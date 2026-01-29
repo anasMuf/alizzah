@@ -1,0 +1,23 @@
+{
+  "name": "@alizzah/api-client",
+  "version": "1.0.0",
+  "description": "Hono RPC client for Alizzah",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "hono": "^4.11.7"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "@alizzah/api": "workspace:*"
+  }
+}

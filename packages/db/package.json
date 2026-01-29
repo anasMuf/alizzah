@@ -2,23 +2,34 @@
   "name": "@alizzah/db",
   "version": "1.0.0",
   "description": "",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc -w",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc && cp -r src/generated dist/",
+    "dev": "mkdir -p dist && cp -r src/generated dist/ && tsc -w",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "db:push": "prisma db push",
+    "db:seed": "prisma db seed"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "prisma": "^7.3.0"
+    "@types/node": "^22.10.7",
+    "prisma": "^5.22.0",
+    "tsx": "^4.7.1"
   },
   "dependencies": {
-    "@prisma/client": "^7.3.0"
+    "@prisma/client": "^5.22.0",
+    "@types/bcryptjs": "^3.0.0",
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^16.4.7"
   }
 }

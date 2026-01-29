@@ -11,6 +11,18 @@
     "paths": {
       "~/*": [
         "./src/*"
+      ],
+      "@alizzah/db": [
+        "../../packages/db/src"
+      ],
+      "@alizzah/api": [
+        "../../apps/api/src"
+      ],
+      "@alizzah/shared": [
+        "../../packages/shared/src"
+      ],
+      "@alizzah/validators": [
+        "../../packages/validators/src"
       ]
     },
     "noEmit": true,

@@ -1,14 +1,504 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// packages/db/prisma/schema.prisma
 
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== ENUMS ====================
+
+enum JenisKelamin {
+  L
+  P
+}
+
+enum StatusSiswa {
+  AKTIF
+  LULUS
+  KELUAR
+}
+
+enum KategoriPembayaran {
+  INFAQ_RUTIN
+  REGISTRASI
+  PERLENGKAPAN
+  DAYCARE
+}
+
+enum TipePembayaran {
+  BULANAN
+  TAHUNAN
+  SEKALI
+  HARIAN
+  INSIDENTIL
+}
+
+enum SifatPembayaran {
+  WAJIB
+  OPSIONAL
+}
+
+enum TipePotongan {
+  PERSENTASE
+  NOMINAL
+}
+
+enum Hari {
+  SENIN
+  SELASA
+  RABU
+  KAMIS
+  JUMAT
+  SABTU
+}
+
+enum UserRole {
+  ADMIN
+  KEPALA_SEKOLAH
+  BENDAHARA_YAYASAN
+}
+
+enum StatusTagihan {
+  DRAFT
+  UNPAID
+  DUE
+  OVERDUE
+  PARTIAL
+  PAID
+  CANCELLED
+}
+
+enum MetodePembayaran {
+  TUNAI
+  TRANSFER
+}
+
+enum StatusPembayaran {
+  AKTIF
+  VOID
+}
+
+enum JenisTabungan {
+  WAJIB_BERLIAN
+  UMUM
+}
+
+enum TipeTransaksiTabungan {
+  SETOR
+  TARIK
+}
+
+enum TipeKas {
+  KAS
+  BERANGKAS
+}
+
+enum TipeTransaksiKas {
+  MASUK
+  KELUAR
+  TRANSFER
+}
+
+// ==================== MODELS ====================
+
+model TahunAjaran {
+  id              String    @id @default(uuid())
+  nama            String    @unique @db.VarChar(20)
+  tanggalMulai    DateTime  @map("tanggal_mulai") @db.Date
+  tanggalSelesai  DateTime  @map("tanggal_selesai") @db.Date
+  isAktif         Boolean   @default(false) @map("is_aktif")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  rombels Rombel[]
+  tarifs  JenisPembayaranTarif[]
+
+  @@map("tahun_ajaran")
+}
+
+model Jenjang {
+  id        String   @id @default(uuid())
+  kode      String   @unique @db.VarChar(10)
+  nama      String   @db.VarChar(50)
+  kelompok  String   @db.VarChar(20)
+  urutan    Int
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  rombels Rombel[]
+  tarifs  JenisPembayaranTarif[]
+
+  @@map("jenjang")
+}
+
+model Rombel {
+  id            String      @id @default(uuid())
+  jenjangId     String      @map("jenjang_id")
+  tahunAjaranId String      @map("tahun_ajaran_id")
+  nama          String      @db.VarChar(30)
+  waliKelas     String?     @map("wali_kelas") @db.VarChar(100)
+  kapasitas     Int         @default(25)
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  jenjang     Jenjang     @relation(fields: [jenjangId], references: [id])
+  tahunAjaran TahunAjaran @relation(fields: [tahunAjaranId], references: [id])
+  siswas      Siswa[]
+
+  @@unique([jenjangId, tahunAjaranId, nama])
+  @@map("rombel")
+}
+
+model Siswa {
+  id            String       @id @default(uuid())
+  nis           String       @unique @db.VarChar(20)
+  namaLengkap   String       @map("nama_lengkap") @db.VarChar(100)
+  jenisKelamin  JenisKelamin @map("jenis_kelamin")
+  tempatLahir   String?      @map("tempat_lahir") @db.VarChar(50)
+  tanggalLahir  DateTime?    @map("tanggal_lahir") @db.Date
+  alamat        String?      @db.Text
+  namaOrtu      String       @map("nama_ortu") @db.VarChar(100)
+  noHpOrtu      String       @map("no_hp_ortu") @db.VarChar(20)
+  emailOrtu     String?      @map("email_ortu") @db.VarChar(100)
+  rombelId      String       @map("rombel_id")
+  status        StatusSiswa  @default(AKTIF)
+  tanggalMasuk  DateTime     @map("tanggal_masuk") @db.Date
+  foto          String?      @db.VarChar(255)
+  ikutDaycare   Boolean      @default(false) @map("ikut_daycare")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  rombel              Rombel               @relation(fields: [rombelId], references: [id])
+  siswaPastas         SiswaPasta[]
+  siswaDiskons        SiswaDiskon[]
+  tagihans            Tagihan[]
+  pembayarans         Pembayaran[]
+  tabungans           Tabungan[]
+
+  @@map("siswa")
+}
+
+model JenisPembayaran {
+  id              String              @id @default(uuid())
+  kode            String              @unique @db.VarChar(20)
+  nama            String              @db.VarChar(100)
+  kategori        KategoriPembayaran
+  tipe            TipePembayaran
+  nominalDefault  Decimal             @map("nominal_default") @db.Decimal(12, 2)
+  jenjangIds      String[]            @map("jenjang_ids")
+  sifat           SifatPembayaran
+  jatuhTempoHari  Int                 @default(1) @map("jatuh_tempo_hari")
+  keterangan      String?             @db.Text
+  isAktif         Boolean             @default(true) @map("is_aktif")
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
+
+  tarifs        JenisPembayaranTarif[]
+  diskons       Diskon[]
+  tagihanItems  TagihanItem[]
+  transaksis    TransaksiKas[]
+  posPengeluarans PosPengeluaran[]
+
+  @@map("jenis_pembayaran")
+}
+
+model JenisPembayaranTarif {
+  id                  String        @id @default(uuid())
+  jenisPembayaranId   String        @map("jenis_pembayaran_id")
+  tahunAjaranId       String        @map("tahun_ajaran_id")
+  jenjangId           String?       @map("jenjang_id")
+  jenisKelamin        JenisKelamin? @map("jenis_kelamin")
+  nominal             Decimal       @db.Decimal(12, 2)
+  createdAt           DateTime      @default(now()) @map("created_at")
+  updatedAt           DateTime      @updatedAt @map("updated_at")
+
+  jenisPembayaran JenisPembayaran @relation(fields: [jenisPembayaranId], references: [id])
+  tahunAjaran     TahunAjaran     @relation(fields: [tahunAjaranId], references: [id])
+  jenjang         Jenjang?        @relation(fields: [jenjangId], references: [id])
+
+  @@unique([jenisPembayaranId, tahunAjaranId, jenjangId, jenisKelamin])
+  @@map("jenis_pembayaran_tarif")
+}
+
+model Diskon {
+  id                String        @id @default(uuid())
+  kode              String        @unique @db.VarChar(20)
+  nama              String        @db.VarChar(100)
+  jenisPembayaranId String        @map("jenis_pembayaran_id")
+  tipePotongan      TipePotongan  @map("tipe_potongan")
+  nilaiPotongan     Decimal       @map("nilai_potongan") @db.Decimal(12, 2)
+  keterangan        String?       @db.Text
+  isAktif           Boolean       @default(true) @map("is_aktif")
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+
+  jenisPembayaran JenisPembayaran @relation(fields: [jenisPembayaranId], references: [id])
+  siswaDiskons    SiswaDiskon[]
+
+  @@map("diskon")
+}
+
+model Pasta {
+  id          String   @id @default(uuid())
+  nama        String   @db.VarChar(50)
+  hari        Hari
+  jamMulai    DateTime @map("jam_mulai") @db.Time
+  jamSelesai  DateTime @map("jam_selesai") @db.Time
+  biaya       Decimal  @db.Decimal(12, 2)
+  jenjangIds  String[] @map("jenjang_ids")
+  isAktif     Boolean  @default(true) @map("is_aktif")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  siswaPastas SiswaPasta[]
+
+  @@map("pasta")
+}
+
+model Bank {
+  id            String   @id @default(uuid())
+  nama          String   @db.VarChar(50)
+  nomorRekening String   @map("nomor_rekening") @db.VarChar(30)
+  atasNama      String   @map("atas_nama") @db.VarChar(100)
+  isAktif       Boolean  @default(true) @map("is_aktif")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  pembayarans Pembayaran[]
+
+  @@map("bank")
+}
+
+model User {
+  id          String    @id @default(uuid())
+  username    String    @unique @db.VarChar(50)
+  email       String?   @unique @db.VarChar(100)
+  password    String    @db.VarChar(255)
+  namaLengkap String    @map("nama_lengkap") @db.VarChar(100)
+  role        UserRole
+  isAktif     Boolean   @default(true) @map("is_aktif")
+  lastLogin   DateTime? @map("last_login")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  siswaDiskonsCreated     SiswaDiskon[]       @relation("DiskonCreatedBy")
+  pembayaransAsKasir      Pembayaran[]        @relation("PembayaranKasir")
+  pembayaransVoidedBy     Pembayaran[]        @relation("PembayaranVoidBy")
+  transaksiTabungans      TransaksiTabungan[]
+  transaksiKas            TransaksiKas[]
+
+  @@map("user")
+}
+
+// ==================== JUNCTION TABLES ====================
+
+model SiswaPasta {
+  id        String   @id @default(uuid())
+  siswaId   String   @map("siswa_id")
+  pastaId   String   @map("pasta_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  siswa Siswa @relation(fields: [siswaId], references: [id], onDelete: Cascade)
+  pasta Pasta @relation(fields: [pastaId], references: [id], onDelete: Cascade)
+
+  @@unique([siswaId, pastaId])
+  @@map("siswa_pasta")
+}
+
+model SiswaDiskon {
+  id              String    @id @default(uuid())
+  siswaId         String    @map("siswa_id")
+  diskonId        String    @map("diskon_id")
+  tanggalMulai    DateTime  @map("tanggal_mulai") @db.Date
+  tanggalBerakhir DateTime? @map("tanggal_berakhir") @db.Date
+  catatan         String?   @db.Text
+  createdBy       String    @map("created_by")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  siswa     Siswa  @relation(fields: [siswaId], references: [id], onDelete: Cascade)
+  diskon    Diskon @relation(fields: [diskonId], references: [id], onDelete: Cascade)
+  createdByUser User @relation("DiskonCreatedBy", fields: [createdBy], references: [id])
+
+  @@map("siswa_diskon")
+}
+
+// ==================== TAGIHAN & PEMBAYARAN ====================
+
+model Tagihan {
+  id             String        @id @default(uuid())
+  kode           String        @unique @db.VarChar(30)
+  siswaId        String        @map("siswa_id")
+  periode          String        @db.VarChar(7) // "2026-01"
+  rombelSnapshot   String        @map("rombel_snapshot") @db.VarChar(50)
+  jenjangSnapshot  String        @map("jenjang_snapshot") @db.VarChar(30)
+  tanggalTagihan   DateTime      @map("tanggal_tagihan") @db.Date
+  jatuhTempo     DateTime      @map("jatuh_tempo") @db.Date
+  totalTagihan   Decimal       @map("total_tagihan") @db.Decimal(12, 2)
+  totalDiskon    Decimal       @default(0) @map("total_diskon") @db.Decimal(12, 2)
+  totalBayar     Decimal       @default(0) @map("total_bayar") @db.Decimal(12, 2)
+  sisaTagihan    Decimal       @map("sisa_tagihan") @db.Decimal(12, 2)
+  status         StatusTagihan @default(UNPAID)
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  siswa              Siswa               @relation(fields: [siswaId], references: [id])
+  tagihanItems       TagihanItem[]
+  pembayaranAlokasis PembayaranAlokasi[]
+
+  @@unique([siswaId, periode])
+  @@map("tagihan")
+}
+
+model TagihanItem {
+  id                String   @id @default(uuid())
+  tagihanId         String   @map("tagihan_id")
+  jenisPembayaranId String   @map("jenis_pembayaran_id")
+  namaItem          String   @map("nama_item") @db.VarChar(100)
+  nominalAwal       Decimal  @map("nominal_awal") @db.Decimal(12, 2)
+  nominalDiskon     Decimal  @default(0) @map("nominal_diskon") @db.Decimal(12, 2)
+  nominalAkhir      Decimal  @map("nominal_akhir") @db.Decimal(12, 2)
+  catatan           String?  @db.Text
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  tagihan         Tagihan         @relation(fields: [tagihanId], references: [id], onDelete: Cascade)
+  jenisPembayaran JenisPembayaran @relation(fields: [jenisPembayaranId], references: [id])
+
+  @@map("tagihan_item")
+}
+
+model Pembayaran {
+  id            String            @id @default(uuid())
+  kode          String            @unique @db.VarChar(30)
+  siswaId       String            @map("siswa_id")
+  tanggal       DateTime          @default(now())
+  totalBayar    Decimal           @map("total_bayar") @db.Decimal(12, 2)
+  metode        MetodePembayaran
+  bankId        String?           @map("bank_id")
+  buktiTransfer String?           @map("bukti_transfer") @db.VarChar(255)
+  catatan       String?           @db.Text
+  kasirId       String            @map("kasir_id")
+  status        StatusPembayaran  @default(AKTIF)
+  voidReason    String?           @map("void_reason") @db.Text
+  voidBy        String?           @map("void_by")
+  voidAt        DateTime?         @map("void_at")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+
+  siswa     Siswa  @relation(fields: [siswaId], references: [id])
+  bank      Bank?  @relation(fields: [bankId], references: [id])
+  kasir     User   @relation("PembayaranKasir", fields: [kasirId], references: [id])
+  voidByUser User? @relation("PembayaranVoidBy", fields: [voidBy], references: [id])
+
+  pembayaranAlokasis PembayaranAlokasi[]
+
+  @@map("pembayaran")
+}
+
+model PembayaranAlokasi {
+  id             String   @id @default(uuid())
+  pembayaranId   String   @map("pembayaran_id")
+  tagihanId      String   @map("tagihan_id")
+  nominalAlokasi Decimal  @map("nominal_alokasi") @db.Decimal(12, 2)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  pembayaran Pembayaran @relation(fields: [pembayaranId], references: [id], onDelete: Cascade)
+  tagihan    Tagihan    @relation(fields: [tagihanId], references: [id])
+
+  @@map("pembayaran_alokasi")
+}
+
+// ==================== TABUNGAN ====================
+
+model Tabungan {
+  id        String         @id @default(uuid())
+  siswaId   String         @map("siswa_id")
+  jenis     JenisTabungan
+  saldo     Decimal        @default(0) @db.Decimal(12, 2)
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @updatedAt @map("updated_at")
+
+  siswa       Siswa               @relation(fields: [siswaId], references: [id])
+  transaksis  TransaksiTabungan[]
+
+  @@unique([siswaId, jenis])
+  @@map("tabungan")
+}
+
+model TransaksiTabungan {
+  id             String                 @id @default(uuid())
+  tabunganId     String                 @map("tabungan_id")
+  tipe           TipeTransaksiTabungan
+  nominal        Decimal                @db.Decimal(12, 2)
+  potonganAdmin  Decimal                @default(0) @map("potongan_admin") @db.Decimal(12, 2)
+  nominalBersih  Decimal                @map("nominal_bersih") @db.Decimal(12, 2)
+  keterangan     String?                @db.Text
+  createdBy      String                 @map("created_by")
+  createdAt      DateTime               @default(now()) @map("created_at")
+
+  tabungan      Tabungan @relation(fields: [tabunganId], references: [id])
+  createdByUser User     @relation(fields: [createdBy], references: [id])
+
+  @@map("transaksi_tabungan")
+}
+
+// ==================== KAS & BERANGKAS ====================
+
+model Kas {
+  id        String     @id @default(uuid())
+  tipe      TipeKas
+  nama      String     @db.VarChar(50)
+  saldo     Decimal    @default(0) @db.Decimal(15, 2)
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  transaksis          TransaksiKas[] @relation("KasTransaksi")
+  transfersReceived   TransaksiKas[] @relation("KasTransferTo")
+
+  @@map("kas")
+}
+
+model PosPengeluaran {
+  id                    String   @id @default(uuid())
+  kode                  String   @unique @db.VarChar(20)
+  nama                  String   @db.VarChar(100)
+  prioritasSumberDanaId String?  @map("prioritas_sumber_dana_id")
+  keterangan            String?  @db.Text
+  isAktif               Boolean  @default(true) @map("is_aktif")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  prioritasSumberDana JenisPembayaran? @relation(fields: [prioritasSumberDanaId], references: [id])
+  transaksis          TransaksiKas[]
+
+  @@map("pos_pengeluaran")
+}
+
+model TransaksiKas {
+  id              String           @id @default(uuid())
+  kasId              String           @map("kas_id")
+  tipeTransaksi      TipeTransaksiKas @map("tipe_transaksi")
+  sumberDanaId       String?          @map("sumber_dana_id") // FK ke JenisPembayaran
+  posPengeluaranId   String?          @map("pos_pengeluaran_id") // FK ke PosPengeluaran
+  referensiId        String?          @map("referensi_id")
+  referensiTipe   String?          @map("referensi_tipe") @db.VarChar(50)
+  kategori        String?          @db.VarChar(50)
+  nominal         Decimal          @db.Decimal(12, 2)
+  keterangan      String?          @db.Text
+  bukti           String?          @db.VarChar(255)
+  transferKeKasId String?          @map("transfer_ke_kas_id")
+  createdBy       String           @map("created_by")
+  createdAt       DateTime         @default(now()) @map("created_at")
+
+  kas             Kas              @relation("KasTransaksi", fields: [kasId], references: [id])
+  transferKeKas   Kas?             @relation("KasTransferTo", fields: [transferKeKasId], references: [id])
+  createdByUser   User             @relation(fields: [createdBy], references: [id])
+  sumberDana      JenisPembayaran? @relation(fields: [sumberDanaId], references: [id])
+  posPengeluaran  PosPengeluaran?  @relation(fields: [posPengeluaranId], references: [id])
+
+  @@map("transaksi_kas")
 }

@@ -1,18 +1,33 @@
-import { serve } from '@hono/node-server'
-import { Hono } from 'hono'
+import path from 'path';
+import dotenv from 'dotenv';
+dotenv.config({ path: path.resolve(process.cwd(), '../../.env') });
 
-const app = new Hono()
+import { serve } from '@hono/node-server';
+import app from './app';
 
-app.get('/', (c) => {
-  return c.text('Hello Hono!')
-})
+const port = 3001;
+console.log(`Server is running on http://localhost:${port}`);
 
-const port = 3001
-console.log(`Server is running on http://localhost:${port}`)
-
-serve({
+const server = serve({
   fetch: app.fetch,
-  port
-})
+  port,
+});
 
-export type AppType = typeof app
+// Graceful shutdown for tsx watch and production
+process.on('SIGTERM', () => {
+  console.log('SIGTERM signal received: closing HTTP server');
+  server.close(() => {
+    console.log('HTTP server closed');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT signal received: closing HTTP server');
+  server.close(() => {
+    console.log('HTTP server closed');
+    process.exit(0);
+  });
+});
+
+export type { AppType } from './app';

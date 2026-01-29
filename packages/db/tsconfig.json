@@ -3,13 +3,17 @@
     "compilerOptions": {
         "outDir": "./dist",
         "rootDir": "./src",
-        "declaration": true
+        "declaration": true,
+        "jsx": "react-jsx",
+        "jsxImportSource": "hono/jsx"
     },
     "include": [
         "src"
     ],
     "exclude": [
         "node_modules",
-        "dist"
+        "dist",
+        "prisma",
+        "src/generated"
     ]
 }

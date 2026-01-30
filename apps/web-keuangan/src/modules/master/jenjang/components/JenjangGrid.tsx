@@ -75,7 +75,7 @@ export function JenjangGrid({ onEdit }: JenjangGridProps) {
 
                         <div className="relative z-10">
                             <div className="flex items-start justify-between mb-4">
-                                <div className="bg-blue-600 text-white w-10 h-10 rounded-xl flex items-center justify-center font-bold shadow-lg shadow-blue-100">
+                                <div className="bg-blue-600 text-white w-fit min-w-10 px-3 h-10 rounded-xl flex items-center justify-center font-bold shadow-lg shadow-blue-100">
                                     {item.kode}
                                 </div>
                                 <span className="text-slate-400 text-xs font-mono">#{item.urutan}</span>

@@ -1,16 +1,19 @@
-/// <reference types="vite/client" />
 import * as React from 'react'
 import {
   HeadContent,
-  Link,
   Scripts,
   createRootRouteWithContext,
   Outlet,
+  useLocation,
+  useNavigate,
+  redirect,
 } from '@tanstack/react-router'
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query'
-import { Provider as JotaiProvider, useAtom, useAtomValue } from 'jotai'
-import { userAtom, isAuthenticatedAtom, logoutAtom } from '~/stores/auth'
+import { Provider as JotaiProvider, useAtomValue, useSetAtom } from 'jotai'
+import { isAuthenticatedAtom, initializeAuthAtom } from '~/stores/auth'
+import { DashboardLayout } from '~/components/layout/DashboardLayout'
+import { fetchAuth } from '~/modules/auth/api/auth.server'
 import appCss from '~/styles/app.css?url'
 
 export const Route = createRootRouteWithContext<{
@@ -20,25 +23,43 @@ export const Route = createRootRouteWithContext<{
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'Sistem Keuangan Alizzah' },
+      { title: 'Alizzah Finance' },
     ],
     links: [
       { rel: 'stylesheet', href: appCss },
+      { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+      { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossOrigin: 'anonymous' },
+      { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap' },
     ],
   }),
+  beforeLoad: async ({ location }) => {
+    const auth = await fetchAuth()
+    const isLoginPage = location.pathname === '/login'
+
+    if (!auth.token && !isLoginPage) {
+      throw redirect({
+        to: '/login',
+      })
+    }
+
+    if (auth.token && isLoginPage) {
+      throw redirect({
+        to: '/',
+      })
+    }
+
+    return { auth }
+  },
+  loader: async () => {
+    const auth = await fetchAuth()
+    return { auth }
+  },
   component: RootDocument,
 })
 
 function RootDocument() {
   const { queryClient } = Route.useRouteContext()
-  const user = useAtomValue(userAtom)
-  const isAuthenticated = useAtomValue(isAuthenticatedAtom)
-  const [, logout] = useAtom(logoutAtom)
-  const [isMounted, setIsMounted] = React.useState(false)
-
-  React.useEffect(() => {
-    setIsMounted(true)
-  }, [])
+  const { auth } = Route.useLoaderData()
 
   return (
     <JotaiProvider>
@@ -47,68 +68,52 @@ function RootDocument() {
           <head>
             <HeadContent />
           </head>
-          <body className="bg-slate-50 text-slate-900 font-sans min-h-screen">
-            <header className="bg-white border-b shadow-sm sticky top-0 z-10 px-6 py-4 flex items-center justify-between">
-              <div className="flex items-center gap-6">
-                <Link to="/" className="text-xl font-bold text-blue-700">
-                  ALIZZAH FINANCE
-                </Link>
-                <nav className="flex gap-4">
-                  <Link
-                    to="/"
-                    activeProps={{ className: 'text-blue-600 font-semibold' }}
-                    activeOptions={{ exact: true }}
-                    className="text-slate-600 hover:text-blue-500 transition-colors"
-                  >
-                    Dashboard
-                  </Link>
-                  <Link
-                    to="/master/tahun-ajaran"
-                    activeProps={{ className: 'text-blue-600 font-semibold' }}
-                    className="text-slate-600 hover:text-blue-500 transition-colors"
-                  >
-                    Tahun Ajaran
-                  </Link>
-                  <Link
-                    to="/master/jenjang"
-                    activeProps={{ className: 'text-blue-600 font-semibold' }}
-                    className="text-slate-600 hover:text-blue-500 transition-colors"
-                  >
-                    Jenjang
-                  </Link>
-                </nav>
-              </div>
-              <div className="flex items-center gap-4">
-                {isMounted && isAuthenticated ? (
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium text-slate-600">
-                      Hi, {user?.namaLengkap || user?.username}
-                    </span>
-                    <button
-                      onClick={() => logout()}
-                      className="text-sm font-medium text-red-600 hover:text-red-700 transition-colors"
-                    >
-                      Logout
-                    </button>
-                  </div>
-                ) : (
-                  <Link
-                    to="/login"
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-                  >
-                    Login
-                  </Link>
-                )}
-              </div>
-            </header>
-            <main className="max-w-7xl mx-auto py-8 px-6">
-              <Outlet />
-            </main>
+          <body className="bg-[#F8FAFC] text-slate-900 font-['Plus_Jakarta_Sans',sans-serif] min-h-screen">
+            <AppContent initialAuth={auth} />
             <TanStackRouterDevtools position="bottom-right" />
             <Scripts />
           </body>
         </html>
       </QueryClientProvider>
     </JotaiProvider>
+  )
+}
+
+function AppContent({ initialAuth }: { initialAuth: any }) {
+  const isAuthenticated = useAtomValue(isAuthenticatedAtom)
+  const initializeAuth = useSetAtom(initializeAuthAtom)
+  const location = useLocation()
+  const navigate = useNavigate()
+  const isLoginPage = location.pathname === '/login'
+  const [isInitialized, setIsInitialized] = React.useState(false)
+
+  // Sync server auth state to Jotai on mount
+  React.useEffect(() => {
+    if (initialAuth) {
+      initializeAuth({
+        token: initialAuth.token,
+        user: initialAuth.user
+      })
+    }
+    setIsInitialized(true)
+  }, [initialAuth, initializeAuth])
+
+  // Handle client-side redirect after logout
+  React.useEffect(() => {
+    if (isInitialized && !isAuthenticated && !isLoginPage) {
+      navigate({ to: '/login', replace: true })
+    }
+  }, [isInitialized, isAuthenticated, isLoginPage, navigate])
+
+  if (!isInitialized) return null
+
+  return isAuthenticated && !isLoginPage ? (
+    <DashboardLayout>
+      <Outlet />
+    </DashboardLayout>
+  ) : (
+    <main className="min-h-screen">
+      <Outlet />
+    </main>
   )
 }

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
-import { JenisPembayaranTable } from '~/modules/keuangan/master/jenis-pembayaran';
-import { JenisPembayaranForm } from '~/modules/keuangan/master/jenis-pembayaran/components/form/JenisPembayaranForm';
+import { JenisPembayaranTable } from '~/modules/master/jenis-pembayaran';
+import { JenisPembayaranForm } from '~/modules/master/jenis-pembayaran/components/form/JenisPembayaranForm';
 import { Plus } from 'lucide-react';
 import { Toaster } from 'sonner';
 

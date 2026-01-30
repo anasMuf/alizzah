@@ -67,7 +67,36 @@ async function main() {
     const jenjangs = await prisma.jenjang.findMany();
     const jenjangMap = jenjangs.reduce((acc, j) => ({ ...acc, [j.kode]: j.id }), {} as Record<string, string>);
 
-    // 4. Seed Pos Pengeluaran
+    // 4. Seed Rombel (Classes) - 10 per Jenjang
+    console.log('🌱 Seeding Rombels...');
+    let rombelCount = 0;
+    for (const jenjang of jenjangs) {
+        for (let i = 1; i <= 9; i++) {
+            const namaRombel = `${jenjang.kelompok}-${i}`; // e.g., Mutiara-1, Intan-2
+
+            await prisma.rombel.upsert({
+                where: {
+                    jenjangId_tahunAjaranId_nama: {
+                        jenjangId: jenjang.id,
+                        tahunAjaranId: academicYearId,
+                        nama: namaRombel
+                    }
+                },
+                update: {},
+                create: {
+                    nama: namaRombel,
+                    jenjangId: jenjang.id,
+                    tahunAjaranId: academicYearId,
+                    kapasitas: 25,
+                    waliKelas: `Wali Kelas ${jenjang.kelompok} ${i}`
+                }
+            });
+            rombelCount++;
+        }
+    }
+    console.log(`✅ Rombels seeded: ${rombelCount}`);
+
+    // 5. Seed Pos Pengeluaran
     const posPengeluaranData = [
         { kode: 'POS-SARPRAS', nama: 'Infaq Sarpras' },
         { kode: 'POS-APE', nama: 'Infaq APE' },

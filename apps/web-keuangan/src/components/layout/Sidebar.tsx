@@ -111,11 +111,12 @@ export function Sidebar({ open, setOpen, isCollapsed, setIsCollapsed }: SidebarP
                         </div>
                         <SidebarItem to="/master/tahun-ajaran" icon={CalendarDays} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Tahun Ajaran</SidebarItem>
                         <SidebarItem to="/master/jenjang" icon={School} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Jenjang</SidebarItem>
+                        <SidebarItem to="/master/rombel" icon={Users} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Rombel (Kelas)</SidebarItem>
                         <SidebarItem to="/master/jenis-pembayaran" icon={CreditCard} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Jenis Pembayaran</SidebarItem>
                         <div className={`mt-6 px-4 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ${isCollapsed ? 'text-center px-0' : ''}`}>
                             {isCollapsed ? '...' : 'Keuangan'}
                         </div>
-                        <SidebarItem to="#" icon={Users} isCollapsed={isCollapsed}>Data Siswa</SidebarItem>
+                        <SidebarItem to="/siswa" icon={Users} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Data Siswa</SidebarItem>
                         <SidebarItem to="#" icon={CreditCard} isCollapsed={isCollapsed}>Tagihan & SPP</SidebarItem>
 
                         <div className={`mt-6 px-4 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ${isCollapsed ? 'text-center px-0' : ''}`}>

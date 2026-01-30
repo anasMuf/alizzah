@@ -3,14 +3,23 @@
   "version": "1.0.0",
   "description": "",
   "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
   "files": [
-    "dist"
+    "dist",
+    "generated"
   ],
   "scripts": {
-    "build": "tsc && cp -r src/generated dist/",
-    "dev": "mkdir -p dist && cp -r src/generated dist/ && tsc -w",
+    "build": "pnpm generate && tsc && cp -r generated dist/",
+    "dev": "mkdir -p dist && pnpm generate && cp -r generated dist/ && tsc -w",
+    "generate": "prisma generate",
     "test": "echo \"Error: no test specified\" && exit 1",
     "db:push": "prisma db push",
     "db:seed": "prisma db seed"

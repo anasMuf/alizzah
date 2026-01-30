@@ -5,6 +5,7 @@ import { useAtomValue } from 'jotai';
 import { tokenAtom } from '~/stores/auth';
 import { Plus, Edit2, Trash2, CheckCircle2, XCircle } from 'lucide-react';
 import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
+import { formatCurrency } from '@alizzah/shared';
 
 export function JenisPembayaranTable({ onEdit }: { onEdit?: (item: any) => void }) {
     const token = useAtomValue(tokenAtom);
@@ -76,7 +77,7 @@ export function JenisPembayaranTable({ onEdit }: { onEdit?: (item: any) => void 
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="font-bold text-slate-900">
-                                            Rp {new Intl.NumberFormat('id-ID').format(Number(item.nominalDefault))}
+                                            {formatCurrency(item.nominalDefault)}
                                         </div>
                                         <div className="text-[10px] text-slate-400 font-medium">
                                             {item.sifat === 'WAJIB' ? 'Wajib Dibayar' : 'Opsional'}

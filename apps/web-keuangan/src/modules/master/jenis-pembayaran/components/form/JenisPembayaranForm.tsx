@@ -9,6 +9,8 @@ import { useAtomValue } from 'jotai';
 import { tokenAtom } from '~/stores/auth';
 import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Controller } from 'react-hook-form';
+import { formatNumber, parseCurrency } from '@alizzah/shared';
 
 interface JenisPembayaranFormProps {
     isOpen: boolean;
@@ -27,6 +29,7 @@ export function JenisPembayaranForm({ isOpen, onClose, initialData }: JenisPemba
         handleSubmit,
         reset,
         watch,
+        control,
         formState: { errors, isSubmitting }
     } = useForm<CreateJenisPembayaranInput>({
         // @ts-ignore
@@ -180,11 +183,18 @@ export function JenisPembayaranForm({ isOpen, onClose, initialData }: JenisPemba
                                         <label className="text-sm font-semibold text-slate-700">Nominal Default (Rp) <span className="text-red-500">*</span></label>
                                         <div className="relative group">
                                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 font-semibold group-focus-within:text-blue-500 transition-colors">Rp</div>
-                                            <input
-                                                type="number"
-                                                {...register('nominalDefault', { valueAsNumber: true })}
-                                                className="w-full pl-12 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-mono"
-                                                placeholder="0"
+                                            <Controller
+                                                name="nominalDefault"
+                                                control={control}
+                                                render={({ field }) => (
+                                                    <input
+                                                        type="text"
+                                                        value={field.value === 0 ? '' : formatNumber(field.value)}
+                                                        onChange={(e) => field.onChange(parseCurrency(e.target.value))}
+                                                        className="w-full pl-12 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-mono"
+                                                        placeholder="0"
+                                                    />
+                                                )}
                                             />
                                         </div>
                                         <p className="text-[11px] text-slate-400">Masukkan 0 jika tarif berbeda tiap jenjang.</p>

@@ -11,7 +11,9 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SiswaIndexRouteImport } from './routes/siswa/index'
 import { Route as MasterTahunAjaranRouteImport } from './routes/master/tahun-ajaran'
+import { Route as MasterRombelRouteImport } from './routes/master/rombel'
 import { Route as MasterJenjangRouteImport } from './routes/master/jenjang'
 import { Route as MasterJenisPembayaranRouteImport } from './routes/master/jenis-pembayaran'
 
@@ -25,9 +27,19 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SiswaIndexRoute = SiswaIndexRouteImport.update({
+  id: '/siswa/',
+  path: '/siswa/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MasterTahunAjaranRoute = MasterTahunAjaranRouteImport.update({
   id: '/master/tahun-ajaran',
   path: '/master/tahun-ajaran',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MasterRombelRoute = MasterRombelRouteImport.update({
+  id: '/master/rombel',
+  path: '/master/rombel',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MasterJenjangRoute = MasterJenjangRouteImport.update({
@@ -46,14 +58,18 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/master/jenis-pembayaran': typeof MasterJenisPembayaranRoute
   '/master/jenjang': typeof MasterJenjangRoute
+  '/master/rombel': typeof MasterRombelRoute
   '/master/tahun-ajaran': typeof MasterTahunAjaranRoute
+  '/siswa/': typeof SiswaIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/master/jenis-pembayaran': typeof MasterJenisPembayaranRoute
   '/master/jenjang': typeof MasterJenjangRoute
+  '/master/rombel': typeof MasterRombelRoute
   '/master/tahun-ajaran': typeof MasterTahunAjaranRoute
+  '/siswa': typeof SiswaIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -61,7 +77,9 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/master/jenis-pembayaran': typeof MasterJenisPembayaranRoute
   '/master/jenjang': typeof MasterJenjangRoute
+  '/master/rombel': typeof MasterRombelRoute
   '/master/tahun-ajaran': typeof MasterTahunAjaranRoute
+  '/siswa/': typeof SiswaIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -70,21 +88,27 @@ export interface FileRouteTypes {
     | '/login'
     | '/master/jenis-pembayaran'
     | '/master/jenjang'
+    | '/master/rombel'
     | '/master/tahun-ajaran'
+    | '/siswa/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
     | '/master/jenis-pembayaran'
     | '/master/jenjang'
+    | '/master/rombel'
     | '/master/tahun-ajaran'
+    | '/siswa'
   id:
     | '__root__'
     | '/'
     | '/login'
     | '/master/jenis-pembayaran'
     | '/master/jenjang'
+    | '/master/rombel'
     | '/master/tahun-ajaran'
+    | '/siswa/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -92,7 +116,9 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   MasterJenisPembayaranRoute: typeof MasterJenisPembayaranRoute
   MasterJenjangRoute: typeof MasterJenjangRoute
+  MasterRombelRoute: typeof MasterRombelRoute
   MasterTahunAjaranRoute: typeof MasterTahunAjaranRoute
+  SiswaIndexRoute: typeof SiswaIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -111,11 +137,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/siswa/': {
+      id: '/siswa/'
+      path: '/siswa'
+      fullPath: '/siswa/'
+      preLoaderRoute: typeof SiswaIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/master/tahun-ajaran': {
       id: '/master/tahun-ajaran'
       path: '/master/tahun-ajaran'
       fullPath: '/master/tahun-ajaran'
       preLoaderRoute: typeof MasterTahunAjaranRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/master/rombel': {
+      id: '/master/rombel'
+      path: '/master/rombel'
+      fullPath: '/master/rombel'
+      preLoaderRoute: typeof MasterRombelRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/master/jenjang': {
@@ -140,7 +180,9 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   MasterJenisPembayaranRoute: MasterJenisPembayaranRoute,
   MasterJenjangRoute: MasterJenjangRoute,
+  MasterRombelRoute: MasterRombelRoute,
   MasterTahunAjaranRoute: MasterTahunAjaranRoute,
+  SiswaIndexRoute: SiswaIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

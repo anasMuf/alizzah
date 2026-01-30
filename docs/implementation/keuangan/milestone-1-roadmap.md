@@ -44,12 +44,12 @@ Sebelum memulai implementasi, pastikan memahami referensi berikut:
 ## 👥 Phase 2: Student & Rombel (Classroom)
 **Goal:** Management of students as the primary financial subjects.
 
-- [ ] **2.1 Rombel Management**
-  - [ ] **Backend:** Model `Rombel` linked to `AcademicYear` and `Level`.
-  - [ ] **Frontend:** Grid view of classrooms with student count indicators.
-- [ ] **2.2 Student Lifecycle**
-  - [ ] **Backend:** Model `Student` with multi-field profiles and `PASTA` (addons) selections.
-  - [ ] **Frontend:** Multi-tab form for student data (Basic, Parents, Financial Profile).
+- [x] **2.1 Rombel Management**
+  - [x] **Backend:** Model `Rombel` linked to `AcademicYear` and `Level`.
+  - [x] **Frontend:** Grid view of classrooms with student count indicators.
+- [x] **2.2 Student Lifecycle**
+  - [x] **Backend:** Model `Student` with multi-field profiles and `PASTA` (addons) selections.
+  - [x] **Frontend:** Multi-tab form for student data (Basic, Parents, Financial Profile).
 - [ ] **2.3 Batch Operations (Promotions)**
   - [ ] **Backend:** Implement Transactional SQL for mass-transferring students between Rombels.
   - [ ] **Frontend:** Drag-and-drop or checklist-based promotion wizard.

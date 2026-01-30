@@ -5,6 +5,7 @@ import { ZodError } from 'zod';
 import { authRoutes } from './modules/core/auth/auth.routes';
 import { masterRoutes } from './modules/core/master';
 import { jenisPembayaranRoutes } from './modules/keuangan/master/jenis-pembayaran/jenis-pembayaran.routes';
+import { pastaRoutes } from './modules/keuangan/master/pasta/pasta.routes';
 import { AppError } from './lib/error';
 import { errorResponse } from './lib/response';
 
@@ -24,10 +25,14 @@ app.onError((err, c) => {
     return errorResponse(c, 'Terjadi kesalahan internal server', 500);
 });
 
+import { siswaRoutes } from './modules/core/siswa/siswa.routes';
+
 // Define API v1 routes separately to have a clean AppType
 const v1 = new Hono()
     .route('/auth', authRoutes)
     .route('/master', masterRoutes)
+    .route('/siswa', siswaRoutes)
+    .route('/keuangan/master/pasta', pastaRoutes)
     .route('/keuangan/master/jenis-pembayaran', jenisPembayaranRoutes);
 
 // Mount v1

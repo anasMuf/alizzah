@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
-import { TahunAjaranTable } from '~/modules/master/tahun-ajaran';
-import { TahunAjaranForm } from '~/modules/master/tahun-ajaran/components/form/TahunAjaranForm';
+import { JenisPembayaranTable } from '~/modules/keuangan/master/jenis-pembayaran';
+import { JenisPembayaranForm } from '~/modules/keuangan/master/jenis-pembayaran/components/form/JenisPembayaranForm';
 import { Plus } from 'lucide-react';
 import { Toaster } from 'sonner';
 
-export const Route = createFileRoute('/master/tahun-ajaran')({
-    component: TahunAjaranPage,
+export const Route = createFileRoute('/master/jenis-pembayaran')({
+    component: JenisPembayaranPage,
 });
 
-function TahunAjaranPage() {
+function JenisPembayaranPage() {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState<any>(null);
 
@@ -29,21 +29,21 @@ function TahunAjaranPage() {
 
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900">Master Tahun Ajaran</h1>
-                    <p className="text-slate-500 text-sm">Kelola periode akademik sekolah aktif dan arsip.</p>
+                    <h1 className="text-2xl font-bold text-slate-900">Master Jenis Pembayaran</h1>
+                    <p className="text-slate-500 text-sm">Kelola kategori tagihan, SPP, dan biaya pendidikan lainnya.</p>
                 </div>
                 <button
                     onClick={handleCreate}
                     className="flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 font-bold active:scale-95"
                 >
                     <Plus size={20} />
-                    <span>Tambah Tahun</span>
+                    <span>Tambah Jenis</span>
                 </button>
             </div>
 
-            <TahunAjaranTable onEdit={handleEdit} />
+            <JenisPembayaranTable onEdit={handleEdit} />
 
-            <TahunAjaranForm
+            <JenisPembayaranForm
                 isOpen={isFormOpen}
                 onClose={() => setIsFormOpen(false)}
                 initialData={selectedItem}

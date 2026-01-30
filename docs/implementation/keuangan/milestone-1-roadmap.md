@@ -24,15 +24,15 @@ Sebelum memulai implementasi, pastikan memahami referensi berikut:
 - [x] **1.1 Database Schema (Prisma)**
   - [x] Define models: `User`, `Role`, `AcademicYear`, `Level` (Jenjang), `PaymentType`.
   - [x] Run `pnpm db:push` or `prisma migrate dev`.
-- [ ] **1.2 Auth & Session Management**
-  - [ ] **Backend:** Setup Hono Middleware for JWT/Session validation.
-  - [ ] **Frontend:** Setup TanStack Start auth context, login route, and persistent layout.
-- [ ] **1.3 Master Data APIs (Hono RPC)**
-  - [ ] **Backend:** Export `AppType` with routes for `academic-years` and `levels`.
-  - [ ] **Frontend:** Build management UI using TanStack Table & Shadcn Dialogs.
-- [ ] **1.4 Payment Categories & Tariffs**
-  - [ ] **Backend:** `POST /payment-types`, `GET /payment-types`.
-  - [ ] **Logic:** Implement complex pricing logic (tariffs per level/gender) in `packages/validators`.
+- [x] **1.2 Auth & Session Management**
+  - [x] **Backend:** Setup Hono Middleware for JWT/Session validation.
+  - [x] **Frontend:** Setup TanStack Start auth context, login route, and persistent layout.
+- [x] **1.3 Master Data APIs (Hono RPC)**
+  - [x] **Backend:** Export `AppType` with routes for `academic-years` and `levels`.
+  - [x] **Frontend:** Build management UI using TanStack Table & Shadcn Dialogs.
+- [x] **1.4 Payment Categories & Tariffs**
+  - [x] **Backend:** `POST /payment-types`, `GET /payment-types`.
+  - [x] **Logic:** Implement complex pricing logic (tariffs per level/gender) in `packages/validators`.
 - [x] **1.5 Development Seeders**
   - [x] **Backend:** Setup Prisma seeders in `packages/db/prisma/seed.ts`.
   - [x] **Data:** Generate dummy data for Years, Levels, and initial Admin users.

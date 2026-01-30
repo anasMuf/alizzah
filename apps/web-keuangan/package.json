@@ -13,6 +13,7 @@
     "@alizzah/api-client": "workspace:^",
     "@alizzah/shared": "workspace:^",
     "@alizzah/validators": "workspace:^",
+    "@hookform/resolvers": "^5.2.2",
     "@tanstack/react-query": "^5.90.20",
     "@tanstack/react-router": "^1.157.16",
     "@tanstack/react-router-devtools": "^1.157.16",
@@ -26,6 +27,8 @@
     "lucide-react": "^0.563.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-hook-form": "^7.71.1",
+    "sonner": "^2.0.7",
     "tailwind-merge": "^2.6.0",
     "vinxi": "^0.5.11",
     "zod": "^3.24.2"

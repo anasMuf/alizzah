@@ -13,6 +13,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as MasterTahunAjaranRouteImport } from './routes/master/tahun-ajaran'
 import { Route as MasterJenjangRouteImport } from './routes/master/jenjang'
+import { Route as MasterJenisPembayaranRouteImport } from './routes/master/jenis-pembayaran'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -34,16 +35,23 @@ const MasterJenjangRoute = MasterJenjangRouteImport.update({
   path: '/master/jenjang',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MasterJenisPembayaranRoute = MasterJenisPembayaranRouteImport.update({
+  id: '/master/jenis-pembayaran',
+  path: '/master/jenis-pembayaran',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/master/jenis-pembayaran': typeof MasterJenisPembayaranRoute
   '/master/jenjang': typeof MasterJenjangRoute
   '/master/tahun-ajaran': typeof MasterTahunAjaranRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/master/jenis-pembayaran': typeof MasterJenisPembayaranRoute
   '/master/jenjang': typeof MasterJenjangRoute
   '/master/tahun-ajaran': typeof MasterTahunAjaranRoute
 }
@@ -51,20 +59,38 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/master/jenis-pembayaran': typeof MasterJenisPembayaranRoute
   '/master/jenjang': typeof MasterJenjangRoute
   '/master/tahun-ajaran': typeof MasterTahunAjaranRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/master/jenjang' | '/master/tahun-ajaran'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/master/jenis-pembayaran'
+    | '/master/jenjang'
+    | '/master/tahun-ajaran'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/master/jenjang' | '/master/tahun-ajaran'
-  id: '__root__' | '/' | '/login' | '/master/jenjang' | '/master/tahun-ajaran'
+  to:
+    | '/'
+    | '/login'
+    | '/master/jenis-pembayaran'
+    | '/master/jenjang'
+    | '/master/tahun-ajaran'
+  id:
+    | '__root__'
+    | '/'
+    | '/login'
+    | '/master/jenis-pembayaran'
+    | '/master/jenjang'
+    | '/master/tahun-ajaran'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
+  MasterJenisPembayaranRoute: typeof MasterJenisPembayaranRoute
   MasterJenjangRoute: typeof MasterJenjangRoute
   MasterTahunAjaranRoute: typeof MasterTahunAjaranRoute
 }
@@ -99,12 +125,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MasterJenjangRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/master/jenis-pembayaran': {
+      id: '/master/jenis-pembayaran'
+      path: '/master/jenis-pembayaran'
+      fullPath: '/master/jenis-pembayaran'
+      preLoaderRoute: typeof MasterJenisPembayaranRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
+  MasterJenisPembayaranRoute: MasterJenisPembayaranRoute,
   MasterJenjangRoute: MasterJenjangRoute,
   MasterTahunAjaranRoute: MasterTahunAjaranRoute,
 }

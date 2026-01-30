@@ -101,24 +101,24 @@ export function Sidebar({ open, setOpen, isCollapsed, setIsCollapsed }: SidebarP
 
                     {/* Navigation */}
                     <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto custom-scrollbar overflow-x-hidden">
-                        <div className={`px-4 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em] mb-2 ${isCollapsed ? 'text-center px-0' : ''}`}>
+                        <div className={`px-4 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ${isCollapsed ? 'text-center px-0' : ''}`}>
                             {isCollapsed ? '...' : 'Menu Utama'}
                         </div>
                         <SidebarItem to="/" icon={LayoutDashboard} exact onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Dashboard</SidebarItem>
 
-                        <div className={`mt-6 px-4 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em] mb-2 ${isCollapsed ? 'text-center px-0' : ''}`}>
+                        <div className={`mt-6 px-4 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ${isCollapsed ? 'text-center px-0' : ''}`}>
                             {isCollapsed ? '...' : 'Master Data'}
                         </div>
                         <SidebarItem to="/master/tahun-ajaran" icon={CalendarDays} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Tahun Ajaran</SidebarItem>
                         <SidebarItem to="/master/jenjang" icon={School} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Jenjang</SidebarItem>
-
-                        <div className={`mt-6 px-4 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em] mb-2 ${isCollapsed ? 'text-center px-0' : ''}`}>
+                        <SidebarItem to="/master/jenis-pembayaran" icon={CreditCard} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Jenis Pembayaran</SidebarItem>
+                        <div className={`mt-6 px-4 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ${isCollapsed ? 'text-center px-0' : ''}`}>
                             {isCollapsed ? '...' : 'Keuangan'}
                         </div>
                         <SidebarItem to="#" icon={Users} isCollapsed={isCollapsed}>Data Siswa</SidebarItem>
                         <SidebarItem to="#" icon={CreditCard} isCollapsed={isCollapsed}>Tagihan & SPP</SidebarItem>
 
-                        <div className={`mt-6 px-4 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em] mb-2 ${isCollapsed ? 'text-center px-0' : ''}`}>
+                        <div className={`mt-6 px-4 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ${isCollapsed ? 'text-center px-0' : ''}`}>
                             {isCollapsed ? '...' : 'Laporan'}
                         </div>
                         <SidebarItem to="#" icon={FileText} isCollapsed={isCollapsed}>Laporan Harian</SidebarItem>

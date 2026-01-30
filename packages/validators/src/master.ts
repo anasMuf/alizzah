@@ -3,8 +3,15 @@ import { z } from 'zod';
 // Tahun Ajaran
 export const createTahunAjaranSchema = z.object({
     nama: z.string().min(1),
-    tanggalMulai: z.string().transform((str) => new Date(str)), // Input as string YYYY-MM-DD
-    tanggalSelesai: z.string().transform((str) => new Date(str)),
+    // Use preprocess to handle string inputs from form, but schema results in Date
+    tanggalMulai: z.preprocess((arg) => {
+        if (typeof arg === 'string' || arg instanceof Date) return new Date(arg);
+        return arg;
+    }, z.date()),
+    tanggalSelesai: z.preprocess((arg) => {
+        if (typeof arg === 'string' || arg instanceof Date) return new Date(arg);
+        return arg;
+    }, z.date()),
     isAktif: z.boolean().default(false),
 });
 

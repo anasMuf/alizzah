@@ -4,6 +4,7 @@ import { logger } from 'hono/logger';
 import { ZodError } from 'zod';
 import { authRoutes } from './modules/core/auth/auth.routes';
 import { masterRoutes } from './modules/core/master';
+import { jenisPembayaranRoutes } from './modules/keuangan/master/jenis-pembayaran/jenis-pembayaran.routes';
 import { AppError } from './lib/error';
 import { errorResponse } from './lib/response';
 
@@ -26,7 +27,8 @@ app.onError((err, c) => {
 // Define API v1 routes separately to have a clean AppType
 const v1 = new Hono()
     .route('/auth', authRoutes)
-    .route('/master', masterRoutes);
+    .route('/master', masterRoutes)
+    .route('/keuangan/master/jenis-pembayaran', jenisPembayaranRoutes);
 
 // Mount v1
 app.route('/api/v1', v1);

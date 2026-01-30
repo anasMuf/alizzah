@@ -1,12 +1,31 @@
 'use client';
 
+import { useState } from 'react';
 import { useJenjangList } from '../hooks/useJenjangList';
+import { useJenjangMutations } from '../hooks/useJenjangMutations';
 import { useAtomValue } from 'jotai';
 import { tokenAtom } from '~/stores/auth';
+import { Edit2, Trash2 } from 'lucide-react';
+import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
+import { Jenjang } from '@alizzah/db';
 
-export function JenjangGrid() {
+interface JenjangGridProps {
+    onEdit?: (item: Jenjang) => void;
+}
+
+export function JenjangGrid({ onEdit }: JenjangGridProps) {
     const token = useAtomValue(tokenAtom);
     const { data, isLoading, error, refetch } = useJenjangList(token);
+    const { deleteMutation } = useJenjangMutations(token);
+
+    const [deleteId, setDeleteId] = useState<string | null>(null);
+
+    const handleDelete = async () => {
+        if (deleteId) {
+            await deleteMutation.mutateAsync(deleteId);
+            setDeleteId(null);
+        }
+    };
 
     if (isLoading) {
         return (
@@ -48,37 +67,54 @@ export function JenjangGrid() {
     }
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {data.map((item) => (
-                <div key={item.id} className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-10 -mt-10 group-hover:bg-blue-100 transition-colors z-0"></div>
+        <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {data.map((item) => (
+                    <div key={item.id} className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-10 -mt-10 group-hover:bg-blue-100 transition-colors z-0"></div>
 
-                    <div className="relative z-10">
-                        <div className="flex items-start justify-between mb-4">
-                            <div className="bg-blue-600 text-white w-10 h-10 rounded-xl flex items-center justify-center font-bold shadow-lg shadow-blue-100">
-                                {item.kode}
+                        <div className="relative z-10">
+                            <div className="flex items-start justify-between mb-4">
+                                <div className="bg-blue-600 text-white w-10 h-10 rounded-xl flex items-center justify-center font-bold shadow-lg shadow-blue-100">
+                                    {item.kode}
+                                </div>
+                                <span className="text-slate-400 text-xs font-mono">#{item.urutan}</span>
                             </div>
-                            <span className="text-slate-400 text-xs font-mono">#{item.urutan}</span>
-                        </div>
 
-                        <h3 className="text-lg font-bold text-slate-900 mb-1">{item.nama}</h3>
-                        <p className="text-slate-500 text-sm mb-4">Kelompok: <span className="text-slate-700 font-medium">{item.kelompok}</span></p>
+                            <h3 className="text-lg font-bold text-slate-900 mb-1">{item.nama}</h3>
+                            <p className="text-slate-500 text-sm mb-4">Kelompok: <span className="text-slate-700 font-medium">{item.kelompok}</span></p>
 
-                        <div className="flex items-center justify-end gap-3 mt-2 border-t pt-4 border-slate-50">
-                            <button className="text-slate-400 hover:text-blue-600 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                                </svg>
-                            </button>
-                            <button className="text-slate-400 hover:text-red-500 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                                </svg>
-                            </button>
+                            <div className="flex items-center justify-end gap-2 mt-2 border-t pt-4 border-slate-50">
+                                <button
+                                    onClick={() => onEdit?.(item)}
+                                    className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                    title="Edit"
+                                >
+                                    <Edit2 size={18} />
+                                </button>
+                                <button
+                                    onClick={() => setDeleteId(item.id)}
+                                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                    title="Hapus"
+                                >
+                                    <Trash2 size={18} />
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            ))}
-        </div>
+                ))}
+            </div>
+
+            <ConfirmDialog
+                isOpen={!!deleteId}
+                onClose={() => setDeleteId(null)}
+                onConfirm={handleDelete}
+                title="Hapus Jenjang"
+                description="Apakah Anda yakin ingin menghapus jenjang ini? Data yang sudah dihapus tidak dapat dikembalikan."
+                variant="danger"
+                confirmText="Hapus"
+                isLoading={deleteMutation.isPending}
+            />
+        </>
     );
 }

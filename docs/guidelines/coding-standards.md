@@ -210,6 +210,14 @@ Untuk UX yang *snappy*, gunakan Optimistic Update (update UI dulu sebelum server
 - Validasi instan di client side (UX), tapi tetap validasi di server (Security).
 - Tampilkan error tepat di bawah field yang salah.
 
+### 4.5 Premium Aesthetic Standards
+Pengguna harus merasa bangga menggunakan aplikasi ini. Ikuti standar visual ini:
+1.  **Rich Colors & Shadow:** Hindari warna flat default. Gunakan palette modern (misal: Indigo-Blue dengan shadow soft berbayang warna biru).
+2.  **Typography:** Gunakan font 'Plus Jakarta Sans' atau 'Inter' dengan weighting yang kontras untuk hierarki informasi.
+3.  **Micro-animations:** Selalu tambahkan interaksi halus dengan `framer-motion` (misal: hover scale 1.05, fade-in slide-up untuk modal/dialog).
+4.  **Glassmorphism & Blurs:** Gunakan `backdrop-blur` pada overlay (sidebar mobile, modal backdrop) untuk kesan modern dan premium.
+5.  **Rounded Everything:** Gunakan `rounded-xl` (12px) atau `rounded-2xl` (16px) sebagai standar border radius.
+
 ---
 
 ## 5. Naming Conventions

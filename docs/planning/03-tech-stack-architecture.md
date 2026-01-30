@@ -799,7 +799,44 @@ export class SiswaService {
 
 ### 4.2 TanStack Start + Island Pattern
 
-TanStack Start mendukung Island Architecture melalui selective hydration. Berikut implementasinya:
+TanStack Start mendukung "Enterprise Hybrid Hydration" melalui selective hydration dan server functions. Berikut pola standar yang diimplementasikan:
+
+#### A. Zero-Flicker Enterprise Auth Pattern
+Mekanisme autentikasi menggunakan `beforeLoad` dan `loader` di level root route untuk memastikan validasi server-side dilakukan *sebelum* UI client-side dirender.
+
+```typescript
+// src/routes/__root.tsx
+export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  beforeLoad: async ({ location }) => {
+    const auth = await fetchAuth() // Server function: read token from cookie
+    const isLoginPage = location.pathname === '/login'
+
+    if (!auth.token && !isLoginPage) throw redirect({ to: '/login' })
+    if (auth.token && isLoginPage) throw redirect({ to: '/' })
+    
+    return { auth }
+  },
+  loader: async () => {
+    const auth = await fetchAuth()
+    return { auth }
+  }
+})
+```
+
+#### B. Hybrid State Hydration (Jotai + Cookies)
+State autentikasi (token & user profile) disimpan secara redundan di **Cookies** (untuk SSR) dan **LocalStorage** (untuk persistence). Komponen `AppContent` melakukan sinkronisasi data dari loader server ke Jotai atoms saat mount pertama kali.
+
+```typescript
+// src/stores/auth.ts implementation
+export const loginSuccessAtom = atom(null, (_get, set, { token, user }) => {
+    set(tokenAtom, token)
+    set(userAtom, user)
+    if (typeof window !== 'undefined') {
+        Cookies.set('token', token, { expires: 7, path: '/' })
+        Cookies.set('user', JSON.stringify(user), { expires: 7, path: '/' })
+    }
+})
+```
 
 ```typescript
 // src/routes/_auth/siswa/index.tsx
@@ -1001,11 +1038,7 @@ src/
 │   │   ├── Button.tsx
 │   │   ├── Input.tsx
 │   │   ├── Select.tsx
-│   │   ├── Modal.tsx
-│   │   ├── DataTable.tsx
-│   │   ├── Card.tsx
-│   │   ├── Badge.tsx
-│   │   ├── Skeleton.tsx
+│   │   ├── ConfirmDialog.tsx # Dynamic premium confirm modal
 │   │   └── index.ts
 │   │
 │   └── layout/                  # Layout components
@@ -1283,31 +1316,28 @@ export const tahunAjaranAktifAtom = atomWithStorage<string | null>('tahunAjaranA
 
 ```
 ┌──────────┐         ┌──────────┐         ┌──────────┐
-│  Client  │         │   API    │         │ Database │
+│  Browser │         │ TanStack │         │  API /   │
+│ Client   │         │ Start    │         │ Database │
 └────┬─────┘         └────┬─────┘         └────┬─────┘
      │                    │                    │
-     │  POST /auth/login  │                    │
-     │  {username, pass}  │                    │
+     │   Initial Request  │                    │
      │───────────────────►│                    │
-     │                    │  Verify user       │
-     │                    │───────────────────►│
-     │                    │◄───────────────────│
+     │                    │  beforeLoad()      │
+     │                    │  (Server Side)     │
+     │                    │  - read Cookies    │
+     │                    │  - validate token  │
      │                    │                    │
-     │                    │  Generate JWT      │
-     │   {accessToken,    │  (access + refresh)│
-     │    refreshToken}   │                    │
-     │◄───────────────────│                    │
-     │                    │                    │
-     │  GET /api/siswa    │                    │
-     │  Authorization:    │                    │
-     │  Bearer <token>    │                    │
-     │───────────────────►│                    │
-     │                    │  Verify JWT        │
-     │                    │  & check role      │
-     │                    │                    │
-     │      {data}        │                    │
-     │◄───────────────────│                    │
+     │   Rendered HTML    │◄───────────────────┘
+     │   (Authenticated)  │
+     │◄───────────────────│
+     │                    │
+     │   Hydrate Jotai    │
+     │   from Loader Data │
+     │───────────────────►│
 ```
+
+### 6.2 Token & Profile Management
+Sistem menggunakan JWT token yang disimpan dalam HTTP-accessible cookies. Data profil dasar user juga di-cache dalam cookie (JSON stringified) untuk memungkinkan server merender informasi profil di header/sidebar secara instan tanpa fetch API tambahan ke backend saat initial load.
 
 ### 6.2 Token Structure
 

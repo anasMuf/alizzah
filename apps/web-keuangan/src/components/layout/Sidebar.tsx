@@ -11,7 +11,8 @@ import {
     LogOut,
     ChevronRight,
     X,
-    ChevronLeft
+    ChevronLeft,
+    GraduationCap
 } from 'lucide-react'
 import { userAtom, logoutAtom } from '~/stores/auth'
 import { ConfirmDialog } from '~/components/ui/ConfirmDialog'
@@ -117,6 +118,7 @@ export function Sidebar({ open, setOpen, isCollapsed, setIsCollapsed }: SidebarP
                             {isCollapsed ? '...' : 'Keuangan'}
                         </div>
                         <SidebarItem to="/siswa" icon={Users} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Data Siswa</SidebarItem>
+                        <SidebarItem to="/siswa/progresi" icon={GraduationCap} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Kenaikan Kelas</SidebarItem>
                         <SidebarItem to="#" icon={CreditCard} isCollapsed={isCollapsed}>Tagihan & SPP</SidebarItem>
 
                         <div className={`mt-6 px-4 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ${isCollapsed ? 'text-center px-0' : ''}`}>

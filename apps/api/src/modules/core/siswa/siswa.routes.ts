@@ -1,7 +1,7 @@
 
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
-import { createSiswaSchema, updateSiswaSchema } from '@alizzah/validators';
+import { createSiswaSchema, updateSiswaSchema, promoteSiswaSchema } from '@alizzah/validators';
 import { SiswaService } from './siswa.service';
 import { authMiddleware } from '../../../middleware/auth.middleware';
 import { successResponse } from '../../../lib/response';
@@ -34,6 +34,16 @@ export const siswaRoutes = new Hono()
         try {
             const siswa = await SiswaService.create(data);
             return successResponse(c, siswa, 'Siswa berhasil ditambahkan', 201);
+        } catch (error: any) {
+            return c.json({ success: false, error: { message: error.message } }, 400);
+        }
+    })
+    .post('/promote/batch', authMiddleware, zValidator('json', promoteSiswaSchema), async (c) => {
+        const data = c.req.valid('json');
+
+        try {
+            const result = await SiswaService.promote(data);
+            return successResponse(c, result, `${result.count} siswa berhasil dipindahkan`);
         } catch (error: any) {
             return c.json({ success: false, error: { message: error.message } }, 400);
         }

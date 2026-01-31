@@ -38,6 +38,8 @@ export const createSiswaSchema = z.object({
 
     // Additional
     ikutDaycare: z.boolean().default(false),
+    isMutasi: z.boolean().default(false),
+    asalSekolah: z.string().max(100).optional().nullable(),
     foto: z.string().optional().nullable(),
     pastaIds: z.array(z.string()).optional(),
 });
@@ -46,3 +48,21 @@ export const updateSiswaSchema = createSiswaSchema.partial();
 
 export type CreateSiswaInput = z.infer<typeof createSiswaSchema>;
 export type UpdateSiswaInput = z.infer<typeof updateSiswaSchema>;
+
+// Promotion/Transfer Schema
+// Promotion/Transfer Schema
+export const promoteSiswaSchema = z.object({
+    siswaIds: z.array(z.string().uuid()).min(1),
+    action: z.enum(['PROMOTE', 'GRADUATE']),
+    targetRombelId: z.string().uuid().optional(),
+}).refine((data) => {
+    if (data.action === 'PROMOTE' && !data.targetRombelId) {
+        return false;
+    }
+    return true;
+}, {
+    message: "Rombel tujuan wajib dipilih untuk kenaikan kelas",
+    path: ["targetRombelId"]
+});
+
+export type PromoteSiswaInput = z.infer<typeof promoteSiswaSchema>;

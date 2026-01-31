@@ -50,9 +50,9 @@ Sebelum memulai implementasi, pastikan memahami referensi berikut:
 - [x] **2.2 Student Lifecycle**
   - [x] **Backend:** Model `Student` with multi-field profiles and `PASTA` (addons) selections.
   - [x] **Frontend:** Multi-tab form for student data (Basic, Parents, Financial Profile).
-- [ ] **2.3 Batch Operations (Promotions)**
-  - [ ] **Backend:** Implement Transactional SQL for mass-transferring students between Rombels.
-  - [ ] **Frontend:** Drag-and-drop or checklist-based promotion wizard.
+- [x] **2.3 Batch Operations (Promotions)**
+  - [x] **Backend:** Implement Transactional SQL for mass-transferring students between Rombels.
+  - [x] **Frontend:** Drag-and-drop or checklist-based promotion wizard.
 
 ---
 

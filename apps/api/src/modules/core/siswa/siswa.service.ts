@@ -1,6 +1,6 @@
 
 import { prisma } from '../../../lib/prisma';
-import { CreateSiswaInput, UpdateSiswaInput } from '@alizzah/validators';
+import { CreateSiswaInput, UpdateSiswaInput, PromoteSiswaInput } from '@alizzah/validators';
 
 export class SiswaService {
     static async findAll(params?: {
@@ -147,5 +147,61 @@ export class SiswaService {
         return prisma.siswa.delete({
             where: { id }
         });
+    }
+
+    static async promote(data: PromoteSiswaInput) {
+        const { targetRombelId, siswaIds, action } = data;
+
+        if (siswaIds.length === 0) {
+            throw new Error('Minimal satu siswa harus dipilih.');
+        }
+
+        // Logic for Promotion (Move Class)
+        if (action === 'PROMOTE') {
+            if (!targetRombelId) throw new Error('Rombel tujuan harus dipilih.');
+
+            // Check if target Rombel exists
+            const rombel = await prisma.rombel.findUnique({
+                where: { id: targetRombelId }
+            });
+
+            if (!rombel) {
+                throw new Error('Rombel tujuan tidak ditemukan.');
+            }
+
+            // Execute in transaction
+            return await prisma.$transaction(async (tx) => {
+                const result = await tx.siswa.updateMany({
+                    where: {
+                        id: { in: siswaIds }
+                    },
+                    data: {
+                        rombelId: targetRombelId
+                    }
+                });
+
+                return result;
+            });
+        }
+
+        // Logic for Graduation (Graduate Student)
+        if (action === 'GRADUATE') {
+            return await prisma.$transaction(async (tx) => {
+                const result = await tx.siswa.updateMany({
+                    where: {
+                        id: { in: siswaIds }
+                    },
+                    data: {
+                        status: 'LULUS'
+                        // We keep the rombelId as history reference, or we can set it to null if schema allows.
+                        // Since schema says rombelId String (required), we keep it.
+                        // Rombel capacity check already filters for status='AKTIF', so this is safe.
+                    }
+                });
+                return result;
+            });
+        }
+
+        throw new Error('Aksi tidak valid.');
     }
 }

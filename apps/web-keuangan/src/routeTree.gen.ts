@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SiswaIndexRouteImport } from './routes/siswa/index'
+import { Route as SiswaProgresiRouteImport } from './routes/siswa/progresi'
 import { Route as MasterTahunAjaranRouteImport } from './routes/master/tahun-ajaran'
 import { Route as MasterRombelRouteImport } from './routes/master/rombel'
 import { Route as MasterJenjangRouteImport } from './routes/master/jenjang'
@@ -30,6 +31,11 @@ const IndexRoute = IndexRouteImport.update({
 const SiswaIndexRoute = SiswaIndexRouteImport.update({
   id: '/siswa/',
   path: '/siswa/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SiswaProgresiRoute = SiswaProgresiRouteImport.update({
+  id: '/siswa/progresi',
+  path: '/siswa/progresi',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MasterTahunAjaranRoute = MasterTahunAjaranRouteImport.update({
@@ -60,6 +66,7 @@ export interface FileRoutesByFullPath {
   '/master/jenjang': typeof MasterJenjangRoute
   '/master/rombel': typeof MasterRombelRoute
   '/master/tahun-ajaran': typeof MasterTahunAjaranRoute
+  '/siswa/progresi': typeof SiswaProgresiRoute
   '/siswa/': typeof SiswaIndexRoute
 }
 export interface FileRoutesByTo {
@@ -69,6 +76,7 @@ export interface FileRoutesByTo {
   '/master/jenjang': typeof MasterJenjangRoute
   '/master/rombel': typeof MasterRombelRoute
   '/master/tahun-ajaran': typeof MasterTahunAjaranRoute
+  '/siswa/progresi': typeof SiswaProgresiRoute
   '/siswa': typeof SiswaIndexRoute
 }
 export interface FileRoutesById {
@@ -79,6 +87,7 @@ export interface FileRoutesById {
   '/master/jenjang': typeof MasterJenjangRoute
   '/master/rombel': typeof MasterRombelRoute
   '/master/tahun-ajaran': typeof MasterTahunAjaranRoute
+  '/siswa/progresi': typeof SiswaProgresiRoute
   '/siswa/': typeof SiswaIndexRoute
 }
 export interface FileRouteTypes {
@@ -90,6 +99,7 @@ export interface FileRouteTypes {
     | '/master/jenjang'
     | '/master/rombel'
     | '/master/tahun-ajaran'
+    | '/siswa/progresi'
     | '/siswa/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -99,6 +109,7 @@ export interface FileRouteTypes {
     | '/master/jenjang'
     | '/master/rombel'
     | '/master/tahun-ajaran'
+    | '/siswa/progresi'
     | '/siswa'
   id:
     | '__root__'
@@ -108,6 +119,7 @@ export interface FileRouteTypes {
     | '/master/jenjang'
     | '/master/rombel'
     | '/master/tahun-ajaran'
+    | '/siswa/progresi'
     | '/siswa/'
   fileRoutesById: FileRoutesById
 }
@@ -118,6 +130,7 @@ export interface RootRouteChildren {
   MasterJenjangRoute: typeof MasterJenjangRoute
   MasterRombelRoute: typeof MasterRombelRoute
   MasterTahunAjaranRoute: typeof MasterTahunAjaranRoute
+  SiswaProgresiRoute: typeof SiswaProgresiRoute
   SiswaIndexRoute: typeof SiswaIndexRoute
 }
 
@@ -142,6 +155,13 @@ declare module '@tanstack/react-router' {
       path: '/siswa'
       fullPath: '/siswa/'
       preLoaderRoute: typeof SiswaIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/siswa/progresi': {
+      id: '/siswa/progresi'
+      path: '/siswa/progresi'
+      fullPath: '/siswa/progresi'
+      preLoaderRoute: typeof SiswaProgresiRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/master/tahun-ajaran': {
@@ -182,6 +202,7 @@ const rootRouteChildren: RootRouteChildren = {
   MasterJenjangRoute: MasterJenjangRoute,
   MasterRombelRoute: MasterRombelRoute,
   MasterTahunAjaranRoute: MasterTahunAjaranRoute,
+  SiswaProgresiRoute: SiswaProgresiRoute,
   SiswaIndexRoute: SiswaIndexRoute,
 }
 export const routeTree = rootRouteImport

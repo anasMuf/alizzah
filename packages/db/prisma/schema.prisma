@@ -172,6 +172,8 @@ model Siswa {
   tanggalMasuk  DateTime     @map("tanggal_masuk") @db.Date
   foto          String?      @db.VarChar(255)
   ikutDaycare   Boolean      @default(false) @map("ikut_daycare")
+  isMutasi      Boolean      @default(false) @map("is_mutasi")
+  asalSekolah   String?      @map("asal_sekolah") @db.VarChar(100)
   createdAt     DateTime     @default(now()) @map("created_at")
   updatedAt     DateTime     @updatedAt @map("updated_at")
 

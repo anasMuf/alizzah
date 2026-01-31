@@ -17,7 +17,7 @@ export class RombelService {
                 jenjang: true,
                 tahunAjaran: true,
                 _count: {
-                    select: { siswas: true }
+                    select: { siswas: { where: { status: 'AKTIF' } } }
                 }
             }
         });
@@ -36,7 +36,7 @@ export class RombelService {
                 jenjang: true,
                 tahunAjaran: true,
                 _count: {
-                    select: { siswas: true }
+                    select: { siswas: { where: { status: 'AKTIF' } } }
                 }
             }
         });

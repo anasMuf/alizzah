@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 
 // Jenis Kelamin enum (duplicated from prisma logic for zod)
@@ -19,6 +20,8 @@ export const TipePembayaranSchema = z.enum([
 ]);
 
 export const SifatPembayaranSchema = z.enum(['WAJIB', 'OPSIONAL']);
+
+export const TipePotonganSchema = z.enum(['PERSENTASE', 'NOMINAL']);
 
 // Jenis Pembayaran
 export const createJenisPembayaranSchema = z.object({
@@ -52,3 +55,55 @@ export const updateTarifSchema = createTarifSchema.partial();
 
 export type CreateTarifInput = z.infer<typeof createTarifSchema>;
 export type UpdateTarifInput = z.infer<typeof updateTarifSchema>;
+
+// Diskon / Dispensasi
+export const createDiskonSchema = z.object({
+    kode: z.string().min(1).max(20),
+    nama: z.string().min(1).max(100),
+    jenisPembayaranId: z.string().uuid(),
+    tipePotongan: TipePotonganSchema,
+    nilaiPotongan: z.number().nonnegative(),
+    keterangan: z.string().optional(),
+    isAktif: z.boolean().default(true),
+});
+
+export const updateDiskonSchema = createDiskonSchema.partial();
+
+export type CreateDiskonInput = z.infer<typeof createDiskonSchema>;
+export type UpdateDiskonInput = z.infer<typeof updateDiskonSchema>;
+
+// Assign Diskon to Siswa
+export const assignDiskonSchema = z.object({
+    siswaId: z.string().uuid(),
+    diskonId: z.string().uuid(),
+    tanggalMulai: z.preprocess((arg) => {
+        if (!arg || arg === '') return undefined;
+        if (typeof arg === 'string' || arg instanceof Date) return new Date(arg);
+        return arg;
+    }, z.date()),
+    tanggalBerakhir: z.preprocess((arg) => {
+        if (!arg || arg === '') return null;
+        if (typeof arg === 'string' || arg instanceof Date) return new Date(arg);
+        return arg;
+    }, z.date().nullable()).optional().nullable(),
+    catatan: z.string().optional(),
+});
+
+export type AssignDiskonInput = z.infer<typeof assignDiskonSchema>;
+
+// Billing Generation
+export const generateTagihanSchema = z.object({
+    bulan: z.number().int().min(1).max(12),
+    tahun: z.number().int().min(2020),
+    // For calculation variables
+    jumlahHariEfektif: z.number().int().nonnegative().default(20),
+    jumlahSenin: z.number().int().nonnegative().default(4),
+    // Target scope
+    jenjangId: z.string().uuid().optional(),
+    rombelId: z.string().uuid().optional(),
+    siswaIds: z.array(z.string().uuid()).optional(),
+    // Dynamic selection
+    jenisPembayaranIds: z.array(z.string().uuid()).optional(),
+});
+
+export type GenerateTagihanInput = z.infer<typeof generateTagihanSchema>;

@@ -59,15 +59,15 @@ Sebelum memulai implementasi, pastikan memahami referensi berikut:
 ## 📑 Phase 3: Discount Logic & Billing Engine
 **Goal:** Automating the invoice generation process.
 
-- [ ] **3.1 Discount/Dispensasi Engine**
-  - [ ] **Backend:** Logic for "Stacked Discounts" (Applying multiple discounts sequentially).
-  - [ ] **Frontend:** UI to assign discounts to specific students with validity dates.
-- [ ] **3.2 Billing Generator (Core Logic)**
-  - [ ] **Backend:** High-performance script to generate thousands of `Invoice` and `InvoiceItem` records.
-  - [ ] **Logic:** Must handle dynamic calculation for `TAB-WJB` (based on Mondays in month) and `INF-HR` (based on effective days).
-- [ ] **3.3 Invoice Viewer**
-  - [ ] **Frontend:** Complex filters for invoices (by Rombel, by status `UNPAID`, `OVERDUE`).
-  - [ ] **API:** Optimized query for invoice listing with total balance calculation.
+- [x] **3.1 Discount/Dispensasi Engine**
+  - [x] **Backend:** Logic for "Stacked Discounts" (Applying multiple discounts sequentially).
+  - [x] **Frontend:** UI to assign discounts to specific students with validity dates.
+- [x] **3.2 Billing Generator (Core Logic)**
+  - [x] **Backend:** High-performance script to generate thousands of `Invoice` and `InvoiceItem` records.
+  - [x] **Logic:** Must handle dynamic calculation for `TAB-WJB` (based on Mondays in month) and `INF-HR` (based on effective days).
+- [x] **3.3 Invoice Viewer**
+  - [x] **Frontend:** Complex filters for invoices (by Rombel, by status `UNPAID`, `OVERDUE`).
+  - [x] **API:** Optimized query for invoice listing with total balance calculation.
 
 ---
 

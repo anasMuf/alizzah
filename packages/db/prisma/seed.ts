@@ -164,12 +164,20 @@ async function main() {
             sifat: 'WAJIB' as const,
         },
         {
-            kode: 'INF-CALISAN',
-            nama: 'Ekskul Calisan',
+            kode: 'INF-CALISAN-KB',
+            nama: 'Ekskul Calisan KB',
             kategori: 'INFAQ_RUTIN' as const,
             tipe: 'BULANAN' as const,
             nominalDefault: 50000,
-            sifat: 'OPSIONAL' as const,
+            sifat: 'WAJIB' as const,
+        },
+        {
+            kode: 'INF-CALISAN-TK',
+            nama: 'Ekskul Calisan TK',
+            kategori: 'INFAQ_RUTIN' as const,
+            tipe: 'BULANAN' as const,
+            nominalDefault: 50000,
+            sifat: 'WAJIB' as const,
         },
         {
             kode: 'TAB-UMUM',
@@ -191,8 +199,10 @@ async function main() {
             create: {
                 ...jp,
                 nominalDefault: jp.nominalDefault,
-                jenjangIds: jp.kode === 'REG-TAHUNAN' ? ['KB', 'TK-A', 'TK-B'] :
-                    jp.kode === 'INF-ASLIN' || jp.kode === 'TAB-WJB' ? ['TK-B'] : [],
+                jenjangIds: jp.kode === 'REG-TAHUNAN' ? [jenjangMap['KB'], jenjangMap['TK-A'], jenjangMap['TK-B']] :
+                    jp.kode === 'INF-ASLIN' || jp.kode === 'TAB-WJB' ? [jenjangMap['TK-B']] :
+                        jp.kode === 'INF-CALISAN-TK' ? [jenjangMap['TK-A'], jenjangMap['TK-B']] :
+                            jp.kode === 'INF-CALISAN-KB' ? [jenjangMap['KB']] : [],
             },
         });
 
@@ -262,7 +272,7 @@ async function main() {
                 jamMulai: new Date(`1970-01-01T${pasta.jamMulai}:00Z`),
                 jamSelesai: new Date(`1970-01-01T${pasta.jamSelesai}:00Z`),
                 biaya: pasta.biaya,
-                jenjangIds: ['TK-A', 'TK-B'],
+                jenjangIds: [jenjangMap['TK-A'], jenjangMap['TK-B']],
                 isAktif: true,
             },
         });

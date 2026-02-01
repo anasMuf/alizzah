@@ -17,6 +17,8 @@ import { Route as MasterTahunAjaranRouteImport } from './routes/master/tahun-aja
 import { Route as MasterRombelRouteImport } from './routes/master/rombel'
 import { Route as MasterJenjangRouteImport } from './routes/master/jenjang'
 import { Route as MasterJenisPembayaranRouteImport } from './routes/master/jenis-pembayaran'
+import { Route as MasterDiskonRouteImport } from './routes/master/diskon'
+import { Route as KeuanganBillingRouteImport } from './routes/keuangan/billing'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -58,10 +60,22 @@ const MasterJenisPembayaranRoute = MasterJenisPembayaranRouteImport.update({
   path: '/master/jenis-pembayaran',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MasterDiskonRoute = MasterDiskonRouteImport.update({
+  id: '/master/diskon',
+  path: '/master/diskon',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KeuanganBillingRoute = KeuanganBillingRouteImport.update({
+  id: '/keuangan/billing',
+  path: '/keuangan/billing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/keuangan/billing': typeof KeuanganBillingRoute
+  '/master/diskon': typeof MasterDiskonRoute
   '/master/jenis-pembayaran': typeof MasterJenisPembayaranRoute
   '/master/jenjang': typeof MasterJenjangRoute
   '/master/rombel': typeof MasterRombelRoute
@@ -72,6 +86,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/keuangan/billing': typeof KeuanganBillingRoute
+  '/master/diskon': typeof MasterDiskonRoute
   '/master/jenis-pembayaran': typeof MasterJenisPembayaranRoute
   '/master/jenjang': typeof MasterJenjangRoute
   '/master/rombel': typeof MasterRombelRoute
@@ -83,6 +99,8 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/keuangan/billing': typeof KeuanganBillingRoute
+  '/master/diskon': typeof MasterDiskonRoute
   '/master/jenis-pembayaran': typeof MasterJenisPembayaranRoute
   '/master/jenjang': typeof MasterJenjangRoute
   '/master/rombel': typeof MasterRombelRoute
@@ -95,6 +113,8 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/keuangan/billing'
+    | '/master/diskon'
     | '/master/jenis-pembayaran'
     | '/master/jenjang'
     | '/master/rombel'
@@ -105,6 +125,8 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/keuangan/billing'
+    | '/master/diskon'
     | '/master/jenis-pembayaran'
     | '/master/jenjang'
     | '/master/rombel'
@@ -115,6 +137,8 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/login'
+    | '/keuangan/billing'
+    | '/master/diskon'
     | '/master/jenis-pembayaran'
     | '/master/jenjang'
     | '/master/rombel'
@@ -126,6 +150,8 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
+  KeuanganBillingRoute: typeof KeuanganBillingRoute
+  MasterDiskonRoute: typeof MasterDiskonRoute
   MasterJenisPembayaranRoute: typeof MasterJenisPembayaranRoute
   MasterJenjangRoute: typeof MasterJenjangRoute
   MasterRombelRoute: typeof MasterRombelRoute
@@ -192,12 +218,28 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MasterJenisPembayaranRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/master/diskon': {
+      id: '/master/diskon'
+      path: '/master/diskon'
+      fullPath: '/master/diskon'
+      preLoaderRoute: typeof MasterDiskonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/keuangan/billing': {
+      id: '/keuangan/billing'
+      path: '/keuangan/billing'
+      fullPath: '/keuangan/billing'
+      preLoaderRoute: typeof KeuanganBillingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
+  KeuanganBillingRoute: KeuanganBillingRoute,
+  MasterDiskonRoute: MasterDiskonRoute,
   MasterJenisPembayaranRoute: MasterJenisPembayaranRoute,
   MasterJenjangRoute: MasterJenjangRoute,
   MasterRombelRoute: MasterRombelRoute,

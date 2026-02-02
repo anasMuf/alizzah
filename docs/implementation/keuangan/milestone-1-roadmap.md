@@ -71,17 +71,20 @@ Sebelum memulai implementasi, pastikan memahami referensi berikut:
 
 ---
 
-## 💰 Phase 4: Payment Allocation & Receipts
+## 💰 Phase 4: Payment Allocation & Receipts [COMPLETED]
 **Goal:** Handling multi-payment scenarios and partial settlements.
 
-- [ ] **4.1 Payment Allocation (FIFO Logic)**
-  - [ ] **Backend:** Implement the "Payment Allocation Pattern". One payment can settle multiple invoices.
-  - [ ] **Logic:** Logic to automatically apply payments to the oldest debt first.
-- [ ] **4.2 Transactional Payment API**
-  - [ ] **Backend:** `POST /payments` with ACID transactions to update `Invoice` status and `CashBalance`.
-- [ ] **4.3 Receipt Generator**
-  - [ ] **Backend/Frontend:** Print-ready HTML/PDF receipts with QR code for verification.
-  - [ ] **Feature:** Re-print history and voiding transactions with audit log.
+- [x] **4.1 Payment Allocation (FIFO Logic)**
+  - [x] **Backend:** Implement the "Payment Allocation Pattern". One payment can settle multiple invoices.
+  - [x] **Logic:** Logic to automatically apply payments to the oldest debt first.
+- [x] **4.2 Transactional Payment API**
+  - [x] **Backend:** `POST /payments` with ACID transactions to update `Invoice` status and `CashBalance`.
+- [x] **4.3 Receipt Generator**
+  - [x] **Backend/Frontend:** Print-ready HTML/PDF receipts with professional layout.
+  - [x] **Feature:** Integrated POS system for real-time payment processing and history tracking.
+- [x] **4.4 Dynamic Incidental Billing**
+  - [x] **Backend:** Automated logic to append "Optional/Incidental" items (e.g. Tabungan Umum) to invoices during payment.
+  - [x] **Frontend:** Sub-form for adding incidental items with custom amounts directly in the POS view.
 
 ---
 

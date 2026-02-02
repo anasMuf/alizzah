@@ -121,6 +121,7 @@ export function Sidebar({ open, setOpen, isCollapsed, setIsCollapsed }: SidebarP
                         <SidebarItem to="/siswa" icon={Users} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Data Siswa</SidebarItem>
                         <SidebarItem to="/siswa/progresi" icon={GraduationCap} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Kenaikan Kelas</SidebarItem>
                         <SidebarItem to="/keuangan/billing" icon={CreditCard} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Tagihan & SPP</SidebarItem>
+                        <SidebarItem to="/keuangan/pembayaran" icon={CreditCard} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Pembayaran & Kasir</SidebarItem>
 
                         <div className={`mt-6 px-4 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ${isCollapsed ? 'text-center px-0' : ''}`}>
                             {isCollapsed ? '...' : 'Laporan'}

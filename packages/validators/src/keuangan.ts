@@ -106,4 +106,26 @@ export const generateTagihanSchema = z.object({
     jenisPembayaranIds: z.array(z.string().uuid()).optional(),
 });
 
+
 export type GenerateTagihanInput = z.infer<typeof generateTagihanSchema>;
+
+// Payments
+export const MetodePembayaranSchema = z.enum(['TUNAI', 'TRANSFER']);
+
+export const createPembayaranSchema = z.object({
+    siswaId: z.string().uuid(),
+    tanggal: z.preprocess((arg) => (arg ? new Date(arg as any) : new Date()), z.date()),
+    totalBayar: z.number().positive(),
+    metode: MetodePembayaranSchema,
+    bankId: z.string().uuid().optional().nullable(),
+    buktiTransfer: z.string().optional().nullable(),
+    catatan: z.string().optional().nullable(),
+    kasId: z.string().uuid().optional(), // Target cash account
+    additionalItems: z.array(z.object({
+        jenisPembayaranId: z.string().uuid(),
+        nominal: z.number().positive(),
+        catatan: z.string().optional().nullable(),
+    })).optional(),
+});
+
+export type CreatePembayaranInput = z.infer<typeof createPembayaranSchema>;

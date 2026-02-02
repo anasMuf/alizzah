@@ -18,6 +18,7 @@ import { Route as MasterRombelRouteImport } from './routes/master/rombel'
 import { Route as MasterJenjangRouteImport } from './routes/master/jenjang'
 import { Route as MasterJenisPembayaranRouteImport } from './routes/master/jenis-pembayaran'
 import { Route as MasterDiskonRouteImport } from './routes/master/diskon'
+import { Route as KeuanganPembayaranRouteImport } from './routes/keuangan/pembayaran'
 import { Route as KeuanganBillingRouteImport } from './routes/keuangan/billing'
 
 const LoginRoute = LoginRouteImport.update({
@@ -65,6 +66,11 @@ const MasterDiskonRoute = MasterDiskonRouteImport.update({
   path: '/master/diskon',
   getParentRoute: () => rootRouteImport,
 } as any)
+const KeuanganPembayaranRoute = KeuanganPembayaranRouteImport.update({
+  id: '/keuangan/pembayaran',
+  path: '/keuangan/pembayaran',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const KeuanganBillingRoute = KeuanganBillingRouteImport.update({
   id: '/keuangan/billing',
   path: '/keuangan/billing',
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/keuangan/billing': typeof KeuanganBillingRoute
+  '/keuangan/pembayaran': typeof KeuanganPembayaranRoute
   '/master/diskon': typeof MasterDiskonRoute
   '/master/jenis-pembayaran': typeof MasterJenisPembayaranRoute
   '/master/jenjang': typeof MasterJenjangRoute
@@ -87,6 +94,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/keuangan/billing': typeof KeuanganBillingRoute
+  '/keuangan/pembayaran': typeof KeuanganPembayaranRoute
   '/master/diskon': typeof MasterDiskonRoute
   '/master/jenis-pembayaran': typeof MasterJenisPembayaranRoute
   '/master/jenjang': typeof MasterJenjangRoute
@@ -100,6 +108,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/keuangan/billing': typeof KeuanganBillingRoute
+  '/keuangan/pembayaran': typeof KeuanganPembayaranRoute
   '/master/diskon': typeof MasterDiskonRoute
   '/master/jenis-pembayaran': typeof MasterJenisPembayaranRoute
   '/master/jenjang': typeof MasterJenjangRoute
@@ -114,6 +123,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/keuangan/billing'
+    | '/keuangan/pembayaran'
     | '/master/diskon'
     | '/master/jenis-pembayaran'
     | '/master/jenjang'
@@ -126,6 +136,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/keuangan/billing'
+    | '/keuangan/pembayaran'
     | '/master/diskon'
     | '/master/jenis-pembayaran'
     | '/master/jenjang'
@@ -138,6 +149,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/keuangan/billing'
+    | '/keuangan/pembayaran'
     | '/master/diskon'
     | '/master/jenis-pembayaran'
     | '/master/jenjang'
@@ -151,6 +163,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
   KeuanganBillingRoute: typeof KeuanganBillingRoute
+  KeuanganPembayaranRoute: typeof KeuanganPembayaranRoute
   MasterDiskonRoute: typeof MasterDiskonRoute
   MasterJenisPembayaranRoute: typeof MasterJenisPembayaranRoute
   MasterJenjangRoute: typeof MasterJenjangRoute
@@ -225,6 +238,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MasterDiskonRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/keuangan/pembayaran': {
+      id: '/keuangan/pembayaran'
+      path: '/keuangan/pembayaran'
+      fullPath: '/keuangan/pembayaran'
+      preLoaderRoute: typeof KeuanganPembayaranRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/keuangan/billing': {
       id: '/keuangan/billing'
       path: '/keuangan/billing'
@@ -239,6 +259,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
   KeuanganBillingRoute: KeuanganBillingRoute,
+  KeuanganPembayaranRoute: KeuanganPembayaranRoute,
   MasterDiskonRoute: MasterDiskonRoute,
   MasterJenisPembayaranRoute: MasterJenisPembayaranRoute,
   MasterJenjangRoute: MasterJenjangRoute,

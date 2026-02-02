@@ -7,6 +7,7 @@ import { masterRoutes } from './modules/core/master';
 import { jenisPembayaranRoutes } from './modules/keuangan/master/jenis-pembayaran/jenis-pembayaran.routes';
 import { diskonRoutes } from './modules/keuangan/master/diskon/diskon.routes';
 import { tagihanRoutes } from './modules/keuangan/tagihan/tagihan.routes';
+import { pembayaranRoutes } from './modules/keuangan/pembayaran/pembayaran.routes';
 import { pastaRoutes } from './modules/keuangan/master/pasta/pasta.routes';
 import { AppError } from './lib/error';
 import { errorResponse } from './lib/response';
@@ -37,7 +38,8 @@ const v1 = new Hono()
     .route('/keuangan/master/pasta', pastaRoutes)
     .route('/keuangan/master/jenis-pembayaran', jenisPembayaranRoutes)
     .route('/keuangan/master/diskon', diskonRoutes)
-    .route('/keuangan/tagihan', tagihanRoutes);
+    .route('/keuangan/tagihan', tagihanRoutes)
+    .route('/keuangan/pembayaran', pembayaranRoutes);
 
 // Mount v1
 app.route('/api/v1', v1);

@@ -86,7 +86,22 @@ export class TabunganService {
         createdBy: string,
         keterangan?: string
     ) {
-        const tabungan = await this.getOrCreateTabungan(tx, siswaId, 'UMUM');
+        return this.setorFromPayment(tx, siswaId, 'UMUM', nominal, createdBy, keterangan || 'Kelebihan pembayaran');
+    }
+
+    /**
+     * Setor from Payment - Called from Payment Service for any savings type
+     * This uses the existing transaction context
+     */
+    static async setorFromPayment(
+        tx: TransactionClient,
+        siswaId: string,
+        jenis: JenisTabungan,
+        nominal: DecimalType,
+        createdBy: string,
+        keterangan?: string
+    ) {
+        const tabungan = await this.getOrCreateTabungan(tx, siswaId, jenis);
 
         // Create transaction record
         await tx.transaksiTabungan.create({
@@ -96,7 +111,7 @@ export class TabunganService {
                 nominal: nominal,
                 potonganAdmin: 0,
                 nominalBersih: nominal,
-                keterangan: keterangan || 'Kelebihan pembayaran',
+                keterangan: keterangan || `Setoran ${jenis === 'UMUM' ? 'Tabungan Umum' : 'Tabungan Wajib Berlian'}`,
                 createdBy
             }
         });

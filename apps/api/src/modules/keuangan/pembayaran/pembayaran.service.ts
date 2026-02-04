@@ -35,6 +35,9 @@ export class PembayaranService {
                 }
             });
 
+            // 3. FIFO Allocation Logic
+            let remainingAmount = new Decimal(input.totalBayar);
+
             // 2.5 Handle Additional Items (Optional/Incidental)
             if (input.additionalItems && input.additionalItems.length > 0) {
                 const now = new Date();
@@ -87,6 +90,7 @@ export class PembayaranService {
 
                     const nominal = new Decimal(item.nominal);
 
+                    // ALWAYS create TagihanItem so it shows in Invoice/Receipt
                     await tx.tagihanItem.create({
                         data: {
                             tagihanId: tagihan.id,
@@ -99,7 +103,7 @@ export class PembayaranService {
                         }
                     });
 
-                    // Update Tagihan Totals and ensure status is open
+                    // Update Tagihan totals
                     await tx.tagihan.update({
                         where: { id: tagihan.id },
                         data: {
@@ -111,15 +115,19 @@ export class PembayaranService {
                 }
             }
 
-            // 3. FIFO Allocation Logic
-            let remainingAmount = new Decimal(input.totalBayar);
-
             // Get all unpaid/partial tagihan for this student ordered by date (oldest first)
             const unpaidTagihan = await tx.tagihan.findMany({
                 where: {
                     siswaId: input.siswaId,
                     status: { in: ['UNPAID', 'PARTIAL', 'DUE', 'OVERDUE'] },
                     sisaTagihan: { gt: 0 }
+                },
+                include: {
+                    tagihanItems: {
+                        include: {
+                            jenisPembayaran: true
+                        }
+                    }
                 },
                 orderBy: { tanggalTagihan: 'asc' }
             });
@@ -128,6 +136,32 @@ export class PembayaranService {
                 if (remainingAmount.lte(0)) break;
 
                 const allocateAmount = Decimal.min(remainingAmount, tagihan.sisaTagihan);
+                const oldTotalBayar = tagihan.totalBayar;
+
+                // --- DETECT RECURRING SAVINGS ITEMS WITHIN INVOICE ---
+                // We track which part of the new 'allocateAmount' covers which savings item.
+                let cumulativeDebt = new Decimal(0);
+
+                for (const item of tagihan.tagihanItems) {
+                    const itemNominal = item.nominalAkhir;
+                    const itemCoveredBefore = Decimal.min(oldTotalBayar, cumulativeDebt.add(itemNominal)).sub(Decimal.min(oldTotalBayar, cumulativeDebt));
+                    const itemCoveredAfter = Decimal.min(oldTotalBayar.add(allocateAmount), cumulativeDebt.add(itemNominal)).sub(Decimal.min(oldTotalBayar.add(allocateAmount), cumulativeDebt));
+
+                    const amountToDepositNow = itemCoveredAfter.sub(itemCoveredBefore);
+
+                    if (amountToDepositNow.gt(0) && item.jenisPembayaran.jenisTabungan) {
+                        await TabunganService.setorFromPayment(
+                            tx,
+                            input.siswaId,
+                            item.jenisPembayaran.jenisTabungan,
+                            amountToDepositNow,
+                            kasirId,
+                            `Setoran ${item.namaItem} via ${pembayaran.kode}`
+                        );
+                    }
+
+                    cumulativeDebt = cumulativeDebt.add(itemNominal);
+                }
 
                 // Update Tagihan
                 const newTotalBayar = tagihan.totalBayar.add(allocateAmount);

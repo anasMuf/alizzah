@@ -8,7 +8,7 @@ dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 const prisma = new PrismaClient();
 
-const SQL_FILE_PATH = path.resolve(process.cwd(), 'docs/implementation/src/siswa_cycle.sql');
+const SQL_FILE_PATH = path.resolve(process.cwd(), '../../docs/implementation/src/siswa_cycle.sql');
 
 // Helper to convert Title Case (MUTIARA 1 -> Mutiara-1)
 function normalizeRombelName(name: string): string {

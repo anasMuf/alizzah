@@ -95,6 +95,8 @@ model JenisPembayaran {
   jatuhTempoHari  Int                    @default(1) @map("jatuh_tempo_hari")
   keterangan      String?
   isAktif         Boolean                @default(true) @map("is_aktif")
+  // If set, payments to this type will be deposited directly to the specified savings account
+  jenisTabungan   JenisTabungan?         @map("jenis_tabungan")
   createdAt       DateTime               @default(now()) @map("created_at")
   updatedAt       DateTime               @updatedAt @map("updated_at")
   diskons         Diskon[]

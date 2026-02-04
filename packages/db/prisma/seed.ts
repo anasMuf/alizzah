@@ -162,6 +162,7 @@ async function main() {
             tipe: 'BULANAN' as const,
             nominalDefault: 10000,
             sifat: 'WAJIB' as const,
+            jenisTabungan: 'WAJIB_BERLIAN' as const,
         },
         {
             kode: 'INF-CALISAN-KB',
@@ -186,6 +187,7 @@ async function main() {
             tipe: 'INSIDENTIL' as const,
             nominalDefault: 0,
             sifat: 'OPSIONAL' as const,
+            jenisTabungan: 'UMUM' as const,
         }
     ];
 

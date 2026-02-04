@@ -66,16 +66,10 @@ export function TahunAjaranForm({ isOpen, onClose, initialData }: TahunAjaranFor
         }
     }, [isOpen, initialData, reset]);
 
-    const onSubmit = async (data: FormData) => {
+    const onSubmit = async (data: Record<string, unknown>) => {
         try {
             // Data is already validated and transformed by Zod resolver
-            // However, useForm is typed with FormData (strings), so we need to cast or rely on the resolver output
-
-            // The zod resolver will return Date objects for the date fields
-            // So 'data' passed to onSubmit here will actually be of type CreateTahunAjaranInput (with Dates)
-            // even though the function signature says FormData.
-            // We cast it to user-defined explicit type.
-
+            // The zod resolver transforms string dates to Date objects
             const payload = data as unknown as CreateTahunAjaranInput;
 
             if (isEdit && initialData?.id) {

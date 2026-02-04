@@ -4,9 +4,19 @@ const { verify } = jwt;
 
 const JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 
+// Type for authenticated user payload
+export interface AuthUser {
+    id: string;
+    email: string;
+    namaLengkap: string;
+    role: string;
+    iat?: number;
+    exp?: number;
+}
+
 declare module 'hono' {
     interface ContextVariableMap {
-        user: any;
+        user: AuthUser;
     }
 }
 
@@ -18,7 +28,7 @@ export const authMiddleware = createMiddleware(async (c, next) => {
 
     const token = authHeader.split(' ')[1];
     try {
-        const payload = verify(token, JWT_SECRET);
+        const payload = verify(token, JWT_SECRET) as AuthUser;
         c.set('user', payload);
         await next();
     } catch (err) {

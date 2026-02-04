@@ -4,10 +4,21 @@ import { id } from 'date-fns/locale';
 
 /**
  * Format number to IDR Currency
+ * Handles: number, string, Prisma Decimal objects (with .toNumber()), null, undefined
  */
-export const formatCurrency = (amount: number | string | undefined | null): string => {
-    if (amount === undefined || amount === null) return 'Rp 0';
-    const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+export const formatCurrency = (amount: number | string | { toNumber?: () => number } | null | undefined): string => {
+    if (amount === null || amount === undefined) return 'Rp 0';
+
+    let num: number;
+    if (typeof amount === 'object' && typeof amount.toNumber === 'function') {
+        // Handle Prisma Decimal
+        num = amount.toNumber();
+    } else if (typeof amount === 'string') {
+        num = parseFloat(amount);
+    } else {
+        num = amount as number;
+    }
+
     if (isNaN(num)) return 'Rp 0';
 
     return new Intl.NumberFormat('id-ID', {

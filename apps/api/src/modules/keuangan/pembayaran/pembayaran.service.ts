@@ -1,6 +1,7 @@
 import { prisma } from '../../../lib/prisma';
 import { CreatePembayaranInput } from '@alizzah/validators';
 import { Prisma } from '@alizzah/db';
+import { TabunganService } from '../tabungan/tabungan.service';
 
 const { Decimal } = Prisma;
 
@@ -188,10 +189,17 @@ export class PembayaranService {
                 }
             });
 
-            // 6. Handle Surplus (Optional / Future: Credit to Student Balance)
-            // For now, if there's still remainingAmount, we might just log it or throw error?
-            // Actually, usually it's better to allow it and put it in student's deposit.
-            // But let's keep it simple for now as per Roadmap.
+            // 6. Handle Overpayment - Credit surplus to Tabungan Umum
+            // If there's remaining amount after all invoices are paid, move it to savings
+            if (remainingAmount.gt(0)) {
+                await TabunganService.setorFromOverpayment(
+                    tx,
+                    input.siswaId,
+                    remainingAmount,
+                    kasirId,
+                    `Kelebihan pembayaran dari ${pembayaran.kode}`
+                );
+            }
 
             // 7. Return Full Record with Inclusions for Receipt
             // Include tagihanItems to show details on receipt

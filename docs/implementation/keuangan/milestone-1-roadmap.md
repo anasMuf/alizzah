@@ -88,16 +88,22 @@ Sebelum memulai implementasi, pastikan memahami referensi berikut:
 
 ---
 
-## 🏦 Phase 5: Savings (Tabungan) Module
+## 🏦 Phase 5: Savings (Tabungan) Module [COMPLETED]
 **Goal:** Managing student savings with automated deductions.
 
-- [ ] **5.1 Savings Ledger**
-  - [ ] **Backend:** Model `SavingsAccount` and `SavingsTransaction`.
-  - [ ] **API:** Logic for automatic 2.5% fee on withdrawals from `TAB-UM`.
-- [ ] **5.2 Overpayment Hook**
-  - [ ] **Backend:** Trigger to move balance from `Payment` overage to `SavingsAccount`.
-- [ ] **5.3 Savings UI**
-  - [ ] **Frontend:** Ledger view for students showing deposits from billing overpayments.
+- [x] **5.1 Savings Ledger**
+  - [x] **Backend:** Model `SavingsAccount` and `SavingsTransaction` (already in Prisma schema).
+  - [x] **API:** `TabunganService` with setor/tarik operations.
+  - [x] **API Routes:** `/keuangan/tabungan` endpoints for CRUD and transactions.
+  - [x] **Logic:** Automatic 2.5% admin fee on withdrawals from `TAB-UM`.
+- [x] **5.2 Overpayment Hook**
+  - [x] **Backend:** Modified `PembayaranService` to move overpayment surplus to `TabunganUmum`.
+  - [x] **Integration:** `TabunganService.setorFromOverpayment()` called from payment transaction.
+- [x] **5.3 Savings UI**
+  - [x] **Frontend:** Summary cards showing total saldo for Umum and Wajib Berlian.
+  - [x] **Frontend:** Ledger view with search/filter by jenis tabungan.
+  - [x] **Frontend:** Detail view with transaction history.
+  - [x] **Frontend:** Modal for Setor/Tarik with admin fee calculation preview.
 
 ---
 

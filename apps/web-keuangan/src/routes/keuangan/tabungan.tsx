@@ -1,15 +1,14 @@
-import { useState } from 'react';
+import { useNavigate, Outlet } from '@tanstack/react-router';
 import { createFileRoute } from '@tanstack/react-router';
 import { PiggyBank } from 'lucide-react';
 import { TabunganList } from '../../modules/keuangan/tabungan/components/TabunganList';
-import { TabunganDetail } from '../../modules/keuangan/tabungan/components/TabunganDetail';
 
 export const Route = createFileRoute('/keuangan/tabungan')({
-    component: TabunganPage,
+    component: TabunganLayout,
 });
 
-function TabunganPage() {
-    const [selectedTabungan, setSelectedTabungan] = useState<any>(null);
+function TabunganLayout() {
+    const navigate = useNavigate();
 
     return (
         <div className="p-8 max-w-[1400px] mx-auto space-y-8 pb-24">
@@ -26,27 +25,16 @@ function TabunganPage() {
                 </div>
             </div>
 
-            {/* Main Content */}
-            <div className="space-y-8">
-                {selectedTabungan ? (
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-                        <div className="lg:col-span-2">
-                            <TabunganList
-                                onSelectTabungan={(t) => setSelectedTabungan(t)}
-                            />
-                        </div>
-                        <div className="lg:col-span-1 sticky top-8">
-                            <TabunganDetail
-                                tabunganId={selectedTabungan.id}
-                                onClose={() => setSelectedTabungan(null)}
-                            />
-                        </div>
-                    </div>
-                ) : (
+            {/* Main Content with Nested Detail */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                <div className="lg:col-span-2">
                     <TabunganList
-                        onSelectTabungan={(t) => setSelectedTabungan(t)}
+                        onSelectTabungan={(t) => navigate({ to: '/keuangan/tabungan/$tabunganId', params: { tabunganId: t.id } })}
                     />
-                )}
+                </div>
+                <div className="lg:col-span-1 sticky top-8">
+                    <Outlet />
+                </div>
             </div>
         </div>
     );

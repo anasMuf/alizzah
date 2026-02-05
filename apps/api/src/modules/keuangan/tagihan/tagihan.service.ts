@@ -17,18 +17,35 @@ export class TagihanService {
         const skip = (page - 1) * limit;
 
         const where: any = {
-            OR: search ? [
+            periode: periode || undefined,
+        };
+
+        if (status) {
+            if (status === 'UNPAID') {
+                where.status = { in: ['UNPAID', 'DUE', 'OVERDUE'] };
+            } else {
+                where.status = status;
+            }
+        }
+
+        const orConditions: any[] = [];
+        if (search) {
+            orConditions.push(
                 { kode: { contains: search, mode: 'insensitive' } },
                 { siswa: { namaLengkap: { contains: search, mode: 'insensitive' } } },
                 { siswa: { nis: { contains: search, mode: 'insensitive' } } },
-            ] : undefined,
-            rombelSnapshot: rombelId ? { contains: rombelId } : undefined,
-            periode: periode || undefined,
-            status: status || undefined,
-        };
+            );
+        }
+
+        if (orConditions.length > 0) {
+            where.OR = orConditions;
+        }
 
         if (rombelId) {
-            where.siswa = { rombelId };
+            where.siswa = {
+                ...(where.siswa || {}),
+                rombelId
+            };
         }
 
         const [data, total] = await Promise.all([
@@ -40,7 +57,10 @@ export class TagihanService {
                     },
                     tagihanItems: true
                 },
-                orderBy: { tanggalTagihan: 'desc' },
+                orderBy: [
+                    { tanggalTagihan: 'desc' },
+                    { id: 'asc' }
+                ],
                 skip,
                 take: limit
             }),
@@ -58,12 +78,38 @@ export class TagihanService {
         };
     }
 
-    static async getSummary() {
+    static async getSummary(params: { search?: string, tahunAjaranId?: string }) {
+        const { search, tahunAjaranId } = params;
+
+        let periodeIn: string[] | undefined = undefined;
+
+        if (tahunAjaranId) {
+            const ta = await prisma.tahunAjaran.findUnique({ where: { id: tahunAjaranId } });
+            if (ta) {
+                const start = new Date(ta.tanggalMulai);
+                const end = new Date(ta.tanggalSelesai);
+                periodeIn = [];
+                let curr = new Date(start.getFullYear(), start.getMonth(), 1);
+                while (curr <= end) {
+                    periodeIn.push(`${curr.getFullYear()}-${(curr.getMonth() + 1).toString().padStart(2, '0')}`);
+                    curr.setMonth(curr.getMonth() + 1);
+                }
+            }
+        }
+
+        const where: any = {
+            periode: periodeIn ? { in: periodeIn } : undefined,
+            OR: search ? [
+                { periode: { contains: search } },
+                { kode: { contains: search, mode: 'insensitive' } }
+            ] : undefined
+        };
+
         const result = await prisma.tagihan.groupBy({
             by: ['periode'],
+            where,
             _count: {
                 _all: true,
-                status: true
             },
             _sum: {
                 totalTagihan: true,
@@ -78,7 +124,11 @@ export class TagihanService {
         const periods = result.map(p => p.periode);
         const unpaidCounts = await prisma.tagihan.groupBy({
             by: ['periode'],
-            where: { status: 'UNPAID', periode: { in: periods } },
+            where: {
+                status: { not: 'PAID' },
+                sisaTagihan: { gt: 0 },
+                periode: { in: periods }
+            },
             _count: true
         });
 

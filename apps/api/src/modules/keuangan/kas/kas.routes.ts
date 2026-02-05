@@ -36,6 +36,33 @@ app.get('/', async (c) => {
     });
 });
 
+// ==================== TRANSACTION ROUTES ====================
+
+// List Transactions
+app.get('/transaksi', async (c) => {
+    const kasId = c.req.query('kasId');
+    const tipeTransaksi = c.req.query('tipeTransaksi') as 'MASUK' | 'KELUAR' | 'TRANSFER' | undefined;
+    const tanggalMulai = c.req.query('tanggalMulai');
+    const tanggalSelesai = c.req.query('tanggalSelesai');
+    const search = c.req.query('search');
+    const page = parseInt(c.req.query('page') || '1');
+    const limit = parseInt(c.req.query('limit') || '20');
+
+    const result = await KasService.findAllTransaksi({
+        kasId,
+        tipeTransaksi,
+        tanggalMulai: tanggalMulai ? new Date(tanggalMulai) : undefined,
+        tanggalSelesai: tanggalSelesai ? new Date(tanggalSelesai) : undefined,
+        search,
+        page,
+        limit
+    });
+    return c.json<APIResponse<typeof result>>({
+        success: true,
+        data: result
+    });
+});
+
 // Get Kas by ID
 app.get('/:id', async (c) => {
     const id = c.req.param('id');
@@ -67,32 +94,6 @@ app.patch('/:id', zValidator('json', updateKasSchema), async (c) => {
     });
 });
 
-// ==================== TRANSACTION ROUTES ====================
-
-// List Transactions
-app.get('/transaksi', async (c) => {
-    const kasId = c.req.query('kasId');
-    const tipeTransaksi = c.req.query('tipeTransaksi') as 'MASUK' | 'KELUAR' | 'TRANSFER' | undefined;
-    const tanggalMulai = c.req.query('tanggalMulai');
-    const tanggalSelesai = c.req.query('tanggalSelesai');
-    const search = c.req.query('search');
-    const page = parseInt(c.req.query('page') || '1');
-    const limit = parseInt(c.req.query('limit') || '20');
-
-    const result = await KasService.findAllTransaksi({
-        kasId,
-        tipeTransaksi,
-        tanggalMulai: tanggalMulai ? new Date(tanggalMulai) : undefined,
-        tanggalSelesai: tanggalSelesai ? new Date(tanggalSelesai) : undefined,
-        search,
-        page,
-        limit
-    });
-    return c.json<APIResponse<typeof result>>({
-        success: true,
-        data: result
-    });
-});
 
 // Cash In - Uang Masuk
 app.post('/masuk', zValidator('json', kasirMasukSchema), async (c) => {

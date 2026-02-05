@@ -48,7 +48,11 @@ tagihanRoutes.get('/', async (c) => {
 
 tagihanRoutes.get('/summary', async (c) => {
     try {
-        const result = await TagihanService.getSummary();
+        const query = c.req.query();
+        const result = await TagihanService.getSummary({
+            search: query.search,
+            tahunAjaranId: query.tahunAjaranId
+        });
         return successResponse(c, result);
     } catch (error: any) {
         return errorResponse(c, error.message, 400);

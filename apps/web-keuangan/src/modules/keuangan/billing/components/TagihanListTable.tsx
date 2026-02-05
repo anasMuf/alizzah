@@ -1,4 +1,4 @@
-
+import { useRef, useEffect } from 'react';
 import { formatCurrency } from '@alizzah/shared';
 import {
     Search,
@@ -23,6 +23,9 @@ interface TagihanListTableProps {
     rombelList?: any[];
     onViewInvoice?: (item: any) => void;
     onDownload?: () => void;
+    hasNextPage?: boolean;
+    onLoadMore?: () => void;
+    isFetchingNextPage?: boolean;
 }
 
 export function TagihanListTable({
@@ -38,7 +41,10 @@ export function TagihanListTable({
     onRombelChange,
     rombelList,
     onViewInvoice,
-    onDownload
+    onDownload,
+    hasNextPage,
+    onLoadMore,
+    isFetchingNextPage
 }: TagihanListTableProps) {
     const getMonthName = (p: string) => {
         const [year, month] = p.split('-');
@@ -56,6 +62,29 @@ export function TagihanListTable({
         }
     };
 
+    const sentinelRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!hasNextPage || isFetchingNextPage) return;
+
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting) {
+                onLoadMore?.();
+            }
+        }, { threshold: 0.1 });
+
+        const currentSentinel = sentinelRef.current;
+        if (currentSentinel) {
+            observer.observe(currentSentinel);
+        }
+
+        return () => {
+            if (currentSentinel) {
+                observer.unobserve(currentSentinel);
+            }
+        };
+    }, [hasNextPage, isFetchingNextPage, onLoadMore]);
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -72,7 +101,7 @@ export function TagihanListTable({
                     </div>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 text-slate-900">
                     {/* Status Filter */}
                     <div className="flex-1 md:flex-none">
                         <select
@@ -120,7 +149,7 @@ export function TagihanListTable({
                 </div>
             </div>
 
-            <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-4xl border border-slate-200 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
@@ -133,7 +162,7 @@ export function TagihanListTable({
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                            {isLoading ? (
+                            {isLoading && data?.length === 0 ? (
                                 [...Array(5)].map((_, i) => (
                                     <tr key={i} className="animate-pulse">
                                         <td colSpan={5} className="px-8 py-6 h-16 bg-slate-50/20" />
@@ -147,7 +176,7 @@ export function TagihanListTable({
                                                 {item.siswa.namaLengkap.charAt(0)}
                                             </div>
                                             <div>
-                                                <div className="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{item.siswa.namaLengkap}</div>
+                                                <div className="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors uppercase">{item.siswa.namaLengkap}</div>
                                                 <div className="text-[10px] text-slate-400 font-mono tracking-tighter uppercase">{item.siswa.nis} • {item.rombelSnapshot}</div>
                                             </div>
                                         </div>
@@ -176,6 +205,13 @@ export function TagihanListTable({
                         </tbody>
                     </table>
                 </div>
+
+                {hasNextPage && (
+                    <div ref={sentinelRef} className="p-12 border-t border-slate-100 bg-slate-50/30 flex justify-center items-center gap-3">
+                        <div className="w-5 h-5 border-2 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest animate-pulse">Memuat Lebih Banyak Data...</p>
+                    </div>
+                )}
             </div>
         </div>
     );

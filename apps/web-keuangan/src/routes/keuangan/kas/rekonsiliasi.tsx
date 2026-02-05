@@ -63,7 +63,7 @@ function RekonsiliasiPage() {
     };
 
     return (
-        <div className="p-8 max-w-[1000px] mx-auto space-y-8 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="max-w-[1000px] mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* Back Button & Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -74,11 +74,11 @@ function RekonsiliasiPage() {
                         <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
                     </button>
                     <div>
-                        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Rekonsiliasi Harian</h1>
-                        <p className="text-slate-500 font-medium">Lakukan penutupan kas dan pencocokan saldo fisik.</p>
+                        <h2 className="text-2xl font-black text-slate-900 tracking-tight">Rekonsiliasi Harian</h2>
+                        <p className="text-sm text-slate-500 font-medium">Lakukan penutupan kas dan pencocokan saldo fisik.</p>
                     </div>
                 </div>
-                <div className="bg-blue-50 text-blue-700 px-4 py-2 rounded-xl border border-blue-100 flex items-center gap-2 text-xs font-black uppercase tracking-widest">
+                <div className="bg-blue-50 text-blue-700 px-4 py-2 rounded-xl border border-blue-100 items-center gap-2 text-xs font-black uppercase tracking-widest hidden md:flex">
                     <Info size={16} /> Beta Version
                 </div>
             </div>
@@ -199,8 +199,8 @@ function RekonsiliasiPage() {
                         </div>
 
                         <div className={`p-6 rounded-3xl border transition-all duration-500 ${selisih === 0 ? 'bg-emerald-50 border-emerald-100 text-emerald-900' :
-                                selisih > 0 ? 'bg-blue-50 border-blue-100 text-blue-900' :
-                                    'bg-rose-50 border-rose-100 text-rose-900'
+                            selisih > 0 ? 'bg-blue-50 border-blue-100 text-blue-900' :
+                                'bg-rose-50 border-rose-100 text-rose-900'
                             }`}>
                             <div className="flex items-center justify-between mb-2">
                                 <span className="text-[10px] font-black uppercase tracking-widest">Analisis Selisih</span>

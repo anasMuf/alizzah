@@ -20,9 +20,18 @@ import { Route as MasterJenisPembayaranRouteImport } from './routes/master/jenis
 import { Route as MasterDiskonRouteImport } from './routes/master/diskon'
 import { Route as KeuanganTabunganRouteImport } from './routes/keuangan/tabungan'
 import { Route as KeuanganPembayaranRouteImport } from './routes/keuangan/pembayaran'
+import { Route as KeuanganKasRouteImport } from './routes/keuangan/kas'
 import { Route as KeuanganBillingRouteImport } from './routes/keuangan/billing'
+import { Route as KeuanganTabunganIndexRouteImport } from './routes/keuangan/tabungan/index'
+import { Route as KeuanganPembayaranIndexRouteImport } from './routes/keuangan/pembayaran/index'
 import { Route as KeuanganKasIndexRouteImport } from './routes/keuangan/kas/index'
+import { Route as KeuanganBillingIndexRouteImport } from './routes/keuangan/billing/index'
+import { Route as KeuanganTabunganTabunganIdRouteImport } from './routes/keuangan/tabungan/$tabunganId'
+import { Route as KeuanganPembayaranHistoryRouteImport } from './routes/keuangan/pembayaran/history'
 import { Route as KeuanganKasRekonsiliasiRouteImport } from './routes/keuangan/kas/rekonsiliasi'
+import { Route as KeuanganKasMutasiRouteImport } from './routes/keuangan/kas/mutasi'
+import { Route as KeuanganBillingHistoryIndexRouteImport } from './routes/keuangan/billing/history/index'
+import { Route as KeuanganBillingHistoryPeriodeRouteImport } from './routes/keuangan/billing/history/$periode'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -79,28 +88,78 @@ const KeuanganPembayaranRoute = KeuanganPembayaranRouteImport.update({
   path: '/keuangan/pembayaran',
   getParentRoute: () => rootRouteImport,
 } as any)
+const KeuanganKasRoute = KeuanganKasRouteImport.update({
+  id: '/keuangan/kas',
+  path: '/keuangan/kas',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const KeuanganBillingRoute = KeuanganBillingRouteImport.update({
   id: '/keuangan/billing',
   path: '/keuangan/billing',
   getParentRoute: () => rootRouteImport,
 } as any)
+const KeuanganTabunganIndexRoute = KeuanganTabunganIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => KeuanganTabunganRoute,
+} as any)
+const KeuanganPembayaranIndexRoute = KeuanganPembayaranIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => KeuanganPembayaranRoute,
+} as any)
 const KeuanganKasIndexRoute = KeuanganKasIndexRouteImport.update({
-  id: '/keuangan/kas/',
-  path: '/keuangan/kas/',
-  getParentRoute: () => rootRouteImport,
+  id: '/',
+  path: '/',
+  getParentRoute: () => KeuanganKasRoute,
 } as any)
+const KeuanganBillingIndexRoute = KeuanganBillingIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => KeuanganBillingRoute,
+} as any)
+const KeuanganTabunganTabunganIdRoute =
+  KeuanganTabunganTabunganIdRouteImport.update({
+    id: '/$tabunganId',
+    path: '/$tabunganId',
+    getParentRoute: () => KeuanganTabunganRoute,
+  } as any)
+const KeuanganPembayaranHistoryRoute =
+  KeuanganPembayaranHistoryRouteImport.update({
+    id: '/history',
+    path: '/history',
+    getParentRoute: () => KeuanganPembayaranRoute,
+  } as any)
 const KeuanganKasRekonsiliasiRoute = KeuanganKasRekonsiliasiRouteImport.update({
-  id: '/keuangan/kas/rekonsiliasi',
-  path: '/keuangan/kas/rekonsiliasi',
-  getParentRoute: () => rootRouteImport,
+  id: '/rekonsiliasi',
+  path: '/rekonsiliasi',
+  getParentRoute: () => KeuanganKasRoute,
 } as any)
+const KeuanganKasMutasiRoute = KeuanganKasMutasiRouteImport.update({
+  id: '/mutasi',
+  path: '/mutasi',
+  getParentRoute: () => KeuanganKasRoute,
+} as any)
+const KeuanganBillingHistoryIndexRoute =
+  KeuanganBillingHistoryIndexRouteImport.update({
+    id: '/history/',
+    path: '/history/',
+    getParentRoute: () => KeuanganBillingRoute,
+  } as any)
+const KeuanganBillingHistoryPeriodeRoute =
+  KeuanganBillingHistoryPeriodeRouteImport.update({
+    id: '/history/$periode',
+    path: '/history/$periode',
+    getParentRoute: () => KeuanganBillingRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/keuangan/billing': typeof KeuanganBillingRoute
-  '/keuangan/pembayaran': typeof KeuanganPembayaranRoute
-  '/keuangan/tabungan': typeof KeuanganTabunganRoute
+  '/keuangan/billing': typeof KeuanganBillingRouteWithChildren
+  '/keuangan/kas': typeof KeuanganKasRouteWithChildren
+  '/keuangan/pembayaran': typeof KeuanganPembayaranRouteWithChildren
+  '/keuangan/tabungan': typeof KeuanganTabunganRouteWithChildren
   '/master/diskon': typeof MasterDiskonRoute
   '/master/jenis-pembayaran': typeof MasterJenisPembayaranRoute
   '/master/jenjang': typeof MasterJenjangRoute
@@ -108,15 +167,20 @@ export interface FileRoutesByFullPath {
   '/master/tahun-ajaran': typeof MasterTahunAjaranRoute
   '/siswa/progresi': typeof SiswaProgresiRoute
   '/siswa/': typeof SiswaIndexRoute
+  '/keuangan/kas/mutasi': typeof KeuanganKasMutasiRoute
   '/keuangan/kas/rekonsiliasi': typeof KeuanganKasRekonsiliasiRoute
+  '/keuangan/pembayaran/history': typeof KeuanganPembayaranHistoryRoute
+  '/keuangan/tabungan/$tabunganId': typeof KeuanganTabunganTabunganIdRoute
+  '/keuangan/billing/': typeof KeuanganBillingIndexRoute
   '/keuangan/kas/': typeof KeuanganKasIndexRoute
+  '/keuangan/pembayaran/': typeof KeuanganPembayaranIndexRoute
+  '/keuangan/tabungan/': typeof KeuanganTabunganIndexRoute
+  '/keuangan/billing/history/$periode': typeof KeuanganBillingHistoryPeriodeRoute
+  '/keuangan/billing/history/': typeof KeuanganBillingHistoryIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/keuangan/billing': typeof KeuanganBillingRoute
-  '/keuangan/pembayaran': typeof KeuanganPembayaranRoute
-  '/keuangan/tabungan': typeof KeuanganTabunganRoute
   '/master/diskon': typeof MasterDiskonRoute
   '/master/jenis-pembayaran': typeof MasterJenisPembayaranRoute
   '/master/jenjang': typeof MasterJenjangRoute
@@ -124,16 +188,25 @@ export interface FileRoutesByTo {
   '/master/tahun-ajaran': typeof MasterTahunAjaranRoute
   '/siswa/progresi': typeof SiswaProgresiRoute
   '/siswa': typeof SiswaIndexRoute
+  '/keuangan/kas/mutasi': typeof KeuanganKasMutasiRoute
   '/keuangan/kas/rekonsiliasi': typeof KeuanganKasRekonsiliasiRoute
+  '/keuangan/pembayaran/history': typeof KeuanganPembayaranHistoryRoute
+  '/keuangan/tabungan/$tabunganId': typeof KeuanganTabunganTabunganIdRoute
+  '/keuangan/billing': typeof KeuanganBillingIndexRoute
   '/keuangan/kas': typeof KeuanganKasIndexRoute
+  '/keuangan/pembayaran': typeof KeuanganPembayaranIndexRoute
+  '/keuangan/tabungan': typeof KeuanganTabunganIndexRoute
+  '/keuangan/billing/history/$periode': typeof KeuanganBillingHistoryPeriodeRoute
+  '/keuangan/billing/history': typeof KeuanganBillingHistoryIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/keuangan/billing': typeof KeuanganBillingRoute
-  '/keuangan/pembayaran': typeof KeuanganPembayaranRoute
-  '/keuangan/tabungan': typeof KeuanganTabunganRoute
+  '/keuangan/billing': typeof KeuanganBillingRouteWithChildren
+  '/keuangan/kas': typeof KeuanganKasRouteWithChildren
+  '/keuangan/pembayaran': typeof KeuanganPembayaranRouteWithChildren
+  '/keuangan/tabungan': typeof KeuanganTabunganRouteWithChildren
   '/master/diskon': typeof MasterDiskonRoute
   '/master/jenis-pembayaran': typeof MasterJenisPembayaranRoute
   '/master/jenjang': typeof MasterJenjangRoute
@@ -141,8 +214,16 @@ export interface FileRoutesById {
   '/master/tahun-ajaran': typeof MasterTahunAjaranRoute
   '/siswa/progresi': typeof SiswaProgresiRoute
   '/siswa/': typeof SiswaIndexRoute
+  '/keuangan/kas/mutasi': typeof KeuanganKasMutasiRoute
   '/keuangan/kas/rekonsiliasi': typeof KeuanganKasRekonsiliasiRoute
+  '/keuangan/pembayaran/history': typeof KeuanganPembayaranHistoryRoute
+  '/keuangan/tabungan/$tabunganId': typeof KeuanganTabunganTabunganIdRoute
+  '/keuangan/billing/': typeof KeuanganBillingIndexRoute
   '/keuangan/kas/': typeof KeuanganKasIndexRoute
+  '/keuangan/pembayaran/': typeof KeuanganPembayaranIndexRoute
+  '/keuangan/tabungan/': typeof KeuanganTabunganIndexRoute
+  '/keuangan/billing/history/$periode': typeof KeuanganBillingHistoryPeriodeRoute
+  '/keuangan/billing/history/': typeof KeuanganBillingHistoryIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -150,6 +231,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/keuangan/billing'
+    | '/keuangan/kas'
     | '/keuangan/pembayaran'
     | '/keuangan/tabungan'
     | '/master/diskon'
@@ -159,15 +241,20 @@ export interface FileRouteTypes {
     | '/master/tahun-ajaran'
     | '/siswa/progresi'
     | '/siswa/'
+    | '/keuangan/kas/mutasi'
     | '/keuangan/kas/rekonsiliasi'
+    | '/keuangan/pembayaran/history'
+    | '/keuangan/tabungan/$tabunganId'
+    | '/keuangan/billing/'
     | '/keuangan/kas/'
+    | '/keuangan/pembayaran/'
+    | '/keuangan/tabungan/'
+    | '/keuangan/billing/history/$periode'
+    | '/keuangan/billing/history/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
-    | '/keuangan/billing'
-    | '/keuangan/pembayaran'
-    | '/keuangan/tabungan'
     | '/master/diskon'
     | '/master/jenis-pembayaran'
     | '/master/jenjang'
@@ -175,13 +262,22 @@ export interface FileRouteTypes {
     | '/master/tahun-ajaran'
     | '/siswa/progresi'
     | '/siswa'
+    | '/keuangan/kas/mutasi'
     | '/keuangan/kas/rekonsiliasi'
+    | '/keuangan/pembayaran/history'
+    | '/keuangan/tabungan/$tabunganId'
+    | '/keuangan/billing'
     | '/keuangan/kas'
+    | '/keuangan/pembayaran'
+    | '/keuangan/tabungan'
+    | '/keuangan/billing/history/$periode'
+    | '/keuangan/billing/history'
   id:
     | '__root__'
     | '/'
     | '/login'
     | '/keuangan/billing'
+    | '/keuangan/kas'
     | '/keuangan/pembayaran'
     | '/keuangan/tabungan'
     | '/master/diskon'
@@ -191,16 +287,25 @@ export interface FileRouteTypes {
     | '/master/tahun-ajaran'
     | '/siswa/progresi'
     | '/siswa/'
+    | '/keuangan/kas/mutasi'
     | '/keuangan/kas/rekonsiliasi'
+    | '/keuangan/pembayaran/history'
+    | '/keuangan/tabungan/$tabunganId'
+    | '/keuangan/billing/'
     | '/keuangan/kas/'
+    | '/keuangan/pembayaran/'
+    | '/keuangan/tabungan/'
+    | '/keuangan/billing/history/$periode'
+    | '/keuangan/billing/history/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
-  KeuanganBillingRoute: typeof KeuanganBillingRoute
-  KeuanganPembayaranRoute: typeof KeuanganPembayaranRoute
-  KeuanganTabunganRoute: typeof KeuanganTabunganRoute
+  KeuanganBillingRoute: typeof KeuanganBillingRouteWithChildren
+  KeuanganKasRoute: typeof KeuanganKasRouteWithChildren
+  KeuanganPembayaranRoute: typeof KeuanganPembayaranRouteWithChildren
+  KeuanganTabunganRoute: typeof KeuanganTabunganRouteWithChildren
   MasterDiskonRoute: typeof MasterDiskonRoute
   MasterJenisPembayaranRoute: typeof MasterJenisPembayaranRoute
   MasterJenjangRoute: typeof MasterJenjangRoute
@@ -208,8 +313,6 @@ export interface RootRouteChildren {
   MasterTahunAjaranRoute: typeof MasterTahunAjaranRoute
   SiswaProgresiRoute: typeof SiswaProgresiRoute
   SiswaIndexRoute: typeof SiswaIndexRoute
-  KeuanganKasRekonsiliasiRoute: typeof KeuanganKasRekonsiliasiRoute
-  KeuanganKasIndexRoute: typeof KeuanganKasIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -291,6 +394,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof KeuanganPembayaranRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/keuangan/kas': {
+      id: '/keuangan/kas'
+      path: '/keuangan/kas'
+      fullPath: '/keuangan/kas'
+      preLoaderRoute: typeof KeuanganKasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/keuangan/billing': {
       id: '/keuangan/billing'
       path: '/keuangan/billing'
@@ -298,29 +408,144 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof KeuanganBillingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/keuangan/tabungan/': {
+      id: '/keuangan/tabungan/'
+      path: '/'
+      fullPath: '/keuangan/tabungan/'
+      preLoaderRoute: typeof KeuanganTabunganIndexRouteImport
+      parentRoute: typeof KeuanganTabunganRoute
+    }
+    '/keuangan/pembayaran/': {
+      id: '/keuangan/pembayaran/'
+      path: '/'
+      fullPath: '/keuangan/pembayaran/'
+      preLoaderRoute: typeof KeuanganPembayaranIndexRouteImport
+      parentRoute: typeof KeuanganPembayaranRoute
+    }
     '/keuangan/kas/': {
       id: '/keuangan/kas/'
-      path: '/keuangan/kas'
+      path: '/'
       fullPath: '/keuangan/kas/'
       preLoaderRoute: typeof KeuanganKasIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof KeuanganKasRoute
+    }
+    '/keuangan/billing/': {
+      id: '/keuangan/billing/'
+      path: '/'
+      fullPath: '/keuangan/billing/'
+      preLoaderRoute: typeof KeuanganBillingIndexRouteImport
+      parentRoute: typeof KeuanganBillingRoute
+    }
+    '/keuangan/tabungan/$tabunganId': {
+      id: '/keuangan/tabungan/$tabunganId'
+      path: '/$tabunganId'
+      fullPath: '/keuangan/tabungan/$tabunganId'
+      preLoaderRoute: typeof KeuanganTabunganTabunganIdRouteImport
+      parentRoute: typeof KeuanganTabunganRoute
+    }
+    '/keuangan/pembayaran/history': {
+      id: '/keuangan/pembayaran/history'
+      path: '/history'
+      fullPath: '/keuangan/pembayaran/history'
+      preLoaderRoute: typeof KeuanganPembayaranHistoryRouteImport
+      parentRoute: typeof KeuanganPembayaranRoute
     }
     '/keuangan/kas/rekonsiliasi': {
       id: '/keuangan/kas/rekonsiliasi'
-      path: '/keuangan/kas/rekonsiliasi'
+      path: '/rekonsiliasi'
       fullPath: '/keuangan/kas/rekonsiliasi'
       preLoaderRoute: typeof KeuanganKasRekonsiliasiRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof KeuanganKasRoute
+    }
+    '/keuangan/kas/mutasi': {
+      id: '/keuangan/kas/mutasi'
+      path: '/mutasi'
+      fullPath: '/keuangan/kas/mutasi'
+      preLoaderRoute: typeof KeuanganKasMutasiRouteImport
+      parentRoute: typeof KeuanganKasRoute
+    }
+    '/keuangan/billing/history/': {
+      id: '/keuangan/billing/history/'
+      path: '/history'
+      fullPath: '/keuangan/billing/history/'
+      preLoaderRoute: typeof KeuanganBillingHistoryIndexRouteImport
+      parentRoute: typeof KeuanganBillingRoute
+    }
+    '/keuangan/billing/history/$periode': {
+      id: '/keuangan/billing/history/$periode'
+      path: '/history/$periode'
+      fullPath: '/keuangan/billing/history/$periode'
+      preLoaderRoute: typeof KeuanganBillingHistoryPeriodeRouteImport
+      parentRoute: typeof KeuanganBillingRoute
     }
   }
 }
 
+interface KeuanganBillingRouteChildren {
+  KeuanganBillingIndexRoute: typeof KeuanganBillingIndexRoute
+  KeuanganBillingHistoryPeriodeRoute: typeof KeuanganBillingHistoryPeriodeRoute
+  KeuanganBillingHistoryIndexRoute: typeof KeuanganBillingHistoryIndexRoute
+}
+
+const KeuanganBillingRouteChildren: KeuanganBillingRouteChildren = {
+  KeuanganBillingIndexRoute: KeuanganBillingIndexRoute,
+  KeuanganBillingHistoryPeriodeRoute: KeuanganBillingHistoryPeriodeRoute,
+  KeuanganBillingHistoryIndexRoute: KeuanganBillingHistoryIndexRoute,
+}
+
+const KeuanganBillingRouteWithChildren = KeuanganBillingRoute._addFileChildren(
+  KeuanganBillingRouteChildren,
+)
+
+interface KeuanganKasRouteChildren {
+  KeuanganKasMutasiRoute: typeof KeuanganKasMutasiRoute
+  KeuanganKasRekonsiliasiRoute: typeof KeuanganKasRekonsiliasiRoute
+  KeuanganKasIndexRoute: typeof KeuanganKasIndexRoute
+}
+
+const KeuanganKasRouteChildren: KeuanganKasRouteChildren = {
+  KeuanganKasMutasiRoute: KeuanganKasMutasiRoute,
+  KeuanganKasRekonsiliasiRoute: KeuanganKasRekonsiliasiRoute,
+  KeuanganKasIndexRoute: KeuanganKasIndexRoute,
+}
+
+const KeuanganKasRouteWithChildren = KeuanganKasRoute._addFileChildren(
+  KeuanganKasRouteChildren,
+)
+
+interface KeuanganPembayaranRouteChildren {
+  KeuanganPembayaranHistoryRoute: typeof KeuanganPembayaranHistoryRoute
+  KeuanganPembayaranIndexRoute: typeof KeuanganPembayaranIndexRoute
+}
+
+const KeuanganPembayaranRouteChildren: KeuanganPembayaranRouteChildren = {
+  KeuanganPembayaranHistoryRoute: KeuanganPembayaranHistoryRoute,
+  KeuanganPembayaranIndexRoute: KeuanganPembayaranIndexRoute,
+}
+
+const KeuanganPembayaranRouteWithChildren =
+  KeuanganPembayaranRoute._addFileChildren(KeuanganPembayaranRouteChildren)
+
+interface KeuanganTabunganRouteChildren {
+  KeuanganTabunganTabunganIdRoute: typeof KeuanganTabunganTabunganIdRoute
+  KeuanganTabunganIndexRoute: typeof KeuanganTabunganIndexRoute
+}
+
+const KeuanganTabunganRouteChildren: KeuanganTabunganRouteChildren = {
+  KeuanganTabunganTabunganIdRoute: KeuanganTabunganTabunganIdRoute,
+  KeuanganTabunganIndexRoute: KeuanganTabunganIndexRoute,
+}
+
+const KeuanganTabunganRouteWithChildren =
+  KeuanganTabunganRoute._addFileChildren(KeuanganTabunganRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
-  KeuanganBillingRoute: KeuanganBillingRoute,
-  KeuanganPembayaranRoute: KeuanganPembayaranRoute,
-  KeuanganTabunganRoute: KeuanganTabunganRoute,
+  KeuanganBillingRoute: KeuanganBillingRouteWithChildren,
+  KeuanganKasRoute: KeuanganKasRouteWithChildren,
+  KeuanganPembayaranRoute: KeuanganPembayaranRouteWithChildren,
+  KeuanganTabunganRoute: KeuanganTabunganRouteWithChildren,
   MasterDiskonRoute: MasterDiskonRoute,
   MasterJenisPembayaranRoute: MasterJenisPembayaranRoute,
   MasterJenjangRoute: MasterJenjangRoute,
@@ -328,8 +553,6 @@ const rootRouteChildren: RootRouteChildren = {
   MasterTahunAjaranRoute: MasterTahunAjaranRoute,
   SiswaProgresiRoute: SiswaProgresiRoute,
   SiswaIndexRoute: SiswaIndexRoute,
-  KeuanganKasRekonsiliasiRoute: KeuanganKasRekonsiliasiRoute,
-  KeuanganKasIndexRoute: KeuanganKasIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -73,6 +73,14 @@ export function JenisPembayaranTable({ onEdit }: { onEdit?: (item: any) => void 
                                             <span className="text-xs text-slate-500 font-medium italic">
                                                 {item.tipe.toLowerCase()}
                                             </span>
+                                            {item.pemicu && item.pemicu !== 'MANUAL' && (
+                                                <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold border mt-0.5 ${item.pemicu === 'OTOMATIS_SISWA_BARU'
+                                                    ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                                    : 'bg-orange-50 text-orange-700 border-orange-200'
+                                                    }`}>
+                                                    Trigger: {item.pemicu === 'OTOMATIS_SISWA_BARU' ? 'Siswa Baru' : 'Awal Tahun'}
+                                                </span>
+                                            )}
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">

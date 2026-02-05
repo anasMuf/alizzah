@@ -23,6 +23,12 @@ export const SifatPembayaranSchema = z.enum(['WAJIB', 'OPSIONAL']);
 
 export const TipePotonganSchema = z.enum(['PERSENTASE', 'NOMINAL']);
 
+export const PemicuTagihanSchema = z.enum([
+    'MANUAL',
+    'OTOMATIS_SISWA_BARU',
+    'OTOMATIS_AWAL_TAHUN',
+]);
+
 // Jenis Pembayaran
 export const createJenisPembayaranSchema = z.object({
     kode: z.string().min(1).max(20),
@@ -35,6 +41,7 @@ export const createJenisPembayaranSchema = z.object({
     jatuhTempoHari: z.number().int().min(1).max(31).default(1),
     keterangan: z.string().optional(),
     isAktif: z.boolean(),
+    pemicu: PemicuTagihanSchema.default('MANUAL'),
 });
 
 export const updateJenisPembayaranSchema = createJenisPembayaranSchema.partial();

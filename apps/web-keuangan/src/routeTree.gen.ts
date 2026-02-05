@@ -21,6 +21,8 @@ import { Route as MasterDiskonRouteImport } from './routes/master/diskon'
 import { Route as KeuanganTabunganRouteImport } from './routes/keuangan/tabungan'
 import { Route as KeuanganPembayaranRouteImport } from './routes/keuangan/pembayaran'
 import { Route as KeuanganBillingRouteImport } from './routes/keuangan/billing'
+import { Route as KeuanganKasIndexRouteImport } from './routes/keuangan/kas/index'
+import { Route as KeuanganKasRekonsiliasiRouteImport } from './routes/keuangan/kas/rekonsiliasi'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -82,6 +84,16 @@ const KeuanganBillingRoute = KeuanganBillingRouteImport.update({
   path: '/keuangan/billing',
   getParentRoute: () => rootRouteImport,
 } as any)
+const KeuanganKasIndexRoute = KeuanganKasIndexRouteImport.update({
+  id: '/keuangan/kas/',
+  path: '/keuangan/kas/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KeuanganKasRekonsiliasiRoute = KeuanganKasRekonsiliasiRouteImport.update({
+  id: '/keuangan/kas/rekonsiliasi',
+  path: '/keuangan/kas/rekonsiliasi',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -96,6 +108,8 @@ export interface FileRoutesByFullPath {
   '/master/tahun-ajaran': typeof MasterTahunAjaranRoute
   '/siswa/progresi': typeof SiswaProgresiRoute
   '/siswa/': typeof SiswaIndexRoute
+  '/keuangan/kas/rekonsiliasi': typeof KeuanganKasRekonsiliasiRoute
+  '/keuangan/kas/': typeof KeuanganKasIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -110,6 +124,8 @@ export interface FileRoutesByTo {
   '/master/tahun-ajaran': typeof MasterTahunAjaranRoute
   '/siswa/progresi': typeof SiswaProgresiRoute
   '/siswa': typeof SiswaIndexRoute
+  '/keuangan/kas/rekonsiliasi': typeof KeuanganKasRekonsiliasiRoute
+  '/keuangan/kas': typeof KeuanganKasIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -125,6 +141,8 @@ export interface FileRoutesById {
   '/master/tahun-ajaran': typeof MasterTahunAjaranRoute
   '/siswa/progresi': typeof SiswaProgresiRoute
   '/siswa/': typeof SiswaIndexRoute
+  '/keuangan/kas/rekonsiliasi': typeof KeuanganKasRekonsiliasiRoute
+  '/keuangan/kas/': typeof KeuanganKasIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -141,6 +159,8 @@ export interface FileRouteTypes {
     | '/master/tahun-ajaran'
     | '/siswa/progresi'
     | '/siswa/'
+    | '/keuangan/kas/rekonsiliasi'
+    | '/keuangan/kas/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -155,6 +175,8 @@ export interface FileRouteTypes {
     | '/master/tahun-ajaran'
     | '/siswa/progresi'
     | '/siswa'
+    | '/keuangan/kas/rekonsiliasi'
+    | '/keuangan/kas'
   id:
     | '__root__'
     | '/'
@@ -169,6 +191,8 @@ export interface FileRouteTypes {
     | '/master/tahun-ajaran'
     | '/siswa/progresi'
     | '/siswa/'
+    | '/keuangan/kas/rekonsiliasi'
+    | '/keuangan/kas/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -184,6 +208,8 @@ export interface RootRouteChildren {
   MasterTahunAjaranRoute: typeof MasterTahunAjaranRoute
   SiswaProgresiRoute: typeof SiswaProgresiRoute
   SiswaIndexRoute: typeof SiswaIndexRoute
+  KeuanganKasRekonsiliasiRoute: typeof KeuanganKasRekonsiliasiRoute
+  KeuanganKasIndexRoute: typeof KeuanganKasIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -272,6 +298,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof KeuanganBillingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/keuangan/kas/': {
+      id: '/keuangan/kas/'
+      path: '/keuangan/kas'
+      fullPath: '/keuangan/kas/'
+      preLoaderRoute: typeof KeuanganKasIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/keuangan/kas/rekonsiliasi': {
+      id: '/keuangan/kas/rekonsiliasi'
+      path: '/keuangan/kas/rekonsiliasi'
+      fullPath: '/keuangan/kas/rekonsiliasi'
+      preLoaderRoute: typeof KeuanganKasRekonsiliasiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -288,6 +328,8 @@ const rootRouteChildren: RootRouteChildren = {
   MasterTahunAjaranRoute: MasterTahunAjaranRoute,
   SiswaProgresiRoute: SiswaProgresiRoute,
   SiswaIndexRoute: SiswaIndexRoute,
+  KeuanganKasRekonsiliasiRoute: KeuanganKasRekonsiliasiRoute,
+  KeuanganKasIndexRoute: KeuanganKasIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

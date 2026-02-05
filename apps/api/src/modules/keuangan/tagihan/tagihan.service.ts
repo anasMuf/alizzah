@@ -22,12 +22,11 @@ export class TagihanService {
                 { siswa: { namaLengkap: { contains: search, mode: 'insensitive' } } },
                 { siswa: { nis: { contains: search, mode: 'insensitive' } } },
             ] : undefined,
-            rombelSnapshot: rombelId ? { contains: rombelId } : undefined, // Actually rombelId in query might need to match rombelId of student
+            rombelSnapshot: rombelId ? { contains: rombelId } : undefined,
             periode: periode || undefined,
             status: status || undefined,
         };
 
-        // If rombelId is provided, we might want to filter by the current rombel of the student too
         if (rombelId) {
             where.siswa = { rombelId };
         }
@@ -59,9 +58,6 @@ export class TagihanService {
         };
     }
 
-    /**
-     * Get a summary of all billing runs (grouped by period)
-     */
     static async getSummary() {
         const result = await prisma.tagihan.groupBy({
             by: ['periode'],
@@ -79,7 +75,6 @@ export class TagihanService {
             }
         });
 
-        // Get status breakdown per period
         const periods = result.map(p => p.periode);
         const unpaidCounts = await prisma.tagihan.groupBy({
             by: ['periode'],
@@ -101,10 +96,6 @@ export class TagihanService {
         });
     }
 
-    /**
-     * Core Billing Engine
-     * Generates invoices for a specific period (Month/Year) for selected students.
-     */
     static async generate(data: GenerateTagihanInput) {
         const {
             bulan, tahun,
@@ -117,6 +108,20 @@ export class TagihanService {
         const tanggalTagihan = new Date(tahun, bulan - 1, 1);
         const jatuhTempo = new Date(tahun, bulan - 1, 10);
 
+        // Fetch academic year for this period
+        const currentTA = await prisma.tahunAjaran.findFirst({
+            where: {
+                tanggalMulai: { lte: tanggalTagihan },
+                tanggalSelesai: { gte: tanggalTagihan }
+            }
+        });
+
+        if (!currentTA) throw new Error('Tahun Ajaran tidak ditemukan untuk periode ini.');
+
+        // Start of academic year check
+        const isStartOfAcademicYear = currentTA.tanggalMulai.getMonth() === (bulan - 1) &&
+            currentTA.tanggalMulai.getFullYear() === tahun;
+
         // 1. Fetch Candidates (Jenis Pembayaran)
         const targetJPs = await prisma.jenisPembayaran.findMany({
             where: {
@@ -125,8 +130,13 @@ export class TagihanService {
                     { id: { in: jenisPembayaranIds } },
                     {
                         AND: [
-                            { sifat: 'WAJIB' as any }, // 'WAJIB'
-                            { tipe: { in: ['BULANAN', 'HARIAN'] } }
+                            { sifat: 'WAJIB' as any },
+                            {
+                                OR: [
+                                    { tipe: { in: ['BULANAN', 'HARIAN'] } },
+                                    { pemicu: { in: ['OTOMATIS_SISWA_BARU', 'OTOMATIS_AWAL_TAHUN'] } }
+                                ]
+                            }
                         ]
                     }
                 ]
@@ -152,7 +162,6 @@ export class TagihanService {
 
         if (students.length === 0) throw new Error('Tidak ada siswa aktif yang ditemukan.');
 
-        // Helper: Find Tariff
         const getTarif = (jp: any, rombel: any, gender: any) => {
             const t1 = jp.tarifs.find((t: any) =>
                 t.jenjangId === rombel.jenjangId &&
@@ -172,31 +181,73 @@ export class TagihanService {
         };
 
         const results = await Promise.allSettled(students.map(async (siswa: any) => {
-            const existing = await prisma.tagihan.findUnique({
+            const existingTagihan = await prisma.tagihan.findUnique({
                 where: { siswaId_periode: { siswaId: siswa.id, periode } }
             });
 
-            if (existing) return { status: 'skipped', siswa: siswa.namaLengkap };
+            if (existingTagihan) return { status: 'skipped', siswa: siswa.namaLengkap };
 
             const items: any[] = [];
             let totalTagihan = 0;
             let totalDiskon = 0;
 
-            // --- PROCESS SELECTED / MANDATORY PAYMENT TYPES ---
             for (const jp of targetJPs) {
                 // Check Jenjang Restriction
                 if (jp.jenjangIds.length > 0 && !jp.jenjangIds.includes(siswa.rombel.jenjangId)) {
                     continue;
                 }
 
+                // --- ATTRIBUTE-DRIVEN LOGIC ---
+
+                // A. Initial Education / New Student Logic (BAP etc)
+                if (jp.pemicu === 'OTOMATIS_SISWA_BARU') {
+                    const isEligibleForInitialFee =
+                        siswa.rombel.jenjang.isLevelAwal ||
+                        siswa.rombel.isMutasi ||
+                        siswa.isMutasi ||
+                        (new Date(siswa.tanggalMasuk) >= currentTA.tanggalMulai);
+
+                    if (isEligibleForInitialFee) {
+                        const alreadyBilledOnce = await prisma.tagihanItem.findFirst({
+                            where: { tagihan: { siswaId: siswa.id }, jenisPembayaranId: jp.id }
+                        });
+                        if (alreadyBilledOnce) continue;
+                    } else {
+                        continue;
+                    }
+                }
+
+                // B. Yearly Registration Logic (REG-TAHUNAN etc)
+                if (jp.pemicu === 'OTOMATIS_AWAL_TAHUN') {
+                    const alreadyBilledThisYear = await prisma.tagihanItem.findFirst({
+                        where: {
+                            tagihan: {
+                                siswaId: siswa.id,
+                                periode: {
+                                    gte: currentTA.tanggalMulai.toISOString().substring(0, 7),
+                                    lte: currentTA.tanggalSelesai.toISOString().substring(0, 7)
+                                }
+                            },
+                            jenisPembayaranId: jp.id
+                        }
+                    });
+
+                    if (alreadyBilledThisYear) continue;
+
+                    const isEligibleForYearlyNow =
+                        isStartOfAcademicYear ||
+                        siswa.isMutasi ||
+                        siswa.rombel.isMutasi ||
+                        (new Date(siswa.tanggalMasuk) >= new Date(tahun, bulan - 1, 1));
+
+                    if (!isEligibleForYearlyNow) continue;
+                }
+
                 let nominalAwal = 0;
                 let namaItem = jp.nama;
 
-                // Calculation Logic by Type
                 if (jp.tipe === 'BULANAN') {
                     nominalAwal = getTarif(jp, siswa.rombel, siswa.jenisKelamin);
-
-                    // Special proportional handling for TAB-WJB if it's set as BULANAN
                     if (jp.kode === 'TAB-WJB' && jumlahSenin > 0) {
                         nominalAwal *= jumlahSenin;
                         namaItem = `${jp.nama} (${jumlahSenin} Senin)`;
@@ -208,13 +259,11 @@ export class TagihanService {
                     nominalAwal = tarif * (jumlahHariEfektif || 0);
                     namaItem = `${jp.nama} (${jumlahHariEfektif} Hari)`;
                 } else {
-                    // TAHUNAN / SEKALI / etc (not usually in mass generator, but we take default)
                     nominalAwal = getTarif(jp, siswa.rombel, siswa.jenisKelamin);
                 }
 
                 if (nominalAwal <= 0) continue;
 
-                // Handle Discounts (Generic for any JP if Diskon exists)
                 const activeDiscounts = await DiskonService.getActiveDiscounts(siswa.id, jp.id, tanggalTagihan);
                 let discountAmount = 0;
                 let nominalSetelahDiskon = nominalAwal;
@@ -243,7 +292,6 @@ export class TagihanService {
                 totalDiskon += discountAmount;
             }
 
-            // --- EXTRA: PASTA (Still handled as extra because it's student-specific participation) ---
             if (siswa.siswaPastas.length > 0) {
                 const pastaJp = await prisma.jenisPembayaran.findFirst({
                     where: { kode: 'PASTA', isAktif: true }
@@ -266,6 +314,8 @@ export class TagihanService {
 
             const sisaTagihan = totalTagihan - totalDiskon;
             const kode = `INV/${periode.replace('-', '')}/${siswa.nis}`;
+
+            if (items.length === 0) return { status: 'skipped', siswa: siswa.namaLengkap, reason: 'No items to bill' };
 
             await prisma.tagihan.create({
                 data: {

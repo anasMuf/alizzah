@@ -38,10 +38,11 @@ async function main() {
     ];
 
     for (const level of levels) {
+        const isLevelAwal = level.kode === 'KB';
         await prisma.jenjang.upsert({
             where: { kode: level.kode },
-            update: {},
-            create: level,
+            update: { isLevelAwal },
+            create: { ...level, isLevelAwal },
         });
     }
     console.log('✅ Levels seeded:', levels.length);
@@ -73,6 +74,7 @@ async function main() {
     for (const jenjang of jenjangs) {
         for (let i = 1; i <= 9; i++) {
             const namaRombel = `${jenjang.kelompok}-${i}`; // e.g., Mutiara-1, Intan-2
+            const isMutasi = ['Intan-1', 'Intan-8'].includes(namaRombel);
 
             await prisma.rombel.upsert({
                 where: {
@@ -82,13 +84,16 @@ async function main() {
                         nama: namaRombel
                     }
                 },
-                update: {},
+                update: {
+                    isMutasi
+                },
                 create: {
                     nama: namaRombel,
                     jenjangId: jenjang.id,
                     tahunAjaranId: academicYearId,
                     kapasitas: 25,
-                    waliKelas: `Wali Kelas ${jenjang.kelompok} ${i}`
+                    waliKelas: `Wali Kelas ${jenjang.kelompok} ${i}`,
+                    isMutasi
                 }
             });
             rombelCount++;
@@ -96,31 +101,7 @@ async function main() {
     }
     console.log(`✅ Rombels seeded: ${rombelCount}`);
 
-    // 5. Seed Pos Pengeluaran
-    const posPengeluaranData = [
-        { kode: 'POS-SARPRAS', nama: 'Infaq Sarpras' },
-        { kode: 'POS-APE', nama: 'Infaq APE' },
-        { kode: 'POS-PSIKOTEST', nama: 'Biaya Psikotest IQ' },
-        { kode: 'POS-KOPERASI', nama: 'Koperasi' },
-        { kode: 'POS-MPLS', nama: 'Biaya MPLS' },
-        { kode: 'POS-PK-KARAKTER', nama: 'Buku PK Karakter' },
-        { kode: 'POS-ALAT-BELAJAR', nama: 'Alat Belajar' },
-        { kode: 'POS-IURAN-KEG', nama: 'Iuran Kegiatan Kec/Kab' },
-        { kode: 'POS-ADMIN-LPP', nama: 'Administrasi LPP' },
-        { kode: 'POS-KALENDER', nama: 'Kalender' },
-        { kode: 'POS-GAJI-GURU', nama: 'Gaji Guru' },
-    ];
-
-    for (const pos of posPengeluaranData) {
-        await prisma.posPengeluaran.upsert({
-            where: { kode: pos.kode },
-            update: {},
-            create: pos,
-        });
-    }
-    console.log('✅ Pos Pengeluaran seeded:', posPengeluaranData.length);
-
-    // 5. Seed Jenis Pembayaran
+    // 5. Seed Jenis Pembayaran First (So we can map to Pos Pengeluaran)
     const jenisPembayaranData = [
         {
             kode: 'INF-SPP',
@@ -130,6 +111,7 @@ async function main() {
             nominalDefault: 150000,
             sifat: 'WAJIB' as const,
             jatuhTempoHari: 10,
+            pemicu: 'MANUAL' as const,
         },
         {
             kode: 'INF-HR',
@@ -138,6 +120,7 @@ async function main() {
             tipe: 'HARIAN' as const,
             nominalDefault: 7000,
             sifat: 'WAJIB' as const,
+            pemicu: 'MANUAL' as const,
         },
         {
             kode: 'REG-TAHUNAN',
@@ -146,6 +129,16 @@ async function main() {
             tipe: 'TAHUNAN' as const,
             nominalDefault: 0,
             sifat: 'WAJIB' as const,
+            pemicu: 'OTOMATIS_AWAL_TAHUN' as const,
+        },
+        {
+            kode: 'BAP',
+            nama: 'Biaya Awal Pendidikan (Siswa Baru)',
+            kategori: 'REGISTRASI' as const,
+            tipe: 'SEKALI' as const,
+            nominalDefault: 2410000,
+            sifat: 'WAJIB' as const,
+            pemicu: 'OTOMATIS_SISWA_BARU' as const,
         },
         {
             kode: 'INF-ASLIN',
@@ -154,6 +147,7 @@ async function main() {
             tipe: 'BULANAN' as const,
             nominalDefault: 25000,
             sifat: 'WAJIB' as const,
+            pemicu: 'MANUAL' as const,
         },
         {
             kode: 'TAB-WJB',
@@ -163,6 +157,7 @@ async function main() {
             nominalDefault: 10000,
             sifat: 'WAJIB' as const,
             jenisTabungan: 'WAJIB_BERLIAN' as const,
+            pemicu: 'MANUAL' as const,
         },
         {
             kode: 'INF-CALISAN-KB',
@@ -171,6 +166,7 @@ async function main() {
             tipe: 'BULANAN' as const,
             nominalDefault: 50000,
             sifat: 'WAJIB' as const,
+            pemicu: 'MANUAL' as const,
         },
         {
             kode: 'INF-CALISAN-TK',
@@ -179,6 +175,7 @@ async function main() {
             tipe: 'BULANAN' as const,
             nominalDefault: 50000,
             sifat: 'WAJIB' as const,
+            pemicu: 'MANUAL' as const,
         },
         {
             kode: 'TAB-UMUM',
@@ -188,25 +185,28 @@ async function main() {
             nominalDefault: 0,
             sifat: 'OPSIONAL' as const,
             jenisTabungan: 'UMUM' as const,
+            pemicu: 'MANUAL' as const,
         }
     ];
 
+    const createdJenisPembayaran: Record<string, string> = {};
     for (const jp of jenisPembayaranData) {
         const createdJp = await prisma.jenisPembayaran.upsert({
             where: { kode: jp.kode },
             update: {
                 nominalDefault: jp.nominalDefault,
                 tipe: jp.tipe,
+                pemicu: jp.pemicu,
             },
             create: {
                 ...jp,
-                nominalDefault: jp.nominalDefault,
-                jenjangIds: jp.kode === 'REG-TAHUNAN' ? [jenjangMap['KB'], jenjangMap['TK-A'], jenjangMap['TK-B']] :
+                jenjangIds: jp.kode === 'REG-TAHUNAN' || jp.kode === 'BAP' ? [jenjangMap['KB'], jenjangMap['TK-A'], jenjangMap['TK-B']] :
                     jp.kode === 'INF-ASLIN' || jp.kode === 'TAB-WJB' ? [jenjangMap['TK-B']] :
                         jp.kode === 'INF-CALISAN-TK' ? [jenjangMap['TK-A'], jenjangMap['TK-B']] :
                             jp.kode === 'INF-CALISAN-KB' ? [jenjangMap['KB']] : [],
             },
         });
+        createdJenisPembayaran[jp.kode] = createdJp.id;
 
         // Seed Tariffs for Registrasi Tahunan
         if (jp.kode === 'REG-TAHUNAN') {
@@ -249,7 +249,72 @@ async function main() {
     }
     console.log('✅ Jenis Pembayaran & Tariffs seeded');
 
-    // 6. Seed PASTA (Program Asah Talenta)
+    // 6. Seed Pos Pengeluaran
+    const posPengeluaranData = [
+        { kode: 'POS-SARPRAS', nama: 'Infaq Sarpras', prioritasSumberDanaId: createdJenisPembayaran['BAP'] },
+        { kode: 'POS-APE', nama: 'Infaq APE', prioritasSumberDanaId: createdJenisPembayaran['BAP'] },
+        { kode: 'POS-PSIKOTEST', nama: 'Biaya Psikotest IQ', prioritasSumberDanaId: createdJenisPembayaran['BAP'] },
+        { kode: 'POS-KOPERASI', nama: 'Koperasi', prioritasSumberDanaId: createdJenisPembayaran['BAP'] },
+        { kode: 'POS-MPLS', nama: 'Biaya MPLS', prioritasSumberDanaId: createdJenisPembayaran['REG-TAHUNAN'] },
+        { kode: 'POS-PK-KARAKTER', nama: 'Buku PK Karakter', prioritasSumberDanaId: createdJenisPembayaran['REG-TAHUNAN'] },
+        { kode: 'POS-ALAT-BELAJAR', nama: 'Alat Belajar', prioritasSumberDanaId: createdJenisPembayaran['REG-TAHUNAN'] },
+        { kode: 'POS-IURAN-KEG', nama: 'Iuran Kegiatan Kec/Kab', prioritasSumberDanaId: createdJenisPembayaran['REG-TAHUNAN'] },
+        { kode: 'POS-ADMIN-LPP', nama: 'Administrasi LPP', prioritasSumberDanaId: createdJenisPembayaran['REG-TAHUNAN'] },
+        { kode: 'POS-KALENDER', nama: 'Kalender', prioritasSumberDanaId: createdJenisPembayaran['REG-TAHUNAN'] },
+        { kode: 'POS-GAJI-GURU', nama: 'Gaji Guru', prioritasSumberDanaId: createdJenisPembayaran['INF-SPP'] },
+    ];
+
+    for (const pos of posPengeluaranData) {
+        await prisma.posPengeluaran.upsert({
+            where: { kode: pos.kode },
+            update: { prioritasSumberDanaId: pos.prioritasSumberDanaId },
+            create: pos,
+        });
+    }
+    console.log('✅ Pos Pengeluaran seeded:', posPengeluaranData.length);
+
+    // 7. Seed Kas (Cash Accounts)
+    const kasData = [
+        { tipe: 'KAS' as const, nama: 'Kas Utama', saldo: 5000000 },
+        { tipe: 'BERANGKAS' as const, nama: 'Berangkas', saldo: 10000000 },
+    ];
+
+    for (const kas of kasData) {
+        await prisma.kas.upsert({
+            where: { id: `fixed-kas-${kas.tipe.toLowerCase()}` },
+            update: {},
+            create: {
+                id: `fixed-kas-${kas.tipe.toLowerCase()}`,
+                tipe: kas.tipe,
+                nama: kas.nama,
+                saldo: kas.saldo,
+            },
+        });
+    }
+    console.log('✅ Kas seeded:', kasData.length);
+
+    // 8. Seed Bank
+    const bankData = [
+        { nama: 'Bank Syariah Indonesia', nomorRekening: '1234567890', atasNama: 'PAUD Unggulan Alizzah' },
+        { nama: 'Bank Muamalat', nomorRekening: '0987654321', atasNama: 'PAUD Unggulan Alizzah' },
+    ];
+
+    for (const bank of bankData) {
+        await prisma.bank.upsert({
+            where: { id: `fixed-bank-${bank.nama.toLowerCase().replace(/ /g, '-')}` },
+            update: {},
+            create: {
+                id: `fixed-bank-${bank.nama.toLowerCase().replace(/ /g, '-')}`,
+                nama: bank.nama,
+                nomorRekening: bank.nomorRekening,
+                atasNama: bank.atasNama,
+                isAktif: true,
+            },
+        });
+    }
+    console.log('✅ Bank seeded:', bankData.length);
+
+    // 9. Seed PASTA (Program Asah Talenta)
     const pastaData = [
         { nama: 'Robotika', hari: 'JUMAT' as const, jamMulai: '09:00', jamSelesai: '10:00', biaya: 100000 },
         { nama: 'Sempoa Kids', hari: 'JUMAT' as const, jamMulai: '09:00', jamSelesai: '10:00', biaya: 100000 },
@@ -262,10 +327,8 @@ async function main() {
     ];
 
     for (const pasta of pastaData) {
-        // We use a pseudo-date for Time type in Prisma/Postgres or handle as String if needed.
-        // Prisma @db.Time expects local time or DateTime.
         await prisma.pasta.upsert({
-            where: { id: `fixed-id-${pasta.nama.toLowerCase().replace(/ /g, '-')}` }, // Pseudo upsert check by name or ID
+            where: { id: `fixed-id-${pasta.nama.toLowerCase().replace(/ /g, '-')}` },
             update: { biaya: pasta.biaya },
             create: {
                 id: `fixed-id-${pasta.nama.toLowerCase().replace(/ /g, '-')}`,

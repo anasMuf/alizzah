@@ -10,6 +10,8 @@ import { tagihanRoutes } from './modules/keuangan/tagihan/tagihan.routes';
 import { pembayaranRoutes } from './modules/keuangan/pembayaran/pembayaran.routes';
 import { pastaRoutes } from './modules/keuangan/master/pasta/pasta.routes';
 import { tabunganRoutes } from './modules/keuangan/tabungan/tabungan.routes';
+import { kasRoutes } from './modules/keuangan/kas/kas.routes';
+import { posPengeluaranRoutes } from './modules/keuangan/master/pos-pengeluaran/pos-pengeluaran.routes';
 import { AppError } from './lib/error';
 import { errorResponse } from './lib/response';
 
@@ -39,12 +41,15 @@ const v1 = new Hono()
     .route('/keuangan/master/pasta', pastaRoutes)
     .route('/keuangan/master/jenis-pembayaran', jenisPembayaranRoutes)
     .route('/keuangan/master/diskon', diskonRoutes)
+    .route('/keuangan/master/pos-pengeluaran', posPengeluaranRoutes)
     .route('/keuangan/tagihan', tagihanRoutes)
     .route('/keuangan/pembayaran', pembayaranRoutes)
-    .route('/keuangan/tabungan', tabunganRoutes);
+    .route('/keuangan/tabungan', tabunganRoutes)
+    .route('/keuangan/kas', kasRoutes);
 
 // Mount v1
 app.route('/api/v1', v1);
 
 export default app;
 export type AppType = typeof v1;
+

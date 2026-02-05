@@ -43,6 +43,7 @@ export function RombelForm({ isOpen, onClose, initialData }: RombelFormProps) {
             jenjangId: '',
             tahunAjaranId: '',
             waliKelas: '',
+            isMutasi: false,
         }
     });
 
@@ -55,6 +56,7 @@ export function RombelForm({ isOpen, onClose, initialData }: RombelFormProps) {
                     jenjangId: initialData.jenjangId,
                     tahunAjaranId: initialData.tahunAjaranId,
                     waliKelas: initialData.waliKelas || '',
+                    isMutasi: initialData.isMutasi || false,
                 });
             } else {
                 reset({
@@ -63,6 +65,7 @@ export function RombelForm({ isOpen, onClose, initialData }: RombelFormProps) {
                     jenjangId: '',
                     tahunAjaranId: '', // Ideally default to active academic year
                     waliKelas: '',
+                    isMutasi: false,
                 });
                 // Set default active academic year if available
                 if (tahunAjaranList) {
@@ -187,6 +190,23 @@ export function RombelForm({ isOpen, onClose, initialData }: RombelFormProps) {
                                             className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
                                         />
                                         <p className="text-[11px] text-slate-400">Guru yang bertanggung jawab atas kelas ini.</p>
+                                    </div>
+
+                                    <div className="flex items-center gap-3 p-4 bg-orange-50/50 rounded-xl border border-orange-100">
+                                        <input
+                                            type="checkbox"
+                                            id="isMutasi"
+                                            {...register('isMutasi')}
+                                            className="w-5 h-5 text-orange-600 border-slate-300 rounded focus:ring-orange-500"
+                                        />
+                                        <div className="flex flex-col">
+                                            <label htmlFor="isMutasi" className="text-sm font-bold cursor-pointer text-orange-700">
+                                                Kelas Mutasi (Pindahan)
+                                            </label>
+                                            <p className="text-[11px] text-slate-500">
+                                                Dicentang jika kelas ini ditujukan khusus untuk siswa pindahan/mutasi yang masuk di tengah tahun ajaran.
+                                            </p>
+                                        </div>
                                     </div>
 
                                     {/* Alert Info */}

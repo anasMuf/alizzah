@@ -26,6 +26,7 @@ export const createJenjangSchema = z.object({
     nama: z.string().min(1).max(50),
     kelompok: z.string().min(1),
     urutan: z.number().int().positive(),
+    isLevelAwal: z.boolean().default(false),
 });
 
 export const updateJenjangSchema = createJenjangSchema.partial();
@@ -40,6 +41,7 @@ export const createRombelSchema = z.object({
     jenjangId: z.string().uuid(),
     tahunAjaranId: z.string().uuid(),
     waliKelas: z.string().max(100).optional().nullable(),
+    isMutasi: z.boolean().default(false),
 });
 
 export const updateRombelSchema = createRombelSchema.partial();

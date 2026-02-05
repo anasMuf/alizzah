@@ -77,9 +77,16 @@ export function RombelGrid({ onEdit, tahunAjaranId }: RombelGridProps) {
                                 <div className="bg-blue-600 text-white w-fit min-w-10 px-3 h-10 rounded-xl flex items-center justify-center font-bold shadow-lg shadow-blue-100 text-sm">
                                     {item.jenjang.kode}
                                 </div>
-                                <div className="flex items-center gap-1.5 bg-slate-100 px-2.5 py-1 rounded-lg">
-                                    <Users size={14} className="text-slate-500" />
-                                    <span className="text-xs font-bold text-slate-700">{item.jumlahSiswa}/{item.kapasitas}</span>
+                                <div className="flex flex-col items-end gap-1 text-right">
+                                    <div className="flex items-center gap-1.5 bg-slate-100 px-2.5 py-1 rounded-lg">
+                                        <Users size={14} className="text-slate-500" />
+                                        <span className="text-xs font-bold text-slate-700">{item.jumlahSiswa}/{item.kapasitas}</span>
+                                    </div>
+                                    {item.isMutasi && (
+                                        <span className="bg-orange-100 text-orange-700 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                                            Mutasi
+                                        </span>
+                                    )}
                                 </div>
                             </div>
 

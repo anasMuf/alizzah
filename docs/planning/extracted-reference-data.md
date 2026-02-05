@@ -100,13 +100,13 @@ Dokumen ini berisi data hasil ekstraksi dari gambar referensi di `docs/planning/
 ## 6. Pos Pengeluaran
 *Sumber: contoh pos pengeluaran.png*
 
-**Kategori: Biaya Awal**
+**Kategori: Biaya Awal** <!-- jenis pembayaran -->
 - Infaq Sarpras
 - Infaq APE
 - Biaya Psikotest IQ
 - Koperasi
 
-**Kategori: Biaya Registrasi**
+**Kategori: Biaya Registrasi** <!-- jenis pembayaran -->
 - Biaya MPLS
 - Buku PK Karakter
 - Alat Belajar
@@ -115,5 +115,5 @@ Dokumen ini berisi data hasil ekstraksi dari gambar referensi di `docs/planning/
 - Kalender
 - KOPRASI
 
-**Kategori: SPP**
+**Kategori: SPP** <!-- jenis pembayaran -->
 - GAJI GURU

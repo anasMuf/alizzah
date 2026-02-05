@@ -2,7 +2,7 @@
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { createJenisPembayaranSchema, CreateJenisPembayaranInput, UpdateJenisPembayaranInput, KategoriPembayaranSchema, TipePembayaranSchema, SifatPembayaranSchema } from '@alizzah/validators';
+import { createJenisPembayaranSchema, CreateJenisPembayaranInput, UpdateJenisPembayaranInput, KategoriPembayaranSchema, TipePembayaranSchema, SifatPembayaranSchema, PemicuTagihanSchema } from '@alizzah/validators';
 import { X, Save } from 'lucide-react';
 import { useJenisPembayaranMutations } from '../../hooks/useJenisPembayaranMutations';
 import { useAtomValue } from 'jotai';
@@ -45,6 +45,7 @@ export function JenisPembayaranForm({ isOpen, onClose, initialData }: JenisPemba
             jenjangIds: [],
             isAktif: true,
             keterangan: '',
+            pemicu: 'MANUAL',
         }
     });
 
@@ -65,6 +66,7 @@ export function JenisPembayaranForm({ isOpen, onClose, initialData }: JenisPemba
                     jenjangIds: [],
                     isAktif: true,
                     keterangan: '',
+                    pemicu: 'MANUAL',
                 });
             }
         }
@@ -236,6 +238,29 @@ export function JenisPembayaranForm({ isOpen, onClose, initialData }: JenisPemba
                                         <p className="text-[11px] text-slate-400">Default tanggal 10 setiap bulan.</p>
                                     </div>
 
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-semibold text-slate-700">Pemicu Otomatis <span className="text-red-500">*</span></label>
+                                        <div className="relative">
+                                            <select
+                                                {...register('pemicu')}
+                                                className="w-full px-4 py-2.5 bg-blue-50 border border-blue-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none font-bold text-blue-700"
+                                            >
+                                                {PemicuTagihanSchema.options.map((opt) => (
+                                                    <option key={opt} value={opt}>
+                                                        {opt === 'MANUAL' ? 'Manual (Standard)' :
+                                                            opt === 'OTOMATIS_SISWA_BARU' ? 'Otomatis: Siswa Baru (BAP)' :
+                                                                'Otomatis: Awal Tahun (Reg. Tahunan)'}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-blue-500">
+                                                <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
+                                            </div>
+                                        </div>
+                                        <p className="text-[11px] text-slate-400">Tentukan kapan tagihan ini dibuat secara otomatis oleh sistem.</p>
+                                        {errors.pemicu && <span className="text-xs text-red-500 font-medium">{errors.pemicu.message}</span>}
+                                    </div>
+
                                     <div className="space-y-2 col-span-1 md:col-span-2">
                                         <label className="text-sm font-semibold text-slate-700">Keterangan</label>
                                         <textarea
@@ -297,4 +322,3 @@ export function JenisPembayaranForm({ isOpen, onClose, initialData }: JenisPemba
         </AnimatePresence>
     );
 }
-

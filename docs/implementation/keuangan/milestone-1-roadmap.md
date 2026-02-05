@@ -110,12 +110,22 @@ Sebelum memulai implementasi, pastikan memahami referensi berikut:
 ## 📦 Phase 6: Cash, Vault & Journaling
 **Goal:** Financial oversight of physical and digital funds.
 
-- [ ] **6.1 Multi-Fund Journaling**
-  - [ ] **Backend:** Record movements between `Pos Pengeluaran` (Expense Posts) and `Sumber Dana` (Funding Sources).
-  - [ ] **Validation:** Enforce saldo checks before any cash-out operation.
-- [ ] **6.2 Cash-to-Vault Transfer**
-  - [ ] **Backend:** Double-entry bookkeeping for internal transfers between Kas and Berangkas.
-- [ ] **6.3 Daily Reconciliation**
+- [x] **6.1 Multi-Fund Journaling** ✅
+  - [x] **Backend:** Record movements between `Pos Pengeluaran` (Expense Posts) and `Sumber Dana` (Funding Sources).
+    - Created `KasService` with `kasirMasuk`, `kasirKeluar` operations
+    - Created `PosPengeluaranService` with full CRUD + spending summary
+    - Integrated with payment service via `recordPaymentCash` method
+  - [x] **Validation:** Enforce saldo checks before any cash-out operation.
+    - Balance validation in `kasirKeluar` and `transferKas`
+    - Zod validators: `kasirMasukSchema`, `kasirKeluarSchema`, `transferKasSchema`
+- [x] **6.2 Cash-to-Vault Transfer** ✅
+  - [x] **Backend:** Double-entry bookkeeping for internal transfers between Kas and Berangkas.
+    - `transferKas` creates paired KELUAR/MASUK transactions
+    - Both accounts updated atomically in single transaction
+- [x] **6.3 Daily Reconciliation** ✅
+  - [x] **Backend:** `getDailyReconciliation` and `submitRekonsiliasi` endpoints
+    - Compare system balance vs physical count
+    - Automatic adjustment transactions when discrepancy detected
   - [ ] **Frontend:** Closing form where Kasir must input physical cash count to match system balance.
 
 ---

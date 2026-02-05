@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import * as React from 'react'
 import {
   HeadContent,
@@ -58,6 +59,12 @@ export const Route = createRootRouteWithContext<{
 })
 
 function RootDocument() {
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      void import("react-grab");
+    }
+  }, []);
+
   const { queryClient } = Route.useRouteContext()
   const { auth } = Route.useLoaderData()
 

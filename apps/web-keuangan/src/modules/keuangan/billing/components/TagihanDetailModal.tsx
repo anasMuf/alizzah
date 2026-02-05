@@ -46,7 +46,7 @@ export function TagihanDetailModal({ isOpen, onClose, tagihan }: TagihanDetailMo
                         .grid { display: grid; grid-template-cols: 1fr 1fr; gap: 40px; margin-bottom: 40px; }
                         .section-label { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; }
                         .student-card { display: flex; align-items: center; gap: 12px; }
-                        .student-avatar { width: 48px; height: 48px; background: #f5f3ff; color: #4f46e5; border-radius: 12px; display: flex; items-center; justify-content: center; font-weight: 800; font-size: 20px; border: 1px solid #ddd6fe; }
+                        .student-avatar { width: 48px; height: 48px; background: #f5f3ff; color: #4f46e5; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 20px; border: 1px solid #ddd6fe; }
                         .student-name { font-weight: 800; font-size: 16px; color: #1e293b; }
                         .student-meta { font-size: 11px; color: #64748b; font-family: monospace; text-transform: uppercase; }
                         table { width: 100%; border-collapse: collapse; margin-bottom: 40px; }

@@ -5,6 +5,8 @@ import { tokenAtom } from '~/stores/auth'
 import { Search, Download } from 'lucide-react'
 import { usePembayaranList } from '~/modules/keuangan/pembayaran/hooks/usePembayaranList'
 import { PembayaranHistoryTable } from '~/modules/keuangan/pembayaran/components/PembayaranHistoryTable'
+import { ReceiptModal } from '~/modules/keuangan/pembayaran/components/ReceiptModal'
+import { AnimatePresence } from 'framer-motion'
 
 export const Route = createFileRoute('/keuangan/pembayaran/history')({
     component: PembayaranHistoryPage,
@@ -13,11 +15,28 @@ export const Route = createFileRoute('/keuangan/pembayaran/history')({
 function PembayaranHistoryPage() {
     const token = useAtomValue(tokenAtom)
     const [searchHistory, setSearchHistory] = useState('')
+    const [selectedPembayaran, setSelectedPembayaran] = useState<any | null>(null)
+    const [isModalOpen, setIsModalOpen] = useState(false)
 
     const { data: history, isLoading: loadingHistory } = usePembayaranList(token, { search: searchHistory })
 
+    const handleViewReceipt = (pembayaran: any) => {
+        setSelectedPembayaran(pembayaran)
+        setIsModalOpen(true)
+    }
+
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
+            <AnimatePresence>
+                {isModalOpen && (
+                    <ReceiptModal
+                        isOpen={isModalOpen}
+                        onClose={() => setIsModalOpen(false)}
+                        pembayaran={selectedPembayaran}
+                    />
+                )}
+            </AnimatePresence>
+
             {/* History Filters */}
             <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
                 <div className="relative w-full md:w-96">
@@ -38,7 +57,7 @@ function PembayaranHistoryPage() {
             <PembayaranHistoryTable
                 data={history}
                 isLoading={loadingHistory}
-                onViewReceipt={(p) => console.log('Print', p)}
+                onViewReceipt={handleViewReceipt}
             />
         </div>
     )

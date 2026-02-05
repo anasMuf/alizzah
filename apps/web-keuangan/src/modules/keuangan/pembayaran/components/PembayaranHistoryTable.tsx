@@ -72,6 +72,7 @@ export function PembayaranHistoryTable({ data, isLoading, onViewReceipt }: Pemba
                                             <Printer size={18} />
                                         </button>
                                         <button
+                                            onClick={() => onViewReceipt(item)}
                                             className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all"
                                             title="Detail Alokasi"
                                         >

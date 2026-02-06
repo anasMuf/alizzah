@@ -54,7 +54,8 @@ export function useTunggakanJenjang(token: string | null) {
  * Hook to fetch Daily Rekap for Cashier.
  */
 export function useRekapKasir(token: string | null, tanggal?: Date) {
-    const tanggalStr = tanggal?.toISOString();
+    const isValidDate = tanggal instanceof Date && !isNaN(tanggal.getTime());
+    const tanggalStr = isValidDate ? tanggal.toISOString() : undefined;
     return useQuery({
         queryKey: ['laporan', 'rekap-kasir', tanggalStr],
         queryFn: async () => {

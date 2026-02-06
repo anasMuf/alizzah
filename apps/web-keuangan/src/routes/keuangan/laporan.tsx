@@ -154,8 +154,16 @@ function ReportCard({ title, desc, icon: Icon, onExport, format, hasDate, date, 
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Pilih Tanggal</label>
                     <input
                         type="date"
-                        value={date.toISOString().split('T')[0]}
-                        onChange={(e) => onDateChange(new Date(e.target.value))}
+                        value={date instanceof Date && !isNaN(date.getTime()) ? date.toISOString().split('T')[0] : ''}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            if (val) {
+                                const newDate = new Date(val);
+                                if (!isNaN(newDate.getTime())) {
+                                    onDateChange(newDate);
+                                }
+                            }
+                        }}
                         className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl font-bold focus:outline-none focus:ring-4 focus:ring-blue-100 transition-all"
                     />
                 </div>

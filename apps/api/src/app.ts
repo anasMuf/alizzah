@@ -12,6 +12,7 @@ import { pastaRoutes } from './modules/keuangan/master/pasta/pasta.routes';
 import { tabunganRoutes } from './modules/keuangan/tabungan/tabungan.routes';
 import { kasRoutes } from './modules/keuangan/kas/kas.routes';
 import { posPengeluaranRoutes } from './modules/keuangan/master/pos-pengeluaran/pos-pengeluaran.routes';
+import { laporanRoutes } from './modules/keuangan/laporan/laporan.routes';
 import { AppError } from './lib/error';
 import { errorResponse } from './lib/response';
 
@@ -45,7 +46,8 @@ const v1 = new Hono()
     .route('/keuangan/tagihan', tagihanRoutes)
     .route('/keuangan/pembayaran', pembayaranRoutes)
     .route('/keuangan/tabungan', tabunganRoutes)
-    .route('/keuangan/kas', kasRoutes);
+    .route('/keuangan/kas', kasRoutes)
+    .route('/keuangan/laporan', laporanRoutes);
 
 // Mount v1
 app.route('/api/v1', v1);

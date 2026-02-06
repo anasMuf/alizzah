@@ -20,6 +20,7 @@ import { Route as MasterJenisPembayaranRouteImport } from './routes/master/jenis
 import { Route as MasterDiskonRouteImport } from './routes/master/diskon'
 import { Route as KeuanganTabunganRouteImport } from './routes/keuangan/tabungan'
 import { Route as KeuanganPembayaranRouteImport } from './routes/keuangan/pembayaran'
+import { Route as KeuanganLaporanRouteImport } from './routes/keuangan/laporan'
 import { Route as KeuanganKasRouteImport } from './routes/keuangan/kas'
 import { Route as KeuanganBillingRouteImport } from './routes/keuangan/billing'
 import { Route as KeuanganTabunganIndexRouteImport } from './routes/keuangan/tabungan/index'
@@ -86,6 +87,11 @@ const KeuanganTabunganRoute = KeuanganTabunganRouteImport.update({
 const KeuanganPembayaranRoute = KeuanganPembayaranRouteImport.update({
   id: '/keuangan/pembayaran',
   path: '/keuangan/pembayaran',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KeuanganLaporanRoute = KeuanganLaporanRouteImport.update({
+  id: '/keuangan/laporan',
+  path: '/keuangan/laporan',
   getParentRoute: () => rootRouteImport,
 } as any)
 const KeuanganKasRoute = KeuanganKasRouteImport.update({
@@ -158,6 +164,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/keuangan/billing': typeof KeuanganBillingRouteWithChildren
   '/keuangan/kas': typeof KeuanganKasRouteWithChildren
+  '/keuangan/laporan': typeof KeuanganLaporanRoute
   '/keuangan/pembayaran': typeof KeuanganPembayaranRouteWithChildren
   '/keuangan/tabungan': typeof KeuanganTabunganRouteWithChildren
   '/master/diskon': typeof MasterDiskonRoute
@@ -181,6 +188,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/keuangan/laporan': typeof KeuanganLaporanRoute
   '/master/diskon': typeof MasterDiskonRoute
   '/master/jenis-pembayaran': typeof MasterJenisPembayaranRoute
   '/master/jenjang': typeof MasterJenjangRoute
@@ -205,6 +213,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/keuangan/billing': typeof KeuanganBillingRouteWithChildren
   '/keuangan/kas': typeof KeuanganKasRouteWithChildren
+  '/keuangan/laporan': typeof KeuanganLaporanRoute
   '/keuangan/pembayaran': typeof KeuanganPembayaranRouteWithChildren
   '/keuangan/tabungan': typeof KeuanganTabunganRouteWithChildren
   '/master/diskon': typeof MasterDiskonRoute
@@ -232,6 +241,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/keuangan/billing'
     | '/keuangan/kas'
+    | '/keuangan/laporan'
     | '/keuangan/pembayaran'
     | '/keuangan/tabungan'
     | '/master/diskon'
@@ -255,6 +265,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/keuangan/laporan'
     | '/master/diskon'
     | '/master/jenis-pembayaran'
     | '/master/jenjang'
@@ -278,6 +289,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/keuangan/billing'
     | '/keuangan/kas'
+    | '/keuangan/laporan'
     | '/keuangan/pembayaran'
     | '/keuangan/tabungan'
     | '/master/diskon'
@@ -304,6 +316,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   KeuanganBillingRoute: typeof KeuanganBillingRouteWithChildren
   KeuanganKasRoute: typeof KeuanganKasRouteWithChildren
+  KeuanganLaporanRoute: typeof KeuanganLaporanRoute
   KeuanganPembayaranRoute: typeof KeuanganPembayaranRouteWithChildren
   KeuanganTabunganRoute: typeof KeuanganTabunganRouteWithChildren
   MasterDiskonRoute: typeof MasterDiskonRoute
@@ -392,6 +405,13 @@ declare module '@tanstack/react-router' {
       path: '/keuangan/pembayaran'
       fullPath: '/keuangan/pembayaran'
       preLoaderRoute: typeof KeuanganPembayaranRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/keuangan/laporan': {
+      id: '/keuangan/laporan'
+      path: '/keuangan/laporan'
+      fullPath: '/keuangan/laporan'
+      preLoaderRoute: typeof KeuanganLaporanRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/keuangan/kas': {
@@ -544,6 +564,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   KeuanganBillingRoute: KeuanganBillingRouteWithChildren,
   KeuanganKasRoute: KeuanganKasRouteWithChildren,
+  KeuanganLaporanRoute: KeuanganLaporanRoute,
   KeuanganPembayaranRoute: KeuanganPembayaranRouteWithChildren,
   KeuanganTabunganRoute: KeuanganTabunganRouteWithChildren,
   MasterDiskonRoute: MasterDiskonRoute,

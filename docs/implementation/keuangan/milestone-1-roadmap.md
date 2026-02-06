@@ -126,18 +126,18 @@ Sebelum memulai implementasi, pastikan memahami referensi berikut:
   - [x] **Backend:** `getDailyReconciliation` and `submitRekonsiliasi` endpoints
     - Compare system balance vs physical count
     - Automatic adjustment transactions when discrepancy detected
-  - [ ] **Frontend:** Closing form where Kasir must input physical cash count to match system balance.
+  - [x] **Frontend:** Closing form where Kasir must input physical cash count to match system balance.
 
 ---
 
 ## 📊 Phase 7: Advanced Exports & Analytics
 **Goal:** Management reports and data portability.
 
-- [ ] **7.1 Export Engine**
-  - [ ] **Backend:** Setup `exceljs` and `jspdf` for high-fidelity reports.
-  - [ ] **Standard Reports:** Tunggakan per Kelas, Rekap Harian Kasir, Buku Besar per Pos.
-- [ ] **7.2 Analytics Dashboard**
-  - [ ] **Frontend:** Implementation of `recharts` for visualization of Revenue vs Expenses.
+- [x] **7.1 Export Engine**
+  - [x] **Backend:** Setup `exceljs` and `jspdf` for high-fidelity reports.
+  - [x] **Standard Reports:** Tunggakan per Kelas, Rekap Harian Kasir, Buku Besar per Pos.
+- [x] **7.2 Analytics Dashboard**
+  - [x] **Frontend:** Implementation of `recharts` for visualization of Revenue vs Expenses.
 
 ---
 

@@ -17,8 +17,8 @@
     "generated"
   ],
   "scripts": {
-    "build": "pnpm generate && tsc && cp -r generated dist/",
-    "dev": "mkdir -p dist && pnpm generate && cp -r generated dist/ && tsc -w",
+    "build": "pnpm generate && tsup src/index.ts --format esm --clean --dts",
+    "dev": "pnpm generate && tsup src/index.ts --format esm --watch",
     "generate": "prisma generate",
     "test": "echo \"Error: no test specified\" && exit 1",
     "db:push": "prisma db push",

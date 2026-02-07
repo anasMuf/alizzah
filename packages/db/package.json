@@ -17,7 +17,7 @@
     "generated"
   ],
   "scripts": {
-    "build": "pnpm generate && tsup src/index.ts --format esm --clean --dts",
+    "build": "pnpm generate && tsup src/index.ts --format esm --clean && tsc --emitDeclarationOnly --declaration",
     "dev": "pnpm generate && tsup src/index.ts --format esm --watch",
     "generate": "prisma generate",
     "test": "echo \"Error: no test specified\" && exit 1",

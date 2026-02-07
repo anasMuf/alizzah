@@ -29,7 +29,7 @@ export function TabunganList({ onSelectTabungan }: TabunganListProps) {
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-linear-to-br from-emerald-600 to-teal-700 rounded-[2.5rem] p-8 text-white shadow-xl shadow-emerald-200/50 relative overflow-hidden group">
+                <div className="bg-linear-to-br from-emerald-600 to-teal-700 rounded-[2.5rem] p-5 sm:p-6 md:p-8 text-white shadow-xl shadow-emerald-200/50 relative overflow-hidden group">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 blur-3xl rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700" />
                     <div className="flex items-center justify-between relative z-10">
                         <div className="space-y-2">
@@ -47,7 +47,7 @@ export function TabunganList({ onSelectTabungan }: TabunganListProps) {
                     </div>
                 </div>
 
-                <div className="bg-linear-to-br from-amber-500 to-orange-600 rounded-[2.5rem] p-8 text-white shadow-xl shadow-amber-200/50 relative overflow-hidden group">
+                <div className="bg-linear-to-br from-amber-500 to-orange-600 rounded-[2.5rem] p-5 sm:p-6 md:p-8 text-white shadow-xl shadow-amber-200/50 relative overflow-hidden group">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 blur-3xl rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700" />
                     <div className="flex items-center justify-between relative z-10">
                         <div className="space-y-2">
@@ -69,7 +69,7 @@ export function TabunganList({ onSelectTabungan }: TabunganListProps) {
             {/* Content Card */}
             <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
                 {/* Filters Header */}
-                <div className="p-8 border-b border-slate-100 bg-slate-50/50">
+                <div className="p-5 sm:p-8 border-b border-slate-100 bg-slate-50/50">
                     <div className="flex flex-col md:flex-row gap-4">
                         <div className="flex-1 relative">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
@@ -170,7 +170,7 @@ export function TabunganList({ onSelectTabungan }: TabunganListProps) {
 
                         {/* Pagination Area */}
                         {tabunganData?.meta && tabunganData.meta.totalPages > 1 && (
-                            <div className="p-8 border-t border-slate-100 bg-slate-50/30 flex flex-col md:flex-row items-center justify-between gap-4">
+                            <div className="p-5 sm:p-8 border-t border-slate-100 bg-slate-50/30 flex flex-col md:flex-row items-center justify-between gap-4">
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-white px-4 py-2 rounded-full border border-slate-100 shadow-sm">
                                     Records {((page - 1) * 20) + 1} - {Math.min(page * 20, tabunganData.meta.total)} <span className="text-slate-200 mx-2">/</span> Total {tabunganData.meta.total}
                                 </p>

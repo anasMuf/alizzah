@@ -69,7 +69,7 @@ export function RombelGrid({ onEdit, tahunAjaranId }: RombelGridProps) {
         <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {data.map((item) => (
-                    <div key={item.id} className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-all group relative overflow-hidden flex flex-col justify-between">
+                    <div key={item.id} className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm hover:shadow-md transition-all group relative overflow-hidden flex flex-col justify-between">
 
                         {/* Header */}
                         <div>

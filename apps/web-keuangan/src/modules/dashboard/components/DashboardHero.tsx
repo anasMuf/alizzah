@@ -2,7 +2,7 @@ import { ChevronRight } from 'lucide-react'
 
 export function DashboardHero() {
     return (
-        <div className="bg-white p-8 rounded-[32px] border border-slate-200 shadow-sm relative overflow-hidden group">
+        <div className="bg-white p-5 sm:p-6 md:p-8 rounded-[32px] border border-slate-200 shadow-sm relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/50 rounded-full blur-3xl -mr-20 -mt-20 group-hover:bg-blue-100/50 transition-colors"></div>
             <div className="relative z-10">
                 <h2 className="text-2xl font-bold text-slate-900 mb-2">Kelola Pembayaran SPP</h2>

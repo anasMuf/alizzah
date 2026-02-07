@@ -11,7 +11,7 @@ interface StatCardProps {
 
 export function StatCard({ title, value, trend, trendValue, icon: Icon, color }: StatCardProps) {
     return (
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-white p-4 sm:p-5 md:p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex justify-between items-start mb-4">
                 <div className={`w-12 h-12 rounded-2xl bg-${color}-50 flex items-center justify-center text-${color}-600`}>
                     <Icon size={24} />

@@ -111,7 +111,7 @@ export function BillingGenerator() {
             ) : view === 'history' ? (
                 <div className="max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
                     {/* History Filters */}
-                    <div className="flex flex-wrap items-center gap-4 bg-white p-6 rounded-4xl border border-slate-200">
+                    <div className="flex flex-wrap items-center gap-4 bg-white p-5 sm:p-6 rounded-4xl border border-slate-200">
                         <div className="flex items-center gap-3 mr-4">
                             <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
                                 <Filter size={18} />

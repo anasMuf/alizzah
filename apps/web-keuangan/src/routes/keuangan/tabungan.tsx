@@ -11,16 +11,16 @@ function TabunganLayout() {
     const navigate = useNavigate();
 
     return (
-        <div className="p-8 max-w-[1400px] mx-auto space-y-8 pb-24">
+        <div className="p-0 sm:p-6 md:p-8 max-w-[1400px] mx-auto space-y-6 sm:space-y-8 pb-24">
             {/* Page Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div className="flex items-center gap-4">
-                    <div className="p-4 bg-emerald-100 text-emerald-600 rounded-2xl shadow-sm border border-emerald-200">
-                        <PiggyBank className="h-8 w-8" />
+            <div className="px-4 sm:px-0 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="flex items-center gap-3 sm:gap-4">
+                    <div className="p-3 sm:p-4 bg-emerald-100 text-emerald-600 rounded-2xl sm:rounded-3xl shadow-sm border border-emerald-200">
+                        <PiggyBank className="h-6 w-6 sm:h-8 sm:w-8" />
                     </div>
                     <div>
-                        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Tabungan Siswa</h1>
-                        <p className="text-slate-500 font-medium mt-1">Pengelolaan Dana Simpanan & Tabungan Wajib Siswa.</p>
+                        <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Tabungan Siswa</h1>
+                        <p className="text-sm sm:text-base text-slate-500 font-medium mt-0.5 sm:mt-1">Pengelolaan Dana Simpanan & Tabungan Wajib Siswa.</p>
                     </div>
                 </div>
             </div>

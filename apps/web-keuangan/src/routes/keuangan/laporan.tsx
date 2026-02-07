@@ -65,7 +65,7 @@ function LaporanPage() {
     return (
         <div className="space-y-8">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden relative">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-6 sm:p-8 rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden relative">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-[100px] rounded-full -mr-32 -mt-32" />
                 <div className="relative z-10">
                     <div className="flex items-center gap-3 mb-2">
@@ -134,7 +134,7 @@ function LaporanPage() {
 
 function ReportCard({ title, desc, icon: Icon, onExport, format, hasDate, date, onDateChange }: any) {
     return (
-        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-xl group hover:border-blue-200 transition-all space-y-8">
+        <div className="bg-white p-6 sm:p-8 rounded-[2.5rem] border border-slate-200 shadow-xl group hover:border-blue-200 transition-all space-y-6 sm:space-y-8">
             <div className="flex items-start justify-between">
                 <div className="p-4 bg-slate-50 rounded-2xl text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
                     <Icon size={28} />

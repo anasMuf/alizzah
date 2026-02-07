@@ -115,7 +115,7 @@ export function ReceiptModal({ isOpen, onClose, pembayaran }: ReceiptModalProps)
                             <h3 className="text-lg font-black text-slate-900 uppercase tracking-[0.2em]">Kuitansi Pembayaran</h3>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-10 mb-10">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-10 mb-10">
                             <div className="space-y-4">
                                 <div>
                                     <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">No. Transaksi</div>
@@ -138,47 +138,49 @@ export function ReceiptModal({ isOpen, onClose, pembayaran }: ReceiptModalProps)
                             </div>
                         </div>
 
-                        <table className="w-full mb-10 border-collapse">
-                            <thead>
-                                <tr className="border-b border-slate-200">
-                                    <th className="text-left py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Keterangan Alokasi</th>
-                                    <th className="text-right py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Nominal</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                                {pembayaran.pembayaranAlokasis?.map((alokasi: any) => (
-                                    <tr key={alokasi.id}>
-                                        <td className="py-4">
-                                            <div className="text-xs font-bold text-slate-800">Tagihan Periode {alokasi.tagihan.periode}</div>
-                                            <div className="text-[9px] text-slate-400 font-mono uppercase mb-2">{alokasi.tagihan.kode}</div>
+                        <div className="overflow-x-auto">
+                            <table className="w-full mb-10 border-collapse min-w-[500px] sm:min-w-0">
+                                <thead>
+                                    <tr className="border-b border-slate-200">
+                                        <th className="text-left py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Keterangan Alokasi</th>
+                                        <th className="text-right py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Nominal</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {pembayaran.pembayaranAlokasis?.map((alokasi: any) => (
+                                        <tr key={alokasi.id}>
+                                            <td className="py-4">
+                                                <div className="text-xs font-bold text-slate-800">Tagihan Periode {alokasi.tagihan.periode}</div>
+                                                <div className="text-[9px] text-slate-400 font-mono uppercase mb-2">{alokasi.tagihan.kode}</div>
 
-                                            {/* Detailed Items Breakdown */}
-                                            <div className="space-y-1 ml-2 border-l-2 border-slate-100 pl-3">
-                                                {alokasi.tagihan.tagihanItems?.map((item: any) => (
-                                                    <div key={item.id} className="flex justify-between items-center text-[10px] text-slate-500">
-                                                        <span>• {item.namaItem}</span>
-                                                        <span className="font-medium">{formatCurrency(item.nominalAkhir)}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </td>
-                                        <td className="text-right font-black text-slate-900 text-sm align-top pt-4">
-                                            {formatCurrency(alokasi.nominalAlokasi)}
+                                                {/* Detailed Items Breakdown */}
+                                                <div className="space-y-1 ml-2 border-l-2 border-slate-100 pl-3">
+                                                    {alokasi.tagihan.tagihanItems?.map((item: any) => (
+                                                        <div key={item.id} className="flex justify-between items-center text-[10px] text-slate-500">
+                                                            <span>• {item.namaItem}</span>
+                                                            <span className="font-medium">{formatCurrency(item.nominalAkhir)}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </td>
+                                            <td className="text-right font-black text-slate-900 text-sm align-top pt-4">
+                                                {formatCurrency(alokasi.nominalAlokasi)}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                                <tfoot>
+                                    <tr className="bg-slate-50 border-t-2 border-slate-200">
+                                        <td className="py-5 px-4 text-xs font-black text-slate-900 uppercase">Total Dibayar ({pembayaran.metode})</td>
+                                        <td className="py-5 px-4 text-right text-xl font-black text-blue-600">
+                                            {formatCurrency(pembayaran.totalBayar)}
                                         </td>
                                     </tr>
-                                ))}
-                            </tbody>
-                            <tfoot>
-                                <tr className="bg-slate-50 border-t-2 border-slate-200">
-                                    <td className="py-5 px-4 text-xs font-black text-slate-900 uppercase">Total Dibayar ({pembayaran.metode})</td>
-                                    <td className="py-5 px-4 text-right text-xl font-black text-blue-600">
-                                        {formatCurrency(pembayaran.totalBayar)}
-                                    </td>
-                                </tr>
-                            </tfoot>
-                        </table>
+                                </tfoot>
+                            </table>
+                        </div>
 
-                        <div className="flex justify-between items-start mt-12 mb-6">
+                        <div className="flex flex-col sm:flex-row justify-between items-center sm:items-start gap-12 sm:gap-0 mt-12 mb-6">
                             <div className="text-center w-48">
                                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-16">Penerima (Kasir)</div>
                                 <div className="border-t border-slate-900 pt-2 text-xs font-black uppercase">{pembayaran.kasir.namaLengkap}</div>

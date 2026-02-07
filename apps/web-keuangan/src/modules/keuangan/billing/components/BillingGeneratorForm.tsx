@@ -73,7 +73,7 @@ export function BillingGeneratorForm({
     return (
         <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* Header Section */}
-            <div className="bg-linear-to-br from-slate-900 to-slate-800 p-8 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden">
+            <div className="bg-linear-to-br from-slate-900 to-slate-800 p-6 sm:p-8 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 blur-[100px] rounded-full -mr-32 -mt-32" />
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="space-y-2">
@@ -90,13 +90,13 @@ export function BillingGeneratorForm({
                 {/* Configuration Form */}
                 <div className="lg:col-span-2 space-y-6">
                     {/* Periode Info */}
-                    <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-6">
+                    <div className="bg-white p-6 sm:p-8 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-6">
                         <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
                             <Calendar className="text-blue-600" size={24} />
                             <h2 className="text-xl font-bold text-slate-900">Konfigurasi Periode</h2>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div className="space-y-1">
                                 <label className={labelClass}>Bulan Tagihan</label>
                                 <select {...register('bulan', { valueAsNumber: true })} className={inputClass}>
@@ -111,7 +111,7 @@ export function BillingGeneratorForm({
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-6 pt-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4">
                             <div className="space-y-1">
                                 <label className={labelClass}>
                                     Hari Efektif
@@ -142,7 +142,7 @@ export function BillingGeneratorForm({
 
                 {/* Status & Action */}
                 <div className="space-y-6">
-                    <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-6 flex flex-col items-center text-center">
+                    <div className="bg-white p-6 sm:p-8 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-6 flex flex-col items-center text-center">
                         <div className="p-4 bg-blue-50 text-blue-600 rounded-3xl">
                             <Users size={40} />
                         </div>
@@ -182,7 +182,7 @@ export function BillingGeneratorForm({
                     </div>
 
                     {lastPeriode ? (
-                        <div className="w-full p-8 bg-emerald-50 rounded-[2.5rem] border border-emerald-100 flex flex-col items-center text-center space-y-4 animate-in zoom-in-95 duration-500 shadow-sm transition-all">
+                        <div className="w-full p-6 sm:p-8 bg-emerald-50 rounded-[2.5rem] border border-emerald-100 flex flex-col items-center text-center space-y-4 animate-in zoom-in-95 duration-500 shadow-sm transition-all">
                             <div className="p-3 bg-white rounded-2xl text-emerald-600 shadow-sm border border-emerald-50">
                                 <CheckCircle size={28} />
                             </div>
@@ -208,7 +208,7 @@ export function BillingGeneratorForm({
                     ) : (
                         <button
                             onClick={onViewHistory}
-                            className="w-full p-8 bg-indigo-50/50 rounded-[2.5rem] border border-indigo-100 flex flex-col items-center text-center space-y-3 group hover:bg-indigo-600 hover:border-indigo-600 transition-all active:scale-95 shadow-sm"
+                            className="w-full p-6 sm:p-8 bg-indigo-50/50 rounded-[2.5rem] border border-indigo-100 flex flex-col items-center text-center space-y-3 group hover:bg-indigo-600 hover:border-indigo-600 transition-all active:scale-95 shadow-sm"
                         >
                             <div className="p-3 bg-white rounded-2xl text-indigo-600 group-hover:scale-110 transition-transform">
                                 <Calendar size={24} />

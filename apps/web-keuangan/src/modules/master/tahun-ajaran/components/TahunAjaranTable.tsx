@@ -58,13 +58,13 @@ export function TahunAjaranTable({ onEdit }: TahunAjaranTableProps) {
 
     return (
         <>
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto custom-scrollbar">
                 <table className="min-w-full divide-y divide-slate-200">
                     <thead className="bg-slate-50/50">
                         <tr>
                             <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Nama Periode</th>
-                            <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Tanggal Mulai</th>
-                            <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Tanggal Selesai</th>
+                            <th className="hidden md:table-cell px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Tanggal Mulai</th>
+                            <th className="hidden lg:table-cell px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Tanggal Selesai</th>
                             <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Status</th>
                             <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Aksi</th>
                         </tr>
@@ -74,11 +74,14 @@ export function TahunAjaranTable({ onEdit }: TahunAjaranTableProps) {
                             <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="font-medium text-slate-900">{item.nama}</div>
+                                    <div className="md:hidden text-[10px] text-slate-500 mt-1">
+                                        {new Date(item.tanggalMulai).toLocaleDateString('id-ID')} - {new Date(item.tanggalSelesai).toLocaleDateString('id-ID')}
+                                    </div>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-slate-600 text-sm">
+                                <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap text-slate-600 text-sm">
                                     {new Date(item.tanggalMulai).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-slate-600 text-sm">
+                                <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap text-slate-600 text-sm">
                                     {new Date(item.tanggalSelesai).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
@@ -93,17 +96,17 @@ export function TahunAjaranTable({ onEdit }: TahunAjaranTableProps) {
                                     </span>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                    <div className="flex justify-end gap-2">
+                                    <div className="flex justify-end gap-1 sm:gap-2">
                                         <button
                                             onClick={() => onEdit?.(item)}
-                                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                            className="p-1.5 sm:p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
                                             title="Edit"
                                         >
                                             <Edit2 size={18} />
                                         </button>
                                         <button
                                             onClick={() => setDeleteId(item.id)}
-                                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                            className="p-1.5 sm:p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                                             title="Hapus"
                                         >
                                             <Trash2 size={18} />

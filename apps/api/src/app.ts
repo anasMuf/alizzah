@@ -32,6 +32,10 @@ app.onError((err, c) => {
     return errorResponse(c, 'Terjadi kesalahan internal server', 500);
 });
 
+app.notFound((c) => {
+    return errorResponse(c, `Resource not found: ${c.req.path}`, 404);
+});
+
 import { siswaRoutes } from './modules/core/siswa/siswa.routes';
 
 // Define API v1 routes separately to have a clean AppType

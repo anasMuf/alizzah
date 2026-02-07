@@ -12,7 +12,7 @@ export function Header({ setSidebarOpen }: { setSidebarOpen: (open: boolean) => 
                 <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg">
                     <Menu size={24} />
                 </button>
-                <div className="hidden md:flex items-center gap-2 px-4 py-2.5 bg-slate-100 rounded-xl text-slate-400 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:bg-white focus-within:text-slate-900 transition-all w-80">
+                <div className="hidden md:flex items-center gap-2 px-4 py-2.5 bg-slate-100 rounded-xl text-slate-400 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:bg-white focus-within:text-slate-900 transition-all w-48 lg:w-80">
                     <Search size={18} />
                     <input type="text" placeholder="Cari data, laporan..." className="bg-transparent border-none outline-none text-sm w-full" />
                 </div>

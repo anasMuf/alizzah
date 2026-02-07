@@ -133,7 +133,7 @@ export function SiswaPromotion() {
                         className="grid grid-cols-1 md:grid-cols-2 gap-6"
                     >
                         {/* Source Selection */}
-                        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+                        <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
                             <div className="flex items-center gap-3 mb-2">
                                 <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><Users size={20} /></div>
                                 <h3 className="font-bold text-slate-800">Pilih Rombel Asal</h3>
@@ -158,7 +158,7 @@ export function SiswaPromotion() {
 
                         {/* Action & Target Selection */}
                         <div className="space-y-6">
-                            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+                            <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
                                 <div className="flex items-center gap-3 mb-2">
                                     <div className="p-2 bg-purple-50 text-purple-600 rounded-lg"><TrendingUp size={20} /></div>
                                     <h3 className="font-bold text-slate-800">Jenis Aksi</h3>
@@ -186,7 +186,7 @@ export function SiswaPromotion() {
                                 <motion.div
                                     initial={{ opacity: 0, height: 0 }}
                                     animate={{ opacity: 1, height: 'auto' }}
-                                    className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4 overflow-hidden"
+                                    className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4 overflow-hidden"
                                 >
                                     <div className="flex items-center gap-3 mb-2">
                                         <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><GraduationCap size={20} /></div>
@@ -323,7 +323,7 @@ export function SiswaPromotion() {
                         animate={{ opacity: 1, scale: 1 }}
                         className="max-w-xl mx-auto"
                     >
-                        <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-xl text-center space-y-6">
+                        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xl text-center space-y-6">
                             <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center ${action === 'PROMOTE' ? 'bg-blue-100 text-blue-600' : 'bg-indigo-100 text-indigo-600'}`}>
                                 {action === 'PROMOTE' ? <TrendingUp size={40} /> : <Award size={40} />}
                             </div>

@@ -26,7 +26,7 @@ export function LoginForm() {
     };
 
     return (
-        <div className="w-full max-w-md bg-white rounded-3xl border border-slate-200 p-8 shadow-xl shadow-slate-200/50">
+        <div className="w-full max-w-md bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xl shadow-slate-200/50">
             <div className="mb-8 text-center">
                 <h2 className="text-3xl font-bold text-slate-900 mb-2">Selamat Datang</h2>
                 <p className="text-slate-500">Silakan masuk menggunakan akun administratif Anda.</p>

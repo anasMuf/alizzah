@@ -130,7 +130,7 @@ export function Sidebar({ open, setOpen, isCollapsed, setIsCollapsed }: SidebarP
                         <div className={`mt-6 px-4 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ${isCollapsed ? 'text-center px-0' : ''}`}>
                             {isCollapsed ? '...' : 'Laporan'}
                         </div>
-                        <SidebarItem to="/keuangan/laporan" icon={FilePieChart} isCollapsed={isCollapsed}>Laporan & Analitik</SidebarItem>
+                        <SidebarItem to="/keuangan/laporan" icon={FilePieChart} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Laporan & Analitik</SidebarItem>
                     </nav>
 
                     {/* User Profile Section */}

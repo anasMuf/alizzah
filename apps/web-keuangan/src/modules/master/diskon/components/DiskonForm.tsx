@@ -110,19 +110,19 @@ export function DiskonForm({ isOpen, onClose, initialData }: DiskonFormProps) {
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="relative w-full max-w-xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200"
+                className="relative w-full max-w-xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200 flex flex-col max-h-[90vh]"
             >
                 {/* Header */}
-                <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-indigo-100 text-indigo-600 rounded-2xl">
+                <div className="px-5 sm:px-8 py-4 sm:py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 shrink-0">
+                    <div className="flex items-center gap-3 sm:gap-4">
+                        <div className="p-2.5 sm:p-3 bg-indigo-100 text-indigo-600 rounded-xl sm:rounded-2xl">
                             <Ticket size={24} />
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold text-slate-900">
+                            <h2 className="text-lg sm:text-xl font-bold text-slate-900 leading-tight">
                                 {initialData ? 'Edit Master Diskon' : 'Tambah Master Diskon'}
                             </h2>
-                            <p className="text-xs text-slate-500 font-medium italic">Konfigurasi jenis potongan / beasiswa</p>
+                            <p className="text-[10px] sm:text-xs text-slate-500 font-medium italic">Konfigurasi jenis potongan / beasiswa</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-white hover:shadow-md rounded-full transition-all text-slate-400 hover:text-slate-600">
@@ -130,123 +130,125 @@ export function DiskonForm({ isOpen, onClose, initialData }: DiskonFormProps) {
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit(onSubmit)} className="p-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Info Dasar */}
-                        <div className="space-y-2 md:col-span-2">
-                            <label className={labelClass}>Nama Diskon / Beasiswa</label>
-                            <input
-                                {...register('nama')}
-                                placeholder="Contoh: Beasiswa Yatim, Diskon Saudara Kandung"
-                                className={inputClass}
-                            />
-                            {errors.nama && <p className="text-[10px] font-bold text-rose-500 ml-1">{errors.nama.message as string}</p>}
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className={labelClass}>Kode Diskon</label>
-                            <input
-                                {...register('kode')}
-                                placeholder="BSW-YTM"
-                                className={`${inputClass} font-mono uppercase tracking-wider`}
-                                disabled={!!initialData}
-                            />
-                            {errors.kode && <p className="text-[10px] font-bold text-rose-500 ml-1">{errors.kode.message as string}</p>}
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className={labelClass}>Jenis Pembayaran</label>
-                            <select
-                                {...register('jenisPembayaranId')}
-                                className={inputClass}
-                            >
-                                <option value="">Pilih Jenis Tagihan...</option>
-                                {jenisPembayaranList?.map((jp: any) => (
-                                    <option key={jp.id} value={jp.id}>{jp.nama} ({jp.kode})</option>
-                                ))}
-                            </select>
-                            {errors.jenisPembayaranId && <p className="text-[10px] font-bold text-rose-500 ml-1">Jenis harus dipilih</p>}
-                        </div>
-
-                        {/* Potongan Section */}
-                        <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100 md:col-span-2 space-y-4">
-                            <div className="flex items-center justify-between">
-                                <label className={labelClass}>Tipe & Nilai Potongan</label>
-                                <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
-                                    <button
-                                        type="button"
-                                        onClick={() => setValue('tipePotongan', 'PERSENTASE')}
-                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${tipePotongan === 'PERSENTASE' ? 'bg-orange-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-50'}`}
-                                    >
-                                        <Percent size={12} /> Persen
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setValue('tipePotongan', 'NOMINAL')}
-                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${tipePotongan === 'NOMINAL' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-50'}`}
-                                    >
-                                        <Banknote size={12} /> Nominal
-                                    </button>
-                                </div>
+                <div className="flex-1 overflow-y-auto custom-scrollbar">
+                    <form id="diskon-form" onSubmit={handleSubmit(onSubmit)} className="p-5 sm:p-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Info Dasar */}
+                            <div className="space-y-2 md:col-span-2">
+                                <label className={labelClass}>Nama Diskon / Beasiswa</label>
+                                <input
+                                    {...register('nama')}
+                                    placeholder="Contoh: Beasiswa Yatim, Diskon Saudara Kandung"
+                                    className={inputClass}
+                                />
+                                {errors.nama && <p className="text-[10px] font-bold text-rose-500 ml-1">{errors.nama.message as string}</p>}
                             </div>
 
-                            <div className="relative">
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-                                    {tipePotongan === 'PERSENTASE' ? <Percent size={18} /> : <span className="font-bold text-sm">Rp</span>}
-                                </div>
+                            <div className="space-y-2">
+                                <label className={labelClass}>Kode Diskon</label>
                                 <input
-                                    type="number"
-                                    {...register('nilaiPotongan', { valueAsNumber: true })}
-                                    className={`${inputClass} pl-12 text-lg font-bold`}
-                                    placeholder="0"
+                                    {...register('kode')}
+                                    placeholder="BSW-YTM"
+                                    className={`${inputClass} font-mono uppercase tracking-wider`}
+                                    disabled={!!initialData}
+                                />
+                                {errors.kode && <p className="text-[10px] font-bold text-rose-500 ml-1">{errors.kode.message as string}</p>}
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className={labelClass}>Jenis Pembayaran</label>
+                                <select
+                                    {...register('jenisPembayaranId')}
+                                    className={inputClass}
+                                >
+                                    <option value="">Pilih Jenis Tagihan...</option>
+                                    {jenisPembayaranList?.map((jp: any) => (
+                                        <option key={jp.id} value={jp.id}>{jp.nama} ({jp.kode})</option>
+                                    ))}
+                                </select>
+                                {errors.jenisPembayaranId && <p className="text-[10px] font-bold text-rose-500 ml-1">Jenis harus dipilih</p>}
+                            </div>
+
+                            {/* Potongan Section */}
+                            <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100 md:col-span-2 space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <label className={labelClass}>Tipe & Nilai Potongan</label>
+                                    <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
+                                        <button
+                                            type="button"
+                                            onClick={() => setValue('tipePotongan', 'PERSENTASE')}
+                                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${tipePotongan === 'PERSENTASE' ? 'bg-orange-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-50'}`}
+                                        >
+                                            <Percent size={12} /> Persen
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setValue('tipePotongan', 'NOMINAL')}
+                                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${tipePotongan === 'NOMINAL' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-50'}`}
+                                        >
+                                            <Banknote size={12} /> Nominal
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="relative">
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                                        {tipePotongan === 'PERSENTASE' ? <Percent size={18} /> : <span className="font-bold text-sm">Rp</span>}
+                                    </div>
+                                    <input
+                                        type="number"
+                                        {...register('nilaiPotongan', { valueAsNumber: true })}
+                                        className={`${inputClass} pl-12 text-lg font-bold`}
+                                        placeholder="0"
+                                    />
+                                </div>
+                                {errors.nilaiPotongan && <p className="text-[10px] font-bold text-rose-500 ml-1">{errors.nilaiPotongan.message as string}</p>}
+                            </div>
+
+                            <div className="space-y-2 md:col-span-2">
+                                <label className={labelClass}>Keterangan (Opsional)</label>
+                                <textarea
+                                    {...register('keterangan')}
+                                    rows={2}
+                                    className={`${inputClass} resize-none`}
+                                    placeholder="Catatan tambahan..."
                                 />
                             </div>
-                            {errors.nilaiPotongan && <p className="text-[10px] font-bold text-rose-500 ml-1">{errors.nilaiPotongan.message as string}</p>}
+
+                            <div className="flex items-center gap-3 pt-2">
+                                <input
+                                    type="checkbox"
+                                    id="isAktif"
+                                    {...register('isAktif')}
+                                    className="w-5 h-5 rounded-lg border-slate-300 text-blue-600 focus:ring-blue-500/20"
+                                />
+                                <label htmlFor="isAktif" className="text-sm font-bold text-slate-700 cursor-pointer">Status Aktif</label>
+                            </div>
                         </div>
 
-                        <div className="space-y-2 md:col-span-2">
-                            <label className={labelClass}>Keterangan (Opsional)</label>
-                            <textarea
-                                {...register('keterangan')}
-                                rows={2}
-                                className={`${inputClass} resize-none`}
-                                placeholder="Catatan tambahan..."
-                            />
+                        <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row gap-3">
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="order-2 sm:order-1 flex-1 py-3.5 sm:py-4 border border-slate-200 text-slate-600 font-bold rounded-2xl hover:bg-slate-50 transition-all active:scale-95"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={isSubmitting || createMutation.isPending || updateMutation.isPending}
+                                className="order-1 sm:order-2 flex-2 py-3.5 sm:py-4 bg-slate-900 text-white font-bold rounded-2xl hover:bg-slate-800 transition-all shadow-lg shadow-slate-200 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+                            >
+                                {isSubmitting || createMutation.isPending || updateMutation.isPending ? (
+                                    <Loader2 className="animate-spin" size={20} />
+                                ) : (
+                                    <Save size={20} />
+                                )}
+                                <span>{initialData ? 'Simpan Perubahan' : 'Tambah Diskon'}</span>
+                            </button>
                         </div>
-
-                        <div className="flex items-center gap-3 pt-2">
-                            <input
-                                type="checkbox"
-                                id="isAktif"
-                                {...register('isAktif')}
-                                className="w-5 h-5 rounded-lg border-slate-300 text-blue-600 focus:ring-blue-500/20"
-                            />
-                            <label htmlFor="isAktif" className="text-sm font-bold text-slate-700 cursor-pointer">Status Aktif</label>
-                        </div>
-                    </div>
-
-                    <div className="mt-10 flex gap-3">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="flex-1 py-4 border border-slate-200 text-slate-600 font-bold rounded-2xl hover:bg-slate-50 transition-all active:scale-95"
-                        >
-                            Batal
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={isSubmitting || createMutation.isPending || updateMutation.isPending}
-                            className="flex-2 py-4 bg-slate-900 text-white font-bold rounded-2xl hover:bg-slate-800 transition-all shadow-lg shadow-slate-200 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
-                        >
-                            {isSubmitting || createMutation.isPending || updateMutation.isPending ? (
-                                <Loader2 className="animate-spin" size={20} />
-                            ) : (
-                                <Save size={20} />
-                            )}
-                            <span>{initialData ? 'Simpan Perubahan' : 'Tambah Diskon'}</span>
-                        </button>
-                    </div>
-                </form>
+                    </form>
+                </div>
             </motion.div>
         </div>
     );

@@ -132,7 +132,7 @@ export function TahunAjaranForm({ isOpen, onClose, initialData }: TahunAjaranFor
                                     {errors.nama && <span className="text-xs text-red-500 font-medium">{errors.nama.message}</span>}
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <label className="text-sm font-semibold text-slate-700">Tanggal Mulai <span className="text-red-500">*</span></label>
                                         <input

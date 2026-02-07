@@ -8,7 +8,7 @@ const ACTIONS = [
 
 export function QuickActions() {
     return (
-        <div className="bg-slate-900 rounded-[32px] p-8 text-white relative overflow-hidden">
+        <div className="bg-slate-900 rounded-[32px] p-5 sm:p-6 md:p-8 text-white relative overflow-hidden">
             <div className="absolute bottom-0 right-0 opacity-10 translate-x-4 translate-y-4">
                 <CreditCard size={120} />
             </div>

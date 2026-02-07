@@ -87,14 +87,14 @@ export function AssignDiskonForm({ isOpen, onClose, diskon }: AssignDiskonFormPr
                 className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200 flex flex-col max-h-[90vh]"
             >
                 {/* Header */}
-                <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-indigo-50/30">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-indigo-600 text-white rounded-2xl shadow-lg shadow-indigo-100">
+                <div className="px-5 sm:px-8 py-4 sm:py-6 border-b border-slate-100 flex justify-between items-center bg-indigo-50/30 shrink-0">
+                    <div className="flex items-center gap-3 sm:gap-4">
+                        <div className="p-2.5 sm:p-3 bg-indigo-600 text-white rounded-xl sm:rounded-2xl shadow-lg shadow-indigo-100">
                             <UserCheck size={24} />
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold text-slate-900">Berikan Diskon</h2>
-                            <p className="text-xs text-indigo-600 font-bold tracking-wide uppercase">{diskon?.nama}</p>
+                            <h2 className="text-lg sm:text-xl font-bold text-slate-900 leading-tight">Berikan Diskon</h2>
+                            <p className="text-[10px] sm:text-xs text-indigo-600 font-bold tracking-wide uppercase">{diskon?.nama}</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-white hover:shadow-md rounded-full transition-all text-slate-400">
@@ -102,7 +102,7 @@ export function AssignDiskonForm({ isOpen, onClose, diskon }: AssignDiskonFormPr
                     </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-8">
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-5 sm:p-8">
                     <form id="assign-diskon-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                         {/* Hidden Inputs */}
                         <input type="hidden" {...register('diskonId')} />
@@ -222,12 +222,12 @@ export function AssignDiskonForm({ isOpen, onClose, diskon }: AssignDiskonFormPr
                 </div>
 
                 {/* Footer */}
-                <div className="px-8 py-6 border-t border-slate-100 bg-slate-50">
+                <div className="px-5 sm:px-8 py-4 sm:py-6 border-t border-slate-100 bg-slate-50 shrink-0">
                     <button
                         form="assign-diskon-form"
                         type="submit"
                         disabled={isSubmitting || assignMutation.isPending || !selectedSiswaId}
-                        className="w-full py-4 bg-indigo-600 text-white font-bold rounded-2xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+                        className="w-full py-3.5 sm:py-4 bg-indigo-600 text-white font-bold rounded-2xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 text-sm sm:text-base"
                     >
                         {isSubmitting || assignMutation.isPending ? (
                             <Loader2 className="animate-spin" size={20} />

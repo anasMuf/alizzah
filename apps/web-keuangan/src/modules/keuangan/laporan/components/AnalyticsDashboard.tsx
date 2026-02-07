@@ -75,7 +75,7 @@ export function AnalyticsDashboard({ tunggakanData, rekapData }: AnalyticsDashbo
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Tunggakan Bar Chart */}
-                <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-xl space-y-6">
+                <div className="bg-white p-5 sm:p-8 rounded-[2.5rem] border border-slate-200 shadow-xl space-y-6">
                     <div className="flex justify-between items-center">
                         <h3 className="text-xl font-black text-slate-900 tracking-tight">Tunggakan per Jenjang</h3>
                         <div className="p-2 bg-slate-50 rounded-xl text-slate-400">
@@ -110,7 +110,7 @@ export function AnalyticsDashboard({ tunggakanData, rekapData }: AnalyticsDashbo
                 </div>
 
                 {/* Metode Pembayaran Pie Chart */}
-                <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-xl space-y-6">
+                <div className="bg-white p-5 sm:p-8 rounded-[2.5rem] border border-slate-200 shadow-xl space-y-6">
                     <h3 className="text-xl font-black text-slate-900 tracking-tight">Metode Pembayaran (Hari Ini)</h3>
                     <div className="flex items-center justify-between">
                         <div className="h-[250px] w-1/2">
@@ -169,7 +169,7 @@ function Card({ title, value, icon: Icon, color }: CardProps) {
     };
 
     return (
-        <div className="bg-white p-6 rounded-4xl border border-slate-200 shadow-sm flex items-center justify-between">
+        <div className="bg-white p-4 sm:p-6 rounded-4xl border border-slate-200 shadow-sm flex items-center justify-between">
             <div className="space-y-1">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{title}</p>
                 <p className="text-2xl font-black text-slate-900 tracking-tight">{value}</p>

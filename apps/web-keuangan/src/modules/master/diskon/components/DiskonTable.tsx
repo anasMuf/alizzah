@@ -66,7 +66,7 @@ export function DiskonTable({
     return (
         <>
             <div className="space-y-4">
-                <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto custom-scrollbar">
                     <table className="min-w-full divide-y divide-slate-200">
                         <thead className="bg-slate-50/50">
                             <tr>

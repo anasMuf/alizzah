@@ -16,7 +16,7 @@ const ACTIVITIES: ActivityItem[] = [
 
 export function RecentActivity() {
     return (
-        <div className="bg-white rounded-[32px] p-6 border border-slate-200 shadow-sm">
+        <div className="bg-white rounded-[32px] p-4 sm:p-6 border border-slate-200 shadow-sm">
             <h4 className="font-bold text-slate-900 mb-4 flex items-center justify-between text-sm">
                 Aktivitas Terakhir
                 <Link to="/" className="text-blue-600 text-[11px] font-bold uppercase hover:underline">Lihat Semua</Link>

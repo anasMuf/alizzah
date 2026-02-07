@@ -1,6 +1,6 @@
 import { prisma } from '../../../lib/prisma';
 import { CreatePembayaranInput } from '@alizzah/validators';
-import { Prisma } from '@alizzah/db';
+import { Prisma } from '@prisma/client';
 import { TabunganService } from '../tabungan/tabungan.service';
 
 const { Decimal } = Prisma;

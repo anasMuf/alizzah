@@ -1,6 +1,6 @@
 import { prisma } from '../../../../lib/prisma';
 import { CreateJenjangInput, UpdateJenjangInput } from '@alizzah/validators';
-import { Jenjang } from '@alizzah/db';
+import { Jenjang } from '@prisma/client';
 import { AppError } from '../../../../lib/error';
 
 export class JenjangService {

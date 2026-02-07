@@ -9,7 +9,7 @@ import {
     RekonsiliasiFisikInput,
     TransaksisKasQuery,
 } from '@alizzah/validators';
-import { Prisma, TipeKas, TipeTransaksiKas, PrismaClient } from '@alizzah/db';
+import { Prisma, TipeKas, TipeTransaksiKas, PrismaClient } from '@prisma/client';
 
 const { Decimal } = Prisma;
 

@@ -1,6 +1,6 @@
 import { prisma } from '../../../../lib/prisma';
 import { CreateTahunAjaranInput, UpdateTahunAjaranInput } from '@alizzah/validators';
-import { TahunAjaran } from '@alizzah/db';
+import { TahunAjaran } from '@prisma/client';
 import { AppError } from '../../../../lib/error';
 
 export class TahunAjaranService {

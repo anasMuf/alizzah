@@ -1,7 +1,7 @@
 import { prisma } from '../../../lib/prisma';
 import { AppError } from '../../../lib/error';
 import { SetorTabunganInput, TarikTabunganInput, TABUNGAN_ADMIN_FEE_PERCENT } from '@alizzah/validators';
-import { Prisma, JenisTabungan, PrismaClient } from '@alizzah/db';
+import { Prisma, JenisTabungan, PrismaClient } from '@prisma/client';
 
 const { Decimal } = Prisma;
 

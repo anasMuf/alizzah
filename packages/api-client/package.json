@@ -17,7 +17,7 @@
     "src"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsup src/index.ts --format esm --clean --dts",
     "dev": "tsc -w",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

@@ -5,59 +5,20 @@ on:
     branches: [main]
 
 jobs:
-  # =================================================================================
-  # JOB 1: BUILD FRONTEND (WEB REUANGAN)
-  # =================================================================================
-  build-web:
+  build-and-deploy:
     runs-on: ubuntu-latest
     environment: ANASLABS_VPS
+    
+    # Inject API URL for frontend build globally for this job
+    env:
+      VITE_API_URL: http://${{ secrets.VPS_HOST }}:3001/api/v1
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_USER: ${{ secrets.VPS_USER }}
+      VPS_KEY: ${{ secrets.VPS_KEY }}
+
     steps:
       - uses: actions/checkout@v4
-      
-      - uses: pnpm/action-setup@v3
-        with:
-          version: 9
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Generate Prisma Client (Needed for types)
-        run: pnpm --filter @alizzah/db generate
-
-      - name: Build Web Only
-        env:
-          VITE_API_URL: http://${{ secrets.VPS_HOST }}:3001/api/v1
-        run: pnpm build --filter @alizzah/web-keuangan
-
-      - name: Debug Output Directory
-        run: |
-          echo "Current directory: $(pwd)"
-          ls -R apps/web-keuangan
-          find . -type d \( -name ".output" -o -name "dist" \)
-
-      - name: Upload Web Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: web-build
-          path: |
-            apps/web-keuangan/.output/
-            apps/web-keuangan/dist/
-          retention-days: 1
-
-  # =================================================================================
-  # JOB 2: BUILD BACKEND (API + PACKAGES)
-  # =================================================================================
-  build-api:
-    runs-on: ubuntu-latest
-    environment: ANASLABS_VPS
-    steps:
-      - uses: actions/checkout@v4
-      
       - uses: pnpm/action-setup@v3
         with:
           version: 9
@@ -73,82 +34,52 @@ jobs:
       - name: Generate Prisma Client
         run: pnpm --filter @alizzah/db generate
 
-      # Build API also builds dependencies (db, shared, validators) via turbo
-      - name: Build API
+      - name: Build all packages
         run: |
-          pnpm build --filter @alizzah/api
-          # Also build API Client explicitly as it's not a dependency of API
-          pnpm build --filter @alizzah/api-client
+           pnpm build 
+           # Explicitly build api-client too just heavily make sure
+           pnpm build --filter @alizzah/api-client
 
-      # Prepare artifacts folder structure to make deployment easier
-      - name: Prepare Artifacts
+      # OPTIONAL DEBUG: Check if output folders exist
+      - name: Check Output Folders
         run: |
-          mkdir -p dist-package
-          cp -r apps/api/dist dist-package/api-dist
-          mkdir -p dist-package/packages
-          cp -r packages/db/dist dist-package/packages/db-dist
-          cp -r packages/shared/dist dist-package/packages/shared-dist
-          cp -r packages/validators/dist dist-package/packages/validators-dist
-          cp -r packages/api-client/dist dist-package/packages/api-client-dist
-          cp ecosystem.config.cjs dist-package/
+          echo "Checking Web Output..."
+          ls -F apps/web-keuangan/.output || echo "Web .output not found"
+          ls -F apps/web-keuangan/dist || echo "Web dist not found"
 
-      - name: Upload API Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: api-build
-          path: dist-package/
-          retention-days: 1
-
-  # =================================================================================
-  # JOB 3: DEPLOY (RSYNC + RELOAD)
-  # =================================================================================
-  deploy:
-    needs: [build-web, build-api]
-    runs-on: ubuntu-latest
-    environment: ANASLABS_VPS
-    
-    steps:
-      - name: Download Web Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: web-build
-          path: web-output
-
-      - name: Download API Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: api-build
-          path: api-dist-package
+          echo "Checking API Output..."
+          ls -F apps/api/dist || echo "API dist not found"
 
       - name: Prepare SSH Key
-        env:
-          VPS_KEY: ${{ secrets.VPS_KEY }}
-          VPS_HOST: ${{ secrets.VPS_HOST }}
         run: |
           mkdir -p ~/.ssh
           echo "$VPS_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
 
-      - name: Sync Files to VPS
-        env:
-          VPS_USER: ${{ secrets.VPS_USER }}
-          VPS_HOST: ${{ secrets.VPS_HOST }}
+      - name: Sync Build Artifacts to VPS
         run: |
-          # Sync Web Output
-          rsync -avz --delete ./web-output/ $VPS_USER@$VPS_HOST:~/alizzah/apps/web-keuangan/.output/
+          # Sync Web Output (Try .output first, typical for Vinxi/Nitro)
+          if [ -d "apps/web-keuangan/.output" ]; then
+             rsync -avz --delete ./apps/web-keuangan/.output/ $VPS_USER@$VPS_HOST:~/alizzah/apps/web-keuangan/.output/
+          elif [ -d "apps/web-keuangan/dist" ]; then
+             rsync -avz --delete ./apps/web-keuangan/dist/ $VPS_USER@$VPS_HOST:~/alizzah/apps/web-keuangan/dist/
+          else
+             echo "ERROR: No web build output found!"
+             exit 1
+          fi
           
           # Sync API Dist
-          rsync -avz --delete ./api-dist-package/api-dist/ $VPS_USER@$VPS_HOST:~/alizzah/apps/api/dist/
+          rsync -avz --delete ./apps/api/dist/ $VPS_USER@$VPS_HOST:~/alizzah/apps/api/dist/
           
           # Sync Packages Dist
-          rsync -avz --delete ./api-dist-package/packages/db-dist/ $VPS_USER@$VPS_HOST:~/alizzah/packages/db/dist/
-          rsync -avz --delete ./api-dist-package/packages/shared-dist/ $VPS_USER@$VPS_HOST:~/alizzah/packages/shared/dist/
-          rsync -avz --delete ./api-dist-package/packages/validators-dist/ $VPS_USER@$VPS_HOST:~/alizzah/packages/validators/dist/
-          rsync -avz --delete ./api-dist-package/packages/api-client-dist/ $VPS_USER@$VPS_HOST:~/alizzah/packages/api-client/dist/
+          rsync -avz --delete ./packages/db/dist/ $VPS_USER@$VPS_HOST:~/alizzah/packages/db/dist/
+          rsync -avz --delete ./packages/shared/dist/ $VPS_USER@$VPS_HOST:~/alizzah/packages/shared/dist/
+          rsync -avz --delete ./packages/validators/dist/ $VPS_USER@$VPS_HOST:~/alizzah/packages/validators/dist/
+          rsync -avz --delete ./packages/api-client/dist/ $VPS_USER@$VPS_HOST:~/alizzah/packages/api-client/dist/
           
-          # Sync Config
-          rsync -avz ./api-dist-package/ecosystem.config.cjs $VPS_USER@$VPS_HOST:~/alizzah/
+          # Sync Ecosystem Config
+          rsync -avz ./ecosystem.config.cjs $VPS_USER@$VPS_HOST:~/alizzah/
 
       - name: Reload Application on VPS
         uses: appleboy/ssh-action@v1.0.3
@@ -166,16 +97,16 @@ jobs:
              
              cd ~/alizzah
              
-             # Pull only for package.json updates
+             # Pull latest code
              git fetch origin main
              git reset --hard origin/main
              
-             # Symlinks (Safety Check)
+             # Symlinks
              ln -sf .env apps/api/.env
              ln -sf ../../.env apps/web-keuangan/.env
              ln -sf ../../.env packages/db/.env
 
-             # Install dependencies (only production)
+             # Install Production Deps
              pnpm install --prod --ignore-scripts
              
              # Reload PM2

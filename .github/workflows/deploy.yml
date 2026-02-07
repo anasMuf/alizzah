@@ -70,11 +70,14 @@ jobs:
              exit 1
           fi
           
-          # Sync API Dist
-          rsync -avz --delete ./apps/api/dist/ $VPS_USER@$VPS_HOST:~/alizzah/apps/api/dist/
+          # Sync API Source (API now runs from source via tsx)
+          rsync -avz --delete ./apps/api/src/ $VPS_USER@$VPS_HOST:~/alizzah/apps/api/src/
           
-          # Sync Packages Dist
-          rsync -avz --delete ./packages/db/dist/ $VPS_USER@$VPS_HOST:~/alizzah/packages/db/dist/
+          # Sync Packages Source (db uses source exports)
+          rsync -avz --delete ./packages/db/src/ $VPS_USER@$VPS_HOST:~/alizzah/packages/db/src/
+          rsync -avz --delete ./packages/db/prisma/ $VPS_USER@$VPS_HOST:~/alizzah/packages/db/prisma/
+          
+          # Sync Packages Dist (shared, validators, api-client still use dist)
           rsync -avz --delete ./packages/shared/dist/ $VPS_USER@$VPS_HOST:~/alizzah/packages/shared/dist/
           rsync -avz --delete ./packages/validators/dist/ $VPS_USER@$VPS_HOST:~/alizzah/packages/validators/dist/
           rsync -avz --delete ./packages/api-client/dist/ $VPS_USER@$VPS_HOST:~/alizzah/packages/api-client/dist/
@@ -117,8 +120,11 @@ jobs:
              ln -sf ../../.env apps/web-keuangan/.env 2>/dev/null || true
              ln -sf ../../.env packages/db/.env 2>/dev/null || true
 
-             # Install Production Deps (without running build scripts)
-             pnpm install --prod --ignore-scripts
+             # Install Deps (need devDependencies for prisma generate)
+             pnpm install --ignore-scripts
+             
+             # Generate Prisma Client for VPS (gets correct binary engine for debian)
+             cd packages/db && pnpm generate && cd ../..
              
              # Reload PM2
              pm2 reload ecosystem.config.cjs

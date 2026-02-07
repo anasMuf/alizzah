@@ -2,8 +2,8 @@ module.exports = {
     apps: [
         {
             name: "alizzah-api",
-            script: "apps/api/dist/index.js",
-            interpreter: "node",
+            script: "apps/api/src/index.ts",
+            interpreter: "./node_modules/.bin/tsx",
             env: {
                 NODE_ENV: "production",
                 PORT: 3001,

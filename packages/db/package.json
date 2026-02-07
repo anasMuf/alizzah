@@ -2,13 +2,13 @@
   "name": "@alizzah/db",
   "version": "1.0.0",
   "description": "",
-  "main": "./dist/index.js",
+  "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
     ".": {
-      "require": "./dist/index.js",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
+      "require": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
     }
   },
   "files": [
@@ -16,8 +16,8 @@
     "generated"
   ],
   "scripts": {
-    "build": "pnpm generate && tsup src/index.ts --format cjs --clean",
-    "dev": "pnpm generate && tsup src/index.ts --format cjs --watch",
+    "build": "pnpm generate",
+    "dev": "pnpm generate",
     "generate": "prisma generate",
     "test": "echo \"Error: no test specified\" && exit 1",
     "db:push": "prisma db push",

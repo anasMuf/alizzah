@@ -9,7 +9,6 @@ jobs:
     runs-on: ubuntu-latest
     environment: ANASLABS_VPS
     
-    # Inject API URL for frontend build globally for this job
     env:
       VITE_API_URL: http://${{ secrets.VPS_HOST }}:3001/api/v1
       VPS_HOST: ${{ secrets.VPS_HOST }}
@@ -36,26 +35,21 @@ jobs:
 
       - name: Create .env file for Web Build
         run: |
-          # Vite config points envDir to '../../', so we must create .env in the ROOT workspace
-          # Base URL only, without /api/v1 because client.ts appends it
           echo "VITE_API_URL=http://${{ secrets.VPS_HOST }}:3001" > .env
           cat .env
 
       - name: Build all packages
-        run: |
-           pnpm build 
-           # Explicitly build api-client too just heavily make sure
-           pnpm build --filter @alizzah/api-client
+        run: pnpm build
 
-      # OPTIONAL DEBUG: Check if output folders exist
       - name: Check Output Folders
         run: |
-          echo "Checking Web Output..."
-          ls -F apps/web-keuangan/.output || echo "Web .output not found"
-          ls -F apps/web-keuangan/dist || echo "Web dist not found"
-
-          echo "Checking API Output..."
-          ls -F apps/api/dist || echo "API dist not found"
+          echo "=== Web Output ==="
+          ls -la apps/web-keuangan/.output 2>/dev/null || ls -la apps/web-keuangan/dist 2>/dev/null || echo "No web output found"
+          echo "=== API Output ==="
+          ls -la apps/api/dist || echo "No API dist found"
+          echo "=== DB Package ==="
+          ls -la packages/db/dist || echo "No DB dist found"
+          ls -la packages/db/generated/prisma || echo "No Prisma generated found"
 
       - name: Prepare SSH Key
         run: |
@@ -66,7 +60,7 @@ jobs:
 
       - name: Sync Build Artifacts to VPS
         run: |
-          # Sync Web Output (Try .output first, typical for Vinxi/Nitro)
+          # Sync Web Output
           if [ -d "apps/web-keuangan/.output" ]; then
              rsync -avz --delete ./apps/web-keuangan/.output/ $VPS_USER@$VPS_HOST:~/alizzah/apps/web-keuangan/.output/
           elif [ -d "apps/web-keuangan/dist" ]; then
@@ -85,8 +79,22 @@ jobs:
           rsync -avz --delete ./packages/validators/dist/ $VPS_USER@$VPS_HOST:~/alizzah/packages/validators/dist/
           rsync -avz --delete ./packages/api-client/dist/ $VPS_USER@$VPS_HOST:~/alizzah/packages/api-client/dist/
           
-          # Sync Ecosystem Config
+          # CRITICAL: Sync Prisma Generated Client (required for runtime)
+          rsync -avz --delete ./packages/db/generated/ $VPS_USER@$VPS_HOST:~/alizzah/packages/db/generated/
+          
+          # Sync package.json files (for module resolution)
+          rsync -avz ./packages/db/package.json $VPS_USER@$VPS_HOST:~/alizzah/packages/db/
+          rsync -avz ./packages/shared/package.json $VPS_USER@$VPS_HOST:~/alizzah/packages/shared/
+          rsync -avz ./packages/validators/package.json $VPS_USER@$VPS_HOST:~/alizzah/packages/validators/
+          rsync -avz ./packages/api-client/package.json $VPS_USER@$VPS_HOST:~/alizzah/packages/api-client/
+          rsync -avz ./apps/api/package.json $VPS_USER@$VPS_HOST:~/alizzah/apps/api/
+          rsync -avz ./apps/web-keuangan/package.json $VPS_USER@$VPS_HOST:~/alizzah/apps/web-keuangan/
+          
+          # Sync root config files
           rsync -avz ./ecosystem.config.cjs $VPS_USER@$VPS_HOST:~/alizzah/
+          rsync -avz ./package.json $VPS_USER@$VPS_HOST:~/alizzah/
+          rsync -avz ./pnpm-workspace.yaml $VPS_USER@$VPS_HOST:~/alizzah/
+          rsync -avz ./pnpm-lock.yaml $VPS_USER@$VPS_HOST:~/alizzah/
 
       - name: Reload Application on VPS
         uses: appleboy/ssh-action@v1.0.3
@@ -95,7 +103,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_KEY }}
           script: |
-             # Load NVM (Node Version Manager)
+             # Load NVM
              export NVM_DIR="$HOME/.nvm"
              [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
@@ -104,16 +112,12 @@ jobs:
              
              cd ~/alizzah
              
-             # Pull latest code
-             git fetch origin main
-             git reset --hard origin/main
-             
-             # Symlinks
-             ln -sf .env apps/api/.env
-             ln -sf ../../.env apps/web-keuangan/.env
-             ln -sf ../../.env packages/db/.env
+             # Create .env symlinks if not exist
+             ln -sf ../../.env apps/api/.env 2>/dev/null || true
+             ln -sf ../../.env apps/web-keuangan/.env 2>/dev/null || true
+             ln -sf ../../.env packages/db/.env 2>/dev/null || true
 
-             # Install Production Deps
+             # Install Production Deps (without running build scripts)
              pnpm install --prod --ignore-scripts
              
              # Reload PM2

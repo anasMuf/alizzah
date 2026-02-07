@@ -190,7 +190,7 @@ export class LaporanService {
     /**
      * EXPORT: Excel for Tunggakan
      */
-    async exportTunggakanExcel(data: any) {
+    async exportTunggakanExcel(data: any): Promise<Buffer> {
         const workbook = new ExcelJS.Workbook();
         const sheet = workbook.addWorksheet('Laporan Tunggakan');
 
@@ -218,7 +218,7 @@ export class LaporanService {
         // Format currency column
         sheet.getColumn('total').numFmt = '#,##0';
 
-        return await workbook.xlsx.writeBuffer();
+        return (await workbook.xlsx.writeBuffer()) as unknown as Buffer;
     }
 
     /**

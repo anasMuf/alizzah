@@ -36,8 +36,9 @@ jobs:
 
       - name: Create .env file for Web Build
         run: |
-          echo "VITE_API_URL=http://${{ secrets.VPS_HOST }}:3001/api/v1" > apps/web-keuangan/.env
-          cat apps/web-keuangan/.env
+          # Vite config points envDir to '../../', so we must create .env in the ROOT workspace
+          echo "VITE_API_URL=http://${{ secrets.VPS_HOST }}:3001/api/v1" > .env
+          cat .env
 
       - name: Build all packages
         run: |

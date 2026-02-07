@@ -34,6 +34,11 @@ jobs:
       - name: Generate Prisma Client
         run: pnpm --filter @alizzah/db generate
 
+      - name: Create .env file for Web Build
+        run: |
+          echo "VITE_API_URL=http://${{ secrets.VPS_HOST }}:3001/api/v1" > apps/web-keuangan/.env
+          cat apps/web-keuangan/.env
+
       - name: Build all packages
         run: |
            pnpm build 

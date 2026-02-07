@@ -12,6 +12,7 @@
     "@alizzah/db": "workspace:^",
     "@alizzah/shared": "workspace:^",
     "@alizzah/validators": "workspace:^",
+    "@prisma/client": "^5.22.0",
     "@hono/node-server": "^1.19.9",
     "@hono/zod-validator": "^0.7.6",
     "@types/bcryptjs": "^3.0.0",

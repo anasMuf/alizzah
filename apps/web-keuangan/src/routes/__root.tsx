@@ -73,6 +73,11 @@ function RootDocument() {
       <QueryClientProvider client={queryClient}>
         <html lang="id">
           <head>
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `window.API_URL = "${import.meta.env.VITE_API_URL || 'http://localhost:3001'}"`,
+              }}
+            />
             <HeadContent />
           </head>
           <body className="bg-[#F8FAFC] text-slate-900 font-['Plus_Jakarta_Sans',sans-serif] min-h-screen">

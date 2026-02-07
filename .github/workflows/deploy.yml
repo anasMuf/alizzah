@@ -1,0 +1,86 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_USER: ${{ secrets.VPS_USER }}
+      VPS_KEY: ${{ secrets.VPS_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm --filter @alizzah/db generate
+
+      - name: Build all packages
+        run: pnpm build
+
+      - name: Prepare SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "$VPS_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Sync Build Artifacts to VPS
+        run: |
+          # Sync Web Output
+          rsync -avz --delete ./apps/web-keuangan/.output/ $VPS_USER@$VPS_HOST:~/alizzah/apps/web-keuangan/.output/
+          
+          # Sync API Dist
+          rsync -avz --delete ./apps/api/dist/ $VPS_USER@$VPS_HOST:~/alizzah/apps/api/dist/
+          
+          # Sync Packages Dist
+          rsync -avz --delete ./packages/db/dist/ $VPS_USER@$VPS_HOST:~/alizzah/packages/db/dist/
+          rsync -avz --delete ./packages/shared/dist/ $VPS_USER@$VPS_HOST:~/alizzah/packages/shared/dist/
+          rsync -avz --delete ./packages/validators/dist/ $VPS_USER@$VPS_HOST:~/alizzah/packages/validators/dist/
+          rsync -avz --delete ./packages/api-client/dist/ $VPS_USER@$VPS_HOST:~/alizzah/packages/api-client/dist/
+          
+          # Sync Ecosystem Config (just in case)
+          rsync -avz ./ecosystem.config.cjs $VPS_USER@$VPS_HOST:~/alizzah/
+
+      - name: Reload Application on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_KEY }}
+          script: |
+             cd ~/alizzah
+             
+             # Pull latest code (to update package.json etc)
+             # We reset hard to avoid conflicts with local changes, assuming source of truth is GitHub
+             git fetch origin main
+             git reset --hard origin/main
+             
+             # Re-create symlink for env if lost (just to be safe)
+             ln -sf .env apps/api/.env
+             ln -sf ../../.env apps/web-keuangan/.env
+             ln -sf ../../.env packages/db/.env
+
+             # Install Production Dependencies
+             # We ignore scripts to avoid triggering build/prepare scripts which might fail or be heavy
+             pnpm install --prod --ignore-scripts
+             
+             # Reload PM2
+             pm2 reload ecosystem.config.cjs
+             pm2 save

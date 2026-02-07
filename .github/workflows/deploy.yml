@@ -34,11 +34,16 @@ jobs:
           VITE_API_URL: http://${{ secrets.VPS_HOST }}:3001/api/v1
         run: pnpm build --filter @alizzah/web-keuangan
 
+      - name: Debug Output Directory
+        run: ls -Fal apps/web-keuangan
+
       - name: Upload Web Artifact
         uses: actions/upload-artifact@v4
         with:
           name: web-build
-          path: apps/web-keuangan/.output/
+          path: |
+            apps/web-keuangan/.output/
+            apps/web-keuangan/dist/
           retention-days: 1
 
   # =================================================================================

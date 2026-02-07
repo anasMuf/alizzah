@@ -7,6 +7,7 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    environment: ANASLABS_VPS
 
     env:
       VPS_HOST: ${{ secrets.VPS_HOST }}

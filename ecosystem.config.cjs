@@ -3,7 +3,7 @@ module.exports = {
         {
             name: "alizzah-api",
             script: "apps/api/src/index.ts",
-            interpreter: "./node_modules/.bin/tsx",
+            interpreter: "./apps/api/node_modules/.bin/tsx",
             env: {
                 NODE_ENV: "production",
                 PORT: 3001,

@@ -82,9 +82,6 @@ jobs:
           rsync -avz --delete ./packages/validators/dist/ $VPS_USER@$VPS_HOST:~/alizzah/packages/validators/dist/
           rsync -avz --delete ./packages/api-client/dist/ $VPS_USER@$VPS_HOST:~/alizzah/packages/api-client/dist/
           
-          # CRITICAL: Sync Prisma Generated Client (required for runtime)
-          rsync -avz --delete ./packages/db/generated/ $VPS_USER@$VPS_HOST:~/alizzah/packages/db/generated/
-          
           # Sync package.json files (for module resolution)
           rsync -avz ./packages/db/package.json $VPS_USER@$VPS_HOST:~/alizzah/packages/db/
           rsync -avz ./packages/shared/package.json $VPS_USER@$VPS_HOST:~/alizzah/packages/shared/

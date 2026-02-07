@@ -12,8 +12,8 @@
     }
   },
   "files": [
-    "dist",
-    "generated"
+    "src",
+    "prisma"
   ],
   "scripts": {
     "build": "pnpm generate",

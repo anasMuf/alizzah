@@ -35,7 +35,10 @@ jobs:
         run: pnpm build --filter @alizzah/web-keuangan
 
       - name: Debug Output Directory
-        run: ls -Fal apps/web-keuangan
+        run: |
+          echo "Current directory: $(pwd)"
+          ls -R apps/web-keuangan
+          find . -type d \( -name ".output" -o -name "dist" \)
 
       - name: Upload Web Artifact
         uses: actions/upload-artifact@v4

@@ -5,7 +5,7 @@
   "types": "./src/index.ts",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsup src/index.ts --format esm --clean && tsc --emitDeclarationOnly --declaration",
+    "build": "tsup src/index.ts --format esm --clean",
     "start": "node dist/index.js"
   },
   "dependencies": {

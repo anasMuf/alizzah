@@ -65,9 +65,12 @@ jobs:
       - name: Generate Prisma Client
         run: pnpm --filter @alizzah/db generate
 
-      # Build API also builds dependencies (db, shared, validators, api-client) via turbo
+      # Build API also builds dependencies (db, shared, validators) via turbo
       - name: Build API
-        run: pnpm build --filter @alizzah/api
+        run: |
+          pnpm build --filter @alizzah/api
+          # Also build API Client explicitly as it's not a dependency of API
+          pnpm build --filter @alizzah/api-client
 
       # Prepare artifacts folder structure to make deployment easier
       - name: Prepare Artifacts

@@ -30,7 +30,7 @@ export class LaporanService {
         });
 
         // Group by Rombel and Siswa
-        const result = tagihans.reduce((acc: any, tagihan) => {
+        const result = tagihans.reduce((acc: any, tagihan: typeof tagihans[number]) => {
             const rombelName = tagihan.siswa.rombel?.nama || 'Tanpa Rombel';
             const studentId = tagihan.siswa.id;
             const studentName = tagihan.siswa.namaLengkap;
@@ -89,7 +89,7 @@ export class LaporanService {
             }
         });
 
-        const result = tagihans.reduce((acc: any, tagihan) => {
+        const result = tagihans.reduce((acc: any, tagihan: typeof tagihans[number]) => {
             const jenjangName = tagihan.siswa.rombel?.jenjang?.nama || 'Tanpa Jenjang';
             if (!acc[jenjangName]) acc[jenjangName] = 0;
             acc[jenjangName] += Number(tagihan.sisaTagihan);
@@ -125,7 +125,7 @@ export class LaporanService {
         console.log(`[Rekap Kasir] Found ${pembayarans.length} transactions for ${tanggal.toISOString()}`);
 
         // Group by Cashier
-        const rekap = pembayarans.reduce((acc: any, p) => {
+        const rekap = pembayarans.reduce((acc: any, p: typeof pembayarans[number]) => {
             if (!p.kasir) {
                 console.warn(`[Rekap Kasir] Warning: Transaction ${p.kode} has no kasir.`);
                 return acc;

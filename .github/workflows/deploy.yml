@@ -33,6 +33,9 @@ jobs:
         run: pnpm --filter @alizzah/db generate
 
       - name: Build all packages
+        # Inject API URL for frontend build
+        env:
+          VITE_API_URL: http://${{ secrets.VPS_HOST }}:3001/api/v1
         run: pnpm build
 
       - name: Prepare SSH Key

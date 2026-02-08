@@ -14,6 +14,7 @@ import { QueryClientProvider, QueryClient } from '@tanstack/react-query'
 import { Provider as JotaiProvider, useAtomValue, useSetAtom } from 'jotai'
 import { isAuthenticatedAtom, initializeAuthAtom } from '~/stores/auth'
 import { DashboardLayout } from '~/components/layout/DashboardLayout'
+import { CommandPalette } from '~/components/layout/CommandPalette'
 import { fetchAuth } from '~/modules/auth/api/auth.server'
 import appCss from '~/styles/app.css?url'
 
@@ -122,6 +123,7 @@ function AppContent({ initialAuth }: { initialAuth: any }) {
   return isAuthenticated && !isLoginPage ? (
     <DashboardLayout>
       <Outlet />
+      <CommandPalette />
     </DashboardLayout>
   ) : (
     <main className="min-h-screen">

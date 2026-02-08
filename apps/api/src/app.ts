@@ -14,6 +14,7 @@ import { kasRoutes } from './modules/keuangan/kas/kas.routes';
 import { posPengeluaranRoutes } from './modules/keuangan/master/pos-pengeluaran/pos-pengeluaran.routes';
 import { laporanRoutes } from './modules/keuangan/laporan/laporan.routes';
 import { dashboardRoutes } from './modules/keuangan/dashboard/dashboard.routes';
+import { searchRoutes } from './modules/keuangan/search/search.routes';
 import { AppError } from './lib/error';
 import { errorResponse } from './lib/response';
 
@@ -53,7 +54,8 @@ const v1 = new Hono()
     .route('/keuangan/tabungan', tabunganRoutes)
     .route('/keuangan/kas', kasRoutes)
     .route('/keuangan/laporan', laporanRoutes)
-    .route('/keuangan/dashboard', dashboardRoutes);
+    .route('/keuangan/dashboard', dashboardRoutes)
+    .route('/keuangan/search', searchRoutes);
 
 // Mount v1
 app.route('/api/v1', v1);

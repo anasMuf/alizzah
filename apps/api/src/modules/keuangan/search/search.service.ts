@@ -40,7 +40,7 @@ export class SearchService {
         return {
             siswa: siswas.map(s => ({ id: s.id, title: s.namaLengkap, subtitle: `NIS: ${s.nis}`, type: 'SISWA', link: `/keuangan/pembayaran?siswaId=${s.id}` })),
             tagihan: tagihans.map(t => ({ id: t.id, title: t.kode, subtitle: `Periode: ${t.periode}`, type: 'TAGIHAN', link: `/keuangan/billing` })),
-            pembayaran: pembayarans.map(p => ({ id: p.id, title: p.kode, subtitle: `Total: Rp ${p.totalBayar.toNumber().toLocaleString('id-ID')}`, type: 'PEMBAYARAN' }))
+            pembayaran: pembayarans.map(p => ({ id: p.id, title: p.kode, subtitle: `Total: Rp ${Number(p.totalBayar).toLocaleString('id-ID')}`, type: 'PEMBAYARAN' }))
         };
     }
 }

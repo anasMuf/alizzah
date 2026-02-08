@@ -14,25 +14,32 @@ import { kasRoutes } from './modules/keuangan/kas/kas.routes';
 import { posPengeluaranRoutes } from './modules/keuangan/master/pos-pengeluaran/pos-pengeluaran.routes';
 import { laporanRoutes } from './modules/keuangan/laporan/laporan.routes';
 import { dashboardRoutes } from './modules/keuangan/dashboard/dashboard.routes';
-import { searchRoutes } from './modules/keuangan/search/search.routes';
 import { siswaRoutes } from './modules/core/siswa/siswa.routes';
+import { SearchService } from './modules/keuangan/search/search.service';
+import { authMiddleware } from './middleware/auth.middleware';
 import { AppError } from './lib/error';
 import { errorResponse, successResponse } from './lib/response';
 
 const app = new Hono();
 
+// Global Middleware
 app.use('*', logger());
 app.use('*', cors());
 
-// Health Check
+// 1. Root Level Routes
 app.get('/health', (c) => c.text('OK'));
 
-// Define API v1 routes using method chaining for RPC type inference
+// 2. API v1 Router
 const v1 = new Hono()
-    .get('/ping', (c) => successResponse(c, { status: 'OK', version: '2.0.2' }))
+    // Diagnostic
+    .get('/ping', (c) => successResponse(c, { status: 'OK', version: '2.0.3' }))
+
+    // Auth & Core
     .route('/auth', authRoutes)
     .route('/master', masterRoutes)
     .route('/siswa', siswaRoutes)
+
+    // Keuangan
     .route('/keuangan/master/pasta', pastaRoutes)
     .route('/keuangan/master/jenis-pembayaran', jenisPembayaranRoutes)
     .route('/keuangan/master/diskon', diskonRoutes)
@@ -43,12 +50,22 @@ const v1 = new Hono()
     .route('/keuangan/kas', kasRoutes)
     .route('/keuangan/laporan', laporanRoutes)
     .route('/keuangan/dashboard', dashboardRoutes)
-    .route('/keuangan/search', searchRoutes);
 
-// Mount v1
+    // Search (Direct registration to bypass potential module issues)
+    .get('/keuangan/search/global', authMiddleware, async (c) => {
+        try {
+            const query = c.req.query('q') || '';
+            const results = await SearchService.globalSearch(query);
+            return successResponse(c, results);
+        } catch (error: any) {
+            return errorResponse(c, error.message, 500);
+        }
+    });
+
+// 3. Mount v1 to /api/v1
 app.route('/api/v1', v1);
 
-// Error handlers
+// 4. Global Error Catch-all (MUST be at the very bottom)
 app.onError((err, c) => {
     if (err instanceof AppError) {
         return errorResponse(c, err.message, err.statusCode);
@@ -61,7 +78,7 @@ app.onError((err, c) => {
 });
 
 app.notFound((c) => {
-    return errorResponse(c, `Resource not found: ${c.req.path}`, 404);
+    return errorResponse(c, `Opps! Resource not found: ${c.req.path}`, 404);
 });
 
 export default app;

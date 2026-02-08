@@ -1,6 +1,16 @@
 
-import { format } from 'date-fns';
+import { format, formatDistanceToNow as fdn } from 'date-fns';
 import { id } from 'date-fns/locale';
+
+/**
+ * Format Distance to Now (Relative Time)
+ * Example: 5 menit yang lalu
+ */
+export const formatDistanceToNow = (date: Date | string | number | undefined | null): string => {
+    if (!date) return '-';
+    const d = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
+    return fdn(d, { locale: id, addSuffix: true });
+};
 
 /**
  * Format number to IDR Currency

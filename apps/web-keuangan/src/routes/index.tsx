@@ -11,11 +11,19 @@ import { DashboardHero } from '~/modules/dashboard/components/DashboardHero'
 import { QuickActions } from '~/modules/dashboard/components/QuickActions'
 import { RecentActivity } from '~/modules/dashboard/components/RecentActivity'
 
+import { useAtomValue } from 'jotai'
+import { tokenAtom } from '~/stores/auth'
+import { useDashboardStats } from '~/modules/dashboard/hooks/useDashboardQueries'
+import { formatCurrency } from '@alizzah/shared'
+
 export const Route = createFileRoute('/')({
   component: DashboardHome,
 })
 
 function DashboardHome() {
+  const token = useAtomValue(tokenAtom)
+  const { data: stats, isLoading } = useDashboardStats(token)
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* Header Section */}
@@ -39,7 +47,7 @@ function DashboardHome() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Total Penerimaan"
-          value="Rp 128.450.000"
+          value={isLoading ? '...' : formatCurrency(stats?.totalPenerimaan || 0)}
           trend="up"
           trendValue="+12.5%"
           icon={TrendingUp}
@@ -47,7 +55,7 @@ function DashboardHome() {
         />
         <StatCard
           title="Siswa Terdaftar"
-          value="248"
+          value={isLoading ? '...' : String(stats?.totalSiswa || 0)}
           trend="up"
           trendValue="+4.2%"
           icon={Users}
@@ -55,7 +63,7 @@ function DashboardHome() {
         />
         <StatCard
           title="Tunggakan SPP"
-          value="Rp 12.400.000"
+          value={isLoading ? '...' : formatCurrency(stats?.totalTunggakan || 0)}
           trend="down"
           trendValue="-2.4%"
           icon={AlertCircle}
@@ -63,7 +71,7 @@ function DashboardHome() {
         />
         <StatCard
           title="Saldo Kas"
-          value="Rp 45.200.000"
+          value={isLoading ? '...' : formatCurrency(stats?.totalSaldoKas || 0)}
           trend="up"
           trendValue="+0.8%"
           icon={Wallet}

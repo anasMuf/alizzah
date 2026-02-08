@@ -68,7 +68,7 @@ export function CommandPalette() {
                         transition={{ duration: 0.2, ease: "easeOut" }}
                         className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-200"
                     >
-                        <Command className="w-full">
+                        <Command className="w-full" shouldFilter={false}>
                             <div className="flex items-center px-6 py-5 border-b border-slate-100">
                                 <Search className="mr-4 h-5 w-5 text-slate-400" />
                                 <Command.Input
@@ -91,21 +91,24 @@ export function CommandPalette() {
                                     <p className="text-slate-500 font-medium">Tidak ada hasil ditemukan untuk "{search}"</p>
                                 </Command.Empty>
 
-                                {/* Navigation Group */}
-                                <Command.Group heading={<span className="px-2 text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Navigasi Langsung</span>}>
-                                    <PageItem icon={LayoutDashboard} label="Dashboard Utama" onClick={() => runCommand(() => navigate({ to: '/' }))} shortcut="G D" />
-                                    <PageItem icon={CreditCard} label="Pembayaran Siswa" onClick={() => runCommand(() => navigate({ to: '/keuangan/pembayaran' }))} shortcut="G P" />
-                                    <PageItem icon={PiggyBank} label="Tabungan & Setoran" onClick={() => runCommand(() => navigate({ to: '/keuangan/tabungan' }))} />
-                                    <PageItem icon={Wallet} label="Kas & Perbankan" onClick={() => runCommand(() => navigate({ to: '/keuangan/kas' }))} />
-                                    <PageItem icon={BarChart3} label="Laporan & Analitik" onClick={() => runCommand(() => navigate({ to: '/keuangan/laporan' }))} />
-                                    <PageItem icon={Users} label="Master Data Siswa" onClick={() => runCommand(() => navigate({ to: '/siswa' }))} />
-                                </Command.Group>
+                                {/* Static Navigation - Only show when NOT searching */}
+                                {!search && (
+                                    <>
+                                        <Command.Group heading={<span className="px-2 text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Navigasi Langsung</span>}>
+                                            <PageItem icon={LayoutDashboard} label="Dashboard Utama" onClick={() => runCommand(() => navigate({ to: '/' }))} shortcut="G D" />
+                                            <PageItem icon={CreditCard} label="Pembayaran Siswa" onClick={() => runCommand(() => navigate({ to: '/keuangan/pembayaran' }))} shortcut="G P" />
+                                            <PageItem icon={PiggyBank} label="Tabungan & Setoran" onClick={() => runCommand(() => navigate({ to: '/keuangan/tabungan' }))} />
+                                            <PageItem icon={Wallet} label="Kas & Perbankan" onClick={() => runCommand(() => navigate({ to: '/keuangan/kas' }))} />
+                                            <PageItem icon={BarChart3} label="Laporan & Analitik" onClick={() => runCommand(() => navigate({ to: '/keuangan/laporan' }))} />
+                                            <PageItem icon={Users} label="Master Data Siswa" onClick={() => runCommand(() => navigate({ to: '/siswa' }))} />
+                                        </Command.Group>
 
-                                {/* Common Actions */}
-                                <Command.Group heading={<span className="px-2 text-[11px] font-black text-slate-400 uppercase tracking-widest mt-6 mb-3 block">Fungsi Cepat</span>}>
-                                    <ActionItem icon={ArrowRight} label="Generate Tagihan Baru" onClick={() => runCommand(() => navigate({ to: '/keuangan/billing' }))} />
-                                    <ActionItem icon={Settings} label="Pengaturan Sistem" onClick={() => runCommand(() => navigate({ to: '/master/tahun-ajaran' }))} />
-                                </Command.Group>
+                                        <Command.Group heading={<span className="px-2 text-[11px] font-black text-slate-400 uppercase tracking-widest mt-6 mb-3 block">Fungsi Cepat</span>}>
+                                            <ActionItem icon={ArrowRight} label="Generate Tagihan Baru" onClick={() => runCommand(() => navigate({ to: '/keuangan/billing' }))} />
+                                            <ActionItem icon={Settings} label="Pengaturan Sistem" onClick={() => runCommand(() => navigate({ to: '/master/tahun-ajaran' }))} />
+                                        </Command.Group>
+                                    </>
+                                )}
 
                                 {/* Dynamic Results from API */}
                                 {results && (
@@ -160,6 +163,7 @@ function PageItem({ icon: Icon, label, onClick, shortcut }: { icon: any, label: 
     return (
         <Command.Item
             onSelect={onClick}
+            value={label}
             className="flex items-center justify-between px-3 py-3 rounded-2xl cursor-pointer aria-selected:bg-blue-600 aria-selected:text-white group transition-all"
         >
             <div className="flex items-center gap-3">
@@ -181,6 +185,7 @@ function ActionItem({ icon: Icon, label, onClick }: { icon: any, label: string, 
     return (
         <Command.Item
             onSelect={onClick}
+            value={label}
             className="flex items-center gap-3 px-3 py-3 rounded-2xl cursor-pointer aria-selected:bg-slate-900 aria-selected:text-white group transition-all"
         >
             <div className="p-2 bg-slate-100 rounded-xl group-aria-selected:bg-white/20 text-slate-600 group-aria-selected:text-white">
@@ -196,6 +201,7 @@ function DataItem({ icon: Icon, title, subtitle, onClick }: { icon: any, title: 
     return (
         <Command.Item
             onSelect={onClick}
+            value={title}
             className="flex items-center gap-3 px-3 py-3 rounded-2xl cursor-pointer aria-selected:bg-blue-600 aria-selected:text-white group transition-all"
         >
             <div className="p-2 bg-slate-100 rounded-xl group-aria-selected:bg-white/20 text-slate-600 group-aria-selected:text-white">

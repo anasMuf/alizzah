@@ -56,8 +56,8 @@ function DiskonPage() {
                         <Ticket size={24} />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-900">Master Diskon & Beasiswa</h1>
-                        <p className="text-slate-500 text-sm">Kelola potongan harga, dispensasi, dan beasiswa siswa.</p>
+                        <h1 className="text-2xl font-bold text-slate-900">Master Dispensasi Siswa</h1>
+                        <p className="text-slate-500 text-sm">Kelola dispensasi siswa</p>
                     </div>
                 </div>
                 <button
@@ -65,7 +65,7 @@ function DiskonPage() {
                     className="flex items-center justify-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-2xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 font-bold active:scale-95"
                 >
                     <Plus size={20} />
-                    <span>Tambah Master Diskon</span>
+                    <span>Tambah Dispensasi</span>
                 </button>
             </div>
 

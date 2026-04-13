@@ -171,8 +171,8 @@ export function DiskonTable({
                                                 <Ticket size={32} />
                                             </div>
                                             <div>
-                                                <p className="text-slate-900 font-bold">Belum ada data diskon</p>
-                                                <p className="text-xs text-slate-400">Mulai dengan menambahkan jenis diskon/beasiswa baru.</p>
+                                                <p className="text-slate-900 font-bold">Belum ada data dispensasi</p>
+                                                <p className="text-xs text-slate-400">Mulai dengan menambahkan jenis dispensasi baru.</p>
                                             </div>
                                         </div>
                                     </td>

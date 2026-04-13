@@ -117,7 +117,7 @@ export function Sidebar({ open, setOpen, isCollapsed, setIsCollapsed }: SidebarP
                         <SidebarItem to="/master/jenjang" icon={School} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Jenjang</SidebarItem>
                         <SidebarItem to="/master/rombel" icon={Users} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Rombel (Kelas)</SidebarItem>
                         <SidebarItem to="/master/jenis-pembayaran" icon={CreditCard} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Jenis Pembayaran</SidebarItem>
-                        <SidebarItem to="/master/diskon" icon={CreditCard} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Diskon & Beasiswa</SidebarItem>
+                        <SidebarItem to="/master/diskon" icon={CreditCard} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Dispensasi siswa</SidebarItem>
                         <div className={`mt-6 px-4 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ${isCollapsed ? 'text-center px-0' : ''}`}>
                             {isCollapsed ? '...' : 'Keuangan'}
                         </div>

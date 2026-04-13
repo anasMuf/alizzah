@@ -2,9 +2,9 @@
 import path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
-import { PrismaClient, JenisKelamin, StatusSiswa } from '../generated/prisma';
+import { PrismaClient, JenisKelamin, StatusSiswa } from '@prisma/client';
 
-dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+dotenv.config({ path: path.resolve(process.cwd(), '../../.env') });
 
 const prisma = new PrismaClient();
 

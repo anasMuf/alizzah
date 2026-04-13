@@ -42,6 +42,7 @@ export function useBillingList(token: string | null, params: {
     rombelId?: string;
     periode?: string;
     status?: string;
+    pesertaDaycareId?: string;
 }) {
     return useQuery({
         queryKey: ['tagihan', 'list', params],
@@ -55,6 +56,7 @@ export function useBillingList(token: string | null, params: {
             if (params.rombelId) query.rombelId = params.rombelId;
             if (params.periode) query.periode = params.periode;
             if (params.status) query.status = params.status;
+            if (params.pesertaDaycareId) query.pesertaDaycareId = params.pesertaDaycareId;
 
             const res = await (client.keuangan as any).tagihan.$get(
                 { query },
@@ -76,6 +78,7 @@ export function useInfiniteBillingList(token: string | null, params: {
     rombelId?: string;
     periode?: string;
     status?: string;
+    pesertaDaycareId?: string;
 }) {
     return useInfiniteQuery({
         queryKey: ['tagihan', 'list', 'infinite', params],
@@ -89,6 +92,7 @@ export function useInfiniteBillingList(token: string | null, params: {
             if (params.rombelId) query.rombelId = params.rombelId;
             if (params.periode) query.periode = params.periode;
             if (params.status) query.status = params.status;
+            if (params.pesertaDaycareId) query.pesertaDaycareId = params.pesertaDaycareId;
 
             const res = await (client.keuangan as any).tagihan.$get(
                 { query },

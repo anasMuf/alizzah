@@ -36,7 +36,8 @@ tagihanRoutes.get('/', async (c) => {
             search: query.search,
             rombelId: query.rombelId,
             periode: query.periode,
-            status: query.status
+            status: query.status,
+            pesertaDaycareId: query.pesertaDaycareId
         };
 
         const result = await TagihanService.findAll(params);

@@ -2,7 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { client } from '@alizzah/api-client';
 import { APIResponse } from '@alizzah/shared';
-import { Siswa } from '@alizzah/db';
+import { Siswa } from '@alizzah/api-client';
 import { useAtomValue } from 'jotai';
 import { tokenAtom } from '~/stores/auth';
 

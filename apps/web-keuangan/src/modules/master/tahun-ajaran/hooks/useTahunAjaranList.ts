@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { client } from '@alizzah/api-client';
 import { APIResponse } from '@alizzah/shared';
-import { TahunAjaran } from '@alizzah/db';
+import { TahunAjaran } from '@alizzah/api-client';
 
 export function useTahunAjaranList(token: string | null) {
     return useQuery({

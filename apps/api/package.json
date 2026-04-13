@@ -5,11 +5,13 @@
   "types": "./src/index.ts",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsup src/index.ts --format esm --clean --external @prisma/client --external @alizzah/db",
-    "start": "node dist/index.js"
+    "build": "tsup src/index.ts --format esm --clean --external @prisma/client",
+    "start": "node dist/index.js",
+    "generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:seed": "prisma db seed"
   },
   "dependencies": {
-    "@alizzah/db": "workspace:^",
     "@alizzah/shared": "workspace:^",
     "@alizzah/validators": "workspace:^",
     "@prisma/client": "^5.22.0",
@@ -29,6 +31,7 @@
   "devDependencies": {
     "@types/jspdf": "^2.0.0",
     "@types/node": "^20.11.17",
+    "prisma": "^5.22.0",
     "tsup": "^8.5.1",
     "tsx": "^4.7.1",
     "typescript": "^5.8.3"

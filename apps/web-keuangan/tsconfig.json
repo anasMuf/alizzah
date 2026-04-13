@@ -12,9 +12,6 @@
       "~/*": [
         "./src/*"
       ],
-      "@alizzah/db": [
-        "../../packages/db/src"
-      ],
       "@alizzah/api": [
         "../../apps/api/src"
       ],

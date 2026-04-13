@@ -223,10 +223,10 @@ packages:
     "build": "pnpm -r build",
     "build:api": "pnpm --filter @alizzah/api build",
     "build:web": "pnpm --filter @alizzah/web-keuangan build",
-    "db:generate": "pnpm --filter @alizzah/db generate",
-    "db:migrate": "pnpm --filter @alizzah/db migrate",
-    "db:seed": "pnpm --filter @alizzah/db seed",
-    "db:studio": "pnpm --filter @alizzah/db studio",
+    "db:generate": "pnpm --filter @alizzah/api-client generate",
+    "db:migrate": "pnpm --filter @alizzah/api-client migrate",
+    "db:seed": "pnpm --filter @alizzah/api-client seed",
+    "db:studio": "pnpm --filter @alizzah/api-client studio",
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
     "clean": "pnpm -r clean"
@@ -333,6 +333,12 @@ apps/api/
 │   │   │   │   │   └── index.ts
 │   │   │   │   └── pasta/
 │   │   │   │
+│   │   │   ├── daycare/                # 🏠 Daycare module
+│   │   │   │   ├── daycare.routes.ts
+│   │   │   │   ├── daycare.service.ts
+│   │   │   │   ├── daycare.types.ts
+│   │   │   │   └── index.ts
+│   │   │   │
 │   │   │   └── index.ts
 │   │   │
 │   │   ├── ppdb/                       # 📝 PPDB app modules (future)
@@ -420,6 +426,10 @@ v1.route('/keuangan/tabungan', tabunganRoutes)
 v1.route('/keuangan/kas', kasRoutes)
 v1.route('/keuangan/laporan', laporanRoutes)
 v1.route('/keuangan/master', keuanganMasterRoutes) // /keuangan/master/diskon, /pasta
+
+// Daycare module
+import { daycareRoutes } from './modules/keuangan/daycare'
+v1.route('/keuangan/daycare', daycareRoutes)
 
 // ====== PPDB ROUTES (future) ======
 // v1.route('/ppdb/pendaftaran', pendaftaranRoutes)
@@ -556,7 +566,7 @@ export default siswa
 
 ```typescript
 // apps/api/src/services/siswa.service.ts
-import { prisma } from '@alizzah/db'
+import { prisma } from '@alizzah/api-client'
 import { CreateSiswaInput, UpdateSiswaInput } from '@alizzah/validators'
 import { ExcelService } from '../lib/excel'
 
@@ -749,6 +759,15 @@ export class SiswaService {
 | GET | /laporan/kas | Cash report | ✅ |
 | GET | /laporan/*/export | Export any report | ✅ |
 | GET | /laporan/*/print | Print any report | ✅ |
+| **Daycare** |
+| GET | /keuangan/daycare/peserta | List peserta daycare | ✅ |
+| GET | /keuangan/daycare/peserta/:id | Get peserta by ID | ✅ |
+| POST | /keuangan/daycare/peserta | Register peserta daycare | ✅ Admin |
+| PUT | /keuangan/daycare/peserta/:id | Update peserta | ✅ Admin |
+| DELETE | /keuangan/daycare/peserta/:id | Deactivate peserta | ✅ Admin |
+| POST | /keuangan/daycare/tagihan-harian | Create daily daycare invoice | ✅ Admin |
+| GET | /keuangan/daycare/tagihan-harian | List daily daycare invoices | ✅ |
+| GET | /keuangan/daycare/export | Export daycare data | ✅ |
 
 ---
 
@@ -1717,3 +1736,4 @@ pnpm lint
 | Versi | Tanggal | Perubahan | Oleh |
 |-------|---------|-----------|------|
 | 1.0 | 29 Jan 2026 | Dokumen awal | - |
+| 1.1 | 13 Apr 2026 | - Tambah daycare module di folder structure<br>- Tambah daycare route mounting<br>- Tambah 8 daycare API endpoints<br>- URL structure: `/api/v1/keuangan/daycare/*` | - |

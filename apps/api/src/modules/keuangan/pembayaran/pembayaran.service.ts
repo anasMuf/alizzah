@@ -52,8 +52,8 @@ export class PembayaranService {
                 if (!siswa) throw new Error('Siswa tidak ditemukan');
                 if (!siswa.rombel) throw new Error('Siswa belum memiliki Rombel aktif');
 
-                let tagihan = await tx.tagihan.findUnique({
-                    where: { siswaId_periode: { siswaId: input.siswaId, periode } }
+                let tagihan = await tx.tagihan.findFirst({
+                    where: { siswaId: input.siswaId, periode }
                 });
 
                 if (!tagihan) {

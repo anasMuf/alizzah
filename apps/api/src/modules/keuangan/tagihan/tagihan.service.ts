@@ -12,12 +12,14 @@ export class TagihanService {
         rombelId?: string;
         periode?: string;
         status?: string;
+        pesertaDaycareId?: string;
     }) {
-        const { page = 1, limit = 10, search, rombelId, periode, status } = params;
+        const { page = 1, limit = 10, search, rombelId, periode, status, pesertaDaycareId } = params;
         const skip = (page - 1) * limit;
 
         const where: any = {
             periode: periode || undefined,
+            pesertaDaycareId: pesertaDaycareId || undefined,
         };
 
         if (status) {
@@ -34,6 +36,8 @@ export class TagihanService {
                 { kode: { contains: search, mode: 'insensitive' } },
                 { siswa: { namaLengkap: { contains: search, mode: 'insensitive' } } },
                 { siswa: { nis: { contains: search, mode: 'insensitive' } } },
+                { pesertaDaycare: { namaLengkap: { contains: search, mode: 'insensitive' } } },
+                { pesertaDaycare: { namaOrtu: { contains: search, mode: 'insensitive' } } },
             );
         }
 
@@ -54,6 +58,9 @@ export class TagihanService {
                 include: {
                     siswa: {
                         select: { id: true, namaLengkap: true, nis: true, rombel: true }
+                    },
+                    pesertaDaycare: {
+                        select: { id: true, namaLengkap: true, noHpOrtu: true }
                     },
                     tagihanItems: true
                 },
@@ -149,7 +156,7 @@ export class TagihanService {
     static async generate(data: GenerateTagihanInput) {
         const {
             bulan, tahun,
-            jumlahHariEfektif, jumlahSenin,
+            jumlahHariEfektif, jumlahSenin, jumlahHariKonsumsi,
             jenjangId, rombelId, siswaIds,
             jenisPembayaranIds
         } = data;
@@ -206,7 +213,11 @@ export class TagihanService {
             },
             include: {
                 rombel: { include: { jenjang: true } },
-                siswaPastas: { include: { pasta: true } }
+                siswaPastas: { include: { pasta: true } },
+                pesertaDaycares: {
+                    where: { status: 'AKTIF', modeDaycare: 'RUTIN' },
+                    include: { jenjangSetara: true }
+                }
             }
         });
 
@@ -231,8 +242,8 @@ export class TagihanService {
         };
 
         const results = await Promise.allSettled(students.map(async (siswa: any) => {
-            const existingTagihan = await prisma.tagihan.findUnique({
-                where: { siswaId_periode: { siswaId: siswa.id, periode } }
+            const existingTagihan = await prisma.tagihan.findFirst({
+                where: { siswaId: siswa.id, periode }
             });
 
             if (existingTagihan) return { status: 'skipped', siswa: siswa.namaLengkap };
@@ -358,6 +369,43 @@ export class TagihanService {
                             nominalAkhir: biaya
                         });
                         totalTagihan += biaya;
+                    }
+                }
+            }
+
+            // --- DAYCARE RUTIN LOGIC ---
+            if (siswa.pesertaDaycares.length > 0) {
+                const daycarePeserta = siswa.pesertaDaycares[0]; // Take the first active rutin
+                
+                // 1. SPD Rutin
+                const spdKode = daycarePeserta.jenjangSetara.kode === 'KB' ? 'SPD-KB' : 'SPD-TK';
+                const spdJp = await prisma.jenisPembayaran.findUnique({ where: { kode: spdKode } });
+                
+                if (spdJp) {
+                    const nominalSpd = getTarif(spdJp, siswa.rombel, siswa.jenisKelamin);
+                    items.push({
+                        jenisPembayaranId: spdJp.id,
+                        namaItem: `${spdJp.nama} ${daycarePeserta.jenjangSetara.nama}`,
+                        nominalAwal: nominalSpd,
+                        nominalDiskon: 0,
+                        nominalAkhir: nominalSpd
+                    });
+                    totalTagihan += nominalSpd;
+                }
+
+                // 2. Konsumsi Daycare (if provided)
+                if (jumlahHariKonsumsi && jumlahHariKonsumsi > 0) {
+                    const konsJp = await prisma.jenisPembayaran.findUnique({ where: { kode: 'DC-KONS' } });
+                    if (konsJp) {
+                        const nominalKons = Number(konsJp.nominalDefault) * jumlahHariKonsumsi;
+                        items.push({
+                            jenisPembayaranId: konsJp.id,
+                            namaItem: `Konsumsi Daycare (${jumlahHariKonsumsi} Hari)`,
+                            nominalAwal: nominalKons,
+                            nominalDiskon: 0,
+                            nominalAkhir: nominalKons
+                        });
+                        totalTagihan += nominalKons;
                     }
                 }
             }

@@ -30,4 +30,5 @@ process.on('SIGINT', () => {
   });
 });
 
+export type * from '@prisma/client';
 export type { AppType } from './app';

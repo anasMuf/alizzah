@@ -2,7 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { client } from '@alizzah/api-client';
 import { APIResponse } from '@alizzah/shared';
-// import { Pasta } from '@alizzah/db'; // Can't import from db directly in frontend 
+// import { Pasta } from '@alizzah/api-client'; // Can't import from db directly in frontend 
 // need shared types or define locally
 import { useAtomValue } from 'jotai';
 import { tokenAtom } from '~/stores/auth';

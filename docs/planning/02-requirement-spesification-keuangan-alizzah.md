@@ -1,8 +1,8 @@
 # Dokumen Spesifikasi Kebutuhan (Requirement Specification)
 # Sistem Keuangan Sekolah PAUD Unggulan Alizzah
 
-> **Versi:** 1.3  
-> **Tanggal:** 29 Januari 2026  
+> **Versi:** 1.5  
+> **Tanggal:** 13 April 2026  
 > **Status:** Draft - Menunggu Validasi  
 > **Yayasan:** Walipapat  
 > **Lokasi:** Kabupaten Mojokerto
@@ -98,8 +98,73 @@ Ekstrakurikuler **opsional** untuk jenjang TK (Intan & Berlian):
 
 #### B. Daycare (Penitipan Anak) - Opsional
 
-**⚠️ STATUS: PENDING / MASA DEPAN**
-> Modul Daycare ditunda implementasinya pada Fase 1 ini karena kebutuhan detail yang masih perlu diklarifikasi.
+Layanan penitipan anak setelah jam belajar selesai.
+
+**Karakteristik:**
+- Tersedia untuk **semua jenjang** (KB, TK-A, TK-B)
+- Juga **menerima anak dari luar Alizzah** (bukan siswa aktif) — bisa mendaftar SPD Harian atau Rutin
+- Jam operasional: **10:00 - 15:00 WIB**
+- Hari operasional: **Senin - Sabtu**
+- Belum ada batas kapasitas per hari
+- SPP reguler **tetap dibayar terpisah**, SPD tidak menggantikan SPP
+- Tidak ada paket gabungan SPP + SPD
+
+**Mode Pembayaran Daycare:**
+
+| Mode | Deskripsi | Penagihan |
+|------|-----------|----------|
+| **SPD Rutin (Bulanan)** | Peserta daycare tetap setiap hari | Diikutkan di invoice bulanan bersama SPP |
+| **SPD Harian Lepas** | Peserta daycare insidentil/hari tertentu | Tagihan tersendiri (admin input transaksi harian per tanggal) |
+
+**Rincian Biaya:**
+
+##### 1. Biaya Awal Daycare (Sekali Bayar)
+
+| No | Uraian | Jumlah |
+|----|--------|--------|
+| 1 | Pendaftaran | Rp 150.000 |
+| 2 | Akomodasi | Rp 250.000 |
+| | **Total** | **Rp 400.000** |
+
+##### 2. SPD Rutin (Bulanan)
+
+| No | Kategori | SPD/Bulan | Paket (SPD + Konsumsi) |
+|----|----------|-----------|------------------------|
+| 1 | Biaya Rutin KB | Rp 200.000 | Rp 500.000 |
+| | Biaya Rutin TK (A & B) | Rp 400.000 | Rp 900.000 |
+
+> **Catatan:** Biaya konsumsi (Rp 20.000/hari) bersifat **opsional**. Orang tua boleh memilih SPD saja tanpa konsumsi.
+
+##### 3. SPD Harian Lepas
+
+| No | Kategori | Nominal |
+|----|----------|--------|
+| 1 | SPD Harian | Rp 15.000/hari |
+| 2 | Biaya Konsumsi (opsional) | Rp 20.000/hari |
+| | **Paket (SPD + Konsumsi)** | **Rp 35.000/hari** |
+
+> **Catatan:** Admin melakukan input transaksi harian per tanggal untuk setiap anak yang menggunakan SPD Harian Lepas. Konsumsi opsional baik untuk peserta rutin maupun harian lepas.
+
+**Catatan Penting:**
+- Siswa yang ikut daycare **tetap bayar SPP reguler** + SPD terpisah
+- Untuk **anak luar Alizzah**, sistem mendukung pendaftaran sebagai **Peserta Daycare** tersendiri (bukan sebagai siswa)
+- **Absensi daycare** direncanakan sebagai apps/platform terpisah (scope bukan Fase 1)
+- Saat ini jumlah hari konsumsi masih **input manual oleh admin keuangan**; jika platform absensi sudah tersedia, jumlah hari akan otomatis dari data kehadiran
+
+**✅ Peserta Daycare (Konsep):**
+
+Sistem menggunakan tabel `peserta_daycare` terpisah dari `siswa` dengan **relasi opsional** ke tabel siswa:
+
+| Tipe Peserta | siswa_id | Data Nama/Ortu | Tarif SPD |
+|-------------|----------|----------------|----------|
+| **Siswa Internal** (Alizzah) | ✅ FK ke `siswa` | Diambil dari tabel `siswa` | Berdasarkan jenjang siswa |
+| **Anak Luar** (Non-Alizzah) | ❌ NULL | Diisi langsung di `peserta_daycare` | Berdasarkan **usia + pilihan orang tua** (jenjang setara) |
+
+> **Keuntungan pendekatan ini:**
+> - Tabel `siswa` tetap bersih hanya berisi siswa Alizzah yang terdaftar
+> - Anak luar Alizzah tidak mencemari data siswa dan laporan akademik
+> - Billing daycare referensi ke `peserta_daycare`, bukan langsung ke `siswa`
+> - Fleksibel: jika anak luar kemudian mendaftar sebagai siswa, tinggal update `siswa_id`
 
 ---
 
@@ -148,8 +213,9 @@ Contoh: 2025/2026, 2026/2027
 - Status (Aktif/Lulus/Keluar)
 - Tanggal Masuk
 - Foto (opsional)
-- Ikut Daycare (boolean)
 - PASTA yang Dipilih (many-to-many)
+
+> **Catatan:** Field `ikut_daycare` dihapus dari tabel siswa. Status daycare kini ditentukan oleh keberadaan record di tabel `peserta_daycare` yang mereferensi siswa ini.
 
 ### 3.4.1 Kenaikan Kelas & Mutasi (NEW)
 Fitur untuk memindahkan siswa antar kelas secara massal atau individual.
@@ -209,6 +275,46 @@ Fitur untuk memindahkan siswa antar kelas secara massal atau individual.
 - Biaya per Bulan
 - Berlaku untuk Jenjang (TK-A, TK-B)
 - Status (Aktif/Non-aktif)
+
+### 3.6.1 Master Peserta Daycare (NEW)
+
+Tabel khusus untuk peserta daycare, terpisah dari tabel siswa.
+
+**Atribut:**
+- ID
+- Siswa ID (FK, **nullable**) → jika siswa Alizzah, link ke tabel siswa
+- Nama Lengkap → diisi jika anak luar (null jika siswa internal, diambil dari siswa)
+- Tanggal Lahir → untuk penentuan tarif anak luar
+- Jenis Kelamin
+- Nama Orang Tua/Wali → diisi jika anak luar
+- No. HP Orang Tua → diisi jika anak luar
+- Jenjang Setara (KB/TK-A/TK-B) → untuk penentuan tarif SPD, otomatis dari siswa jika internal; **berdasarkan usia + pilihan orang tua** jika anak luar
+- Mode Daycare (RUTIN/HARIAN)
+- Status (Aktif/Non-aktif)
+- Tanggal Mulai Daycare
+- Tanggal Berakhir (nullable)
+- Catatan
+- Created At
+- Updated At
+
+**Logika Pengambilan Data:**
+```
+Jika siswa_id IS NOT NULL:
+  → Ambil nama, tanggal_lahir, jenis_kelamin, nama_ortu, no_hp dari tabel siswa
+  → Jenjang setara otomatis dari siswa.rombel.jenjang
+Jika siswa_id IS NULL (anak luar):
+  → Gunakan data yang diisi langsung di peserta_daycare
+  → Jenjang setara berdasarkan usia + pilihan orang tua
+```
+
+**Penentuan Jenjang Setara (Anak Luar):**
+| Usia | Jenjang Setara | Tarif SPD Rutin |
+|------|---------------|----------------|
+| 3-4 tahun | KB | Rp 200.000/bulan |
+| 4-5 tahun | TK-A | Rp 400.000/bulan |
+| 5-6 tahun | TK-B | Rp 400.000/bulan |
+
+> **Catatan:** Jenjang setara bisa di-override oleh admin berdasarkan pilihan orang tua.
 
 ### 3.7 Master Bank
 **Atribut:**
@@ -297,7 +403,16 @@ Kategori untuk pengelompokan biaya operasional sekolah.
 | 10 | Biaya Psikotes IQ | Rp 150.000 | - |
 | | **Total** | **Rp 2.410.000** | **Berlaku:** Siswa Baru & Mutasi (Kelompok Intan 8 & 1, Mutiara 1-6) |
 
-*(Bagian Daycare dihapus karena pending)*
+#### D. Kategori: DAYCARE (Penitipan Anak)
+
+| No | Kode | Jenis Pembayaran | Nominal | Periode | Jenjang | Sifat | Catatan |
+|----|------|------------------|---------|---------|---------|-------|---------|
+| 1 | DC-DAFTAR | Pendaftaran Daycare | Rp 150.000 | Sekali | Semua | Wajib (jika ikut) | Biaya awal peserta daycare baru |
+| 2 | DC-AKOM | Akomodasi Daycare | Rp 250.000 | Sekali | Semua | Wajib (jika ikut) | Biaya awal peserta daycare baru |
+| 3 | SPD-KB | SPD Rutin KB | Rp 200.000 | Bulanan | KB | Wajib (jika ikut rutin) | Peserta daycare rutin KB |
+| 4 | SPD-TK | SPD Rutin TK | Rp 400.000 | Bulanan | TK-A, TK-B | Wajib (jika ikut rutin) | Peserta daycare rutin TK |
+| 5 | SPD-HR | SPD Harian Lepas | Rp 15.000 | Per hari | Semua | Opsional | Input per transaksi harian oleh admin |
+| 6 | DC-KONS | Konsumsi Daycare | Rp 20.000 | Per hari | Semua | Opsional | Opsional untuk rutin & harian lepas |
 
 ### 4.2 Alur Pembuatan Tagihan (Billing)
 
@@ -337,7 +452,13 @@ Kategori untuk pengelompokan biaya operasional sekolah.
    - Ekskul Calisan → Sesuai jenjang (KB/TK)
    - PASTA → Sesuai pilihan siswa (jika ada)
    - Tabungan Wajib Berlian → Hanya TK-B (**Dihitung: 10.000 x Jumlah Senin**)
-   - ~~Daycare~~ (Pending)
+   - SPD Rutin → Siswa yang `ikut_daycare = true` dan mode Rutin (**KB: 200.000, TK: 400.000**)
+   - Konsumsi Daycare → **Opsional**, jika dipilih: **20.000 x Jumlah Hari** (input jumlah hari saat generate)
+
+4. **Generate Tagihan Harian Daycare (Khusus SPD Harian Lepas)**
+   - Input manual per siswa per tanggal
+   - Tagihan terpisah dari invoice bulanan
+   - Item: SPD Harian (Rp 15.000) + Konsumsi (Rp 20.000, opsional)
 
 ### 4.4 Status Tagihan
 
@@ -1358,11 +1479,16 @@ Template kolom:
 | 1.1 | 29 Jan 2026 | - Tambah section pembayaran parsial (best practice)<br>- Policy multiple diskon: STACK<br>- Tidak ada denda keterlambatan<br>- Tanggal jatuh tempo SPP: tanggal 1 jam 00:00<br>- Generate tagihan per bulan | - |
 | 1.2 | 29 Jan 2026 | - Handling overpayment: masuk Tabungan Umum<br>- Tambah fitur Export/Import/Print | - |
 | 1.3 | 29 Jan 2026 | - Tarif per Jenjang + Gender (untuk Registrasi)<br>- Update skenario overpayment dengan keputusan final | - |
+| 1.4 | 13 Apr 2026 | - Tambah Modul Daycare lengkap (SPD Rutin, Harian, Konsumsi)<br>- Biaya awal daycare (Pendaftaran + Akomodasi)<br>- Support anak luar Alizzah<br>- Jam operasional 10:00-15:00 Senin-Sabtu<br>- SPD terpisah dari SPP reguler<br>- Absensi daycare sebagai platform terpisah | - |
+| 1.5 | 13 Apr 2026 | - Tabel `peserta_daycare` terpisah (FK opsional ke siswa)<br>- Anak luar: tarif berdasarkan usia + pilihan ortu<br>- Absensi daycare = scope terpisah (bukan Fase 1)<br>- Jumlah hari konsumsi input manual admin (integrasi absensi nanti)<br>- Hapus field `ikut_daycare` dari siswa, pindah ke peserta_daycare | - |
 
 ### C. Item yang Perlu Diupdate Kemudian
 
-- [ ] Detail mode pembayaran Daycare (bulanan vs harian)
-- [ ] Relasi SPD dengan SPP reguler (apakah saling menggantikan atau terpisah)
+- [x] ~~Detail mode pembayaran Daycare (bulanan vs harian)~~ → **SPD Rutin (bulanan) + SPD Harian Lepas (per hari)**
+- [x] ~~Relasi SPD dengan SPP reguler (apakah saling menggantikan atau terpisah)~~ → **Terpisah, SPP tetap dibayar**
+- [x] ~~Mekanisme pendaftaran anak luar Alizzah~~ → **Tabel `peserta_daycare` terpisah dengan FK opsional ke siswa**
+- [x] ~~Penentuan tarif SPD anak luar~~ → **Berdasarkan usia + pilihan orang tua (jenjang setara)**
+- [x] ~~Scope absensi daycare~~ → **Fase terpisah, saat ini jumlah hari input manual admin keuangan**
 - [x] ~~Policy multiple diskon (stack atau highest)~~ → **STACK**
 - [ ] Template notifikasi WhatsApp
 - [x] ~~Handling overpayment~~ → **Masuk Tabungan Umum**

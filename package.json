@@ -9,8 +9,8 @@
     "dev": "turbo dev",
     "lint": "turbo lint",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "db:push": "pnpm --filter @alizzah/db db:push",
-    "db:seed": "pnpm --filter @alizzah/db db:seed",
+    "db:push": "pnpm --filter @alizzah/api db:push",
+    "db:seed": "pnpm --filter @alizzah/api db:seed",
     "db:reset": "./reset-db.sh"
   },
   "keywords": [],

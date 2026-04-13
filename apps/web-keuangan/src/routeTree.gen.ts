@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SiswaIndexRouteImport } from './routes/siswa/index'
+import { Route as DaycareIndexRouteImport } from './routes/daycare/index'
 import { Route as SiswaProgresiRouteImport } from './routes/siswa/progresi'
 import { Route as MasterTahunAjaranRouteImport } from './routes/master/tahun-ajaran'
 import { Route as MasterRombelRouteImport } from './routes/master/rombel'
@@ -23,6 +24,8 @@ import { Route as KeuanganPembayaranRouteImport } from './routes/keuangan/pembay
 import { Route as KeuanganLaporanRouteImport } from './routes/keuangan/laporan'
 import { Route as KeuanganKasRouteImport } from './routes/keuangan/kas'
 import { Route as KeuanganBillingRouteImport } from './routes/keuangan/billing'
+import { Route as DaycareHarianRouteImport } from './routes/daycare/harian'
+import { Route as DaycareIdRouteImport } from './routes/daycare/$id'
 import { Route as KeuanganTabunganIndexRouteImport } from './routes/keuangan/tabungan/index'
 import { Route as KeuanganPembayaranIndexRouteImport } from './routes/keuangan/pembayaran/index'
 import { Route as KeuanganKasIndexRouteImport } from './routes/keuangan/kas/index'
@@ -47,6 +50,11 @@ const IndexRoute = IndexRouteImport.update({
 const SiswaIndexRoute = SiswaIndexRouteImport.update({
   id: '/siswa/',
   path: '/siswa/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DaycareIndexRoute = DaycareIndexRouteImport.update({
+  id: '/daycare/',
+  path: '/daycare/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SiswaProgresiRoute = SiswaProgresiRouteImport.update({
@@ -102,6 +110,16 @@ const KeuanganKasRoute = KeuanganKasRouteImport.update({
 const KeuanganBillingRoute = KeuanganBillingRouteImport.update({
   id: '/keuangan/billing',
   path: '/keuangan/billing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DaycareHarianRoute = DaycareHarianRouteImport.update({
+  id: '/daycare/harian',
+  path: '/daycare/harian',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DaycareIdRoute = DaycareIdRouteImport.update({
+  id: '/daycare/$id',
+  path: '/daycare/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const KeuanganTabunganIndexRoute = KeuanganTabunganIndexRouteImport.update({
@@ -162,6 +180,8 @@ const KeuanganBillingHistoryPeriodeRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/daycare/$id': typeof DaycareIdRoute
+  '/daycare/harian': typeof DaycareHarianRoute
   '/keuangan/billing': typeof KeuanganBillingRouteWithChildren
   '/keuangan/kas': typeof KeuanganKasRouteWithChildren
   '/keuangan/laporan': typeof KeuanganLaporanRoute
@@ -173,6 +193,7 @@ export interface FileRoutesByFullPath {
   '/master/rombel': typeof MasterRombelRoute
   '/master/tahun-ajaran': typeof MasterTahunAjaranRoute
   '/siswa/progresi': typeof SiswaProgresiRoute
+  '/daycare/': typeof DaycareIndexRoute
   '/siswa/': typeof SiswaIndexRoute
   '/keuangan/kas/mutasi': typeof KeuanganKasMutasiRoute
   '/keuangan/kas/rekonsiliasi': typeof KeuanganKasRekonsiliasiRoute
@@ -188,6 +209,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/daycare/$id': typeof DaycareIdRoute
+  '/daycare/harian': typeof DaycareHarianRoute
   '/keuangan/laporan': typeof KeuanganLaporanRoute
   '/master/diskon': typeof MasterDiskonRoute
   '/master/jenis-pembayaran': typeof MasterJenisPembayaranRoute
@@ -195,6 +218,7 @@ export interface FileRoutesByTo {
   '/master/rombel': typeof MasterRombelRoute
   '/master/tahun-ajaran': typeof MasterTahunAjaranRoute
   '/siswa/progresi': typeof SiswaProgresiRoute
+  '/daycare': typeof DaycareIndexRoute
   '/siswa': typeof SiswaIndexRoute
   '/keuangan/kas/mutasi': typeof KeuanganKasMutasiRoute
   '/keuangan/kas/rekonsiliasi': typeof KeuanganKasRekonsiliasiRoute
@@ -211,6 +235,8 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/daycare/$id': typeof DaycareIdRoute
+  '/daycare/harian': typeof DaycareHarianRoute
   '/keuangan/billing': typeof KeuanganBillingRouteWithChildren
   '/keuangan/kas': typeof KeuanganKasRouteWithChildren
   '/keuangan/laporan': typeof KeuanganLaporanRoute
@@ -222,6 +248,7 @@ export interface FileRoutesById {
   '/master/rombel': typeof MasterRombelRoute
   '/master/tahun-ajaran': typeof MasterTahunAjaranRoute
   '/siswa/progresi': typeof SiswaProgresiRoute
+  '/daycare/': typeof DaycareIndexRoute
   '/siswa/': typeof SiswaIndexRoute
   '/keuangan/kas/mutasi': typeof KeuanganKasMutasiRoute
   '/keuangan/kas/rekonsiliasi': typeof KeuanganKasRekonsiliasiRoute
@@ -239,6 +266,8 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/daycare/$id'
+    | '/daycare/harian'
     | '/keuangan/billing'
     | '/keuangan/kas'
     | '/keuangan/laporan'
@@ -250,6 +279,7 @@ export interface FileRouteTypes {
     | '/master/rombel'
     | '/master/tahun-ajaran'
     | '/siswa/progresi'
+    | '/daycare/'
     | '/siswa/'
     | '/keuangan/kas/mutasi'
     | '/keuangan/kas/rekonsiliasi'
@@ -265,6 +295,8 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/daycare/$id'
+    | '/daycare/harian'
     | '/keuangan/laporan'
     | '/master/diskon'
     | '/master/jenis-pembayaran'
@@ -272,6 +304,7 @@ export interface FileRouteTypes {
     | '/master/rombel'
     | '/master/tahun-ajaran'
     | '/siswa/progresi'
+    | '/daycare'
     | '/siswa'
     | '/keuangan/kas/mutasi'
     | '/keuangan/kas/rekonsiliasi'
@@ -287,6 +320,8 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/login'
+    | '/daycare/$id'
+    | '/daycare/harian'
     | '/keuangan/billing'
     | '/keuangan/kas'
     | '/keuangan/laporan'
@@ -298,6 +333,7 @@ export interface FileRouteTypes {
     | '/master/rombel'
     | '/master/tahun-ajaran'
     | '/siswa/progresi'
+    | '/daycare/'
     | '/siswa/'
     | '/keuangan/kas/mutasi'
     | '/keuangan/kas/rekonsiliasi'
@@ -314,6 +350,8 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
+  DaycareIdRoute: typeof DaycareIdRoute
+  DaycareHarianRoute: typeof DaycareHarianRoute
   KeuanganBillingRoute: typeof KeuanganBillingRouteWithChildren
   KeuanganKasRoute: typeof KeuanganKasRouteWithChildren
   KeuanganLaporanRoute: typeof KeuanganLaporanRoute
@@ -325,6 +363,7 @@ export interface RootRouteChildren {
   MasterRombelRoute: typeof MasterRombelRoute
   MasterTahunAjaranRoute: typeof MasterTahunAjaranRoute
   SiswaProgresiRoute: typeof SiswaProgresiRoute
+  DaycareIndexRoute: typeof DaycareIndexRoute
   SiswaIndexRoute: typeof SiswaIndexRoute
 }
 
@@ -349,6 +388,13 @@ declare module '@tanstack/react-router' {
       path: '/siswa'
       fullPath: '/siswa/'
       preLoaderRoute: typeof SiswaIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/daycare/': {
+      id: '/daycare/'
+      path: '/daycare'
+      fullPath: '/daycare/'
+      preLoaderRoute: typeof DaycareIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/siswa/progresi': {
@@ -426,6 +472,20 @@ declare module '@tanstack/react-router' {
       path: '/keuangan/billing'
       fullPath: '/keuangan/billing'
       preLoaderRoute: typeof KeuanganBillingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/daycare/harian': {
+      id: '/daycare/harian'
+      path: '/daycare/harian'
+      fullPath: '/daycare/harian'
+      preLoaderRoute: typeof DaycareHarianRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/daycare/$id': {
+      id: '/daycare/$id'
+      path: '/daycare/$id'
+      fullPath: '/daycare/$id'
+      preLoaderRoute: typeof DaycareIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/keuangan/tabungan/': {
@@ -562,6 +622,8 @@ const KeuanganTabunganRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
+  DaycareIdRoute: DaycareIdRoute,
+  DaycareHarianRoute: DaycareHarianRoute,
   KeuanganBillingRoute: KeuanganBillingRouteWithChildren,
   KeuanganKasRoute: KeuanganKasRouteWithChildren,
   KeuanganLaporanRoute: KeuanganLaporanRoute,
@@ -573,6 +635,7 @@ const rootRouteChildren: RootRouteChildren = {
   MasterRombelRoute: MasterRombelRoute,
   MasterTahunAjaranRoute: MasterTahunAjaranRoute,
   SiswaProgresiRoute: SiswaProgresiRoute,
+  DaycareIndexRoute: DaycareIndexRoute,
   SiswaIndexRoute: SiswaIndexRoute,
 }
 export const routeTree = rootRouteImport

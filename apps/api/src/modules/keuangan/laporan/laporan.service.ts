@@ -21,7 +21,8 @@ export class LaporanService {
                     include: {
                         rombel: true
                     }
-                }
+                },
+                pesertaDaycare: true
             },
             orderBy: [
                 { siswa: { rombel: { nama: 'asc' } } },
@@ -30,16 +31,16 @@ export class LaporanService {
         });
 
         // Group by Rombel and Siswa
-        const result = tagihans.reduce((acc: any, tagihan: typeof tagihans[number]) => {
-            const rombelName = tagihan.siswa.rombel?.nama || 'Tanpa Rombel';
-            const studentId = tagihan.siswa.id;
-            const studentName = tagihan.siswa.namaLengkap;
+        const result = tagihans.reduce((acc: any, tagihan: any) => {
+            const rombelName = tagihan.siswa?.rombel?.nama || 'Tanpa Rombel';
+            const studentId = tagihan.siswa?.id || tagihan.pesertaDaycare?.id;
+            const studentName = tagihan.siswa?.namaLengkap || tagihan.pesertaDaycare?.namaLengkap;
 
             if (!acc[rombelName]) acc[rombelName] = {};
             if (!acc[rombelName][studentId]) {
                 acc[rombelName][studentId] = {
                     nama: studentName,
-                    nis: tagihan.siswa.nis,
+                    nis: tagihan.siswa?.nis || 'N/A',
                     totalTunggakan: 0,
                     items: []
                 };
@@ -76,7 +77,8 @@ export class LaporanService {
                             }
                         }
                     }
-                }
+                },
+                pesertaDaycare: { include: { jenjangSetara: true } }
             },
             orderBy: {
                 siswa: {
@@ -89,8 +91,8 @@ export class LaporanService {
             }
         });
 
-        const result = tagihans.reduce((acc: any, tagihan: typeof tagihans[number]) => {
-            const jenjangName = tagihan.siswa.rombel?.jenjang?.nama || 'Tanpa Jenjang';
+        const result = tagihans.reduce((acc: any, tagihan: any) => {
+            const jenjangName = tagihan.siswa?.rombel?.jenjang?.nama || tagihan.pesertaDaycare?.jenjangSetara?.nama || 'Tanpa Jenjang';
             if (!acc[jenjangName]) acc[jenjangName] = 0;
             acc[jenjangName] += Number(tagihan.sisaTagihan);
             return acc;

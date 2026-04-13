@@ -81,10 +81,10 @@ export function TagihanDetailModal({ isOpen, onClose, tagihan }: TagihanDetailMo
                         <div>
                             <div class="section-label">Penerima Tagihan</div>
                             <div class="student-card">
-                                <div class="student-avatar">${tagihan.siswa.namaLengkap.charAt(0)}</div>
+                                <div class="student-avatar">${(tagihan.siswa?.namaLengkap || tagihan.pesertaDaycare?.namaLengkap || '?').charAt(0)}</div>
                                 <div>
-                                    <div class="student-name">${tagihan.siswa.namaLengkap}</div>
-                                    <div class="student-meta">${tagihan.siswa.nis} • ${tagihan.rombelSnapshot}</div>
+                                    <div class="student-name">${tagihan.siswa?.namaLengkap || tagihan.pesertaDaycare?.namaLengkap || 'PESERTA'}</div>
+                                    <div class="student-meta">${tagihan.siswa?.nis || 'DAYCARE'} • ${tagihan.rombelSnapshot}</div>
                                 </div>
                             </div>
                         </div>
@@ -156,7 +156,10 @@ export function TagihanDetailModal({ isOpen, onClose, tagihan }: TagihanDetailMo
     const handlePayNow = () => {
         navigate({
             to: '/keuangan/pembayaran',
-            search: { siswaId: tagihan.siswaId }
+            search: { 
+                siswaId: tagihan.siswaId,
+                pesertaDaycareId: tagihan.pesertaDaycareId
+            } as any
         });
         onClose();
     };
@@ -223,11 +226,11 @@ export function TagihanDetailModal({ isOpen, onClose, tagihan }: TagihanDetailMo
                             <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Penerima Tagihan</h3>
                             <div className="flex items-start gap-4">
                                 <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center font-bold text-lg border border-indigo-100 uppercase">
-                                    {tagihan.siswa.namaLengkap.charAt(0)}
+                                    {(tagihan.siswa?.namaLengkap || tagihan.pesertaDaycare?.namaLengkap || '?').charAt(0)}
                                 </div>
                                 <div>
-                                    <div className="font-bold text-slate-900">{tagihan.siswa.namaLengkap}</div>
-                                    <div className="text-xs text-slate-400 font-mono tracking-tighter uppercase">{tagihan.siswa.nis} • {tagihan.rombelSnapshot}</div>
+                                    <div className="font-bold text-slate-900">{tagihan.siswa?.namaLengkap || tagihan.pesertaDaycare?.namaLengkap || 'PESERTA'}</div>
+                                    <div className="text-xs text-slate-400 font-mono tracking-tighter uppercase">{tagihan.siswa?.nis || 'DAYCARE'} • {tagihan.rombelSnapshot}</div>
                                 </div>
                             </div>
                         </div>

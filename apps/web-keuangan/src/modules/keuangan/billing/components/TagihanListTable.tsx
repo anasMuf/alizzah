@@ -173,11 +173,15 @@ export function TagihanListTable({
                                     <td className="px-8 py-5">
                                         <div className="flex items-center gap-4">
                                             <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center font-bold text-sm">
-                                                {item.siswa.namaLengkap.charAt(0)}
+                                                {(item.siswa?.namaLengkap || item.pesertaDaycare?.namaLengkap || '?').charAt(0)}
                                             </div>
                                             <div>
-                                                <div className="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors uppercase">{item.siswa.namaLengkap}</div>
-                                                <div className="text-[10px] text-slate-400 font-mono tracking-tighter uppercase">{item.siswa.nis} • {item.rombelSnapshot}</div>
+                                                <div className="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors uppercase">
+                                                    {item.siswa?.namaLengkap || item.pesertaDaycare?.namaLengkap || 'PESERTA'}
+                                                </div>
+                                                <div className="text-[10px] text-slate-400 font-mono tracking-tighter uppercase">
+                                                    {item.siswa?.nis || 'DAYCARE'} • {item.rombelSnapshot}
+                                                </div>
                                             </div>
                                         </div>
                                     </td>

@@ -433,10 +433,6 @@ function PembayaranKasirPage() {
                                     <span>Subtotal Alokasi</span>
                                     <span className="text-white">{formatCurrency(paymentAmount)}</span>
                                 </div>
-                                <div className="flex justify-between items-center text-slate-400 text-xs font-bold uppercase tracking-widest">
-                                    <span>Biaya Admin</span>
-                                    <span className="text-emerald-400">Gratis</span>
-                                </div>
                                 <div className="h-px bg-white/10" />
                                 <div className="flex justify-between items-center py-2">
                                     <span className="text-sm font-bold text-slate-300">Total Akhir</span>

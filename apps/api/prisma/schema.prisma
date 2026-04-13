@@ -31,7 +31,8 @@ model Jenjang {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt DateTime               @updatedAt @map("updated_at")
   tarifs    JenisPembayaranTarif[]
-  rombels   Rombel[]
+  rombels     Rombel[]
+  pesertaDaycares PesertaDaycare[] @relation("JenjangSetaraDaycare")
 
   @@map("jenjang")
 }
@@ -69,7 +70,6 @@ model Siswa {
   status       StatusSiswa   @default(AKTIF)
   tanggalMasuk DateTime      @map("tanggal_masuk") @db.Date
   foto         String?       @db.VarChar(255)
-  ikutDaycare  Boolean       @default(false) @map("ikut_daycare")
   createdAt    DateTime      @default(now()) @map("created_at")
   updatedAt    DateTime      @updatedAt @map("updated_at")
   asalSekolah  String?       @map("asal_sekolah") @db.VarChar(100)
@@ -79,7 +79,8 @@ model Siswa {
   siswaDiskons SiswaDiskon[]
   siswaPastas  SiswaPasta[]
   tabungans    Tabungan[]
-  tagihans     Tagihan[]
+  tagihans    Tagihan[]
+  pesertaDaycares PesertaDaycare[]
 
   @@map("siswa")
 }
@@ -224,7 +225,7 @@ model SiswaDiskon {
 model Tagihan {
   id                 String              @id @default(uuid())
   kode               String              @unique @db.VarChar(30)
-  siswaId            String              @map("siswa_id")
+  siswaId            String?             @map("siswa_id")
   periode            String              @db.VarChar(7)
   rombelSnapshot     String              @map("rombel_snapshot") @db.VarChar(50)
   jenjangSnapshot    String              @map("jenjang_snapshot") @db.VarChar(30)
@@ -238,10 +239,11 @@ model Tagihan {
   createdAt          DateTime            @default(now()) @map("created_at")
   updatedAt          DateTime            @updatedAt @map("updated_at")
   pembayaranAlokasis PembayaranAlokasi[]
-  siswa              Siswa               @relation(fields: [siswaId], references: [id])
+  siswa              Siswa?              @relation(fields: [siswaId], references: [id])
+  pesertaDaycareId   String?             @map("peserta_daycare_id")
+  pesertaDaycare     PesertaDaycare?     @relation(fields: [pesertaDaycareId], references: [id])
   tagihanItems       TagihanItem[]
 
-  @@unique([siswaId, periode])
   @@map("tagihan")
 }
 
@@ -264,7 +266,8 @@ model TagihanItem {
 model Pembayaran {
   id                 String              @id @default(uuid())
   kode               String              @unique @db.VarChar(30)
-  siswaId            String              @map("siswa_id")
+  siswaId            String?             @map("siswa_id")
+  pesertaDaycareId   String?             @map("peserta_daycare_id")
   tanggal            DateTime            @default(now())
   totalBayar         Decimal             @map("total_bayar") @db.Decimal(12, 2)
   metode             MetodePembayaran
@@ -280,7 +283,8 @@ model Pembayaran {
   updatedAt          DateTime            @updatedAt @map("updated_at")
   bank               Bank?               @relation(fields: [bankId], references: [id])
   kasir              User                @relation("PembayaranKasir", fields: [kasirId], references: [id])
-  siswa              Siswa               @relation(fields: [siswaId], references: [id])
+  siswa              Siswa?              @relation(fields: [siswaId], references: [id])
+  pesertaDaycare     PesertaDaycare?     @relation(fields: [pesertaDaycareId], references: [id])
   voidByUser         User?               @relation("PembayaranVoidBy", fields: [voidBy], references: [id])
   pembayaranAlokasis PembayaranAlokasi[]
 
@@ -379,6 +383,41 @@ model TransaksiKas {
   transferKeKas    Kas?             @relation("KasTransferTo", fields: [transferKeKasId], references: [id])
 
   @@map("transaksi_kas")
+}
+
+model PesertaDaycare {
+  id              String               @id @default(uuid())
+  siswaId         String?              @map("siswa_id")
+  namaLengkap     String?              @map("nama_lengkap") @db.VarChar(100)
+  tanggalLahir    DateTime?            @map("tanggal_lahir") @db.Date
+  jenisKelamin    JenisKelamin?        @map("jenis_kelamin")
+  namaOrtu        String?              @map("nama_ortu") @db.VarChar(100)
+  noHpOrtu        String?              @map("no_hp_ortu") @db.VarChar(20)
+  jenjangSetaraId String               @map("jenjang_setara_id")
+  modeDaycare     ModeDaycare          @map("mode_daycare")
+  status          StatusPesertaDaycare @default(AKTIF)
+  tanggalMulai    DateTime             @map("tanggal_mulai") @db.Date
+  tanggalBerakhir DateTime?            @map("tanggal_berakhir") @db.Date
+  defaultIkutKonsumsi Boolean          @default(false) @map("default_ikut_konsumsi")
+  catatan         String?              @db.Text
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+  jenjangSetara   Jenjang              @relation("JenjangSetaraDaycare", fields: [jenjangSetaraId], references: [id])
+  siswa           Siswa?               @relation(fields: [siswaId], references: [id])
+  tagihans        Tagihan[]
+  pembayarans     Pembayaran[]
+
+  @@map("peserta_daycare")
+}
+
+enum ModeDaycare {
+  RUTIN
+  HARIAN
+}
+
+enum StatusPesertaDaycare {
+  AKTIF
+  NONAKTIF
 }
 
 enum JenisKelamin {

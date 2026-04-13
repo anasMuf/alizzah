@@ -16,6 +16,7 @@ import { laporanRoutes } from './modules/keuangan/laporan/laporan.routes';
 import { dashboardRoutes } from './modules/keuangan/dashboard/dashboard.routes';
 import { searchRoutes } from './modules/keuangan/search/search.routes';
 import { siswaRoutes } from './modules/core/siswa/siswa.routes';
+import { daycareRoutes } from './modules/keuangan/daycare/daycare.routes';
 import { AppError } from './lib/error';
 import { errorResponse } from './lib/response';
 
@@ -43,7 +44,8 @@ const v1 = new Hono()
     .route('/keuangan/kas', kasRoutes)
     .route('/keuangan/laporan', laporanRoutes)
     .route('/keuangan/dashboard', dashboardRoutes)
-    .route('/keuangan/search', searchRoutes);
+    .route('/keuangan/search', searchRoutes)
+    .route('/keuangan/daycare', daycareRoutes);
 
 // Mount v1
 app.route('/api/v1', v1);

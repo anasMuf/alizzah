@@ -7,7 +7,7 @@ import { useAtomValue } from 'jotai';
 import { tokenAtom } from '~/stores/auth';
 import { Edit2, Trash2 } from 'lucide-react';
 import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
-import { Jenjang } from '@alizzah/db';
+import { Jenjang } from '@alizzah/api-client';
 
 interface JenjangGridProps {
     onEdit?: (item: Jenjang) => void;

@@ -186,6 +186,60 @@ async function main() {
             sifat: 'OPSIONAL' as const,
             jenisTabungan: 'UMUM' as const,
             pemicu: 'MANUAL' as const,
+        },
+        {
+            kode: 'DC-DAFTAR',
+            nama: 'Pendaftaran Daycare',
+            kategori: 'DAYCARE' as const,
+            tipe: 'SEKALI' as const,
+            nominalDefault: 150000,
+            sifat: 'WAJIB' as const,
+            pemicu: 'MANUAL' as const,
+        },
+        {
+            kode: 'DC-AKOM',
+            nama: 'Akomodasi Daycare',
+            kategori: 'DAYCARE' as const,
+            tipe: 'SEKALI' as const,
+            nominalDefault: 250000,
+            sifat: 'WAJIB' as const,
+            pemicu: 'MANUAL' as const,
+        },
+        {
+            kode: 'SPD-KB',
+            nama: 'SPD Rutin KB',
+            kategori: 'DAYCARE' as const,
+            tipe: 'BULANAN' as const,
+            nominalDefault: 200000,
+            sifat: 'WAJIB' as const,
+            pemicu: 'MANUAL' as const,
+        },
+        {
+            kode: 'SPD-TK',
+            nama: 'SPD Rutin TK',
+            kategori: 'DAYCARE' as const,
+            tipe: 'BULANAN' as const,
+            nominalDefault: 400000,
+            sifat: 'WAJIB' as const,
+            pemicu: 'MANUAL' as const,
+        },
+        {
+            kode: 'SPD-HR',
+            nama: 'SPD Harian Lepas',
+            kategori: 'DAYCARE' as const,
+            tipe: 'HARIAN' as const,
+            nominalDefault: 15000,
+            sifat: 'OPSIONAL' as const,
+            pemicu: 'MANUAL' as const,
+        },
+        {
+            kode: 'DC-KONS',
+            nama: 'Konsumsi Daycare',
+            kategori: 'DAYCARE' as const,
+            tipe: 'HARIAN' as const,
+            nominalDefault: 20000,
+            sifat: 'OPSIONAL' as const,
+            pemicu: 'MANUAL' as const,
         }
     ];
 
@@ -200,10 +254,10 @@ async function main() {
             },
             create: {
                 ...jp,
-                jenjangIds: jp.kode === 'REG-TAHUNAN' || jp.kode === 'BAP' ? [jenjangMap['KB'], jenjangMap['TK-A'], jenjangMap['TK-B']] :
-                    jp.kode === 'INF-ASLIN' || jp.kode === 'TAB-WJB' ? [jenjangMap['TK-B']] :
+                jenjangIds: jp.kode === 'REG-TAHUNAN' || jp.kode === 'BAP' || ['DC-DAFTAR', 'DC-AKOM', 'SPD-HR', 'DC-KONS'].includes(jp.kode) ? [jenjangMap['KB'], jenjangMap['TK-A'], jenjangMap['TK-B']] :
+                    jp.kode === 'INF-ASLIN' || jp.kode === 'TAB-WJB' || jp.kode === 'SPD-TK' ? [jenjangMap['TK-B']] :
                         jp.kode === 'INF-CALISAN-TK' ? [jenjangMap['TK-A'], jenjangMap['TK-B']] :
-                            jp.kode === 'INF-CALISAN-KB' ? [jenjangMap['KB']] : [],
+                            jp.kode === 'INF-CALISAN-KB' || jp.kode === 'SPD-KB' ? [jenjangMap['KB']] : [],
             },
         });
         createdJenisPembayaran[jp.kode] = createdJp.id;

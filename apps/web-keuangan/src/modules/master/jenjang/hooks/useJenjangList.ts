@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { client } from '@alizzah/api-client';
 import { APIResponse } from '@alizzah/shared';
-import { Jenjang } from '@alizzah/db';
+import { Jenjang } from '@alizzah/api-client';
 
 export function useJenjangList(token: string | null) {
     return useQuery({

@@ -105,6 +105,7 @@ export const generateTagihanSchema = z.object({
     // For calculation variables
     jumlahHariEfektif: z.number().int().nonnegative().default(20),
     jumlahSenin: z.number().int().nonnegative().default(4),
+    jumlahHariKonsumsi: z.number().int().nonnegative().default(0),
     // Target scope
     jenjangId: z.string().uuid().optional(),
     rombelId: z.string().uuid().optional(),

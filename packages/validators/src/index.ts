@@ -5,3 +5,4 @@ export * from './siswa';
 export * from './tabungan';
 export * from './kas';
 export * from './laporan';
+export * from './daycare';

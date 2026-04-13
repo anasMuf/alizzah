@@ -1,2 +1,2 @@
 export * from './client'
-export type { AppType } from '@alizzah/api'
+export type * from '@alizzah/api'

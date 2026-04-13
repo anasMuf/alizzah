@@ -5,7 +5,7 @@ import { useAtomValue } from 'jotai';
 import { tokenAtom } from '~/stores/auth';
 import { Edit2, Trash2 } from 'lucide-react';
 import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
-import { TahunAjaran } from '@alizzah/db';
+import { TahunAjaran } from '@alizzah/api-client';
 
 interface TahunAjaranTableProps {
     onEdit?: (item: TahunAjaran) => void;

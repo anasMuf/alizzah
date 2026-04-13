@@ -65,6 +65,7 @@ Semua tabel memiliki kolom standar berikut (kecuali junction tables):
 | JenisPembayaranTarif | `jenis_pembayaran_tarif` | Payment pricing per jenjang/gender |
 | Diskon | `diskon` | Discount/dispensation |
 | Pasta | `pasta` | Extracurricular (PASTA) |
+| PesertaDaycare | `peserta_daycare` | Daycare participant (internal & external) |
 | Bank | `bank` | Bank accounts |
 | User | `user` | System users |
 
@@ -321,9 +322,10 @@ Semua tabel memiliki kolom standar berikut (kecuali junction tables):
 | status | ENUM | NOT NULL, DEFAULT 'AKTIF' | AKTIF/LULUS/KELUAR |
 | tanggal_masuk | DATE | NOT NULL | Enrollment date |
 | foto | VARCHAR(255) | | Photo path |
-| ikut_daycare | BOOLEAN | DEFAULT false | Daycare participant |
 | created_at | TIMESTAMP | DEFAULT NOW() | |
 | updated_at | TIMESTAMP | | |
+
+> **Catatan:** Field `ikut_daycare` dihapus. Status daycare ditentukan dari tabel `peserta_daycare`.
 
 ### 4.5 jenis_pembayaran
 
@@ -597,6 +599,37 @@ Semua tabel memiliki kolom standar berikut (kecuali junction tables):
 | created_at | TIMESTAMP | DEFAULT NOW() | |
 | updated_at | TIMESTAMP | | |
 
+### 4.21 peserta_daycare (NEW)
+
+Tabel khusus untuk peserta daycare, terpisah dari tabel siswa. Mendukung peserta internal (siswa Alizzah) maupun eksternal (anak luar).
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | UUID | PK | Primary key |
+| siswa_id | UUID | FK → siswa, NULLABLE | NULL = anak luar Alizzah |
+| nama_lengkap | VARCHAR(100) | NULLABLE | Diisi jika anak luar |
+| tanggal_lahir | DATE | NULLABLE | Untuk penentuan tarif anak luar |
+| jenis_kelamin | ENUM('L','P') | NULLABLE | Diisi jika anak luar |
+| nama_ortu | VARCHAR(100) | NULLABLE | Diisi jika anak luar |
+| no_hp_ortu | VARCHAR(20) | NULLABLE | Diisi jika anak luar |
+| jenjang_setara_id | UUID | FK → jenjang, NOT NULL | Untuk tarif SPD (otomatis jika internal) |
+| mode_daycare | ENUM | NOT NULL | RUTIN/HARIAN |
+| status | ENUM | NOT NULL, DEFAULT 'AKTIF' | AKTIF/NONAKTIF |
+| tanggal_mulai | DATE | NOT NULL | Daycare start date |
+| tanggal_berakhir | DATE | NULLABLE | Daycare end date |
+| catatan | TEXT | | Notes |
+| created_at | TIMESTAMP | DEFAULT NOW() | |
+| updated_at | TIMESTAMP | | |
+
+**Indexes:** `(siswa_id)` — partial unique where siswa_id IS NOT NULL (1 siswa = max 1 record aktif)
+
+**Logika:**
+```
+Jika siswa_id IS NOT NULL → data nama/ortu diambil dari join ke siswa
+Jika siswa_id IS NULL → data nama/ortu diambil dari kolom lokal
+jenjang_setara_id → otomatis dari siswa.rombel.jenjang (internal) atau manual (anak luar, berdasarkan usia + pilihan ortu)
+```
+
 ---
 
 ## 5. Prisma Schema
@@ -707,6 +740,16 @@ enum TipeTransaksiKas {
   TRANSFER
 }
 
+enum ModeDaycare {
+  RUTIN
+  HARIAN
+}
+
+enum StatusPesertaDaycare {
+  AKTIF
+  NONAKTIF
+}
+
 // ==================== MODELS ====================
 
 model TahunAjaran {
@@ -735,6 +778,7 @@ model Jenjang {
 
   rombels Rombel[]
   tarifs  JenisPembayaranTarif[]
+  pesertaDaycares PesertaDaycare[] @relation("JenjangSetaraDaycare")
 
   @@map("jenjang")
 }
@@ -772,7 +816,6 @@ model Siswa {
   status        StatusSiswa  @default(AKTIF)
   tanggalMasuk  DateTime     @map("tanggal_masuk") @db.Date
   foto          String?      @db.VarChar(255)
-  ikutDaycare   Boolean      @default(false) @map("ikut_daycare")
   createdAt     DateTime     @default(now()) @map("created_at")
   updatedAt     DateTime     @updatedAt @map("updated_at")
 
@@ -782,6 +825,7 @@ model Siswa {
   tagihans            Tagihan[]
   pembayarans         Pembayaran[]
   tabungans           Tabungan[]
+  pesertaDaycares     PesertaDaycare[]
 
   @@map("siswa")
 }
@@ -1103,6 +1147,31 @@ model TransaksiKas {
 
   @@map("transaksi_kas")
 }
+
+// ==================== DAYCARE ====================
+
+model PesertaDaycare {
+  id                String               @id @default(uuid())
+  siswaId           String?              @map("siswa_id")
+  namaLengkap       String?              @map("nama_lengkap") @db.VarChar(100)
+  tanggalLahir      DateTime?            @map("tanggal_lahir") @db.Date
+  jenisKelamin      JenisKelamin?        @map("jenis_kelamin")
+  namaOrtu          String?              @map("nama_ortu") @db.VarChar(100)
+  noHpOrtu          String?              @map("no_hp_ortu") @db.VarChar(20)
+  jenjangSetaraId   String               @map("jenjang_setara_id")
+  modeDaycare       ModeDaycare          @map("mode_daycare")
+  status            StatusPesertaDaycare @default(AKTIF)
+  tanggalMulai      DateTime             @map("tanggal_mulai") @db.Date
+  tanggalBerakhir   DateTime?            @map("tanggal_berakhir") @db.Date
+  catatan           String?              @db.Text
+  createdAt         DateTime             @default(now()) @map("created_at")
+  updatedAt         DateTime             @updatedAt @map("updated_at")
+
+  siswa           Siswa?   @relation(fields: [siswaId], references: [id])
+  jenjangSetara   Jenjang  @relation("JenjangSetaraDaycare", fields: [jenjangSetaraId], references: [id])
+
+  @@map("peserta_daycare")
+}
 ```
 
 ---
@@ -1112,3 +1181,4 @@ model TransaksiKas {
 | Versi | Tanggal | Perubahan | Oleh |
 |-------|---------|-----------|------|
 | 1.0 | 29 Jan 2026 | Dokumen awal | - |
+| 1.1 | 13 Apr 2026 | - Tambah model `PesertaDaycare` + enum `ModeDaycare`, `StatusPesertaDaycare`<br>- Hapus `ikutDaycare` dari model `Siswa`<br>- Tambah relasi `pesertaDaycares` di Siswa<br>- Tambah relasi `JenjangSetaraDaycare` di Jenjang<br>- Tambah tabel definition `4.21 peserta_daycare` | - |

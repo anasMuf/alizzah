@@ -14,7 +14,8 @@ import {
     ChevronLeft,
     GraduationCap,
     PiggyBank,
-    Wallet
+    Wallet,
+    Baby
 } from 'lucide-react'
 import { userAtom, logoutAtom } from '~/stores/auth'
 import { ConfirmDialog } from '~/components/ui/ConfirmDialog'
@@ -124,6 +125,7 @@ export function Sidebar({ open, setOpen, isCollapsed, setIsCollapsed }: SidebarP
                         <SidebarItem to="/siswa/progresi" icon={GraduationCap} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Kenaikan Kelas</SidebarItem>
                         <SidebarItem to="/keuangan/billing" icon={CreditCard} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Tagihan & SPP</SidebarItem>
                         <SidebarItem to="/keuangan/pembayaran" icon={CreditCard} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Pembayaran & Kasir</SidebarItem>
+                        <SidebarItem to="/daycare" icon={Baby} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Layanan Daycare</SidebarItem>
                         <SidebarItem to="/keuangan/tabungan" icon={PiggyBank} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Tabungan Siswa</SidebarItem>
                         <SidebarItem to="/keuangan/kas" icon={Wallet} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Kas & Berangkas</SidebarItem>
 

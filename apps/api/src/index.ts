@@ -5,7 +5,7 @@ dotenv.config({ path: path.resolve(process.cwd(), '../../.env') });
 import { serve } from '@hono/node-server';
 import app from './app';
 
-const port = 3001;
+const port = 3011;
 console.log(`Server is running on http://localhost:${port}`);
 
 const server = serve({

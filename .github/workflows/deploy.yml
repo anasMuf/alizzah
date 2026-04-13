@@ -10,7 +10,7 @@ jobs:
     environment: ANASLABS_VPS
     
     env:
-      VITE_API_URL: http://${{ secrets.VPS_HOST }}:3001/api/v1
+      VITE_API_URL: https://api.alizzah.anaslabs.my.id/api/v1
       VPS_HOST: ${{ secrets.VPS_HOST }}
       VPS_USER: ${{ secrets.VPS_USER }}
       VPS_KEY: ${{ secrets.VPS_KEY }}
@@ -35,7 +35,7 @@ jobs:
 
       - name: Create .env file for Web Build
         run: |
-          echo "VITE_API_URL=http://${{ secrets.VPS_HOST }}:3001/api/v1" > .env
+          echo "VITE_API_URL=https://api.alizzah.anaslabs.my.id/api/v1" > .env
           cat .env
 
       - name: Build all packages

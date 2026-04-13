@@ -6,7 +6,7 @@ module.exports = {
             interpreter: "./apps/api/node_modules/.bin/tsx",
             env: {
                 NODE_ENV: "production",
-                PORT: 3001,
+                PORT: 3011,
             }
         },
         {
@@ -15,7 +15,7 @@ module.exports = {
             interpreter: "node",
             env: {
                 NODE_ENV: "production",
-                PORT: 3000,
+                PORT: 3012,
             }
         }
     ]

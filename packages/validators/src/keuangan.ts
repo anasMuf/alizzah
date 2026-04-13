@@ -102,8 +102,10 @@ export type AssignDiskonInput = z.infer<typeof assignDiskonSchema>;
 export const generateTagihanSchema = z.object({
     bulan: z.number().int().min(1).max(12),
     tahun: z.number().int().min(2020),
-    // For calculation variables
-    jumlahHariEfektif: z.number().int().nonnegative().default(20),
+    hariEfektifMutiara13: z.number().int().nonnegative().default(20),
+    hariEfektifMutiara46: z.number().int().nonnegative().default(20),
+    hariEfektifIntan18: z.number().int().nonnegative().default(20),
+    hariEfektifBerlian18: z.number().int().nonnegative().default(20),
     jumlahSenin: z.number().int().nonnegative().default(4),
     jumlahHariKonsumsi: z.number().int().nonnegative().default(0),
     // Target scope

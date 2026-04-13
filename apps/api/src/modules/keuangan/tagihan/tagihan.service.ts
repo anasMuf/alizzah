@@ -156,7 +156,8 @@ export class TagihanService {
     static async generate(data: GenerateTagihanInput) {
         const {
             bulan, tahun,
-            jumlahHariEfektif, jumlahSenin, jumlahHariKonsumsi,
+            hariEfektifMutiara13, hariEfektifMutiara46, hariEfektifIntan18, hariEfektifBerlian18,
+            jumlahSenin, jumlahHariKonsumsi,
             jenjangId, rombelId, siswaIds,
             jenisPembayaranIds
         } = data;
@@ -317,8 +318,23 @@ export class TagihanService {
                     }
                 } else if (jp.tipe === 'HARIAN') {
                     const tarif = getTarif(jp, siswa.rombel, siswa.jenisKelamin);
-                    nominalAwal = tarif * (jumlahHariEfektif || 0);
-                    namaItem = `${jp.nama} (${jumlahHariEfektif} Hari)`;
+                    
+                    let effectiveDays = 20;
+                    const rombelNama = siswa.rombel.nama.toLowerCase();
+
+                    if (rombelNama.includes('mutiara')) {
+                        const match = rombelNama.match(/\d+/);
+                        const rombelNumber = match ? parseInt(match[0]) : 0;
+                        if (rombelNumber >= 1 && rombelNumber <= 3) effectiveDays = hariEfektifMutiara13 ?? 20;
+                        else effectiveDays = hariEfektifMutiara46 ?? 20;
+                    } else if (rombelNama.includes('intan')) {
+                        effectiveDays = hariEfektifIntan18 ?? 20;
+                    } else if (rombelNama.includes('berlian')) {
+                        effectiveDays = hariEfektifBerlian18 ?? 20;
+                    }
+
+                    nominalAwal = tarif * effectiveDays;
+                    namaItem = `${jp.nama} (${effectiveDays} Hari)`;
                 } else {
                     nominalAwal = getTarif(jp, siswa.rombel, siswa.jenisKelamin);
                 }

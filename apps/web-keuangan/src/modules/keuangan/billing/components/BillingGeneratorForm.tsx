@@ -41,7 +41,10 @@ export function BillingGeneratorForm({
         defaultValues: {
             bulan: new Date().getMonth() + 1,
             tahun: new Date().getFullYear(),
-            jumlahHariEfektif: 20,
+            hariEfektifMutiara13: 20,
+            hariEfektifMutiara46: 20,
+            hariEfektifIntan18: 20,
+            hariEfektifBerlian18: 20,
             jumlahSenin: 4,
             jenisPembayaranIds: []
         }
@@ -110,20 +113,38 @@ export function BillingGeneratorForm({
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 italic">
-                                    HARI EFEKTIF
-                                    <Info size={10} className="text-slate-300" />
-                                </label>
-                                <input {...register('jumlahHariEfektif', { valueAsNumber: true })} type="number" className={`${inputClass}`} placeholder="20" />
+                        <div className="pt-2 border-t border-slate-100">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 italic mb-2">
+                                JUMLAH HARI EFEKTIF PER ROMBEL
+                                <Info size={10} className="text-slate-300" />
+                            </label>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                <div className="space-y-1">
+                                    <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest italic">MUTIARA 1-3</label>
+                                    <input {...register('hariEfektifMutiara13', { valueAsNumber: true })} type="number" className={`${inputClass}`} />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest italic">MUTIARA 4-6</label>
+                                    <input {...register('hariEfektifMutiara46', { valueAsNumber: true })} type="number" className={`${inputClass}`} />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest italic">INTAN 1-8</label>
+                                    <input {...register('hariEfektifIntan18', { valueAsNumber: true })} type="number" className={`${inputClass}`} />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest italic">BERLIAN 1-8</label>
+                                    <input {...register('hariEfektifBerlian18', { valueAsNumber: true })} type="number" className={`${inputClass}`} />
+                                </div>
                             </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-3 pt-1 mt-2">
                             <div className="space-y-1">
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 italic">
-                                    JUMLAH SENIN
+                                    JUMLAH SENIN (TK-B / BERLIAN)
                                     <Info size={10} className="text-slate-300" />
                                 </label>
-                                <input {...register('jumlahSenin', { valueAsNumber: true })} type="number" className={`${inputClass}`} placeholder="4" />
+                                <input {...register('jumlahSenin', { valueAsNumber: true })} type="number" className={`${inputClass} sm:max-w-[200px]`} placeholder="4" />
                             </div>
                         </div>
                     </div>

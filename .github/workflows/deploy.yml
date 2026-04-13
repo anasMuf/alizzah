@@ -114,7 +114,7 @@ jobs:
              pnpm install --ignore-scripts
              
              # Generate Prisma Client for VPS (gets correct binary engine for debian)
-             cd apps/api && pnpm prisma generate && cd ../..
+             cd apps/api && pnpm prisma generate && pnpm prisma db push --accept-data-loss && cd ../..
              
              # Reload PM2
              pm2 reload ecosystem.config.cjs

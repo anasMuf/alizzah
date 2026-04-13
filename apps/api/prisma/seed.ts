@@ -2,7 +2,7 @@ import path from 'path';
 import dotenv from 'dotenv';
 dotenv.config({ path: path.resolve(process.cwd(), '../../.env') });
 
-import { PrismaClient } from '../generated/prisma';
+import { PrismaClient } from '@prisma/client';
 import { hashSync } from 'bcryptjs';
 
 // Ensure DATABASE_URL is loaded
@@ -66,7 +66,7 @@ async function main() {
 
     const academicYearId = currentYear.id;
     const jenjangs = await prisma.jenjang.findMany();
-    const jenjangMap = jenjangs.reduce((acc, j) => ({ ...acc, [j.kode]: j.id }), {} as Record<string, string>);
+    const jenjangMap = jenjangs.reduce((acc: Record<string, string>, j) => ({ ...acc, [j.kode]: j.id }), {} as Record<string, string>);
 
     // 4. Seed Rombel (Classes) - 10 per Jenjang
     console.log('🌱 Seeding Rombels...');
@@ -328,29 +328,28 @@ async function main() {
     console.log('✅ Pos Pengeluaran seeded:', posPengeluaranData.length);
 
     // 7. Seed Kas (Cash Accounts)
-    const kasData = [
-        { tipe: 'KAS' as const, nama: 'Kas Utama', saldo: 5000000 },
-        { tipe: 'BERANGKAS' as const, nama: 'Berangkas', saldo: 10000000 },
-    ];
+    const kasData: { tipe: 'KAS' | 'BERANGKAS', nama: string, saldo: number }[] = [];
 
-    for (const kas of kasData) {
-        await prisma.kas.upsert({
-            where: { id: `fixed-kas-${kas.tipe.toLowerCase()}` },
-            update: {},
-            create: {
-                id: `fixed-kas-${kas.tipe.toLowerCase()}`,
-                tipe: kas.tipe,
-                nama: kas.nama,
-                saldo: kas.saldo,
-            },
-        });
+    if (kasData.length > 0) {
+        for (const kas of kasData) {
+            await prisma.kas.upsert({
+                where: { id: `fixed-kas-${kas.tipe.toLowerCase()}` },
+                update: {},
+                create: {
+                    id: `fixed-kas-${kas.tipe.toLowerCase()}`,
+                    tipe: kas.tipe,
+                    nama: kas.nama,
+                    saldo: kas.saldo,
+                },
+            });
+        }
+        console.log('✅ Kas seeded:', kasData.length);
     }
-    console.log('✅ Kas seeded:', kasData.length);
 
     // 8. Seed Bank
     const bankData = [
-        { nama: 'Bank Syariah Indonesia', nomorRekening: '1234567890', atasNama: 'PAUD Unggulan Alizzah' },
-        { nama: 'Bank Muamalat', nomorRekening: '0987654321', atasNama: 'PAUD Unggulan Alizzah' },
+        { nama: 'BCA', nomorRekening: '1234567890', atasNama: 'PAUD Unggulan Alizzah' },
+        { nama: 'Mandiri', nomorRekening: '1234567890', atasNama: 'PAUD Unggulan Alizzah' },
     ];
 
     for (const bank of bankData) {

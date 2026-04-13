@@ -9,7 +9,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     return (
         <div className="flex h-screen overflow-hidden bg-[#F8FAFC]">
             {/* Sidebar - Desktop: Fixed width container, Mobile: Absolute */}
-            <div className={`transition-all duration-300 ease-in-out hidden lg:block grow-0 shrink-0 ${isCollapsed ? 'w-20' : 'w-72'}`}>
+            <div className={`transition-all duration-300 ease-in-out hidden lg:block grow-0 shrink-0 ${isCollapsed ? 'w-20' : 'w-60'}`}>
                 <Sidebar
                     open={sidebarOpen}
                     setOpen={setSidebarOpen}
@@ -33,8 +33,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <Header setSidebarOpen={setSidebarOpen} />
 
                 {/* Scrollable Content */}
-                <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 custom-scrollbar">
-                    <div className="max-w-[1400px] mx-auto pb-10">
+                <main className="flex-1 overflow-y-auto p-4 md:p-5 lg:p-5 custom-scrollbar">
+                    <div className="max-w-[1400px] mx-auto pb-6">
                         {children}
                     </div>
                 </main>

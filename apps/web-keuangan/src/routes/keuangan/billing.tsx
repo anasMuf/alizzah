@@ -11,23 +11,23 @@ function BillingLayout() {
     const isHistoryPath = location.pathname.includes('/history');
 
     return (
-        <div className="p-0 sm:p-6 md:p-8 max-w-[1400px] mx-auto space-y-6 sm:space-y-8 pb-20">
+        <div className="p-0 sm:p-4 max-w-[1400px] mx-auto space-y-5 pb-20">
             <Toaster position="top-right" richColors />
 
             {/* Shared View Switching Header */}
             <div className="px-4 sm:px-0 flex">
-                <div className="flex bg-slate-100 p-1 rounded-xl sm:p-1.5 sm:rounded-2xl w-full sm:w-fit mx-auto shadow-sm border border-slate-200">
+                <div className="flex bg-slate-100 p-1 rounded-xl w-full sm:w-fit mx-auto shadow-sm border border-slate-200">
                     <Link
                         to="/keuangan/billing"
-                        className={`flex-1 sm:flex-none px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-[10px] sm:text-sm font-bold transition-all flex items-center justify-center gap-2 ${!isHistoryPath ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+                        className={`flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-[10px] sm:text-xs font-bold transition-all flex items-center justify-center gap-2 ${!isHistoryPath ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
                     >
-                        <Zap size={16} className="sm:w-[18px] sm:h-[18px]" /> <span className="whitespace-nowrap">Generate Baru</span>
+                        <Zap size={14} /> <span className="whitespace-nowrap uppercase tracking-wider">Generate Baru</span>
                     </Link>
                     <Link
                         to="/keuangan/billing/history"
-                        className={`flex-1 sm:flex-none px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-[10px] sm:text-sm font-bold transition-all flex items-center justify-center gap-2 ${isHistoryPath ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+                        className={`flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-[10px] sm:text-xs font-bold transition-all flex items-center justify-center gap-2 ${isHistoryPath ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
                     >
-                        <Calendar size={16} className="sm:w-[18px] sm:h-[18px]" /> <span className="whitespace-nowrap">Riwayat & Detail</span>
+                        <Calendar size={14} /> <span className="whitespace-nowrap uppercase tracking-wider">Riwayat</span>
                     </Link>
                 </div>
             </div>

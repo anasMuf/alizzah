@@ -66,98 +66,98 @@ export function DiskonTable({
     return (
         <>
             <div className="space-y-4">
-                <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto custom-scrollbar">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto custom-scrollbar">
                     <table className="min-w-full divide-y divide-slate-200">
                         <thead className="bg-slate-50/50">
                             <tr>
-                                <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Info Diskon</th>
-                                <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Jenis Potongan</th>
-                                <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Berlaku Untuk</th>
-                                <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Status</th>
-                                <th className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider text-slate-500">Aksi</th>
+                                <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-wider text-slate-500">Info Diskon</th>
+                                <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-wider text-slate-500">Jenis Potongan</th>
+                                <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-wider text-slate-500">Berlaku Untuk</th>
+                                <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-wider text-slate-500">Status</th>
+                                <th className="px-4 py-2.5 text-right text-[10px] font-bold uppercase tracking-wider text-slate-500">Aksi</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 bg-white">
                             {data?.map((item) => (
                                 <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl group-hover:scale-110 transition-transform">
-                                                <Ticket size={20} />
+                                    <td className="px-4 py-2.5">
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg group-hover:scale-110 transition-transform">
+                                                <Ticket size={18} />
                                             </div>
                                             <div>
-                                                <div className="font-bold text-slate-900">{item.nama}</div>
+                                                <div className="font-bold text-slate-900 text-sm">{item.nama}</div>
                                                 <div className="text-[10px] text-slate-400 font-mono tracking-wider mt-0.5">{item.kode}</div>
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4">
+                                    <td className="px-4 py-2.5">
                                         <div className="flex items-center gap-2">
                                             {item.tipePotongan === 'PERSENTASE' ? (
-                                                <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-orange-50 text-orange-700 border border-orange-100">
-                                                    <Percent size={14} />
-                                                    <span className="font-bold text-sm">{item.nilaiPotongan}%</span>
+                                                <div className="flex items-center gap-1 px-1.5 py-0.5 rounded text-orange-700 bg-orange-50 border border-orange-100 font-black text-[10px]">
+                                                    <Percent size={12} />
+                                                    <span>{item.nilaiPotongan}%</span>
                                                 </div>
                                             ) : (
-                                                <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-100">
-                                                    <Banknote size={14} />
-                                                    <span className="font-bold text-sm">{formatCurrency(item.nilaiPotongan)}</span>
+                                                <div className="flex items-center gap-1 px-1.5 py-0.5 rounded text-emerald-700 bg-emerald-50 border border-emerald-100 font-black text-[10px]">
+                                                    <Banknote size={12} />
+                                                    <span>{formatCurrency(item.nilaiPotongan)}</span>
                                                 </div>
                                             )}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <div className="text-sm font-semibold text-slate-700">
+                                    <td className="px-4 py-2.5">
+                                        <div className="text-xs font-bold text-slate-700">
                                             {item.jenisPembayaran?.nama}
                                         </div>
                                         <div className="text-[10px] text-slate-400 italic">
                                             ID: {item.jenisPembayaran?.kode}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
+                                    <td className="px-4 py-2.5 whitespace-nowrap">
                                         <span
-                                            className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${item.isAktif
+                                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${item.isAktif
                                                 ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
                                                 : 'bg-slate-50 text-slate-400 border border-slate-200'
                                                 }`}
                                         >
                                             {item.isAktif ? (
-                                                <CheckCircle2 size={12} className="mr-1.5" />
+                                                <CheckCircle2 size={10} className="mr-1" />
                                             ) : (
-                                                <XCircle size={12} className="mr-1.5" />
+                                                <XCircle size={10} className="mr-1" />
                                             )}
                                             {item.isAktif ? 'Aktif' : 'Non-Aktif'}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                        <div className="flex justify-end gap-1.5 text-slate-400">
+                                    <td className="px-4 py-2.5 whitespace-nowrap text-right">
+                                        <div className="flex justify-end gap-1 text-slate-400">
                                             <button
                                                 onClick={() => onViewSiswa?.(item)}
-                                                className="p-2 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                                                className="p-1.5 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
                                                 title="Lihat Siswa Penerima"
                                             >
-                                                <Eye size={18} />
+                                                <Eye size={16} />
                                             </button>
                                             <button
                                                 onClick={() => onEdit?.(item)}
-                                                className="p-2 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all"
+                                                className="p-1.5 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-all"
                                                 title="Edit Master Diskon"
                                             >
-                                                <Edit2 size={18} />
+                                                <Edit2 size={16} />
                                             </button>
                                             <button
                                                 onClick={() => onAssign?.(item)}
-                                                className="p-2 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                                                className="p-1.5 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
                                                 title="Berikan ke Siswa"
                                             >
-                                                <Users size={18} />
+                                                <Users size={16} />
                                             </button>
                                             <button
                                                 onClick={() => setDeleteId(item.id)}
-                                                className="p-2 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+                                                className="p-1.5 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
                                                 title="Hapus"
                                             >
-                                                <Trash2 size={18} />
+                                                <Trash2 size={16} />
                                             </button>
                                         </div>
                                     </td>

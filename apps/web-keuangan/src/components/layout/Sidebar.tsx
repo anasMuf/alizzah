@@ -26,11 +26,11 @@ function SidebarItem({ to, icon: Icon, children, exact = false, onClick, isColla
             to={to}
             activeOptions={{ exact }}
             activeProps={{ className: 'bg-blue-50 text-blue-700 shadow-sm' }}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 group relative ${isCollapsed ? 'justify-center px-0 w-12 mx-auto' : ''}`}
+            className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 group relative ${isCollapsed ? 'justify-center px-0 w-12 mx-auto' : ''}`}
             onClick={onClick}
         >
-            <Icon size={20} className="group-hover:scale-110 transition-transform shrink-0" />
-            {!isCollapsed && <span className="font-medium text-[15px] truncate">{children}</span>}
+            <Icon size={18} className="group-hover:scale-110 transition-transform shrink-0" />
+            {!isCollapsed && <span className="font-medium text-[13px] truncate">{children}</span>}
             {!isCollapsed && <ChevronRight size={14} className="ml-auto opacity-0 group-hover:opacity-40 transition-opacity" />}
 
             {/* Tooltip for collapsed state */}
@@ -72,14 +72,14 @@ export function Sidebar({ open, setOpen, isCollapsed, setIsCollapsed }: SidebarP
 
             {/* Sidebar Content */}
             <aside
-                className={`fixed inset-y-0 left-0 bg-white border-r border-slate-200 z-50 transform transition-all duration-300 ease-in-out lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'} ${isCollapsed ? 'w-20' : 'w-72'}`}
+                className={`fixed inset-y-0 left-0 bg-white border-r border-slate-200 z-50 transform transition-all duration-300 ease-in-out lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'} ${isCollapsed ? 'w-20' : 'w-60'}`}
             >
                 <div className="flex flex-col h-full overflow-hidden">
                     {/* Logo Section */}
-                    <div className={`p-6 border-b border-slate-100 flex items-center shrink-0 ${isCollapsed ? 'justify-center px-0' : 'justify-between'}`}>
-                        <div className={`flex items-center gap-3 ${isCollapsed ? 'gap-0' : ''}`}>
-                            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200 shrink-0">
-                                <School className="text-white" size={24} />
+                    <div className={`p-4 border-b border-slate-100 flex items-center shrink-0 ${isCollapsed ? 'justify-center px-0' : 'justify-between'}`}>
+                        <div className={`flex items-center gap-2.5 ${isCollapsed ? 'gap-0' : ''}`}>
+                            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-200 shrink-0">
+                                <School className="text-white" size={20} />
                             </div>
                             {!isCollapsed && (
                                 <div className="animate-in fade-in slide-in-from-left-2 duration-300">
@@ -92,7 +92,7 @@ export function Sidebar({ open, setOpen, isCollapsed, setIsCollapsed }: SidebarP
                         {/* Desktop Collapse Toggle */}
                         <button
                             onClick={() => setIsCollapsed(!isCollapsed)}
-                            className="hidden lg:flex p-1.5 rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors"
+                            className="hidden lg:flex p-1 rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors"
                         >
                             <ChevronLeft size={18} className={`transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`} />
                         </button>
@@ -104,13 +104,13 @@ export function Sidebar({ open, setOpen, isCollapsed, setIsCollapsed }: SidebarP
                     </div>
 
                     {/* Navigation */}
-                    <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto custom-scrollbar overflow-x-hidden">
-                        <div className={`px-4 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ${isCollapsed ? 'text-center px-0' : ''}`}>
+                    <nav className="flex-1 px-3 py-3 space-y-1 overflow-y-auto custom-scrollbar overflow-x-hidden">
+                        <div className={`px-3 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1 ${isCollapsed ? 'text-center px-0' : ''}`}>
                             {isCollapsed ? '...' : 'Menu Utama'}
                         </div>
                         <SidebarItem to="/" icon={LayoutDashboard} exact onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Dashboard</SidebarItem>
 
-                        <div className={`mt-6 px-4 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ${isCollapsed ? 'text-center px-0' : ''}`}>
+                        <div className={`mt-4 px-3 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1 ${isCollapsed ? 'text-center px-0' : ''}`}>
                             {isCollapsed ? '...' : 'Master Data'}
                         </div>
                         <SidebarItem to="/master/tahun-ajaran" icon={CalendarDays} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Tahun Ajaran</SidebarItem>
@@ -118,7 +118,7 @@ export function Sidebar({ open, setOpen, isCollapsed, setIsCollapsed }: SidebarP
                         <SidebarItem to="/master/rombel" icon={Users} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Rombel (Kelas)</SidebarItem>
                         <SidebarItem to="/master/jenis-pembayaran" icon={CreditCard} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Jenis Pembayaran</SidebarItem>
                         <SidebarItem to="/master/diskon" icon={CreditCard} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Dispensasi siswa</SidebarItem>
-                        <div className={`mt-6 px-4 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ${isCollapsed ? 'text-center px-0' : ''}`}>
+                        <div className={`mt-4 px-3 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1 ${isCollapsed ? 'text-center px-0' : ''}`}>
                             {isCollapsed ? '...' : 'Keuangan'}
                         </div>
                         <SidebarItem to="/siswa" icon={Users} exact onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Data Siswa</SidebarItem>
@@ -129,18 +129,18 @@ export function Sidebar({ open, setOpen, isCollapsed, setIsCollapsed }: SidebarP
                         <SidebarItem to="/keuangan/tabungan" icon={PiggyBank} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Tabungan Siswa</SidebarItem>
                         <SidebarItem to="/keuangan/kas" icon={Wallet} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Kas & Berangkas</SidebarItem>
 
-                        <div className={`mt-6 px-4 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ${isCollapsed ? 'text-center px-0' : ''}`}>
+                        <div className={`mt-4 px-3 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1 ${isCollapsed ? 'text-center px-0' : ''}`}>
                             {isCollapsed ? '...' : 'Laporan'}
                         </div>
                         <SidebarItem to="/keuangan/laporan" icon={FilePieChart} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Laporan & Analitik</SidebarItem>
                     </nav>
 
                     {/* User Profile Section */}
-                    <div className="p-4 border-t border-slate-100 bg-slate-50/50 shrink-0">
+                    <div className="p-3 border-t border-slate-100 bg-slate-50/50 shrink-0">
                         {!isCollapsed ? (
                             <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                <div className="flex items-center gap-3 p-3 mb-2">
-                                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold border-2 border-white shrink-0">
+                                <div className="flex items-center gap-2.5 p-2 mb-1">
+                                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold border-2 border-white shrink-0">
                                         {user?.username?.[0]?.toUpperCase()}
                                     </div>
                                     <div className="flex-1 overflow-hidden">
@@ -150,20 +150,20 @@ export function Sidebar({ open, setOpen, isCollapsed, setIsCollapsed }: SidebarP
                                 </div>
                                 <button
                                     onClick={() => setShowLogoutConfirm(true)}
-                                    className="flex items-center gap-3 w-full px-4 py-3 text-red-600 font-semibold text-sm hover:bg-red-50 rounded-xl transition-colors group"
+                                    className="flex items-center gap-2.5 w-full px-3 py-2 text-red-600 font-semibold text-sm hover:bg-red-50 rounded-lg transition-colors group"
                                 >
                                     <LogOut size={18} className="group-hover:-translate-x-1 transition-transform" />
                                     Keluar Sistem
                                 </button>
                             </div>
                         ) : (
-                            <div className="flex flex-col items-center gap-4">
-                                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold border-2 border-white shrink-0">
+                            <div className="flex flex-col items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold border-2 border-white shrink-0">
                                     {user?.username?.[0]?.toUpperCase()}
                                 </div>
                                 <button
                                     onClick={() => setShowLogoutConfirm(true)}
-                                    className="p-3 text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                     title="Keluar Sistem"
                                 >
                                     <LogOut size={20} />

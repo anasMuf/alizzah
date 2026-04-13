@@ -33,10 +33,10 @@ export function ConfirmDialog({
     isLoading = false
 }: ConfirmDialogProps) {
     const icons = {
-        danger: <AlertCircle className="text-red-600" size={24} />,
-        warning: <AlertTriangle className="text-amber-600" size={24} />,
-        info: <HelpCircle className="text-blue-600" size={24} />,
-        success: <Info className="text-emerald-600" size={24} />
+        danger: <AlertCircle className="text-red-600" size={20} />,
+        warning: <AlertTriangle className="text-amber-600" size={20} />,
+        info: <HelpCircle className="text-blue-600" size={20} />,
+        success: <Info className="text-emerald-600" size={20} />
     }
 
     const colors = {
@@ -73,13 +73,13 @@ export function ConfirmDialog({
                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
                         className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200"
                     >
-                        <div className="p-6">
+                        <div className="p-5">
                             <div className="flex items-start gap-4">
-                                <div className={cn("p-3 rounded-xl border shrink-0", colors[variant])}>
+                                <div className={cn("p-2.5 rounded-xl border shrink-0", colors[variant])}>
                                     {icons[variant]}
                                 </div>
                                 <div className="flex-1">
-                                    <h3 className="text-lg font-bold text-slate-900 leading-tight">
+                                    <h3 className="text-base font-bold text-slate-900 leading-tight">
                                         {title}
                                     </h3>
                                     <p className="mt-2 text-sm text-slate-500 leading-relaxed font-medium">
@@ -94,7 +94,7 @@ export function ConfirmDialog({
                                 </button>
                             </div>
 
-                            <div className="mt-8 flex items-center gap-3">
+                            <div className="mt-5 flex items-center gap-3">
                                 <button
                                     onClick={onClose}
                                     disabled={isLoading}

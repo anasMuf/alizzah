@@ -83,20 +83,20 @@ export function BillingGenerator() {
     }, [infiniteListData]);
 
     return (
-        <div className="space-y-8 pb-20">
+        <div className="space-y-5 pb-20">
             {/* View Switching Header */}
-            <div className="flex bg-slate-100 p-1.5 rounded-2xl w-fit mx-auto shadow-sm border border-slate-200">
+            <div className="flex bg-slate-100 p-1 rounded-xl w-fit mx-auto shadow-sm border border-slate-200">
                 <button
                     onClick={() => setView('generator')}
-                    className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${view === 'generator' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${view === 'generator' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
                 >
-                    <Zap size={16} /> Generate Baru
+                    <Zap size={14} /> Generate Baru
                 </button>
                 <button
                     onClick={() => setView('history')}
-                    className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${view !== 'generator' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${view !== 'generator' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
                 >
-                    <Calendar size={16} /> Riwayat & Detail
+                    <Calendar size={14} /> Riwayat & Detail
                 </button>
             </div>
 
@@ -109,33 +109,33 @@ export function BillingGenerator() {
                     }}
                 />
             ) : view === 'history' ? (
-                <div className="max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
+                <div className="max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-4">
                     {/* History Filters */}
-                    <div className="flex flex-wrap items-center gap-4 bg-white p-5 sm:p-6 rounded-4xl border border-slate-200">
-                        <div className="flex items-center gap-3 mr-4">
-                            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                                <Filter size={18} />
+                    <div className="flex flex-wrap items-center gap-3 bg-white p-4 rounded-xl border border-slate-200">
+                        <div className="flex items-center gap-2 mr-2">
+                            <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg">
+                                <Filter size={16} />
                             </div>
-                            <span className="text-sm font-bold text-slate-700">Filter Riwayat</span>
+                            <span className="text-xs font-bold text-slate-700 uppercase tracking-tighter">Filter</span>
                         </div>
 
-                        <div className="flex-1 min-w-[200px] relative">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                        <div className="flex-1 min-w-[180px] relative">
+                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
                             <input
                                 type="text"
                                 placeholder="Cari periode (YYYY-MM)..."
                                 value={historySearch}
                                 onChange={(e) => setHistorySearch(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500/20 text-sm font-medium"
+                                className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-100 rounded-lg focus:ring-2 focus:ring-blue-500/20 text-xs font-medium"
                             />
                         </div>
 
                         <select
                             value={historyTA || ''}
                             onChange={(e) => setHistoryTA(e.target.value || null)}
-                            className="px-4 py-2.5 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500/20 text-sm font-medium min-w-[150px]"
+                            className="px-3 py-1.5 bg-slate-50 border border-slate-100 rounded-lg focus:ring-2 focus:ring-blue-500/20 text-xs font-bold text-slate-700 min-w-[140px]"
                         >
-                            <option value="">Semua Tahun Ajaran</option>
+                            <option value="">Semua TA</option>
                             {taList?.map(ta => (
                                 <option key={ta.id} value={ta.id}>{ta.nama}</option>
                             ))}
@@ -144,7 +144,7 @@ export function BillingGenerator() {
                         <select
                             value={historyMonth || ''}
                             onChange={(e) => setHistoryMonth(e.target.value || null)}
-                            className="px-4 py-2.5 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500/20 text-sm font-medium min-w-[120px]"
+                            className="px-3 py-1.5 bg-slate-50 border border-slate-100 rounded-lg focus:ring-2 focus:ring-blue-500/20 text-xs font-bold text-slate-700 min-w-[110px]"
                         >
                             <option value="">Semua Bulan</option>
                             {['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'].map(m => (

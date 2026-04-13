@@ -53,9 +53,9 @@ export function IncidentalItemForm({ availableItems, items, onChange }: Incident
             </div>
 
             {/* Input Row */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-2.5 bg-slate-50 p-3 rounded-xl border border-slate-100">
                 <div className="md:col-span-2 space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter ml-1">Jenis Pembayaran</label>
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-tighter ml-1 leading-none">Jenis Pembayaran</label>
                     <select
                         value={selectedId}
                         onChange={(e) => {
@@ -64,7 +64,7 @@ export function IncidentalItemForm({ availableItems, items, onChange }: Incident
                             const jp = availableItems.find(i => i.id === id);
                             if (jp) setNominal(parseCurrency(jp.nominalDefault));
                         }}
-                        className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                        className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                     >
                         <option value="">Pilih Jenis...</option>
                         {availableItems.filter(jp => jp.sifat === 'OPSIONAL' || jp.tipe === 'INSIDENTIL').map(jp => (
@@ -74,15 +74,15 @@ export function IncidentalItemForm({ availableItems, items, onChange }: Incident
                 </div>
 
                 <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter ml-1">Nominal</label>
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-tighter ml-1 leading-none">Nominal</label>
                     <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">Rp</span>
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[9px] font-black text-slate-400 font-mono">Rp</span>
                         <input
                             type="number"
                             value={nominal || ''}
                             onChange={(e) => setNominal(parseCurrency(e.target.value))}
                             placeholder="0"
-                            className="w-full pl-8 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-bold"
+                            className="w-full pl-7 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-black focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-mono"
                         />
                     </div>
                 </div>
@@ -91,33 +91,33 @@ export function IncidentalItemForm({ availableItems, items, onChange }: Incident
                     <button
                         onClick={handleAdd}
                         disabled={!selectedId || nominal <= 0}
-                        className="w-full py-2 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                        className="w-full py-1.5 bg-blue-600 text-white rounded-lg font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all disabled:opacity-50 flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
                     >
-                        <Plus size={16} /> Tambah
+                        <Plus size={14} /> Tambah
                     </button>
                 </div>
             </div>
 
             {/* List of Added Items */}
-            <div className="space-y-2">
+            <div className="space-y-1.5">
                 {items.map((item, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-white border border-slate-100 rounded-2xl shadow-sm animate-in slide-in-from-top-2 duration-300">
-                        <div className="flex items-center gap-4">
-                            <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
-                                <Banknote size={16} />
+                    <div key={index} className="flex items-center justify-between p-2.5 bg-white border border-slate-100 rounded-xl shadow-sm animate-in slide-in-from-top-2 duration-300">
+                        <div className="flex items-center gap-3">
+                            <div className="p-1.5 bg-amber-50 text-amber-600 rounded-lg">
+                                <Banknote size={14} />
                             </div>
                             <div>
-                                <div className="text-xs font-bold text-slate-900">{item.nama}</div>
-                                {item.catatan && <div className="text-[10px] text-slate-400">{item.catatan}</div>}
+                                <div className="text-[11px] font-black text-slate-900 uppercase tracking-tight">{item.nama}</div>
+                                {item.catatan && <div className="text-[8px] text-slate-400 font-medium font-mono">{item.catatan}</div>}
                             </div>
                         </div>
-                        <div className="flex items-center gap-6">
-                            <div className="text-sm font-black text-slate-900">{formatCurrency(item.nominal)}</div>
+                        <div className="flex items-center gap-4">
+                            <div className="text-xs font-black text-slate-900 font-mono">{formatCurrency(item.nominal)}</div>
                             <button
                                 onClick={() => handleRemove(index)}
-                                className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
+                                className="p-1.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
                             >
-                                <Trash2 size={16} />
+                                <Trash2 size={14} />
                             </button>
                         </div>
                     </div>

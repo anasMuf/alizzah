@@ -76,103 +76,103 @@ export function ReceiptModal({ isOpen, onClose, pembayaran }: ReceiptModalProps)
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="relative w-full max-w-2xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200 flex flex-col"
+                className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200 flex flex-col"
             >
                 {/* Modal Header */}
-                <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-blue-600 text-white rounded-2xl shadow-lg shadow-blue-100">
-                            <Receipt size={24} />
+                <div className="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2.5 bg-blue-600 text-white rounded-xl shadow-lg shadow-blue-100">
+                            <Receipt size={20} />
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold text-slate-900 leading-none">Bukti Pembayaran</h2>
-                            <p className="text-xs text-slate-400 font-mono mt-1 lowercase tracking-tighter">{pembayaran.kode}</p>
+                            <h2 className="text-lg font-bold text-slate-900 leading-none uppercase">Bukti Bayar</h2>
+                            <p className="text-[10px] text-slate-400 font-mono mt-1 lowercase tracking-tighter italic">{pembayaran.kode}</p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
                         <button
                             onClick={handlePrint}
-                            className="p-2 text-slate-400 hover:bg-white hover:text-blue-600 rounded-full transition-all border border-transparent hover:border-slate-100"
+                            className="p-1.5 text-slate-400 hover:bg-white hover:text-blue-600 rounded-full transition-all border border-transparent hover:border-slate-100"
                         >
-                            <Printer size={20} />
+                            <Printer size={18} />
                         </button>
-                        <button onClick={onClose} className="p-2 hover:bg-white rounded-full transition-all text-slate-400 border border-transparent hover:border-slate-100">
-                            <X size={20} />
+                        <button onClick={onClose} className="p-1.5 hover:bg-white rounded-full transition-all text-slate-400 border border-transparent hover:border-slate-100">
+                            <X size={18} />
                         </button>
                     </div>
                 </div>
 
-                <div className="overflow-y-auto max-h-[70vh] p-8">
-                    <div ref={printRef} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                        <div className="header text-center border-b-2 border-slate-100 pb-6 mb-8">
-                            <div className="text-2xl font-black text-blue-600 tracking-tighter">AL IZZAH SCHOOL</div>
-                            <div className="text-[10px] text-slate-400 font-medium mt-1 uppercase tracking-widest">
+                <div className="overflow-y-auto max-h-[75vh] p-5 custom-scrollbar">
+                    <div ref={printRef} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                        <div className="header text-center border-b-2 border-slate-100 pb-5 mb-6">
+                            <div className="text-xl font-black text-blue-600 tracking-tighter">AL IZZAH SCHOOL</div>
+                            <div className="text-[9px] text-slate-400 font-black mt-1 uppercase tracking-[0.2em]">
                                 Sistem Keuangan Sekolah Terpadu
                             </div>
                         </div>
 
-                        <div className="text-center mb-8">
-                            <h3 className="text-lg font-black text-slate-900 uppercase tracking-[0.2em]">Kuitansi Pembayaran</h3>
+                        <div className="text-center mb-6">
+                            <h3 className="text-base font-black text-slate-900 uppercase tracking-[0.3em]">Kuitansi</h3>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-10 mb-10">
-                            <div className="space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8 px-2">
+                            <div className="space-y-3">
                                 <div>
-                                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">No. Transaksi</div>
-                                    <div className="text-sm font-black text-slate-900">{pembayaran.kode}</div>
+                                    <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">No. Transaksi</div>
+                                    <div className="text-xs font-black text-slate-900 font-mono italic">{pembayaran.kode}</div>
                                 </div>
                                 <div>
-                                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tanggal Bayar</div>
-                                    <div className="text-sm font-bold text-slate-700">{new Date(pembayaran.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+                                    <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Tanggal Bayar</div>
+                                    <div className="text-xs font-black text-slate-700 italic">{new Date(pembayaran.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
                                 </div>
                             </div>
-                            <div className="space-y-4">
+                            <div className="space-y-3 sm:text-right">
                                 <div>
-                                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Nama Siswa</div>
+                                    <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Nama Siswa</div>
                                     <div className="text-sm font-black text-blue-600 uppercase tracking-tight">{pembayaran.siswa.namaLengkap}</div>
                                 </div>
                                 <div>
-                                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">NIS / Rombel</div>
-                                    <div className="text-sm font-bold text-slate-700 uppercase tracking-tighter">{pembayaran.siswa.nis} • {pembayaran.siswa.rombel?.nama || 'N/A'}</div>
+                                    <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">NIS / Rombel</div>
+                                    <div className="text-xs font-black text-slate-700 uppercase tracking-tighter italic">{pembayaran.siswa.nis} • {pembayaran.siswa.rombel?.nama || 'N/A'}</div>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="overflow-x-auto">
-                            <table className="w-full mb-10 border-collapse min-w-[500px] sm:min-w-0">
+                        <div className="overflow-x-auto px-2">
+                            <table className="w-full mb-8 border-collapse min-w-[450px] sm:min-w-0">
                                 <thead>
                                     <tr className="border-b border-slate-200">
-                                        <th className="text-left py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Keterangan Alokasi</th>
-                                        <th className="text-right py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Nominal</th>
+                                        <th className="text-left py-2.5 text-[9px] font-black text-slate-400 uppercase tracking-widest">Alokasi Tagihan</th>
+                                        <th className="text-right py-2.5 text-[9px] font-black text-slate-400 uppercase tracking-widest">Nominal</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
                                     {pembayaran.pembayaranAlokasis?.map((alokasi: any) => (
                                         <tr key={alokasi.id}>
-                                            <td className="py-4">
-                                                <div className="text-xs font-bold text-slate-800">Tagihan Periode {alokasi.tagihan.periode}</div>
-                                                <div className="text-[9px] text-slate-400 font-mono uppercase mb-2">{alokasi.tagihan.kode}</div>
+                                            <td className="py-3">
+                                                <div className="text-xs font-black text-slate-800 uppercase tracking-tight">Periode {alokasi.tagihan.periode}</div>
+                                                <div className="text-[8px] text-slate-400 font-mono uppercase italic leading-none mb-1.5">{alokasi.tagihan.kode}</div>
 
                                                 {/* Detailed Items Breakdown */}
-                                                <div className="space-y-1 ml-2 border-l-2 border-slate-100 pl-3">
+                                                <div className="space-y-0.5 ml-2 border-l-2 border-slate-100 pl-2.5">
                                                     {alokasi.tagihan.tagihanItems?.map((item: any) => (
-                                                        <div key={item.id} className="flex justify-between items-center text-[10px] text-slate-500">
+                                                        <div key={item.id} className="flex justify-between items-center text-[9px] text-slate-500 italic font-medium">
                                                             <span>• {item.namaItem}</span>
-                                                            <span className="font-medium">{formatCurrency(item.nominalAkhir)}</span>
+                                                            <span className="font-mono">{formatCurrency(item.nominalAkhir)}</span>
                                                         </div>
                                                     ))}
                                                 </div>
                                             </td>
-                                            <td className="text-right font-black text-slate-900 text-sm align-top pt-4">
+                                            <td className="text-right font-black text-slate-900 text-xs align-top pt-3 font-mono">
                                                 {formatCurrency(alokasi.nominalAlokasi)}
                                             </td>
                                         </tr>
                                     ))}
                                 </tbody>
                                 <tfoot>
-                                    <tr className="bg-slate-50 border-t-2 border-slate-200">
-                                        <td className="py-5 px-4 text-xs font-black text-slate-900 uppercase">Total Dibayar ({pembayaran.metode})</td>
-                                        <td className="py-5 px-4 text-right text-xl font-black text-blue-600">
+                                    <tr className="bg-slate-50/50 border-t-2 border-slate-200">
+                                        <td className="py-4 px-3 text-[11px] font-black text-slate-900 uppercase tracking-widest">Total Bayar ({pembayaran.metode})</td>
+                                        <td className="py-4 px-3 text-right text-lg font-black text-blue-600 font-mono">
                                             {formatCurrency(pembayaran.totalBayar)}
                                         </td>
                                     </tr>
@@ -180,36 +180,36 @@ export function ReceiptModal({ isOpen, onClose, pembayaran }: ReceiptModalProps)
                             </table>
                         </div>
 
-                        <div className="flex flex-col sm:flex-row justify-between items-center sm:items-start gap-12 sm:gap-0 mt-12 mb-6">
-                            <div className="text-center w-48">
-                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-16">Penerima (Kasir)</div>
-                                <div className="border-t border-slate-900 pt-2 text-xs font-black uppercase">{pembayaran.kasir.namaLengkap}</div>
+                        <div className="flex flex-col sm:flex-row justify-between items-center sm:items-start gap-10 sm:gap-0 mt-8 mb-4 px-4">
+                            <div className="text-center w-40">
+                                <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-12">Penerima (Kasir)</div>
+                                <div className="border-t border-slate-900 pt-1.5 text-[10px] font-black uppercase tracking-tight">{pembayaran.kasir.namaLengkap}</div>
                             </div>
-                            <div className="text-center w-48">
-                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-16">Penyetor / Wali Murid</div>
-                                <div className="border-t border-slate-900 pt-2 text-xs font-black uppercase">&nbsp;</div>
+                            <div className="text-center w-40">
+                                <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-12">Penyetor (Wali Murid)</div>
+                                <div className="border-t border-slate-900 pt-1.5 text-[10px] font-black uppercase transition-all">&nbsp;</div>
                             </div>
                         </div>
 
-                        <div className="text-center pt-6 border-t border-dashed border-slate-200">
-                            <p className="text-[9px] text-slate-400 font-medium italic">
-                                * Dokumen ini adalah bukti pembayaran sah yang dikeluarkan secara elektronik oleh Al Izzah School.
+                        <div className="text-center pt-5 border-t border-dashed border-slate-200 px-4">
+                            <p className="text-[8px] text-slate-400 font-black italic uppercase tracking-tighter">
+                                Sah dikeluarkan elektronik oleh Al Izzah School.
                             </p>
                         </div>
                     </div>
                 </div>
 
                 {/* Modal Footer */}
-                <div className="px-8 py-6 bg-slate-50 border-t border-slate-100 flex gap-4">
+                <div className="px-5 py-4 bg-slate-50 border-t border-slate-100 flex gap-3">
                     <button
                         onClick={handlePrint}
-                        className="flex-1 flex items-center justify-center gap-2 py-4 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
+                        className="flex-1 flex items-center justify-center gap-2 py-3 bg-blue-600 text-white font-black rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 text-[11px] uppercase tracking-widest active:scale-95"
                     >
-                        <Printer size={18} /> Cetak Bukti
+                        <Printer size={16} /> Cetak Bukti
                     </button>
                     <button
                         onClick={onClose}
-                        className="px-8 py-4 bg-white border border-slate-200 text-slate-600 font-bold rounded-2xl hover:bg-slate-50 transition-all"
+                        className="px-6 py-3 bg-white border border-slate-200 text-slate-600 font-black rounded-xl hover:bg-slate-50 transition-all text-[11px] uppercase tracking-widest active:scale-95"
                     >
                         Tutup
                     </button>

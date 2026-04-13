@@ -44,9 +44,9 @@ export function AnalyticsDashboard({ tunggakanData, rekapData }: AnalyticsDashbo
     ];
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-700">
+        <div className="space-y-5 animate-in fade-in duration-500">
             {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Card
                     title="Total Tunai Hari Ini"
                     value={formatCurrency(totalTunai)}
@@ -73,16 +73,16 @@ export function AnalyticsDashboard({ tunggakanData, rekapData }: AnalyticsDashbo
                 />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* Tunggakan Bar Chart */}
-                <div className="bg-white p-5 sm:p-8 rounded-[2.5rem] border border-slate-200 shadow-xl space-y-6">
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                     <div className="flex justify-between items-center">
-                        <h3 className="text-xl font-black text-slate-900 tracking-tight">Tunggakan per Jenjang</h3>
-                        <div className="p-2 bg-slate-50 rounded-xl text-slate-400">
-                            <Users size={20} />
+                        <h3 className="text-base font-black text-slate-900 uppercase tracking-tight leading-none italic">Tunggakan per Jenjang</h3>
+                        <div className="p-2 bg-slate-50 rounded-lg text-slate-400">
+                            <Users size={16} />
                         </div>
                     </div>
-                    <div className="h-[300px] w-full">
+                    <div className="h-[250px] w-full font-mono">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={tunggakanChartData}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -90,38 +90,38 @@ export function AnalyticsDashboard({ tunggakanData, rekapData }: AnalyticsDashbo
                                     dataKey="name"
                                     axisLine={false}
                                     tickLine={false}
-                                    tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }}
+                                    tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }}
                                 />
                                 <YAxis
                                     axisLine={false}
                                     tickLine={false}
-                                    tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }}
+                                    tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }}
                                     tickFormatter={(val) => `Rp${(val as number) / 1000000}jt`}
                                 />
                                 <Tooltip
                                     cursor={{ fill: '#f8fafc' }}
-                                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                                    formatter={(val) => [formatCurrency(val as number), 'Tunggakan']}
+                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '12px', fontWeight: 'bold' }}
+                                    formatter={(val) => [formatCurrency(val as number), 'Total']}
                                 />
-                                <Bar dataKey="total" fill="#6366f1" radius={[8, 8, 0, 0]} barSize={40} />
+                                <Bar dataKey="total" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={32} />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
 
                 {/* Metode Pembayaran Pie Chart */}
-                <div className="bg-white p-5 sm:p-8 rounded-[2.5rem] border border-slate-200 shadow-xl space-y-6">
-                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Metode Pembayaran (Hari Ini)</h3>
-                    <div className="flex items-center justify-between">
-                        <div className="h-[250px] w-1/2">
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                    <h3 className="text-base font-black text-slate-900 uppercase tracking-tight leading-none italic">Metode Pembayaran Harian</h3>
+                    <div className="flex items-center justify-between gap-4">
+                        <div className="h-[200px] w-1/2">
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
                                     <Pie
                                         data={methodData}
                                         cx="50%"
                                         cy="50%"
-                                        innerRadius={60}
-                                        outerRadius={80}
+                                        innerRadius={50}
+                                        outerRadius={70}
                                         paddingAngle={5}
                                         dataKey="value"
                                     >
@@ -129,18 +129,18 @@ export function AnalyticsDashboard({ tunggakanData, rekapData }: AnalyticsDashbo
                                             <Cell key={`cell-${index}`} fill={entry.color} />
                                         ))}
                                     </Pie>
-                                    <Tooltip />
+                                    <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', fontSize: '12px', fontWeight: 'bold' }} />
                                 </PieChart>
                             </ResponsiveContainer>
                         </div>
-                        <div className="w-1/2 space-y-4">
+                        <div className="w-1/2 space-y-2">
                             {methodData.map((item) => (
-                                <div key={item.name} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                                        <span className="text-sm font-bold text-slate-600">{item.name}</span>
+                                <div key={item.name} className="flex items-center justify-between p-3 bg-slate-50/50 rounded-xl border border-transparent hover:border-slate-100 transition-all">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full shadow-sm" style={{ backgroundColor: item.color }} />
+                                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">{item.name}</span>
                                     </div>
-                                    <span className="text-sm font-black text-slate-900">
+                                    <span className="text-xs font-black text-slate-900 font-mono">
                                         {Math.round((item.value / (totalTunai + totalTransfer || 1)) * 100)}%
                                     </span>
                                 </div>
@@ -169,14 +169,16 @@ function Card({ title, value, icon: Icon, color }: CardProps) {
     };
 
     return (
-        <div className="bg-white p-4 sm:p-6 rounded-4xl border border-slate-200 shadow-sm flex items-center justify-between">
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between group hover:border-blue-200 transition-all">
             <div className="space-y-1">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{title}</p>
-                <p className="text-2xl font-black text-slate-900 tracking-tight">{value}</p>
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none italic">{title}</p>
+                <p className="text-xl font-black text-slate-900 tracking-tighter leading-none font-mono">{value}</p>
             </div>
-            <div className={`p-4 rounded-2xl border ${colors[color]}`}>
-                <Icon size={24} />
+            <div className={`p-2.5 rounded-xl border transition-all group-hover:scale-110 ${colors[color]}`}>
+                <Icon size={18} />
             </div>
         </div>
     );
 }
+
+

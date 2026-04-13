@@ -193,88 +193,88 @@ export function TagihanDetailModal({ isOpen, onClose, tagihan }: TagihanDetailMo
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="relative w-full max-w-2xl bg-white rounded-4xl shadow-2xl overflow-hidden border border-slate-200 flex flex-col"
+                className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200 flex flex-col"
             >
                 {/* Header */}
-                <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-indigo-600 text-white rounded-2xl shadow-lg shadow-indigo-100">
-                            <FileText size={24} />
+                <div className="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2.5 bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-100">
+                            <FileText size={20} />
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold text-slate-900 leading-none">Rincian Invoice</h2>
-                            <p className="text-xs text-slate-400 font-mono mt-1 lowercase tracking-tighter">{tagihan.kode}</p>
+                            <h2 className="text-lg font-bold text-slate-900 leading-tight">Rincian Invoice</h2>
+                            <p className="text-[10px] text-slate-400 font-mono mt-1 lowercase tracking-tighter italic">{tagihan.kode}</p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
                         <button
                             onClick={handlePrint}
-                            className="p-2 text-slate-400 hover:bg-white hover:text-blue-600 rounded-full transition-all border border-transparent hover:border-slate-100"
+                            className="p-1.5 text-slate-400 hover:bg-white hover:text-blue-600 rounded-full transition-all border border-transparent hover:border-slate-100"
                         >
-                            <Printer size={20} />
+                            <Printer size={18} />
                         </button>
-                        <button onClick={onClose} className="p-2 hover:bg-white rounded-full transition-all text-slate-400 border border-transparent hover:border-slate-100">
-                            <X size={20} />
+                        <button onClick={onClose} className="p-1.5 hover:bg-white rounded-full transition-all text-slate-400 border border-transparent hover:border-slate-100">
+                            <X size={18} />
                         </button>
                     </div>
                 </div>
 
-                <div className="overflow-y-auto max-h-[70vh]" ref={printRef}>
+                <div className="overflow-y-auto max-h-[70vh] custom-scrollbar" ref={printRef}>
                     {/* Student Info & Status Row */}
-                    <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8 border-b border-slate-100">
-                        <div className="space-y-4">
-                            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Penerima Tagihan</h3>
-                            <div className="flex items-start gap-4">
-                                <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center font-bold text-lg border border-indigo-100 uppercase">
+                    <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-5 border-b border-slate-100">
+                        <div className="space-y-3">
+                            <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none mb-1">Penerima Tagihan</h3>
+                            <div className="flex items-center gap-3.5">
+                                <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center font-black text-base border border-indigo-100 uppercase">
                                     {(tagihan.siswa?.namaLengkap || tagihan.pesertaDaycare?.namaLengkap || '?').charAt(0)}
                                 </div>
                                 <div>
-                                    <div className="font-bold text-slate-900">{tagihan.siswa?.namaLengkap || tagihan.pesertaDaycare?.namaLengkap || 'PESERTA'}</div>
-                                    <div className="text-xs text-slate-400 font-mono tracking-tighter uppercase">{tagihan.siswa?.nis || 'DAYCARE'} • {tagihan.rombelSnapshot}</div>
+                                    <div className="font-extrabold text-slate-900 text-sm uppercase tracking-tight">{tagihan.siswa?.namaLengkap || tagihan.pesertaDaycare?.namaLengkap || 'PESERTA'}</div>
+                                    <div className="text-[10px] text-slate-400 font-mono tracking-tighter uppercase font-medium">{tagihan.siswa?.nis || 'DAYCARE'} • {tagihan.rombelSnapshot}</div>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="space-y-4 md:text-right md:flex md:flex-col md:items-end">
-                            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Status Pembayaran</h3>
+                        <div className="space-y-3 md:text-right md:flex md:flex-col md:items-end">
+                            <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none mb-1">Status Pembayaran</h3>
                             {statusBadge(tagihan.status)}
-                            <div className="mt-2 text-[10px] text-slate-400 font-medium">
-                                Jatuh Tempo: <span className="font-bold text-slate-600 tracking-tight">{formatDate(tagihan.jatuhTempo)}</span>
+                            <div className="mt-1.5 text-[10px] text-slate-400 font-medium">
+                                Jatuh Tempo: <span className="font-black text-slate-600 tracking-tight">{formatDate(tagihan.jatuhTempo)}</span>
                             </div>
                         </div>
                     </div>
 
                     {/* Items Table */}
-                    <div className="p-8 space-y-4">
-                        <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Rincian Item</h3>
-                        <div className="bg-slate-50/50 rounded-3xl border border-slate-100 overflow-hidden">
+                    <div className="p-5 space-y-3">
+                        <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Rincian Item</h3>
+                        <div className="bg-slate-50/50 rounded-xl border border-slate-100 overflow-hidden">
                             <table className="w-full text-left border-collapse">
                                 <thead>
                                     <tr className="border-b border-slate-100 bg-white/50">
-                                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Deskripsi</th>
-                                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Jumlah</th>
+                                        <th className="px-4 py-2.5 text-[9px] font-black text-slate-500 uppercase tracking-widest">Deskripsi</th>
+                                        <th className="px-4 py-2.5 text-[9px] font-black text-slate-500 uppercase tracking-widest text-right">Jumlah</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100/50">
                                     {tagihan.tagihanItems?.map((item: any) => (
                                         <React.Fragment key={item.id}>
                                             <tr className="group">
-                                                <td className="px-6 py-4">
-                                                    <div className="text-sm font-bold text-slate-700 uppercase tracking-tight">{item.namaItem}</div>
+                                                <td className="px-4 py-2.5">
+                                                    <div className="text-xs font-extrabold text-slate-700 uppercase tracking-tight">{item.namaItem}</div>
                                                 </td>
-                                                <td className="px-6 py-4 text-sm font-bold text-right text-slate-900">
+                                                <td className="px-4 py-2.5 text-xs font-black text-right text-slate-900 font-mono">
                                                     {formatCurrency(item.nominalAwal)}
                                                 </td>
                                             </tr>
                                             {item.nominalDiskon > 0 && (
                                                 <tr className="bg-emerald-50/20">
-                                                    <td className="px-6 py-2">
-                                                        <div className="text-[10px] text-emerald-600 font-bold italic uppercase tracking-widest pl-4 flex items-center gap-2">
-                                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                                                    <td className="px-4 py-1.5">
+                                                        <div className="text-[9px] text-emerald-600 font-black italic uppercase tracking-widest pl-3 flex items-center gap-1.5">
+                                                            <div className="w-1 h-1 rounded-full bg-emerald-400" />
                                                             Potongan Diskon
                                                         </div>
                                                     </td>
-                                                    <td className="px-6 py-2 text-xs font-bold text-right text-emerald-600 italic">
+                                                    <td className="px-4 py-1.5 text-[10px] font-black text-right text-emerald-600 italic font-mono">
                                                         -{formatCurrency(item.nominalDiskon)}
                                                     </td>
                                                 </tr>
@@ -284,8 +284,8 @@ export function TagihanDetailModal({ isOpen, onClose, tagihan }: TagihanDetailMo
                                 </tbody>
                                 <tfoot>
                                     <tr className="bg-white border-t border-slate-100">
-                                        <td className="px-6 py-5 text-sm font-bold text-slate-900 uppercase">Total Tagihan</td>
-                                        <td className="px-6 py-5 text-lg font-black text-indigo-600 text-right">
+                                        <td className="px-4 py-3 text-xs font-black text-slate-900 uppercase">Total Tagihan</td>
+                                        <td className="px-4 py-3 text-base font-black text-indigo-600 text-right font-mono">
                                             {formatCurrency(tagihan.sisaTagihan)}
                                         </td>
                                     </tr>
@@ -295,36 +295,36 @@ export function TagihanDetailModal({ isOpen, onClose, tagihan }: TagihanDetailMo
                     </div>
 
                     {/* Payment Summary */}
-                    <div className="px-8 pb-8 grid grid-cols-2 md:grid-cols-3 gap-6">
-                        <div className="p-4 bg-emerald-50/30 rounded-2xl border border-emerald-100/50">
-                            <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-1">Sudah Bayar</p>
-                            <p className="text-sm font-bold text-emerald-700">{formatCurrency(tagihan.totalBayar)}</p>
+                    <div className="px-5 pb-5 grid grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="p-3 bg-emerald-50/30 rounded-xl border border-emerald-100/50">
+                            <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-1 leading-none">Sudah Bayar</p>
+                            <p className="text-xs font-black text-emerald-700 font-mono">{formatCurrency(tagihan.totalBayar)}</p>
                         </div>
-                        <div className="p-4 bg-rose-50/30 rounded-2xl border border-rose-100/50">
-                            <p className="text-[10px] font-bold text-rose-600 uppercase tracking-widest mb-1">Sisa Piutang</p>
-                            <p className="text-sm font-bold text-rose-700">{formatCurrency(tagihan.sisaTagihan)}</p>
+                        <div className="p-3 bg-rose-50/30 rounded-xl border border-rose-100/50">
+                            <p className="text-[9px] font-black text-rose-600 uppercase tracking-widest mb-1 leading-none">Sisa Piutang</p>
+                            <p className="text-xs font-black text-rose-700 font-mono">{formatCurrency(tagihan.sisaTagihan)}</p>
                         </div>
                     </div>
                 </div>
 
                 {/* Footer Actions */}
-                <div className="px-8 py-6 bg-slate-50/80 border-t border-slate-100 flex flex-col sm:flex-row gap-4 items-center justify-between">
-                    <div className="flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                        <Receipt size={14} className="text-indigo-500" /> Diterbitkan pada {formatDate(tagihan.tanggalTagihan)}
+                <div className="px-5 py-4 bg-slate-50/80 border-t border-slate-100 flex flex-col sm:flex-row gap-3 items-center justify-between">
+                    <div className="flex items-center gap-2 text-[9px] text-slate-400 font-black uppercase tracking-widest">
+                        <Receipt size={12} className="text-indigo-500" /> {formatDate(tagihan.tanggalTagihan)}
                     </div>
-                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <div className="flex items-center gap-2.5 w-full sm:w-auto">
                         <button
                             onClick={handlePrint}
-                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-white border border-slate-200 text-slate-600 text-xs font-bold rounded-xl hover:bg-slate-50 transition-all"
+                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 text-[10px] font-black rounded-lg hover:bg-slate-50 transition-all uppercase tracking-wider"
                         >
-                            <Download size={16} /> Download PDF
+                            <Download size={14} /> PDF
                         </button>
                         {tagihan.status !== 'PAID' && (
                             <button
                                 onClick={handlePayNow}
-                                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100"
+                                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white text-[10px] font-black rounded-lg hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 uppercase tracking-wider"
                             >
-                                <CreditCard size={16} /> Bayar Sekarang
+                                <CreditCard size={14} /> Bayar
                             </button>
                         )}
                     </div>

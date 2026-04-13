@@ -26,7 +26,7 @@ export function StudentSearch({ onSelect }: StudentSearchProps) {
     return (
         <div className="relative">
             <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input
                     type="text"
                     placeholder="Ketik Nama atau NIS Siswa..."
@@ -36,17 +36,17 @@ export function StudentSearch({ onSelect }: StudentSearchProps) {
                         setIsOpen(true);
                     }}
                     onFocus={() => setIsOpen(true)}
-                    className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-bold text-lg"
+                    className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-bold text-sm"
                 />
             </div>
 
             {isOpen && searchTerm.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-3xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
-                    <div className="p-2">
+                <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="p-1">
                         {isLoading ? (
-                            <div className="p-4 flex items-center justify-center gap-3 text-slate-400">
-                                <Users size={20} className="animate-pulse" />
-                                <span className="text-sm font-medium">Mencari siswa...</span>
+                            <div className="p-3 flex items-center justify-center gap-2 text-slate-400">
+                                <Users size={16} className="animate-pulse" />
+                                <span className="text-xs font-medium">Mencari siswa...</span>
                             </div>
                         ) : searchResults?.data?.length ? (
                             searchResults.data.map((siswa: any) => (
@@ -57,18 +57,18 @@ export function StudentSearch({ onSelect }: StudentSearchProps) {
                                         setSearchTerm('');
                                         setIsOpen(false);
                                     }}
-                                    className="w-full flex items-center gap-4 p-4 hover:bg-blue-50 rounded-2xl transition-all group text-left"
+                                    className="w-full flex items-center gap-3 p-3 hover:bg-blue-50 rounded-lg transition-all group text-left"
                                 >
-                                    <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center font-bold text-sm shrink-0">
+                                    <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center font-black text-xs shrink-0 border border-indigo-100">
                                         {siswa.namaLengkap.charAt(0)}
                                     </div>
                                     <div className="flex-1 overflow-hidden">
-                                        <div className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors uppercase tracking-tight truncate">{siswa.namaLengkap}</div>
-                                        <div className="text-[10px] text-slate-500 font-mono tracking-tighter uppercase truncate">
+                                        <div className="font-extrabold text-slate-900 group-hover:text-blue-600 transition-colors uppercase tracking-tight truncate text-xs">{siswa.namaLengkap}</div>
+                                        <div className="text-[9px] text-slate-400 font-mono tracking-tighter uppercase truncate font-medium">
                                             {siswa.nis} • {siswa.rombel.nama}
                                         </div>
                                     </div>
-                                    <CheckCircle size={20} className="text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    <CheckCircle size={16} className="text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" />
                                 </button>
                             ))
                         ) : (

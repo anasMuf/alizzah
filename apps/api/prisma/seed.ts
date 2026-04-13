@@ -19,26 +19,26 @@ async function main() {
 
     // 0. Clean old data (Order is important because of Foreign Keys)
     console.log('🧹 Cleaning existing data...');
-    // Level 3 (Dependents of everything)
+    // Level 3: Transaksi & Relasi Terjauh
     await prisma.pembayaranAlokasi.deleteMany({});
     await prisma.tagihanItem.deleteMany({});
     await prisma.transaksiKas.deleteMany({});
     await prisma.transaksiTabungan.deleteMany({});
-    
-    // Level 2 (Dependents of Master Data)
-    await prisma.tagihan.deleteMany({});
-    await prisma.pembayaran.deleteMany({});
     await prisma.siswaPasta.deleteMany({});
     await prisma.siswaDiskon.deleteMany({});
     await prisma.jenisPembayaranTarif.deleteMany({});
-    await prisma.rombel.deleteMany({});
+    
+    // Level 2: Data yang merujuk ke Master Data (Siswa & Rombel)
+    await prisma.tagihan.deleteMany({});
+    await prisma.pembayaran.deleteMany({});
     await prisma.tabungan.deleteMany({});
+    await prisma.pesertaDaycare.deleteMany({});
+    await prisma.siswa.deleteMany({}); // Harus hapus siswa sebelum rombel
+
+    // Level 1: Master Data Utama
+    await prisma.rombel.deleteMany({});
     await prisma.posPengeluaran.deleteMany({});
     await prisma.diskon.deleteMany({});
-    await prisma.pesertaDaycare.deleteMany({});
-
-    // Level 1 (Master Data)
-    await prisma.siswa.deleteMany({});
     await prisma.jenjang.deleteMany({});
     await prisma.tahunAjaran.deleteMany({});
     await prisma.jenisPembayaran.deleteMany({});

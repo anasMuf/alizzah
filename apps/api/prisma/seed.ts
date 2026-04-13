@@ -17,6 +17,31 @@ const prisma = new PrismaClient();
 async function main() {
     console.log('🌱 Starting seed...');
 
+    // 0. Clean old data (Order is important because of Foreign Keys)
+    console.log('🧹 Cleaning existing data...');
+    await prisma.pembayaranAlokasi.deleteMany({});
+    await prisma.tagihanItem.deleteMany({});
+    await prisma.tagihan.deleteMany({});
+    await prisma.pembayaran.deleteMany({});
+    await prisma.siswaPasta.deleteMany({});
+    await prisma.siswaDiskon.deleteMany({});
+    await prisma.pesertaDaycare.deleteMany({});
+    await prisma.siswa.deleteMany({});
+    await prisma.rombel.deleteMany({});
+    await prisma.jenjang.deleteMany({});
+    await prisma.tahunAjaran.deleteMany({});
+    await prisma.transaksiKas.deleteMany({});
+    await prisma.transaksiTabungan.deleteMany({});
+    await prisma.posPengeluaran.deleteMany({});
+    await prisma.jenisPembayaranTarif.deleteMany({});
+    await prisma.diskon.deleteMany({});
+    await prisma.jenisPembayaran.deleteMany({});
+    await prisma.tabungan.deleteMany({});
+    await prisma.kas.deleteMany({});
+    await prisma.bank.deleteMany({});
+    await prisma.pasta.deleteMany({});
+    // await prisma.user.deleteMany({}); // Opsional: jangan hapus admin jika ingin tetap bisa login
+
     // 1. Seed Academic Year (Tahun Ajaran)
     const currentYear = await prisma.tahunAjaran.upsert({
         where: { nama: '2025/2026' },
@@ -334,13 +359,16 @@ async function main() {
         for (const kas of kasData) {
             await prisma.kas.upsert({
                 where: { id: `fixed-kas-${kas.tipe.toLowerCase()}` },
-                update: {},
-                create: {
-                    id: `fixed-kas-${kas.tipe.toLowerCase()}`,
-                    tipe: kas.tipe,
-                    nama: kas.nama,
-                    saldo: kas.saldo,
-                },
+            update: {
+                saldo: kas.saldo,
+                nama: kas.nama,
+            },
+            create: {
+                id: `fixed-kas-${kas.tipe.toLowerCase()}`,
+                tipe: kas.tipe,
+                nama: kas.nama,
+                saldo: kas.saldo,
+            },
             });
         }
         console.log('✅ Kas seeded:', kasData.length);
@@ -355,7 +383,11 @@ async function main() {
     for (const bank of bankData) {
         await prisma.bank.upsert({
             where: { id: `fixed-bank-${bank.nama.toLowerCase().replace(/ /g, '-')}` },
-            update: {},
+            update: {
+                nomorRekening: bank.nomorRekening,
+                atasNama: bank.atasNama,
+                nama: bank.nama,
+            },
             create: {
                 id: `fixed-bank-${bank.nama.toLowerCase().replace(/ /g, '-')}`,
                 nama: bank.nama,

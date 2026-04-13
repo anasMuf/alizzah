@@ -104,78 +104,78 @@ export function TahunAjaranForm({ isOpen, onClose, initialData }: TahunAjaranFor
                         className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200"
                     >
                         {/* Header */}
-                        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50/50">
                             <div>
-                                <h3 className="text-lg font-bold text-slate-900">
+                                <h3 className="text-base font-black text-slate-900 uppercase tracking-tight leading-none italic">
                                     {isEdit ? 'Edit Tahun Ajaran' : 'Tambah Tahun Ajaran'}
                                 </h3>
-                                <p className="text-sm text-slate-500">Kelola periode akademik sekolah.</p>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 leading-none italic">Kelola periode akademik sekolah.</p>
                             </div>
                             <button
                                 onClick={onClose}
-                                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors active:scale-90"
                             >
-                                <X size={20} />
+                                <X size={18} />
                             </button>
                         </div>
 
                         {/* Form Body */}
-                        <div className="p-6">
-                            <form id="tahun-ajaran-form" onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-                                <div className="space-y-2">
-                                    <label className="text-sm font-semibold text-slate-700">Nama Periode <span className="text-red-500">*</span></label>
+                        <div className="p-5">
+                            <form id="tahun-ajaran-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 leading-none">Nama Periode <span className="text-red-500 font-bold">*</span></label>
                                     <input
                                         {...register('nama')}
                                         placeholder="Contoh: 2024/2025"
-                                        className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-black text-xs placeholder:italic"
                                     />
-                                    {errors.nama && <span className="text-xs text-red-500 font-medium">{errors.nama.message}</span>}
+                                    {errors.nama && <span className="text-[9px] text-red-500 font-black uppercase tracking-tighter italic">{errors.nama.message}</span>}
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-semibold text-slate-700">Tanggal Mulai <span className="text-red-500">*</span></label>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 leading-none">Tanggal Mulai <span className="text-red-500 font-bold">*</span></label>
                                         <input
                                             type="date"
                                             {...register('tanggalMulai')}
-                                            className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all text-xs font-black font-mono"
                                         />
-                                        {errors.tanggalMulai && <span className="text-xs text-red-500 font-medium">{errors.tanggalMulai.message}</span>}
+                                        {errors.tanggalMulai && <span className="text-[9px] text-red-500 font-black uppercase tracking-tighter italic">{errors.tanggalMulai.message}</span>}
                                     </div>
 
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-semibold text-slate-700">Tanggal Selesai <span className="text-red-500">*</span></label>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 leading-none">Tanggal Selesai <span className="text-red-500 font-bold">*</span></label>
                                         <input
                                             type="date"
                                             {...register('tanggalSelesai')}
-                                            className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all text-xs font-black font-mono"
                                         />
-                                        {errors.tanggalSelesai && <span className="text-xs text-red-500 font-medium">{errors.tanggalSelesai.message}</span>}
+                                        {errors.tanggalSelesai && <span className="text-[9px] text-red-500 font-black uppercase tracking-tighter italic">{errors.tanggalSelesai.message}</span>}
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-100 rounded-xl">
+                                <div className="flex items-center gap-3 p-3 bg-slate-50/50 border border-slate-100 rounded-xl">
                                     <input
                                         type="checkbox"
                                         id="isAktif"
                                         {...register('isAktif')}
-                                        className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 border-gray-300"
+                                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 border-slate-300"
                                     />
                                     <div>
-                                        <label htmlFor="isAktif" className="text-sm font-semibold text-slate-700 cursor-pointer">Set sebagai Aktif</label>
-                                        <p className="text-xs text-slate-500">Periode aktif akan menjadi default sistem.</p>
+                                        <label htmlFor="isAktif" className="text-[10px] font-black text-slate-700 cursor-pointer uppercase tracking-tight">Set sebagai Aktif</label>
+                                        <p className="text-[9px] text-slate-400 font-bold italic leading-none">Periode aktif akan menjadi default sistem.</p>
                                     </div>
                                 </div>
                             </form>
                         </div>
 
                         {/* Footer */}
-                        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50/50">
+                        <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-slate-100 bg-slate-50/50">
                             <button
                                 onClick={onClose}
                                 type="button"
                                 disabled={isSubmitting || createMutation.isPending || updateMutation.isPending}
-                                className="px-5 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-200/50 rounded-xl transition-colors"
+                                className="px-4 py-2 text-[10px] font-black text-slate-500 hover:text-slate-800 hover:bg-slate-200/50 rounded-lg transition-all uppercase tracking-widest italic"
                             >
                                 Batal
                             </button>
@@ -183,16 +183,16 @@ export function TahunAjaranForm({ isOpen, onClose, initialData }: TahunAjaranFor
                                 form="tahun-ajaran-form"
                                 type="submit"
                                 disabled={isSubmitting || createMutation.isPending || updateMutation.isPending}
-                                className="flex items-center gap-2 px-6 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 active:scale-95 rounded-xl shadow-lg shadow-blue-200 transition-all disabled:opacity-70 disabled:active:scale-100"
+                                className="flex items-center gap-2 px-5 py-2 text-[10px] font-black text-white bg-blue-600 hover:bg-blue-700 active:scale-95 rounded-lg shadow-lg shadow-blue-200 transition-all disabled:opacity-70 disabled:active:scale-100 uppercase tracking-widest italic"
                             >
                                 {(createMutation.isPending || updateMutation.isPending) ? (
                                     <>
-                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                         <span>Menyimpan...</span>
                                     </>
                                 ) : (
                                     <>
-                                        <Save size={18} />
+                                        <Save size={14} />
                                         <span>Simpan Data</span>
                                     </>
                                 )}

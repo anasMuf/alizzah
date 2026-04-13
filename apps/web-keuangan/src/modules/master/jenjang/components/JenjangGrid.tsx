@@ -68,43 +68,43 @@ export function JenjangGrid({ onEdit }: JenjangGridProps) {
 
     return (
         <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {data.map((item) => (
-                    <div key={item.id} className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-10 -mt-10 group-hover:bg-blue-100 transition-colors z-0"></div>
+                    <div key={item.id} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-20 h-20 bg-blue-50 rounded-bl-full -mr-10 -mt-10 group-hover:bg-blue-100 transition-colors z-0"></div>
 
                         <div className="relative z-10">
-                            <div className="flex items-start justify-between mb-4">
-                                <div className="bg-blue-600 text-white w-fit min-w-10 px-3 h-10 rounded-xl flex items-center justify-center font-bold shadow-lg shadow-blue-100">
+                            <div className="flex items-start justify-between mb-3">
+                                <div className="bg-blue-600 text-white w-fit min-w-8 px-2.5 h-8 rounded-lg flex items-center justify-center font-black text-xs shadow-lg shadow-blue-100">
                                     {item.kode}
                                 </div>
                                 <div className="flex flex-col items-end gap-1 text-right">
-                                    <span className="text-slate-400 text-xs font-mono">#{item.urutan}</span>
+                                    <span className="text-slate-300 text-[10px] font-mono font-bold">#{item.urutan}</span>
                                     {(item as any).isLevelAwal && (
-                                        <span className="bg-blue-100 text-blue-700 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                                        <span className="bg-blue-50 text-blue-600 text-[8px] px-1.5 py-0.5 rounded font-black uppercase tracking-widest border border-blue-100">
                                             Gatekeeper
                                         </span>
                                     )}
                                 </div>
                             </div>
 
-                            <h3 className="text-lg font-bold text-slate-900 mb-1">{item.nama}</h3>
-                            <p className="text-slate-500 text-sm mb-4">Kelompok: <span className="text-slate-700 font-medium">{item.kelompok}</span></p>
+                            <h3 className="text-sm font-black text-slate-900 mb-1 uppercase tracking-tight italic leading-none">{item.nama}</h3>
+                            <p className="text-slate-400 text-[10px] uppercase font-bold tracking-widest mb-4">Kelompok: <span className="text-slate-700">{item.kelompok}</span></p>
 
-                            <div className="flex items-center justify-end gap-2 mt-2 border-t pt-4 border-slate-50">
+                            <div className="flex items-center justify-end gap-1 mt-2 border-t pt-3 border-slate-50">
                                 <button
                                     onClick={() => onEdit?.(item)}
-                                    className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                    className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
                                     title="Edit"
                                 >
-                                    <Edit2 size={18} />
+                                    <Edit2 size={14} />
                                 </button>
                                 <button
                                     onClick={() => setDeleteId(item.id)}
-                                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                                     title="Hapus"
                                 >
-                                    <Trash2 size={18} />
+                                    <Trash2 size={14} />
                                 </button>
                             </div>
                         </div>

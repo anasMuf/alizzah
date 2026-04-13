@@ -107,124 +107,124 @@ export function RombelForm({ isOpen, onClose, initialData }: RombelFormProps) {
                             onClick={(e) => e.stopPropagation()}
                             className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]"
                         >
-                            <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-white sticky top-0 z-10">
+                            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-white sticky top-0 z-10">
                                 <div>
-                                    <h2 className="text-xl font-bold text-slate-900">
+                                    <h2 className="text-base font-black text-slate-900 uppercase tracking-tight leading-none italic">
                                         {isEdit ? 'Edit Rombel' : 'Tambah Rombel Baru'}
                                     </h2>
-                                    <p className="text-sm text-slate-500 mt-1">
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 leading-none italic">
                                         {isEdit ? 'Perbarui data rombongan belajar.' : 'Buat rombongan belajar untuk tahun ajaran aktif.'}
                                     </p>
                                 </div>
                                 <button
                                     onClick={onClose}
-                                    className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-600"
+                                    className="p-1.5 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-600"
                                 >
-                                    <X size={20} />
+                                    <X size={18} />
                                 </button>
                             </div>
 
-                            <div className="p-6 overflow-y-auto custom-scrollbar">
-                                <form id="rombel-form" onSubmit={handleSubmit(onSubmit as any)} className="space-y-5">
+                            <div className="p-5 overflow-y-auto custom-scrollbar text-left">
+                                <form id="rombel-form" onSubmit={handleSubmit(onSubmit as any)} className="space-y-4">
 
                                     {/* Tahun Ajaran & Jenjang Row */}
                                     <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-semibold text-slate-700">Tahun Ajaran <span className="text-red-500">*</span></label>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 leading-none">Tahun Ajaran <span className="text-red-500 font-bold">*</span></label>
                                             <select
                                                 {...register('tahunAjaranId')}
-                                                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium appearance-none"
+                                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-black text-xs appearance-none cursor-pointer"
                                             >
                                                 <option value="">Pilih Tahun...</option>
                                                 {tahunAjaranList?.map((ta: any) => (
                                                     <option key={ta.id} value={ta.id}>{ta.nama}</option>
                                                 ))}
                                             </select>
-                                            {errors.tahunAjaranId && <span className="text-xs text-red-500 font-medium">{errors.tahunAjaranId.message}</span>}
+                                            {errors.tahunAjaranId && <span className="text-[9px] text-red-500 font-black uppercase tracking-tighter italic">{errors.tahunAjaranId.message}</span>}
                                         </div>
 
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-semibold text-slate-700">Jenjang <span className="text-red-500">*</span></label>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 leading-none">Jenjang <span className="text-red-500 font-bold">*</span></label>
                                             <select
                                                 {...register('jenjangId')}
-                                                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium appearance-none"
+                                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-black text-xs appearance-none cursor-pointer"
                                             >
                                                 <option value="">Pilih Jenjang...</option>
                                                 {jenjangList?.map((j: any) => (
                                                     <option key={j.id} value={j.id}>{j.nama} ({j.kode})</option>
                                                 ))}
                                             </select>
-                                            {errors.jenjangId && <span className="text-xs text-red-500 font-medium">{errors.jenjangId.message}</span>}
+                                            {errors.jenjangId && <span className="text-[9px] text-red-500 font-black uppercase tracking-tighter italic">{errors.jenjangId.message}</span>}
                                         </div>
                                     </div>
 
                                     {/* Nama Rombel & Kapasitas Row */}
                                     <div className="grid grid-cols-3 gap-4">
-                                        <div className="col-span-2 space-y-2">
-                                            <label className="text-sm font-semibold text-slate-700">Nama Rombel <span className="text-red-500">*</span></label>
+                                        <div className="col-span-2 space-y-1.5">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 leading-none">Nama Rombel <span className="text-red-500 font-bold">*</span></label>
                                             <input
                                                 {...register('nama')}
                                                 placeholder="Contoh: Kelas Abu Bakar"
-                                                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-black text-xs placeholder:italic"
                                             />
-                                            {errors.nama && <span className="text-xs text-red-500 font-medium">{errors.nama.message}</span>}
+                                            {errors.nama && <span className="text-[9px] text-red-500 font-black uppercase tracking-tighter italic">{errors.nama.message}</span>}
                                         </div>
 
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-semibold text-slate-700">Kapasitas</label>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 leading-none">Kapasitas</label>
                                             <input
                                                 type="number"
                                                 {...register('kapasitas', { valueAsNumber: true })}
-                                                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-black text-xs font-mono"
                                             />
-                                            {errors.kapasitas && <span className="text-xs text-red-500 font-medium">{errors.kapasitas.message}</span>}
+                                            {errors.kapasitas && <span className="text-[9px] text-red-500 font-black uppercase tracking-tighter italic">{errors.kapasitas.message}</span>}
                                         </div>
                                     </div>
 
                                     {/* Wali Kelas */}
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-semibold text-slate-700">Wali Kelas</label>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 leading-none">Wali Kelas</label>
                                         <input
                                             {...register('waliKelas')}
                                             placeholder="Nama Wali Kelas (Opsional)"
-                                            className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-black text-xs placeholder:italic"
                                         />
-                                        <p className="text-[11px] text-slate-400">Guru yang bertanggung jawab atas kelas ini.</p>
+                                        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-tight italic leading-none">Guru yang bertanggung jawab atas kelas ini.</p>
                                     </div>
 
-                                    <div className="flex items-center gap-3 p-4 bg-orange-50/50 rounded-xl border border-orange-100">
+                                    <div className="flex items-center gap-3 p-3 bg-orange-50/50 rounded-xl border border-orange-100">
                                         <input
                                             type="checkbox"
                                             id="isMutasi"
                                             {...register('isMutasi')}
-                                            className="w-5 h-5 text-orange-600 border-slate-300 rounded focus:ring-orange-500"
+                                            className="w-4 h-4 text-orange-600 border-slate-300 rounded focus:ring-orange-500"
                                         />
                                         <div className="flex flex-col">
-                                            <label htmlFor="isMutasi" className="text-sm font-bold cursor-pointer text-orange-700">
+                                            <label htmlFor="isMutasi" className="text-[10px] font-black text-orange-700 cursor-pointer uppercase tracking-tight">
                                                 Kelas Mutasi (Pindahan)
                                             </label>
-                                            <p className="text-[11px] text-slate-500">
-                                                Dicentang jika kelas ini ditujukan khusus untuk siswa pindahan/mutasi yang masuk di tengah tahun ajaran.
+                                            <p className="text-[9px] text-slate-500 font-bold italic leading-none">
+                                                Dicentang jika kelas ini ditujukan khusus untuk siswa pindahan/mutasi.
                                             </p>
                                         </div>
                                     </div>
 
                                     {/* Alert Info */}
-                                    <div className="bg-blue-50 px-4 py-3 rounded-xl flex items-start gap-3">
-                                        <AlertCircle size={18} className="text-blue-600 mt-0.5" />
-                                        <p className="text-xs text-blue-700 leading-relaxed">
-                                            Pastikan kombinasi Jenjang, Tahun Ajaran, dan Nama Rombel unik. Sistem akan menolak jika ada duplikasi.
+                                    <div className="bg-blue-50 px-3 py-2 rounded-lg flex items-start gap-2 border border-blue-100">
+                                        <AlertCircle size={14} className="text-blue-600 mt-0.5 shrink-0" />
+                                        <p className="text-[9px] font-black text-blue-700 uppercase tracking-tight italic leading-relaxed">
+                                            Pastikan kombinasi Jenjang, Tahun Ajaran, dan Nama Rombel unik.
                                         </p>
                                     </div>
 
                                 </form>
                             </div>
 
-                            <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3 sticky bottom-0">
+                            <div className="px-5 py-4 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3 sticky bottom-0">
                                 <button
                                     onClick={onClose}
                                     type="button"
-                                    className="px-5 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-100 hover:text-slate-800 transition-all"
+                                    className="px-4 py-2 text-[10px] font-black text-slate-500 hover:text-slate-800 hover:bg-slate-200/50 rounded-lg transition-all uppercase tracking-widest italic"
                                 >
                                     Batal
                                 </button>
@@ -232,16 +232,16 @@ export function RombelForm({ isOpen, onClose, initialData }: RombelFormProps) {
                                     type="submit"
                                     form="rombel-form"
                                     disabled={isSubmitting}
-                                    className="bg-blue-600 text-white px-5 py-2.5 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 font-bold active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
+                                    className="bg-blue-600 text-white px-5 py-2 text-[10px] font-black rounded-lg hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2 uppercase tracking-widest italic"
                                 >
                                     {isSubmitting ? (
                                         <>
-                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                            <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                             <span>Menyimpan...</span>
                                         </>
                                     ) : (
                                         <>
-                                            <Save size={18} />
+                                            <Save size={14} />
                                             <span>Simpan Rombel</span>
                                         </>
                                     )}

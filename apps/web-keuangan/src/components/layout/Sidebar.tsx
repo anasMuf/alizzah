@@ -123,8 +123,8 @@ export function Sidebar({ open, setOpen, isCollapsed, setIsCollapsed }: SidebarP
                         </div>
                         <SidebarItem to="/siswa" icon={Users} exact onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Data Siswa</SidebarItem>
                         <SidebarItem to="/siswa/progresi" icon={GraduationCap} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Kenaikan Kelas</SidebarItem>
-                        <SidebarItem to="/keuangan/billing" icon={CreditCard} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Tagihan & SPP</SidebarItem>
-                        <SidebarItem to="/keuangan/pembayaran" icon={CreditCard} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Pembayaran & Kasir</SidebarItem>
+                        <SidebarItem to="/keuangan/billing" icon={CreditCard} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Tagihan</SidebarItem>
+                        <SidebarItem to="/keuangan/pembayaran" icon={CreditCard} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Pembayaran</SidebarItem>
                         <SidebarItem to="/daycare" icon={Baby} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Layanan Daycare</SidebarItem>
                         <SidebarItem to="/keuangan/tabungan" icon={PiggyBank} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Tabungan Siswa</SidebarItem>
                         <SidebarItem to="/keuangan/kas" icon={Wallet} onClick={() => setOpen(false)} isCollapsed={isCollapsed}>Kas & Berangkas</SidebarItem>

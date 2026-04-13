@@ -47,34 +47,34 @@ export function JenisPembayaranTable({ onEdit }: { onEdit?: (item: any) => void 
     return (
         <>
             <div className="space-y-4">
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto custom-scrollbar">
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto custom-scrollbar">
                     <table className="min-w-full divide-y divide-slate-200">
                         <thead className="bg-slate-50/50">
                             <tr>
-                                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Info Pembayaran</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Kategori & Tipe</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Nominal Default</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Status</th>
-                                <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Aksi</th>
+                                <th className="px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">Info Pembayaran</th>
+                                <th className="px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">Kategori & Tipe</th>
+                                <th className="px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">Nominal Default</th>
+                                <th className="px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">Status</th>
+                                <th className="px-4 py-2.5 text-right text-[10px] font-black uppercase tracking-widest text-slate-400">Aksi</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 bg-white">
                             {data?.map((item) => (
-                                <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
-                                    <td className="px-6 py-4">
-                                        <div className="font-bold text-slate-900">{item.nama}</div>
-                                        <div className="text-xs text-slate-400 font-mono mt-0.5">{item.kode}</div>
+                                <tr key={item.id} className="hover:bg-slate-50/10 transition-colors group">
+                                    <td className="px-4 py-2.5">
+                                        <div className="font-black text-slate-900 text-xs uppercase tracking-tight">{item.nama}</div>
+                                        <div className="text-[9px] text-slate-400 font-mono mt-0.5 italic">{item.kode}</div>
                                     </td>
-                                    <td className="px-6 py-4">
+                                    <td className="px-4 py-2.5">
                                         <div className="flex flex-col gap-1">
-                                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-100 w-fit">
+                                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-black bg-blue-50 text-blue-600 border border-blue-100 w-fit uppercase tracking-tighter">
                                                 {item.kategori.replace('_', ' ')}
                                             </span>
-                                            <span className="text-xs text-slate-500 font-medium italic">
-                                                {item.tipe.toLowerCase()}
+                                            <span className="text-[9px] text-slate-400 font-black uppercase tracking-widest italic">
+                                                {item.tipe}
                                             </span>
                                             {item.pemicu && item.pemicu !== 'MANUAL' && (
-                                                <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold border mt-0.5 ${item.pemicu === 'OTOMATIS_SISWA_BARU'
+                                                <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-black border mt-0.5 uppercase tracking-tighter ${item.pemicu === 'OTOMATIS_SISWA_BARU'
                                                     ? 'bg-blue-50 text-blue-700 border-blue-200'
                                                     : 'bg-orange-50 text-orange-700 border-orange-200'
                                                     }`}>
@@ -83,44 +83,44 @@ export function JenisPembayaranTable({ onEdit }: { onEdit?: (item: any) => void 
                                             )}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="font-bold text-slate-900">
+                                    <td className="px-4 py-2.5 whitespace-nowrap">
+                                        <div className="font-black text-slate-800 text-xs font-mono">
                                             {formatCurrency(item.nominalDefault)}
                                         </div>
-                                        <div className="text-[10px] text-slate-400 font-medium">
+                                        <div className="text-[9px] text-slate-400 font-black uppercase tracking-tighter italic">
                                             {item.sifat === 'WAJIB' ? 'Wajib Dibayar' : 'Opsional'}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
+                                    <td className="px-4 py-2.5 whitespace-nowrap">
                                         <span
-                                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${item.isAktif
+                                            className={`inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter ${item.isAktif
                                                 ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
-                                                : 'bg-slate-50 text-slate-500 border border-slate-200'
+                                                : 'bg-slate-50 text-slate-400 border border-slate-100'
                                                 }`}
                                         >
                                             {item.isAktif ? (
-                                                <CheckCircle2 size={12} className="mr-1.5" />
+                                                <CheckCircle2 size={10} className="mr-1" />
                                             ) : (
-                                                <XCircle size={12} className="mr-1.5" />
+                                                <XCircle size={10} className="mr-1" />
                                             )}
                                             {item.isAktif ? 'Aktif' : 'Non-Aktif'}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                        <div className="flex justify-end gap-2">
+                                    <td className="px-4 py-2.5 whitespace-nowrap text-right text-xs">
+                                        <div className="flex justify-end gap-1">
                                             <button
                                                 onClick={() => onEdit?.(item)}
-                                                className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
                                                 title="Edit"
                                             >
-                                                <Edit2 size={18} />
+                                                <Edit2 size={14} />
                                             </button>
                                             <button
                                                 onClick={() => setDeleteId(item.id)}
-                                                className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                                                 title="Hapus"
                                             >
-                                                <Trash2 size={18} />
+                                                <Trash2 size={14} />
                                             </button>
                                         </div>
                                     </td>
@@ -128,12 +128,12 @@ export function JenisPembayaranTable({ onEdit }: { onEdit?: (item: any) => void 
                             ))}
                             {(!data || data.length === 0) && (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-20 text-center">
+                                    <td colSpan={5} className="px-4 py-20 text-center">
                                         <div className="flex flex-col items-center gap-2">
-                                            <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center text-slate-300">
-                                                <Plus size={24} />
+                                            <div className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center text-slate-300">
+                                                <Plus size={20} />
                                             </div>
-                                            <p className="text-slate-500 font-medium">Belum ada data jenis pembayaran.</p>
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest italic">Belum ada data jenis pembayaran.</p>
                                         </div>
                                     </td>
                                 </tr>

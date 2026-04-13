@@ -47,24 +47,24 @@ function DiskonPage() {
     };
 
     return (
-        <div className="space-y-5 animate-in fade-in duration-500">
+        <div className="space-y-3 animate-in fade-in duration-500">
             <Toaster position="top-right" richColors />
 
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-100 hidden sm:block">
-                        <Ticket size={20} />
+                    <div className="p-1 bg-indigo-600 text-white rounded shadow-lg shadow-indigo-100 hidden sm:block shrink-0">
+                        <Ticket size={14} />
                     </div>
                     <div>
-                        <h1 className="text-xl font-bold text-slate-900">Master Dispensasi Siswa</h1>
-                        <p className="text-slate-500 text-xs font-medium italic">Kelola jenis dispensasi dan beasiswa siswa</p>
+                        <h1 className="text-base font-black text-slate-900 uppercase tracking-tight italic leading-none">Master Dispensasi Siswa</h1>
+                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest leading-none mt-1.5 italic">Kelola jenis dispensasi dan beasiswa siswa</p>
                     </div>
                 </div>
                 <button
                     onClick={handleCreate}
-                    className="flex items-center justify-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 font-bold active:scale-95 text-xs"
+                    className="flex items-center justify-center gap-2 bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-black transition-all shadow-lg shadow-indigo-200 font-black text-[10px] uppercase tracking-widest active:scale-95 italic"
                 >
-                    <Plus size={18} />
+                    <Plus size={14} />
                     <span>Tambah Dispensasi</span>
                 </button>
             </div>

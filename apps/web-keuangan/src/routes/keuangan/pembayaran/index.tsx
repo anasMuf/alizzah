@@ -64,72 +64,72 @@ function PaymentConfirmationModal({ isOpen, onClose, onConfirm, data }: PaymentC
             />
 
             <motion.div
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                initial={{ opacity: 0, scale: 0.9, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden border border-white/20 flex flex-col max-h-[90vh]"
+                exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                className="relative w-full max-w-md bg-white rounded-xl shadow-2xl overflow-hidden border border-slate-200 flex flex-col max-h-[95vh]"
             >
                 {/* Header */}
-                <div className="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-indigo-50/30">
+                <div className="px-4 py-3 border-b border-slate-100 flex justify-between items-center bg-indigo-50/30">
                     <div className="flex items-center gap-3">
-                        <div className="p-2.5 bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-100">
-                            <AlertTriangle size={20} />
+                        <div className="p-1.5 bg-indigo-600 text-white rounded-lg">
+                            <AlertTriangle size={16} />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold text-slate-900 leading-tight">Konfirmasi Pembayaran</h2>
-                            <p className="text-[9px] text-indigo-600 font-black uppercase tracking-widest italic">Preview Transaksi</p>
+                            <h2 className="text-base font-black text-slate-900 leading-tight uppercase tracking-tight italic">Konfirmasi Pembayaran</h2>
+                            <p className="text-[9px] text-indigo-600 font-black uppercase tracking-widest italic">PREVIEW TRANSAKSI</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-1.5 hover:bg-white rounded-full transition-all text-slate-400">
-                        <X size={18} />
+                    <button onClick={onClose} className="p-1 hover:bg-white rounded-full transition-all text-slate-400">
+                        <X size={16} />
                     </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-5 space-y-5">
+                <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
                     {/* Student Info Summary */}
-                    <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-3.5">
-                        <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center font-black">
+                    <div className="p-2 bg-slate-50 rounded-lg border border-slate-100 flex items-center gap-3">
+                        <div className="w-8 h-8 bg-indigo-100 text-indigo-600 rounded flex items-center justify-center font-black text-xs">
                             {data.siswa?.namaLengkap?.charAt(0)}
                         </div>
                         <div>
-                            <div className="text-sm font-black text-slate-900 leading-none mb-1">{data.siswa?.namaLengkap}</div>
-                            <div className="text-[9px] text-slate-400 font-black uppercase tracking-tighter italic">
+                            <div className="text-xs font-black text-slate-900 leading-none mb-1 uppercase tracking-tight italic">{data.siswa?.namaLengkap}</div>
+                            <div className="text-[9px] text-slate-400 font-black uppercase tracking-widest italic leading-none">
                                 {data.siswa?.nis} • {data.siswa?.rombel?.nama}
                             </div>
                         </div>
                     </div>
 
-                    <div className="space-y-5">
+                    <div className="space-y-4">
                         <div className="flex justify-between items-center">
-                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Metode Bayar</span>
-                            <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${data.metode === 'TUNAI' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-blue-50 border-blue-100 text-blue-600'}`}>
+                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic">METODE BAYAR</span>
+                            <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border ${data.metode === 'TUNAI' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-blue-50 border-blue-100 text-blue-600'}`}>
                                 {data.metode}
                             </span>
                         </div>
 
                         {/* Mandatory Items Preview */}
-                        <div className="space-y-2.5">
-                            <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-1.5 leading-none">
-                                <div className="w-1 h-1 rounded-full bg-indigo-600" /> Tagihan Utama
+                        <div className="space-y-2">
+                            <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-1.5 leading-none italic">
+                                <div className="w-1 h-1 rounded-full bg-indigo-600" /> TAGIHAN UTAMA
                             </span>
-                            <div className="bg-slate-50/50 rounded-xl border border-slate-100 divide-y divide-slate-100 overflow-hidden">
+                            <div className="bg-slate-50/50 rounded-lg border border-slate-100 divide-y divide-slate-100 overflow-hidden text-[10px]">
                                 {data.unpaidTagihan.length === 0 ? (
-                                    <div className="p-3 text-center text-[9px] text-slate-400 font-bold uppercase italic">Tidak Ada Tunggakan</div>
+                                    <div className="p-2 text-center text-[9px] text-slate-400 font-black uppercase italic">TIDAK ADA TUNGGAKAN</div>
                                 ) : (
                                     data.unpaidTagihan.map((tagihan, idx) => (
                                         <div key={idx} className="flex flex-col">
                                             <button
                                                 onClick={() => setOpenTagihanId(openTagihanId === tagihan.id ? null : tagihan.id)}
-                                                className="p-2.5 flex justify-between items-center text-[11px] hover:bg-white transition-all text-left w-full group"
+                                                className="p-2 flex justify-between items-center hover:bg-white transition-all text-left w-full group"
                                             >
-                                                <div className="flex items-center gap-2.5">
-                                                    <ChevronRight size={12} className={`text-slate-400 transition-transform ${openTagihanId === tagihan.id ? 'rotate-90 text-indigo-600' : ''}`} />
+                                                <div className="flex items-center gap-2">
+                                                    <ChevronRight size={10} className={`text-slate-400 transition-transform ${openTagihanId === tagihan.id ? 'rotate-90 text-indigo-600' : ''}`} />
                                                     <div className="flex flex-col">
-                                                        <span className={`font-black transition-colors ${openTagihanId === tagihan.id ? 'text-indigo-600' : 'text-slate-700'}`}>Tagihan {new Date(tagihan.periode).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })}</span>
-                                                        <span className="text-[8px] text-slate-400 font-mono italic leading-none">{tagihan.kode}</span>
+                                                        <span className={`font-black uppercase tracking-tight italic transition-colors ${openTagihanId === tagihan.id ? 'text-indigo-600' : 'text-slate-700'}`}>TAGIHAN {new Date(tagihan.periode).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' }).toUpperCase()}</span>
+                                                        <span className="text-[8px] text-slate-400 font-black font-mono italic leading-none">{tagihan.kode}</span>
                                                     </div>
                                                 </div>
-                                                <span className="font-bold text-slate-900">{formatCurrency(tagihan.sisaTagihan)}</span>
+                                                <span className="font-black text-slate-900 italic font-mono">{formatCurrency(tagihan.sisaTagihan)}</span>
                                             </button>
 
                                             <AnimatePresence>
@@ -140,11 +140,11 @@ function PaymentConfirmationModal({ isOpen, onClose, onConfirm, data }: PaymentC
                                                         exit={{ height: 0, opacity: 0 }}
                                                         className="overflow-hidden bg-white/60 border-t border-slate-100"
                                                     >
-                                                        <div className="px-8 py-2.5 space-y-1">
+                                                        <div className="px-6 py-1.5 space-y-0.5">
                                                             {tagihan.tagihanItems?.map((item: any) => (
-                                                                <div key={item.id} className="flex justify-between items-center text-[9px]">
-                                                                    <span className="text-slate-500 font-black italic">• {item.namaItem}</span>
-                                                                    <span className="font-bold text-slate-700 font-mono">{formatCurrency(item.nominalAkhir)}</span>
+                                                                <div key={item.id} className="flex justify-between items-center text-[8px]">
+                                                                    <span className="text-slate-400 font-black italic uppercase tracking-tight">• {item.namaItem}</span>
+                                                                    <span className="font-black text-slate-600 font-mono tracking-tighter">{formatCurrency(item.nominalAkhir)}</span>
                                                                 </div>
                                                             ))}
                                                         </div>
@@ -154,64 +154,64 @@ function PaymentConfirmationModal({ isOpen, onClose, onConfirm, data }: PaymentC
                                         </div>
                                     ))
                                 )}
-                                <div className="p-2.5 bg-indigo-50/50 flex justify-between items-center text-[9px] font-black border-t-2 border-indigo-100">
-                                    <span className="text-indigo-600 uppercase tracking-widest leading-none">Alokasi ke Tagihan</span>
-                                    <span className="text-indigo-700 font-mono">{formatCurrency(amountForTagihan)}</span>
+                                <div className="p-2 bg-indigo-50/50 flex justify-between items-center text-[9px] font-black border-t border-indigo-100">
+                                    <span className="text-indigo-600 uppercase tracking-widest leading-none italic">ALOKASI TAGIHAN</span>
+                                    <span className="text-indigo-700 font-mono italic">{formatCurrency(amountForTagihan)}</span>
                                 </div>
                             </div>
                         </div>
 
                         {/* Additional Items Preview */}
                         {data.additionalItems.length > 0 && (
-                            <div className="space-y-2.5">
-                                <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-1.5 leading-none">
-                                    <div className="w-1 h-1 rounded-full bg-emerald-600" /> Item Tambahan (Incidental)
+                            <div className="space-y-2">
+                                <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-1.5 leading-none italic">
+                                    <div className="w-1 h-1 rounded-full bg-emerald-600" /> ITEM TAMBAHAN
                                 </span>
-                                <div className="bg-emerald-50/30 rounded-xl border border-emerald-100/50 divide-y divide-emerald-100/50">
+                                <div className="bg-emerald-50/30 rounded-lg border border-emerald-100/50 divide-y divide-emerald-100/50 text-[10px]">
                                     {data.additionalItems.map((item, idx) => (
-                                        <div key={idx} className="p-2.5 flex justify-between items-center text-[11px]">
-                                            <span className="text-emerald-700 font-black italic">• {item.catatan || 'Biaya Tambahan'}</span>
-                                            <span className="font-bold text-emerald-900 font-mono">{formatCurrency(item.nominal)}</span>
+                                        <div key={idx} className="p-2 flex justify-between items-center">
+                                            <span className="text-emerald-700 font-black italic uppercase tracking-tight">• {item.catatan || 'BIAYA TAMBAHAN'}</span>
+                                            <span className="font-black text-emerald-900 font-mono tracking-tighter italic">{formatCurrency(item.nominal)}</span>
                                         </div>
                                     ))}
-                                    <div className="p-2.5 bg-emerald-100/30 flex justify-between items-center text-[9px] font-black border-t border-emerald-200/50">
-                                        <span className="text-emerald-600 uppercase tracking-widest text-[8px] leading-none">Subtotal Tambahan</span>
-                                        <span className="text-emerald-700 font-mono">{formatCurrency(totalIncidental)}</span>
+                                    <div className="p-2 bg-emerald-100/30 flex justify-between items-center text-[9px] font-black border-t border-emerald-200/50">
+                                        <span className="text-emerald-600 uppercase tracking-widest text-[8px] leading-none italic">SUBTOTAL TAMBAHAN</span>
+                                        <span className="text-emerald-700 font-mono italic">{formatCurrency(totalIncidental)}</span>
                                     </div>
                                 </div>
                             </div>
                         )}
 
-                        <div className="p-5 bg-slate-900 rounded-2xl text-white space-y-1.5 text-center relative overflow-hidden shadow-xl">
+                        <div className="p-3 bg-slate-900 rounded-xl text-white space-y-0.5 text-center relative overflow-hidden shadow-xl">
                             <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/10 blur-2xl rounded-full -mr-12 -mt-12" />
-                            <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest relative z-10 leading-none">Nominal Diterima</p>
-                            <p className="text-2xl font-black tracking-tight relative z-10 font-mono">{formatCurrency(data.paymentAmount)}</p>
+                            <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest relative z-10 leading-none">NOMINAL DITERIMA</p>
+                            <p className="text-xl font-black tracking-tight relative z-10 font-mono italic">{formatCurrency(data.paymentAmount)}</p>
                         </div>
                     </div>
 
-                    <div className="bg-amber-50 p-3.5 rounded-xl border border-amber-100 flex gap-2.5">
-                        <Info size={14} className="text-amber-600 shrink-0 mt-0.5" />
-                        <p className="text-[9px] text-amber-800 leading-relaxed font-black mb-0.5 italic">
+                    <div className="bg-amber-50 p-2.5 rounded-lg border border-amber-100 flex gap-2">
+                        <Info size={12} className="text-amber-600 shrink-0 mt-0.5" />
+                        <p className="text-[8px] text-amber-800 leading-tight font-black uppercase italic mb-0.5 tracking-tight">
                             Sistem mendahulukan Item Tambahan, kemudian sisa dana ke Tagihan Utama (FIFO).
                         </p>
                     </div>
                 </div>
 
-                <div className="px-5 py-4 bg-slate-50 border-t border-slate-100 flex gap-2.5">
+                <div className="px-4 py-3 bg-slate-50 border-t border-slate-100 flex gap-2 shrink-0">
                     <button
                         onClick={onClose}
                         disabled={data.isPending}
-                        className="flex-1 py-3 bg-white border border-slate-200 text-slate-600 font-black rounded-xl hover:bg-slate-50 transition-all text-[10px] uppercase tracking-widest"
+                        className="flex-1 py-1.5 bg-white border border-slate-200 text-slate-400 font-black rounded hover:bg-slate-50 transition-all text-[10px] uppercase tracking-widest italic"
                     >
-                        Perbaiki
+                        PERBAIKI
                     </button>
                     <button
                         onClick={onConfirm}
                         disabled={data.isPending}
-                        className="flex-1 py-3 bg-indigo-600 text-white font-black rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 flex items-center justify-center gap-2 active:scale-95 text-[10px] uppercase tracking-widest disabled:opacity-50"
+                        className="flex-1 py-1.5 bg-indigo-600 text-white font-black rounded hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 flex items-center justify-center gap-2 active:scale-95 text-[10px] uppercase tracking-widest italic disabled:opacity-50"
                     >
                         {data.isPending ? <Loader2 className="animate-spin" size={14} /> : <CheckCircle size={14} />}
-                        <span>Final Submit</span>
+                        <span>FINAL SUBMIT</span>
                     </button>
                 </div>
             </motion.div>
@@ -304,7 +304,7 @@ function PembayaranKasirPage() {
     const suggestedTotal = parseCurrency(summary?.totalDebt || 0) + totalIncidental;
 
     return (
-        <div className="space-y-5 animate-in fade-in duration-500">
+        <div className="space-y-3 animate-in fade-in duration-500">
             <AnimatePresence>
                 {isReceiptOpen && (
                     <ReceiptModal
@@ -330,23 +330,23 @@ function PembayaranKasirPage() {
                 )}
             </AnimatePresence>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
                 {/* Input Area */}
-                <div className="lg:col-span-2 space-y-4">
-                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-5">
+                <div className="lg:col-span-2 space-y-3">
+                    <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-4">
                         <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
-                                    <Search size={20} />
+                            <div className="flex items-center gap-2">
+                                <div className="p-1.5 bg-blue-50 text-blue-600 rounded">
+                                    <Search size={16} />
                                 </div>
-                                <h2 className="text-lg font-bold text-slate-900 uppercase">Input Kasir</h2>
+                                <h2 className="text-base font-black text-slate-900 uppercase tracking-tight italic">Input Kasir</h2>
                             </div>
                             {selectedSiswaId && (
                                 <button
                                     onClick={handleClearSiswa}
-                                    className="text-[10px] font-black text-rose-500 hover:text-rose-700 uppercase tracking-[0.2em] italic"
+                                    className="text-[9px] font-black text-rose-500 hover:text-rose-700 uppercase tracking-widest italic"
                                 >
-                                    Ganti Siswa
+                                    GANTI SISWA
                                 </button>
                             )}
                         </div>
@@ -354,7 +354,7 @@ function PembayaranKasirPage() {
                         {!selectedSiswaId ? (
                             <StudentSearch onSelect={(s) => handleSelectSiswa(s.id)} />
                         ) : (
-                            <div className="space-y-5 animate-in fade-in duration-500">
+                            <div className="space-y-4 animate-in fade-in duration-500">
                                 <StudentDebtSummary data={summary} isLoading={loadingSummary} />
 
                                 <div className="h-px bg-slate-100" />
@@ -369,18 +369,18 @@ function PembayaranKasirPage() {
                     </div>
 
                     {selectedSiswaId && suggestedTotal > 0 && (
-                        <div className="bg-blue-600 p-5 rounded-2xl text-white shadow-xl shadow-blue-200 flex flex-col md:flex-row items-center justify-between gap-5 animate-in zoom-in-95 duration-500 overflow-hidden relative">
+                        <div className="bg-blue-600 p-4 rounded-xl text-white shadow-xl shadow-blue-200 flex flex-col md:flex-row items-center justify-between gap-3 animate-in zoom-in-95 duration-500 overflow-hidden relative">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 blur-3xl rounded-full -mr-16 -mt-16" />
                             <div className="space-y-1 relative z-10 text-center md:text-left">
-                                <p className="text-blue-100/60 font-black uppercase tracking-widest text-[9px] leading-none mb-1">Total Estimasi Pembayaran</p>
-                                <p className="text-2xl font-black font-mono">{formatCurrency(suggestedTotal)}</p>
+                                <p className="text-blue-100/60 font-black uppercase tracking-widest text-[8px] leading-none mb-1">Total Estimasi Pembayaran</p>
+                                <p className="text-xl font-black font-mono tracking-tighter italic">{formatCurrency(suggestedTotal)}</p>
                                 {totalIncidental > 0 && (
-                                    <p className="text-[9px] text-blue-200 font-black uppercase tracking-tight italic mt-1 leading-none">Termasuk {incidentalItems.length} tambahan: {formatCurrency(totalIncidental)}</p>
+                                    <p className="text-[8px] text-blue-200 font-black uppercase tracking-tight italic mt-1 leading-none">Termasuk {incidentalItems.length} tambahan: {formatCurrency(totalIncidental)}</p>
                                 )}
                             </div>
                             <button
                                 onClick={() => setPaymentAmount(suggestedTotal)}
-                                className="px-5 py-2.5 bg-white text-blue-600 font-black rounded-xl hover:bg-blue-50 transition-all shadow-lg active:scale-95 flex items-center gap-2 text-[10px] uppercase tracking-widest relative z-10"
+                                className="px-4 py-2 bg-white text-blue-600 font-black rounded-lg hover:bg-blue-50 transition-all shadow-lg active:scale-95 flex items-center gap-2 text-[9px] uppercase tracking-widest relative z-10 italic"
                             >
                                 <CheckCircle size={14} /> Gunakan Nominal Ini
                             </button>
@@ -389,55 +389,55 @@ function PembayaranKasirPage() {
                 </div>
 
                 {/* Order Sidebar */}
-                <div className="space-y-4 h-fit lg:sticky lg:top-4">
-                    <div className="bg-slate-900 p-5 rounded-2xl text-white shadow-2xl space-y-5 relative overflow-hidden">
+                <div className="space-y-3 h-fit lg:sticky lg:top-2">
+                    <div className="bg-slate-900 p-4 rounded-xl text-white shadow-2xl space-y-4 relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 blur-3xl rounded-full -mr-16 -mt-16" />
 
-                        <h3 className="text-sm font-black flex items-center gap-2 relative z-10 uppercase tracking-widest">
-                            <Banknote className="text-blue-400" size={18} /> Ringkasan Bayar
+                        <h3 className="text-xs font-black flex items-center gap-2 relative z-10 uppercase tracking-widest italic">
+                            <Banknote className="text-blue-400" size={16} /> Kasir Pembayaran
                         </h3>
 
                         <div className="space-y-4 relative z-10">
                             {/* Amount Input */}
-                            <div className="space-y-2">
-                                <label className="text-[9px] font-black text-blue-400 uppercase tracking-[0.2em] ml-1">Bayar Diterima</label>
+                            <div className="space-y-1.5">
+                                <label className="text-[8px] font-black text-blue-400 uppercase tracking-[0.2em] ml-1">BAYAR DITERIMA</label>
                                 <div className="relative group">
-                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-slate-500 group-focus-within:text-blue-400 transition-colors text-lg">Rp</span>
+                                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-black text-slate-500 group-focus-within:text-blue-400 transition-colors text-base italic leading-none">Rp</span>
                                     <input
                                         type="number"
                                         value={paymentAmount || ''}
                                         onChange={(e) => setPaymentAmount(Number(e.target.value))}
-                                        className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500/50 font-black text-xl text-white transition-all placeholder:text-white/10 font-mono"
+                                        className="w-full pl-10 pr-3 py-3 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500/50 font-black text-lg text-white transition-all placeholder:text-white/10 font-mono italic"
                                         placeholder="0"
                                     />
                                 </div>
                             </div>
 
                             {/* Toggle Method */}
-                            <div className="grid grid-cols-2 gap-1.5 p-1 bg-white/5 rounded-xl border border-white/5">
+                            <div className="grid grid-cols-2 gap-1 p-0.5 bg-white/5 rounded-lg border border-white/5">
                                 <button
                                     onClick={() => setMetode('TUNAI')}
-                                    className={`py-2 rounded-lg text-[10px] font-black flex items-center justify-center gap-1.5 transition-all uppercase tracking-widest ${metode === 'TUNAI' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                                    className={`py-1.5 rounded text-[9px] font-black flex items-center justify-center gap-1 transition-all uppercase tracking-widest italic ${metode === 'TUNAI' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
                                 >
-                                    <Wallet size={12} /> CASH
+                                    <Wallet size={10} /> CASH
                                 </button>
                                 <button
                                     onClick={() => setMetode('TRANSFER')}
-                                    className={`py-2 rounded-lg text-[10px] font-black flex items-center justify-center gap-1.5 transition-all uppercase tracking-widest ${metode === 'TRANSFER' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                                    className={`py-1.5 rounded text-[9px] font-black flex items-center justify-center gap-1 transition-all uppercase tracking-widest italic ${metode === 'TRANSFER' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
                                 >
-                                    <CreditCard size={12} /> BANK
+                                    <CreditCard size={10} /> BANK
                                 </button>
                             </div>
 
-                            <div className="space-y-3 pt-2">
-                                <div className="flex justify-between items-center text-slate-400 text-[10px] font-black uppercase tracking-widest leading-none">
+                            <div className="space-y-2 pt-1">
+                                <div className="flex justify-between items-center text-slate-400 text-[9px] font-black uppercase tracking-widest leading-none italic">
                                     <span>Subtotal</span>
-                                    <span className="text-white font-mono">{formatCurrency(paymentAmount)}</span>
+                                    <span className="text-white font-mono italic">{formatCurrency(paymentAmount)}</span>
                                 </div>
                                 <div className="h-px bg-white/10" />
                                 <div className="flex justify-between items-center py-1">
-                                    <span className="text-xs font-black text-slate-300 uppercase tracking-widest">Total Akhir</span>
-                                    <span className="text-xl font-black text-blue-400 font-mono">{formatCurrency(paymentAmount)}</span>
+                                    <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest italic">TOTAL AKHIR</span>
+                                    <span className="text-xl font-black text-blue-400 font-mono italic tracking-tighter">{formatCurrency(paymentAmount)}</span>
                                 </div>
                             </div>
                         </div>
@@ -445,25 +445,25 @@ function PembayaranKasirPage() {
                         <button
                             onClick={handleOpenConfirm}
                             disabled={!selectedSiswaId || paymentAmount <= 0 || createMutation.isPending}
-                            className="w-full py-3.5 bg-blue-600 text-white font-black rounded-xl hover:bg-blue-700 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2.5 shadow-2xl shadow-blue-900/40 disabled:opacity-30 disabled:grayscale disabled:cursor-not-allowed group text-xs uppercase tracking-[0.2em]"
+                            className="w-full py-3 bg-blue-600 text-white font-black rounded-lg hover:bg-black hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 shadow-2xl shadow-blue-900/40 disabled:opacity-30 disabled:grayscale disabled:cursor-not-allowed group text-[11px] uppercase tracking-[0.2em] italic"
                         >
                             {createMutation.isPending ? (
-                                <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin" />
+                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                             ) : (
                                 <>
-                                    PROSES BAYAR <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                                    PROSES BAYAR <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                                 </>
                             )}
                         </button>
                     </div>
 
-                    <div className="bg-amber-50 p-4 rounded-xl border border-amber-100 flex gap-3 animate-in slide-in-from-right-4 duration-700">
-                        <div className="p-1.5 bg-white rounded-lg text-amber-600 shadow-sm shrink-0 h-fit mt-0.5">
-                            <FileText size={16} />
+                    <div className="bg-amber-50 p-3 rounded-lg border border-amber-100 flex gap-2 animate-in slide-in-from-right-4 duration-700">
+                        <div className="p-1 bg-white rounded text-amber-600 shadow-sm shrink-0 h-fit mt-0.5">
+                            <FileText size={14} />
                         </div>
                         <div>
-                            <p className="text-[9px] font-black text-amber-900 uppercase tracking-widest mb-0.5 leading-none">FIFO ALLOCATION</p>
-                            <p className="text-[10px] text-amber-800 leading-normal font-black italic">
+                            <p className="text-[8px] font-black text-amber-900 uppercase tracking-[0.2em] mb-0.5 leading-none italic">FIFO ALLOCATION</p>
+                            <p className="text-[9px] text-amber-800 leading-normal font-black italic uppercase tracking-tight">
                                 Sesuai urutan tagihan tertua.
                             </p>
                         </div>

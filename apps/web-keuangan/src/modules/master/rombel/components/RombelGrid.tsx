@@ -67,37 +67,37 @@ export function RombelGrid({ onEdit, tahunAjaranId }: RombelGridProps) {
 
     return (
         <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {data.map((item) => (
-                    <div key={item.id} className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm hover:shadow-md transition-all group relative overflow-hidden flex flex-col justify-between">
+                    <div key={item.id} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition-all group relative overflow-hidden flex flex-col justify-between">
 
                         {/* Header */}
                         <div>
-                            <div className="flex items-start justify-between mb-4">
-                                <div className="bg-blue-600 text-white w-fit min-w-10 px-3 h-10 rounded-xl flex items-center justify-center font-bold shadow-lg shadow-blue-100 text-sm">
+                            <div className="flex items-start justify-between mb-3">
+                                <div className="bg-blue-600 text-white w-fit min-w-8 px-2 h-7 rounded-lg flex items-center justify-center font-black shadow-lg shadow-blue-100 text-[10px]">
                                     {item.jenjang.kode}
                                 </div>
                                 <div className="flex flex-col items-end gap-1 text-right">
-                                    <div className="flex items-center gap-1.5 bg-slate-100 px-2.5 py-1 rounded-lg">
-                                        <Users size={14} className="text-slate-500" />
-                                        <span className="text-xs font-bold text-slate-700">{item.jumlahSiswa}/{item.kapasitas}</span>
+                                    <div className="flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded border border-slate-100">
+                                        <Users size={12} className="text-slate-400" />
+                                        <span className="text-[10px] font-black text-slate-700">{item.jumlahSiswa}/{item.kapasitas}</span>
                                     </div>
                                     {item.isMutasi && (
-                                        <span className="bg-orange-100 text-orange-700 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                                        <span className="bg-orange-50 text-orange-600 text-[8px] px-1.5 py-0.5 rounded font-black uppercase tracking-widest border border-orange-100">
                                             Mutasi
                                         </span>
                                     )}
                                 </div>
                             </div>
 
-                            <h3 className="text-lg font-bold text-slate-900 mb-1 line-clamp-1" title={item.nama}>{item.nama}</h3>
-                            <div className="flex items-center gap-2 text-slate-500 text-sm mb-4">
-                                <School size={16} />
-                                <span className="font-medium">{item.waliKelas || 'Belum ada Wali Kelas'}</span>
+                            <h3 className="text-sm font-black text-slate-900 mb-0.5 line-clamp-1 uppercase tracking-tight italic" title={item.nama}>{item.nama}</h3>
+                            <div className="flex items-center gap-1.5 text-slate-400 text-[10px] mb-3 uppercase font-bold">
+                                <School size={12} />
+                                <span className="line-clamp-1 italic">{item.waliKelas || 'No Wali Kelas'}</span>
                             </div>
 
                             {/* Progress Bar for Capacity */}
-                            <div className="relative h-2 w-full bg-slate-100 rounded-full overflow-hidden mb-1">
+                            <div className="relative h-1.5 w-full bg-slate-50 rounded-full overflow-hidden mb-1">
                                 <div
                                     className={`absolute top-0 left-0 h-full rounded-full transition-all duration-500 ${item.kapasitasTerpakai >= 100 ? 'bg-red-500' :
                                         item.kapasitasTerpakai >= 80 ? 'bg-amber-500' : 'bg-blue-500'
@@ -105,27 +105,27 @@ export function RombelGrid({ onEdit, tahunAjaranId }: RombelGridProps) {
                                     style={{ width: `${Math.min(item.kapasitasTerpakai, 100)}%` }}
                                 ></div>
                             </div>
-                            <div className="flex justify-between text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                            <div className="flex justify-between text-[8px] uppercase font-black text-slate-300 tracking-widest">
                                 <span>Kapasitas</span>
                                 <span>{item.kapasitasTerpakai}%</span>
                             </div>
                         </div>
 
                         {/* Actions */}
-                        <div className="flex items-center justify-end gap-2 mt-4 border-t pt-4 border-slate-50">
+                        <div className="flex items-center justify-end gap-1 mt-4 border-t pt-3 border-slate-50">
                             <button
                                 onClick={() => onEdit?.(item)}
-                                className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
                                 title="Edit"
                             >
-                                <Edit2 size={18} />
+                                <Edit2 size={14} />
                             </button>
                             <button
                                 onClick={() => setDeleteId(item.id)}
-                                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                                 title="Hapus"
                             >
-                                <Trash2 size={18} />
+                                <Trash2 size={14} />
                             </button>
                         </div>
                     </div>

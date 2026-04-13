@@ -62,7 +62,7 @@ export function BillingGeneratorForm({
         }
     };
 
-    const inputClass = "w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-slate-900";
+    const inputClass = "w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-black text-xs text-slate-900 placeholder:italic";
 
     const months = [
         "Januari", "Februari", "Maret", "April", "Mei", "Juni",
@@ -70,69 +70,69 @@ export function BillingGeneratorForm({
     ];
 
     return (
-        <div className="max-w-4xl mx-auto space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="max-w-4xl mx-auto space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* Header Section */}
-            <div className="bg-linear-to-br from-slate-900 to-slate-800 p-5 rounded-2xl text-white shadow-2xl relative overflow-hidden">
+            <div className="bg-linear-to-br from-slate-900 to-slate-800 p-4 rounded-xl text-white shadow-2xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 blur-[100px] rounded-full -mr-32 -mt-32" />
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="space-y-1">
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-white/10 backdrop-blur-md rounded-full text-[9px] font-black tracking-widest uppercase text-blue-300 border border-white/10">
-                            <Zap size={12} className="animate-pulse" /> Automatic Billing Engine
+                        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-white/10 backdrop-blur-md rounded-full text-[8px] font-black tracking-widest uppercase text-blue-300 border border-white/10">
+                            <Zap size={10} className="animate-pulse" /> AUTOMATIC BILLING ENGINE
                         </div>
-                        <h1 className="text-xl font-extrabold tracking-tight">Generate Tagihan Bulanan</h1>
-                        <p className="text-slate-400 text-xs font-medium">Buat invoice otomatis untuk seluruh siswa aktif sesuai jenjang.</p>
+                        <h1 className="text-lg font-black uppercase tracking-tight italic">Generate Tagihan Bulanan</h1>
+                        <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest italic leading-none">Buat invoice otomatis untuk seluruh siswa aktif sesuai jenjang.</p>
                     </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
                 {/* Configuration Form */}
-                <div className="lg:col-span-2 space-y-4">
+                <div className="lg:col-span-2 space-y-3">
                     {/* Periode Info */}
-                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-5">
-                        <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
-                            <Calendar className="text-blue-600" size={20} />
-                            <h2 className="text-lg font-bold text-slate-900">Konfigurasi Periode</h2>
+                    <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                        <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+                            <Calendar className="text-blue-600" size={16} />
+                            <h2 className="text-base font-black text-slate-900 uppercase tracking-tight italic">Konfigurasi Periode</h2>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div className="space-y-1">
-                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Bulan Tagihan</label>
-                                <select {...register('bulan', { valueAsNumber: true })} className={`${inputClass} text-sm py-2.5`}>
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 italic">BULAN TAGIHAN</label>
+                                <select {...register('bulan', { valueAsNumber: true })} className={`${inputClass}`}>
                                     {months.map((m, i) => (
-                                        <option key={i} value={i + 1}>{m}</option>
+                                        <option key={i} value={i + 1}>{m.toUpperCase()}</option>
                                     ))}
                                 </select>
                             </div>
                             <div className="space-y-1">
-                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Tahun</label>
-                                <input {...register('tahun', { valueAsNumber: true })} type="number" className={`${inputClass} text-sm py-2.5`} />
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 italic">TAHUN</label>
+                                <input {...register('tahun', { valueAsNumber: true })} type="number" className={`${inputClass}`} />
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                             <div className="space-y-1">
-                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 flex items-center gap-1.5">
-                                    Hari Efektif
-                                    <Info size={12} className="text-slate-300" />
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 italic">
+                                    HARI EFEKTIF
+                                    <Info size={10} className="text-slate-300" />
                                 </label>
-                                <input {...register('jumlahHariEfektif', { valueAsNumber: true })} type="number" className={`${inputClass} text-sm py-2.5`} placeholder="20" />
+                                <input {...register('jumlahHariEfektif', { valueAsNumber: true })} type="number" className={`${inputClass}`} placeholder="20" />
                             </div>
                             <div className="space-y-1">
-                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 flex items-center gap-1.5">
-                                    Jumlah Senin
-                                    <Info size={12} className="text-slate-300" />
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 italic">
+                                    JUMLAH SENIN
+                                    <Info size={10} className="text-slate-300" />
                                 </label>
-                                <input {...register('jumlahSenin', { valueAsNumber: true })} type="number" className={`${inputClass} text-sm py-2.5`} placeholder="4" />
+                                <input {...register('jumlahSenin', { valueAsNumber: true })} type="number" className={`${inputClass}`} placeholder="4" />
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 flex gap-3">
-                        <AlertTriangle className="text-blue-600 shrink-0" size={20} />
+                    <div className="bg-blue-50/50 p-3 rounded-lg border border-blue-100 flex gap-2.5">
+                        <AlertTriangle className="text-blue-600 shrink-0" size={16} />
                         <div>
-                            <p className="text-xs font-bold text-blue-900 italic">Penting!</p>
-                            <p className="text-[10px] text-blue-700 leading-relaxed mt-0.5">
+                            <p className="text-[10px] font-black text-blue-900 uppercase tracking-widest italic leading-none">PENTING!</p>
+                            <p className="text-[9px] text-blue-700 font-bold uppercase tracking-tight leading-relaxed mt-1 italic">
                                 Sistem akan otomatis mendeteksi komponen wajib (SPP, Infaq, Calisan, Tabungan) sesuai jenjang masing-masing siswa (KB, TK-A, TK-B).
                             </p>
                         </div>
@@ -140,40 +140,40 @@ export function BillingGeneratorForm({
                 </div>
 
                 {/* Status & Action */}
-                <div className="space-y-4">
-                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-5 flex flex-col items-center text-center">
-                        <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
-                            <Users size={32} />
+                <div className="space-y-3">
+                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4 flex flex-col items-center text-center">
+                        <div className="p-2.5 bg-blue-50 text-blue-600 rounded-lg">
+                            <Users size={24} />
                         </div>
                         <div>
-                            <h3 className="text-base font-bold text-slate-900 uppercase tracking-tight">Siap Proses</h3>
-                            <p className="text-xs text-slate-400 font-medium">Periode: {months[formValues.bulan - 1]} {formValues.tahun}</p>
+                            <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight italic">Siap Proses</h3>
+                            <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest italic mt-0.5">PERIODE: {months[formValues.bulan - 1].toUpperCase()} {formValues.tahun}</p>
                         </div>
 
                         {!isConfirming ? (
                             <button
                                 onClick={() => setIsConfirming(true)}
-                                className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-100 flex items-center justify-center gap-2 active:scale-95 text-xs uppercase tracking-widest"
+                                className="w-full py-2 bg-blue-600 text-white font-black rounded hover:bg-black transition-all shadow-lg shadow-blue-100 flex items-center justify-center gap-2 active:scale-95 text-[10px] uppercase tracking-widest italic"
                             >
-                                <Zap size={16} />
-                                <span>Mulai Generate</span>
+                                <Zap size={14} />
+                                <span>MULAI GENERATE</span>
                             </button>
                         ) : (
-                            <div className="w-full space-y-3">
-                                <p className="text-[10px] font-bold text-rose-500 uppercase tracking-wider italic">Konfirmasi Akhir?</p>
-                                <div className="flex gap-2">
+                            <div className="w-full space-y-2">
+                                <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest italic">KONFIRMASI AKHIR?</p>
+                                <div className="flex gap-1.5">
                                     <button
                                         onClick={() => setIsConfirming(false)}
-                                        className="flex-1 py-2 text-[10px] border border-slate-200 text-slate-600 font-bold rounded-lg hover:bg-slate-50 transition-all uppercase tracking-wider"
+                                        className="flex-1 py-1.5 text-[9px] border border-slate-200 text-slate-400 font-black rounded hover:bg-slate-50 transition-all uppercase tracking-widest"
                                     >
-                                        Batal
+                                        BATAL
                                     </button>
                                     <button
                                         onClick={handleSubmit(onSubmit)}
                                         disabled={generateMutation.isPending}
-                                        className="flex-2 py-2 text-[10px] bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800 transition-all flex items-center justify-center gap-2 uppercase tracking-wider"
+                                        className="flex-2 py-1.5 text-[9px] bg-slate-900 text-white font-black rounded hover:bg-black transition-all flex items-center justify-center gap-2 uppercase tracking-widest"
                                     >
-                                        {generateMutation.isPending ? <Loader2 className="animate-spin" size={14} /> : <span>Ya, Lanjut</span>}
+                                        {generateMutation.isPending ? <Loader2 className="animate-spin" size={12} /> : <span>YA, LANJUT</span>}
                                     </button>
                                 </div>
                             </div>
@@ -181,40 +181,40 @@ export function BillingGeneratorForm({
                     </div>
 
                     {lastPeriode ? (
-                        <div className="w-full p-5 bg-emerald-50 rounded-2xl border border-emerald-100 flex flex-col items-center text-center space-y-4 animate-in zoom-in-95 duration-500 shadow-sm transition-all">
-                            <div className="p-2.5 bg-white rounded-xl text-emerald-600 shadow-sm border border-emerald-50">
-                                <CheckCircle size={24} />
+                        <div className="w-full p-4 bg-emerald-50 rounded-xl border border-emerald-100 flex flex-col items-center text-center space-y-3 animate-in zoom-in-95 duration-500 shadow-sm transition-all">
+                            <div className="p-2 bg-white rounded-lg text-emerald-600 shadow-sm border border-emerald-50">
+                                <CheckCircle size={20} />
                             </div>
                             <div>
-                                <h4 className="text-sm font-bold text-emerald-900 leading-tight uppercase tracking-tight">Berhasil!</h4>
-                                <p className="text-[10px] text-emerald-600 font-medium italic mt-1 leading-tight">
-                                    Tagihan periode {months[parseInt(lastPeriode.split('-')[1]) - 1]} {lastPeriode.split('-')[0]} telah siap.
+                                <h4 className="text-xs font-black text-emerald-900 leading-tight uppercase tracking-tight italic">Berhasil!</h4>
+                                <p className="text-[9px] text-emerald-600 font-black uppercase tracking-widest italic mt-0.5 leading-tight">
+                                    Tagihan periode {months[parseInt(lastPeriode.split('-')[1]) - 1].toUpperCase()} {lastPeriode.split('-')[0]} telah siap.
                                 </p>
                             </div>
                             <button
                                 onClick={() => onViewDetail?.(lastPeriode)}
-                                className="w-full py-2.5 bg-emerald-600 text-white text-[10px] font-bold rounded-lg hover:bg-emerald-700 transition-all active:scale-95 shadow-lg shadow-emerald-200 flex items-center justify-center gap-2 uppercase tracking-widest"
+                                className="w-full py-2 bg-emerald-600 text-white text-[9px] font-black rounded hover:bg-black transition-all active:scale-95 shadow-lg shadow-emerald-200 flex items-center justify-center gap-2 uppercase tracking-widest italic"
                             >
-                                <ArrowRight size={14} /> Detail Tagihan
+                                <ArrowRight size={14} /> DETAIL TAGIHAN
                             </button>
                             <button
                                 onClick={() => setLastPeriode(null)}
-                                className="text-[9px] font-black text-emerald-400 hover:text-emerald-700 uppercase tracking-widest transition-colors"
+                                className="text-[8px] font-black text-emerald-400 hover:text-emerald-700 uppercase tracking-widest transition-colors"
                             >
-                                Tutup
+                                TUTUP
                             </button>
                         </div>
                     ) : (
                         <button
                             onClick={onViewHistory}
-                            className="w-full p-5 bg-indigo-50/50 rounded-2xl border border-indigo-100 flex flex-col items-center text-center space-y-2.5 group hover:bg-indigo-600 hover:border-indigo-600 transition-all active:scale-95 shadow-sm"
+                            className="w-full p-4 bg-indigo-50/50 rounded-xl border border-indigo-100 flex flex-col items-center text-center space-y-2 group hover:bg-indigo-600 hover:border-indigo-600 transition-all active:scale-95 shadow-sm"
                         >
-                            <div className="p-2.5 bg-white rounded-xl text-indigo-600 group-hover:scale-110 transition-transform">
-                                <Calendar size={20} />
+                            <div className="p-2 bg-white rounded-lg text-indigo-600 group-hover:scale-110 transition-transform shadow-sm">
+                                <Calendar size={16} />
                             </div>
                             <div>
-                                <p className="text-[10px] font-bold text-indigo-900 group-hover:text-white uppercase tracking-widest">Lihat Riwayat</p>
-                                <p className="text-[9px] text-indigo-400 group-hover:text-indigo-200 font-medium italic mt-0.5 leading-tight">Cek hasil generate sebelumnya di sini.</p>
+                                <p className="text-[9px] font-black text-indigo-900 group-hover:text-white uppercase tracking-widest italic leading-none">LIHAT RIWAYAT</p>
+                                <p className="text-[8px] text-indigo-400 group-hover:text-indigo-100 font-bold uppercase tracking-tight italic mt-1 leading-tight">Cek hasil generate sebelumnya di sini.</p>
                             </div>
                         </button>
                     )}

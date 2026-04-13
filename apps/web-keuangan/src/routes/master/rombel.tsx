@@ -42,28 +42,28 @@ function RombelPage() {
     };
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500">
+        <div className="space-y-5 animate-in fade-in duration-500">
             <Toaster position="top-right" richColors />
 
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900">Data Rombel (Kelas)</h1>
-                    <p className="text-slate-500 text-sm">Kelola pembagian kelas siswa per tahun ajaran.</p>
+                    <h1 className="text-lg font-black text-slate-900 uppercase tracking-tight">Data Rombel (Kelas)</h1>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest italic leading-none">Kelola pembagian kelas siswa per tahun ajaran.</p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                     {/* Tahun Ajaran Filter */}
                     <div className="relative">
-                        <Filter size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                         <select
                             value={selectedTahunAjaran}
                             onChange={(e) => setSelectedTahunAjaran(e.target.value)}
-                            className="pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 appearance-none min-w-[200px]"
+                            className="pl-8 pr-8 py-2 bg-white border border-slate-200 rounded-lg text-[10px] font-black uppercase tracking-widest focus:outline-none focus:ring-4 focus:ring-blue-500/10 appearance-none min-w-[150px] cursor-pointer"
                         >
-                            <option value="">Semua Tahun Ajaran</option>
+                            <option value="">Filter Tahun...</option>
                             {tahunAjaranList?.map((ta: any) => (
                                 <option key={ta.id} value={ta.id}>
-                                    {ta.nama} {ta.isAktif ? '(Aktif)' : ''}
+                                    {ta.nama} {ta.isAktif ? '(AKTIF)' : ''}
                                 </option>
                             ))}
                         </select>
@@ -71,9 +71,9 @@ function RombelPage() {
 
                     <button
                         onClick={handleCreate}
-                        className="flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 font-bold active:scale-95"
+                        className="flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 font-black text-xs uppercase tracking-widest active:scale-95 italic"
                     >
-                        <Plus size={20} />
+                        <Plus size={16} />
                         <span className="hidden sm:inline">Tambah Rombel</span>
                     </button>
                 </div>

@@ -62,46 +62,46 @@ function SiswaPage() {
     };
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500">
+        <div className="space-y-5 animate-in fade-in duration-500">
             <Toaster position="top-right" richColors />
 
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900">Data Siswa</h1>
-                    <p className="text-slate-500 text-sm">Kelola data seluruh siswa, orang tua, dan status akademik.</p>
+                    <h1 className="text-lg font-black text-slate-900 uppercase tracking-tight italic">Data Siswa</h1>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest italic leading-none">Kelola data seluruh siswa, orang tua, dan status akademik.</p>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-center gap-3">
+                <div className="flex flex-col sm:flex-row items-center gap-2">
                     <button
                         onClick={handleCreate}
-                        className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 font-bold active:scale-95"
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 font-black text-xs uppercase tracking-widest active:scale-95 italic"
                     >
-                        <Plus size={20} />
+                        <Plus size={16} />
                         <span>Tambah Siswa</span>
                     </button>
                 </div>
             </div>
 
             {/* Toolbar: Search & Filters */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-3 items-center justify-between">
                 <div className="relative w-full md:w-80">
-                    <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
                         type="text"
                         placeholder="Cari Nama / NIS / Ortu..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                        className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-black text-xs placeholder:italic"
                     />
                 </div>
 
-                <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
-                    <div className="relative min-w-[180px]">
-                        <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
+                    <div className="relative min-w-[150px]">
+                        <Filter size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                         <select
                             value={rombelFilter}
                             onChange={(e) => { setRombelFilter(e.target.value); setPage(1); }}
-                            className="w-full pl-9 pr-8 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 appearance-none cursor-pointer hover:border-slate-300 transition-colors"
+                            className="w-full pl-8 pr-8 py-2 bg-white border border-slate-200 rounded-lg text-[10px] font-black uppercase tracking-widest focus:outline-none focus:ring-4 focus:ring-blue-500/10 appearance-none cursor-pointer hover:border-slate-300 transition-colors"
                         >
                             <option value="">Semua Kelas</option>
                             {rombelList?.map((r: any) => (
@@ -110,18 +110,18 @@ function SiswaPage() {
                         </select>
                     </div>
 
-                    <div className="relative min-w-[140px]">
+                    <div className="relative min-w-[130px]">
                         <select
                             value={statusFilter}
                             onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-                            className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 appearance-none cursor-pointer hover:border-slate-300 transition-colors"
+                            className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg text-[10px] font-black uppercase tracking-widest focus:outline-none focus:ring-4 focus:ring-blue-500/10 appearance-none cursor-pointer hover:border-slate-300 transition-colors"
                         >
                             <option value="">Semua Status</option>
-                            <option value="AKTIF">Aktif</option>
-                            <option value="CALON_SISWA">Calon Siswa</option>
-                            <option value="CUTI">Cuti</option>
-                            <option value="LULUS">Lulus</option>
-                            <option value="KELUAR">Keluar</option>
+                            <option value="AKTIF">AKTIF</option>
+                            <option value="CALON_SISWA">CALON SISWA</option>
+                            <option value="CUTI">CUTI</option>
+                            <option value="LULUS">LULUS</option>
+                            <option value="KELUAR">KELUAR</option>
                         </select>
                     </div>
                 </div>
@@ -130,7 +130,7 @@ function SiswaPage() {
             {/* Table Content */}
             {isLoadingSiswa ? (
                 <div className="flex items-center justify-center min-h-[400px]">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
                 </div>
             ) : (
                 <>
@@ -143,21 +143,21 @@ function SiswaPage() {
                     {/* Pagination */}
                     {(siswaData as any)?.meta && (
                         <div className="flex items-center justify-between mt-4">
-                            <p className="text-sm text-slate-500">
-                                Menampilkan <span className="font-bold text-slate-900">{((page - 1) * limit) + 1}</span> - <span className="font-bold text-slate-900">{Math.min(page * limit, (siswaData as any).meta.total)}</span> dari <span className="font-bold text-slate-900">{(siswaData as any).meta.total}</span> data
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest italic">
+                                Menampilkan <span className="font-black text-slate-700">{((page - 1) * limit) + 1}</span> - <span className="font-black text-slate-700">{Math.min(page * limit, (siswaData as any).meta.total)}</span> dari <span className="font-black text-slate-700">{(siswaData as any).meta.total}</span> data
                             </p>
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => setPage(p => Math.max(1, p - 1))}
                                     disabled={page === 1}
-                                    className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    className="px-3 py-1.5 bg-white border border-slate-200 rounded-md text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all italic"
                                 >
                                     Sebelumnya
                                 </button>
                                 <button
                                     onClick={() => setPage(p => p + 1)}
                                     disabled={page >= ((siswaData as any).meta.totalPages || 1)}
-                                    className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    className="px-3 py-1.5 bg-white border border-slate-200 rounded-md text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all italic"
                                 >
                                     Selanjutnya
                                 </button>

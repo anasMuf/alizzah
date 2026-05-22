@@ -19,6 +19,23 @@ func NewDaycareEnrollmentHandler(daycareService service.DaycareEnrollmentService
 	return &DaycareEnrollmentHandler{daycareService: daycareService}
 }
 
+// List godoc
+// @Summary      List daycare enrollments
+// @Description  Get a paginated list of daycare enrollments
+// @Tags         daycare-enrollments
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        status            query   string  false  "Filter by status"
+// @Param        search            query   string  false  "Search by student name"
+// @Param        academic_year_id  query   int     false  "Academic Year ID"
+// @Param        page              query   int     false  "Page number"
+// @Param        limit             query   int     false  "Items per page"
+// @Success      200  {object}  dto.PaginatedResponse{data=[]dto.DaycareEnrollmentResponse}
+// @Failure      401  {object}  dto.ErrorResponse
+// @Failure      403  {object}  dto.ErrorResponse
+// @Failure      500  {object}  dto.ErrorResponse
+// @Router       /v1/daycare-enrollments [get]
 func (h *DaycareEnrollmentHandler) List(c echo.Context) error {
 	params := dto.DaycareEnrollmentQueryParams{
 		Status: c.QueryParam("status"),
@@ -60,6 +77,21 @@ func (h *DaycareEnrollmentHandler) List(c echo.Context) error {
 	})
 }
 
+// Get godoc
+// @Summary      Get daycare enrollment
+// @Description  Get a single daycare enrollment by ID
+// @Tags         daycare-enrollments
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id   path      int  true  "Daycare Enrollment ID"
+// @Success      200  {object}  dto.SuccessResponse{data=dto.DaycareEnrollmentResponse}
+// @Failure      400  {object}  dto.ErrorResponse
+// @Failure      401  {object}  dto.ErrorResponse
+// @Failure      403  {object}  dto.ErrorResponse
+// @Failure      404  {object}  dto.ErrorResponse
+// @Failure      500  {object}  dto.ErrorResponse
+// @Router       /v1/daycare-enrollments/{id} [get]
 func (h *DaycareEnrollmentHandler) Get(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -86,6 +118,21 @@ func (h *DaycareEnrollmentHandler) Get(c echo.Context) error {
 	})
 }
 
+// Create godoc
+// @Summary      Create daycare enrollment
+// @Description  Create a new daycare enrollment
+// @Tags         daycare-enrollments
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        request  body      dto.CreateDaycareEnrollmentRequest  true  "Daycare enrollment data"
+// @Success      201      {object}  dto.SuccessResponse{data=dto.DaycareEnrollmentResponse}
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      401      {object}  dto.ErrorResponse
+// @Failure      403      {object}  dto.ErrorResponse
+// @Failure      409      {object}  dto.ErrorResponse
+// @Failure      500      {object}  dto.ErrorResponse
+// @Router       /v1/daycare-enrollments [post]
 func (h *DaycareEnrollmentHandler) Create(c echo.Context) error {
 	var req dto.CreateDaycareEnrollmentRequest
 	if err := c.Bind(&req); err != nil {
@@ -125,6 +172,22 @@ func (h *DaycareEnrollmentHandler) Create(c echo.Context) error {
 	})
 }
 
+// Update godoc
+// @Summary      Update daycare enrollment
+// @Description  Update daycare enrollment details
+// @Tags         daycare-enrollments
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id       path      int                                 true  "Daycare Enrollment ID"
+// @Param        request  body      dto.CreateDaycareEnrollmentRequest  true  "Updated daycare data"
+// @Success      200      {object}  dto.SuccessResponse{data=dto.DaycareEnrollmentResponse}
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      401      {object}  dto.ErrorResponse
+// @Failure      403      {object}  dto.ErrorResponse
+// @Failure      404      {object}  dto.ErrorResponse
+// @Failure      500      {object}  dto.ErrorResponse
+// @Router       /v1/daycare-enrollments/{id} [put]
 func (h *DaycareEnrollmentHandler) Update(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -168,6 +231,22 @@ func (h *DaycareEnrollmentHandler) Update(c echo.Context) error {
 	})
 }
 
+// UpdateStatus godoc
+// @Summary      Update daycare status
+// @Description  Update the status of a daycare enrollment
+// @Tags         daycare-enrollments
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id       path      int                             true  "Daycare Enrollment ID"
+// @Param        request  body      dto.UpdateDaycareStatusRequest  true  "Updated status data"
+// @Success      200      {object}  dto.SuccessResponse
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      401      {object}  dto.ErrorResponse
+// @Failure      403      {object}  dto.ErrorResponse
+// @Failure      404      {object}  dto.ErrorResponse
+// @Failure      500      {object}  dto.ErrorResponse
+// @Router       /v1/daycare-enrollments/{id}/status [patch]
 func (h *DaycareEnrollmentHandler) UpdateStatus(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {

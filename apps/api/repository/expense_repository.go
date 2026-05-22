@@ -88,9 +88,7 @@ func (r *expenseRepository) Delete(id uint) error {
 }
 
 func (r *expenseRepository) IsDateLocked(expenseDate time.Time) (bool, error) {
-	// TODO(batch-7): aktifkan pengecekan IsDateLocked setelah DailyClosing di-migrate
-	// var count int64
-	// err := r.db.Model(&model.DailyClosing{}).Where("closing_date = ? AND is_confirmed = true", expenseDate).Count(&count).Error
-	// return count > 0, err
-	return false, nil
+	var count int64
+	err := r.db.Model(&model.DailyClosing{}).Where("closing_date = ? AND is_confirmed = true", expenseDate).Count(&count).Error
+	return count > 0, err
 }

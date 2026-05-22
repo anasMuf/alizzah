@@ -18,7 +18,21 @@ func NewStudentEnrollmentHandler(enrollmentService service.StudentEnrollmentServ
 	return &StudentEnrollmentHandler{enrollmentService: enrollmentService}
 }
 
-// GetByStudent handles GET /api/v1/students/:id/enrollments
+// GetByStudent godoc
+// @Summary      Get student enrollments
+// @Description  Get a list of enrollments (class groups) for a specific student
+// @Tags         student-enrollments
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id                path   int  true   "Student ID"
+// @Param        academic_year_id  query  int  false  "Academic Year ID"
+// @Success      200  {object}  dto.SuccessResponse{data=[]dto.EnrollmentBriefResponse}
+// @Failure      400  {object}  dto.ErrorResponse
+// @Failure      401  {object}  dto.ErrorResponse
+// @Failure      403  {object}  dto.ErrorResponse
+// @Failure      500  {object}  dto.ErrorResponse
+// @Router       /v1/students/{id}/enrollments [get]
 func (h *StudentEnrollmentHandler) GetByStudent(c echo.Context) error {
 	studentID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -52,7 +66,20 @@ func (h *StudentEnrollmentHandler) GetByStudent(c echo.Context) error {
 	})
 }
 
-// GetStudentsByClassGroup handles GET /api/v1/class-groups/:id/students
+// GetStudentsByClassGroup godoc
+// @Summary      Get students by class group
+// @Description  Get a list of students enrolled in a specific class group
+// @Tags         student-enrollments
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id   path      int  true  "Class Group ID"
+// @Success      200  {object}  dto.SuccessResponse{data=[]dto.StudentBriefResponse}
+// @Failure      400  {object}  dto.ErrorResponse
+// @Failure      401  {object}  dto.ErrorResponse
+// @Failure      403  {object}  dto.ErrorResponse
+// @Failure      500  {object}  dto.ErrorResponse
+// @Router       /v1/class-groups/{id}/students [get]
 func (h *StudentEnrollmentHandler) GetStudentsByClassGroup(c echo.Context) error {
 	classGroupID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {

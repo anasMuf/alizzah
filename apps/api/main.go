@@ -67,6 +67,8 @@ func main() {
 		&model.Expense{},
 		&model.CashTransaction{},
 		&model.VaultTransaction{},
+		// Batch 7
+		&model.DailyClosing{},
 	); err != nil {
 		log.Fatal("Gagal AutoMigrate:", err)
 	}
@@ -140,6 +142,10 @@ func main() {
 	cashTxnRepo := repository.NewCashTransactionRepository(db)
 	vaultTxnRepo := repository.NewVaultTransactionRepository(db)
 
+	// Batch 7
+	dailyClosingRepo := repository.NewDailyClosingRepository(db)
+	reportRepo := repository.NewReportRepository(db)
+
 	// Services
 	authService := service.NewAuthService(userRepo)
 	userService := service.NewUserService(userRepo)
@@ -157,6 +163,12 @@ func main() {
 	paymentService := service.NewPaymentService(db, paymentRepo, paymentItemRepo, invoiceItemRepo, invoiceService, savingsRepo, savingsTxnRepo, studentRepo, txnWriterService)
 	expCatService := service.NewExpenseCategoryService(expCatRepo)
 	expenseService := service.NewExpenseService(db, expenseRepo, expCatRepo, ayRepo, txnWriterService)
+
+	// Batch 7
+	cashService := service.NewCashService(db, cashTxnRepo, txnWriterService)
+	vaultService := service.NewVaultService(vaultTxnRepo, savingsRepo)
+	dailyClosingService := service.NewDailyClosingService(dailyClosingRepo, cashTxnRepo)
+	reportService := service.NewReportService(reportRepo, ayRepo, cashTxnRepo, vaultTxnRepo, dailyClosingRepo, studentRepo, invoiceRepo, invoiceItemRepo, paymentRepo, savingsService, classGroupRepo)
 
 	// Batch 3 (updated with Batch 5+6 dependencies)
 	studentService := service.NewStudentService(studentRepo, invoiceRepo, savingsService)
@@ -201,6 +213,12 @@ func main() {
 	savingsHandler := handler.NewSavingsHandler(savingsService)
 	expCatHandler := handler.NewExpenseCategoryHandler(expCatService)
 	expenseHandler := handler.NewExpenseHandler(expenseService)
+
+	// Batch 7
+	cashHandler := handler.NewCashHandler(cashService)
+	vaultHandler := handler.NewVaultHandler(vaultService)
+	dailyClosingHandler := handler.NewDailyClosingHandler(dailyClosingService)
+	reportHandler := handler.NewReportHandler(reportService)
 
 	// =====================
 	// Routes — /api/v1
@@ -350,6 +368,32 @@ func main() {
 	expenses.GET("/:id", expenseHandler.Get)
 	expenses.PUT("/:id", expenseHandler.Update)
 	expenses.DELETE("/:id", expenseHandler.Delete)
+
+	// Batch 7: Cash
+	cash := api.Group("/cash", middleware.JWTAuth)
+	cash.GET("/balance", cashHandler.GetBalance, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah"))
+	cash.GET("/transactions", cashHandler.GetTransactions, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah"))
+	cash.POST("/transfers", cashHandler.TransferToVault, middleware.RequireRoles("superadmin", "admin_keuangan"))
+
+	// Batch 7: Vault
+	vault := api.Group("/vault", middleware.JWTAuth)
+	vault.GET("/balance", vaultHandler.GetBalance, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah"))
+	vault.GET("/transactions", vaultHandler.GetTransactions, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah"))
+
+	// Batch 7: Daily Closings
+	dc := api.Group("/daily-closings", middleware.JWTAuth)
+	dc.GET("", dailyClosingHandler.List, middleware.RequireRoles("superadmin", "admin_keuangan"))
+	dc.POST("", dailyClosingHandler.Create, middleware.RequireRoles("superadmin", "admin_keuangan"))
+	dc.GET("/:id", dailyClosingHandler.Get, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah", "yayasan"))
+	dc.PATCH("/:id/confirm", dailyClosingHandler.Confirm, middleware.RequireRoles("superadmin", "admin_keuangan"))
+
+	// Batch 7: Reports
+	reports := api.Group("/reports", middleware.JWTAuth)
+	reports.GET("/daily", reportHandler.Daily, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah"))
+	reports.GET("/monthly", reportHandler.Monthly, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah"))
+	reports.GET("/annual", reportHandler.Annual, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah", "yayasan"))
+	reports.GET("/students/:id", reportHandler.ByStudent, middleware.RequireRoles("superadmin", "admin_keuangan"))
+	reports.GET("/class-groups/:id", reportHandler.ByClassGroup, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah"))
 
 	// Start server
 	port := os.Getenv("PORT")

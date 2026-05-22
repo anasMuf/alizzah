@@ -18,6 +18,18 @@ func NewFeeConfigHandler(service service.FeeConfigService) *FeeConfigHandler {
 	return &FeeConfigHandler{service: service}
 }
 
+// List godoc
+// @Summary      List fee configs
+// @Description  Get a list of all fee configurations
+// @Tags         fee-configs
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Success      200  {object}  dto.SuccessResponse{data=[]dto.FeeConfigResponse}
+// @Failure      401  {object}  dto.ErrorResponse
+// @Failure      403  {object}  dto.ErrorResponse
+// @Failure      500  {object}  dto.ErrorResponse
+// @Router       /v1/fee-configs [get]
 func (h *FeeConfigHandler) List(c echo.Context) error {
 	fcs, err := h.service.GetAll()
 	if err != nil {
@@ -35,6 +47,21 @@ func (h *FeeConfigHandler) List(c echo.Context) error {
 	})
 }
 
+// Create godoc
+// @Summary      Create fee config
+// @Description  Create a new fee configuration
+// @Tags         fee-configs
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        request  body      dto.CreateFeeConfigRequest  true  "Fee config data"
+// @Success      201      {object}  dto.SuccessResponse{data=dto.FeeConfigResponse}
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      401      {object}  dto.ErrorResponse
+// @Failure      403      {object}  dto.ErrorResponse
+// @Failure      409      {object}  dto.ErrorResponse
+// @Failure      500      {object}  dto.ErrorResponse
+// @Router       /v1/fee-configs [post]
 func (h *FeeConfigHandler) Create(c echo.Context) error {
 	var req dto.CreateFeeConfigRequest
 	if err := c.Bind(&req); err != nil {
@@ -72,6 +99,21 @@ func (h *FeeConfigHandler) Create(c echo.Context) error {
 	})
 }
 
+// Get godoc
+// @Summary      Get fee config
+// @Description  Get fee configuration by ID
+// @Tags         fee-configs
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id   path      int  true  "Fee Config ID"
+// @Success      200  {object}  dto.SuccessResponse{data=dto.FeeConfigResponse}
+// @Failure      400  {object}  dto.ErrorResponse
+// @Failure      401  {object}  dto.ErrorResponse
+// @Failure      403  {object}  dto.ErrorResponse
+// @Failure      404  {object}  dto.ErrorResponse
+// @Failure      500  {object}  dto.ErrorResponse
+// @Router       /v1/fee-configs/{id} [get]
 func (h *FeeConfigHandler) Get(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -98,6 +140,22 @@ func (h *FeeConfigHandler) Get(c echo.Context) error {
 	})
 }
 
+// Update godoc
+// @Summary      Update fee config
+// @Description  Update a fee configuration
+// @Tags         fee-configs
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id       path      int                         true  "Fee Config ID"
+// @Param        request  body      dto.UpdateFeeConfigRequest  true  "Fee config update data"
+// @Success      200      {object}  dto.SuccessResponse{data=dto.FeeConfigResponse}
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      401      {object}  dto.ErrorResponse
+// @Failure      403      {object}  dto.ErrorResponse
+// @Failure      404      {object}  dto.ErrorResponse
+// @Failure      500      {object}  dto.ErrorResponse
+// @Router       /v1/fee-configs/{id} [put]
 func (h *FeeConfigHandler) Update(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -140,6 +198,24 @@ func (h *FeeConfigHandler) Update(c echo.Context) error {
 	})
 }
 
+// ListItems godoc
+// @Summary      List fee config items
+// @Description  Get a list of items within a fee configuration
+// @Tags         fee-configs
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id        path   int     true   "Fee Config ID"
+// @Param        category  query  string  false  "Filter by category"
+// @Param        level     query  string  false  "Filter by level"
+// @Param        gender    query  string  false  "Filter by gender"
+// @Success      200       {object}  dto.SuccessResponse{data=[]dto.FeeConfigItemResponse}
+// @Failure      400       {object}  dto.ErrorResponse
+// @Failure      401       {object}  dto.ErrorResponse
+// @Failure      403       {object}  dto.ErrorResponse
+// @Failure      404       {object}  dto.ErrorResponse
+// @Failure      500       {object}  dto.ErrorResponse
+// @Router       /v1/fee-configs/{id}/items [get]
 func (h *FeeConfigHandler) ListItems(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -172,6 +248,23 @@ func (h *FeeConfigHandler) ListItems(c echo.Context) error {
 	})
 }
 
+// CreateItem godoc
+// @Summary      Create fee config item
+// @Description  Add a new item to a fee configuration
+// @Tags         fee-configs
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id       path      int                             true  "Fee Config ID"
+// @Param        request  body      dto.CreateFeeConfigItemRequest  true  "Item data"
+// @Success      201      {object}  dto.SuccessResponse{data=dto.FeeConfigItemResponse}
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      401      {object}  dto.ErrorResponse
+// @Failure      403      {object}  dto.ErrorResponse
+// @Failure      404      {object}  dto.ErrorResponse
+// @Failure      409      {object}  dto.ErrorResponse
+// @Failure      500      {object}  dto.ErrorResponse
+// @Router       /v1/fee-configs/{id}/items [post]
 func (h *FeeConfigHandler) CreateItem(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -218,6 +311,24 @@ func (h *FeeConfigHandler) CreateItem(c echo.Context) error {
 	})
 }
 
+// UpdateItem godoc
+// @Summary      Update fee config item
+// @Description  Update a fee config item
+// @Tags         fee-configs
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id       path      int                             true  "Fee Config ID"
+// @Param        item_id  path      int                             true  "Item ID"
+// @Param        request  body      dto.CreateFeeConfigItemRequest  true  "Updated item data"
+// @Success      200      {object}  dto.SuccessResponse{data=dto.FeeConfigItemResponse}
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      401      {object}  dto.ErrorResponse
+// @Failure      403      {object}  dto.ErrorResponse
+// @Failure      404      {object}  dto.ErrorResponse
+// @Failure      409      {object}  dto.ErrorResponse
+// @Failure      500      {object}  dto.ErrorResponse
+// @Router       /v1/fee-configs/{id}/items/{item_id} [put]
 func (h *FeeConfigHandler) UpdateItem(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -272,6 +383,23 @@ func (h *FeeConfigHandler) UpdateItem(c echo.Context) error {
 	})
 }
 
+// DeleteItem godoc
+// @Summary      Delete fee config item
+// @Description  Delete an item from a fee configuration
+// @Tags         fee-configs
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id       path      int  true  "Fee Config ID"
+// @Param        item_id  path      int  true  "Item ID"
+// @Success      200      {object}  dto.SuccessResponse
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      401      {object}  dto.ErrorResponse
+// @Failure      403      {object}  dto.ErrorResponse
+// @Failure      404      {object}  dto.ErrorResponse
+// @Failure      422      {object}  dto.ErrorResponse
+// @Failure      500      {object}  dto.ErrorResponse
+// @Router       /v1/fee-configs/{id}/items/{item_id} [delete]
 func (h *FeeConfigHandler) DeleteItem(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {

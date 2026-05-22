@@ -18,6 +18,19 @@ func NewExtracurricularHandler(extracurricularService service.ExtracurricularSer
 	return &ExtracurricularHandler{extracurricularService: extracurricularService}
 }
 
+// List godoc
+// @Summary      List extracurriculars
+// @Description  Get a list of all extracurriculars
+// @Tags         extracurriculars
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        type  query   string  false  "Filter by type (wajib/pilihan)"
+// @Success      200   {object}  dto.SuccessResponse{data=[]dto.ExtracurricularResponse}
+// @Failure      401   {object}  dto.ErrorResponse
+// @Failure      403   {object}  dto.ErrorResponse
+// @Failure      500   {object}  dto.ErrorResponse
+// @Router       /v1/extracurriculars [get]
 func (h *ExtracurricularHandler) List(c echo.Context) error {
 	params := dto.ExtracurricularQueryParams{
 		Type: c.QueryParam("type"),
@@ -39,6 +52,20 @@ func (h *ExtracurricularHandler) List(c echo.Context) error {
 	})
 }
 
+// Create godoc
+// @Summary      Create extracurricular
+// @Description  Create a new extracurricular
+// @Tags         extracurriculars
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        request  body      dto.CreateExtracurricularRequest  true  "Extracurricular data"
+// @Success      201      {object}  dto.SuccessResponse{data=dto.ExtracurricularResponse}
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      401      {object}  dto.ErrorResponse
+// @Failure      403      {object}  dto.ErrorResponse
+// @Failure      500      {object}  dto.ErrorResponse
+// @Router       /v1/extracurriculars [post]
 func (h *ExtracurricularHandler) Create(c echo.Context) error {
 	var req dto.CreateExtracurricularRequest
 	if err := c.Bind(&req); err != nil {
@@ -73,6 +100,22 @@ func (h *ExtracurricularHandler) Create(c echo.Context) error {
 	})
 }
 
+// Update godoc
+// @Summary      Update extracurricular
+// @Description  Update extracurricular details
+// @Tags         extracurriculars
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id       path      int                               true  "Extracurricular ID"
+// @Param        request  body      dto.CreateExtracurricularRequest  true  "Updated data"
+// @Success      200      {object}  dto.SuccessResponse{data=dto.ExtracurricularResponse}
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      401      {object}  dto.ErrorResponse
+// @Failure      403      {object}  dto.ErrorResponse
+// @Failure      404      {object}  dto.ErrorResponse
+// @Failure      500      {object}  dto.ErrorResponse
+// @Router       /v1/extracurriculars/{id} [put]
 func (h *ExtracurricularHandler) Update(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -116,6 +159,22 @@ func (h *ExtracurricularHandler) Update(c echo.Context) error {
 	})
 }
 
+// Delete godoc
+// @Summary      Delete extracurricular
+// @Description  Delete an extracurricular
+// @Tags         extracurriculars
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id   path      int  true  "Extracurricular ID"
+// @Success      200  {object}  dto.SuccessResponse
+// @Failure      400  {object}  dto.ErrorResponse
+// @Failure      401  {object}  dto.ErrorResponse
+// @Failure      403  {object}  dto.ErrorResponse
+// @Failure      404  {object}  dto.ErrorResponse
+// @Failure      422  {object}  dto.ErrorResponse
+// @Failure      500  {object}  dto.ErrorResponse
+// @Router       /v1/extracurriculars/{id} [delete]
 func (h *ExtracurricularHandler) Delete(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {

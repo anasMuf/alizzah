@@ -18,6 +18,27 @@ func NewInvoiceHandler(service service.InvoiceService) *InvoiceHandler {
 	return &InvoiceHandler{service: service}
 }
 
+// List godoc
+// @Summary      List invoices
+// @Description  Get a paginated list of invoices with various filters
+// @Tags         invoices
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        page              query   int     false  "Page number"  default(1)
+// @Param        limit             query   int     false  "Items per page"  default(20)
+// @Param        student_id        query   int     false  "Filter by student ID"
+// @Param        academic_year_id  query   int     false  "Filter by academic year ID"
+// @Param        month             query   int     false  "Filter by month (1-12)"
+// @Param        year              query   int     false  "Filter by year"
+// @Param        class_group_id    query   int     false  "Filter by class group ID"
+// @Param        type              query   string  false  "Filter by type"
+// @Param        status            query   string  false  "Filter by status"
+// @Success      200               {object}  dto.PaginatedResponse{data=[]dto.InvoiceListResponse}
+// @Failure      401               {object}  dto.ErrorResponse
+// @Failure      403               {object}  dto.ErrorResponse
+// @Failure      500               {object}  dto.ErrorResponse
+// @Router       /v1/invoices [get]
 func (h *InvoiceHandler) List(c echo.Context) error {
 	page, _ := strconv.Atoi(c.QueryParam("page"))
 	limit, _ := strconv.Atoi(c.QueryParam("limit"))
@@ -63,6 +84,21 @@ func (h *InvoiceHandler) List(c echo.Context) error {
 	})
 }
 
+// Get godoc
+// @Summary      Get invoice details
+// @Description  Get detailed information of a specific invoice
+// @Tags         invoices
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id   path      int  true  "Invoice ID"
+// @Success      200  {object}  dto.SuccessResponse{data=dto.InvoiceDetailResponse}
+// @Failure      400  {object}  dto.ErrorResponse
+// @Failure      401  {object}  dto.ErrorResponse
+// @Failure      403  {object}  dto.ErrorResponse
+// @Failure      404  {object}  dto.ErrorResponse
+// @Failure      500  {object}  dto.ErrorResponse
+// @Router       /v1/invoices/{id} [get]
 func (h *InvoiceHandler) Get(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -89,6 +125,23 @@ func (h *InvoiceHandler) Get(c echo.Context) error {
 	})
 }
 
+// GetByStudent godoc
+// @Summary      Get invoices by student
+// @Description  Get a list of invoices for a specific student
+// @Tags         invoices
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id                path   int     true   "Student ID"
+// @Param        academic_year_id  query  int     false  "Filter by academic year ID"
+// @Param        type              query  string  false  "Filter by type"
+// @Param        status            query  string  false  "Filter by status"
+// @Success      200               {object}  dto.SuccessResponse{data=[]dto.InvoiceListResponse}
+// @Failure      400               {object}  dto.ErrorResponse
+// @Failure      401               {object}  dto.ErrorResponse
+// @Failure      403               {object}  dto.ErrorResponse
+// @Failure      500               {object}  dto.ErrorResponse
+// @Router       /v1/students/{id}/invoices [get]
 func (h *InvoiceHandler) GetByStudent(c echo.Context) error {
 	studentID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -122,6 +175,22 @@ func (h *InvoiceHandler) GetByStudent(c echo.Context) error {
 	})
 }
 
+// AddItem godoc
+// @Summary      Add item to invoice
+// @Description  Add a new item to an existing invoice
+// @Tags         invoices
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id       path      int                        true  "Invoice ID"
+// @Param        request  body      dto.AddInvoiceItemRequest  true  "Item data"
+// @Success      201      {object}  dto.SuccessResponse{data=dto.InvoiceItemResponse}
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      401      {object}  dto.ErrorResponse
+// @Failure      403      {object}  dto.ErrorResponse
+// @Failure      404      {object}  dto.ErrorResponse
+// @Failure      500      {object}  dto.ErrorResponse
+// @Router       /v1/invoices/{id}/items [post]
 func (h *InvoiceHandler) AddItem(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -164,6 +233,24 @@ func (h *InvoiceHandler) AddItem(c echo.Context) error {
 	})
 }
 
+// UpdateItem godoc
+// @Summary      Update invoice item
+// @Description  Update details of a specific invoice item
+// @Tags         invoices
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id       path      int                           true  "Invoice ID"
+// @Param        item_id  path      int                           true  "Item ID"
+// @Param        request  body      dto.UpdateInvoiceItemRequest  true  "Updated item data"
+// @Success      200      {object}  dto.SuccessResponse{data=dto.InvoiceItemResponse}
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      401      {object}  dto.ErrorResponse
+// @Failure      403      {object}  dto.ErrorResponse
+// @Failure      404      {object}  dto.ErrorResponse
+// @Failure      422      {object}  dto.ErrorResponse
+// @Failure      500      {object}  dto.ErrorResponse
+// @Router       /v1/invoices/{id}/items/{item_id} [put]
 func (h *InvoiceHandler) UpdateItem(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -218,6 +305,23 @@ func (h *InvoiceHandler) UpdateItem(c echo.Context) error {
 	})
 }
 
+// DeleteItem godoc
+// @Summary      Delete invoice item
+// @Description  Delete an item from an invoice
+// @Tags         invoices
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id       path      int  true  "Invoice ID"
+// @Param        item_id  path      int  true  "Item ID"
+// @Success      200      {object}  dto.SuccessResponse
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      401      {object}  dto.ErrorResponse
+// @Failure      403      {object}  dto.ErrorResponse
+// @Failure      404      {object}  dto.ErrorResponse
+// @Failure      422      {object}  dto.ErrorResponse
+// @Failure      500      {object}  dto.ErrorResponse
+// @Router       /v1/invoices/{id}/items/{item_id} [delete]
 func (h *InvoiceHandler) DeleteItem(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -255,6 +359,21 @@ func (h *InvoiceHandler) DeleteItem(c echo.Context) error {
 	})
 }
 
+// GetInstallments godoc
+// @Summary      Get invoice installments
+// @Description  Get a list of installments for an invoice
+// @Tags         invoices
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id   path      int  true  "Invoice ID"
+// @Success      200  {object}  dto.SuccessResponse{data=[]dto.InstallmentResponse}
+// @Failure      400  {object}  dto.ErrorResponse
+// @Failure      401  {object}  dto.ErrorResponse
+// @Failure      403  {object}  dto.ErrorResponse
+// @Failure      404  {object}  dto.ErrorResponse
+// @Failure      500  {object}  dto.ErrorResponse
+// @Router       /v1/invoices/{id}/installments [get]
 func (h *InvoiceHandler) GetInstallments(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -281,6 +400,23 @@ func (h *InvoiceHandler) GetInstallments(c echo.Context) error {
 	})
 }
 
+// CreateInstallments godoc
+// @Summary      Create invoice installments
+// @Description  Create a schedule of installments for an invoice
+// @Tags         invoices
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id       path      int                                     true  "Invoice ID"
+// @Param        request  body      dto.CreateInstallmentScheduleRequest    true  "Installment schedule data"
+// @Success      201      {object}  dto.SuccessResponse{data=[]dto.InstallmentResponse}
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      401      {object}  dto.ErrorResponse
+// @Failure      403      {object}  dto.ErrorResponse
+// @Failure      404      {object}  dto.ErrorResponse
+// @Failure      422      {object}  dto.ErrorResponse
+// @Failure      500      {object}  dto.ErrorResponse
+// @Router       /v1/invoices/{id}/installments [post]
 func (h *InvoiceHandler) CreateInstallments(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -327,6 +463,23 @@ func (h *InvoiceHandler) CreateInstallments(c echo.Context) error {
 	})
 }
 
+// UpdateInstallment godoc
+// @Summary      Update invoice installment
+// @Description  Update details of a specific installment
+// @Tags         invoices
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id       path      int                           true  "Invoice ID"
+// @Param        inst_id  path      int                           true  "Installment ID"
+// @Param        request  body      dto.UpdateInstallmentRequest  true  "Updated installment data"
+// @Success      200      {object}  dto.SuccessResponse{data=dto.InstallmentResponse}
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      401      {object}  dto.ErrorResponse
+// @Failure      403      {object}  dto.ErrorResponse
+// @Failure      404      {object}  dto.ErrorResponse
+// @Failure      500      {object}  dto.ErrorResponse
+// @Router       /v1/invoices/{id}/installments/{inst_id} [put]
 func (h *InvoiceHandler) UpdateInstallment(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -377,6 +530,22 @@ func (h *InvoiceHandler) UpdateInstallment(c echo.Context) error {
 	})
 }
 
+// DeleteInstallment godoc
+// @Summary      Delete invoice installment
+// @Description  Delete a specific installment
+// @Tags         invoices
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id       path      int  true  "Invoice ID"
+// @Param        inst_id  path      int  true  "Installment ID"
+// @Success      200      {object}  dto.SuccessResponse
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      401      {object}  dto.ErrorResponse
+// @Failure      403      {object}  dto.ErrorResponse
+// @Failure      404      {object}  dto.ErrorResponse
+// @Failure      500      {object}  dto.ErrorResponse
+// @Router       /v1/invoices/{id}/installments/{inst_id} [delete]
 func (h *InvoiceHandler) DeleteInstallment(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {

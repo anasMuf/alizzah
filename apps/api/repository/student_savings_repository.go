@@ -10,6 +10,7 @@ type StudentSavingsRepository interface {
 	FindByStudentID(studentID uint) ([]model.StudentSavings, error)
 	FindByStudentAndType(studentID uint, savingsType string) (*model.StudentSavings, error)
 	GetBalance(studentID uint, savingsType string) (float64, error)
+	SumBalanceByType(academicYearID uint, savingsType string) (float64, error)
 	Create(savings *model.StudentSavings) error
 	UpdateBalance(id uint, balance float64, tx *gorm.DB) error
 	WithTx(tx *gorm.DB) StudentSavingsRepository
@@ -45,6 +46,16 @@ func (r *studentSavingsRepository) GetBalance(studentID uint, savingsType string
 		return 0, err
 	}
 	return savings.Balance, nil
+}
+
+func (r *studentSavingsRepository) SumBalanceByType(academicYearID uint, savingsType string) (float64, error) {
+	var total float64
+	err := r.db.Table("student_savings ss").
+		Select("COALESCE(SUM(ss.balance), 0)").
+		Joins("JOIN student_enrollments se ON se.student_id = ss.student_id AND se.academic_year_id = ?", academicYearID).
+		Where("ss.type = ?", savingsType).
+		Scan(&total).Error
+	return total, err
 }
 
 func (r *studentSavingsRepository) Create(savings *model.StudentSavings) error {

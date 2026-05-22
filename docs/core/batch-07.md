@@ -40,7 +40,7 @@ Batch penutup. Membangun endpoint kas & berangkas, tutup buku harian, dan seluru
 
 Model `CashTransaction` dan `VaultTransaction` sudah di-migrate di Batch 6. Satu model tersisa:
 
-- [ ] `model/daily_closing.go`
+- [x] `model/daily_closing.go`
 
 ```go
 type DailyClosing struct {
@@ -65,7 +65,7 @@ type DailyClosing struct {
 
 ### 2. DTO
 
-- [ ] `dto/cash.go`
+- [x] `dto/cash.go`
 
 ```go
 // Cash
@@ -131,7 +131,7 @@ type VaultTransactionQueryParams struct {
 }
 ```
 
-- [ ] `dto/daily_closing.go`
+- [x] `dto/daily_closing.go`
 
 ```go
 type CreateDailyClosingRequest struct {
@@ -166,7 +166,7 @@ type DailyClosingQueryParams struct {
 }
 ```
 
-- [ ] `dto/report.go`
+- [x] `dto/report.go`
 
 ```go
 // Laporan Harian
@@ -359,7 +359,7 @@ type StudentPaymentStatusInReport struct {
 
 ### 3. Repository
 
-- [ ] `repository/cash_transaction_repository.go` *(full impl — menggantikan stub Batch 6)*
+- [x] `repository/cash_transaction_repository.go` *(full impl — menggantikan stub Batch 6)*
 
 ```go
 type CashTransactionRepository interface {
@@ -378,7 +378,7 @@ type CashTransactionRepository interface {
 }
 ```
 
-- [ ] `repository/vault_transaction_repository.go` *(full impl)*
+- [x] `repository/vault_transaction_repository.go` *(full impl)*
 
 ```go
 type VaultTransactionRepository interface {
@@ -389,7 +389,7 @@ type VaultTransactionRepository interface {
 }
 ```
 
-- [ ] `repository/daily_closing_repository.go`
+- [x] `repository/daily_closing_repository.go`
 
 ```go
 type DailyClosingRepository interface {
@@ -404,7 +404,7 @@ type DailyClosingRepository interface {
 }
 ```
 
-- [ ] `repository/report_repository.go` — query agregat khusus laporan
+- [x] `repository/report_repository.go` — query agregat khusus laporan
 
 ```go
 type ReportRepository interface {
@@ -445,7 +445,7 @@ type ReportRepository interface {
 
 #### 4a. Cash Service
 
-- [ ] `service/cash_service.go`
+- [x] `service/cash_service.go`
 
 ```go
 type CashService interface {
@@ -513,7 +513,7 @@ func (s *cashService) TransferToVault(createdBy uint, req dto.TransferToCashRequ
 
 #### 4b. Vault Service
 
-- [ ] `service/vault_service.go`
+- [x] `service/vault_service.go`
 
 ```go
 type VaultService interface {
@@ -551,7 +551,7 @@ SumBalanceByType(academicYearID uint, savingsType string) (float64, error)
 
 #### 4c. Daily Closing Service
 
-- [ ] `service/daily_closing_service.go`
+- [x] `service/daily_closing_service.go`
 
 ```go
 type DailyClosingService interface {
@@ -632,7 +632,7 @@ func (s *dailyClosingService) Confirm(id uint, closedBy uint, req dto.ConfirmDai
 
 #### 4d. Report Service
 
-- [ ] `service/report_service.go`
+- [x] `service/report_service.go`
 
 ```go
 type ReportService interface {
@@ -879,7 +879,7 @@ func (s *reportService) GetClassGroupReport(classGroupID uint, req dto.ClassGrou
 
 ### 5. Handler
 
-- [ ] `handler/cash_handler.go`
+- [x] `handler/cash_handler.go`
 
 ```go
 func (h *CashHandler) GetBalance(c echo.Context) error     {}
@@ -887,14 +887,14 @@ func (h *CashHandler) GetTransactions(c echo.Context) error {}
 func (h *CashHandler) TransferToVault(c echo.Context) error {}
 ```
 
-- [ ] `handler/vault_handler.go`
+- [x] `handler/vault_handler.go`
 
 ```go
 func (h *VaultHandler) GetBalance(c echo.Context) error     {}
 func (h *VaultHandler) GetTransactions(c echo.Context) error {}
 ```
 
-- [ ] `handler/daily_closing_handler.go`
+- [x] `handler/daily_closing_handler.go`
 
 ```go
 func (h *DailyClosingHandler) List(c echo.Context) error    {}
@@ -903,7 +903,7 @@ func (h *DailyClosingHandler) Get(c echo.Context) error     {}
 func (h *DailyClosingHandler) Confirm(c echo.Context) error {}
 ```
 
-- [ ] `handler/report_handler.go`
+- [x] `handler/report_handler.go`
 
 ```go
 func (h *ReportHandler) Daily(c echo.Context) error           {}
@@ -917,7 +917,7 @@ func (h *ReportHandler) ByClassGroup(c echo.Context) error    {}
 
 ### 6. Route
 
-- [ ] Register di `main.go`:
+- [x] Register di `main.go`:
 
 ```go
 // Cash
@@ -967,7 +967,7 @@ reports.GET("/class-groups/:id", reportHandler.ByClassGroup,
 
 Setelah `DailyClosingRepository` selesai:
 
-- [ ] `repository/expense_repository.go` — aktifkan `IsDateLocked`:
+- [x] `repository/expense_repository.go` — aktifkan `IsDateLocked`:
 
 ```go
 // Hapus TODO(batch-7), implementasi penuh:
@@ -984,7 +984,7 @@ func (r *expenseRepo) IsDateLocked(expenseDate time.Time) (bool, error) {
 
 ### 8. Auto-Migrate Update (Final)
 
-- [ ] Tambahkan model terakhir ke `config/database.go`:
+- [x] Tambahkan model terakhir ke `config/database.go`:
 
 ```go
 db.AutoMigrate(
@@ -1138,36 +1138,36 @@ Jika admin keuangan melewatkan tutup buku beberapa hari, `Create` tetap bisa dil
 
 ### Kas & Berangkas
 
-- [ ] `GET /cash/balance` → saldo akurat = SUM(credit) - SUM(debit) di `cash_transactions`
-- [ ] `GET /cash/balance` → `today_credit` dan `today_debit` menunjukkan transaksi hari ini
-- [ ] `POST /cash/transfers` dengan `amount > saldo kas` → 422
-- [ ] `POST /cash/transfers` → `cash_transactions` debit + `vault_transactions` credit ter-insert
-- [ ] `GET /vault/balance` → `total_savings_general` dan `total_savings_mandatory` akurat
+- [x] `GET /cash/balance` → saldo akurat = SUM(credit) - SUM(debit) di `cash_transactions`
+- [x] `GET /cash/balance` → `today_credit` dan `today_debit` menunjukkan transaksi hari ini
+- [x] `POST /cash/transfers` dengan `amount > saldo kas` → 422
+- [x] `POST /cash/transfers` → `cash_transactions` debit + `vault_transactions` credit ter-insert
+- [x] `GET /vault/balance` → `total_savings_general` dan `total_savings_mandatory` akurat
 
 ### Daily Closing
 
-- [ ] `POST /daily-closings` → `system_cash_amount` dihitung otomatis dari saldo kas
-- [ ] `POST /daily-closings` → gagal 409 jika tanggal yang sama sudah ada
-- [ ] `POST /daily-closings` dengan selisih ≠ 0 dan tanpa notes → 400
-- [ ] `PATCH /daily-closings/:id/confirm` → `is_confirmed` menjadi `true`
-- [ ] Setelah confirm → `PUT /expenses/:id` pada tanggal tersebut → 422
-- [ ] `PATCH /daily-closings/:id/confirm` yang sudah confirmed → 409
+- [x] `POST /daily-closings` → `system_cash_amount` dihitung otomatis dari saldo kas
+- [x] `POST /daily-closings` → gagal 409 jika tanggal yang sama sudah ada
+- [x] `POST /daily-closings` dengan selisih ≠ 0 dan tanpa notes → 400
+- [x] `PATCH /daily-closings/:id/confirm` → `is_confirmed` menjadi `true`
+- [x] Setelah confirm → `PUT /expenses/:id` pada tanggal tersebut → 422
+- [x] `PATCH /daily-closings/:id/confirm` yang sudah confirmed → 409
 
 ### Laporan
 
-- [ ] `GET /reports/daily` → income, expense, cash summary, vault, dan daily closing ter-render
-- [ ] `GET /reports/monthly?month=7&year=2025` → breakdown per kategori, arrears by class, cash summary
-- [ ] `GET /reports/annual?academic_year_id=1` → breakdown per bulan, net, saldo akhir
-- [ ] `GET /reports/students/:id` → seluruh invoice dan payment history siswa ter-render
-- [ ] `GET /reports/students/:id?all=true` → data lintas tahun ajaran
-- [ ] `GET /reports/class-groups/:id?month=7&year=2025` → payment rate akurat
-- [ ] `yayasan` hanya bisa akses `/reports/annual` → endpoint lain → 403
-- [ ] `kepala_sekolah` bisa akses daily, monthly, annual, class-groups → student report → 403
+- [x] `GET /reports/daily` → income, expense, cash summary, vault, dan daily closing ter-render
+- [x] `GET /reports/monthly?month=7&year=2025` → breakdown per kategori, arrears by class, cash summary
+- [x] `GET /reports/annual?academic_year_id=1` → breakdown per bulan, net, saldo akhir
+- [x] `GET /reports/students/:id` → seluruh invoice dan payment history siswa ter-render
+- [x] `GET /reports/students/:id?all=true` → data lintas tahun ajaran
+- [x] `GET /reports/class-groups/:id?month=7&year=2025` → payment rate akurat
+- [x] `yayasan` hanya bisa akses `/reports/annual` → endpoint lain → 403
+- [x] `kepala_sekolah` bisa akses daily, monthly, annual, class-groups → student report → 403
 
 ### Wire TODO(batch-7)
 
-- [ ] `PUT /expenses/:id` pada tanggal yang sudah confirmed daily closing → 422 "Tanggal sudah dikunci"
-- [ ] `DELETE /expenses/:id` pada tanggal yang sudah dikunci → 422
+- [x] `PUT /expenses/:id` pada tanggal yang sudah confirmed daily closing → 422 "Tanggal sudah dikunci"
+- [x] `DELETE /expenses/:id` pada tanggal yang sudah dikunci → 422
 
 ---
 

@@ -22,7 +22,21 @@ func NewAcademicEventHandler(eventService service.StudentAcademicEventService, a
 	}
 }
 
-// GetByStudent handles GET /api/v1/students/:id/academic-events
+// GetByStudent godoc
+// @Summary      Get academic events by student
+// @Description  Get a list of academic events (promotion, graduation, etc) for a specific student
+// @Tags         academic-events
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id   path      int  true  "Student ID"
+// @Success      200  {object}  dto.SuccessResponse{data=[]dto.AcademicEventResponse}
+// @Failure      400  {object}  dto.ErrorResponse
+// @Failure      401  {object}  dto.ErrorResponse
+// @Failure      403  {object}  dto.ErrorResponse
+// @Failure      404  {object}  dto.ErrorResponse
+// @Failure      500  {object}  dto.ErrorResponse
+// @Router       /v1/students/{id}/academic-events [get]
 func (h *AcademicEventHandler) GetByStudent(c echo.Context) error {
 	studentID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -51,6 +65,20 @@ func (h *AcademicEventHandler) GetByStudent(c echo.Context) error {
 
 // Batch 4 Handlers
 
+// Promotion godoc
+// @Summary      Process student promotion
+// @Description  Process promotion of students to the next class group
+// @Tags         academic-events
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        request  body      dto.PromotionRequest  true  "Promotion data"
+// @Success      200      {object}  dto.SuccessResponse{data=dto.PromotionResult}
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      401      {object}  dto.ErrorResponse
+// @Failure      403      {object}  dto.ErrorResponse
+// @Failure      500      {object}  dto.ErrorResponse
+// @Router       /v1/academic-events/promotions [post]
 func (h *AcademicEventHandler) Promotion(c echo.Context) error {
 	var req dto.PromotionRequest
 	if err := c.Bind(&req); err != nil {
@@ -85,6 +113,21 @@ func (h *AcademicEventHandler) Promotion(c echo.Context) error {
 	})
 }
 
+// Graduation godoc
+// @Summary      Process student graduation
+// @Description  Process graduation of students from the highest class group
+// @Tags         academic-events
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        request  body      dto.GraduationRequest  true  "Graduation data"
+// @Success      200      {object}  dto.SuccessResponse{data=dto.GraduationResult}
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      401      {object}  dto.ErrorResponse
+// @Failure      403      {object}  dto.ErrorResponse
+// @Failure      500      {object}  dto.ErrorResponse
+// @Failure      501      {object}  dto.ErrorResponse
+// @Router       /v1/academic-events/graduations [post]
 func (h *AcademicEventHandler) Graduation(c echo.Context) error {
 	var req dto.GraduationRequest
 	if err := c.Bind(&req); err != nil {
@@ -126,6 +169,20 @@ func (h *AcademicEventHandler) Graduation(c echo.Context) error {
 	})
 }
 
+// ClassChange godoc
+// @Summary      Process class change
+// @Description  Process class change (pindah rombel) for a student within the same level
+// @Tags         academic-events
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        request  body      dto.ClassChangeRequest  true  "Class change data"
+// @Success      200      {object}  dto.SuccessResponse
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      401      {object}  dto.ErrorResponse
+// @Failure      403      {object}  dto.ErrorResponse
+// @Failure      500      {object}  dto.ErrorResponse
+// @Router       /v1/academic-events/class-changes [post]
 func (h *AcademicEventHandler) ClassChange(c echo.Context) error {
 	var req dto.ClassChangeRequest
 	if err := c.Bind(&req); err != nil {
@@ -158,6 +215,21 @@ func (h *AcademicEventHandler) ClassChange(c echo.Context) error {
 	})
 }
 
+// TransferIn godoc
+// @Summary      Process transfer in
+// @Description  Process transfer in (mutasi masuk) for a student
+// @Tags         academic-events
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        request  body      dto.TransferInRequest  true  "Transfer in data"
+// @Success      200      {object}  dto.SuccessResponse
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      401      {object}  dto.ErrorResponse
+// @Failure      403      {object}  dto.ErrorResponse
+// @Failure      422      {object}  dto.ErrorResponse
+// @Failure      500      {object}  dto.ErrorResponse
+// @Router       /v1/academic-events/transfers [post]
 func (h *AcademicEventHandler) TransferIn(c echo.Context) error {
 	var req dto.TransferInRequest
 	if err := c.Bind(&req); err != nil {
@@ -194,6 +266,20 @@ func (h *AcademicEventHandler) TransferIn(c echo.Context) error {
 	})
 }
 
+// Withdrawal godoc
+// @Summary      Process withdrawal
+// @Description  Process withdrawal (pindah/keluar sekolah) for a student
+// @Tags         academic-events
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        request  body      dto.WithdrawalRequest  true  "Withdrawal data"
+// @Success      200      {object}  dto.SuccessResponse
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      401      {object}  dto.ErrorResponse
+// @Failure      403      {object}  dto.ErrorResponse
+// @Failure      500      {object}  dto.ErrorResponse
+// @Router       /v1/academic-events/withdrawals [post]
 func (h *AcademicEventHandler) Withdrawal(c echo.Context) error {
 	var req dto.WithdrawalRequest
 	if err := c.Bind(&req); err != nil {

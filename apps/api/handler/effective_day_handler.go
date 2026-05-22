@@ -19,6 +19,22 @@ func NewEffectiveDayHandler(effectiveDayService service.EffectiveDayService) *Ef
 	return &EffectiveDayHandler{effectiveDayService: effectiveDayService}
 }
 
+// List godoc
+// @Summary      List effective days
+// @Description  Get a list of effective days for a specific class group
+// @Tags         effective-days
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id                path   int  true   "Class Group ID"
+// @Param        academic_year_id  query  int  false  "Academic Year ID"
+// @Param        year              query  int  false  "Year"
+// @Success      200  {object}  dto.SuccessResponse{data=[]dto.EffectiveDayResponse}
+// @Failure      400  {object}  dto.ErrorResponse
+// @Failure      401  {object}  dto.ErrorResponse
+// @Failure      403  {object}  dto.ErrorResponse
+// @Failure      500  {object}  dto.ErrorResponse
+// @Router       /v1/class-groups/{id}/effective-days [get]
 func (h *EffectiveDayHandler) List(c echo.Context) error {
 	classGroupID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -57,6 +73,21 @@ func (h *EffectiveDayHandler) List(c echo.Context) error {
 	})
 }
 
+// Upsert godoc
+// @Summary      Create or Update effective day
+// @Description  Create a new effective day or update if it already exists for the month/year
+// @Tags         effective-days
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id       path      int                            true  "Class Group ID"
+// @Param        request  body      dto.UpsertEffectiveDayRequest  true  "Effective day data"
+// @Success      200      {object}  dto.SuccessResponse{data=dto.EffectiveDayResponse}
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      401      {object}  dto.ErrorResponse
+// @Failure      403      {object}  dto.ErrorResponse
+// @Failure      500      {object}  dto.ErrorResponse
+// @Router       /v1/class-groups/{id}/effective-days [post]
 func (h *EffectiveDayHandler) Upsert(c echo.Context) error {
 	classGroupID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -101,6 +132,23 @@ func (h *EffectiveDayHandler) Upsert(c echo.Context) error {
 	})
 }
 
+// Update godoc
+// @Summary      Update effective day
+// @Description  Update a specific effective day record
+// @Tags         effective-days
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id       path      int                            true  "Class Group ID"
+// @Param        ed_id    path      int                            true  "Effective Day ID"
+// @Param        request  body      dto.UpsertEffectiveDayRequest  true  "Effective day data"
+// @Success      200      {object}  dto.SuccessResponse{data=dto.EffectiveDayResponse}
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      401      {object}  dto.ErrorResponse
+// @Failure      403      {object}  dto.ErrorResponse
+// @Failure      404      {object}  dto.ErrorResponse
+// @Failure      500      {object}  dto.ErrorResponse
+// @Router       /v1/class-groups/{id}/effective-days/{ed_id} [put]
 func (h *EffectiveDayHandler) Update(c echo.Context) error {
 	classGroupID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {

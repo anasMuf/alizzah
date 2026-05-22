@@ -18,6 +18,21 @@ func NewStudentExtracurricularHandler(seService service.StudentExtracurricularSe
 	return &StudentExtracurricularHandler{seService: seService}
 }
 
+// GetByStudent godoc
+// @Summary      Get student extracurriculars
+// @Description  Get a list of extracurriculars for a specific student
+// @Tags         student-extracurriculars
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id                path   int  true   "Student ID"
+// @Param        academic_year_id  query  int  false  "Academic Year ID"
+// @Success      200  {object}  dto.SuccessResponse{data=[]dto.StudentExtracurricularResponse}
+// @Failure      400  {object}  dto.ErrorResponse
+// @Failure      401  {object}  dto.ErrorResponse
+// @Failure      403  {object}  dto.ErrorResponse
+// @Failure      500  {object}  dto.ErrorResponse
+// @Router       /v1/students/{id}/extracurriculars [get]
 func (h *StudentExtracurricularHandler) GetByStudent(c echo.Context) error {
 	studentID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -51,6 +66,22 @@ func (h *StudentExtracurricularHandler) GetByStudent(c echo.Context) error {
 	})
 }
 
+// Enroll godoc
+// @Summary      Enroll student in extracurricular
+// @Description  Enroll a student in an extracurricular for a specific academic year
+// @Tags         student-extracurriculars
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id       path      int                                 true  "Student ID"
+// @Param        request  body      dto.EnrollExtracurricularRequest    true  "Enrollment data"
+// @Success      201      {object}  dto.SuccessResponse{data=dto.StudentExtracurricularResponse}
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      401      {object}  dto.ErrorResponse
+// @Failure      403      {object}  dto.ErrorResponse
+// @Failure      409      {object}  dto.ErrorResponse
+// @Failure      500      {object}  dto.ErrorResponse
+// @Router       /v1/students/{id}/extracurriculars [post]
 func (h *StudentExtracurricularHandler) Enroll(c echo.Context) error {
 	studentID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -98,6 +129,23 @@ func (h *StudentExtracurricularHandler) Enroll(c echo.Context) error {
 	})
 }
 
+// Update godoc
+// @Summary      Update student extracurricular
+// @Description  Update student extracurricular details
+// @Tags         student-extracurriculars
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id       path      int                                      true  "Student ID"
+// @Param        se_id    path      int                                      true  "Student Extracurricular ID"
+// @Param        request  body      dto.UpdateStudentExtracurricularRequest  true  "Updated data"
+// @Success      200      {object}  dto.SuccessResponse{data=dto.StudentExtracurricularResponse}
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      401      {object}  dto.ErrorResponse
+// @Failure      403      {object}  dto.ErrorResponse
+// @Failure      404      {object}  dto.ErrorResponse
+// @Failure      500      {object}  dto.ErrorResponse
+// @Router       /v1/students/{id}/extracurriculars/{se_id} [put]
 func (h *StudentExtracurricularHandler) Update(c echo.Context) error {
 	studentID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -150,6 +198,22 @@ func (h *StudentExtracurricularHandler) Update(c echo.Context) error {
 	})
 }
 
+// Unenroll godoc
+// @Summary      Unenroll student from extracurricular
+// @Description  Unenroll a student from an extracurricular
+// @Tags         student-extracurriculars
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id     path      int  true  "Student ID"
+// @Param        se_id  path      int  true  "Student Extracurricular ID"
+// @Success      200    {object}  dto.SuccessResponse
+// @Failure      400    {object}  dto.ErrorResponse
+// @Failure      401    {object}  dto.ErrorResponse
+// @Failure      403    {object}  dto.ErrorResponse
+// @Failure      404    {object}  dto.ErrorResponse
+// @Failure      500    {object}  dto.ErrorResponse
+// @Router       /v1/students/{id}/extracurriculars/{se_id} [delete]
 func (h *StudentExtracurricularHandler) Unenroll(c echo.Context) error {
 	studentID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {

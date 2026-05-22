@@ -1,0 +1,301 @@
+package service
+
+import (
+	"api/dto"
+	"api/repository"
+	"api/utility"
+	"time"
+)
+
+type ReportService interface {
+	GetDailyReport(req dto.DailyReportRequest) (*dto.DailyReportResponse, error)
+	GetMonthlyReport(req dto.MonthlyReportRequest) (*dto.MonthlyReportResponse, error)
+	GetAnnualReport(req dto.AnnualReportRequest) (*dto.AnnualReportResponse, error)
+	GetStudentReport(studentID uint, req dto.StudentReportRequest) (*dto.StudentReportResponse, error)
+	GetClassGroupReport(classGroupID uint, req dto.ClassGroupReportRequest) (*dto.ClassGroupReportResponse, error)
+}
+
+type reportService struct {
+	reportRepo       repository.ReportRepository
+	academicYearRepo repository.AcademicYearRepository
+	cashRepo         repository.CashTransactionRepository
+	vaultRepo        repository.VaultTransactionRepository
+	dailyClosingRepo repository.DailyClosingRepository
+	studentRepo      repository.StudentRepository
+	invoiceRepo      repository.InvoiceRepository
+	invoiceItemRepo  repository.InvoiceItemRepository
+	paymentRepo      repository.PaymentRepository
+	savingsService   SavingsService
+	classGroupRepo   repository.ClassGroupRepository
+}
+
+func NewReportService(
+	reportRepo repository.ReportRepository,
+	academicYearRepo repository.AcademicYearRepository,
+	cashRepo repository.CashTransactionRepository,
+	vaultRepo repository.VaultTransactionRepository,
+	dailyClosingRepo repository.DailyClosingRepository,
+	studentRepo repository.StudentRepository,
+	invoiceRepo repository.InvoiceRepository,
+	invoiceItemRepo repository.InvoiceItemRepository,
+	paymentRepo repository.PaymentRepository,
+	savingsService SavingsService,
+	classGroupRepo repository.ClassGroupRepository,
+) ReportService {
+	return &reportService{
+		reportRepo:       reportRepo,
+		academicYearRepo: academicYearRepo,
+		cashRepo:         cashRepo,
+		vaultRepo:        vaultRepo,
+		dailyClosingRepo: dailyClosingRepo,
+		studentRepo:      studentRepo,
+		invoiceRepo:      invoiceRepo,
+		invoiceItemRepo:  invoiceItemRepo,
+		paymentRepo:      paymentRepo,
+		savingsService:   savingsService,
+		classGroupRepo:   classGroupRepo,
+	}
+}
+
+func (s *reportService) GetDailyReport(req dto.DailyReportRequest) (*dto.DailyReportResponse, error) {
+	academicYearID := req.AcademicYearID
+	if academicYearID == 0 {
+		ay, _ := s.academicYearRepo.FindActive()
+		academicYearID = ay.ID
+	}
+
+	date, _ := time.Parse("2006-01-02", req.Date)
+	startOfDay := date
+	endOfDay := date.Add(23*time.Hour + 59*time.Minute + 59*time.Second)
+
+	incomeByCategory, _ := s.cashRepo.SumByCategory(academicYearID, startOfDay, endOfDay)
+	totalIncome := utility.SumCategoryAmounts(incomeByCategory)
+
+	expenseByCategory, _ := s.reportRepo.SumExpenseByCategory(academicYearID, startOfDay, endOfDay)
+	totalExpense := utility.SumCategoryAmounts(expenseByCategory)
+
+	openingBalance, _ := s.cashRepo.GetBalanceUpToDate(academicYearID, date.AddDate(0, 0, -1))
+	closingBalance := openingBalance + totalIncome - totalExpense
+
+	vaultBalance, _ := s.vaultRepo.GetCurrentBalance(academicYearID)
+
+	dc, _ := s.dailyClosingRepo.FindByDate(date)
+	var dcInReport *dto.DailyClosingInReport
+	if dc != nil {
+		dcInReport = &dto.DailyClosingInReport{
+			PhysicalCashAmount: dc.PhysicalCashAmount,
+			SystemCashAmount:   dc.SystemCashAmount,
+			Difference:         dc.Difference,
+			Notes:              utility.NilIfEmpty(dc.Notes),
+			IsConfirmed:        dc.IsConfirmed,
+		}
+	}
+
+	ay, _ := s.academicYearRepo.FindByID(academicYearID)
+	return &dto.DailyReportResponse{
+		Date:         req.Date,
+		AcademicYear: ay.Name,
+		IncomeSummary: dto.IncomeSummaryResponse{
+			Total:      totalIncome,
+			ByCategory: incomeByCategory,
+		},
+		ExpenseSummary: dto.ExpenseSummaryResponse{
+			Total:      totalExpense,
+			ByCategory: expenseByCategory,
+		},
+		Cash: dto.CashSummaryResponse{
+			OpeningBalance: openingBalance,
+			TotalCredit:    totalIncome,
+			TotalDebit:     totalExpense,
+			ClosingBalance: closingBalance,
+		},
+		Vault:        dto.VaultSummaryResponse{Balance: vaultBalance},
+		DailyClosing: dcInReport,
+	}, nil
+}
+
+func (s *reportService) GetMonthlyReport(req dto.MonthlyReportRequest) (*dto.MonthlyReportResponse, error) {
+	academicYearID := utility.ResolveAcademicYear(req.AcademicYearID, s.academicYearRepo)
+	startDate := time.Date(int(req.Year), time.Month(req.Month), 1, 0, 0, 0, 0, time.UTC)
+	endDate := startDate.AddDate(0, 1, -1)
+
+	byCategory, _ := s.reportRepo.SumInvoiceByCategory(academicYearID, req.Month, req.Year)
+	totalBilled := utility.SumBilled(byCategory)
+	totalPaid := utility.SumPaid(byCategory)
+
+	expenseByCategory, _ := s.reportRepo.SumExpenseByCategory(academicYearID, startDate, endDate)
+	totalExpense := utility.SumCategoryAmounts(expenseByCategory)
+
+	arrearsByClass, _ := s.reportRepo.GetArrearsByClass(academicYearID, req.Month, req.Year)
+
+	openingBalance, _ := s.cashRepo.GetBalanceUpToDate(academicYearID, startDate.AddDate(0, 0, -1))
+	credit, debit, _ := s.cashRepo.SumByDateRange(academicYearID, startDate, endDate)
+
+	period := startDate.Format("January 2006")
+
+	return &dto.MonthlyReportResponse{
+		Period: period,
+		IncomeSummary: dto.MonthlyIncomeSummary{
+			TotalBilled: totalBilled,
+			TotalPaid:   totalPaid,
+			TotalUnpaid: totalBilled - totalPaid,
+			ByCategory:  byCategory,
+		},
+		ExpenseSummary: dto.ExpenseSummaryResponse{
+			Total:      totalExpense,
+			ByCategory: expenseByCategory,
+		},
+		ArrearsByClass: arrearsByClass,
+		Cash: dto.MonthlyCashSummary{
+			OpeningBalance: openingBalance,
+			TotalIncome:    credit,
+			TotalExpense:   debit,
+			ClosingBalance: openingBalance + credit - debit,
+		},
+	}, nil
+}
+
+var annualReportCache = map[uint]*dto.AnnualReportResponse{}
+var annualReportCacheTime = map[uint]time.Time{}
+
+func (s *reportService) GetAnnualReport(req dto.AnnualReportRequest) (*dto.AnnualReportResponse, error) {
+	if cached, ok := annualReportCache[req.AcademicYearID]; ok {
+		if time.Since(annualReportCacheTime[req.AcademicYearID]) < time.Hour {
+			return cached, nil
+		}
+	}
+
+	ay, _ := s.academicYearRepo.FindByID(req.AcademicYearID)
+
+	byCategory, _ := s.reportRepo.SumInvoiceByCategory(req.AcademicYearID, 0, 0)
+	totalBilled := utility.SumBilled(byCategory)
+	totalPaid := utility.SumPaid(byCategory)
+
+	expenseByCategory, _ := s.reportRepo.SumExpenseByCategory(
+		req.AcademicYearID, ay.StartDate, ay.EndDate,
+	)
+	totalExpense := utility.SumCategoryAmounts(expenseByCategory)
+
+	byMonth, _ := s.reportRepo.GetMonthlyBreakdown(req.AcademicYearID)
+
+	cashBalance, _ := s.cashRepo.GetCurrentBalance(req.AcademicYearID)
+	vaultBalance, _ := s.vaultRepo.GetCurrentBalance(req.AcademicYearID)
+
+	result := &dto.AnnualReportResponse{
+		AcademicYear: ay.Name,
+		IncomeSummary: dto.AnnualIncomeSummary{
+			TotalBilled: totalBilled,
+			TotalPaid:   totalPaid,
+			TotalUnpaid: totalBilled - totalPaid,
+		},
+		ExpenseSummary: dto.AnnualExpenseSummary{Total: totalExpense},
+		Net:            totalPaid - totalExpense,
+		ByMonth:        byMonth,
+		CashBalance:    cashBalance,
+		VaultBalance:   vaultBalance,
+	}
+
+	annualReportCache[req.AcademicYearID] = result
+	annualReportCacheTime[req.AcademicYearID] = time.Now()
+
+	return result, nil
+}
+
+func (s *reportService) GetStudentReport(studentID uint, req dto.StudentReportRequest) (*dto.StudentReportResponse, error) {
+	student, _ := s.studentRepo.FindByID(studentID)
+
+	academicYearID := uint(0)
+	if !req.All {
+		academicYearID = utility.ResolveAcademicYear(req.AcademicYearID, s.academicYearRepo)
+	}
+
+	invoiceSummary, _ := s.reportRepo.GetInvoiceSummaryByStudent(studentID, academicYearID)
+	invoices, _ := s.invoiceRepo.FindByStudentID(studentID, "", "", academicYearID)
+	payments, _ := s.paymentRepo.FindByStudentID(studentID, dto.StudentPaymentQueryParams{})
+	savings, _ := s.savingsService.GetByStudentID(studentID)
+
+	invoicesForReport := make([]dto.InvoiceDetailForReport, len(invoices))
+	for i, inv := range invoices {
+		items, _ := s.invoiceItemRepo.FindByInvoiceID(inv.ID)
+		period := utility.FormatInvoicePeriod(inv)
+		
+		itemResponses := make([]dto.InvoiceItemResponse, len(items))
+		for j, item := range items {
+			itemResponses[j] = dto.InvoiceItemResponse{
+				ID:         item.ID,
+				Category:   item.Category,
+				Amount:     item.Amount,
+				PaidAmount: item.PaidAmount,
+			}
+		}
+
+		invoicesForReport[i] = dto.InvoiceDetailForReport{
+			ID:          inv.ID,
+			Type:        inv.Type,
+			Period:      period,
+			TotalAmount: inv.TotalAmount,
+			PaidAmount:  inv.PaidAmount,
+			Status:      inv.Status,
+			Items:       itemResponses,
+		}
+	}
+
+	paymentResponses := make([]dto.PaymentListResponse, len(payments))
+	for i, p := range payments {
+		paymentResponses[i] = dto.PaymentListResponse{
+			ID:          p.ID,
+			PaymentDate: p.PaymentDate.Format("2006-01-02"),
+			TotalAmount: p.TotalAmount,
+			Source:      p.Source,
+		}
+	}
+
+	return &dto.StudentReportResponse{
+		Student: dto.StudentBriefResponse{
+			ID:       student.ID,
+			FullName: student.FullName,
+		},
+		Savings:        *savings,
+		InvoiceSummary: *invoiceSummary,
+		Invoices:       invoicesForReport,
+		PaymentHistory: paymentResponses,
+	}, nil
+}
+
+func (s *reportService) GetClassGroupReport(classGroupID uint, req dto.ClassGroupReportRequest) (*dto.ClassGroupReportResponse, error) {
+	academicYearID := utility.ResolveAcademicYear(req.AcademicYearID, s.academicYearRepo)
+	classGroup, _ := s.classGroupRepo.FindByID(classGroupID)
+
+	students, _ := s.reportRepo.GetStudentsByClassGroupForMonth(
+		classGroupID, req.Month, req.Year, academicYearID,
+	)
+
+	totalStudents := len(students)
+	totalBilled, totalPaid, totalUnpaid := float64(0), float64(0), float64(0)
+	for _, st := range students {
+		totalBilled += st.TotalAmount
+		totalPaid += st.PaidAmount
+		totalUnpaid += st.UnpaidAmount
+	}
+
+	paymentRate := utility.FormatPaymentRate(totalPaid, totalBilled)
+
+	startDate := time.Date(int(req.Year), time.Month(req.Month), 1, 0, 0, 0, 0, time.UTC)
+	period := startDate.Format("January 2006")
+
+	return &dto.ClassGroupReportResponse{
+		ClassGroup: dto.ClassGroupBriefResponse{
+			ID:   classGroup.ID,
+			Name: classGroup.Name,
+		},
+		Period: period,
+		Summary: dto.ClassGroupReportSummary{
+			TotalStudents: totalStudents,
+			TotalBilled:   totalBilled,
+			TotalPaid:     totalPaid,
+			TotalUnpaid:   totalUnpaid,
+			PaymentRate:   paymentRate,
+		},
+		Students: students,
+	}, nil
+}

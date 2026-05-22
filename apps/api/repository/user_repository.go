@@ -8,19 +8,19 @@ import (
 
 type UserRepository interface {
 	FindByEmail(email string) (*model.User, error)
-	FindByUsername(username string) (*model.User, error)
-	Create(req *model.User) error
-	UpdateDeposit(userID uint, amount float64) error
-	UpdateMinDeposit(userID uint, amount float64) error
+	FindByID(id uint) (*model.User, error)
+	FindAll(search, role string, page, limit int) ([]model.User, int64, error)
+	Create(user *model.User) error
+	Update(user *model.User) error
+	Delete(id uint) error
 }
+
 type userRepository struct {
 	db *gorm.DB
 }
 
 func NewUserRepository(db *gorm.DB) UserRepository {
-	return &userRepository{
-		db: db,
-	}
+	return &userRepository{db: db}
 }
 
 func (r *userRepository) FindByEmail(email string) (*model.User, error) {
@@ -29,20 +29,46 @@ func (r *userRepository) FindByEmail(email string) (*model.User, error) {
 	return &user, err
 }
 
-func (r *userRepository) FindByUsername(username string) (*model.User, error) {
+func (r *userRepository) FindByID(id uint) (*model.User, error) {
 	var user model.User
-	err := r.db.Where("username = ?", username).First(&user).Error
+	err := r.db.First(&user, id).Error
 	return &user, err
 }
 
-func (r *userRepository) Create(req *model.User) error {
-	return r.db.Create(req).Error
+func (r *userRepository) FindAll(search, role string, page, limit int) ([]model.User, int64, error) {
+	var users []model.User
+	var total int64
+
+	query := r.db.Model(&model.User{})
+
+	if search != "" {
+		searchPattern := "%" + search + "%"
+		query = query.Where("full_name ILIKE ? OR email ILIKE ?", searchPattern, searchPattern)
+	}
+	if role != "" {
+		query = query.Where("role = ?", role)
+	}
+
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * limit
+	if err := query.Order("id ASC").Offset(offset).Limit(limit).Find(&users).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return users, total, nil
 }
 
-func (r *userRepository) UpdateDeposit(userID uint, amount float64) error {
-	return r.db.Model(&model.User{}).Where("id = ?", userID).Update("deposit", gorm.Expr("deposit + ?", amount)).Error
+func (r *userRepository) Create(user *model.User) error {
+	return r.db.Create(user).Error
 }
 
-func (r *userRepository) UpdateMinDeposit(userID uint, amount float64) error {
-	return r.db.Model(&model.User{}).Where("id = ?", userID).Update("deposit", amount).Error
+func (r *userRepository) Update(user *model.User) error {
+	return r.db.Save(user).Error
+}
+
+func (r *userRepository) Delete(id uint) error {
+	return r.db.Delete(&model.User{}, id).Error
 }

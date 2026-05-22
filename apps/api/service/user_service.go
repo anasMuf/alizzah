@@ -5,97 +5,150 @@ import (
 	"api/model"
 	"api/repository"
 	"errors"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 type UserService interface {
-	GetUserByEmail(email string) (*dto.UserResponse, error)
-	CreateUser(req dto.CreateUserRequest) (*dto.UserResponse, error)
-	LoginUser(email, password string) (*dto.UserResponse, error)
+	GetAll(params dto.UserQueryParams) ([]dto.UserResponse, *dto.Meta, error)
+	GetByID(id uint) (*dto.UserResponse, error)
+	Create(req dto.CreateUserRequest) (*dto.UserResponse, error)
+	Update(id uint, req dto.UpdateUserRequest) (*dto.UserResponse, error)
+	Delete(id, currentUserID uint) error
 }
 
 type userService struct {
-	userRepository repository.UserRepository
+	userRepo repository.UserRepository
 }
 
-func NewUserService(userRepository repository.UserRepository) UserService {
-	return &userService{
-		userRepository: userRepository,
-	}
+func NewUserService(userRepo repository.UserRepository) UserService {
+	return &userService{userRepo: userRepo}
 }
 
-func (s *userService) GetUserByEmail(email string) (*dto.UserResponse, error) {
-	user, err := s.userRepository.FindByEmail(email)
+func (s *userService) GetAll(params dto.UserQueryParams) ([]dto.UserResponse, *dto.Meta, error) {
+	users, total, err := s.userRepo.FindAll(params.Search, params.Role, params.Page, params.Limit)
 	if err != nil {
-		return nil, errors.New("user not found")
+		return nil, nil, err
 	}
-	return &dto.UserResponse{
-		ID:       user.ID,
-		FullName: user.FullName,
-		Username: user.Username,
-		Email:    user.Email,
-		Phone:    user.Phone,
-		Address:  user.Address,
-		Role:     user.Role,
-		Deposit:  user.Deposit,
-	}, nil
+
+	responses := make([]dto.UserResponse, len(users))
+	for i, user := range users {
+		responses[i] = mapUserToResponse(user)
+	}
+
+	meta := &dto.Meta{
+		Page:  params.Page,
+		Limit: params.Limit,
+		Total: total,
+	}
+
+	return responses, meta, nil
 }
 
-func (s *userService) CreateUser(req dto.CreateUserRequest) (*dto.UserResponse, error) {
-	_, err := s.userRepository.FindByEmail(req.Email)
-	if err == nil {
-		return nil, errors.New("email already exists")
+func (s *userService) GetByID(id uint) (*dto.UserResponse, error) {
+	user, err := s.userRepo.FindByID(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("User tidak ditemukan")
+		}
+		return nil, err
 	}
-	_, err = s.userRepository.FindByUsername(req.Username)
+
+	response := mapUserToResponse(*user)
+	return &response, nil
+}
+
+func (s *userService) Create(req dto.CreateUserRequest) (*dto.UserResponse, error) {
+	// Check email uniqueness
+	_, err := s.userRepo.FindByEmail(req.Email)
 	if err == nil {
-		return nil, errors.New("username not found")
+		return nil, errors.New("Email sudah digunakan")
 	}
-	hash, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+
+	// Hash password
+	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, errors.New("Gagal memproses password")
+	}
 
 	user := &model.User{
 		FullName: req.FullName,
-		Username: req.Username,
 		Email:    req.Email,
 		Password: string(hash),
-		Phone:    req.Phone,
-		Address:  req.Address,
-		Role:     "customer", // Default role
-		Deposit:  0,          // Default deposit
+		Role:     req.Role,
 	}
-	if err := s.userRepository.Create(user); err != nil {
+
+	if err := s.userRepo.Create(user); err != nil {
 		return nil, err
 	}
-	return &dto.UserResponse{
-		ID:       user.ID,
-		FullName: user.FullName,
-		Username: user.Username,
-		Email:    user.Email,
-		Phone:    user.Phone,
-		Address:  user.Address,
-		Role:     user.Role,
-		Deposit:  user.Deposit,
-	}, nil
+
+	response := mapUserToResponse(*user)
+	return &response, nil
 }
 
-func (s *userService) LoginUser(email, password string) (*dto.UserResponse, error) {
-	user, err := s.userRepository.FindByEmail(email)
+func (s *userService) Update(id uint, req dto.UpdateUserRequest) (*dto.UserResponse, error) {
+	user, err := s.userRepo.FindByID(id)
 	if err != nil {
-		return nil, errors.New("user not found")
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("User tidak ditemukan")
+		}
+		return nil, err
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
-		return nil, errors.New("invalid password")
+	// Check email uniqueness if changed
+	if user.Email != req.Email {
+		existing, err := s.userRepo.FindByEmail(req.Email)
+		if err == nil && existing.ID != id {
+			return nil, errors.New("Email sudah digunakan")
+		}
 	}
 
-	return &dto.UserResponse{
-		ID:       user.ID,
-		FullName: user.FullName,
-		Username: user.Username,
-		Email:    user.Email,
-		Phone:    user.Phone,
-		Address:  user.Address,
-		Role:     user.Role,
-		Deposit:  user.Deposit,
-	}, nil
+	user.FullName = req.FullName
+	user.Email = req.Email
+	user.Role = req.Role
+
+	// Only update password if provided
+	if req.Password != "" {
+		hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return nil, errors.New("Gagal memproses password")
+		}
+		user.Password = string(hash)
+	}
+
+	if err := s.userRepo.Update(user); err != nil {
+		return nil, err
+	}
+
+	response := mapUserToResponse(*user)
+	return &response, nil
+}
+
+func (s *userService) Delete(id, currentUserID uint) error {
+	// Cannot delete self
+	if id == currentUserID {
+		return errors.New("Tidak dapat menghapus akun sendiri")
+	}
+
+	_, err := s.userRepo.FindByID(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("User tidak ditemukan")
+		}
+		return err
+	}
+
+	return s.userRepo.Delete(id)
+}
+
+func mapUserToResponse(user model.User) dto.UserResponse {
+	return dto.UserResponse{
+		ID:        user.ID,
+		FullName:  user.FullName,
+		Email:     user.Email,
+		Role:      user.Role,
+		CreatedAt: user.CreatedAt.Format(time.RFC3339),
+	}
 }

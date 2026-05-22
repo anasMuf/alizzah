@@ -1,16 +1,16 @@
-// handler/error_handler.go
 package handler
 
 import (
 	"api/dto"
 	"api/middleware"
+	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/labstack/echo/v4"
 )
 
-// Helper: Mapping pesan default ke kode error
+// parseErrorCode maps HTTP status and message to a standardized error code.
 func parseErrorCode(message string, status int) string {
 	msg := strings.ToLower(message)
 	switch status {
@@ -21,46 +21,51 @@ func parseErrorCode(message string, status int) string {
 	case http.StatusForbidden:
 		return "FORBIDDEN"
 	case http.StatusBadRequest:
-		if strings.Contains(msg, "validation") || strings.Contains(msg, "invalid") {
+		if strings.Contains(msg, "validasi") || strings.Contains(msg, "validation") || strings.Contains(msg, "invalid") {
 			return "VALIDATION_ERROR"
 		}
 		return "BAD_REQUEST"
 	case http.StatusConflict:
 		return "CONFLICT"
+	case http.StatusUnprocessableEntity:
+		return "UNPROCESSABLE_ENTITY"
 	default:
 		return "INTERNAL_ERROR"
 	}
 }
 
-// Custom global error handler
+// CustomHTTPErrorHandler is the global error handler for the Echo application.
 func CustomHTTPErrorHandler(err error, c echo.Context) {
 	code := http.StatusInternalServerError
 	msg := "Internal Server Error"
 	var details interface{}
 
-	// Default dari Echo adalah *echo.HTTPError
 	if he, ok := err.(*echo.HTTPError); ok {
 		code = he.Code
 		switch m := he.Message.(type) {
 		case string:
 			msg = m
 		case map[string]interface{}:
-			msg = m["message"].(string)
-			details = m["details"]
+			if message, ok := m["message"].(string); ok {
+				msg = message
+			}
+			if d, ok := m["details"]; ok {
+				details = d
+			}
 		default:
-			msg = he.Message.(string)
+			msg = fmt.Sprintf("%v", he.Message)
 		}
 	} else {
 		msg = err.Error()
 	}
 
-	// Tambahan: Log error dengan Logrus!
+	// Log error with Logrus
 	middleware.MakeLogEntry(c).Error(msg)
 
-	// Generate standardized code (bisa diimprove ke const/error map)
+	// Generate standardized error code
 	errCode := parseErrorCode(msg, code)
 
-	// Buat response error contract
+	// Build response
 	res := dto.ErrorResponse{
 		Status:  code,
 		Code:    errCode,
@@ -68,7 +73,6 @@ func CustomHTTPErrorHandler(err error, c echo.Context) {
 		Details: details,
 	}
 
-	// Pastikan response dalam format JSON
 	if !c.Response().Committed {
 		c.JSON(code, res)
 	}

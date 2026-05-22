@@ -1,17 +1,13 @@
 package model
 
+// User represents the users table.
+// Roles: superadmin, admin_administrasi, admin_keuangan, kepala_sekolah, yayasan
 type User struct {
 	PrimaryKey
-	FullName string `json:"full_name" gorm:"type:varchar(100);not null"`
-	Email    string `json:"email" gorm:"type:varchar(100);not null;unique"`
-	// password not shown in response
-	Password string `json:"password,omitempty" gorm:"type:varchar(100);not null"`
-
-	Username string  `json:"username" gorm:"type:varchar(50);not null;unique"`
-	Phone    string  `json:"phone" gorm:"type:varchar(15);not null"`
-	Address  string  `json:"address" gorm:"type:text;not null"`
-	Role     string  `json:"role" gorm:"type:varchar(20);not null;default:'customer'"`
-	Deposit  float64 `json:"deposit" gorm:"type:decimal(15,2);default:0"`
+	FullName string `gorm:"size:100;not null" json:"full_name"`
+	Email    string `gorm:"size:100;not null;uniqueIndex" json:"email"`
+	Password string `gorm:"size:255;not null" json:"-"`
+	Role     string `gorm:"size:30;not null" json:"role"`
 	BaseModelTimeAt
 }
 

@@ -18,33 +18,27 @@ func LoadEnv() {
 
 func DBInit() *gorm.DB {
 	user := os.Getenv("DB_USER")
+	password := os.Getenv("DB_PASSWORD")
 	host := os.Getenv("DB_HOST")
 	port := os.Getenv("DB_PORT")
 	name := os.Getenv("DB_NAME")
 	sslmode := os.Getenv("SSL_MODE")
 
 	dsn := fmt.Sprintf(
-		"host=%s user=%s dbname=%s port=%s sslmode=%s",
-		host, user, name, port, sslmode,
+		"host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
+		host, user, password, name, port, sslmode,
 	)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatal("Gagal koneksi ke database:", err)
 	}
-	// --- Tambahkan kode ini ---
-	var dbName string
-	db.Raw("SELECT current_database()").Scan(&dbName)
-	fmt.Println("PostgreSQL benar-benar connect ke:", dbName)
-	// --------------------------
 
-	// (Opsional) ping db
 	sqlDB, err := db.DB()
 	if err != nil {
 		log.Fatal("Error mengambil database object:", err)
 	}
-	err = sqlDB.Ping()
-	if err != nil {
+	if err := sqlDB.Ping(); err != nil {
 		log.Fatal("Tidak bisa mengakses database:", err)
 	}
 	log.Println("Berhasil koneksi ke database PostgreSQL via GORM")

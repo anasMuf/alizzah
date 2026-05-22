@@ -1,12 +1,5 @@
 package dto
 
-// EnrollmentBriefResponse is a placeholder for Batch 3
-type EnrollmentBriefResponse struct {
-	ID           uint   `json:"id"`
-	ClassGroupID uint   `json:"class_group_id"`
-	ClassGroup   string `json:"class_group_name"`
-	Status       string `json:"status"`
-}
 
 // FinancialSummaryResponse is a placeholder for Batch 5
 type FinancialSummaryResponse struct {
@@ -84,13 +77,6 @@ type StudentDetailResponse struct {
 	CreatedAt         string                    `json:"created_at"`
 }
 
-// StudentBriefResponse is used in GuardianResponse to prevent cyclic JSON.
-type StudentBriefResponse struct {
-	ID       uint   `json:"id"`
-	FullName string `json:"full_name"`
-	Gender   string `json:"gender"`
-	Status   string `json:"status"`
-}
 
 // ImportResult is the response item for student import.
 type ImportResult struct {

@@ -44,6 +44,13 @@ func main() {
 		&model.Guardian{},
 		&model.StudentGuardian{},
 		&model.ClassGroup{},
+		// Batch 3
+		&model.StudentEnrollment{},
+		&model.EffectiveDay{},
+		&model.Extracurricular{},
+		&model.StudentExtracurricular{},
+		&model.StudentAcademicEvent{},
+		&model.DaycareEnrollment{},
 	); err != nil {
 		log.Fatal("Gagal AutoMigrate:", err)
 	}
@@ -88,6 +95,14 @@ func main() {
 	studentRepo := repository.NewStudentRepository(db)
 	guardianRepo := repository.NewGuardianRepository(db)
 	classGroupRepo := repository.NewClassGroupRepository(db)
+	
+	// Batch 3
+	enrollmentRepo := repository.NewStudentEnrollmentRepository(db)
+	effectiveDayRepo := repository.NewEffectiveDayRepository(db)
+	extracurricularRepo := repository.NewExtracurricularRepository(db)
+	seRepo := repository.NewStudentExtracurricularRepository(db)
+	eventRepo := repository.NewStudentAcademicEventRepository(db)
+	daycareRepo := repository.NewDaycareEnrollmentRepository(db)
 
 	// Services
 	authService := service.NewAuthService(userRepo)
@@ -97,6 +112,14 @@ func main() {
 	guardianService := service.NewGuardianService(guardianRepo, studentRepo)
 	classGroupService := service.NewClassGroupService(classGroupRepo)
 
+	// Batch 3
+	enrollmentService := service.NewStudentEnrollmentService(enrollmentRepo, studentRepo, classGroupRepo)
+	effectiveDayService := service.NewEffectiveDayService(effectiveDayRepo, classGroupRepo)
+	extracurricularService := service.NewExtracurricularService(extracurricularRepo)
+	seService := service.NewStudentExtracurricularService(seRepo, studentRepo, extracurricularRepo, ayRepo)
+	eventService := service.NewStudentAcademicEventService(eventRepo, studentRepo)
+	daycareService := service.NewDaycareEnrollmentService(daycareRepo, studentRepo, ayRepo)
+
 	// Handlers
 	authHandler := handler.NewAuthHandler(authService)
 	userHandler := handler.NewUserHandler(userService)
@@ -104,6 +127,14 @@ func main() {
 	studentHandler := handler.NewStudentHandler(studentService)
 	guardianHandler := handler.NewGuardianHandler(guardianService)
 	classGroupHandler := handler.NewClassGroupHandler(classGroupService)
+
+	// Batch 3
+	enrollmentHandler := handler.NewStudentEnrollmentHandler(enrollmentService)
+	effectiveDayHandler := handler.NewEffectiveDayHandler(effectiveDayService)
+	extracurricularHandler := handler.NewExtracurricularHandler(extracurricularService)
+	seHandler := handler.NewStudentExtracurricularHandler(seService)
+	eventHandler := handler.NewAcademicEventHandler(eventService)
+	daycareHandler := handler.NewDaycareEnrollmentHandler(daycareService)
 
 	// =====================
 	// Routes — /api/v1
@@ -144,6 +175,14 @@ func main() {
 	students.PUT("/:id", studentHandler.Update, middleware.RequireRoles("superadmin", "admin_administrasi"))
 	students.DELETE("/:id", studentHandler.Delete, middleware.RequireRoles("superadmin", "admin_administrasi"))
 
+	// Batch 3: Student nested endpoints
+	students.GET("/:id/enrollments", enrollmentHandler.GetByStudent, middleware.RequireRoles("superadmin", "admin_administrasi", "admin_keuangan"))
+	students.GET("/:id/extracurriculars", seHandler.GetByStudent, middleware.RequireRoles("superadmin", "admin_administrasi"))
+	students.POST("/:id/extracurriculars", seHandler.Enroll, middleware.RequireRoles("superadmin", "admin_administrasi"))
+	students.PUT("/:id/extracurriculars/:se_id", seHandler.Update, middleware.RequireRoles("superadmin", "admin_administrasi"))
+	students.DELETE("/:id/extracurriculars/:se_id", seHandler.Unenroll, middleware.RequireRoles("superadmin", "admin_administrasi"))
+	students.GET("/:id/academic-events", eventHandler.GetByStudent, middleware.RequireRoles("superadmin", "admin_administrasi"))
+
 	// Guardians (Standalone)
 	guardians := api.Group("/guardians", middleware.JWTAuth, middleware.RequireRoles("superadmin", "admin_administrasi"))
 	guardians.POST("", guardianHandler.Create)
@@ -163,6 +202,27 @@ func main() {
 	classGroups.GET("/:id", classGroupHandler.Get, middleware.RequireRoles("superadmin", "admin_administrasi", "admin_keuangan"))
 	classGroups.PUT("/:id", classGroupHandler.Update, middleware.RequireRoles("superadmin", "admin_administrasi"))
 	classGroups.DELETE("/:id", classGroupHandler.Delete, middleware.RequireRoles("superadmin", "admin_administrasi"))
+
+	// Batch 3: Class Groups nested endpoints
+	classGroups.GET("/:id/students", enrollmentHandler.GetStudentsByClassGroup, middleware.RequireRoles("superadmin", "admin_administrasi", "admin_keuangan"))
+	classGroups.GET("/:id/effective-days", effectiveDayHandler.List, middleware.RequireRoles("superadmin", "admin_administrasi"))
+	classGroups.POST("/:id/effective-days", effectiveDayHandler.Upsert, middleware.RequireRoles("superadmin", "admin_administrasi"))
+	classGroups.PUT("/:id/effective-days/:ed_id", effectiveDayHandler.Update, middleware.RequireRoles("superadmin", "admin_administrasi"))
+
+	// Extracurriculars
+	extracurriculars := api.Group("/extracurriculars", middleware.JWTAuth, middleware.RequireRoles("superadmin", "admin_administrasi"))
+	extracurriculars.GET("", extracurricularHandler.List)
+	extracurriculars.POST("", extracurricularHandler.Create)
+	extracurriculars.PUT("/:id", extracurricularHandler.Update)
+	extracurriculars.DELETE("/:id", extracurricularHandler.Delete)
+
+	// Daycare Enrollments
+	daycare := api.Group("/daycare-enrollments", middleware.JWTAuth, middleware.RequireRoles("superadmin", "admin_administrasi"))
+	daycare.GET("", daycareHandler.List)
+	daycare.POST("", daycareHandler.Create)
+	daycare.GET("/:id", daycareHandler.Get)
+	daycare.PUT("/:id", daycareHandler.Update)
+	daycare.PATCH("/:id/status", daycareHandler.UpdateStatus)
 
 	// Start server
 	port := os.Getenv("PORT")

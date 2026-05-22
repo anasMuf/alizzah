@@ -12,7 +12,7 @@ type ClassGroup struct {
 	BaseModelTimeAt
 
 	AcademicYear AcademicYear `gorm:"foreignKey:AcademicYearID" json:"academic_year,omitempty"`
-	// Enrollments  []StudentEnrollment `gorm:"foreignKey:ClassGroupID" json:"-"` // TODO: Add in Batch 3
+	Enrollments  []StudentEnrollment `gorm:"foreignKey:ClassGroupID" json:"-"`
 }
 
 func (ClassGroup) TableName() string {

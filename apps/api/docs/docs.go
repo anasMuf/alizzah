@@ -2415,6 +2415,12 @@ const docTemplate = `{
         "dto.EnrollmentBriefResponse": {
             "type": "object",
             "properties": {
+                "academic_year_id": {
+                    "type": "integer"
+                },
+                "academic_year_name": {
+                    "type": "string"
+                },
                 "class_group_id": {
                     "type": "integer"
                 },
@@ -2423,6 +2429,12 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "integer"
+                },
+                "level": {
+                    "type": "string"
+                },
+                "start_date": {
+                    "type": "string"
                 },
                 "status": {
                     "type": "string"

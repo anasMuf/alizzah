@@ -46,7 +46,7 @@ Membangun relasi antara siswa dengan rombel (enrollment), input hari efektif per
 
 #### Model
 
-- [ ] `model/student_enrollment.go`
+- [x] `model/student_enrollment.go`
 
 ```go
 type StudentEnrollment struct {
@@ -74,7 +74,7 @@ type StudentEnrollment struct {
 
 #### DTO
 
-- [ ] `dto/student_enrollment.go`
+- [x] `dto/student_enrollment.go`
 
 ```go
 type EnrollmentBriefResponse struct {
@@ -106,7 +106,7 @@ type EnrollmentQueryParams struct {
 
 #### Repository
 
-- [ ] `repository/student_enrollment_repository.go`
+- [x] `repository/student_enrollment_repository.go`
 
 ```go
 type StudentEnrollmentRepository interface {
@@ -121,7 +121,7 @@ type StudentEnrollmentRepository interface {
 
 #### Service
 
-- [ ] `service/student_enrollment_service.go`
+- [x] `service/student_enrollment_service.go`
 
 ```go
 type StudentEnrollmentService interface {
@@ -134,13 +134,13 @@ type StudentEnrollmentService interface {
 
 #### Handler
 
-- [ ] `handler/student_enrollment_handler.go`
+- [x] `handler/student_enrollment_handler.go`
   - `GetByStudent` — untuk `GET /students/:id/enrollments`
   - `GetStudentsByClassGroup` — untuk `GET /class-groups/:id/students`
 
 #### Route
 
-- [ ] Register di `main.go`:
+- [x] Register di `main.go`:
 
 ```go
 // Nested di students
@@ -158,7 +158,7 @@ classGroups.GET("/:id/students", enrollmentHandler.GetStudentsByClassGroup,
 
 #### Model
 
-- [ ] `model/effective_day.go`
+- [x] `model/effective_day.go`
 
 ```go
 type EffectiveDay struct {
@@ -183,7 +183,7 @@ type EffectiveDay struct {
 
 #### DTO
 
-- [ ] `dto/effective_day.go`
+- [x] `dto/effective_day.go`
 
 ```go
 type UpsertEffectiveDayRequest struct {
@@ -213,7 +213,7 @@ type EffectiveDayQueryParams struct {
 
 #### Repository
 
-- [ ] `repository/effective_day_repository.go`
+- [x] `repository/effective_day_repository.go`
 
 ```go
 type EffectiveDayRepository interface {
@@ -226,7 +226,7 @@ type EffectiveDayRepository interface {
 
 #### Service
 
-- [ ] `service/effective_day_service.go`
+- [x] `service/effective_day_service.go`
 
 ```go
 type EffectiveDayService interface {
@@ -248,12 +248,12 @@ Logika bisnis `Upsert`:
 
 #### Handler
 
-- [ ] `handler/effective_day_handler.go`
+- [x] `handler/effective_day_handler.go`
   - `List`, `Upsert`, `Update`
 
 #### Route
 
-- [ ] Register di `main.go`:
+- [x] Register di `main.go`:
 
 ```go
 classGroups.GET("/:id/effective-days", effectiveDayHandler.List,
@@ -270,7 +270,7 @@ classGroups.PUT("/:id/effective-days/:ed_id", effectiveDayHandler.Update,
 
 #### Model
 
-- [ ] `model/extracurricular.go`
+- [x] `model/extracurricular.go`
 
 ```go
 type Extracurricular struct {
@@ -283,7 +283,7 @@ type Extracurricular struct {
 
 #### DTO
 
-- [ ] `dto/extracurricular.go`
+- [x] `dto/extracurricular.go`
 
 ```go
 type CreateExtracurricularRequest struct {
@@ -304,7 +304,7 @@ type ExtracurricularQueryParams struct {
 
 #### Repository
 
-- [ ] `repository/extracurricular_repository.go`
+- [x] `repository/extracurricular_repository.go`
 
 ```go
 type ExtracurricularRepository interface {
@@ -319,7 +319,7 @@ type ExtracurricularRepository interface {
 
 #### Service
 
-- [ ] `service/extracurricular_service.go`
+- [x] `service/extracurricular_service.go`
 
 ```go
 type ExtracurricularService interface {
@@ -335,12 +335,12 @@ Logika bisnis:
 
 #### Handler
 
-- [ ] `handler/extracurricular_handler.go`
+- [x] `handler/extracurricular_handler.go`
   - `List`, `Create`, `Update`, `Delete`
 
 #### Route
 
-- [ ] Register di `main.go`:
+- [x] Register di `main.go`:
 
 ```go
 extracurriculars := api.Group("/extracurriculars", jwtMiddleware,
@@ -357,7 +357,7 @@ extracurriculars.DELETE("/:id", extracurricularHandler.Delete)
 
 #### Model
 
-- [ ] `model/student_extracurricular.go`
+- [x] `model/student_extracurricular.go`
 
 ```go
 type StudentExtracurricular struct {
@@ -378,7 +378,7 @@ type StudentExtracurricular struct {
 
 #### DTO
 
-- [ ] `dto/student_extracurricular.go`
+- [x] `dto/student_extracurricular.go`
 
 ```go
 type EnrollExtracurricularRequest struct {
@@ -405,7 +405,7 @@ type StudentExtracurricularQueryParams struct {
 
 #### Repository
 
-- [ ] `repository/student_extracurricular_repository.go`
+- [x] `repository/student_extracurricular_repository.go`
 
 ```go
 type StudentExtracurricularRepository interface {
@@ -421,7 +421,7 @@ type StudentExtracurricularRepository interface {
 
 #### Service
 
-- [ ] `service/student_extracurricular_service.go`
+- [x] `service/student_extracurricular_service.go`
 
 ```go
 type StudentExtracurricularService interface {
@@ -443,12 +443,12 @@ Logika bisnis `Unenroll`:
 
 #### Handler
 
-- [ ] `handler/student_extracurricular_handler.go`
+- [x] `handler/student_extracurricular_handler.go`
   - `GetByStudent`, `Enroll`, `Update`, `Unenroll`
 
 #### Route
 
-- [ ] Register di `main.go`:
+- [x] Register di `main.go`:
 
 ```go
 students.GET("/:id/extracurriculars", studentExtracurricularHandler.GetByStudent,
@@ -469,7 +469,7 @@ Endpoint write untuk academic events ada di Batch 4. Di sini hanya implementasi 
 
 #### Model
 
-- [ ] `model/student_academic_event.go`
+- [x] `model/student_academic_event.go`
 
 ```go
 type StudentAcademicEvent struct {
@@ -497,7 +497,7 @@ type StudentAcademicEvent struct {
 
 #### DTO
 
-- [ ] `dto/student_academic_event.go`
+- [x] `dto/student_academic_event.go`
 
 ```go
 type AcademicEventResponse struct {
@@ -515,7 +515,7 @@ type AcademicEventResponse struct {
 
 #### Repository
 
-- [ ] `repository/student_academic_event_repository.go`
+- [x] `repository/student_academic_event_repository.go`
 
 ```go
 type StudentAcademicEventRepository interface {
@@ -526,11 +526,11 @@ type StudentAcademicEventRepository interface {
 
 #### Handler
 
-- [ ] Tambahkan `GetAcademicEvents` ke `handler/student_enrollment_handler.go` atau buat file terpisah
+- [x] Tambahkan `GetAcademicEvents` ke `handler/student_enrollment_handler.go` atau buat file terpisah
 
 #### Route
 
-- [ ] Register di `main.go`:
+- [x] Register di `main.go`:
 
 ```go
 students.GET("/:id/academic-events", academicEventHandler.GetByStudent,
@@ -543,7 +543,7 @@ students.GET("/:id/academic-events", academicEventHandler.GetByStudent,
 
 #### Model
 
-- [ ] `model/daycare_enrollment.go`
+- [x] `model/daycare_enrollment.go`
 
 ```go
 type DaycareEnrollment struct {
@@ -568,7 +568,7 @@ type DaycareEnrollment struct {
 
 #### DTO
 
-- [ ] `dto/daycare_enrollment.go`
+- [x] `dto/daycare_enrollment.go`
 
 ```go
 type CreateDaycareEnrollmentRequest struct {
@@ -604,7 +604,7 @@ type DaycareEnrollmentQueryParams struct {
 
 #### Repository
 
-- [ ] `repository/daycare_enrollment_repository.go`
+- [x] `repository/daycare_enrollment_repository.go`
 
 ```go
 type DaycareEnrollmentRepository interface {
@@ -619,7 +619,7 @@ type DaycareEnrollmentRepository interface {
 
 #### Service
 
-- [ ] `service/daycare_enrollment_service.go`
+- [x] `service/daycare_enrollment_service.go`
 
 ```go
 type DaycareEnrollmentService interface {
@@ -638,12 +638,12 @@ Logika bisnis `Create`:
 
 #### Handler
 
-- [ ] `handler/daycare_enrollment_handler.go`
+- [x] `handler/daycare_enrollment_handler.go`
   - `List`, `Create`, `Get`, `Update`, `UpdateStatus`
 
 #### Route
 
-- [ ] Register di `main.go`:
+- [x] Register di `main.go`:
 
 ```go
 daycare := api.Group("/daycare-enrollments", jwtMiddleware,
@@ -690,7 +690,7 @@ type UserBriefResponse struct {
 
 ### 8. Auto-Migrate Update
 
-- [ ] Tambahkan model baru ke `config/database.go`:
+- [x] Tambahkan model baru ke `config/database.go`:
 
 ```go
 db.AutoMigrate(
@@ -763,14 +763,14 @@ Di setiap service yang akan menjadi trigger invoice, tambahkan komentar `TODO(ba
 
 ## Acceptance Criteria Batch 3
 
-- [ ] `GET /class-groups/:id/students` → mengembalikan daftar siswa beserta info enrollment aktif di rombel tersebut
-- [ ] `POST /class-groups/:id/effective-days` → upsert berhasil; response mengembalikan `200` jika update, konsisten di kedua kasus
-- [ ] `PUT /class-groups/:id/effective-days/:ed_id` → update berhasil dan `TODO(batch-5)` tercatat di log
-- [ ] `GET /extracurriculars` → filter by `type` berfungsi
-- [ ] `DELETE /extracurriculars/:id` → gagal 422 jika masih dipakai siswa
-- [ ] `POST /students/:id/extracurriculars` → gagal 409 jika siswa sudah terdaftar di ekstrakurikuler yang sama di tahun ajaran yang sama
-- [ ] `GET /students/:id/enrollments` → mengembalikan riwayat enrollment per tahun ajaran; filter `academic_year_id` berfungsi
-- [ ] `GET /students/:id/academic-events` → mengembalikan array kosong (belum ada event — diisi di Batch 4)
-- [ ] `POST /daycare-enrollments` → gagal 409 jika siswa sudah punya daycare aktif di tahun ajaran yang sama
-- [ ] `PATCH /daycare-enrollments/:id/status` → update status ke `inactive` memerlukan `end_date`
-- [ ] Admin keuangan hanya bisa akses `GET /class-groups/:id/students` dan `GET /students/:id/enrollments`
+- [x] `GET /class-groups/:id/students` → mengembalikan daftar siswa beserta info enrollment aktif di rombel tersebut
+- [x] `POST /class-groups/:id/effective-days` → upsert berhasil; response mengembalikan `200` jika update, konsisten di kedua kasus
+- [x] `PUT /class-groups/:id/effective-days/:ed_id` → update berhasil dan `TODO(batch-5)` tercatat di log
+- [x] `GET /extracurriculars` → filter by `type` berfungsi
+- [x] `DELETE /extracurriculars/:id` → gagal 422 jika masih dipakai siswa
+- [x] `POST /students/:id/extracurriculars` → gagal 409 jika siswa sudah terdaftar di ekstrakurikuler yang sama di tahun ajaran yang sama
+- [x] `GET /students/:id/enrollments` → mengembalikan riwayat enrollment per tahun ajaran; filter `academic_year_id` berfungsi
+- [x] `GET /students/:id/academic-events` → mengembalikan array kosong (belum ada event — diisi di Batch 4)
+- [x] `POST /daycare-enrollments` → gagal 409 jika siswa sudah punya daycare aktif di tahun ajaran yang sama
+- [x] `PATCH /daycare-enrollments/:id/status` → update status ke `inactive` memerlukan `end_date`
+- [x] Admin keuangan hanya bisa akses `GET /class-groups/:id/students` dan `GET /students/:id/enrollments`

@@ -18,7 +18,7 @@ type Student struct {
 	// Relations
 	Guardians        []Guardian        `gorm:"many2many:student_guardians;" json:"guardians,omitempty"`
 	StudentGuardians []StudentGuardian `gorm:"foreignKey:StudentID" json:"-"`
-	// Enrollments      []StudentEnrollment `gorm:"foreignKey:StudentID" json:"-"` // TODO: Add in Batch 3
+	Enrollments      []StudentEnrollment `gorm:"foreignKey:StudentID" json:"-"`
 }
 
 func (Student) TableName() string {

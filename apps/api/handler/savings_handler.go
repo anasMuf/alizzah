@@ -18,6 +18,20 @@ func NewSavingsHandler(service service.SavingsService) *SavingsHandler {
 	return &SavingsHandler{service: service}
 }
 
+// GetByStudent godoc
+// @Summary Get savings balance by student ID
+// @Description Get general and mandatory savings balance for a specific student
+// @Tags savings
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param id path int true "Student ID"
+// @Success 200 {object} dto.SuccessResponse{data=dto.StudentSavingsResponse}
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /students/{id}/savings [get]
 func (h *SavingsHandler) GetByStudent(c echo.Context) error {
 	studentID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -33,6 +47,25 @@ func (h *SavingsHandler) GetByStudent(c echo.Context) error {
 	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil mengambil saldo tabungan", Data: savings})
 }
 
+// GetTransactions godoc
+// @Summary Get savings transactions
+// @Description Get a paginated list of savings transactions for a student
+// @Tags savings
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param id path int true "Student ID"
+// @Param type query string false "Savings Type (general/mandatory)"
+// @Param start_date query string false "Start Date (YYYY-MM-DD)"
+// @Param end_date query string false "End Date (YYYY-MM-DD)"
+// @Param page query int false "Page number"
+// @Param limit query int false "Limit per page"
+// @Success 200 {object} dto.PaginatedResponse{data=[]dto.SavingsTransactionResponse}
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /students/{id}/savings/transactions [get]
 func (h *SavingsHandler) GetTransactions(c echo.Context) error {
 	studentID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -63,6 +96,22 @@ func (h *SavingsHandler) GetTransactions(c echo.Context) error {
 	})
 }
 
+// GuardianWithdrawal godoc
+// @Summary Guardian withdrawal
+// @Description Record a savings withdrawal by a guardian
+// @Tags savings
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param id path int true "Student ID"
+// @Param request body dto.SavingsWithdrawalRequest true "Withdrawal request"
+// @Success 200 {object} dto.SuccessResponse{data=dto.WithdrawalResponse}
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 422 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /students/{id}/savings/withdrawals [post]
 func (h *SavingsHandler) GuardianWithdrawal(c echo.Context) error {
 	studentID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {

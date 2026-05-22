@@ -18,6 +18,18 @@ func NewExpenseCategoryHandler(service service.ExpenseCategoryService) *ExpenseC
 	return &ExpenseCategoryHandler{service: service}
 }
 
+// List godoc
+// @Summary Get expense category list
+// @Description Get a tree of expense categories
+// @Tags expense-categories
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Success 200 {object} dto.SuccessResponse{data=[]dto.ExpenseCategoryResponse}
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /expense-categories [get]
 func (h *ExpenseCategoryHandler) List(c echo.Context) error {
 	categories, err := h.service.GetAll()
 	if err != nil {
@@ -28,6 +40,21 @@ func (h *ExpenseCategoryHandler) List(c echo.Context) error {
 	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil mengambil kategori pengeluaran", Data: categories})
 }
 
+// Create godoc
+// @Summary Create expense category
+// @Description Create a new expense category (max 2 levels deep)
+// @Tags expense-categories
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param request body dto.CreateExpenseCategoryRequest true "Create category request"
+// @Success 201 {object} dto.SuccessResponse{data=dto.ExpenseCategoryResponse}
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 422 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /expense-categories [post]
 func (h *ExpenseCategoryHandler) Create(c echo.Context) error {
 	var req dto.CreateExpenseCategoryRequest
 	if err := c.Bind(&req); err != nil {
@@ -46,6 +73,23 @@ func (h *ExpenseCategoryHandler) Create(c echo.Context) error {
 	return c.JSON(http.StatusCreated, dto.SuccessResponse{Message: "Berhasil membuat kategori pengeluaran", Data: cat})
 }
 
+// Update godoc
+// @Summary Update expense category
+// @Description Update an existing expense category
+// @Tags expense-categories
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param id path int true "Category ID"
+// @Param request body dto.CreateExpenseCategoryRequest true "Update category request"
+// @Success 200 {object} dto.SuccessResponse{data=dto.ExpenseCategoryResponse}
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 422 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /expense-categories/{id} [put]
 func (h *ExpenseCategoryHandler) Update(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -69,6 +113,22 @@ func (h *ExpenseCategoryHandler) Update(c echo.Context) error {
 	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil memperbarui kategori pengeluaran", Data: cat})
 }
 
+// Delete godoc
+// @Summary Delete expense category
+// @Description Delete an existing expense category (only if it has no children and no expenses)
+// @Tags expense-categories
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param id path int true "Category ID"
+// @Success 200 {object} dto.SuccessResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 422 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /expense-categories/{id} [delete]
 func (h *ExpenseCategoryHandler) Delete(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {

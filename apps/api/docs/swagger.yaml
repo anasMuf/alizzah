@@ -72,6 +72,38 @@ definitions:
     - name
     - schedule
     type: object
+  dto.CreateExpenseCategoryRequest:
+    properties:
+      name:
+        maxLength: 100
+        type: string
+      parent_id:
+        type: integer
+    required:
+    - name
+    type: object
+  dto.CreateExpenseRequest:
+    properties:
+      academic_year_id:
+        type: integer
+      amount:
+        minimum: 1
+        type: number
+      description:
+        type: string
+      expense_category_id:
+        type: integer
+      expense_date:
+        type: string
+      receipt_url:
+        type: string
+    required:
+    - academic_year_id
+    - amount
+    - description
+    - expense_category_id
+    - expense_date
+    type: object
   dto.CreateGuardianInline:
     properties:
       address:
@@ -115,6 +147,34 @@ definitions:
     - full_name
     - phone
     - relationship
+    type: object
+  dto.CreatePaymentRequest:
+    properties:
+      academic_year_id:
+        type: integer
+      items:
+        items:
+          $ref: '#/definitions/dto.PaymentItemReq'
+        type: array
+      notes:
+        type: string
+      payment_date:
+        type: string
+      savings_deposit:
+        minimum: 0
+        type: number
+      source:
+        enum:
+        - cash
+        - savings
+        type: string
+      student_id:
+        type: integer
+    required:
+    - academic_year_id
+    - payment_date
+    - source
+    - student_id
     type: object
   dto.CreateStudentRequest:
     properties:
@@ -201,6 +261,47 @@ definitions:
         type: string
       status:
         type: integer
+    type: object
+  dto.ExpenseCategoryBrief:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      parent_name:
+        type: string
+    type: object
+  dto.ExpenseCategoryResponse:
+    properties:
+      children:
+        items:
+          $ref: '#/definitions/dto.ExpenseCategoryResponse'
+        type: array
+      id:
+        type: integer
+      name:
+        type: string
+      parent_id:
+        type: integer
+    type: object
+  dto.ExpenseResponse:
+    properties:
+      amount:
+        type: number
+      category:
+        $ref: '#/definitions/dto.ExpenseCategoryBrief'
+      created_at:
+        type: string
+      created_by:
+        $ref: '#/definitions/dto.UserBriefResponse'
+      description:
+        type: string
+      expense_date:
+        type: string
+      id:
+        type: integer
+      receipt_url:
+        type: string
     type: object
   dto.FinancialSummaryResponse:
     properties:
@@ -309,6 +410,108 @@ definitions:
       meta:
         $ref: '#/definitions/dto.Meta'
     type: object
+  dto.PaymentDetailResponse:
+    properties:
+      created_at:
+        type: string
+      created_by:
+        $ref: '#/definitions/dto.UserBriefResponse'
+      id:
+        type: integer
+      items:
+        items:
+          $ref: '#/definitions/dto.PaymentItemResponse'
+        type: array
+      notes:
+        type: string
+      payment_date:
+        type: string
+      source:
+        type: string
+      student:
+        $ref: '#/definitions/dto.StudentBriefResponse'
+      total_amount:
+        type: number
+    type: object
+  dto.PaymentItemReq:
+    properties:
+      amount:
+        minimum: 1
+        type: number
+      invoice_item_id:
+        type: integer
+    required:
+    - amount
+    - invoice_item_id
+    type: object
+  dto.PaymentItemResponse:
+    properties:
+      amount:
+        type: number
+      id:
+        type: integer
+      invoice_item_id:
+        type: integer
+      invoice_item_name:
+        type: string
+    type: object
+  dto.PaymentListResponse:
+    properties:
+      created_at:
+        type: string
+      created_by:
+        $ref: '#/definitions/dto.UserBriefResponse'
+      id:
+        type: integer
+      payment_date:
+        type: string
+      source:
+        type: string
+      student:
+        $ref: '#/definitions/dto.StudentBriefResponse'
+      total_amount:
+        type: number
+    type: object
+  dto.SavingsBalanceResponse:
+    properties:
+      balance:
+        type: number
+      id:
+        type: integer
+      type:
+        type: string
+    type: object
+  dto.SavingsTransactionResponse:
+    properties:
+      admin_fee:
+        type: number
+      amount:
+        type: number
+      created_at:
+        type: string
+      id:
+        type: integer
+      net_amount:
+        type: number
+      notes:
+        type: string
+      savings_type:
+        type: string
+      source_type:
+        type: string
+      transaction_type:
+        type: string
+    type: object
+  dto.SavingsWithdrawalRequest:
+    properties:
+      amount:
+        minimum: 1
+        type: number
+      notes:
+        type: string
+    required:
+    - amount
+    type: object
   dto.ScheduleBlock:
     properties:
       days:
@@ -381,6 +584,13 @@ definitions:
       status:
         type: string
     type: object
+  dto.StudentSavingsResponse:
+    properties:
+      general:
+        $ref: '#/definitions/dto.SavingsBalanceResponse'
+      mandatory:
+        $ref: '#/definitions/dto.SavingsBalanceResponse'
+    type: object
   dto.SuccessResponse:
     properties:
       data: {}
@@ -438,6 +648,13 @@ definitions:
     - full_name
     - role
     type: object
+  dto.UserBriefResponse:
+    properties:
+      full_name:
+        type: string
+      id:
+        type: integer
+    type: object
   dto.UserResponse:
     properties:
       created_at:
@@ -451,6 +668,17 @@ definitions:
       role:
         type: string
     type: object
+  dto.WithdrawalResponse:
+    properties:
+      admin_fee:
+        type: number
+      amount:
+        type: number
+      net_amount:
+        type: number
+      remaining_balance:
+        type: number
+    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -458,6 +686,838 @@ info:
   title: Alizzah Manajemen API
   version: "1.0"
 paths:
+  /expense-categories:
+    get:
+      consumes:
+      - application/json
+      description: Get a tree of expense categories
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.ExpenseCategoryResponse'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get expense category list
+      tags:
+      - expense-categories
+    post:
+      consumes:
+      - application/json
+      description: Create a new expense category (max 2 levels deep)
+      parameters:
+      - description: Create category request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateExpenseCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.ExpenseCategoryResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create expense category
+      tags:
+      - expense-categories
+  /expense-categories/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an existing expense category (only if it has no children
+        and no expenses)
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete expense category
+      tags:
+      - expense-categories
+    put:
+      consumes:
+      - application/json
+      description: Update an existing expense category
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update category request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateExpenseCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.ExpenseCategoryResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update expense category
+      tags:
+      - expense-categories
+  /expenses:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of expenses
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Limit per page
+        in: query
+        name: limit
+        type: integer
+      - description: Academic Year ID
+        in: query
+        name: academic_year_id
+        type: integer
+      - description: Expense Category ID
+        in: query
+        name: expense_category_id
+        type: integer
+      - description: Start Date (YYYY-MM-DD)
+        in: query
+        name: start_date
+        type: string
+      - description: End Date (YYYY-MM-DD)
+        in: query
+        name: end_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.PaginatedResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.ExpenseResponse'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get expense list
+      tags:
+      - expenses
+    post:
+      consumes:
+      - application/json
+      description: Record a new expense
+      parameters:
+      - description: Create expense request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateExpenseRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.ExpenseResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create expense
+      tags:
+      - expenses
+  /expenses/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an existing expense
+      parameters:
+      - description: Expense ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete expense
+      tags:
+      - expenses
+    get:
+      consumes:
+      - application/json
+      description: Get expense detail by ID
+      parameters:
+      - description: Expense ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.ExpenseResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get expense by ID
+      tags:
+      - expenses
+    put:
+      consumes:
+      - application/json
+      description: Update an existing expense
+      parameters:
+      - description: Expense ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update expense request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateExpenseRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.ExpenseResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update expense
+      tags:
+      - expenses
+  /payments:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of payments
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Limit per page
+        in: query
+        name: limit
+        type: integer
+      - description: Student ID
+        in: query
+        name: student_id
+        type: integer
+      - description: Academic Year ID
+        in: query
+        name: academic_year_id
+        type: integer
+      - description: Payment Source (cash/savings)
+        in: query
+        name: source
+        type: string
+      - description: Start Date (YYYY-MM-DD)
+        in: query
+        name: start_date
+        type: string
+      - description: End Date (YYYY-MM-DD)
+        in: query
+        name: end_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.PaginatedResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.PaymentListResponse'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get payment list
+      tags:
+      - payments
+    post:
+      consumes:
+      - application/json
+      description: Record a new payment from cash or savings
+      parameters:
+      - description: Create payment request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreatePaymentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.PaymentDetailResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create payment
+      tags:
+      - payments
+  /payments/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get payment detail by ID
+      parameters:
+      - description: Payment ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.PaymentDetailResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get payment by ID
+      tags:
+      - payments
+  /students/{id}/payments:
+    get:
+      consumes:
+      - application/json
+      description: Get all payments for a specific student
+      parameters:
+      - description: Student ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Academic Year ID
+        in: query
+        name: academic_year_id
+        type: integer
+      - description: Start Date (YYYY-MM-DD)
+        in: query
+        name: start_date
+        type: string
+      - description: End Date (YYYY-MM-DD)
+        in: query
+        name: end_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.PaymentListResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get payment history by student ID
+      tags:
+      - payments
+  /students/{id}/savings:
+    get:
+      consumes:
+      - application/json
+      description: Get general and mandatory savings balance for a specific student
+      parameters:
+      - description: Student ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.StudentSavingsResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get savings balance by student ID
+      tags:
+      - savings
+  /students/{id}/savings/transactions:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of savings transactions for a student
+      parameters:
+      - description: Student ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Savings Type (general/mandatory)
+        in: query
+        name: type
+        type: string
+      - description: Start Date (YYYY-MM-DD)
+        in: query
+        name: start_date
+        type: string
+      - description: End Date (YYYY-MM-DD)
+        in: query
+        name: end_date
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Limit per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.PaginatedResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.SavingsTransactionResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get savings transactions
+      tags:
+      - savings
+  /students/{id}/savings/withdrawals:
+    post:
+      consumes:
+      - application/json
+      description: Record a savings withdrawal by a guardian
+      parameters:
+      - description: Student ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Withdrawal request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SavingsWithdrawalRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.WithdrawalResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Guardian withdrawal
+      tags:
+      - savings
   /v1/academic-years:
     get:
       consumes:

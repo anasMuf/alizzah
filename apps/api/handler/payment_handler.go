@@ -18,6 +18,25 @@ func NewPaymentHandler(service service.PaymentService) *PaymentHandler {
 	return &PaymentHandler{service: service}
 }
 
+// List godoc
+// @Summary Get payment list
+// @Description Get a paginated list of payments
+// @Tags payments
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param page query int false "Page number"
+// @Param limit query int false "Limit per page"
+// @Param student_id query int false "Student ID"
+// @Param academic_year_id query int false "Academic Year ID"
+// @Param source query string false "Payment Source (cash/savings)"
+// @Param start_date query string false "Start Date (YYYY-MM-DD)"
+// @Param end_date query string false "End Date (YYYY-MM-DD)"
+// @Success 200 {object} dto.PaginatedResponse{data=[]dto.PaymentListResponse}
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /payments [get]
 func (h *PaymentHandler) List(c echo.Context) error {
 	page, _ := strconv.Atoi(c.QueryParam("page"))
 	limit, _ := strconv.Atoi(c.QueryParam("limit"))
@@ -47,6 +66,21 @@ func (h *PaymentHandler) List(c echo.Context) error {
 	})
 }
 
+// Create godoc
+// @Summary Create payment
+// @Description Record a new payment from cash or savings
+// @Tags payments
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param request body dto.CreatePaymentRequest true "Create payment request"
+// @Success 201 {object} dto.SuccessResponse{data=dto.PaymentDetailResponse}
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 422 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /payments [post]
 func (h *PaymentHandler) Create(c echo.Context) error {
 	var req dto.CreatePaymentRequest
 	if err := c.Bind(&req); err != nil {
@@ -66,6 +100,21 @@ func (h *PaymentHandler) Create(c echo.Context) error {
 	return c.JSON(http.StatusCreated, dto.SuccessResponse{Message: "Pembayaran berhasil dicatat", Data: payment})
 }
 
+// Get godoc
+// @Summary Get payment by ID
+// @Description Get payment detail by ID
+// @Tags payments
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param id path int true "Payment ID"
+// @Success 200 {object} dto.SuccessResponse{data=dto.PaymentDetailResponse}
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /payments/{id} [get]
 func (h *PaymentHandler) Get(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -81,6 +130,23 @@ func (h *PaymentHandler) Get(c echo.Context) error {
 	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil mengambil detail pembayaran", Data: payment})
 }
 
+// GetByStudent godoc
+// @Summary Get payment history by student ID
+// @Description Get all payments for a specific student
+// @Tags payments
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param id path int true "Student ID"
+// @Param academic_year_id query int false "Academic Year ID"
+// @Param start_date query string false "Start Date (YYYY-MM-DD)"
+// @Param end_date query string false "End Date (YYYY-MM-DD)"
+// @Success 200 {object} dto.SuccessResponse{data=[]dto.PaymentListResponse}
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /students/{id}/payments [get]
 func (h *PaymentHandler) GetByStudent(c echo.Context) error {
 	studentID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {

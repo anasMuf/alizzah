@@ -18,6 +18,24 @@ func NewExpenseHandler(service service.ExpenseService) *ExpenseHandler {
 	return &ExpenseHandler{service: service}
 }
 
+// List godoc
+// @Summary Get expense list
+// @Description Get a paginated list of expenses
+// @Tags expenses
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param page query int false "Page number"
+// @Param limit query int false "Limit per page"
+// @Param academic_year_id query int false "Academic Year ID"
+// @Param expense_category_id query int false "Expense Category ID"
+// @Param start_date query string false "Start Date (YYYY-MM-DD)"
+// @Param end_date query string false "End Date (YYYY-MM-DD)"
+// @Success 200 {object} dto.PaginatedResponse{data=[]dto.ExpenseResponse}
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /expenses [get]
 func (h *ExpenseHandler) List(c echo.Context) error {
 	page, _ := strconv.Atoi(c.QueryParam("page"))
 	limit, _ := strconv.Atoi(c.QueryParam("limit"))
@@ -46,6 +64,21 @@ func (h *ExpenseHandler) List(c echo.Context) error {
 	})
 }
 
+// Create godoc
+// @Summary Create expense
+// @Description Record a new expense
+// @Tags expenses
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param request body dto.CreateExpenseRequest true "Create expense request"
+// @Success 201 {object} dto.SuccessResponse{data=dto.ExpenseResponse}
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 422 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /expenses [post]
 func (h *ExpenseHandler) Create(c echo.Context) error {
 	var req dto.CreateExpenseRequest
 	if err := c.Bind(&req); err != nil {
@@ -65,6 +98,21 @@ func (h *ExpenseHandler) Create(c echo.Context) error {
 	return c.JSON(http.StatusCreated, dto.SuccessResponse{Message: "Berhasil mencatat pengeluaran", Data: expense})
 }
 
+// Get godoc
+// @Summary Get expense by ID
+// @Description Get expense detail by ID
+// @Tags expenses
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param id path int true "Expense ID"
+// @Success 200 {object} dto.SuccessResponse{data=dto.ExpenseResponse}
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /expenses/{id} [get]
 func (h *ExpenseHandler) Get(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -80,6 +128,23 @@ func (h *ExpenseHandler) Get(c echo.Context) error {
 	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil mengambil detail pengeluaran", Data: expense})
 }
 
+// Update godoc
+// @Summary Update expense
+// @Description Update an existing expense
+// @Tags expenses
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param id path int true "Expense ID"
+// @Param request body dto.CreateExpenseRequest true "Update expense request"
+// @Success 200 {object} dto.SuccessResponse{data=dto.ExpenseResponse}
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 422 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /expenses/{id} [put]
 func (h *ExpenseHandler) Update(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -103,6 +168,22 @@ func (h *ExpenseHandler) Update(c echo.Context) error {
 	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil memperbarui pengeluaran", Data: expense})
 }
 
+// Delete godoc
+// @Summary Delete expense
+// @Description Delete an existing expense
+// @Tags expenses
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param id path int true "Expense ID"
+// @Success 200 {object} dto.SuccessResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 422 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /expenses/{id} [delete]
 func (h *ExpenseHandler) Delete(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {

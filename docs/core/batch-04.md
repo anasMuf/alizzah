@@ -41,7 +41,7 @@ Seluruh endpoint academic events dikelola dalam satu handler tapi service terpis
 
 #### DTO
 
-- [ ] `dto/academic_event.go`
+- [x] `dto/academic_event.go`
 
 ```go
 // Kenaikan Kelas Massal
@@ -118,7 +118,7 @@ type EventError struct {
 
 #### Repository (tambahan ke Batch 3)
 
-- [ ] Tambahkan method ke `repository/student_enrollment_repository.go`:
+- [x] Tambahkan method ke `repository/student_enrollment_repository.go`:
 
 ```go
 // Tambahan untuk keperluan academic events
@@ -128,7 +128,7 @@ CloseEnrollment(id uint, endDate time.Time, status string) error
 BulkCreate(enrollments []model.StudentEnrollment) error
 ```
 
-- [ ] Tambahkan method ke `repository/student_repository.go`:
+- [x] Tambahkan method ke `repository/student_repository.go`:
 
 ```go
 UpdateStatus(id uint, status string) error
@@ -137,7 +137,7 @@ FindByIDs(ids []uint) ([]model.Student, error)
 
 #### Service
 
-- [ ] `service/academic_event_service.go`
+- [x] `service/academic_event_service.go`
 
 ```go
 type AcademicEventService interface {
@@ -175,7 +175,7 @@ Per siswa aktif di from_academic_year_id:
   5. TODO(batch-5): generate tagihan registrasi tahunan untuk tahun ajaran baru
 ```
 
-- [ ] Implementasi `processPromotion` di service
+- [x] Implementasi `processPromotion` di service
 
 **Catatan penting:** Untuk siswa berlian yang masuk `retained_student_ids`, mereka tetap di berlian (tinggal kelas). Siswa berlian yang TIDAK ada di `retained_student_ids` di-skip — mereka harus diproses via `ProcessGraduation` secara terpisah.
 
@@ -217,8 +217,8 @@ Per siswa:
   7. Log student_academic_events (event_type=graduation)
 ```
 
-- [ ] Implementasi `processGraduation` di service
-- [ ] Inject `InvoiceRepository`, `StudentSavingsRepository`, `VaultTransactionRepository` ke service ini (akan dibuat di Batch 5 & 6 — gunakan interface, implementasi nyata di-wire di Batch 5)
+- [x] Implementasi `processGraduation` di service
+- [x] Inject `InvoiceRepository`, `StudentSavingsRepository`, `VaultTransactionRepository` ke service ini (akan dibuat di Batch 5 & 6 — gunakan interface, implementasi nyata di-wire di Batch 5)
 
 **Strategi dependency ke Batch 5:**
 Definisikan interface minimal yang dibutuhkan di file `service/academic_event_service.go` sendiri:
@@ -269,7 +269,7 @@ Proses (dalam transaction):
   (Tidak ada efek ke tagihan)
 ```
 
-- [ ] Implementasi `processClassChange` di service
+- [x] Implementasi `processClassChange` di service
 
 ---
 
@@ -293,7 +293,7 @@ Proses (dalam transaction):
      (registrasi tahunan + monthly dari bulan start_date s/d akhir tahun ajaran)
 ```
 
-- [ ] Implementasi `processTransferIn` di service
+- [x] Implementasi `processTransferIn` di service
 
 ---
 
@@ -314,13 +314,13 @@ Proses (dalam transaction):
      (UPDATE invoices SET notes='frozen - siswa keluar' WHERE status != 'paid')
 ```
 
-- [ ] Implementasi `processWithdrawal` di service
+- [x] Implementasi `processWithdrawal` di service
 
 ---
 
 #### Handler
 
-- [ ] `handler/academic_event_handler.go`
+- [x] `handler/academic_event_handler.go`
 
 ```go
 type AcademicEventHandler struct {
@@ -339,7 +339,7 @@ Graduation dan Promotion mengembalikan summary result (bukan hanya message).
 
 #### Route
 
-- [ ] Register di `main.go`:
+- [x] Register di `main.go`:
 
 ```go
 events := api.Group("/academic-events", jwtMiddleware,
@@ -359,7 +359,7 @@ events.POST("/withdrawals", academicEventHandler.Withdrawal)
 
 #### Model
 
-- [ ] `model/fee_config.go`
+- [x] `model/fee_config.go`
 
 ```go
 type FeeConfig struct {
@@ -373,7 +373,7 @@ type FeeConfig struct {
 }
 ```
 
-- [ ] `model/fee_config_item.go`
+- [x] `model/fee_config_item.go`
 
 ```go
 type FeeConfigItem struct {
@@ -401,7 +401,7 @@ type FeeConfigItem struct {
 
 #### DTO
 
-- [ ] `dto/fee_config.go`
+- [x] `dto/fee_config.go`
 
 ```go
 // FeeConfig
@@ -453,7 +453,7 @@ type FeeConfigItemQueryParams struct {
 
 #### Repository
 
-- [ ] `repository/fee_config_repository.go`
+- [x] `repository/fee_config_repository.go`
 
 ```go
 type FeeConfigRepository interface {
@@ -465,7 +465,7 @@ type FeeConfigRepository interface {
 }
 ```
 
-- [ ] `repository/fee_config_item_repository.go`
+- [x] `repository/fee_config_item_repository.go`
 
 ```go
 type FeeConfigItemRepository interface {
@@ -484,7 +484,7 @@ type FeeConfigItemRepository interface {
 
 #### Service
 
-- [ ] `service/fee_config_service.go`
+- [x] `service/fee_config_service.go`
 
 ```go
 type FeeConfigService interface {
@@ -509,7 +509,7 @@ Logika bisnis:
 
 #### Handler
 
-- [ ] `handler/fee_config_handler.go`
+- [x] `handler/fee_config_handler.go`
 
 ```go
 type FeeConfigHandler struct {
@@ -528,7 +528,7 @@ func (h *FeeConfigHandler) DeleteItem(c echo.Context) error {}
 
 #### Route
 
-- [ ] Register di `main.go`:
+- [x] Register di `main.go`:
 
 ```go
 feeConfigs := api.Group("/fee-configs", jwtMiddleware,
@@ -547,7 +547,7 @@ feeConfigs.DELETE("/:id/items/:item_id", feeConfigHandler.DeleteItem)
 
 ### 3. Auto-Migrate Update
 
-- [ ] Tambahkan model baru ke `config/database.go`:
+- [x] Tambahkan model baru ke `config/database.go`:
 
 ```go
 db.AutoMigrate(
@@ -559,7 +559,7 @@ db.AutoMigrate(
 // StudentAcademicEvent & StudentEnrollment sudah di-migrate Batch 3
 ```
 
-- [ ] Tambahkan unique constraint fee config item:
+- [x] Tambahkan unique constraint fee config item:
 
 ```go
 db.Exec(`ALTER TABLE fee_config_items
@@ -664,39 +664,39 @@ if classGroup.Name != "Intan 1" && classGroup.Name != "Intan 8" {
 
 ### Academic Events
 
-- [ ] `POST /academic-events/promotions`:
+- [x] `POST /academic-events/promotions`:
   - Siswa Mutiara → enrollment baru di Intan di `to_academic_year_id`
   - Siswa Intan → enrollment baru di Berlian
   - Siswa Berlian di-skip (tidak diproses)
   - Siswa di `retained_student_ids` → enrollment baru di level yang sama
   - Response mengembalikan `{promoted, retained, errors}`
   - Jika sudah diproses sebelumnya → kembalikan 422
-- [ ] `POST /academic-events/graduations`:
+- [x] `POST /academic-events/graduations`:
   - Hanya bisa untuk siswa berlian aktif
   - `student_academic_events` ter-insert untuk setiap siswa
   - `students.status` berubah menjadi `graduated`
   - Endpoint mengembalikan `501` hingga Batch 5 di-wire (graduation invoice & savings)
-- [ ] `POST /academic-events/class-changes`:
+- [x] `POST /academic-events/class-changes`:
   - Validasi level rombel asal dan tujuan harus sama
   - Enrollment lama ditutup, enrollment baru dibuat
   - Tidak ada perubahan ke tagihan
-- [ ] `POST /academic-events/transfers`:
+- [x] `POST /academic-events/transfers`:
   - Hanya ke `intan` level
   - Hanya ke rombel bernama `Intan 1` atau `Intan 8`
   - Enrollment baru dibuat dengan `start_date` sesuai request
-- [ ] `POST /academic-events/withdrawals`:
+- [x] `POST /academic-events/withdrawals`:
   - `students.status` berubah sesuai `event_type`
   - Enrollment aktif ditutup
   - `student_academic_events` ter-insert
 
 ### Fee Configs
 
-- [ ] `POST /fee-configs` → gagal 409 jika `academic_year_id` sudah punya konfigurasi
-- [ ] `GET /fee-configs/:id` → response menyertakan `items`
-- [ ] `POST /fee-configs/:id/items` → gagal 409 jika kombinasi `(item_key, level, gender)` sudah ada
-- [ ] `DELETE /fee-configs/:id/items/:item_id` → gagal 422 jika item sudah dipakai invoice
-- [ ] `GET /fee-configs/:id/items` → filter `category`, `level`, `gender` berfungsi
-- [ ] Seluruh endpoint fee-configs hanya bisa diakses `superadmin`; role lain → 403
+- [x] `POST /fee-configs` → gagal 409 jika `academic_year_id` sudah punya konfigurasi
+- [x] `GET /fee-configs/:id` → response menyertakan `items`
+- [x] `POST /fee-configs/:id/items` → gagal 409 jika kombinasi `(item_key, level, gender)` sudah ada
+- [x] `DELETE /fee-configs/:id/items/:item_id` → gagal 422 jika item sudah dipakai invoice
+- [x] `GET /fee-configs/:id/items` → filter `category`, `level`, `gender` berfungsi
+- [x] Seluruh endpoint fee-configs hanya bisa diakses `superadmin`; role lain → 403
 
 ### Seed Data Rekomendasi
 

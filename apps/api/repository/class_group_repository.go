@@ -13,6 +13,7 @@ type ClassGroupRepository interface {
 	Create(cg *model.ClassGroup) error
 	Update(cg *model.ClassGroup) error
 	Delete(id uint) error
+	WithTx(tx *gorm.DB) ClassGroupRepository
 	HasActiveStudents(id uint) (bool, error)
 	CountStudents(id uint) (int, error)
 }
@@ -57,6 +58,11 @@ func (r *classGroupRepository) Update(cg *model.ClassGroup) error {
 func (r *classGroupRepository) Delete(id uint) error {
 	return r.db.Delete(&model.ClassGroup{}, id).Error
 }
+
+func (r *classGroupRepository) WithTx(tx *gorm.DB) ClassGroupRepository {
+	return &classGroupRepository{db: tx}
+}
+
 
 func (r *classGroupRepository) HasActiveStudents(id uint) (bool, error) {
 	// TODO: Check against enrollments table in Batch 3

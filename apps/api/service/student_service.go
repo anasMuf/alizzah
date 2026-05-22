@@ -26,10 +26,16 @@ type StudentService interface {
 
 type studentService struct {
 	studentRepo repository.StudentRepository
+	invoiceRepo repository.InvoiceRepository
+	savingsService SavingsService
 }
 
-func NewStudentService(studentRepo repository.StudentRepository) StudentService {
-	return &studentService{studentRepo: studentRepo}
+func NewStudentService(studentRepo repository.StudentRepository, invoiceRepo repository.InvoiceRepository, savingsService SavingsService) StudentService {
+	return &studentService{
+		studentRepo:    studentRepo,
+		invoiceRepo:    invoiceRepo,
+		savingsService: savingsService,
+	}
 }
 
 func (s *studentService) GetAll(params dto.StudentQueryParams) ([]dto.StudentListResponse, *dto.Meta, error) {
@@ -69,7 +75,25 @@ func (s *studentService) GetByID(id uint) (*dto.StudentDetailResponse, error) {
 		return nil, err
 	}
 
-	return mapStudentToDetailResponse(*student), nil
+	resp := mapStudentToDetailResponse(*student)
+
+	// Fill financial summary
+	if s.invoiceRepo != nil {
+		unpaidTotal, _ := s.invoiceRepo.SumUnpaidByStudent(id)
+		generalBal := float64(0)
+		mandatoryBal := float64(0)
+		if s.savingsService != nil {
+			generalBal, _ = s.savingsService.GetBalance(id, "general")
+			mandatoryBal, _ = s.savingsService.GetBalance(id, "mandatory")
+		}
+		resp.FinancialSummary = &dto.FinancialSummaryResponse{
+			TotalUnpaid:             unpaidTotal,
+			SavingsGeneralBalance:   generalBal,
+			SavingsMandatoryBalance: mandatoryBal,
+		}
+	}
+
+	return resp, nil
 }
 
 func (s *studentService) Create(req dto.CreateStudentRequest) (*dto.StudentDetailResponse, error) {

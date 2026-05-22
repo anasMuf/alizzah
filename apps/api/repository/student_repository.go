@@ -15,6 +15,10 @@ type StudentRepository interface {
 	Delete(id uint) error
 	HasActiveEnrollment(id uint) (bool, error)
 	BulkCreate(students []model.Student) (int, []dto.ImportResult, error)
+	// Batch 4 additions
+	WithTx(tx *gorm.DB) StudentRepository
+	UpdateStatus(id uint, status string) error
+	FindByIDs(ids []uint) ([]model.Student, error)
 }
 
 type studentRepository struct {
@@ -108,3 +112,21 @@ func (r *studentRepository) BulkCreate(students []model.Student) (int, []dto.Imp
 
 	return successCount, results, err
 }
+
+func (r *studentRepository) WithTx(tx *gorm.DB) StudentRepository {
+	return &studentRepository{db: tx}
+}
+
+func (r *studentRepository) UpdateStatus(id uint, status string) error {
+	return r.db.Model(&model.Student{}).Where("id = ?", id).Update("status", status).Error
+}
+
+func (r *studentRepository) FindByIDs(ids []uint) ([]model.Student, error) {
+	var students []model.Student
+	if len(ids) == 0 {
+		return students, nil
+	}
+	err := r.db.Where("id IN ?", ids).Find(&students).Error
+	return students, err
+}
+

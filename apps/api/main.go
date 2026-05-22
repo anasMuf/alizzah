@@ -51,6 +51,22 @@ func main() {
 		&model.StudentExtracurricular{},
 		&model.StudentAcademicEvent{},
 		&model.DaycareEnrollment{},
+		// Batch 4
+		&model.FeeConfig{},
+		&model.FeeConfigItem{},
+		// Batch 5
+		&model.Invoice{},
+		&model.InvoiceItem{},
+		&model.InvoiceInstallment{},
+		// Batch 6
+		&model.Payment{},
+		&model.PaymentItem{},
+		&model.StudentSavings{},
+		&model.SavingsTransaction{},
+		&model.ExpenseCategory{},
+		&model.Expense{},
+		&model.CashTransaction{},
+		&model.VaultTransaction{},
 	); err != nil {
 		log.Fatal("Gagal AutoMigrate:", err)
 	}
@@ -68,6 +84,7 @@ func main() {
 
 	// Seed data
 	seeders.SeedSuperAdmin(db)
+	seeders.SeedExpenseCategories(db)
 
 	// Initialize Echo
 	e := echo.New()
@@ -104,21 +121,58 @@ func main() {
 	eventRepo := repository.NewStudentAcademicEventRepository(db)
 	daycareRepo := repository.NewDaycareEnrollmentRepository(db)
 
+	// Batch 4
+	fcRepo := repository.NewFeeConfigRepository(db)
+	fcItemRepo := repository.NewFeeConfigItemRepository(db)
+
+	// Batch 5
+	invoiceRepo := repository.NewInvoiceRepository(db)
+	invoiceItemRepo := repository.NewInvoiceItemRepository(db)
+	invoiceInstallmentRepo := repository.NewInvoiceInstallmentRepository(db)
+
+	// Batch 6
+	paymentRepo := repository.NewPaymentRepository(db)
+	paymentItemRepo := repository.NewPaymentItemRepository(db)
+	savingsRepo := repository.NewStudentSavingsRepository(db)
+	savingsTxnRepo := repository.NewSavingsTransactionRepository(db)
+	expCatRepo := repository.NewExpenseCategoryRepository(db)
+	expenseRepo := repository.NewExpenseRepository(db)
+	cashTxnRepo := repository.NewCashTransactionRepository(db)
+	vaultTxnRepo := repository.NewVaultTransactionRepository(db)
+
 	// Services
 	authService := service.NewAuthService(userRepo)
 	userService := service.NewUserService(userRepo)
 	ayService := service.NewAcademicYearService(ayRepo)
-	studentService := service.NewStudentService(studentRepo)
 	guardianService := service.NewGuardianService(guardianRepo, studentRepo)
 	classGroupService := service.NewClassGroupService(classGroupRepo)
 
-	// Batch 3
+	// Batch 5: create generate service first (other services depend on it)
+	invoiceGenService := service.NewInvoiceGenerateService(db, invoiceRepo, invoiceItemRepo, fcRepo, fcItemRepo, effectiveDayRepo, enrollmentRepo, extracurricularRepo, seRepo)
+	invoiceService := service.NewInvoiceService(invoiceRepo, invoiceItemRepo, invoiceInstallmentRepo)
+
+	// Batch 6: create transaction infrastructure first
+	txnWriterService := service.NewTransactionWriterService(cashTxnRepo, vaultTxnRepo)
+	savingsService := service.NewSavingsService(db, savingsRepo, savingsTxnRepo, fcRepo, ayRepo, txnWriterService)
+	paymentService := service.NewPaymentService(db, paymentRepo, paymentItemRepo, invoiceItemRepo, invoiceService, savingsRepo, savingsTxnRepo, studentRepo, txnWriterService)
+	expCatService := service.NewExpenseCategoryService(expCatRepo)
+	expenseService := service.NewExpenseService(db, expenseRepo, expCatRepo, ayRepo, txnWriterService)
+
+	// Batch 3 (updated with Batch 5+6 dependencies)
+	studentService := service.NewStudentService(studentRepo, invoiceRepo, savingsService)
 	enrollmentService := service.NewStudentEnrollmentService(enrollmentRepo, studentRepo, classGroupRepo)
-	effectiveDayService := service.NewEffectiveDayService(effectiveDayRepo, classGroupRepo)
+	effectiveDayService := service.NewEffectiveDayService(effectiveDayRepo, classGroupRepo, invoiceGenService)
 	extracurricularService := service.NewExtracurricularService(extracurricularRepo)
-	seService := service.NewStudentExtracurricularService(seRepo, studentRepo, extracurricularRepo, ayRepo)
+	seService := service.NewStudentExtracurricularService(seRepo, studentRepo, extracurricularRepo, ayRepo, invoiceGenService)
 	eventService := service.NewStudentAcademicEventService(eventRepo, studentRepo)
 	daycareService := service.NewDaycareEnrollmentService(daycareRepo, studentRepo, ayRepo)
+
+	// Batch 4
+	fcService := service.NewFeeConfigService(fcRepo, fcItemRepo, ayRepo)
+
+	// Batch 4 — graduation
+	academicService := service.NewAcademicEventService(db, enrollmentRepo, studentRepo, eventRepo, classGroupRepo, ayRepo, nil, nil)
+	// TODO(batch-6-graduation): wire InvoiceCreator and SavingsManager after implementing the adapter
 
 	// Handlers
 	authHandler := handler.NewAuthHandler(authService)
@@ -133,8 +187,20 @@ func main() {
 	effectiveDayHandler := handler.NewEffectiveDayHandler(effectiveDayService)
 	extracurricularHandler := handler.NewExtracurricularHandler(extracurricularService)
 	seHandler := handler.NewStudentExtracurricularHandler(seService)
-	eventHandler := handler.NewAcademicEventHandler(eventService)
+	eventHandler := handler.NewAcademicEventHandler(eventService, academicService)
 	daycareHandler := handler.NewDaycareEnrollmentHandler(daycareService)
+
+	// Batch 4
+	feeConfigHandler := handler.NewFeeConfigHandler(fcService)
+
+	// Batch 5
+	invoiceHandler := handler.NewInvoiceHandler(invoiceService)
+
+	// Batch 6
+	paymentHandler := handler.NewPaymentHandler(paymentService)
+	savingsHandler := handler.NewSavingsHandler(savingsService)
+	expCatHandler := handler.NewExpenseCategoryHandler(expCatService)
+	expenseHandler := handler.NewExpenseHandler(expenseService)
 
 	// =====================
 	// Routes — /api/v1
@@ -223,6 +289,67 @@ func main() {
 	daycare.GET("/:id", daycareHandler.Get)
 	daycare.PUT("/:id", daycareHandler.Update)
 	daycare.PATCH("/:id/status", daycareHandler.UpdateStatus)
+
+	// Batch 4: Academic Events
+	events := api.Group("/academic-events", middleware.JWTAuth, middleware.RequireRoles("superadmin", "admin_administrasi"))
+	events.POST("/promotions", eventHandler.Promotion)
+	events.POST("/graduations", eventHandler.Graduation)
+	events.POST("/class-changes", eventHandler.ClassChange)
+	events.POST("/transfers", eventHandler.TransferIn)
+	events.POST("/withdrawals", eventHandler.Withdrawal)
+
+	// Batch 4: Fee Configs
+	feeConfigs := api.Group("/fee-configs", middleware.JWTAuth, middleware.RequireRoles("superadmin"))
+	feeConfigs.GET("", feeConfigHandler.List)
+	feeConfigs.POST("", feeConfigHandler.Create)
+	feeConfigs.GET("/:id", feeConfigHandler.Get)
+	feeConfigs.PUT("/:id", feeConfigHandler.Update)
+	feeConfigs.GET("/:id/items", feeConfigHandler.ListItems)
+	feeConfigs.POST("/:id/items", feeConfigHandler.CreateItem)
+	feeConfigs.PUT("/:id/items/:item_id", feeConfigHandler.UpdateItem)
+	feeConfigs.DELETE("/:id/items/:item_id", feeConfigHandler.DeleteItem)
+
+	// Batch 5: Invoices
+	invoices := api.Group("/invoices", middleware.JWTAuth, middleware.RequireRoles("superadmin", "admin_keuangan"))
+	invoices.GET("", invoiceHandler.List)
+	invoices.GET("/:id", invoiceHandler.Get)
+	invoices.POST("/:id/items", invoiceHandler.AddItem)
+	invoices.PUT("/:id/items/:item_id", invoiceHandler.UpdateItem)
+	invoices.DELETE("/:id/items/:item_id", invoiceHandler.DeleteItem)
+	invoices.GET("/:id/installments", invoiceHandler.GetInstallments)
+	invoices.POST("/:id/installments", invoiceHandler.CreateInstallments)
+	invoices.PUT("/:id/installments/:inst_id", invoiceHandler.UpdateInstallment)
+	invoices.DELETE("/:id/installments/:inst_id", invoiceHandler.DeleteInstallment)
+
+	// Batch 5: Student invoices (nested)
+	students.GET("/:id/invoices", invoiceHandler.GetByStudent, middleware.RequireRoles("superadmin", "admin_keuangan"))
+
+	// Batch 6: Payments
+	payments := api.Group("/payments", middleware.JWTAuth, middleware.RequireRoles("superadmin", "admin_keuangan"))
+	payments.GET("", paymentHandler.List)
+	payments.POST("", paymentHandler.Create)
+	payments.GET("/:id", paymentHandler.Get)
+	students.GET("/:id/payments", paymentHandler.GetByStudent, middleware.RequireRoles("superadmin", "admin_keuangan"))
+
+	// Batch 6: Savings (nested under students)
+	students.GET("/:id/savings", savingsHandler.GetByStudent, middleware.RequireRoles("superadmin", "admin_keuangan"))
+	students.GET("/:id/savings/transactions", savingsHandler.GetTransactions, middleware.RequireRoles("superadmin", "admin_keuangan"))
+	students.POST("/:id/savings/withdrawals", savingsHandler.GuardianWithdrawal, middleware.RequireRoles("superadmin", "admin_keuangan"))
+
+	// Batch 6: Expense Categories
+	expCats := api.Group("/expense-categories", middleware.JWTAuth)
+	expCats.GET("", expCatHandler.List, middleware.RequireRoles("superadmin", "admin_keuangan"))
+	expCats.POST("", expCatHandler.Create, middleware.RequireRoles("superadmin", "admin_keuangan"))
+	expCats.PUT("/:id", expCatHandler.Update, middleware.RequireRoles("superadmin"))
+	expCats.DELETE("/:id", expCatHandler.Delete, middleware.RequireRoles("superadmin"))
+
+	// Batch 6: Expenses
+	expenses := api.Group("/expenses", middleware.JWTAuth, middleware.RequireRoles("superadmin", "admin_keuangan"))
+	expenses.GET("", expenseHandler.List)
+	expenses.POST("", expenseHandler.Create)
+	expenses.GET("/:id", expenseHandler.Get)
+	expenses.PUT("/:id", expenseHandler.Update)
+	expenses.DELETE("/:id", expenseHandler.Delete)
 
 	// Start server
 	port := os.Getenv("PORT")

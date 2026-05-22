@@ -18,12 +18,14 @@ type EffectiveDayService interface {
 type effectiveDayService struct {
 	effectiveDayRepo repository.EffectiveDayRepository
 	classGroupRepo   repository.ClassGroupRepository
+	invoiceGen       InvoiceGenerateService
 }
 
-func NewEffectiveDayService(effectiveDayRepo repository.EffectiveDayRepository, classGroupRepo repository.ClassGroupRepository) EffectiveDayService {
+func NewEffectiveDayService(effectiveDayRepo repository.EffectiveDayRepository, classGroupRepo repository.ClassGroupRepository, invoiceGen InvoiceGenerateService) EffectiveDayService {
 	return &effectiveDayService{
 		effectiveDayRepo: effectiveDayRepo,
 		classGroupRepo:   classGroupRepo,
+		invoiceGen:       invoiceGen,
 	}
 }
 
@@ -72,7 +74,10 @@ func (s *effectiveDayService) Upsert(classGroupID uint, createdBy uint, req dto.
 	// Fetch again to ensure preload
 	savedEd, _ := s.effectiveDayRepo.FindByClassGroupMonthYear(classGroupID, req.Month, req.Year)
 
-	// TODO(batch-5): trigger recalculate infaq harian di invoice bulan tersebut
+	// Batch 5: trigger recalculate infaq harian di invoice bulan tersebut
+	if s.invoiceGen != nil {
+		go s.invoiceGen.RecalculateInfaqHarian(classGroupID, req.Month, req.Year)
+	}
 
 	return mapEffectiveDayToResponse(*savedEd), nil
 }
@@ -99,7 +104,10 @@ func (s *effectiveDayService) Update(classGroupID, edID uint, req dto.UpsertEffe
 	// Fetch again for preloads
 	savedEd, _ := s.effectiveDayRepo.FindByClassGroupMonthYear(classGroupID, req.Month, req.Year)
 
-	// TODO(batch-5): trigger recalculate infaq harian di invoice bulan tersebut
+	// Batch 5: trigger recalculate infaq harian di invoice bulan tersebut
+	if s.invoiceGen != nil {
+		go s.invoiceGen.RecalculateInfaqHarian(classGroupID, req.Month, req.Year)
+	}
 
 	return mapEffectiveDayToResponse(*savedEd), nil
 }

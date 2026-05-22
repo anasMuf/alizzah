@@ -45,7 +45,7 @@ Membangun seluruh alur transaksi uang masuk (pembayaran tagihan + setoran tabung
 
 #### Payments
 
-- [ ] `model/payment.go`
+- [x] `model/payment.go`
 
 ```go
 type Payment struct {
@@ -67,7 +67,7 @@ type Payment struct {
 }
 ```
 
-- [ ] `model/payment_item.go`
+- [x] `model/payment_item.go`
 
 ```go
 type PaymentItem struct {
@@ -85,7 +85,7 @@ type PaymentItem struct {
 
 #### Savings
 
-- [ ] `model/student_savings.go`
+- [x] `model/student_savings.go`
 
 ```go
 type StudentSavings struct {
@@ -102,7 +102,7 @@ type StudentSavings struct {
 // UNIQUE constraint: (student_id, type)
 ```
 
-- [ ] `model/savings_transaction.go`
+- [x] `model/savings_transaction.go`
 
 ```go
 type SavingsTransaction struct {
@@ -128,7 +128,7 @@ type SavingsTransaction struct {
 
 #### Expense
 
-- [ ] `model/expense_category.go`
+- [x] `model/expense_category.go`
 
 ```go
 type ExpenseCategory struct {
@@ -142,7 +142,7 @@ type ExpenseCategory struct {
 }
 ```
 
-- [ ] `model/expense.go`
+- [x] `model/expense.go`
 
 ```go
 type Expense struct {
@@ -164,7 +164,7 @@ type Expense struct {
 
 #### Cash & Vault (model saja — endpoint di Batch 7)
 
-- [ ] `model/cash_transaction.go`
+- [x] `model/cash_transaction.go`
 
 ```go
 type CashTransaction struct {
@@ -186,7 +186,7 @@ type CashTransaction struct {
 }
 ```
 
-- [ ] `model/vault_transaction.go`
+- [x] `model/vault_transaction.go`
 
 ```go
 type VaultTransaction struct {
@@ -212,7 +212,7 @@ type VaultTransaction struct {
 
 ### 2. DTO
 
-- [ ] `dto/payment.go`
+- [x] `dto/payment.go`
 
 ```go
 // Query
@@ -279,7 +279,7 @@ type PaymentItemResponse struct {
 }
 ```
 
-- [ ] `dto/savings.go`
+- [x] `dto/savings.go`
 
 ```go
 // Query
@@ -329,7 +329,7 @@ type WithdrawalResponse struct {
 }
 ```
 
-- [ ] `dto/expense.go`
+- [x] `dto/expense.go`
 
 ```go
 // Query
@@ -387,7 +387,7 @@ type ExpenseCategoryBrief struct {
 
 ### 3. Repository
 
-- [ ] `repository/payment_repository.go`
+- [x] `repository/payment_repository.go`
 
 ```go
 type PaymentRepository interface {
@@ -398,7 +398,7 @@ type PaymentRepository interface {
 }
 ```
 
-- [ ] `repository/payment_item_repository.go`
+- [x] `repository/payment_item_repository.go`
 
 ```go
 type PaymentItemRepository interface {
@@ -407,7 +407,7 @@ type PaymentItemRepository interface {
 }
 ```
 
-- [ ] `repository/student_savings_repository.go`
+- [x] `repository/student_savings_repository.go`
 
 ```go
 type StudentSavingsRepository interface {
@@ -424,7 +424,7 @@ type StudentSavingsRepository interface {
 }
 ```
 
-- [ ] `repository/savings_transaction_repository.go`
+- [x] `repository/savings_transaction_repository.go`
 
 ```go
 type SavingsTransactionRepository interface {
@@ -434,7 +434,7 @@ type SavingsTransactionRepository interface {
 }
 ```
 
-- [ ] `repository/expense_category_repository.go`
+- [x] `repository/expense_category_repository.go`
 
 ```go
 type ExpenseCategoryRepository interface {
@@ -449,7 +449,7 @@ type ExpenseCategoryRepository interface {
 }
 ```
 
-- [ ] `repository/expense_repository.go`
+- [x] `repository/expense_repository.go`
 
 ```go
 type ExpenseRepository interface {
@@ -463,7 +463,7 @@ type ExpenseRepository interface {
 }
 ```
 
-- [ ] `repository/cash_transaction_repository.go` *(stub — dipakai Batch 7 untuk full impl)*
+- [x] `repository/cash_transaction_repository.go` *(stub — dipakai Batch 7 untuk full impl)*
 
 ```go
 type CashTransactionRepository interface {
@@ -474,7 +474,7 @@ type CashTransactionRepository interface {
 }
 ```
 
-- [ ] `repository/vault_transaction_repository.go` *(stub)*
+- [x] `repository/vault_transaction_repository.go` *(stub)*
 
 ```go
 type VaultTransactionRepository interface {
@@ -545,7 +545,7 @@ type TransactionWriterService interface {
 
 ### 5. Payment Service
 
-- [ ] `service/payment_service.go`
+- [x] `service/payment_service.go`
 
 ```go
 type PaymentService interface {
@@ -645,7 +645,7 @@ func (s *paymentService) Create(createdBy uint, req dto.CreatePaymentRequest) (*
 
 ### 6. Savings Service
 
-- [ ] `service/savings_service.go`
+- [x] `service/savings_service.go`
 
 ```go
 type SavingsService interface {
@@ -704,7 +704,7 @@ func (s *savingsService) InitForNewStudent(studentID uint, level string, tx *gor
 
 ### 7. Expense Category Service
 
-- [ ] `service/expense_category_service.go`
+- [x] `service/expense_category_service.go`
 
 ```go
 type ExpenseCategoryService interface {
@@ -738,7 +738,7 @@ var defaultCategories = []struct {
 
 ### 8. Expense Service
 
-- [ ] `service/expense_service.go`
+- [x] `service/expense_service.go`
 
 ```go
 type ExpenseService interface {
@@ -777,7 +777,7 @@ Dalam transaction:
 
 Setelah `SavingsService` selesai, buka kembali:
 
-- [ ] `service/invoice_generate_service.go` (graduation):
+- [x] `service/invoice_generate_service.go` (graduation):
 
 ```go
 // Ganti stub dengan implementasi nyata
@@ -789,14 +789,14 @@ balance, _ := s.savingsService.GetBalance(studentID, "mandatory")
 // lanjutkan alokasi graduation...
 ```
 
-- [ ] `service/student_enrollment_service.go` atau `academic_event_service.go`:
+- [x] `service/student_enrollment_service.go` atau `academic_event_service.go`:
 
 ```go
 // Setelah INSERT enrollment baru (siswa baru pertama kali):
 s.savingsService.InitForNewStudent(studentID, level, tx)
 ```
 
-- [ ] Update `financial_summary` di student detail (dari Batch 5 TODO):
+- [x] Update `financial_summary` di student detail (dari Batch 5 TODO):
 
 ```go
 generalBalance, _ := s.savingsService.GetBalance(studentID, "general")
@@ -807,7 +807,7 @@ mandatoryBalance, _ := s.savingsService.GetBalance(studentID, "mandatory")
 
 ### 10. Handler
 
-- [ ] `handler/payment_handler.go`
+- [x] `handler/payment_handler.go`
 
 ```go
 func (h *PaymentHandler) List(c echo.Context) error         {}
@@ -816,7 +816,7 @@ func (h *PaymentHandler) Get(c echo.Context) error          {}
 func (h *PaymentHandler) GetByStudent(c echo.Context) error {}
 ```
 
-- [ ] `handler/savings_handler.go`
+- [x] `handler/savings_handler.go`
 
 ```go
 func (h *SavingsHandler) GetByStudent(c echo.Context) error     {}
@@ -824,7 +824,7 @@ func (h *SavingsHandler) GetTransactions(c echo.Context) error  {}
 func (h *SavingsHandler) GuardianWithdrawal(c echo.Context) error {}
 ```
 
-- [ ] `handler/expense_category_handler.go`
+- [x] `handler/expense_category_handler.go`
 
 ```go
 func (h *ExpenseCategoryHandler) List(c echo.Context) error   {}
@@ -833,7 +833,7 @@ func (h *ExpenseCategoryHandler) Update(c echo.Context) error {}
 func (h *ExpenseCategoryHandler) Delete(c echo.Context) error {}
 ```
 
-- [ ] `handler/expense_handler.go`
+- [x] `handler/expense_handler.go`
 
 ```go
 func (h *ExpenseHandler) List(c echo.Context) error   {}
@@ -847,7 +847,7 @@ func (h *ExpenseHandler) Delete(c echo.Context) error {}
 
 ### 11. Route
 
-- [ ] Register di `main.go`:
+- [x] Register di `main.go`:
 
 ```go
 // Payments
@@ -893,7 +893,7 @@ expenses.DELETE("/:id", expenseHandler.Delete)
 
 ### 12. Auto-Migrate Update
 
-- [ ] Tambahkan model baru ke `config/database.go`:
+- [x] Tambahkan model baru ke `config/database.go`:
 
 ```go
 db.AutoMigrate(
@@ -911,7 +911,7 @@ db.AutoMigrate(
 )
 ```
 
-- [ ] Unique constraint student savings:
+- [x] Unique constraint student savings:
 
 ```go
 db.Exec(`ALTER TABLE student_savings
@@ -984,48 +984,48 @@ Semua repository yang dipakai dalam transaction harus support `WithTx`. Pastikan
 
 ### Payments
 
-- [ ] `POST /payments` dengan `source=cash`:
+- [x] `POST /payments` dengan `source=cash`:
   - `payment_items` ter-insert per item
   - `invoice_items.paid_amount` terupdate
   - `invoices.status` berubah ke `partial` atau `paid` sesuai kondisi
   - `cash_transactions` credit ter-insert otomatis
-- [ ] `POST /payments` dengan `source=savings`:
+- [x] `POST /payments` dengan `source=savings`:
   - Validasi saldo tabungan umum mencukupi
   - `savings_transactions` debit ter-insert
   - `student_savings.balance` berkurang
   - `vault_transactions` debit ter-insert
-- [ ] `POST /payments` dengan `savings_deposit`:
+- [x] `POST /payments` dengan `savings_deposit`:
   - `savings_transactions` credit ter-insert
   - `student_savings.balance` bertambah
   - `vault_transactions` credit ter-insert
-- [ ] `POST /payments` dengan `amount` melebihi sisa tagihan item → 422
-- [ ] `GET /payments` → filter `student_id`, `source`, `start_date`, `end_date` berfungsi
-- [ ] `GET /payments/:id` → response menyertakan `items` dengan `invoice_item_name`
+- [x] `POST /payments` dengan `amount` melebihi sisa tagihan item → 422
+- [x] `GET /payments` → filter `student_id`, `source`, `start_date`, `end_date` berfungsi
+- [x] `GET /payments/:id` → response menyertakan `items` dengan `invoice_item_name`
 
 ### Savings
 
-- [ ] `GET /students/:id/savings` → mengembalikan saldo `general` dan `mandatory` (null jika tidak ada)
-- [ ] `POST /students/:id/savings/withdrawals`:
+- [x] `GET /students/:id/savings` → mengembalikan saldo `general` dan `mandatory` (null jika tidak ada)
+- [x] `POST /students/:id/savings/withdrawals`:
   - Admin fee dihitung dari `fee_config.savings_admin_rate`
   - `savings_transactions` debit ter-insert dengan `admin_fee` yang benar
   - `vault_transactions` debit ter-insert dengan `net_amount`
   - Response mengembalikan `remaining_balance` setelah penarikan
-- [ ] `POST /students/:id/savings/withdrawals` dengan `amount > balance` → 422
-- [ ] `GET /students/:id/savings/transactions` → filter `type`, `start_date`, `end_date` berfungsi
+- [x] `POST /students/:id/savings/withdrawals` dengan `amount > balance` → 422
+- [x] `GET /students/:id/savings/transactions` → filter `type`, `start_date`, `end_date` berfungsi
 
 ### Expenses
 
-- [ ] `POST /expense-categories` dengan `parent_id` level 3 → 422 (hanya 2 level diizinkan)
-- [ ] `DELETE /expense-categories/:id` → gagal 422 jika punya children atau sudah dipakai expenses
-- [ ] `GET /expense-categories` → mengembalikan tree (root + children)
-- [ ] `POST /expenses` → gagal 422 jika `expense_category_id` adalah root (bukan leaf)
-- [ ] `POST /expenses` → `cash_transactions` debit ter-insert otomatis
-- [ ] `PUT /expenses/:id` pada tanggal yang sudah terkunci → 422 *(bisa diabaikan sementara jika Batch 7 belum selesai)*
-- [ ] Expense category seeder default ter-insert
+- [x] `POST /expense-categories` dengan `parent_id` level 3 → 422 (hanya 2 level diizinkan)
+- [x] `DELETE /expense-categories/:id` → gagal 422 jika punya children atau sudah dipakai expenses
+- [x] `GET /expense-categories` → mengembalikan tree (root + children)
+- [x] `POST /expenses` → gagal 422 jika `expense_category_id` adalah root (bukan leaf)
+- [x] `POST /expenses` → `cash_transactions` debit ter-insert otomatis
+- [x] `PUT /expenses/:id` pada tanggal yang sudah terkunci → 422 *(bisa diabaikan sementara jika Batch 7 belum selesai)*
+- [x] Expense category seeder default ter-insert
 
 ### Graduation Wire (dari Batch 4)
 
-- [ ] `POST /academic-events/graduations` sudah tidak lagi mengembalikan 501
-- [ ] Alokasi tabungan wajib berlian berfungsi dengan benar:
+- [x] `POST /academic-events/graduations` sudah tidak lagi mengembalikan 501
+- [x] Alokasi tabungan wajib berlian berfungsi dengan benar:
   - Tabungan wajib = 480.000, biaya wisuda = 500.000 → sisa hutang 20.000 di invoice graduation
   - Tabungan wajib = 550.000, biaya wisuda = 500.000 → surplus 50.000 pindah ke tabungan umum

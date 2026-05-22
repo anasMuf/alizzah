@@ -22,14 +22,16 @@ type studentExtracurricularService struct {
 	studentRepo     repository.StudentRepository
 	exRepo          repository.ExtracurricularRepository
 	acRepo          repository.AcademicYearRepository
+	invoiceGen      InvoiceGenerateService
 }
 
-func NewStudentExtracurricularService(seRepo repository.StudentExtracurricularRepository, studentRepo repository.StudentRepository, exRepo repository.ExtracurricularRepository, acRepo repository.AcademicYearRepository) StudentExtracurricularService {
+func NewStudentExtracurricularService(seRepo repository.StudentExtracurricularRepository, studentRepo repository.StudentRepository, exRepo repository.ExtracurricularRepository, acRepo repository.AcademicYearRepository, invoiceGen InvoiceGenerateService) StudentExtracurricularService {
 	return &studentExtracurricularService{
 		seRepo:      seRepo,
 		studentRepo: studentRepo,
 		exRepo:      exRepo,
 		acRepo:      acRepo,
+		invoiceGen:  invoiceGen,
 	}
 }
 
@@ -91,7 +93,10 @@ func (s *studentExtracurricularService) Enroll(studentID uint, req dto.EnrollExt
 		return nil, err
 	}
 
-	// TODO(batch-5): tambahkan item tagihan pasta/calisan/ekskul ke invoice bulanan berikutnya
+	// Batch 5: tambahkan item tagihan pasta/calisan/ekskul ke invoice bulanan berikutnya
+	if s.invoiceGen != nil {
+		go s.invoiceGen.AddExtracurricularToNextMonthly(studentID, req.ExtracurricularID, req.AcademicYearID)
+	}
 
 	savedSe, _ := s.seRepo.FindByID(se.ID)
 	return mapStudentExtracurricularToResponse(*savedSe), nil
@@ -129,7 +134,10 @@ func (s *studentExtracurricularService) Unenroll(studentID, seID uint) error {
 		return err
 	}
 
-	// TODO(batch-5): hapus item tagihan dari invoice bulan depan jika belum dibayar
+	// Batch 5: hapus item tagihan dari invoice bulan depan jika belum dibayar
+	if s.invoiceGen != nil {
+		go s.invoiceGen.RemoveExtracurricularFromNextMonthly(studentID, se.ExtracurricularID, se.AcademicYearID)
+	}
 
 	return nil
 }

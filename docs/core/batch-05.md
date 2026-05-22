@@ -38,7 +38,7 @@ Membangun mesin generate tagihan otomatis dan seluruh CRUD invoice. Ini adalah b
 
 ### 1. Models
 
-- [ ] `model/invoice.go`
+- [x] `model/invoice.go`
 
 ```go
 type Invoice struct {
@@ -64,7 +64,7 @@ type Invoice struct {
 }
 ```
 
-- [ ] `model/invoice_item.go`
+- [x] `model/invoice_item.go`
 
 ```go
 type InvoiceItem struct {
@@ -85,7 +85,7 @@ type InvoiceItem struct {
 }
 ```
 
-- [ ] `model/invoice_installment.go`
+- [x] `model/invoice_installment.go`
 
 ```go
 type InvoiceInstallment struct {
@@ -106,7 +106,7 @@ type InvoiceInstallment struct {
 
 ### 2. DTO
 
-- [ ] `dto/invoice.go`
+- [x] `dto/invoice.go`
 
 ```go
 // Query
@@ -242,7 +242,7 @@ type GenerateGraduationInvoiceParams struct {
 
 ### 3. Repository
 
-- [ ] `repository/invoice_repository.go`
+- [x] `repository/invoice_repository.go`
 
 ```go
 type InvoiceRepository interface {
@@ -259,7 +259,7 @@ type InvoiceRepository interface {
 }
 ```
 
-- [ ] `repository/invoice_item_repository.go`
+- [x] `repository/invoice_item_repository.go`
 
 ```go
 type InvoiceItemRepository interface {
@@ -280,7 +280,7 @@ type InvoiceItemRepository interface {
 }
 ```
 
-- [ ] `repository/invoice_installment_repository.go`
+- [x] `repository/invoice_installment_repository.go`
 
 ```go
 type InvoiceInstallmentRepository interface {
@@ -579,7 +579,7 @@ RemoveExtracurricular:
 
 ### 5. Invoice Service (HTTP Endpoints)
 
-- [ ] `service/invoice_service.go`
+- [x] `service/invoice_service.go`
 
 ```go
 type InvoiceService interface {
@@ -649,7 +649,7 @@ func (s *invoiceService) RecalculateTotalAmount(invoiceID uint, tx *gorm.DB) err
 
 ### 6. Handler
 
-- [ ] `handler/invoice_handler.go`
+- [x] `handler/invoice_handler.go`
 
 ```go
 type InvoiceHandler struct {
@@ -672,7 +672,7 @@ func (h *InvoiceHandler) DeleteInstallment(c echo.Context) error  {}
 
 ### 7. Route
 
-- [ ] Register di `main.go`:
+- [x] Register di `main.go`:
 
 ```go
 invoices := api.Group("/invoices", jwtMiddleware,
@@ -698,7 +698,7 @@ students.GET("/:id/invoices", invoiceHandler.GetByStudent,
 
 Setelah `invoice_generate_service` selesai, kembali ke semua TODO dan wire:
 
-- [ ] `service/student_enrollment_service.go` — saat enrollment baru dibuat:
+- [x] `service/student_enrollment_service.go` — saat enrollment baru dibuat:
   ```go
   // Setelah INSERT student_enrollment
   switch enrollment.EnrollmentType {
@@ -718,19 +718,19 @@ Setelah `invoice_generate_service` selesai, kembali ke semua TODO dan wire:
   }
   ```
 
-- [ ] `service/effective_day_service.go` — setelah upsert:
+- [x] `service/effective_day_service.go` — setelah upsert:
   ```go
   // Hapus TODO, ganti dengan:
   s.invoiceGen.RecalculateInfaqHarian(classGroupID, month, year)
   ```
 
-- [ ] `service/student_extracurricular_service.go` — setelah enroll/unenroll:
+- [x] `service/student_extracurricular_service.go` — setelah enroll/unenroll:
   ```go
   s.invoiceGen.AddExtracurricularToNextMonthly(...)
   s.invoiceGen.RemoveExtracurricularFromNextMonthly(...)
   ```
 
-- [ ] `service/academic_event_service.go` — wire graduation:
+- [x] `service/academic_event_service.go` — wire graduation:
   ```go
   // Hapus komentar WIRE-BATCH-5 di main.go
   // Wire invoiceGenerateService ke academicEventService
@@ -800,7 +800,7 @@ func MonthRangeFromDate(startDate time.Time, academicYearEnd time.Time) []struct
 
 ### 10. Auto-Migrate Update
 
-- [ ] Tambahkan model baru ke `config/database.go`:
+- [x] Tambahkan model baru ke `config/database.go`:
 
 ```go
 db.AutoMigrate(
@@ -904,24 +904,24 @@ func (r *feeConfigItemRepo) FindByExtracurricular(
 
 ### Generate Engine
 
-- [ ] Saat siswa baru di-assign ke rombel → invoice `initial` dan `registration` ter-generate otomatis
-- [ ] Invoice bulanan ter-generate untuk setiap bulan aktif tahun ajaran
-- [ ] Nominal infaq harian = `rate × total_days` dari effective_days
-- [ ] Jika effective_days belum diinput → item infaq harian = 0 dengan notes
-- [ ] Setelah effective_days diinput/update → nominal infaq harian di semua invoice bulan tersebut ter-update
-- [ ] Saat siswa daftar pasta → item pasta masuk ke invoice bulan berikutnya
-- [ ] Saat siswa keluar pasta → item pasta dihapus dari invoice bulan berikutnya (jika belum dibayar)
-- [ ] Graduation invoice ter-generate dan alokasi tabungan wajib berfungsi (endpoint graduation aktif)
-- [ ] Generate bersifat idempotent — tidak ada duplikat jika dipanggil dua kali
+- [x] Saat siswa baru di-assign ke rombel → invoice `initial` dan `registration` ter-generate otomatis
+- [x] Invoice bulanan ter-generate untuk setiap bulan aktif tahun ajaran
+- [x] Nominal infaq harian = `rate × total_days` dari effective_days
+- [x] Jika effective_days belum diinput → item infaq harian = 0 dengan notes
+- [x] Setelah effective_days diinput/update → nominal infaq harian di semua invoice bulan tersebut ter-update
+- [x] Saat siswa daftar pasta → item pasta masuk ke invoice bulan berikutnya
+- [x] Saat siswa keluar pasta → item pasta dihapus dari invoice bulan berikutnya (jika belum dibayar)
+- [x] Graduation invoice ter-generate dan alokasi tabungan wajib berfungsi (endpoint graduation aktif)
+- [x] Generate bersifat idempotent — tidak ada duplikat jika dipanggil dua kali
 
 ### HTTP Endpoints
 
-- [ ] `GET /invoices` → filter `student_id`, `type`, `status`, `month`, `year` berfungsi
-- [ ] `GET /invoices/:id` → response menyertakan `items` dan `installments`
-- [ ] `GET /students/:id/invoices` → mengembalikan semua invoice siswa
-- [ ] `POST /invoices/:id/items` → item baru ditambahkan, `total_amount` invoice ter-update
-- [ ] `PUT /invoices/:id/items/:item_id` → gagal 422 jika item sudah ada `paid_amount > 0`
-- [ ] `DELETE /invoices/:id/items/:item_id` → gagal 422 jika `is_mandatory=true` atau sudah ada payment
-- [ ] `POST /invoices/:id/installments` → menggantikan jadwal cicilan lama
-- [ ] `POST /invoices/:id/installments` → gagal 422 jika invoice bukan type `registration`
-- [ ] `financial_summary` di `GET /students/:id` sekarang terisi (tidak lagi `null`)
+- [x] `GET /invoices` → filter `student_id`, `type`, `status`, `month`, `year` berfungsi
+- [x] `GET /invoices/:id` → response menyertakan `items` dan `installments`
+- [x] `GET /students/:id/invoices` → mengembalikan semua invoice siswa
+- [x] `POST /invoices/:id/items` → item baru ditambahkan, `total_amount` invoice ter-update
+- [x] `PUT /invoices/:id/items/:item_id` → gagal 422 jika item sudah ada `paid_amount > 0`
+- [x] `DELETE /invoices/:id/items/:item_id` → gagal 422 jika `is_mandatory=true` atau sudah ada payment
+- [x] `POST /invoices/:id/installments` → menggantikan jadwal cicilan lama
+- [x] `POST /invoices/:id/installments` → gagal 422 jika invoice bukan type `registration`
+- [x] `financial_summary` di `GET /students/:id` sekarang terisi (tidak lagi `null`)

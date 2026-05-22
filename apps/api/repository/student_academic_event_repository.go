@@ -9,6 +9,7 @@ import (
 type StudentAcademicEventRepository interface {
 	FindByStudentID(studentID uint) ([]model.StudentAcademicEvent, error)
 	Create(event *model.StudentAcademicEvent) error // dipakai di Batch 4
+	WithTx(tx *gorm.DB) StudentAcademicEventRepository
 }
 
 type studentAcademicEventRepository struct {
@@ -29,3 +30,8 @@ func (r *studentAcademicEventRepository) FindByStudentID(studentID uint) ([]mode
 func (r *studentAcademicEventRepository) Create(event *model.StudentAcademicEvent) error {
 	return r.db.Create(event).Error
 }
+
+func (r *studentAcademicEventRepository) WithTx(tx *gorm.DB) StudentAcademicEventRepository {
+	return &studentAcademicEventRepository{db: tx}
+}
+

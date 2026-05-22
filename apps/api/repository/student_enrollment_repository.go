@@ -15,6 +15,12 @@ type StudentEnrollmentRepository interface {
 	Create(enrollment *model.StudentEnrollment) error
 	UpdateStatus(id uint, status string, endDate *time.Time) error
 	ExistsByStudentAndYear(studentID, academicYearID uint) (bool, error)
+	// Batch 4 additions
+	WithTx(tx *gorm.DB) StudentEnrollmentRepository
+	FindAllActiveByAcademicYear(academicYearID uint) ([]model.StudentEnrollment, error)
+	FindAllActiveByLevel(academicYearID uint, level string) ([]model.StudentEnrollment, error)
+	CloseEnrollment(id uint, endDate time.Time, status string) error
+	BulkCreate(enrollments []model.StudentEnrollment) error
 }
 
 type studentEnrollmentRepository struct {
@@ -65,3 +71,39 @@ func (r *studentEnrollmentRepository) ExistsByStudentAndYear(studentID, academic
 	err := r.db.Model(&model.StudentEnrollment{}).Where("student_id = ? AND academic_year_id = ?", studentID, academicYearID).Count(&count).Error
 	return count > 0, err
 }
+
+func (r *studentEnrollmentRepository) WithTx(tx *gorm.DB) StudentEnrollmentRepository {
+	return &studentEnrollmentRepository{db: tx}
+}
+
+func (r *studentEnrollmentRepository) FindAllActiveByAcademicYear(academicYearID uint) ([]model.StudentEnrollment, error) {
+	var enrollments []model.StudentEnrollment
+	err := r.db.Preload("Student").Preload("ClassGroup").Preload("AcademicYear").
+		Where("academic_year_id = ? AND status = ?", academicYearID, "active").
+		Find(&enrollments).Error
+	return enrollments, err
+}
+
+func (r *studentEnrollmentRepository) FindAllActiveByLevel(academicYearID uint, level string) ([]model.StudentEnrollment, error) {
+	var enrollments []model.StudentEnrollment
+	err := r.db.Preload("Student").Preload("ClassGroup").Preload("AcademicYear").
+		Joins("JOIN class_groups ON class_groups.id = student_enrollments.class_group_id").
+		Where("student_enrollments.academic_year_id = ? AND student_enrollments.status = ? AND class_groups.level = ?", academicYearID, "active", level).
+		Find(&enrollments).Error
+	return enrollments, err
+}
+
+func (r *studentEnrollmentRepository) CloseEnrollment(id uint, endDate time.Time, status string) error {
+	return r.db.Model(&model.StudentEnrollment{}).Where("id = ?", id).Updates(map[string]interface{}{
+		"status":   status,
+		"end_date": endDate,
+	}).Error
+}
+
+func (r *studentEnrollmentRepository) BulkCreate(enrollments []model.StudentEnrollment) error {
+	if len(enrollments) == 0 {
+		return nil
+	}
+	return r.db.Create(&enrollments).Error
+}
+

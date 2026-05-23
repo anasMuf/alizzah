@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { FormField } from '../../../components/molecules/FormField';
 import { Button } from '../../../components/atoms/Button';
 import { useToast } from '../../../components/molecules/Toast';
-import { usePostUsersRegister, type postUsersRegisterResponse } from '../../../api/endpoints/users/users';
+import { usePostV1Users, type postV1UsersResponse } from '../../../api/endpoints/users/users';
 import { ApiError } from '../../../api/mutator/custom-instance';
 
 export function RegisterForm({ onSuccess }: { onSuccess: () => void }) {
@@ -14,11 +14,12 @@ export function RegisterForm({ onSuccess }: { onSuccess: () => void }) {
     password: '',
     phone: '',
     address: '',
+    role: 'parent' as any,
   });
 
-  const registerMutation = usePostUsersRegister({
+  const registerMutation = usePostV1Users({
     mutation: {
-      onSuccess: (response: postUsersRegisterResponse) => {
+      onSuccess: (response: postV1UsersResponse) => {
         if (response.status === 201) {
           addToast({ variant: 'success', title: 'Account created!', message: 'Please sign in with your new account.' });
           onSuccess();

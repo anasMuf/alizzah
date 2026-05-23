@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, type ReactNode, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useGetUsers, getGetUsersQueryKey } from '../../api/endpoints/users/users';
+import { useGetV1AuthMe, getGetV1AuthMeQueryKey } from '../../api/endpoints/auth/auth';
 
 export interface User {
   id: number;
@@ -29,23 +29,24 @@ const AuthContext = createContext<AuthContextType | null>(null);
  * so we can't rely on React state there — only on localStorage directly.
  */
 export function hasToken(): boolean {
-  return !!localStorage.getItem('token');
+  return !!localStorage.getItem('alizzah_token');
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'));
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem('alizzah_token'));
   const queryClient = useQueryClient();
 
   // Fetch user profile when token is available
-  const { data: userResponse, isLoading, isError } = useGetUsers(
+  const { data: userResponse, isLoading, isError } = useGetV1AuthMe(
     { query: { enabled: !!token, retry: false, staleTime: 5 * 60 * 1000 } }
   );
 
   const logout = useCallback(() => {
-    localStorage.removeItem('token');
+    localStorage.removeItem('alizzah_token');
+    localStorage.removeItem('alizzah_role');
     setToken(null);
     // Clear all React Query cache so stale user data doesn't persist
-    queryClient.removeQueries({ queryKey: getGetUsersQueryKey() });
+    queryClient.removeQueries({ queryKey: getGetV1AuthMeQueryKey() });
   }, [queryClient]);
 
   useEffect(() => {
@@ -56,17 +57,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [isError, logout]);
 
   const login = useCallback((newToken: string) => {
-    localStorage.setItem('token', newToken);
+    localStorage.setItem('alizzah_token', newToken);
     setToken(newToken);
     // Invalidate the user query so it refetches with the new token
-    queryClient.invalidateQueries({ queryKey: getGetUsersQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetV1AuthMeQueryKey() });
   }, [queryClient]);
 
   // Derive user from response
   const user: User | null = (() => {
     if (!userResponse?.data) return null;
     if ('data' in userResponse.data) {
-      return userResponse.data.data as User;
+      const u = userResponse.data.data as User;
+      // Store role in local storage for route guards
+      if (u && u.role) {
+        localStorage.setItem('alizzah_role', u.role);
+      }
+      return u;
     }
     return null;
   })();

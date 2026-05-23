@@ -28,7 +28,7 @@ export const customInstance = async <T>(
     });
   }
 
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('alizzah_token');
 
   const response = await fetch(url.toString(), {
     ...options,

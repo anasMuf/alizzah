@@ -13,10 +13,13 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
   component: RootComponent,
 })
 
+import { Toaster } from 'sonner'
+
 function RootComponent() {
   return (
     <>
       <Outlet />
+      <Toaster position="top-right" richColors />
       <TanStackDevtools
         config={{
           position: 'bottom-right',

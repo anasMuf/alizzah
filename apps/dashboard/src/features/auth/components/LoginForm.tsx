@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { FormField } from '../../../components/molecules/FormField';
 import { Button } from '../../../components/atoms/Button';
 import { useToast } from '../../../components/molecules/Toast';
-import { usePostUsersLogin, type postUsersLoginResponse } from '../../../api/endpoints/users/users';
+import { usePostV1AuthLogin, type postV1AuthLoginResponse } from '../../../api/endpoints/auth/auth';
 import { ApiError } from '../../../api/mutator/custom-instance';
 import { useAuth } from '../AuthContext';
 
@@ -15,11 +15,11 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
     password: '',
   });
 
-  const loginMutation = usePostUsersLogin({
+  const loginMutation = usePostV1AuthLogin({
     mutation: {
-      onSuccess: (response: postUsersLoginResponse) => {
-        if (response.status === 200 && response.data.token) {
-          login(response.data.token);
+      onSuccess: (response: postV1AuthLoginResponse) => {
+        if (response.status === 200 && response.data.data?.token) {
+          login(response.data.data?.token);
           addToast({ variant: 'success', title: 'Welcome back!', message: 'You have signed in successfully.' });
           onSuccess();
         }

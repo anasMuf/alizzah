@@ -1,7 +1,11 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useAtom } from 'jotai';
-import { Wallet, AlertCircle, ArrowUpRight, ArrowDownRight, Plus, FileText, ChevronRight } from 'lucide-react';
+import { Wallet, AlertCircle, ArrowUpRight, ArrowDownRight, Plus, FileText, ChevronRight, Loader2 } from 'lucide-react';
 
+import { useGetV1CashBalance } from '../../../api/endpoints/cash/cash';
+import { useGetV1VaultBalance } from '../../../api/endpoints/vault/vault';
+import { useGetV1ReportsDaily } from '../../../api/endpoints/reports/reports';
+import { useGetV1Invoices } from '../../../api/endpoints/invoices/invoices';
 import { academicYearAtom } from '../../../store/global';
 import { formatCurrency } from '../../../utils/format';
 
@@ -11,19 +15,51 @@ export const Route = createFileRoute('/_authenticated/keuangan/')({
 
 function KeuanganOverviewPage() {
   const [activeAy] = useAtom(academicYearAtom);
+  const today = new Date().toISOString().split('T')[0];
 
-  // MOCK DATA
-  const mockData = {
-    saldoKas: 12500000,
-    saldoBerangkas: 3200000,
-    totalTunggakanBulanIni: 4800000,
-    pemasukanHariIni: { nominal: 1500000, transaksi: 8 },
-    pengeluaranHariIni: { nominal: 250000, transaksi: 2 },
-    tagihanJatuhTempo: [
-      { id: 1, siswa: 'Ahmad Fauzan', kelas: 'Intan 1', periode: 'Juli 2025', nominal: 177000 },
-      { id: 2, siswa: 'Citra Dewi', kelas: 'Mutiara 3', periode: 'Juli 2025', nominal: 327000 },
-    ]
-  };
+  const enabled = !!activeAy?.id;
+
+  const { data: cashData, isLoading: cashLoading } = useGetV1CashBalance(
+    { academic_year_id: activeAy?.id },
+    { query: { enabled } },
+  );
+  const { data: vaultData, isLoading: vaultLoading } = useGetV1VaultBalance(
+    { academic_year_id: activeAy?.id },
+    { query: { enabled } },
+  );
+  const { data: reportData, isLoading: reportLoading } = useGetV1ReportsDaily(
+    { date: today, academic_year_id: activeAy?.id },
+    { query: { enabled } },
+  );
+  const { data: unpaidData, isLoading: unpaidLoading } = useGetV1Invoices(
+    { status: 'unpaid', academic_year_id: activeAy?.id, limit: 5 },
+    { query: { enabled } },
+  );
+
+  const cash = (cashData?.data as any)?.data;
+  const vault = (vaultData?.data as any)?.data;
+  const report = (reportData?.data as any)?.data;
+  const unpaidInvoices = (unpaidData?.data as any)?.data || [];
+
+  const saldoKas = Number(cash?.balance || 0);
+  const saldoBerangkas = Number(vault?.balance || 0);
+  const pemasukanHariIni = Number(report?.income_summary?.total || 0);
+  const pengeluaranHariIni = Number(report?.expense_summary?.total || 0);
+  const totalTunggakan = unpaidInvoices.reduce(
+    (sum: number, inv: any) => sum + Number(inv.total_amount || 0) - Number(inv.paid_amount || 0),
+    0,
+  );
+
+  const isLoading = cashLoading || vaultLoading || reportLoading || unpaidLoading;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+        <span className="ml-3 text-gray-500">Memuat data keuangan...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -66,7 +102,7 @@ function KeuanganOverviewPage() {
                 <dl>
                   <dt className="truncate text-sm font-medium text-gray-500">Saldo Kas (Laci)</dt>
                   <dd>
-                    <div className="text-lg font-medium text-gray-900">{formatCurrency(mockData.saldoKas)}</div>
+                    <div className="text-lg font-medium text-gray-900">{formatCurrency(saldoKas)}</div>
                   </dd>
                 </dl>
               </div>
@@ -91,7 +127,7 @@ function KeuanganOverviewPage() {
                 <dl>
                   <dt className="truncate text-sm font-medium text-gray-500">Saldo Brankas</dt>
                   <dd>
-                    <div className="text-lg font-medium text-gray-900">{formatCurrency(mockData.saldoBerangkas)}</div>
+                    <div className="text-lg font-medium text-gray-900">{formatCurrency(saldoBerangkas)}</div>
                   </dd>
                 </dl>
               </div>
@@ -116,7 +152,7 @@ function KeuanganOverviewPage() {
                 <dl>
                   <dt className="truncate text-sm font-medium text-gray-500">Total Tunggakan Bulan Ini</dt>
                   <dd>
-                    <div className="text-lg font-medium text-amber-600">{formatCurrency(mockData.totalTunggakanBulanIni)}</div>
+                    <div className="text-lg font-medium text-amber-600">{formatCurrency(totalTunggakan)}</div>
                   </dd>
                 </dl>
               </div>
@@ -140,8 +176,8 @@ function KeuanganOverviewPage() {
           </div>
           <div>
             <h3 className="text-base font-semibold leading-6 text-gray-900">Pemasukan Hari Ini</h3>
-            <p className="mt-1 text-2xl font-bold tracking-tight text-gray-900">{formatCurrency(mockData.pemasukanHariIni.nominal)}</p>
-            <p className="text-sm text-gray-500">dari {mockData.pemasukanHariIni.transaksi} transaksi pembayaran</p>
+            <p className="mt-1 text-2xl font-bold tracking-tight text-gray-900">{formatCurrency(pemasukanHariIni)}</p>
+            <p className="text-sm text-gray-500">dari {(report?.income_summary?.by_category || []).length || 0} kategori pemasukan</p>
           </div>
         </div>
         <div className="overflow-hidden rounded-lg bg-white shadow ring-1 ring-gray-900/5 p-6 flex items-start">
@@ -150,8 +186,8 @@ function KeuanganOverviewPage() {
           </div>
           <div>
             <h3 className="text-base font-semibold leading-6 text-gray-900">Pengeluaran Hari Ini</h3>
-            <p className="mt-1 text-2xl font-bold tracking-tight text-gray-900">{formatCurrency(mockData.pengeluaranHariIni.nominal)}</p>
-            <p className="text-sm text-gray-500">dari {mockData.pengeluaranHariIni.transaksi} transaksi pengeluaran</p>
+            <p className="mt-1 text-2xl font-bold tracking-tight text-gray-900">{formatCurrency(pengeluaranHariIni)}</p>
+            <p className="text-sm text-gray-500">dari {(report?.expense_summary?.by_category || []).length || 0} kategori pengeluaran</p>
           </div>
         </div>
       </div>
@@ -167,24 +203,30 @@ function KeuanganOverviewPage() {
             </Link>
           </div>
           <ul role="list" className="divide-y divide-gray-200">
-            {mockData.tagihanJatuhTempo.map((tagihan) => (
-              <li key={tagihan.id} className="px-4 py-4 sm:px-6 hover:bg-gray-50">
+            {unpaidInvoices.map((inv: any) => (
+              <li key={inv.id} className="px-4 py-4 sm:px-6 hover:bg-gray-50">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
                     <AlertCircle className="h-5 w-5 text-amber-500 mr-3" />
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{tagihan.siswa}</p>
-                      <p className="text-sm text-gray-500">{tagihan.kelas} &bull; {tagihan.periode}</p>
+                      <p className="text-sm font-medium text-gray-900">{inv.student?.full_name}</p>
+                      <p className="text-sm text-gray-500">
+                        {inv.type === 'monthly' && inv.month && inv.year
+                          ? `${['', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'][inv.month]} ${inv.year}`
+                          : inv.type}
+                      </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-semibold text-gray-900">{formatCurrency(tagihan.nominal)}</p>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {formatCurrency(Number(inv.total_amount || 0) - Number(inv.paid_amount || 0))}
+                    </p>
                   </div>
                 </div>
               </li>
             ))}
-            {mockData.tagihanJatuhTempo.length === 0 && (
-              <li className="px-4 py-8 text-center text-gray-500 text-sm">Tidak ada tagihan yang mendekati jatuh tempo.</li>
+            {unpaidInvoices.length === 0 && (
+              <li className="px-4 py-8 text-center text-gray-500 text-sm">Tidak ada tagihan yang belum dibayar.</li>
             )}
           </ul>
         </div>

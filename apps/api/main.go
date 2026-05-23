@@ -84,9 +84,16 @@ func main() {
 	}
 	log.Println("AutoMigrate berhasil")
 
-	// Seed data
-	seeders.SeedSuperAdmin(db)
-	seeders.SeedExpenseCategories(db)
+	// Seed data (urutan penting karena ada dependency antar seeder)
+	seeders.SeedUsers(db)              // 1. Users (semua role)
+	seeders.SeedAcademicYears(db)      // 2. Tahun Ajaran
+	seeders.SeedClassGroups(db)        // 3. Rombel (depends on #2)
+	seeders.SeedExtracurriculars(db)   // 4. Ekskul/Pasta
+	seeders.SeedFeeConfigs(db)         // 5. Tarif (depends on #2)
+	seeders.SeedExpenseCategories(db)  // 6. Kategori Pengeluaran
+	seeders.SeedStudentsFromLegacy(db) // 7. Siswa + Enrollment + Savings (depends on #1,2,3)
+	seeders.SeedEffectiveDays(db)      // 8. Hari Efektif (depends on #3)
+	seeders.SeedSampleTransactions(db) // 9. Sample Tagihan/Bayar/Pengeluaran (depends on #5,7,8)
 
 	// Initialize Echo
 	e := echo.New()

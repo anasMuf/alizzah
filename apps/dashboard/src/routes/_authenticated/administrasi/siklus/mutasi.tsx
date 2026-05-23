@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { useQueryClient } from '@tanstack/react-query';
+
 import { useAtom } from 'jotai';
 import { ChevronRight, Search, UserCircle, Info } from 'lucide-react';
 import { usePostV1AcademicEventsTransfers } from '../../../../api/endpoints/academic-events/academic-events';
@@ -19,7 +19,6 @@ export const Route = createFileRoute('/_authenticated/administrasi/siklus/mutasi
 function MutasiMasukPage() {
   const [activeAy] = useAtom(academicYearAtom);
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { addToast } = useToast();
 
   const [studentSearch, setStudentSearch] = useState('');
@@ -104,7 +103,7 @@ function MutasiMasukPage() {
         </div>
         <div className="mt-4 sm:mt-0 flex-shrink-0">
           <Link to="/administrasi/siswa/baru">
-            <Button variant="outline" size="sm">
+            <Button variant="secondary">
               + Data Siswa Baru
             </Button>
           </Link>

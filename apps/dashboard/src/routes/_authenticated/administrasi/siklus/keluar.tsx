@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { useQueryClient } from '@tanstack/react-query';
+
 import { ChevronRight, Search, UserCircle, AlertTriangle } from 'lucide-react';
 import { usePostV1AcademicEventsWithdrawals } from '../../../../api/endpoints/academic-events/academic-events';
 import { useGetV1Students, useGetV1StudentsId } from '../../../../api/endpoints/students/students';
@@ -16,7 +16,6 @@ export const Route = createFileRoute('/_authenticated/administrasi/siklus/keluar
 
 function SiswaKeluarPage() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { addToast } = useToast();
 
   const [studentSearch, setStudentSearch] = useState('');
@@ -24,8 +23,8 @@ function SiswaKeluarPage() {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   const [formData, setFormData] = useState({
-    status: 'transferred_out', // 'transferred_out' or 'dropped_out'
-    effective_date: new Date().toISOString().split('T')[0],
+    event_type: 'transferred_out' as 'transferred_out' | 'dropped_out', // 'transferred_out' or 'dropped_out'
+    event_date: new Date().toISOString().split('T')[0],
     notes: '',
   });
 
@@ -69,8 +68,8 @@ function SiswaKeluarPage() {
     createMutation.mutate({
       data: {
         student_id: selectedStudent.id,
-        status: formData.status as any,
-        effective_date: `${formData.effective_date}T00:00:00Z`,
+        event_type: formData.event_type as any,
+        event_date: `${formData.event_date}T00:00:00Z`,
         notes: formData.notes
       }
     });
@@ -188,8 +187,8 @@ function SiswaKeluarPage() {
                       <input
                         type="radio"
                         value="transferred_out"
-                        checked={formData.status === 'transferred_out'}
-                        onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                        checked={formData.event_type === 'transferred_out'}
+                        onChange={(e) => setFormData({ ...formData, event_type: e.target.value as any })}
                         className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
                       />
                       <span className="ml-2 text-sm text-gray-900">Pindah Sekolah</span>
@@ -198,8 +197,8 @@ function SiswaKeluarPage() {
                       <input
                         type="radio"
                         value="dropped_out"
-                        checked={formData.status === 'dropped_out'}
-                        onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                        checked={formData.event_type === 'dropped_out'}
+                        onChange={(e) => setFormData({ ...formData, event_type: e.target.value as any })}
                         className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
                       />
                       <span className="ml-2 text-sm text-gray-900">Keluar / Berhenti</span>
@@ -212,8 +211,8 @@ function SiswaKeluarPage() {
                     id="effective_date"
                     type="date"
                     label="Tanggal Keluar *"
-                    value={formData.effective_date}
-                    onChange={(e) => setFormData({ ...formData, effective_date: e.target.value })}
+                    value={formData.event_date}
+                    onChange={(e) => setFormData({ ...formData, event_date: e.target.value })}
                     required
                   />
                 </div>
@@ -290,7 +289,7 @@ function SiswaKeluarPage() {
         onConfirm={handleConfirm}
         title="Proses Siswa Keluar"
         variant="danger"
-        confirmText="Ya, Proses Keluar"
+        confirmLabel="Ya, Proses Keluar"
       >
         <div className="space-y-4">
           <p>

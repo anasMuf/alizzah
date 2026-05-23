@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { useQueryClient } from '@tanstack/react-query';
+
 import { useAtom } from 'jotai';
 import { ChevronRight, GraduationCap, CheckSquare, Square, Info } from 'lucide-react';
 import { usePostV1AcademicEventsGraduations } from '../../../../api/endpoints/academic-events/academic-events';
@@ -20,7 +20,6 @@ export const Route = createFileRoute('/_authenticated/administrasi/siklus/kelulu
 function KelulusanPage() {
   const [activeAy] = useAtom(academicYearAtom);
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { addToast } = useToast();
 
   const [academicYearId, setAcademicYearId] = useState<number | ''>(activeAy?.id || '');
@@ -93,14 +92,14 @@ function KelulusanPage() {
   };
 
   const handleConfirm = () => {
-    const retainedIds = Object.entries(retainedStudents)
-      .filter(([_, isRetained]) => isRetained)
-      .map(([id]) => Number(id));
+    const graduatedIds = graduatableStudents
+      .filter((student: any) => !retainedStudents[student.id])
+      .map((student: any) => student.id);
 
     createMutation.mutate({
       data: {
         academic_year_id: Number(academicYearId),
-        retained_student_ids: retainedIds,
+        student_ids: graduatedIds,
         event_date: `${eventDate}T00:00:00Z`,
         notes: notes
       }
@@ -298,8 +297,8 @@ function KelulusanPage() {
         onCancel={() => setIsConfirmOpen(false)}
         onConfirm={handleConfirm}
         title="Konfirmasi Proses Kelulusan"
-        variant="warning"
-        confirmText="Ya, Jalankan Proses Massal"
+        variant="primary"
+        confirmLabel="Ya, Jalankan Proses Massal"
       >
         <div className="space-y-4">
           <p>

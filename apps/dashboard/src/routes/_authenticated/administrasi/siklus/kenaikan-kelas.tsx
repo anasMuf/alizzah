@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { useQueryClient } from '@tanstack/react-query';
+
 import { useAtom } from 'jotai';
 import { ChevronRight, Users, CheckSquare, Square, Info } from 'lucide-react';
 import { usePostV1AcademicEventsPromotions } from '../../../../api/endpoints/academic-events/academic-events';
@@ -20,7 +20,6 @@ export const Route = createFileRoute('/_authenticated/administrasi/siklus/kenaik
 function KenaikanKelasPage() {
   const [activeAy] = useAtom(academicYearAtom);
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { addToast } = useToast();
 
   const [fromAcademicYearId, setFromAcademicYearId] = useState<number | ''>(activeAy?.id || '');
@@ -316,8 +315,8 @@ function KenaikanKelasPage() {
         onCancel={() => setIsConfirmOpen(false)}
         onConfirm={handleConfirm}
         title="Konfirmasi Proses Kenaikan Kelas"
-        variant="warning"
-        confirmText="Ya, Jalankan Proses Massal"
+        variant="primary"
+        confirmLabel="Ya, Jalankan Proses Massal"
       >
         <div className="space-y-4">
           <p>

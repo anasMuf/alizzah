@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { useQueryClient } from '@tanstack/react-query';
+
 import { useAtom } from 'jotai';
 import { ChevronRight, Search, UserCircle, AlertCircle, Info } from 'lucide-react';
 import { usePostV1AcademicEventsClassChanges } from '../../../../api/endpoints/academic-events/academic-events';
@@ -19,7 +19,6 @@ export const Route = createFileRoute('/_authenticated/administrasi/siklus/pindah
 function PindahRombelPage() {
   const [activeAy] = useAtom(academicYearAtom);
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { addToast } = useToast();
 
   const [studentSearch, setStudentSearch] = useState('');
@@ -70,8 +69,9 @@ function PindahRombelPage() {
     createMutation.mutate({
       data: {
         student_id: selectedStudent.id,
-        target_class_group_id: Number(formData.target_class_group_id),
-        effective_date: `${formData.effective_date}T00:00:00Z`,
+        to_class_group_id: Number(formData.target_class_group_id),
+        from_class_group_id: selectedStudent.active_enrollment?.class_group_id || 0,
+        event_date: `${formData.effective_date}T00:00:00Z`,
         notes: formData.notes
       }
     });

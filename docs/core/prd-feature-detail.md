@@ -276,7 +276,7 @@ Admin input nominal kas fisik yang dihitung secara fisik
 ```
 
 - Tutup buku dapat dilakukan sekali per hari oleh admin keuangan
-- Jika terlewat, admin keuangan dapat tutup buku hari sebelumnya dengan konfirmasi superadmin
+- Jika terlewat, admin keuangan dapat tutup buku hari sebelumnya secara mandiri (tanpa perlu approval superadmin)
 
 ### 3.7 Laporan Keuangan
 

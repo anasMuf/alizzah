@@ -62,7 +62,11 @@
     │   ├── /kas                → Kas & Berangkas
     │   │   ├── /               → Saldo kas + saldo berangkas + mutasi terkini
     │   │   ├── /transaksi      → Riwayat transaksi kas
-    │   │   └── /tutup-buku     → Form tutup buku harian
+    │   │   ├── /berangkas
+    │   │   │   └── /transaksi  → Riwayat transaksi berangkas
+    │   │   └── /tutup-buku
+    │   │       ├── /           → Form tutup buku harian
+    │   │       └── /riwayat    → Riwayat tutup buku semua hari
     │   └── /laporan            → Laporan keuangan
     │       ├── /harian         → Laporan harian
     │       ├── /bulanan        → Laporan bulanan

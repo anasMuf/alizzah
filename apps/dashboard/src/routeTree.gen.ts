@@ -37,7 +37,6 @@ import { Route as AuthenticatedKeuanganLaporanSiswaRouteImport } from './routes/
 import { Route as AuthenticatedKeuanganLaporanKelasRouteImport } from './routes/_authenticated/keuangan/laporan/kelas'
 import { Route as AuthenticatedKeuanganLaporanHarianRouteImport } from './routes/_authenticated/keuangan/laporan/harian'
 import { Route as AuthenticatedKeuanganLaporanBulananRouteImport } from './routes/_authenticated/keuangan/laporan/bulanan'
-import { Route as AuthenticatedKeuanganKasTutupBukuRouteImport } from './routes/_authenticated/keuangan/kas/tutup-buku'
 import { Route as AuthenticatedKeuanganKasTransaksiRouteImport } from './routes/_authenticated/keuangan/kas/transaksi'
 import { Route as AuthenticatedAdministrasiSiswaImportRouteImport } from './routes/_authenticated/administrasi/siswa/import'
 import { Route as AuthenticatedAdministrasiSiswaBaruRouteImport } from './routes/_authenticated/administrasi/siswa/baru'
@@ -49,10 +48,13 @@ import { Route as AuthenticatedAdministrasiSiklusKelulusanRouteImport } from './
 import { Route as AuthenticatedAdministrasiSiklusKeluarRouteImport } from './routes/_authenticated/administrasi/siklus/keluar'
 import { Route as AuthenticatedAdministrasiRombelBaruRouteImport } from './routes/_authenticated/administrasi/rombel/baru'
 import { Route as AuthenticatedAdministrasiDaycareBaruRouteImport } from './routes/_authenticated/administrasi/daycare/baru'
+import { Route as AuthenticatedKeuanganKasTutupBukuIndexRouteImport } from './routes/_authenticated/keuangan/kas/tutup-buku/index'
 import { Route as AuthenticatedAdministrasiSiswaIdIndexRouteImport } from './routes/_authenticated/administrasi/siswa/$id/index'
 import { Route as AuthenticatedAdministrasiRombelIdIndexRouteImport } from './routes/_authenticated/administrasi/rombel/$id/index'
 import { Route as AuthenticatedKeuanganTagihanSiswaIdRouteImport } from './routes/_authenticated/keuangan/tagihan/siswa.$id'
 import { Route as AuthenticatedKeuanganTabunganSiswaIdRouteImport } from './routes/_authenticated/keuangan/tabungan/siswa.$id'
+import { Route as AuthenticatedKeuanganKasTutupBukuRiwayatRouteImport } from './routes/_authenticated/keuangan/kas/tutup-buku/riwayat'
+import { Route as AuthenticatedKeuanganKasBerangkasTransaksiRouteImport } from './routes/_authenticated/keuangan/kas/berangkas/transaksi'
 import { Route as AuthenticatedAdministrasiSiswaIdProfilRouteImport } from './routes/_authenticated/administrasi/siswa/$id/profil'
 import { Route as AuthenticatedAdministrasiSiswaIdKeuanganRouteImport } from './routes/_authenticated/administrasi/siswa/$id/keuangan'
 import { Route as AuthenticatedAdministrasiSiswaIdEkskulRouteImport } from './routes/_authenticated/administrasi/siswa/$id/ekskul'
@@ -222,12 +224,6 @@ const AuthenticatedKeuanganLaporanBulananRoute =
     path: '/keuangan/laporan/bulanan',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedKeuanganKasTutupBukuRoute =
-  AuthenticatedKeuanganKasTutupBukuRouteImport.update({
-    id: '/keuangan/kas/tutup-buku',
-    path: '/keuangan/kas/tutup-buku',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
 const AuthenticatedKeuanganKasTransaksiRoute =
   AuthenticatedKeuanganKasTransaksiRouteImport.update({
     id: '/keuangan/kas/transaksi',
@@ -294,6 +290,12 @@ const AuthenticatedAdministrasiDaycareBaruRoute =
     path: '/administrasi/daycare/baru',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedKeuanganKasTutupBukuIndexRoute =
+  AuthenticatedKeuanganKasTutupBukuIndexRouteImport.update({
+    id: '/keuangan/kas/tutup-buku/',
+    path: '/keuangan/kas/tutup-buku/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdministrasiSiswaIdIndexRoute =
   AuthenticatedAdministrasiSiswaIdIndexRouteImport.update({
     id: '/',
@@ -316,6 +318,18 @@ const AuthenticatedKeuanganTabunganSiswaIdRoute =
   AuthenticatedKeuanganTabunganSiswaIdRouteImport.update({
     id: '/keuangan/tabungan/siswa/$id',
     path: '/keuangan/tabungan/siswa/$id',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedKeuanganKasTutupBukuRiwayatRoute =
+  AuthenticatedKeuanganKasTutupBukuRiwayatRouteImport.update({
+    id: '/keuangan/kas/tutup-buku/riwayat',
+    path: '/keuangan/kas/tutup-buku/riwayat',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedKeuanganKasBerangkasTransaksiRoute =
+  AuthenticatedKeuanganKasBerangkasTransaksiRouteImport.update({
+    id: '/keuangan/kas/berangkas/transaksi',
+    path: '/keuangan/kas/berangkas/transaksi',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedAdministrasiSiswaIdProfilRoute =
@@ -368,7 +382,6 @@ export interface FileRoutesByFullPath {
   '/administrasi/siswa/baru': typeof AuthenticatedAdministrasiSiswaBaruRoute
   '/administrasi/siswa/import': typeof AuthenticatedAdministrasiSiswaImportRoute
   '/keuangan/kas/transaksi': typeof AuthenticatedKeuanganKasTransaksiRoute
-  '/keuangan/kas/tutup-buku': typeof AuthenticatedKeuanganKasTutupBukuRoute
   '/keuangan/laporan/bulanan': typeof AuthenticatedKeuanganLaporanBulananRoute
   '/keuangan/laporan/harian': typeof AuthenticatedKeuanganLaporanHarianRoute
   '/keuangan/laporan/kelas': typeof AuthenticatedKeuanganLaporanKelasRoute
@@ -394,10 +407,13 @@ export interface FileRoutesByFullPath {
   '/administrasi/siswa/$id/ekskul': typeof AuthenticatedAdministrasiSiswaIdEkskulRoute
   '/administrasi/siswa/$id/keuangan': typeof AuthenticatedAdministrasiSiswaIdKeuanganRoute
   '/administrasi/siswa/$id/profil': typeof AuthenticatedAdministrasiSiswaIdProfilRoute
+  '/keuangan/kas/berangkas/transaksi': typeof AuthenticatedKeuanganKasBerangkasTransaksiRoute
+  '/keuangan/kas/tutup-buku/riwayat': typeof AuthenticatedKeuanganKasTutupBukuRiwayatRoute
   '/keuangan/tabungan/siswa/$id': typeof AuthenticatedKeuanganTabunganSiswaIdRoute
   '/keuangan/tagihan/siswa/$id': typeof AuthenticatedKeuanganTagihanSiswaIdRoute
   '/administrasi/rombel/$id/': typeof AuthenticatedAdministrasiRombelIdIndexRoute
   '/administrasi/siswa/$id/': typeof AuthenticatedAdministrasiSiswaIdIndexRoute
+  '/keuangan/kas/tutup-buku/': typeof AuthenticatedKeuanganKasTutupBukuIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -417,7 +433,6 @@ export interface FileRoutesByTo {
   '/administrasi/siswa/baru': typeof AuthenticatedAdministrasiSiswaBaruRoute
   '/administrasi/siswa/import': typeof AuthenticatedAdministrasiSiswaImportRoute
   '/keuangan/kas/transaksi': typeof AuthenticatedKeuanganKasTransaksiRoute
-  '/keuangan/kas/tutup-buku': typeof AuthenticatedKeuanganKasTutupBukuRoute
   '/keuangan/laporan/bulanan': typeof AuthenticatedKeuanganLaporanBulananRoute
   '/keuangan/laporan/harian': typeof AuthenticatedKeuanganLaporanHarianRoute
   '/keuangan/laporan/kelas': typeof AuthenticatedKeuanganLaporanKelasRoute
@@ -443,10 +458,13 @@ export interface FileRoutesByTo {
   '/administrasi/siswa/$id/ekskul': typeof AuthenticatedAdministrasiSiswaIdEkskulRoute
   '/administrasi/siswa/$id/keuangan': typeof AuthenticatedAdministrasiSiswaIdKeuanganRoute
   '/administrasi/siswa/$id/profil': typeof AuthenticatedAdministrasiSiswaIdProfilRoute
+  '/keuangan/kas/berangkas/transaksi': typeof AuthenticatedKeuanganKasBerangkasTransaksiRoute
+  '/keuangan/kas/tutup-buku/riwayat': typeof AuthenticatedKeuanganKasTutupBukuRiwayatRoute
   '/keuangan/tabungan/siswa/$id': typeof AuthenticatedKeuanganTabunganSiswaIdRoute
   '/keuangan/tagihan/siswa/$id': typeof AuthenticatedKeuanganTagihanSiswaIdRoute
   '/administrasi/rombel/$id': typeof AuthenticatedAdministrasiRombelIdIndexRoute
   '/administrasi/siswa/$id': typeof AuthenticatedAdministrasiSiswaIdIndexRoute
+  '/keuangan/kas/tutup-buku': typeof AuthenticatedKeuanganKasTutupBukuIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -469,7 +487,6 @@ export interface FileRoutesById {
   '/_authenticated/administrasi/siswa/baru': typeof AuthenticatedAdministrasiSiswaBaruRoute
   '/_authenticated/administrasi/siswa/import': typeof AuthenticatedAdministrasiSiswaImportRoute
   '/_authenticated/keuangan/kas/transaksi': typeof AuthenticatedKeuanganKasTransaksiRoute
-  '/_authenticated/keuangan/kas/tutup-buku': typeof AuthenticatedKeuanganKasTutupBukuRoute
   '/_authenticated/keuangan/laporan/bulanan': typeof AuthenticatedKeuanganLaporanBulananRoute
   '/_authenticated/keuangan/laporan/harian': typeof AuthenticatedKeuanganLaporanHarianRoute
   '/_authenticated/keuangan/laporan/kelas': typeof AuthenticatedKeuanganLaporanKelasRoute
@@ -495,10 +512,13 @@ export interface FileRoutesById {
   '/_authenticated/administrasi/siswa/$id/ekskul': typeof AuthenticatedAdministrasiSiswaIdEkskulRoute
   '/_authenticated/administrasi/siswa/$id/keuangan': typeof AuthenticatedAdministrasiSiswaIdKeuanganRoute
   '/_authenticated/administrasi/siswa/$id/profil': typeof AuthenticatedAdministrasiSiswaIdProfilRoute
+  '/_authenticated/keuangan/kas/berangkas/transaksi': typeof AuthenticatedKeuanganKasBerangkasTransaksiRoute
+  '/_authenticated/keuangan/kas/tutup-buku/riwayat': typeof AuthenticatedKeuanganKasTutupBukuRiwayatRoute
   '/_authenticated/keuangan/tabungan/siswa/$id': typeof AuthenticatedKeuanganTabunganSiswaIdRoute
   '/_authenticated/keuangan/tagihan/siswa/$id': typeof AuthenticatedKeuanganTagihanSiswaIdRoute
   '/_authenticated/administrasi/rombel/$id/': typeof AuthenticatedAdministrasiRombelIdIndexRoute
   '/_authenticated/administrasi/siswa/$id/': typeof AuthenticatedAdministrasiSiswaIdIndexRoute
+  '/_authenticated/keuangan/kas/tutup-buku/': typeof AuthenticatedKeuanganKasTutupBukuIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -521,7 +541,6 @@ export interface FileRouteTypes {
     | '/administrasi/siswa/baru'
     | '/administrasi/siswa/import'
     | '/keuangan/kas/transaksi'
-    | '/keuangan/kas/tutup-buku'
     | '/keuangan/laporan/bulanan'
     | '/keuangan/laporan/harian'
     | '/keuangan/laporan/kelas'
@@ -547,10 +566,13 @@ export interface FileRouteTypes {
     | '/administrasi/siswa/$id/ekskul'
     | '/administrasi/siswa/$id/keuangan'
     | '/administrasi/siswa/$id/profil'
+    | '/keuangan/kas/berangkas/transaksi'
+    | '/keuangan/kas/tutup-buku/riwayat'
     | '/keuangan/tabungan/siswa/$id'
     | '/keuangan/tagihan/siswa/$id'
     | '/administrasi/rombel/$id/'
     | '/administrasi/siswa/$id/'
+    | '/keuangan/kas/tutup-buku/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -570,7 +592,6 @@ export interface FileRouteTypes {
     | '/administrasi/siswa/baru'
     | '/administrasi/siswa/import'
     | '/keuangan/kas/transaksi'
-    | '/keuangan/kas/tutup-buku'
     | '/keuangan/laporan/bulanan'
     | '/keuangan/laporan/harian'
     | '/keuangan/laporan/kelas'
@@ -596,10 +617,13 @@ export interface FileRouteTypes {
     | '/administrasi/siswa/$id/ekskul'
     | '/administrasi/siswa/$id/keuangan'
     | '/administrasi/siswa/$id/profil'
+    | '/keuangan/kas/berangkas/transaksi'
+    | '/keuangan/kas/tutup-buku/riwayat'
     | '/keuangan/tabungan/siswa/$id'
     | '/keuangan/tagihan/siswa/$id'
     | '/administrasi/rombel/$id'
     | '/administrasi/siswa/$id'
+    | '/keuangan/kas/tutup-buku'
   id:
     | '__root__'
     | '/_authenticated'
@@ -621,7 +645,6 @@ export interface FileRouteTypes {
     | '/_authenticated/administrasi/siswa/baru'
     | '/_authenticated/administrasi/siswa/import'
     | '/_authenticated/keuangan/kas/transaksi'
-    | '/_authenticated/keuangan/kas/tutup-buku'
     | '/_authenticated/keuangan/laporan/bulanan'
     | '/_authenticated/keuangan/laporan/harian'
     | '/_authenticated/keuangan/laporan/kelas'
@@ -647,10 +670,13 @@ export interface FileRouteTypes {
     | '/_authenticated/administrasi/siswa/$id/ekskul'
     | '/_authenticated/administrasi/siswa/$id/keuangan'
     | '/_authenticated/administrasi/siswa/$id/profil'
+    | '/_authenticated/keuangan/kas/berangkas/transaksi'
+    | '/_authenticated/keuangan/kas/tutup-buku/riwayat'
     | '/_authenticated/keuangan/tabungan/siswa/$id'
     | '/_authenticated/keuangan/tagihan/siswa/$id'
     | '/_authenticated/administrasi/rombel/$id/'
     | '/_authenticated/administrasi/siswa/$id/'
+    | '/_authenticated/keuangan/kas/tutup-buku/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -857,13 +883,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedKeuanganLaporanBulananRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/keuangan/kas/tutup-buku': {
-      id: '/_authenticated/keuangan/kas/tutup-buku'
-      path: '/keuangan/kas/tutup-buku'
-      fullPath: '/keuangan/kas/tutup-buku'
-      preLoaderRoute: typeof AuthenticatedKeuanganKasTutupBukuRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/keuangan/kas/transaksi': {
       id: '/_authenticated/keuangan/kas/transaksi'
       path: '/keuangan/kas/transaksi'
@@ -941,6 +960,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdministrasiDaycareBaruRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/keuangan/kas/tutup-buku/': {
+      id: '/_authenticated/keuangan/kas/tutup-buku/'
+      path: '/keuangan/kas/tutup-buku'
+      fullPath: '/keuangan/kas/tutup-buku/'
+      preLoaderRoute: typeof AuthenticatedKeuanganKasTutupBukuIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/administrasi/siswa/$id/': {
       id: '/_authenticated/administrasi/siswa/$id/'
       path: '/'
@@ -967,6 +993,20 @@ declare module '@tanstack/react-router' {
       path: '/keuangan/tabungan/siswa/$id'
       fullPath: '/keuangan/tabungan/siswa/$id'
       preLoaderRoute: typeof AuthenticatedKeuanganTabunganSiswaIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/keuangan/kas/tutup-buku/riwayat': {
+      id: '/_authenticated/keuangan/kas/tutup-buku/riwayat'
+      path: '/keuangan/kas/tutup-buku/riwayat'
+      fullPath: '/keuangan/kas/tutup-buku/riwayat'
+      preLoaderRoute: typeof AuthenticatedKeuanganKasTutupBukuRiwayatRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/keuangan/kas/berangkas/transaksi': {
+      id: '/_authenticated/keuangan/kas/berangkas/transaksi'
+      path: '/keuangan/kas/berangkas/transaksi'
+      fullPath: '/keuangan/kas/berangkas/transaksi'
+      preLoaderRoute: typeof AuthenticatedKeuanganKasBerangkasTransaksiRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/administrasi/siswa/$id/profil': {
@@ -1051,7 +1091,6 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdministrasiSiswaBaruRoute: typeof AuthenticatedAdministrasiSiswaBaruRoute
   AuthenticatedAdministrasiSiswaImportRoute: typeof AuthenticatedAdministrasiSiswaImportRoute
   AuthenticatedKeuanganKasTransaksiRoute: typeof AuthenticatedKeuanganKasTransaksiRoute
-  AuthenticatedKeuanganKasTutupBukuRoute: typeof AuthenticatedKeuanganKasTutupBukuRoute
   AuthenticatedKeuanganLaporanBulananRoute: typeof AuthenticatedKeuanganLaporanBulananRoute
   AuthenticatedKeuanganLaporanHarianRoute: typeof AuthenticatedKeuanganLaporanHarianRoute
   AuthenticatedKeuanganLaporanKelasRoute: typeof AuthenticatedKeuanganLaporanKelasRoute
@@ -1073,9 +1112,12 @@ interface AuthenticatedRouteChildren {
   AuthenticatedKeuanganTagihanIndexRoute: typeof AuthenticatedKeuanganTagihanIndexRoute
   AuthenticatedPengaturanTarifIndexRoute: typeof AuthenticatedPengaturanTarifIndexRoute
   AuthenticatedAdministrasiRombelIdHariEfektifRoute: typeof AuthenticatedAdministrasiRombelIdHariEfektifRoute
+  AuthenticatedKeuanganKasBerangkasTransaksiRoute: typeof AuthenticatedKeuanganKasBerangkasTransaksiRoute
+  AuthenticatedKeuanganKasTutupBukuRiwayatRoute: typeof AuthenticatedKeuanganKasTutupBukuRiwayatRoute
   AuthenticatedKeuanganTabunganSiswaIdRoute: typeof AuthenticatedKeuanganTabunganSiswaIdRoute
   AuthenticatedKeuanganTagihanSiswaIdRoute: typeof AuthenticatedKeuanganTagihanSiswaIdRoute
   AuthenticatedAdministrasiRombelIdIndexRoute: typeof AuthenticatedAdministrasiRombelIdIndexRoute
+  AuthenticatedKeuanganKasTutupBukuIndexRoute: typeof AuthenticatedKeuanganKasTutupBukuIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -1107,8 +1149,6 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedAdministrasiSiswaImportRoute,
   AuthenticatedKeuanganKasTransaksiRoute:
     AuthenticatedKeuanganKasTransaksiRoute,
-  AuthenticatedKeuanganKasTutupBukuRoute:
-    AuthenticatedKeuanganKasTutupBukuRoute,
   AuthenticatedKeuanganLaporanBulananRoute:
     AuthenticatedKeuanganLaporanBulananRoute,
   AuthenticatedKeuanganLaporanHarianRoute:
@@ -1148,12 +1188,18 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedPengaturanTarifIndexRoute,
   AuthenticatedAdministrasiRombelIdHariEfektifRoute:
     AuthenticatedAdministrasiRombelIdHariEfektifRoute,
+  AuthenticatedKeuanganKasBerangkasTransaksiRoute:
+    AuthenticatedKeuanganKasBerangkasTransaksiRoute,
+  AuthenticatedKeuanganKasTutupBukuRiwayatRoute:
+    AuthenticatedKeuanganKasTutupBukuRiwayatRoute,
   AuthenticatedKeuanganTabunganSiswaIdRoute:
     AuthenticatedKeuanganTabunganSiswaIdRoute,
   AuthenticatedKeuanganTagihanSiswaIdRoute:
     AuthenticatedKeuanganTagihanSiswaIdRoute,
   AuthenticatedAdministrasiRombelIdIndexRoute:
     AuthenticatedAdministrasiRombelIdIndexRoute,
+  AuthenticatedKeuanganKasTutupBukuIndexRoute:
+    AuthenticatedKeuanganKasTutupBukuIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

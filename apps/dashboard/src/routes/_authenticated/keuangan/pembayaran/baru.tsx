@@ -2,9 +2,10 @@ import { useState, useMemo, useEffect } from 'react';
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router';
 import { useAtom } from 'jotai';
 import { useDebounce } from 'use-debounce';
+import { useQueries } from '@tanstack/react-query';
 import { Check, Search, User, FileText, Wallet, AlertCircle } from 'lucide-react';
 import { useGetV1Students } from '../../../../api/endpoints/students/students';
-import { useGetV1StudentsIdInvoices } from '../../../../api/endpoints/invoices/invoices';
+import { useGetV1StudentsIdInvoices, getGetV1InvoicesIdQueryOptions } from '../../../../api/endpoints/invoices/invoices';
 import { usePostV1Payments } from '../../../../api/endpoints/payments/payments';
 import { useGetV1StudentsIdSavings } from '../../../../api/endpoints/savings/savings';
 import { academicYearAtom } from '../../../../store/global';
@@ -45,29 +46,77 @@ function WizardPembayaranPage() {
   );
   const students = (studentsResp?.data as any)?.data || [];
 
-  // Effect for pre-filling student
+  // Effect for pre-filling student from URL param
   useEffect(() => {
-    if (initialStudentId && currentStep === 1) {
-      // In a real app, we'd fetch the student by ID first.
-      // Here we just set the ID and let the user click 'Lanjut' assuming we know who it is.
-      // We'll mock selecting the student for now.
-      setSelectedStudent({ id: initialStudentId, full_name: 'Siswa Terpilih (dari URL)' });
+    if (initialStudentId && currentStep === 1 && !selectedStudent) {
+      setSelectedStudent({ id: initialStudentId, full_name: `Siswa #${initialStudentId}` });
     }
   }, [initialStudentId]);
 
   // State Step 2
   const [selectedInvoices, setSelectedInvoices] = useState<number[]>([]);
-  // Store the mock items we'll pay. We'll use mock data since fetching all invoice details concurrently might be complex for this mockup.
   const [payAmounts, setPayAmounts] = useState<Record<number, number>>({});
 
-  // Queries Step 2
+  // Queries Step 2 — fetch unpaid invoices list
   const { data: invoicesResp, isLoading: isInvoicesLoading } = useGetV1StudentsIdInvoices(
     selectedStudent?.id || 0,
     { academic_year_id: activeAy?.id, status: 'unpaid' },
-    { query: { enabled: currentStep === 2 && !!selectedStudent?.id } }
+    { query: { enabled: currentStep >= 2 && !!selectedStudent?.id } }
   );
   const allInvoices = (invoicesResp?.data as any)?.data || [];
   const unpaidInvoices = allInvoices.filter((inv: any) => inv.status !== 'paid');
+
+  // Fetch detail (items) for each selected invoice using useQueries
+  const invoiceDetailQueries = useQueries({
+    queries: selectedInvoices.map((invId) => ({
+      ...getGetV1InvoicesIdQueryOptions(invId),
+      enabled: selectedInvoices.length > 0,
+    })),
+  });
+
+  // Flatten all invoice items from selected invoices
+  const invoiceItems = useMemo(() => {
+    const items: any[] = [];
+    invoiceDetailQueries.forEach((q) => {
+      const detail = (q.data?.data as any)?.data;
+      if (detail?.items) {
+        detail.items.forEach((item: any) => {
+          const sisa = Number(item.amount || 0) - Number(item.paid_amount || 0);
+          if (sisa > 0) {
+            items.push({
+              id: item.id,
+              invoice_id: detail.id,
+              name: item.name,
+              category: item.category,
+              sisa_tagihan: sisa,
+            });
+          }
+        });
+      }
+    });
+    return items;
+  }, [invoiceDetailQueries.map((q) => q.data).join(',')]);
+
+  // Auto-populate pay amounts when invoice items change
+  useEffect(() => {
+    if (invoiceItems.length > 0) {
+      setPayAmounts((prev) => {
+        const next = { ...prev };
+        invoiceItems.forEach((item) => {
+          if (next[item.id] === undefined) {
+            next[item.id] = item.sisa_tagihan; // Default pay full
+          }
+        });
+        // Remove items that are no longer in the list
+        Object.keys(next).forEach((key) => {
+          if (!invoiceItems.find((i: any) => i.id === Number(key))) {
+            delete next[Number(key)];
+          }
+        });
+        return next;
+      });
+    }
+  }, [invoiceItems]);
 
   // Queries Step 3 (Savings Balance)
   const { data: savingsResp } = useGetV1StudentsIdSavings(selectedStudent?.id || 0, {
@@ -90,39 +139,6 @@ function WizardPembayaranPage() {
     const cash = Number(cashReceived) || 0;
     return cash > totalPay ? cash - totalPay : 0;
   }, [cashReceived, totalPay]);
-
-  // Mock items generation for selected invoices
-  const [mockItems, setMockItems] = useState<any[]>([]);
-  useEffect(() => {
-    if (currentStep === 2 && selectedInvoices.length > 0) {
-      // Generate mock items for the selected invoices to simulate `useGetV1InvoicesId`
-      const items: any[] = [];
-      const newPayAmounts: Record<number, number> = { ...payAmounts };
-      
-      selectedInvoices.forEach(invId => {
-        const inv = unpaidInvoices.find((i: any) => i.id === invId);
-        if (inv) {
-          const sisa = Number(inv.total_amount) - Number(inv.paid_amount);
-          const itemId = invId * 1000; // Mock item ID
-          if (!mockItems.find(i => i.id === itemId)) {
-            items.push({
-              id: itemId,
-              invoice_id: invId,
-              name: `Pembayaran ${inv.type} (${inv.month ? 'Bulan ' + inv.month : 'Tahunan'})`,
-              sisa_tagihan: sisa
-            });
-            if (newPayAmounts[itemId] === undefined) {
-              newPayAmounts[itemId] = sisa; // Default pay full
-            }
-          } else {
-            items.push(mockItems.find(i => i.id === itemId));
-          }
-        }
-      });
-      setMockItems(items);
-      setPayAmounts(newPayAmounts);
-    }
-  }, [selectedInvoices, currentStep]);
 
   const handleToggleInvoice = (invId: number) => {
     setSelectedInvoices(prev => 
@@ -327,7 +343,7 @@ function WizardPembayaranPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
-                        {mockItems.map((item) => (
+                        {invoiceItems.map((item: any) => (
                           <tr key={item.id}>
                             <td className="py-3 text-sm text-gray-900">{item.name}</td>
                             <td className="py-3 text-sm text-gray-500 text-right">{formatCurrency(item.sisa_tagihan)}</td>

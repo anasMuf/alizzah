@@ -7,6 +7,7 @@ import { academicYearAtom } from '../../../../store/global';
 import { Badge } from '../../../../components/atoms/Badge';
 import { formatCurrency, formatDate } from '../../../../utils/format';
 import { Button } from '../../../../components/atoms/Button';
+import { Pagination } from '../../../../components/molecules/Pagination';
 
 export const Route = createFileRoute('/_authenticated/keuangan/pembayaran/')({
   component: PembayaranListPage,
@@ -62,7 +63,7 @@ function PembayaranListPage() {
           </p>
         </div>
         <div className="mt-4 sm:ml-4 sm:mt-0 flex gap-2">
-          <Link to="/keuangan/pembayaran/baru">
+          <Link to="/keuangan/pembayaran/baru" search={{ student_id: undefined }}>
             <Button variant="primary">
               <Plus className="-ml-0.5 mr-1.5 h-5 w-5" aria-hidden="true" />
               Catat Pembayaran Baru
@@ -188,36 +189,14 @@ function PembayaranListPage() {
           </table>
         </div>
 
-        {/* Pagination placeholder if needed */}
-        {meta && meta.total_pages > 1 && (
-          <div className="border-t border-gray-200 px-4 py-3 flex items-center justify-between sm:px-6">
-            <div className="flex flex-1 justify-between sm:hidden">
-              <Button variant="secondary" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>Previous</Button>
-              <Button variant="secondary" onClick={() => setPage(p => p + 1)} disabled={page >= meta.total_pages}>Next</Button>
-            </div>
-            <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm text-gray-700">
-                  Menampilkan <span className="font-medium">{(page - 1) * 20 + 1}</span> sampai <span className="font-medium">{Math.min(page * 20, meta.total_items)}</span> dari <span className="font-medium">{meta.total_items}</span> pembayaran
-                </p>
-              </div>
-              <div>
-                <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
-                  <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50">
-                    <span className="sr-only">Previous</span>
-                    <ChevronRight className="h-5 w-5 rotate-180" aria-hidden="true" />
-                  </button>
-                  <span className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300">
-                    {page}
-                  </span>
-                  <button onClick={() => setPage(p => p + 1)} disabled={page >= meta.total_pages} className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50">
-                    <span className="sr-only">Next</span>
-                    <ChevronRight className="h-5 w-5" aria-hidden="true" />
-                  </button>
-                </nav>
-              </div>
-            </div>
-          </div>
+        {/* Pagination */}
+        {meta && (
+          <Pagination
+            page={page}
+            limit={20}
+            total={meta.total}
+            onPageChange={setPage}
+          />
         )}
       </div>
     </div>

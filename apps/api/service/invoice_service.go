@@ -299,15 +299,33 @@ func (s *invoiceService) UpdateInvoiceStatus(invoiceID uint, tx *gorm.DB) error 
 
 // Mappers
 
+func mapStudentBrief(s model.Student) dto.StudentBriefResponse {
+	brief := dto.StudentBriefResponse{
+		ID:       s.ID,
+		FullName: s.FullName,
+		Gender:   s.Gender,
+		Status:   s.Status,
+	}
+	for _, enr := range s.Enrollments {
+		if enr.Status == "active" {
+			brief.ActiveEnrollment = &dto.EnrollmentBriefForStudent{
+				ClassGroupID: enr.ClassGroupID,
+				ClassGroup: dto.ClassGroupBriefResponse{
+					ID:    enr.ClassGroup.ID,
+					Name:  enr.ClassGroup.Name,
+					Level: enr.ClassGroup.Level,
+				},
+			}
+			break
+		}
+	}
+	return brief
+}
+
 func mapInvoiceToListResponse(inv model.Invoice) dto.InvoiceListResponse {
 	resp := dto.InvoiceListResponse{
-		ID: inv.ID,
-		Student: dto.StudentBriefResponse{
-			ID:       inv.Student.ID,
-			FullName: inv.Student.FullName,
-			Gender:   inv.Student.Gender,
-			Status:   inv.Student.Status,
-		},
+		ID:      inv.ID,
+		Student: mapStudentBrief(inv.Student),
 		AcademicYear: dto.AcademicYearBriefResponse{
 			ID:   inv.AcademicYear.ID,
 			Name: inv.AcademicYear.Name,
@@ -329,13 +347,8 @@ func mapInvoiceToListResponse(inv model.Invoice) dto.InvoiceListResponse {
 
 func mapInvoiceToDetailResponse(inv model.Invoice) dto.InvoiceDetailResponse {
 	resp := dto.InvoiceDetailResponse{
-		ID: inv.ID,
-		Student: dto.StudentBriefResponse{
-			ID:       inv.Student.ID,
-			FullName: inv.Student.FullName,
-			Gender:   inv.Student.Gender,
-			Status:   inv.Student.Status,
-		},
+		ID:      inv.ID,
+		Student: mapStudentBrief(inv.Student),
 		AcademicYear: dto.AcademicYearBriefResponse{
 			ID:   inv.AcademicYear.ID,
 			Name: inv.AcademicYear.Name,

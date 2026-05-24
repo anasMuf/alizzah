@@ -50,7 +50,7 @@ function DetailPembayaranPage() {
       </div>
 
       {/* Print Area Container */}
-      <div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-8 print:shadow-none print:ring-0 print:p-0">
+      <div className="print-invoice bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-8 print:shadow-none print:ring-0 print:p-0">
         
         {/* Receipt Header */}
         <div className="border-b border-gray-200 pb-6 mb-6">

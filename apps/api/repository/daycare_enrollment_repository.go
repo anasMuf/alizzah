@@ -63,7 +63,10 @@ func (r *daycareEnrollmentRepository) FindByID(id uint) (*model.DaycareEnrollmen
 func (r *daycareEnrollmentRepository) FindActiveByStudentID(studentID, academicYearID uint) (*model.DaycareEnrollment, error) {
 	var de model.DaycareEnrollment
 	err := r.db.Where("student_id = ? AND academic_year_id = ? AND status = 'active'", studentID, academicYearID).First(&de).Error
-	return &de, err
+	if err != nil {
+		return nil, err
+	}
+	return &de, nil
 }
 
 func (r *daycareEnrollmentRepository) Create(de *model.DaycareEnrollment) error {

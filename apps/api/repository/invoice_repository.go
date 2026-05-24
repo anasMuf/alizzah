@@ -40,7 +40,11 @@ func (r *invoiceRepository) FindAll(params dto.InvoiceQueryParams) ([]model.Invo
 	var invoices []model.Invoice
 	var total int64
 
-	query := r.db.Model(&model.Invoice{}).Preload("Student").Preload("AcademicYear")
+	query := r.db.Model(&model.Invoice{}).
+		Preload("Student").
+		Preload("Student.Enrollments", "status = ?", "active").
+		Preload("Student.Enrollments.ClassGroup").
+		Preload("AcademicYear")
 
 	if params.StudentID != 0 {
 		query = query.Where("student_id = ?", params.StudentID)
@@ -67,6 +71,14 @@ func (r *invoiceRepository) FindAll(params dto.InvoiceQueryParams) ([]model.Invo
 				Where("class_group_id = ? AND status = ?", params.ClassGroupID, "active"),
 		)
 	}
+	if params.Search != "" {
+		searchPattern := "%" + params.Search + "%"
+		query = query.Where("student_id IN (?)",
+			r.db.Model(&model.Student{}).
+				Select("id").
+				Where("full_name ILIKE ?", searchPattern),
+		)
+	}
 
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err
@@ -91,7 +103,12 @@ func (r *invoiceRepository) FindAll(params dto.InvoiceQueryParams) ([]model.Invo
 
 func (r *invoiceRepository) FindByID(id uint) (*model.Invoice, error) {
 	var invoice model.Invoice
-	err := r.db.Preload("Student").Preload("AcademicYear").Preload("Items").Preload("Installments").First(&invoice, id).Error
+	err := r.db.Preload("Student").
+		Preload("Student.Enrollments", "status = ?", "active").
+		Preload("Student.Enrollments.ClassGroup").
+		Preload("AcademicYear").
+		Preload("Items").
+		Preload("Installments").First(&invoice, id).Error
 	return &invoice, err
 }
 

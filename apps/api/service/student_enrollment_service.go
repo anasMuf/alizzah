@@ -68,9 +68,14 @@ func (s *studentEnrollmentService) GetStudentsByClassGroup(classGroupID uint) ([
 	for _, e := range enrollments {
 		var currentEnrollment *dto.EnrollmentBriefResponse
 		currentEnrollment = &dto.EnrollmentBriefResponse{
-			ID:               e.ID,
-			ClassGroupID:     e.ClassGroupID,
-			ClassGroupName:   e.ClassGroup.Name,
+			ID:             e.ID,
+			ClassGroupID:   e.ClassGroupID,
+			ClassGroupName: e.ClassGroup.Name,
+			ClassGroup: dto.ClassGroupBriefResponse{
+				ID:    e.ClassGroup.ID,
+				Name:  e.ClassGroup.Name,
+				Level: e.ClassGroup.Level,
+			},
 			Level:            e.ClassGroup.Level,
 			AcademicYearID:   e.AcademicYearID,
 			AcademicYearName: e.AcademicYear.Name,

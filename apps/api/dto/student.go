@@ -57,7 +57,7 @@ type StudentListResponse struct {
 	BirthDate         string                   `json:"birth_date"`
 	Status            string                   `json:"status"`
 	IsDaycareOnly     bool                     `json:"is_daycare_only"`
-	CurrentEnrollment *EnrollmentBriefResponse `json:"current_enrollment,omitempty"`
+	CurrentEnrollment *EnrollmentBriefResponse `json:"active_enrollment,omitempty"`
 }
 
 // StudentDetailResponse is the detailed response.
@@ -72,7 +72,7 @@ type StudentDetailResponse struct {
 	Status            string                    `json:"status"`
 	IsDaycareOnly     bool                      `json:"is_daycare_only"`
 	Guardians         []GuardianBriefResponse   `json:"guardians"`
-	CurrentEnrollment *EnrollmentBriefResponse  `json:"current_enrollment,omitempty"`
+	CurrentEnrollment *EnrollmentBriefResponse  `json:"active_enrollment,omitempty"`
 	FinancialSummary  *FinancialSummaryResponse `json:"financial_summary,omitempty"`
 	CreatedAt         string                    `json:"created_at"`
 }

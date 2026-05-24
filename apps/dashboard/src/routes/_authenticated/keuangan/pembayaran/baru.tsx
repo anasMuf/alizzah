@@ -4,7 +4,7 @@ import { useAtom } from 'jotai';
 import { useDebounce } from 'use-debounce';
 import { useQueries } from '@tanstack/react-query';
 import { Check, Search, User, FileText, Wallet, AlertCircle } from 'lucide-react';
-import { useGetV1Students } from '../../../../api/endpoints/students/students';
+import { useGetV1Students, useGetV1StudentsId } from '../../../../api/endpoints/students/students';
 import { useGetV1StudentsIdInvoices, getGetV1InvoicesIdQueryOptions } from '../../../../api/endpoints/invoices/invoices';
 import { usePostV1Payments } from '../../../../api/endpoints/payments/payments';
 import { useGetV1StudentsIdSavings } from '../../../../api/endpoints/savings/savings';
@@ -15,6 +15,9 @@ import { useToast } from '../../../../components/molecules/Toast';
 
 export const Route = createFileRoute('/_authenticated/keuangan/pembayaran/baru')({
   component: WizardPembayaranPage,
+  validateSearch: (search: Record<string, unknown>) => ({
+    student_id: search.student_id ? Number(search.student_id) : undefined,
+  }),
 });
 
 const STEPS = [
@@ -46,12 +49,19 @@ function WizardPembayaranPage() {
   );
   const students = (studentsResp?.data as any)?.data || [];
 
+  // Fetch student data when pre-filling from URL param
+  const { data: initialStudentResp } = useGetV1StudentsId(initialStudentId || 0, {
+    query: { enabled: !!initialStudentId }
+  });
+  const initialStudentData = (initialStudentResp?.data as any)?.data;
+
   // Effect for pre-filling student from URL param
   useEffect(() => {
-    if (initialStudentId && currentStep === 1 && !selectedStudent) {
-      setSelectedStudent({ id: initialStudentId, full_name: `Siswa #${initialStudentId}` });
+    if (initialStudentData && currentStep === 1 && !selectedStudent) {
+      setSelectedStudent(initialStudentData);
+      setCurrentStep(2);
     }
-  }, [initialStudentId]);
+  }, [initialStudentData]);
 
   // State Step 2
   const [selectedInvoices, setSelectedInvoices] = useState<number[]>([]);

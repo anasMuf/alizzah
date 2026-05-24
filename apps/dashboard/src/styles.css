@@ -32,3 +32,46 @@ body {
     opacity: 1;
   }
 }
+
+/* Print Styles */
+@media print {
+  /* Hide everything by default */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Show only the printable invoice area */
+  .print-invoice,
+  .print-invoice * {
+    visibility: visible !important;
+    display: block !important;
+  }
+
+  .print-invoice {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 20mm;
+  }
+
+  .print-invoice table,
+  .print-invoice thead,
+  .print-invoice tbody,
+  .print-invoice tfoot,
+  .print-invoice tr,
+  .print-invoice th,
+  .print-invoice td {
+    display: revert !important;
+  }
+
+  .print-invoice .grid {
+    display: grid !important;
+  }
+
+  /* Ensure proper printing */
+  @page {
+    margin: 10mm;
+    size: A4;
+  }
+}

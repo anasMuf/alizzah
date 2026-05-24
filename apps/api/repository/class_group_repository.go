@@ -65,11 +65,17 @@ func (r *classGroupRepository) WithTx(tx *gorm.DB) ClassGroupRepository {
 
 
 func (r *classGroupRepository) HasActiveStudents(id uint) (bool, error) {
-	// TODO: Check against enrollments table in Batch 3
-	return false, nil
+	var count int64
+	err := r.db.Model(&model.StudentEnrollment{}).
+		Where("class_group_id = ? AND status = ?", id, "active").
+		Count(&count).Error
+	return count > 0, err
 }
 
 func (r *classGroupRepository) CountStudents(id uint) (int, error) {
-	// TODO: Count enrollments table in Batch 3
-	return 0, nil
+	var count int64
+	err := r.db.Model(&model.StudentEnrollment{}).
+		Where("class_group_id = ? AND status = ?", id, "active").
+		Count(&count).Error
+	return int(count), err
 }

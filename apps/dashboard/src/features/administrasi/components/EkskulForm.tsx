@@ -120,9 +120,9 @@ export function EkskulForm({ isOpen, onClose, initialData }: EkskulFormProps) {
             className="block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
             required
           >
-            <option value="pasta">PASTA (Tahfiz)</option>
-            <option value="calisan">CALISAN (Baca Tulis Al-Quran)</option>
-            <option value="ekskul">Ekskul Reguler</option>
+            <option value="pasta">PASTA</option>
+            <option value="calisan">CALISAN</option>
+            <option value="ekskul">Ekskul</option>
           </select>
         </div>
       </form>

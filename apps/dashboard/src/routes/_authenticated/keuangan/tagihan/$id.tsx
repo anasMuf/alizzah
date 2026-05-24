@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useQueryClient } from '@tanstack/react-query';
+import { useAtom } from 'jotai';
 import { ChevronRight, Plus, Printer, Edit2, Trash2, CalendarDays } from 'lucide-react';
 import { 
   useGetV1InvoicesId, 
@@ -10,6 +11,8 @@ import {
   usePutV1InvoicesIdItemsItemId,
   usePostV1InvoicesIdInstallments
 } from '../../../../api/endpoints/invoices/invoices';
+import { useGetV1FeeConfigs, useGetV1FeeConfigsIdItems } from '../../../../api/endpoints/fee-configs/fee-configs';
+import { academicYearAtom } from '../../../../store/global';
 import { Badge } from '../../../../components/atoms/Badge';
 import { Button } from '../../../../components/atoms/Button';
 import { formatCurrency, formatDate } from '../../../../utils/format';
@@ -26,6 +29,7 @@ function DetailTagihanPage() {
   const { id } = Route.useParams();
   const queryClient = useQueryClient();
   const { addToast } = useToast();
+  const [activeAy] = useAtom(academicYearAtom);
 
   const { data: invoiceResp, isLoading } = useGetV1InvoicesId(Number(id));
   const invoice = (invoiceResp?.data as any)?.data;
@@ -48,6 +52,31 @@ function DetailTagihanPage() {
   const [itemName, setItemName] = useState('');
   const [itemAmount, setItemAmount] = useState('');
   const [itemCategory, setItemCategory] = useState('incidental');
+  const [selectedFeeItemId, setSelectedFeeItemId] = useState<string>('');
+
+  // Fetch fee config and items for dropdown
+  const { data: feeConfigsResp } = useGetV1FeeConfigs();
+  const feeConfigs = (feeConfigsResp?.data as any)?.data || [];
+  const activeFeeConfig = feeConfigs.find((fc: any) => fc.academic_year?.id === activeAy?.id);
+  const feeConfigId = activeFeeConfig?.id;
+
+  const { data: feeItemsResp } = useGetV1FeeConfigsIdItems(
+    feeConfigId || 0,
+    undefined,
+    { query: { enabled: !!feeConfigId } }
+  );
+  const allFeeItems: any[] = (feeItemsResp?.data as any)?.data || [];
+
+  // Group fee items by category for dropdown
+  const feeItemsByCategory = useMemo(() => {
+    const grouped: Record<string, any[]> = {};
+    allFeeItems.forEach((item: any) => {
+      const cat = item.category || 'other';
+      if (!grouped[cat]) grouped[cat] = [];
+      grouped[cat].push(item);
+    });
+    return grouped;
+  }, [allFeeItems]);
 
   const addItemMutation = usePostV1InvoicesIdItems({
     mutation: {
@@ -101,11 +130,42 @@ function DetailTagihanPage() {
     }
   });
 
+  const categoryLabels: Record<string, string> = {
+    'monthly_spp': 'SPP Bulanan',
+    'monthly_infaq': 'Infaq Harian',
+    'initial': 'Biaya Awal',
+    'registration': 'Registrasi Tahunan',
+    'pasta': 'PASTA',
+    'calisan': 'CALISAN',
+    'ekskul': 'Ekskul',
+    'savings_mandatory': 'Tabungan Wajib',
+    'daycare': 'Daycare',
+    'graduation': 'Wisuda',
+    'incidental': 'Insidental / Tambahan',
+  };
+
   const handleOpenAddItem = () => {
     setItemName('');
     setItemAmount('');
     setItemCategory('incidental');
+    setSelectedFeeItemId('');
     setIsAddItemOpen(true);
+  };
+
+  const handleFeeItemSelect = (feeItemIdStr: string) => {
+    setSelectedFeeItemId(feeItemIdStr);
+    if (feeItemIdStr === 'custom') {
+      setItemName('');
+      setItemAmount('');
+      setItemCategory('incidental');
+      return;
+    }
+    const feeItem = allFeeItems.find((fi: any) => fi.id.toString() === feeItemIdStr);
+    if (feeItem) {
+      setItemName(feeItem.name);
+      setItemAmount(feeItem.amount.toString());
+      setItemCategory(feeItem.category || 'incidental');
+    }
   };
 
   const handleOpenEditItem = (item: any) => {
@@ -256,7 +316,7 @@ function DetailTagihanPage() {
           <Button variant="secondary" onClick={() => window.print()}>
             <Printer className="w-4 h-4 mr-2" /> Cetak Tagihan
           </Button>
-          <Link to="/keuangan/pembayaran/baru">
+          <Link to="/keuangan/pembayaran/baru" search={{ student_id: invoice.student?.id }}>
             <Button variant="primary" disabled={invoice.status === 'paid'}>
               + Catat Pembayaran
             </Button>
@@ -380,6 +440,57 @@ function DetailTagihanPage() {
         </div>
       </div>
 
+      {/* Printable Invoice - hidden on screen, shown on print */}
+      <div className="hidden print:block print-invoice">
+        <div className="text-center mb-6 border-b-2 border-gray-800 pb-4">
+          <h1 className="text-xl font-bold">ALIZZAH SCHOOL</h1>
+          <p className="text-sm text-gray-600">Detail Tagihan Siswa</p>
+        </div>
+        <div className="mb-4 text-sm">
+          <div className="grid grid-cols-2 gap-2">
+            <div><span className="text-gray-600">Nama Siswa:</span> <strong>{invoice.student?.full_name}</strong></div>
+            <div><span className="text-gray-600">Rombel:</span> <strong>{invoice.student?.active_enrollment?.class_group?.name || '-'}</strong></div>
+            <div><span className="text-gray-600">Jenis Tagihan:</span> <strong>{translateType(invoice.type)}</strong></div>
+            <div><span className="text-gray-600">Periode:</span> <strong>{periodeStr}</strong></div>
+            <div><span className="text-gray-600">Status:</span> <strong>{invoice.status === 'paid' ? 'Lunas' : invoice.status === 'partial' ? 'Sebagian Dibayar' : 'Belum Lunas'}</strong></div>
+            <div><span className="text-gray-600">Tanggal Cetak:</span> <strong>{new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</strong></div>
+          </div>
+        </div>
+        <table className="w-full text-sm border-collapse mb-4">
+          <thead>
+            <tr className="border-b-2 border-gray-800">
+              <th className="text-left py-2 pr-2">No</th>
+              <th className="text-left py-2 px-2">Item</th>
+              <th className="text-right py-2 px-2">Nominal</th>
+              <th className="text-right py-2 px-2">Dibayar</th>
+              <th className="text-right py-2 pl-2">Sisa</th>
+            </tr>
+          </thead>
+          <tbody>
+            {invoice.items?.map((item: any, idx: number) => (
+              <tr key={item.id} className="border-b border-gray-300">
+                <td className="py-1.5 pr-2">{idx + 1}</td>
+                <td className="py-1.5 px-2">{item.name}</td>
+                <td className="py-1.5 px-2 text-right">{formatCurrency(Number(item.amount))}</td>
+                <td className="py-1.5 px-2 text-right">{formatCurrency(Number(item.paid_amount))}</td>
+                <td className="py-1.5 pl-2 text-right">{formatCurrency(Number(item.amount) - Number(item.paid_amount))}</td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr className="border-t-2 border-gray-800 font-bold">
+              <td colSpan={2} className="py-2 text-right">Total</td>
+              <td className="py-2 px-2 text-right">{formatCurrency(totalAmount)}</td>
+              <td className="py-2 px-2 text-right">{formatCurrency(paidAmount)}</td>
+              <td className="py-2 pl-2 text-right">{formatCurrency(sisa)}</td>
+            </tr>
+          </tfoot>
+        </table>
+        <div className="mt-8 text-sm text-gray-500 text-center">
+          <p>Dokumen ini dicetak secara otomatis oleh sistem Alizzah School.</p>
+        </div>
+      </div>
+
       {/* Modals & SlideOvers */}
       <SlideOver
         isOpen={isAddItemOpen || !!editingItem}
@@ -388,12 +499,38 @@ function DetailTagihanPage() {
       >
         <form onSubmit={handleSaveItem} className="flex h-full flex-col bg-white">
           <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 space-y-6">
+            {!editingItem && (
+              <div>
+                <label className="block text-sm font-medium leading-6 text-gray-900 mb-2">Pilih Item dari Daftar Tarif</label>
+                <select
+                  value={selectedFeeItemId}
+                  onChange={(e) => handleFeeItemSelect(e.target.value)}
+                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                >
+                  <option value="">— Pilih item tagihan —</option>
+                  {Object.entries(feeItemsByCategory).map(([cat, items]) => (
+                    <optgroup key={cat} label={categoryLabels[cat] || cat}>
+                      {(items as any[]).map((fi: any) => (
+                        <option key={fi.id} value={fi.id.toString()}>
+                          {fi.name} — {formatCurrency(fi.amount)}{fi.level !== 'all' ? ` (${fi.level})` : ''}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                  <option value="custom">✏ Input Manual (Insidental)</option>
+                </select>
+                {allFeeItems.length === 0 && (
+                  <p className="mt-1 text-xs text-amber-600">Data item tarif belum tersedia. Anda bisa menambahkan item secara manual.</p>
+                )}
+              </div>
+            )}
             <FormField
               id="itemName"
               label="Nama Item"
               value={itemName}
               onChange={(e: any) => setItemName(e.target.value)}
               required
+              disabled={!editingItem && !!selectedFeeItemId && selectedFeeItemId !== 'custom'}
             />
             <FormField
               id="itemAmount"
@@ -404,7 +541,7 @@ function DetailTagihanPage() {
               required
               min="1"
             />
-            {!editingItem && (
+            {!editingItem && selectedFeeItemId === 'custom' && (
                <div>
                   <label className="block text-sm font-medium leading-6 text-gray-900 mb-2">Kategori</label>
                   <select
@@ -413,14 +550,13 @@ function DetailTagihanPage() {
                      className="block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
                   >
                      <option value="incidental">Insidental / Tambahan</option>
-                     <option value="tuition">SPP</option>
                   </select>
                </div>
             )}
           </div>
           <div className="flex-shrink-0 border-t border-gray-200 px-4 py-5 sm:px-6 flex justify-end gap-3">
             <Button type="button" variant="secondary" onClick={() => { setIsAddItemOpen(false); setEditingItem(null); }}>Batal</Button>
-            <Button type="submit" variant="primary" disabled={addItemMutation.isPending || editItemMutation.isPending}>
+            <Button type="submit" variant="primary" disabled={addItemMutation.isPending || editItemMutation.isPending || (!editingItem && !selectedFeeItemId)}>
               Simpan
             </Button>
           </div>

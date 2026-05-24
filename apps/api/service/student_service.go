@@ -25,14 +25,16 @@ type StudentService interface {
 }
 
 type studentService struct {
-	studentRepo repository.StudentRepository
-	invoiceRepo repository.InvoiceRepository
+	studentRepo    repository.StudentRepository
+	enrollmentRepo repository.StudentEnrollmentRepository
+	invoiceRepo    repository.InvoiceRepository
 	savingsService SavingsService
 }
 
-func NewStudentService(studentRepo repository.StudentRepository, invoiceRepo repository.InvoiceRepository, savingsService SavingsService) StudentService {
+func NewStudentService(studentRepo repository.StudentRepository, enrollmentRepo repository.StudentEnrollmentRepository, invoiceRepo repository.InvoiceRepository, savingsService SavingsService) StudentService {
 	return &studentService{
 		studentRepo:    studentRepo,
+		enrollmentRepo: enrollmentRepo,
 		invoiceRepo:    invoiceRepo,
 		savingsService: savingsService,
 	}
@@ -53,7 +55,12 @@ func (s *studentService) GetAll(params dto.StudentQueryParams) ([]dto.StudentLis
 			BirthDate:     st.BirthDate.Format(dateLayout),
 			Status:        st.Status,
 			IsDaycareOnly: st.IsDaycareOnly,
-			// CurrentEnrollment: nil, // TODO: Batch 3
+		}
+		// Populate current enrollment
+		if s.enrollmentRepo != nil {
+			if enr, err := s.enrollmentRepo.FindActiveByStudentID(st.ID); err == nil {
+				responses[i].CurrentEnrollment = s.mapEnrollmentToBrief(enr)
+			}
 		}
 	}
 
@@ -76,6 +83,13 @@ func (s *studentService) GetByID(id uint) (*dto.StudentDetailResponse, error) {
 	}
 
 	resp := mapStudentToDetailResponse(*student)
+
+	// Fill current enrollment
+	if s.enrollmentRepo != nil {
+		if enr, err := s.enrollmentRepo.FindActiveByStudentID(id); err == nil {
+			resp.CurrentEnrollment = s.mapEnrollmentToBrief(enr)
+		}
+	}
 
 	// Fill financial summary
 	if s.invoiceRepo != nil {
@@ -309,9 +323,25 @@ func mapStudentToDetailResponse(st model.Student) *dto.StudentDetailResponse {
 		PhotoURL:      photoUrl,
 		Status:        st.Status,
 		IsDaycareOnly: st.IsDaycareOnly,
-		Guardians:     gBriefs,
-		// CurrentEnrollment: nil, // TODO: Batch 3
-		// FinancialSummary:  nil, // TODO: Batch 5
+		Guardians: gBriefs,
 		CreatedAt: st.CreatedAt.Format(time.RFC3339),
+	}
+}
+
+func (s *studentService) mapEnrollmentToBrief(enr *model.StudentEnrollment) *dto.EnrollmentBriefResponse {
+	return &dto.EnrollmentBriefResponse{
+		ID:             enr.ID,
+		ClassGroupID:   enr.ClassGroupID,
+		ClassGroupName: enr.ClassGroup.Name,
+		ClassGroup: dto.ClassGroupBriefResponse{
+			ID:    enr.ClassGroup.ID,
+			Name:  enr.ClassGroup.Name,
+			Level: enr.ClassGroup.Level,
+		},
+		Level:            enr.ClassGroup.Level,
+		AcademicYearID:   enr.AcademicYearID,
+		AcademicYearName: enr.AcademicYear.Name,
+		StartDate:        enr.StartDate.Format(dateLayout),
+		Status:           enr.Status,
 	}
 }

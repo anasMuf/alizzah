@@ -9,6 +9,7 @@ type InvoiceQueryParams struct {
 	Month          uint
 	Year           uint
 	ClassGroupID   uint
+	Search         string
 	Page           int
 	Limit          int
 }

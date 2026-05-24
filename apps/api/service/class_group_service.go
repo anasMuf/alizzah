@@ -35,7 +35,8 @@ func (s *classGroupService) GetAll(params dto.ClassGroupQueryParams) ([]dto.Clas
 
 	var responses []dto.ClassGroupResponse
 	for _, cg := range cgs {
-		responses = append(responses, *mapClassGroupToResponse(cg, 0)) // StudentCount 0 until Batch 3
+		count, _ := s.classGroupRepo.CountStudents(cg.ID)
+		responses = append(responses, *mapClassGroupToResponse(cg, count))
 	}
 	return responses, nil
 }
@@ -48,7 +49,8 @@ func (s *classGroupService) GetByID(id uint) (*dto.ClassGroupResponse, error) {
 		}
 		return nil, err
 	}
-	return mapClassGroupToResponse(*cg, 0), nil // StudentCount 0 until Batch 3
+	count, _ := s.classGroupRepo.CountStudents(cg.ID)
+	return mapClassGroupToResponse(*cg, count), nil
 }
 
 func (s *classGroupService) Create(req dto.CreateClassGroupRequest) (*dto.ClassGroupResponse, error) {

@@ -119,54 +119,56 @@ function MutasiMasukPage() {
             <div className="sm:col-span-6">
               <label className="block text-sm font-medium leading-6 text-gray-900 mb-2">Pilih Siswa (Belum Ada Rombel) *</label>
               {!selectedStudent ? (
-                <div className="relative">
-                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                    <Search className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    type="text"
-                    className="block w-full rounded-md border-0 py-2 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                    placeholder="Cari nama siswa..."
-                    value={studentSearch}
-                    onChange={(e) => setStudentSearch(e.target.value)}
-                  />
-                  {studentSearch.length > 2 && (
-                    <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
-                      {isSearchLoading ? (
-                        <div className="px-4 py-2 text-sm text-gray-500">Mencari...</div>
-                      ) : searchResults.length === 0 ? (
-                        <div className="px-4 py-2 text-sm text-gray-500">Tidak ada siswa ditemukan.</div>
-                      ) : (
-                        searchResults.map((student: any) => {
-                          const isActive = !!student.active_enrollment;
-                          return (
-                            <div
-                              key={student.id}
-                              className={`relative cursor-pointer select-none py-2 pl-3 pr-9 ${isActive ? 'opacity-50' : 'hover:bg-indigo-50'}`}
-                              onClick={() => {
-                                if (!isActive) setSelectedStudent(student)
-                              }}
-                            >
-                              <div className="flex items-center justify-between">
-                                <span className="ml-3 block truncate font-medium text-gray-900">
-                                  {student.full_name}
-                                </span>
-                                {isActive ? (
-                                  <span className="text-xs text-red-500">
-                                    Sudah aktif di {student.active_enrollment.class_group?.name}
-                                  </span>
-                                ) : (
-                                  <span className="text-xs text-green-500">Belum masuk rombel</span>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })
-                      )}
+                <>
+                  <div className="relative">
+                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                      <Search className="h-5 w-5 text-gray-400" />
                     </div>
-                  )}
+                    <input
+                      type="text"
+                      className="block w-full rounded-md border-0 py-2 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                      placeholder="Cari nama siswa..."
+                      value={studentSearch}
+                      onChange={(e) => setStudentSearch(e.target.value)}
+                    />
+                    {studentSearch.length > 2 && (
+                      <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                        {isSearchLoading ? (
+                          <div className="px-4 py-2 text-sm text-gray-500">Mencari...</div>
+                        ) : searchResults.length === 0 ? (
+                          <div className="px-4 py-2 text-sm text-gray-500">Tidak ada siswa ditemukan.</div>
+                        ) : (
+                          searchResults.map((student: any) => {
+                            const isActive = !!student.active_enrollment;
+                            return (
+                              <div
+                                key={student.id}
+                                className={`relative cursor-pointer select-none py-2 pl-3 pr-9 ${isActive ? 'opacity-50' : 'hover:bg-indigo-50'}`}
+                                onClick={() => {
+                                  if (!isActive) setSelectedStudent(student)
+                                }}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="ml-3 block truncate font-medium text-gray-900">
+                                    {student.full_name}
+                                  </span>
+                                  {isActive ? (
+                                    <span className="text-xs text-red-500">
+                                      Sudah aktif di {student.active_enrollment.class_group?.name}
+                                    </span>
+                                  ) : (
+                                    <span className="text-xs text-green-500">Belum masuk rombel</span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    )}
+                  </div>
                   <p className="mt-2 text-sm text-gray-500">Hanya siswa yang tidak memiliki enrollment aktif yang dapat dipilih. Jika data siswa belum ada, klik "Data Siswa Baru" di atas.</p>
-                </div>
+                </>
               ) : (
                 <div className="flex items-center justify-between p-4 border border-indigo-200 bg-indigo-50 rounded-lg">
                   <div className="flex items-center">

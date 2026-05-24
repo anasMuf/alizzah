@@ -1,14 +1,15 @@
 package dto
 
 type EnrollmentBriefResponse struct {
-	ID               uint   `json:"id"`
-	ClassGroupID     uint   `json:"class_group_id"`
-	ClassGroupName   string `json:"class_group_name"`
-	Level            string `json:"level"`
-	AcademicYearID   uint   `json:"academic_year_id"`
-	AcademicYearName string `json:"academic_year_name"`
-	StartDate        string `json:"start_date"`
-	Status           string `json:"status"`
+	ID               uint                    `json:"id"`
+	ClassGroupID     uint                    `json:"class_group_id"`
+	ClassGroupName   string                  `json:"class_group_name"`
+	ClassGroup       ClassGroupBriefResponse `json:"class_group"`
+	Level            string                  `json:"level"`
+	AcademicYearID   uint                    `json:"academic_year_id"`
+	AcademicYearName string                  `json:"academic_year_name"`
+	StartDate        string                  `json:"start_date"`
+	Status           string                  `json:"status"`
 }
 
 type EnrollmentDetailResponse struct {

@@ -23,27 +23,35 @@ func SeedClassGroups(db *gorm.DB) {
 	}
 
 	scheduleMutiara123, _ := json.Marshal(map[string]interface{}{
-		"groups": []map[string]interface{}{
-			{"days": []string{"senin", "rabu"}, "start": "07:15", "end": "10:00", "end_calisan": "10:30"},
-			{"days": []string{"jumat"}, "start": "07:15", "end": "09:00", "end_calisan": "09:30"},
+		"weekdays": map[string]interface{}{
+			"days": []string{"senin", "rabu"}, "time_in": "07:15", "time_out": "10:00", "time_out_calisan": "10:30",
+		},
+		"weekend": map[string]interface{}{
+			"days": []string{"jumat"}, "time_in": "07:15", "time_out": "09:00", "time_out_calisan": "09:30",
 		},
 	})
 	scheduleMutiara456, _ := json.Marshal(map[string]interface{}{
-		"groups": []map[string]interface{}{
-			{"days": []string{"selasa", "kamis"}, "start": "07:15", "end": "10:00", "end_calisan": "10:30"},
-			{"days": []string{"sabtu"}, "start": "07:15", "end": "09:00", "end_calisan": "09:30"},
+		"weekdays": map[string]interface{}{
+			"days": []string{"selasa", "kamis"}, "time_in": "07:15", "time_out": "10:00", "time_out_calisan": "10:30",
+		},
+		"weekend": map[string]interface{}{
+			"days": []string{"sabtu"}, "time_in": "07:15", "time_out": "09:00", "time_out_calisan": "09:30",
 		},
 	})
 	scheduleIntan, _ := json.Marshal(map[string]interface{}{
-		"groups": []map[string]interface{}{
-			{"days": []string{"senin", "selasa", "rabu", "kamis"}, "start": "07:15", "end": "10:00", "end_calisan": "10:30"},
-			{"days": []string{"jumat", "sabtu"}, "start": "07:15", "end": "09:00"},
+		"weekdays": map[string]interface{}{
+			"days": []string{"senin", "selasa", "rabu", "kamis"}, "time_in": "07:15", "time_out": "10:00", "time_out_calisan": "10:30",
+		},
+		"weekend": map[string]interface{}{
+			"days": []string{"jumat", "sabtu"}, "time_in": "07:15", "time_out": "09:00",
 		},
 	})
 	scheduleBerlian, _ := json.Marshal(map[string]interface{}{
-		"groups": []map[string]interface{}{
-			{"days": []string{"senin", "selasa", "rabu", "kamis"}, "start": "07:15", "end": "10:30", "end_calisan": "11:00"},
-			{"days": []string{"jumat", "sabtu"}, "start": "07:15", "end": "09:00"},
+		"weekdays": map[string]interface{}{
+			"days": []string{"senin", "selasa", "rabu", "kamis"}, "time_in": "07:15", "time_out": "10:30", "time_out_calisan": "11:00",
+		},
+		"weekend": map[string]interface{}{
+			"days": []string{"jumat", "sabtu"}, "time_in": "07:15", "time_out": "09:00",
 		},
 	})
 
@@ -90,4 +98,76 @@ func SeedClassGroups(db *gorm.DB) {
 		}
 	}
 	log.Println("Class group seeder berhasil (22 rombel)")
+}
+
+// FixClassGroupSchedules migrates schedule data from old "groups" format to new "weekdays/weekend" format.
+func FixClassGroupSchedules(db *gorm.DB) {
+	var classGroups []model.ClassGroup
+	db.Find(&classGroups)
+
+	fixed := 0
+	for _, cg := range classGroups {
+		var raw map[string]interface{}
+		if err := json.Unmarshal(cg.Schedule, &raw); err != nil {
+			continue
+		}
+
+		// Check if using old "groups" format
+		groups, ok := raw["groups"]
+		if !ok {
+			continue // Already in new format
+		}
+
+		groupSlice, ok := groups.([]interface{})
+		if !ok || len(groupSlice) == 0 {
+			continue
+		}
+
+		var weekdays, weekend map[string]interface{}
+
+		if len(groupSlice) >= 1 {
+			if g, ok := groupSlice[0].(map[string]interface{}); ok {
+				weekdays = map[string]interface{}{
+					"days":     g["days"],
+					"time_in":  g["start"],
+					"time_out": g["end"],
+				}
+				if cal, exists := g["end_calisan"]; exists {
+					weekdays["time_out_calisan"] = cal
+				}
+			}
+		}
+		if len(groupSlice) >= 2 {
+			if g, ok := groupSlice[1].(map[string]interface{}); ok {
+				weekend = map[string]interface{}{
+					"days":     g["days"],
+					"time_in":  g["start"],
+					"time_out": g["end"],
+				}
+				if cal, exists := g["end_calisan"]; exists {
+					weekend["time_out_calisan"] = cal
+				}
+			}
+		}
+
+		newSchedule := map[string]interface{}{}
+		if weekdays != nil {
+			newSchedule["weekdays"] = weekdays
+		}
+		if weekend != nil {
+			newSchedule["weekend"] = weekend
+		}
+
+		newJSON, err := json.Marshal(newSchedule)
+		if err != nil {
+			continue
+		}
+
+		db.Model(&cg).Update("schedule", newJSON)
+		fixed++
+	}
+
+	if fixed > 0 {
+		log.Printf("Fixed schedule format for %d class groups", fixed)
+	}
 }

@@ -269,12 +269,28 @@ func (s *paymentService) Create(createdBy uint, req dto.CreatePaymentRequest) (*
 }
 
 // Mappers
+func mapPaymentStudentBrief(s model.Student) dto.StudentBriefResponse {
+	brief := dto.StudentBriefResponse{
+		ID: s.ID, FullName: s.FullName, Gender: s.Gender, Status: s.Status,
+	}
+	for _, enr := range s.Enrollments {
+		if enr.Status == "active" {
+			brief.ActiveEnrollment = &dto.EnrollmentBriefForStudent{
+				ClassGroupID: enr.ClassGroupID,
+				ClassGroup: dto.ClassGroupBriefResponse{
+					ID: enr.ClassGroup.ID, Name: enr.ClassGroup.Name, Level: enr.ClassGroup.Level,
+				},
+			}
+			break
+		}
+	}
+	return brief
+}
+
 func mapPaymentToListResponse(p model.Payment) dto.PaymentListResponse {
 	return dto.PaymentListResponse{
-		ID: p.ID,
-		Student: dto.StudentBriefResponse{
-			ID: p.Student.ID, FullName: p.Student.FullName, Gender: p.Student.Gender, Status: p.Student.Status,
-		},
+		ID:      p.ID,
+		Student: mapPaymentStudentBrief(p.Student),
 		PaymentDate: p.PaymentDate.Format("2006-01-02"),
 		TotalAmount: p.TotalAmount,
 		Source:      p.Source,
@@ -285,10 +301,8 @@ func mapPaymentToListResponse(p model.Payment) dto.PaymentListResponse {
 
 func mapPaymentToDetailResponse(p model.Payment) dto.PaymentDetailResponse {
 	resp := dto.PaymentDetailResponse{
-		ID: p.ID,
-		Student: dto.StudentBriefResponse{
-			ID: p.Student.ID, FullName: p.Student.FullName, Gender: p.Student.Gender, Status: p.Student.Status,
-		},
+		ID:      p.ID,
+		Student: mapPaymentStudentBrief(p.Student),
 		PaymentDate: p.PaymentDate.Format("2006-01-02"),
 		TotalAmount: p.TotalAmount,
 		Source:      p.Source,

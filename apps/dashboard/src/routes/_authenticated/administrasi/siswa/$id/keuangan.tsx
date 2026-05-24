@@ -32,7 +32,7 @@ function SiswaKeuanganPage() {
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {/* Card: Total Tagihan Belum Dibayar */}
-        <div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-6 relative overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-6 relative overflow-hidden flex flex-col">
           <div className="absolute top-0 right-0 -mr-4 -mt-4 opacity-10">
             <CreditCard className="w-32 h-32 text-red-600" />
           </div>
@@ -47,8 +47,8 @@ function SiswaKeuanganPage() {
           </p>
           <p className="text-sm text-gray-500 relative z-10">Akumulasi tagihan SPP, SPD, dll yang belum lunas.</p>
           
-          <div className="mt-6 relative z-10">
-            <Link to="/keuangan/tagihan" search={{ q: student.full_name }}>
+          <div className="mt-auto pt-6 relative z-10">
+            <Link to="/keuangan/tagihan/siswa/$id" params={{ id }}>
               <Button variant="secondary" className="w-full text-red-700 border-red-200 hover:bg-red-50 hover:border-red-300">
                 Lihat Tagihan <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
@@ -57,7 +57,7 @@ function SiswaKeuanganPage() {
         </div>
 
         {/* Card: Saldo Tabungan Umum */}
-        <div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-6 relative overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-6 relative overflow-hidden flex flex-col">
           <div className="absolute top-0 right-0 -mr-4 -mt-4 opacity-10">
             <PiggyBank className="w-32 h-32 text-green-600" />
           </div>
@@ -72,8 +72,8 @@ function SiswaKeuanganPage() {
           </p>
           <p className="text-sm text-gray-500 relative z-10">Dapat ditarik kapan saja.</p>
           
-          <div className="mt-6 relative z-10">
-            <Link to="/keuangan/tabungan" search={{ q: student.full_name }}>
+          <div className="mt-auto pt-6 relative z-10">
+            <Link to="/keuangan/tabungan/siswa/$id" params={{ id }}>
               <Button variant="secondary" className="w-full text-green-700 border-green-200 hover:bg-green-50 hover:border-green-300">
                 Buku Tabungan <ArrowRight className="ml-2 w-4 h-4" />
               </Button>

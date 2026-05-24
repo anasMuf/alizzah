@@ -63,6 +63,7 @@ func (h *InvoiceHandler) List(c echo.Context) error {
 		Month:          uint(month),
 		Year:           uint(year),
 		ClassGroupID:   uint(classGroupID),
+		Search:         c.QueryParam("search"),
 		Page:           page,
 		Limit:          limit,
 	}

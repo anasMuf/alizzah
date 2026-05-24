@@ -92,7 +92,7 @@ function ProfilSiswaPage() {
       <div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5">
         <div className="px-4 py-5 sm:px-6 border-b border-gray-200 flex justify-between items-center">
           <h3 className="text-base font-semibold leading-6 text-gray-900">Informasi Pribadi</h3>
-          <Button variant="secondary" size="sm">Edit Data</Button>
+          <Button variant="secondary" size="sm" onClick={() => addToast({ variant: 'info', title: 'Info', message: 'Fitur edit data siswa sedang dalam pengembangan.' })}>Edit Data</Button>
         </div>
         <div className="px-4 py-5 sm:p-6">
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-8">

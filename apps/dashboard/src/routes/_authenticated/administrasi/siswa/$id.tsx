@@ -83,10 +83,10 @@ function StudentLayout() {
               </span>
               <span className="hidden sm:block">&bull;</span>
               <span>{student.gender === 'L' ? 'Laki-laki' : 'Perempuan'}</span>
-              {student.current_enrollment && (
+              {student.active_enrollment && (
                 <>
                   <span className="hidden sm:block">&bull;</span>
-                  <span>Rombel: <strong>{student.current_enrollment.class_group.name}</strong></span>
+                  <span>Rombel: <strong>{student.active_enrollment.class_group.name}</strong></span>
                 </>
               )}
               {student.is_daycare_only && (
@@ -118,14 +118,16 @@ function StudentLayout() {
           <div className="hidden sm:block">
             <nav className="flex divide-x divide-gray-200" aria-label="Tabs">
               {tabs.filter(t => t.show).map((tab) => {
-                const isActive = currentPath === tab.href || (currentPath === `/administrasi/siswa/${id}` && tab.name === 'Profil');
+                const normalizedPath = currentPath.replace(/\/+$/, '');
+                const normalizedHref = tab.href.replace(/\/+$/, '');
+                const isActive = normalizedPath === normalizedHref || normalizedPath.startsWith(normalizedHref + '/') || (normalizedPath === `/administrasi/siswa/${id}` && tab.name === 'Profil');
                 return (
                   <Link
                     key={tab.name}
                     to={tab.href}
                     className={`
-                      group relative min-w-0 flex-1 overflow-hidden bg-white py-4 px-4 text-center text-sm font-medium hover:bg-gray-50 focus:z-10
-                      ${isActive ? 'text-indigo-700 bg-indigo-50/50' : 'text-gray-500 hover:text-gray-700'}
+                      group relative min-w-0 flex-1 overflow-hidden py-4 px-4 text-center text-sm font-medium hover:bg-gray-50 focus:z-10
+                      ${isActive ? 'text-indigo-700 bg-indigo-50' : 'text-gray-500 hover:text-gray-700 bg-white'}
                     `}
                     aria-current={isActive ? 'page' : undefined}
                   >

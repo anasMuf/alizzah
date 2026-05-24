@@ -45,9 +45,20 @@ func (r *studentRepository) FindAll(params dto.StudentQueryParams) ([]model.Stud
 	if params.IsDaycareOnly != nil {
 		query = query.Where("is_daycare_only = ?", *params.IsDaycareOnly)
 	}
-
-	// ClassGroupID and AcademicYearID will be filtered via enrollments join in Batch 3.
-	// For now, we'll ignore them as per spec.
+	if params.ClassGroupID != 0 {
+		query = query.Where("id IN (?)",
+			r.db.Model(&model.StudentEnrollment{}).
+				Select("student_id").
+				Where("class_group_id = ? AND status = ?", params.ClassGroupID, "active"),
+		)
+	}
+	if params.AcademicYearID != 0 {
+		query = query.Where("id IN (?)",
+			r.db.Model(&model.StudentEnrollment{}).
+				Select("student_id").
+				Where("academic_year_id = ? AND status = ?", params.AcademicYearID, "active"),
+		)
+	}
 
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err
@@ -81,8 +92,11 @@ func (r *studentRepository) Delete(id uint) error {
 }
 
 func (r *studentRepository) HasActiveEnrollment(id uint) (bool, error) {
-	// TODO: Implement actual check when StudentEnrollment is created in Batch 3
-	return false, nil
+	var count int64
+	err := r.db.Model(&model.StudentEnrollment{}).
+		Where("student_id = ? AND status = ?", id, "active").
+		Count(&count).Error
+	return count > 0, err
 }
 
 func (r *studentRepository) BulkCreate(students []model.Student) (int, []dto.ImportResult, error) {

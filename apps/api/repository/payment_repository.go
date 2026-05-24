@@ -31,7 +31,11 @@ func (r *paymentRepository) WithTx(tx *gorm.DB) PaymentRepository {
 func (r *paymentRepository) FindAll(params dto.PaymentQueryParams) ([]model.Payment, int64, error) {
 	var payments []model.Payment
 	var total int64
-	query := r.db.Model(&model.Payment{}).Preload("Student").Preload("Creator")
+	query := r.db.Model(&model.Payment{}).
+		Preload("Student").
+		Preload("Student.Enrollments", "status = ?", "active").
+		Preload("Student.Enrollments.ClassGroup").
+		Preload("Creator")
 
 	if params.StudentID != 0 {
 		query = query.Where("student_id = ?", params.StudentID)
@@ -72,7 +76,10 @@ func (r *paymentRepository) FindAll(params dto.PaymentQueryParams) ([]model.Paym
 
 func (r *paymentRepository) FindByID(id uint) (*model.Payment, error) {
 	var payment model.Payment
-	err := r.db.Preload("Student").Preload("Creator").Preload("Items").Preload("Items.InvoiceItem").First(&payment, id).Error
+	err := r.db.Preload("Student").
+		Preload("Student.Enrollments", "status = ?", "active").
+		Preload("Student.Enrollments.ClassGroup").
+		Preload("Creator").Preload("Items").Preload("Items.InvoiceItem").First(&payment, id).Error
 	return &payment, err
 }
 

@@ -45,7 +45,7 @@ func (r *studentEnrollmentRepository) FindByStudentID(studentID uint, params dto
 
 func (r *studentEnrollmentRepository) FindActiveByStudentID(studentID uint) (*model.StudentEnrollment, error) {
 	var enrollment model.StudentEnrollment
-	err := r.db.Where("student_id = ? AND status = ?", studentID, "active").First(&enrollment).Error
+	err := r.db.Preload("ClassGroup").Preload("AcademicYear").Where("student_id = ? AND status = ?", studentID, "active").First(&enrollment).Error
 	return &enrollment, err
 }
 

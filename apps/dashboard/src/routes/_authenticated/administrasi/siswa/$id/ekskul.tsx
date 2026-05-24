@@ -3,6 +3,7 @@ import { Trophy } from 'lucide-react';
 import { useGetV1StudentsIdExtracurriculars } from '../../../../../api/endpoints/student-extracurriculars/student-extracurriculars';
 import { Badge } from '../../../../../components/atoms/Badge';
 import { Button } from '../../../../../components/atoms/Button';
+import { useToast } from '../../../../../components/molecules/Toast';
 
 export const Route = createFileRoute('/_authenticated/administrasi/siswa/$id/ekskul')({
   component: SiswaEkskulPage,
@@ -11,6 +12,7 @@ export const Route = createFileRoute('/_authenticated/administrasi/siswa/$id/eks
 function SiswaEkskulPage() {
   const { id } = Route.useParams();
   const studentId = Number(id);
+  const { addToast } = useToast();
 
   const { data: response, isLoading, isError } = useGetV1StudentsIdExtracurriculars(studentId);
   const studentEkskuls = (response?.data as any)?.data || [];
@@ -55,7 +57,7 @@ function SiswaEkskulPage() {
           <h3 className="text-base font-semibold leading-6 text-gray-900">Daftar Ekstrakurikuler</h3>
           <p className="mt-1 max-w-2xl text-sm text-gray-500">Kegiatan PASTA, CALISAN, dan Ekskul yang diikuti siswa.</p>
         </div>
-        <Button size="sm">Daftar Ekskul</Button>
+        <Button size="sm" onClick={() => addToast({ variant: 'info', title: 'Info', message: 'Fitur pendaftaran ekskul sedang dalam pengembangan.' })}>Daftar Ekskul</Button>
       </div>
 
       <div className="p-0">

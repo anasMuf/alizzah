@@ -8,6 +8,7 @@ import { academicYearAtom } from '../../../../store/global';
 import { Button } from '../../../../components/atoms/Button';
 import { Badge } from '../../../../components/atoms/Badge';
 import { EmptyState } from '../../../../components/molecules/EmptyState';
+import { Pagination } from '../../../../components/molecules/Pagination';
 
 export const Route = createFileRoute('/_authenticated/administrasi/siswa/')({
   component: SiswaIndexPage,
@@ -101,7 +102,11 @@ function SiswaIndexPage() {
               className="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
               placeholder="Cari nama siswa..."
               value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
+              onChange={(e) => {
+                setSearchInput(e.target.value);
+                setSearch(e.target.value);
+                setPage(1);
+              }}
             />
           </form>
 
@@ -194,7 +199,7 @@ function SiswaIndexPage() {
                       </div>
                     </td>
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                      {student.current_enrollment ? student.current_enrollment.class_group.name : '-'}
+                      {student.active_enrollment ? student.active_enrollment.class_group.name : '-'}
                     </td>
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                       {getStatusBadge(student.status)}
@@ -215,40 +220,13 @@ function SiswaIndexPage() {
           </div>
 
           {/* Pagination */}
-          {meta && meta.total_pages > 1 && (
-            <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
-              <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm text-gray-700">
-                    Menampilkan <span className="font-medium">{(page - 1) * limit + 1}</span> hingga <span className="font-medium">{Math.min(page * limit, meta.total_data)}</span> dari <span className="font-medium">{meta.total_data}</span> hasil
-                  </p>
-                </div>
-                <div>
-                  <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
-                    <button
-                      onClick={() => setPage(Math.max(1, page - 1))}
-                      disabled={page === 1}
-                      className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
-                    >
-                      <span className="sr-only">Previous</span>
-                      &laquo;
-                    </button>
-                    {/* Simplified pagination, just showing current page */}
-                    <span className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 focus:z-20 focus:outline-offset-0">
-                      Halaman {page} dari {meta.total_pages}
-                    </span>
-                    <button
-                      onClick={() => setPage(Math.min(meta.total_pages, page + 1))}
-                      disabled={page === meta.total_pages}
-                      className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
-                    >
-                      <span className="sr-only">Next</span>
-                      &raquo;
-                    </button>
-                  </nav>
-                </div>
-              </div>
-            </div>
+          {meta && (
+            <Pagination
+              page={page}
+              limit={limit}
+              total={meta.total}
+              onPageChange={setPage}
+            />
           )}
         </div>
       )}

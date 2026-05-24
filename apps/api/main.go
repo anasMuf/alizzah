@@ -95,6 +95,9 @@ func main() {
 	seeders.SeedEffectiveDays(db)      // 8. Hari Efektif (depends on #3)
 	seeders.SeedSampleTransactions(db) // 9. Sample Tagihan/Bayar/Pengeluaran (depends on #5,7,8)
 
+	// Data migrations / fixes
+	seeders.FixClassGroupSchedules(db) // Fix schedule JSON format from old "groups" to "weekdays/weekend"
+
 	// Initialize Echo
 	e := echo.New()
 	e.HTTPErrorHandler = handler.CustomHTTPErrorHandler
@@ -178,7 +181,7 @@ func main() {
 	reportService := service.NewReportService(reportRepo, ayRepo, cashTxnRepo, vaultTxnRepo, dailyClosingRepo, studentRepo, invoiceRepo, invoiceItemRepo, paymentRepo, savingsService, classGroupRepo)
 
 	// Batch 3 (updated with Batch 5+6 dependencies)
-	studentService := service.NewStudentService(studentRepo, invoiceRepo, savingsService)
+	studentService := service.NewStudentService(studentRepo, enrollmentRepo, invoiceRepo, savingsService)
 	enrollmentService := service.NewStudentEnrollmentService(enrollmentRepo, studentRepo, classGroupRepo)
 	effectiveDayService := service.NewEffectiveDayService(effectiveDayRepo, classGroupRepo, invoiceGenService)
 	extracurricularService := service.NewExtracurricularService(extracurricularRepo)

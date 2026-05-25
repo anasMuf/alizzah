@@ -9,6 +9,7 @@ import (
 	"api/seeders"
 	"api/service"
 	"api/utility"
+	"flag"
 	"log"
 	"os"
 
@@ -29,6 +30,10 @@ import (
 // @in                          header
 // @name                        Authorization
 func main() {
+	// CLI flags
+	reseed := flag.String("reseed", "", "Reset & seed ulang. Nilai: 'all' untuk semua, atau nama grup dipisah koma (users,academic_years,class_groups,extracurriculars,fee_configs,expense_categories,students,effective_days,transactions)")
+	flag.Parse()
+
 	// Load environment
 	config.LoadEnv()
 
@@ -83,6 +88,15 @@ func main() {
 		}
 	}
 	log.Println("AutoMigrate berhasil")
+
+	// Reset data jika flag --reseed diberikan
+	if *reseed != "" {
+		if *reseed == "all" {
+			seeders.ResetAll(db)
+		} else {
+			seeders.ResetGroups(db, *reseed)
+		}
+	}
 
 	// Seed data (urutan penting karena ada dependency antar seeder)
 	seeders.SeedUsers(db)              // 1. Users (semua role)
@@ -187,14 +201,15 @@ func main() {
 	extracurricularService := service.NewExtracurricularService(extracurricularRepo)
 	seService := service.NewStudentExtracurricularService(seRepo, studentRepo, extracurricularRepo, ayRepo, invoiceGenService)
 	eventService := service.NewStudentAcademicEventService(eventRepo, studentRepo)
-	daycareService := service.NewDaycareEnrollmentService(daycareRepo, studentRepo, ayRepo)
+	daycareService := service.NewDaycareEnrollmentService(db, daycareRepo, studentRepo, ayRepo, invoiceGenService)
 
 	// Batch 4
 	fcService := service.NewFeeConfigService(fcRepo, fcItemRepo, ayRepo)
 
 	// Batch 4 — graduation
-	academicService := service.NewAcademicEventService(db, enrollmentRepo, studentRepo, eventRepo, classGroupRepo, ayRepo, nil, nil)
-	// TODO(batch-6-graduation): wire InvoiceCreator and SavingsManager after implementing the adapter
+	invoiceCreator := service.NewInvoiceCreatorAdapter(invoiceGenService, invoiceRepo)
+	savingsManager := service.NewSavingsManagerAdapter(savingsService)
+	academicService := service.NewAcademicEventService(db, enrollmentRepo, studentRepo, eventRepo, classGroupRepo, ayRepo, invoiceCreator, savingsManager, invoiceGenService)
 
 	// Handlers
 	authHandler := handler.NewAuthHandler(authService)

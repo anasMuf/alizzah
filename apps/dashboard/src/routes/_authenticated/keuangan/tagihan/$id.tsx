@@ -53,6 +53,8 @@ function DetailTagihanPage() {
   const [itemAmount, setItemAmount] = useState('');
   const [itemCategory, setItemCategory] = useState('incidental');
   const [selectedFeeItemId, setSelectedFeeItemId] = useState<string>('');
+  const [selectedFeeItem, setSelectedFeeItem] = useState<any>(null);
+  const [unitQuantity, setUnitQuantity] = useState('');
 
   // Fetch fee config and items for dropdown
   const { data: feeConfigsResp } = useGetV1FeeConfigs();
@@ -67,16 +69,62 @@ function DetailTagihanPage() {
   );
   const allFeeItems: any[] = (feeItemsResp?.data as any)?.data || [];
 
-  // Group fee items by category for dropdown
+  // Mapping tipe tagihan → kategori tarif yang relevan
+  const invoiceTypeCategories: Record<string, string[]> = {
+    initial: ['initial'],
+    registration: ['registration'],
+    monthly: ['monthly_spp', 'monthly_infaq', 'calisan', 'pasta', 'ekskul', 'savings_mandatory'],
+    graduation: ['graduation'],
+  };
+
+  // Filter fee items berdasarkan profil siswa (level + gender) dan tipe tagihan
+  const filteredFeeItems = useMemo(() => {
+    if (!invoice || !allFeeItems.length) return [];
+
+    const studentLevel = invoice.student?.active_enrollment?.class_group?.level;
+    const studentGender = invoice.student?.gender;
+    const allowedCategories = invoiceTypeCategories[invoice.type] || [];
+
+    return allFeeItems.filter((item: any) => {
+      const categoryMatch = allowedCategories.includes(item.category);
+      const levelMatch = item.level === 'all' || item.level === studentLevel;
+      const genderMatch = item.gender === 'all' || item.gender === studentGender;
+      return categoryMatch && levelMatch && genderMatch;
+    });
+  }, [allFeeItems, invoice]);
+
+  // Group filtered items by category for dropdown
   const feeItemsByCategory = useMemo(() => {
     const grouped: Record<string, any[]> = {};
-    allFeeItems.forEach((item: any) => {
+    filteredFeeItems.forEach((item: any) => {
       const cat = item.category || 'other';
       if (!grouped[cat]) grouped[cat] = [];
       grouped[cat].push(item);
     });
     return grouped;
-  }, [allFeeItems]);
+  }, [filteredFeeItems]);
+
+  // Auto-hitung total untuk item per_day / per_monday
+  const calculatedAmount = useMemo(() => {
+    if (!selectedFeeItem) return 0;
+    if (selectedFeeItem.unit === 'per_day' || selectedFeeItem.unit === 'per_monday') {
+      return selectedFeeItem.amount * (Number(unitQuantity) || 0);
+    }
+    return selectedFeeItem.amount;
+  }, [selectedFeeItem, unitQuantity]);
+
+  // Validasi tombol submit
+  const canSubmit = useMemo(() => {
+    if (editingItem) return !!itemName && Number(itemAmount) > 0;
+    if (!selectedFeeItemId) return false;
+    if (selectedFeeItemId === 'custom') {
+      return !!itemName && Number(itemAmount) > 0;
+    }
+    if (selectedFeeItem?.unit === 'per_day' || selectedFeeItem?.unit === 'per_monday') {
+      return Number(unitQuantity) > 0;
+    }
+    return true;
+  }, [selectedFeeItemId, selectedFeeItem, itemName, itemAmount, unitQuantity, editingItem]);
 
   const addItemMutation = usePostV1InvoicesIdItems({
     mutation: {
@@ -149,22 +197,42 @@ function DetailTagihanPage() {
     setItemAmount('');
     setItemCategory('incidental');
     setSelectedFeeItemId('');
+    setSelectedFeeItem(null);
+    setUnitQuantity('');
     setIsAddItemOpen(true);
   };
 
   const handleFeeItemSelect = (feeItemIdStr: string) => {
     setSelectedFeeItemId(feeItemIdStr);
+    setUnitQuantity('');
+
     if (feeItemIdStr === 'custom') {
+      setSelectedFeeItem(null);
       setItemName('');
       setItemAmount('');
       setItemCategory('incidental');
       return;
     }
-    const feeItem = allFeeItems.find((fi: any) => fi.id.toString() === feeItemIdStr);
+
+    if (feeItemIdStr === '') {
+      setSelectedFeeItem(null);
+      setItemName('');
+      setItemAmount('');
+      return;
+    }
+
+    const feeItem = filteredFeeItems.find((fi: any) => fi.id.toString() === feeItemIdStr);
     if (feeItem) {
-      setItemName(feeItem.name);
-      setItemAmount(feeItem.amount.toString());
+      setSelectedFeeItem(feeItem);
       setItemCategory(feeItem.category || 'incidental');
+      setItemName(feeItem.name);
+
+      if (feeItem.unit === 'fixed') {
+        setItemAmount(feeItem.amount.toString());
+      } else {
+        // per_day / per_monday: nominal dihitung dari calculatedAmount
+        setItemAmount('');
+      }
     }
   };
 
@@ -188,11 +256,24 @@ function DetailTagihanPage() {
         }
       });
     } else {
+      let finalName = itemName;
+      let finalAmount = Number(itemAmount);
+
+      if (selectedFeeItem) {
+        if (selectedFeeItem.unit === 'per_day') {
+          finalName = `${selectedFeeItem.name} (${unitQuantity} hari)`;
+          finalAmount = calculatedAmount;
+        } else if (selectedFeeItem.unit === 'per_monday') {
+          finalName = `${selectedFeeItem.name} (${unitQuantity} Senin)`;
+          finalAmount = calculatedAmount;
+        }
+      }
+
       addItemMutation.mutate({
         id: Number(id),
         data: {
-          name: itemName,
-          amount: Number(itemAmount),
+          name: finalName,
+          amount: finalAmount,
           category: itemCategory
         }
       });
@@ -499,6 +580,7 @@ function DetailTagihanPage() {
       >
         <form onSubmit={handleSaveItem} className="flex h-full flex-col bg-white">
           <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 space-y-6">
+            {/* Dropdown pilih item tarif (hanya mode tambah, bukan edit) */}
             {!editingItem && (
               <div>
                 <label className="block text-sm font-medium leading-6 text-gray-900 mb-2">Pilih Item dari Daftar Tarif</label>
@@ -512,51 +594,172 @@ function DetailTagihanPage() {
                     <optgroup key={cat} label={categoryLabels[cat] || cat}>
                       {(items as any[]).map((fi: any) => (
                         <option key={fi.id} value={fi.id.toString()}>
-                          {fi.name} — {formatCurrency(fi.amount)}{fi.level !== 'all' ? ` (${fi.level})` : ''}
+                          {fi.name} — {formatCurrency(fi.amount)}{fi.unit === 'per_day' ? ' /hari' : fi.unit === 'per_monday' ? ' /Senin' : ''}
                         </option>
                       ))}
                     </optgroup>
                   ))}
-                  <option value="custom">✏ Input Manual (Insidental)</option>
+                  <option value="custom">--- Input Manual (Insidental) ---</option>
                 </select>
+                {filteredFeeItems.length === 0 && allFeeItems.length > 0 && (
+                  <p className="mt-1 text-xs text-amber-600">Tidak ada tarif yang sesuai untuk profil siswa ini. Anda bisa menambahkan item secara manual.</p>
+                )}
                 {allFeeItems.length === 0 && (
                   <p className="mt-1 text-xs text-amber-600">Data item tarif belum tersedia. Anda bisa menambahkan item secara manual.</p>
                 )}
               </div>
             )}
-            <FormField
-              id="itemName"
-              label="Nama Item"
-              value={itemName}
-              onChange={(e: any) => setItemName(e.target.value)}
-              required
-              disabled={!editingItem && !!selectedFeeItemId && selectedFeeItemId !== 'custom'}
-            />
-            <FormField
-              id="itemAmount"
-              type="number"
-              label="Nominal (Rp)"
-              value={itemAmount}
-              onChange={(e: any) => setItemAmount(e.target.value)}
-              required
-              min="1"
-            />
+
+            {/* === FORM FIELDS BERDASARKAN UNIT TYPE === */}
+
+            {/* Mode Edit — field nama dan nominal bebas diedit */}
+            {editingItem && (
+              <>
+                <FormField
+                  id="itemName"
+                  label="Nama Item"
+                  value={itemName}
+                  onChange={(e: any) => setItemName(e.target.value)}
+                  required
+                />
+                <FormField
+                  id="itemAmount"
+                  type="number"
+                  label="Nominal (Rp)"
+                  value={itemAmount}
+                  onChange={(e: any) => setItemAmount(e.target.value)}
+                  required
+                  min="1"
+                />
+              </>
+            )}
+
+            {/* Mode Tambah: unit = fixed — nama & nominal read-only */}
+            {!editingItem && selectedFeeItem?.unit === 'fixed' && (
+              <>
+                <FormField
+                  id="itemName"
+                  label="Nama Item"
+                  value={itemName}
+                  onChange={() => {}}
+                  disabled
+                />
+                <FormField
+                  id="itemAmount"
+                  type="number"
+                  label="Nominal (Rp)"
+                  value={itemAmount}
+                  onChange={() => {}}
+                  disabled
+                />
+              </>
+            )}
+
+            {/* Mode Tambah: unit = per_day — tarif/hari + input jumlah hari */}
+            {!editingItem && selectedFeeItem?.unit === 'per_day' && (
+              <>
+                <FormField
+                  id="itemName"
+                  label="Nama Item"
+                  value={itemName}
+                  onChange={() => {}}
+                  disabled
+                />
+                <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                  <div className="text-xs text-gray-500 mb-1">Tarif per Hari</div>
+                  <div className="text-sm font-semibold text-gray-900">{formatCurrency(selectedFeeItem.amount)} / hari</div>
+                </div>
+                <FormField
+                  id="unitQuantity"
+                  type="number"
+                  label="Jumlah Hari"
+                  value={unitQuantity}
+                  onChange={(e: any) => setUnitQuantity(e.target.value)}
+                  required
+                  min="1"
+                  placeholder="Masukkan jumlah hari efektif"
+                />
+                {Number(unitQuantity) > 0 && (
+                  <div className="bg-indigo-50 rounded-md p-3 border border-indigo-200">
+                    <div className="text-xs text-indigo-600 mb-1">Total</div>
+                    <div className="text-lg font-bold text-indigo-700">{formatCurrency(calculatedAmount)}</div>
+                    <div className="text-xs text-indigo-500 mt-0.5">{formatCurrency(selectedFeeItem.amount)} x {unitQuantity} hari</div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Mode Tambah: unit = per_monday — tarif/Senin + input jumlah Senin */}
+            {!editingItem && selectedFeeItem?.unit === 'per_monday' && (
+              <>
+                <FormField
+                  id="itemName"
+                  label="Nama Item"
+                  value={itemName}
+                  onChange={() => {}}
+                  disabled
+                />
+                <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                  <div className="text-xs text-gray-500 mb-1">Tarif per Senin</div>
+                  <div className="text-sm font-semibold text-gray-900">{formatCurrency(selectedFeeItem.amount)} / Senin</div>
+                </div>
+                <FormField
+                  id="unitQuantity"
+                  type="number"
+                  label="Jumlah Senin"
+                  value={unitQuantity}
+                  onChange={(e: any) => setUnitQuantity(e.target.value)}
+                  required
+                  min="1"
+                  placeholder="Masukkan jumlah hari Senin"
+                />
+                {Number(unitQuantity) > 0 && (
+                  <div className="bg-indigo-50 rounded-md p-3 border border-indigo-200">
+                    <div className="text-xs text-indigo-600 mb-1">Total</div>
+                    <div className="text-lg font-bold text-indigo-700">{formatCurrency(calculatedAmount)}</div>
+                    <div className="text-xs text-indigo-500 mt-0.5">{formatCurrency(selectedFeeItem.amount)} x {unitQuantity} Senin</div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Mode Tambah: Custom / Manual */}
             {!editingItem && selectedFeeItemId === 'custom' && (
-               <div>
+              <>
+                <FormField
+                  id="itemName"
+                  label="Nama Item"
+                  value={itemName}
+                  onChange={(e: any) => setItemName(e.target.value)}
+                  required
+                  placeholder="Masukkan nama item"
+                />
+                <FormField
+                  id="itemAmount"
+                  type="number"
+                  label="Nominal (Rp)"
+                  value={itemAmount}
+                  onChange={(e: any) => setItemAmount(e.target.value)}
+                  required
+                  min="1"
+                  placeholder="Masukkan nominal"
+                />
+                <div>
                   <label className="block text-sm font-medium leading-6 text-gray-900 mb-2">Kategori</label>
                   <select
-                     value={itemCategory}
-                     onChange={(e: any) => setItemCategory(e.target.value)}
-                     className="block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                    value={itemCategory}
+                    onChange={(e: any) => setItemCategory(e.target.value)}
+                    className="block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
                   >
-                     <option value="incidental">Insidental / Tambahan</option>
+                    <option value="incidental">Insidental / Tambahan</option>
                   </select>
-               </div>
+                </div>
+              </>
             )}
           </div>
           <div className="flex-shrink-0 border-t border-gray-200 px-4 py-5 sm:px-6 flex justify-end gap-3">
             <Button type="button" variant="secondary" onClick={() => { setIsAddItemOpen(false); setEditingItem(null); }}>Batal</Button>
-            <Button type="submit" variant="primary" disabled={addItemMutation.isPending || editItemMutation.isPending || (!editingItem && !selectedFeeItemId)}>
+            <Button type="submit" variant="primary" disabled={addItemMutation.isPending || editItemMutation.isPending || !canSubmit}>
               Simpan
             </Button>
           </div>

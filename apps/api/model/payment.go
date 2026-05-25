@@ -8,6 +8,7 @@ type Payment struct {
 	AcademicYearID uint      `gorm:"not null;index"`
 	PaymentDate    time.Time `gorm:"type:date;not null"`
 	TotalAmount    float64   `gorm:"type:decimal(15,2);not null"`
+	SavingsDeposit float64   `gorm:"type:decimal(15,2);not null;default:0"`
 	Source         string    `gorm:"size:20;not null"` // cash | savings
 	Notes          string    `gorm:"type:text"`
 	CreatedBy      uint      `gorm:"not null"`

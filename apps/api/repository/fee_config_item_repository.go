@@ -90,8 +90,16 @@ func (r *feeConfigItemRepository) Delete(id uint) error {
 }
 
 func (r *feeConfigItemRepository) IsUsedByInvoices(id uint) (bool, error) {
-	// TODO(batch-6): implement actual check against invoice_items when creating invoices
-	return false, nil
+	var item model.FeeConfigItem
+	if err := r.db.First(&item, id).Error; err != nil {
+		return false, err
+	}
+
+	var count int64
+	err := r.db.Model(&model.InvoiceItem{}).
+		Where("name = ? AND category = ?", item.Name, item.Category).
+		Count(&count).Error
+	return count > 0, err
 }
 
 func (r *feeConfigItemRepository) FindByStudentForCategory(feeConfigID uint, category, level, gender string) ([]model.FeeConfigItem, error) {

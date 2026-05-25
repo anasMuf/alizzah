@@ -122,12 +122,34 @@ function DetailPembayaranPage() {
                   <td className="py-3 text-sm text-gray-500" colSpan={2}>Tidak ada rincian item.</td>
                 </tr>
               )}
+              {Number(payment.savings_deposit) > 0 && (
+                <tr className="bg-green-50">
+                  <td className="py-3 text-sm text-green-700 font-medium">Setoran Tabungan Umum</td>
+                  <td className="py-3 text-sm text-green-700 font-medium text-right">{formatCurrency(Number(payment.savings_deposit))}</td>
+                </tr>
+              )}
             </tbody>
             <tfoot>
+              {Number(payment.savings_deposit) > 0 && (
+                <>
+                  <tr>
+                    <td className="pt-4 text-right text-sm text-gray-500 pr-4">Subtotal Tagihan</td>
+                    <td className="pt-4 text-right text-sm text-gray-700 px-3">
+                      {formatCurrency(Number(payment.total_amount))}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="py-1 text-right text-sm text-gray-500 pr-4">Setoran Tabungan</td>
+                    <td className="py-1 text-right text-sm text-gray-700 px-3">
+                      {formatCurrency(Number(payment.savings_deposit))}
+                    </td>
+                  </tr>
+                </>
+              )}
               <tr>
                 <td className="py-4 text-right text-sm font-bold text-gray-900 pr-4">Total Pembayaran</td>
                 <td className="py-4 text-right text-lg font-bold text-indigo-600 bg-indigo-50 px-3 rounded">
-                  {formatCurrency(Number(payment.total_amount))}
+                  {formatCurrency(Number(payment.total_amount) + Number(payment.savings_deposit || 0))}
                 </td>
               </tr>
             </tfoot>

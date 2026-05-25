@@ -96,7 +96,6 @@ func (s *expenseService) Create(createdBy uint, req dto.CreateExpenseRequest) (*
 
 	expenseDate, _ := time.Parse("2006-01-02", req.ExpenseDate)
 
-	// TODO(batch-7): aktifkan pengecekan IsDateLocked setelah DailyClosing di-migrate
 	locked, _ := s.expenseRepo.IsDateLocked(expenseDate)
 	if locked {
 		return nil, errors.New("Tanggal sudah dikunci oleh tutup buku")

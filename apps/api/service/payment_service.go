@@ -103,8 +103,8 @@ func (s *paymentService) GetByStudentID(studentID uint, params dto.StudentPaymen
 }
 
 func (s *paymentService) Create(createdBy uint, req dto.CreatePaymentRequest) (*dto.PaymentDetailResponse, error) {
-	if len(req.Items) == 0 && req.SavingsDeposit == 0 {
-		return nil, errors.New("Minimal ada item pembayaran atau setoran tabungan")
+	if len(req.Items) == 0 && len(req.IncidentalItems) == 0 && req.SavingsDeposit == 0 {
+		return nil, errors.New("Minimal ada item pembayaran, item insidental, atau setoran tabungan")
 	}
 
 	student, err := s.studentRepo.FindByID(req.StudentID)
@@ -116,6 +116,9 @@ func (s *paymentService) Create(createdBy uint, req dto.CreatePaymentRequest) (*
 		balance, _ := s.savingsRepo.GetBalance(req.StudentID, "general")
 		totalItems := float64(0)
 		for _, item := range req.Items {
+			totalItems += item.Amount
+		}
+		for _, item := range req.IncidentalItems {
 			totalItems += item.Amount
 		}
 		if totalItems > balance {
@@ -149,12 +152,53 @@ func (s *paymentService) Create(createdBy uint, req dto.CreatePaymentRequest) (*
 			})
 		}
 
+		// [A2] Process incidental items → buat invoice insidental + item, langsung lunas
+		if len(req.IncidentalItems) > 0 {
+			incidentalInvoice := &model.Invoice{
+				StudentID:      req.StudentID,
+				AcademicYearID: req.AcademicYearID,
+				Type:           "incidental",
+				Status:         "unpaid",
+				TotalAmount:    0,
+				PaidAmount:     0,
+				Notes:          "Invoice insidental dari pembayaran",
+			}
+			if err := tx.Create(incidentalInvoice).Error; err != nil {
+				return fmt.Errorf("Gagal membuat invoice insidental: %v", err)
+			}
+
+			txItemRepo := s.invoiceItemRepo.WithTx(tx)
+			for _, incItem := range req.IncidentalItems {
+				invoiceItem := &model.InvoiceItem{
+					InvoiceID:   incidentalInvoice.ID,
+					Name:        incItem.Name,
+					Category:    "incidental",
+					Amount:      incItem.Amount,
+					PaidAmount:  incItem.Amount,
+					Status:      "paid",
+					IsMandatory: false,
+				}
+				if err := txItemRepo.Create(invoiceItem); err != nil {
+					return fmt.Errorf("Gagal membuat item insidental '%s': %v", incItem.Name, err)
+				}
+
+				paymentItems = append(paymentItems, model.PaymentItem{
+					InvoiceItemID: invoiceItem.ID,
+					Amount:        incItem.Amount,
+				})
+				totalAmount += incItem.Amount
+			}
+
+			invoiceIDs[incidentalInvoice.ID] = true
+		}
+
 		// [B] Create payment record
 		result = &model.Payment{
 			StudentID:      req.StudentID,
 			AcademicYearID: req.AcademicYearID,
 			PaymentDate:    paymentDate,
 			TotalAmount:    totalAmount,
+			SavingsDeposit: req.SavingsDeposit,
 			Source:         req.Source,
 			Notes:          req.Notes,
 			CreatedBy:      createdBy,
@@ -301,13 +345,14 @@ func mapPaymentToListResponse(p model.Payment) dto.PaymentListResponse {
 
 func mapPaymentToDetailResponse(p model.Payment) dto.PaymentDetailResponse {
 	resp := dto.PaymentDetailResponse{
-		ID:      p.ID,
-		Student: mapPaymentStudentBrief(p.Student),
-		PaymentDate: p.PaymentDate.Format("2006-01-02"),
-		TotalAmount: p.TotalAmount,
-		Source:      p.Source,
-		CreatedBy:   dto.UserBriefResponse{ID: p.Creator.ID, FullName: p.Creator.FullName},
-		CreatedAt:   p.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		ID:             p.ID,
+		Student:        mapPaymentStudentBrief(p.Student),
+		PaymentDate:    p.PaymentDate.Format("2006-01-02"),
+		TotalAmount:    p.TotalAmount,
+		SavingsDeposit: p.SavingsDeposit,
+		Source:         p.Source,
+		CreatedBy:      dto.UserBriefResponse{ID: p.Creator.ID, FullName: p.Creator.FullName},
+		CreatedAt:      p.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 	}
 	if p.Notes != "" {
 		resp.Notes = &p.Notes

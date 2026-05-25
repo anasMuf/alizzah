@@ -504,12 +504,7 @@ Field `schedule` disimpan sebagai `jsonb` di PostgreSQL. Saat read, di-unmarshal
 
 ### FinancialSummary di Student Detail
 
-Response `financial_summary` pada `GET /students/:id` dikembalikan `null` untuk sementara di batch ini. Akan diisi oleh service keuangan setelah Batch 5 selesai. Tandai dengan `TODO` komentar di service:
-
-```go
-// TODO(batch-5): populate financial_summary from invoice & savings service
-FinancialSummary: nil,
-```
+Response `financial_summary` pada `GET /students/:id` sudah diisi dari invoice & savings service (`student_service.go`). Data yang ditampilkan: `total_unpaid`, `savings_general_balance`, `savings_mandatory_balance`.
 
 ---
 

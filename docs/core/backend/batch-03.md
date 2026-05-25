@@ -241,10 +241,7 @@ Logika bisnis `Upsert`:
 2. Jika belum → INSERT; jika sudah → UPDATE
 3. Setelah berhasil simpan → **emit event** / panggil invoice service untuk recalculate nominal `monthly_infaq` pada invoice bulanan bulan tersebut (jika invoice sudah ter-generate)
 
-> **Catatan:** Trigger recalculate invoice baru akan aktif penuh setelah Batch 5. Di batch ini, tandai dengan `TODO`:
-> ```go
-> // TODO(batch-5): trigger recalculate infaq harian di invoice bulan tersebut
-> ```
+> **Selesai:** Trigger recalculate invoice sudah aktif via `invoiceGenService.RecalculateInfaqHarian()` di `effective_day_service.go`.
 
 #### Handler
 
@@ -749,15 +746,12 @@ func (r *effectiveDayRepo) Upsert(ed *model.EffectiveDay) error {
 
 Validasi ini belum diterapkan di batch ini (enrollment belum ada write-nya). Akan divalidasi di Batch 4 saat endpoint `academic-events/transfers` dibuat.
 
-### TODO Markers untuk Batch 5
+### Integrasi Invoice (Selesai)
 
-Di setiap service yang akan menjadi trigger invoice, tambahkan komentar `TODO(batch-5)` agar mudah ditemukan saat implementasi:
-
-```go
-// TODO(batch-5): generate initial invoice setelah enrollment baru dibuat
-// TODO(batch-5): recalculate infaq harian di invoice bulan tersebut
-// TODO(batch-5): tambahkan item pasta ke invoice bulanan berikutnya
-```
+Semua trigger invoice dari Batch 3 sudah diimplementasi:
+- Generate initial invoice setelah enrollment → `academic_event_service.go` (`ProcessTransferIn`)
+- Recalculate infaq harian → `effective_day_service.go` (`Upsert`, `Update`)
+- Tambahkan item pasta ke invoice bulanan → `student_extracurricular_service.go` (`Enroll`, `Unenroll`)
 
 ---
 

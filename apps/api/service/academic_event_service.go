@@ -42,6 +42,7 @@ type academicEventService struct {
 	// Batch 5 Dependencies
 	invoiceCreator InvoiceCreator
 	savingsManager SavingsManager
+	invoiceGen     InvoiceGenerateService
 }
 
 func NewAcademicEventService(
@@ -53,6 +54,7 @@ func NewAcademicEventService(
 	academicYearRepo repository.AcademicYearRepository,
 	invoiceCreator InvoiceCreator,
 	savingsManager SavingsManager,
+	invoiceGen InvoiceGenerateService,
 ) AcademicEventService {
 	return &academicEventService{
 		db:                db,
@@ -63,6 +65,7 @@ func NewAcademicEventService(
 		academicYearRepo:  academicYearRepo,
 		invoiceCreator:    invoiceCreator,
 		savingsManager:    savingsManager,
+		invoiceGen:        invoiceGen,
 	}
 }
 
@@ -194,7 +197,16 @@ func (s *academicEventService) ProcessPromotion(createdBy uint, req dto.Promotio
 				result.Promoted++
 			}
 
-			// TODO(batch-5): generate tagihan registrasi tahunan untuk tahun ajaran baru
+			// Generate tagihan registrasi tahunan untuk tahun ajaran baru
+			if s.invoiceGen != nil {
+				_ = s.invoiceGen.GenerateRegistration(dto.GenerateRegistrationInvoiceParams{
+					StudentID:      enrollment.StudentID,
+					AcademicYearID: req.ToAcademicYearID,
+					Level:          newLevel,
+					Gender:         enrollment.Student.Gender,
+					CreatedBy:      createdBy,
+				})
+			}
 		}
 
 		return nil
@@ -208,13 +220,121 @@ func (s *academicEventService) ProcessPromotion(createdBy uint, req dto.Promotio
 }
 
 func (s *academicEventService) ProcessGraduation(createdBy uint, req dto.GraduationRequest) (*dto.GraduationResult, error) {
-	// Pengecekan Batch 5 wiring
 	if s.invoiceCreator == nil || s.savingsManager == nil {
-		return nil, errors.New("501_NOT_IMPLEMENTED")
+		return nil, errors.New("Fitur kelulusan belum dikonfigurasi")
 	}
 
-	// Logic kelulusan (Batch 5)
-	return nil, errors.New("501_NOT_IMPLEMENTED")
+	_, err := s.academicYearRepo.FindByID(req.AcademicYearID)
+	if err != nil {
+		return nil, errors.New("Tahun ajaran tidak ditemukan")
+	}
+
+	eventDate, _ := time.Parse("2006-01-02", req.EventDate)
+
+	result := &dto.GraduationResult{
+		Results: []dto.GraduationStudentResult{},
+	}
+
+	for _, studentID := range req.StudentIDs {
+		studentResult, err := s.processOneGraduation(studentID, req.AcademicYearID, eventDate, req.Notes, createdBy)
+		if err != nil {
+			continue
+		}
+		result.Results = append(result.Results, *studentResult)
+		result.Total++
+	}
+
+	return result, nil
+}
+
+func (s *academicEventService) processOneGraduation(studentID, academicYearID uint, eventDate time.Time, notes string, createdBy uint) (*dto.GraduationStudentResult, error) {
+	student, err := s.studentRepo.FindByID(studentID)
+	if err != nil || student.Status != "active" {
+		return nil, errors.New("Siswa tidak ditemukan atau tidak aktif")
+	}
+
+	activeEnrollment, err := s.enrollmentRepo.FindActiveByStudentID(studentID)
+	if err != nil {
+		return nil, errors.New("Siswa tidak memiliki pendaftaran aktif")
+	}
+
+	if activeEnrollment.ClassGroup.Level != "berlian" {
+		return nil, errors.New("Kelulusan hanya untuk siswa level berlian")
+	}
+
+	invoice, err := s.invoiceGen.GenerateGraduation(dto.GenerateGraduationInvoiceParams{
+		StudentID:      studentID,
+		AcademicYearID: academicYearID,
+		CreatedBy:      createdBy,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	graduationAmount := invoice.TotalAmount
+	mandatoryBalance, _ := s.savingsManager.GetMandatoryBalance(studentID)
+
+	var mandatorySavingsUsed, remainingDebt, surplus float64
+
+	if mandatoryBalance >= graduationAmount {
+		mandatorySavingsUsed = graduationAmount
+		surplus = mandatoryBalance - graduationAmount
+
+		s.savingsManager.DebitMandatory(studentID, mandatoryBalance, "graduation", invoice.ID, createdBy)
+		s.invoiceCreator.FullyPayInvoice(invoice.ID, graduationAmount)
+
+		if surplus > 0 {
+			s.savingsManager.CreditGeneral(studentID, surplus, "graduation_surplus", invoice.ID, createdBy)
+		}
+	} else {
+		mandatorySavingsUsed = mandatoryBalance
+		remainingDebt = graduationAmount - mandatoryBalance
+
+		if mandatoryBalance > 0 {
+			s.savingsManager.DebitMandatory(studentID, mandatoryBalance, "graduation", invoice.ID, createdBy)
+			s.invoiceCreator.PartialPayInvoice(invoice.ID, mandatoryBalance)
+		}
+	}
+
+	err = s.db.Transaction(func(tx *gorm.DB) error {
+		txEnrollmentRepo := s.enrollmentRepo.WithTx(tx)
+		txStudentRepo := s.studentRepo.WithTx(tx)
+		txEventRepo := s.academicEventRepo.WithTx(tx)
+
+		if err := txEnrollmentRepo.CloseEnrollment(activeEnrollment.ID, eventDate, "completed"); err != nil {
+			return err
+		}
+
+		if err := txStudentRepo.UpdateStatus(studentID, "graduated"); err != nil {
+			return err
+		}
+
+		event := &model.StudentAcademicEvent{
+			StudentID:        studentID,
+			AcademicYearID:   academicYearID,
+			FromClassGroupID: &activeEnrollment.ClassGroupID,
+			ToClassGroupID:   nil,
+			EventType:        "graduation",
+			EventDate:        eventDate,
+			Notes:            notes,
+			CreatedBy:        createdBy,
+		}
+		return txEventRepo.Create(event)
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &dto.GraduationStudentResult{
+		StudentID:                studentID,
+		StudentName:              student.FullName,
+		GraduationInvoiceID:      invoice.ID,
+		GraduationAmount:         graduationAmount,
+		MandatorySavingsUsed:     mandatorySavingsUsed,
+		RemainingDebt:            remainingDebt,
+		SurplusReturnedToGeneral: surplus,
+	}, nil
 }
 
 func (s *academicEventService) ProcessClassChange(createdBy uint, req dto.ClassChangeRequest) error {
@@ -352,7 +472,40 @@ func (s *academicEventService) ProcessTransferIn(createdBy uint, req dto.Transfe
 			return err
 		}
 
-		// TODO(batch-5): generate tagihan mulai dari bulan start_date (registrasi tahunan + monthly)
+		// Generate tagihan untuk siswa mutasi masuk
+		if s.invoiceGen != nil {
+			level := classGroup.Level
+			gender := student.Gender
+
+			// 1. Biaya Awal (initial)
+			_ = s.invoiceGen.GenerateInitial(dto.GenerateInitialInvoiceParams{
+				StudentID:      req.StudentID,
+				AcademicYearID: req.AcademicYearID,
+				Level:          level,
+				Gender:         gender,
+				CreatedBy:      createdBy,
+			})
+
+			// 2. Registrasi Tahunan
+			_ = s.invoiceGen.GenerateRegistration(dto.GenerateRegistrationInvoiceParams{
+				StudentID:      req.StudentID,
+				AcademicYearID: req.AcademicYearID,
+				Level:          level,
+				Gender:         gender,
+				CreatedBy:      createdBy,
+			})
+
+			// 3. Tagihan Bulanan mulai dari bulan masuk sampai akhir tahun ajaran
+			ay, ayErr := s.academicYearRepo.FindByID(req.AcademicYearID)
+			if ayErr == nil {
+				_ = s.invoiceGen.GenerateMonthlyRange(
+					req.StudentID, req.AcademicYearID, req.ToClassGroupID,
+					level, gender,
+					startDate, ay.EndDate,
+					createdBy,
+				)
+			}
+		}
 
 		return nil
 	})
@@ -405,7 +558,10 @@ func (s *academicEventService) ProcessWithdrawal(createdBy uint, req dto.Withdra
 			return err
 		}
 
-		// TODO(batch-5): bekukan invoice aktif yang belum lunas
+		tx.Model(&model.Invoice{}).
+			Where("student_id = ? AND status != ?", req.StudentID, "paid").
+			Update("notes", "[DIBEKUKAN] Tagihan dibekukan karena siswa keluar/pindah")
+
 		return nil
 	})
 }

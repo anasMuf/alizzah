@@ -968,11 +968,7 @@ Model `DailyClosing` sudah ada definisinya di Batch 7, tapi tabel belum ada. Aga
 // Wire penuh setelah Batch 7 selesai
 ```
 
-Tandai dengan `TODO(batch-7)`:
-
-```go
-// TODO(batch-7): aktifkan pengecekan IsDateLocked setelah DailyClosing di-migrate
-```
+Pengecekan `IsDateLocked` sudah aktif di `expense_service.go`. DailyClosing sudah di-migrate dan repository `IsDateLocked` sudah fungsional.
 
 ### WithTx Pattern Konsisten
 

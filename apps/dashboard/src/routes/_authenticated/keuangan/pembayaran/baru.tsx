@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
 import { useAtom } from 'jotai';
 import { useDebounce } from 'use-debounce';
 import { useQueries } from '@tanstack/react-query';
-import { Check, Search, User, FileText, Wallet, AlertCircle } from 'lucide-react';
+import { Check, Search, User, FileText, Wallet, AlertCircle, Plus, Trash2 } from 'lucide-react';
 import { useGetV1Students, useGetV1StudentsId } from '../../../../api/endpoints/students/students';
 import { useGetV1StudentsIdInvoices, getGetV1InvoicesIdQueryOptions } from '../../../../api/endpoints/invoices/invoices';
 import { usePostV1Payments } from '../../../../api/endpoints/payments/payments';
@@ -140,10 +140,66 @@ function WizardPembayaranPage() {
   const [depositChange, setDepositChange] = useState(false);
   const [notes, setNotes] = useState('');
 
+  // State for incidental items (Step 2)
+  type IncidentalItem = { id: number; name: string; amount: number; isSavings: boolean };
+  const [incidentalItems, setIncidentalItems] = useState<IncidentalItem[]>([]);
+  const [nextIncId, setNextIncId] = useState(1);
+  const [incName, setIncName] = useState('');
+  const [incAmount, setIncAmount] = useState('');
+
+  // Autocomplete suggestions dari localStorage — hanya untuk custom, BUKAN Tabungan Umum
+  const incidentalSuggestions = useMemo(() => {
+    const stored = localStorage.getItem('incidental_item_names');
+    const names: string[] = stored ? JSON.parse(stored) : [];
+    return names.filter(n => n !== 'Tabungan Umum');
+  }, []);
+
+  const saveIncidentalName = (name: string) => {
+    if (name === 'Tabungan Umum') return;
+    const stored = localStorage.getItem('incidental_item_names');
+    const names: string[] = stored ? JSON.parse(stored) : [];
+    if (!names.includes(name)) {
+      names.push(name);
+      localStorage.setItem('incidental_item_names', JSON.stringify(names));
+    }
+  };
+
+  // State khusus Tabungan Umum (terpisah dari custom)
+  const [savingsAmount, setSavingsAmount] = useState('');
+
+  const handleAddSavings = () => {
+    const amount = Number(savingsAmount);
+    if (amount <= 0) return;
+    setIncidentalItems(prev => [...prev, { id: nextIncId, name: 'Tabungan Umum', amount, isSavings: true }]);
+    setNextIncId(prev => prev + 1);
+    setSavingsAmount('');
+  };
+
+  const handleAddIncidental = () => {
+    const name = incName.trim();
+    const amount = Number(incAmount);
+    if (!name || amount <= 0) return;
+    setIncidentalItems(prev => [...prev, { id: nextIncId, name, amount, isSavings: false }]);
+    setNextIncId(prev => prev + 1);
+    saveIncidentalName(name);
+    setIncName('');
+    setIncAmount('');
+  };
+
+  const handleRemoveIncidental = (id: number) => {
+    setIncidentalItems(prev => prev.filter(item => item.id !== id));
+  };
+
   // Derived
+  const tabunganUmumTotal = useMemo(() => {
+    return incidentalItems.filter(i => i.isSavings).reduce((sum, i) => sum + i.amount, 0);
+  }, [incidentalItems]);
+
   const totalPay = useMemo(() => {
-    return Object.values(payAmounts).reduce((sum, amt) => sum + amt, 0);
-  }, [payAmounts]);
+    const invoiceTotal = Object.values(payAmounts).reduce((sum, amt) => sum + amt, 0);
+    const incidentalTotal = incidentalItems.reduce((sum, item) => sum + item.amount, 0);
+    return invoiceTotal + incidentalTotal;
+  }, [payAmounts, incidentalItems]);
 
   const changeAmount = useMemo(() => {
     const cash = Number(cashReceived) || 0;
@@ -187,6 +243,14 @@ function WizardPembayaranPage() {
       return;
     }
 
+    // Merge tabungan umum dari Step 2 + kembalian dari Step 3
+    const totalSavingsDeposit = tabunganUmumTotal + (depositChange && changeAmount > 0 ? changeAmount : 0);
+
+    // Item insidental custom (bukan tabungan umum) → buat invoice insidental di backend
+    const customIncidentals = incidentalItems
+      .filter(i => !i.isSavings)
+      .map(i => ({ name: i.name, amount: i.amount }));
+
     const payload = {
       academic_year_id: activeAy?.id || 1,
       student_id: selectedStudent.id,
@@ -198,8 +262,9 @@ function WizardPembayaranPage() {
           invoice_item_id: Number(itemId),
           amount: amt
         })),
+      incidental_items: customIncidentals.length > 0 ? customIncidentals : undefined,
       notes: notes || undefined,
-      savings_deposit: depositChange && changeAmount > 0 ? changeAmount : undefined
+      savings_deposit: totalSavingsDeposit > 0 ? totalSavingsDeposit : undefined,
     };
 
     paymentMutation.mutate({ data: payload as any });
@@ -382,9 +447,114 @@ function WizardPembayaranPage() {
               </div>
             )}
 
+            {/* Item Tambahan (Insidental) */}
+            <div className="border border-dashed border-gray-300 rounded-lg p-4 mt-4 space-y-4">
+              <p className="text-sm font-medium text-gray-700">{unpaidInvoices.length > 0 ? '3' : '1'}. Item Tambahan (Opsional)</p>
+
+              {/* Tabungan Umum — opsi tetap */}
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                <p className="text-xs font-semibold text-green-800 mb-2">Setoran Tabungan Umum</p>
+                <div className="flex gap-2 items-end">
+                  <div className="flex-1">
+                    <input
+                      type="number"
+                      className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-green-300 focus:ring-2 focus:ring-inset focus:ring-green-600 sm:text-sm sm:leading-6 text-right"
+                      placeholder="Nominal (Rp)"
+                      value={savingsAmount}
+                      onChange={(e) => setSavingsAmount(e.target.value)}
+                      min={0}
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={handleAddSavings}
+                    disabled={Number(savingsAmount) <= 0}
+                    className="flex items-center gap-1 whitespace-nowrap border-green-300 text-green-700 hover:bg-green-100"
+                  >
+                    <Plus className="w-4 h-4" /> Tambah
+                  </Button>
+                </div>
+              </div>
+
+              {/* Item Insidental Custom — dengan autocomplete */}
+              <div>
+                <p className="text-xs font-semibold text-gray-600 mb-2">Item Insidental Lainnya</p>
+                <div className="flex gap-2 items-end">
+                  <div className="flex-1">
+                    <input
+                      list="incidental-suggestions"
+                      type="text"
+                      className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                      placeholder="Ketik nama item..."
+                      value={incName}
+                      onChange={(e) => setIncName(e.target.value)}
+                    />
+                    <datalist id="incidental-suggestions">
+                      {incidentalSuggestions.map(name => (
+                        <option key={name} value={name} />
+                      ))}
+                    </datalist>
+                  </div>
+                  <div className="w-40">
+                    <input
+                      type="number"
+                      className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 text-right"
+                      placeholder="Nominal (Rp)"
+                      value={incAmount}
+                      onChange={(e) => setIncAmount(e.target.value)}
+                      min={0}
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={handleAddIncidental}
+                    disabled={!incName.trim() || Number(incAmount) <= 0}
+                    className="flex items-center gap-1 whitespace-nowrap"
+                  >
+                    <Plus className="w-4 h-4" /> Tambah
+                  </Button>
+                </div>
+              </div>
+
+              {incidentalItems.length > 0 && (
+                <div className="mt-3 divide-y divide-gray-100">
+                  {incidentalItems.map(item => (
+                    <div key={item.id} className="flex items-center justify-between py-2">
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${item.isSavings ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
+                          {item.isSavings ? 'Tabungan' : 'Insidental'}
+                        </span>
+                        <span className="text-sm text-gray-900">{item.name}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-medium text-gray-900">{formatCurrency(item.amount)}</span>
+                        <button type="button" onClick={() => handleRemoveIncidental(item.id)} className="text-red-400 hover:text-red-600">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  <div className="flex justify-between pt-2 text-sm">
+                    <span className="font-medium text-gray-500">Subtotal Item Tambahan</span>
+                    <span className="font-bold text-gray-900">{formatCurrency(incidentalItems.reduce((s, i) => s + i.amount, 0))}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Grand Total */}
+            {(selectedInvoices.length > 0 || incidentalItems.length > 0) && (
+              <div className="bg-indigo-50 p-4 rounded-lg flex justify-between items-center">
+                <span className="text-sm font-medium text-indigo-900">Total Pembayaran</span>
+                <span className="text-xl font-bold text-indigo-700">{formatCurrency(totalPay)}</span>
+              </div>
+            )}
+
             <div className="flex justify-between pt-4 border-t border-gray-200">
               <Button variant="secondary" onClick={() => setCurrentStep(1)}>Kembali</Button>
-              <Button variant="primary" onClick={() => setCurrentStep(3)} disabled={selectedInvoices.length === 0 || totalPay <= 0}>
+              <Button variant="primary" onClick={() => setCurrentStep(3)} disabled={(selectedInvoices.length === 0 && incidentalItems.length === 0) || totalPay <= 0}>
                 Lanjut ke Pembayaran
               </Button>
             </div>
@@ -428,6 +598,20 @@ function WizardPembayaranPage() {
               </div>
             )}
 
+            {paymentSource === 'savings' && tabunganUmumTotal > 0 && (
+              <div className="rounded-md bg-yellow-50 p-4">
+                <div className="flex">
+                  <AlertCircle className="h-5 w-5 text-yellow-400" aria-hidden="true" />
+                  <div className="ml-3">
+                    <p className="text-sm text-yellow-800">
+                      Setoran Tabungan Umum sebesar <span className="font-semibold">{formatCurrency(tabunganUmumTotal)}</span> tetap akan diproses sebagai kredit tabungan.
+                      Pembayaran tagihan dipotong dari saldo tabungan yang sudah ada.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {paymentSource === 'cash' && (
               <div className="space-y-4 border-t border-gray-200 pt-6">
                 <div>
@@ -441,13 +625,13 @@ function WizardPembayaranPage() {
                 </div>
 
                 {Number(cashReceived) >= totalPay && (
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <div className="flex justify-between text-sm mb-2">
+                  <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+                    <div className="flex justify-between text-sm">
                       <span className="text-gray-500">Kembalian:</span>
                       <span className="font-bold text-gray-900">{formatCurrency(changeAmount)}</span>
                     </div>
                     {changeAmount > 0 && (
-                      <div className="mt-4 pt-4 border-t border-gray-200">
+                      <div className="pt-3 border-t border-gray-200">
                         <label className="flex items-center">
                           <input
                             type="checkbox"
@@ -457,6 +641,19 @@ function WizardPembayaranPage() {
                           />
                           <span className="ml-2 text-sm text-gray-900">Masukkan kembalian (<span className="font-semibold">{formatCurrency(changeAmount)}</span>) ke Tabungan Umum?</span>
                         </label>
+                      </div>
+                    )}
+                    {(tabunganUmumTotal > 0 || (depositChange && changeAmount > 0)) && (
+                      <div className="pt-3 border-t border-gray-200">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-green-700 font-medium">Total Masuk Tabungan Umum</span>
+                          <span className="font-bold text-green-700">
+                            {formatCurrency(tabunganUmumTotal + (depositChange && changeAmount > 0 ? changeAmount : 0))}
+                          </span>
+                        </div>
+                        {tabunganUmumTotal > 0 && (
+                          <p className="text-xs text-gray-500 mt-1">Setoran: {formatCurrency(tabunganUmumTotal)}{depositChange && changeAmount > 0 ? ` + Kembalian: ${formatCurrency(changeAmount)}` : ''}</p>
+                        )}
                       </div>
                     )}
                   </div>
@@ -493,13 +690,24 @@ function WizardPembayaranPage() {
                 <div className="text-gray-500">Metode Bayar</div>
                 <div className="font-medium text-gray-900 text-right">{paymentSource === 'savings' ? 'Potong Tabungan' : 'Uang Tunai (Kas)'}</div>
 
-                <div className="text-gray-500">Item Dibayar</div>
+                <div className="text-gray-500">Item Tagihan</div>
                 <div className="font-medium text-gray-900 text-right">{Object.values(payAmounts).filter(a => a > 0).length} Item</div>
 
-                {paymentSource === 'cash' && changeAmount > 0 && depositChange && (
+                {incidentalItems.length > 0 && (
                   <>
-                    <div className="text-gray-500">Masuk Tabungan</div>
-                    <div className="font-medium text-green-600 text-right">+{formatCurrency(changeAmount)}</div>
+                    <div className="text-gray-500">Item Tambahan</div>
+                    <div className="font-medium text-gray-900 text-right">
+                      {incidentalItems.map(i => i.name).join(', ')}
+                    </div>
+                  </>
+                )}
+
+                {(tabunganUmumTotal > 0 || (paymentSource === 'cash' && depositChange && changeAmount > 0)) && (
+                  <>
+                    <div className="text-gray-500">Masuk Tabungan Umum</div>
+                    <div className="font-medium text-green-600 text-right">
+                      +{formatCurrency(tabunganUmumTotal + (paymentSource === 'cash' && depositChange && changeAmount > 0 ? changeAmount : 0))}
+                    </div>
                   </>
                 )}
               </div>

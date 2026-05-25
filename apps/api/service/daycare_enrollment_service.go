@@ -19,16 +19,20 @@ type DaycareEnrollmentService interface {
 }
 
 type daycareEnrollmentService struct {
+	db          *gorm.DB
 	daycareRepo repository.DaycareEnrollmentRepository
 	studentRepo repository.StudentRepository
 	acRepo      repository.AcademicYearRepository
+	invoiceGen  InvoiceGenerateService
 }
 
-func NewDaycareEnrollmentService(daycareRepo repository.DaycareEnrollmentRepository, studentRepo repository.StudentRepository, acRepo repository.AcademicYearRepository) DaycareEnrollmentService {
+func NewDaycareEnrollmentService(db *gorm.DB, daycareRepo repository.DaycareEnrollmentRepository, studentRepo repository.StudentRepository, acRepo repository.AcademicYearRepository, invoiceGen InvoiceGenerateService) DaycareEnrollmentService {
 	return &daycareEnrollmentService{
+		db:          db,
 		daycareRepo: daycareRepo,
 		studentRepo: studentRepo,
 		acRepo:      acRepo,
+		invoiceGen:  invoiceGen,
 	}
 }
 
@@ -98,7 +102,20 @@ func (s *daycareEnrollmentService) Create(createdBy uint, req dto.CreateDaycareE
 		return nil, err
 	}
 
-	// TODO(batch-5): generate tagihan biaya awal daycare (pendaftaran + akomodasi) jika siswa baru pertama kali daycare
+	if s.invoiceGen != nil {
+		var daycareCount int64
+		s.db.Model(&model.DaycareEnrollment{}).Where("student_id = ?", req.StudentID).Count(&daycareCount)
+		if daycareCount == 1 {
+			student, _ := s.studentRepo.FindByID(req.StudentID)
+			s.invoiceGen.GenerateDaycareInitial(dto.GenerateInitialInvoiceParams{
+				StudentID:      req.StudentID,
+				AcademicYearID: req.AcademicYearID,
+				Level:          "all",
+				Gender:         student.Gender,
+				CreatedBy:      createdBy,
+			})
+		}
+	}
 
 	savedDe, _ := s.daycareRepo.FindByID(de.ID)
 	return mapDaycareEnrollmentToResponse(*savedDe), nil

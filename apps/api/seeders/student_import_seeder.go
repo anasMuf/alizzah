@@ -48,7 +48,13 @@ func SeedStudentsFromLegacy(db *gorm.DB) {
 	placeholderBirthDate := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
 	enrollmentStart := activeYear.StartDate
 
-	var totalStudents, totalEnrollments, totalSavings int
+	// Rombel khusus siswa pindahan/mutasi
+	mutationGroups := map[string]bool{
+		"Intan 1": true,
+		"Intan 8": true,
+	}
+
+	var totalStudents, totalEnrollments, totalSavings, totalEvents int
 
 	for _, s := range students {
 		// Create student
@@ -72,19 +78,45 @@ func SeedStudentsFromLegacy(db *gorm.DB) {
 			log.Printf("Class group '%s' tidak ditemukan untuk siswa '%s'", s.ClassGroup, s.Name)
 			continue
 		}
+
+		isMutation := mutationGroups[s.ClassGroup]
+		enrollmentType := "new"
+		if isMutation {
+			enrollmentType = "mutation"
+		}
+
 		enrollment := model.StudentEnrollment{
 			StudentID:      student.ID,
 			ClassGroupID:   cg.ID,
 			AcademicYearID: activeYear.ID,
 			StartDate:      enrollmentStart,
 			Status:         "active",
-			EnrollmentType: "new",
+			EnrollmentType: enrollmentType,
 			CreatedBy:      admin.ID,
 		}
 		if err := db.Create(&enrollment).Error; err != nil {
 			log.Printf("Gagal membuat enrollment siswa '%s': %v", s.Name, err)
 		} else {
 			totalEnrollments++
+		}
+
+		// Catat event transfer_in untuk siswa pindahan
+		if isMutation {
+			event := model.StudentAcademicEvent{
+				StudentID:        student.ID,
+				AcademicYearID:   activeYear.ID,
+				FromClassGroupID: nil,
+				ToClassGroupID:   &cg.ID,
+				EventType:        "transfer_in",
+				EventDate:        enrollmentStart,
+				Notes:            "Siswa pindahan (data seed)",
+				CreatedBy:        admin.ID,
+			}
+			if err := db.Create(&event).Error; err != nil {
+				log.Printf("Gagal membuat event transfer_in siswa '%s': %v", s.Name, err)
+			} else {
+				totalEvents++
+			}
 		}
 
 		// Create general savings
@@ -114,7 +146,7 @@ func SeedStudentsFromLegacy(db *gorm.DB) {
 		}
 	}
 
-	log.Printf("Student import seeder berhasil (%d siswa, %d enrollment, %d tabungan)", totalStudents, totalEnrollments, totalSavings)
+	log.Printf("Student import seeder berhasil (%d siswa, %d enrollment, %d tabungan, %d event transfer_in)", totalStudents, totalEnrollments, totalSavings, totalEvents)
 }
 
 func legacyStudentData() []legacyStudent {

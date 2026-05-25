@@ -15,7 +15,9 @@ type InvoiceGenerateService interface {
 	GenerateInitial(params dto.GenerateInitialInvoiceParams) error
 	GenerateRegistration(params dto.GenerateRegistrationInvoiceParams) error
 	GenerateMonthly(params dto.GenerateMonthlyInvoiceParams) error
+	GenerateMonthlyRange(studentID, academicYearID, classGroupID uint, level, gender string, startDate, endDate time.Time, createdBy uint) error
 	GenerateGraduation(params dto.GenerateGraduationInvoiceParams) (*model.Invoice, error)
+	GenerateDaycareInitial(params dto.GenerateInitialInvoiceParams) error
 	RecalculateInfaqHarian(classGroupID, month, year uint) error
 	AddExtracurricularToNextMonthly(studentID, extracurricularID, academicYearID uint) error
 	RemoveExtracurricularFromNextMonthly(studentID, extracurricularID, academicYearID uint) error
@@ -270,6 +272,35 @@ func (s *invoiceGenerateService) GenerateGraduation(params dto.GenerateGraduatio
 	})
 
 	return invoice, err
+}
+
+func (s *invoiceGenerateService) GenerateDaycareInitial(params dto.GenerateInitialInvoiceParams) error {
+	feeConfig, err := s.feeConfigRepo.FindByAcademicYearID(params.AcademicYearID)
+	if err != nil {
+		return nil
+	}
+
+	items, err := s.feeConfigItemRepo.FindByStudentForCategory(feeConfig.ID, "daycare_initial", params.Level, params.Gender)
+	if err != nil || len(items) == 0 {
+		return nil
+	}
+
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		invoice := &model.Invoice{
+			StudentID:      params.StudentID,
+			AcademicYearID: params.AcademicYearID,
+			Type:           "initial",
+			Status:         "unpaid",
+			TotalAmount:    utility.SumFeeConfigItems(items),
+			Notes:          "Biaya awal pendaftaran daycare",
+		}
+		if err := s.invoiceRepo.WithTx(tx).Create(invoice); err != nil {
+			return err
+		}
+		return s.invoiceItemRepo.WithTx(tx).BulkCreate(
+			utility.MapFeeItemsToInvoiceItems(invoice.ID, items),
+		)
+	})
 }
 
 func (s *invoiceGenerateService) RecalculateInfaqHarian(classGroupID, month, year uint) error {

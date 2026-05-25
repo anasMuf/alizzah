@@ -1,17 +1,14 @@
 import { useState, useMemo } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useAtom } from 'jotai';
-import { useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Filter, ChevronRight, Trash2, ExternalLink } from 'lucide-react';
-import { useGetV1Expenses, useDeleteV1ExpensesId } from '../../../../api/endpoints/expenses/expenses';
+import { Plus, Search, Filter, ChevronRight } from 'lucide-react';
+import { useGetV1Expenses } from '../../../../api/endpoints/expenses/expenses';
 import { useGetV1ExpenseCategories } from '../../../../api/endpoints/expense-categories/expense-categories';
 import { academicYearAtom } from '../../../../store/global';
-import { formatCurrency, formatDate, formatDateTime } from '../../../../utils/format';
+import { formatCurrency, formatDate } from '../../../../utils/format';
 import { Button } from '../../../../components/atoms/Button';
 import { Alert } from '../../../../components/atoms/Alert';
 import { EmptyState } from '../../../../components/molecules/EmptyState';
-import { ConfirmDialog } from '../../../../components/molecules/ConfirmDialog';
-import { SlideOver } from '../../../../components/molecules/SlideOver';
 
 export const Route = createFileRoute('/_authenticated/keuangan/pengeluaran/')({
   component: PengeluaranListPage,
@@ -19,18 +16,12 @@ export const Route = createFileRoute('/_authenticated/keuangan/pengeluaran/')({
 
 function PengeluaranListPage() {
   const [activeAy] = useAtom(academicYearAtom);
-  const queryClient = useQueryClient();
 
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [page, setPage] = useState(1);
-
-  const [selectedExpense, setSelectedExpense] = useState<any>(null);
-  const [slideOverOpen, setSlideOverOpen] = useState(false);
-  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-  const [deleteError, setDeleteError] = useState('');
 
   const { data: expensesData, isLoading, isError } = useGetV1Expenses(
     {
@@ -73,41 +64,12 @@ function PengeluaranListPage() {
     return filteredExpenses.reduce((sum: number, e: any) => sum + Number(e.amount || 0), 0);
   }, [filteredExpenses]);
 
-  const deleteMutation = useDeleteV1ExpensesId({
-    mutation: {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['/v1/expenses'] });
-        setConfirmDeleteOpen(false);
-        setSlideOverOpen(false);
-        setSelectedExpense(null);
-        setDeleteError('');
-      },
-      onError: (err: any) => {
-        const message = err?.response?.data?.message || err?.message || 'Gagal menghapus pengeluaran.';
-        setDeleteError(message);
-        setConfirmDeleteOpen(false);
-      },
-    },
-  });
-
   const handleReset = () => {
     setSearch('');
     setSelectedCategory('');
     setDateFrom('');
     setDateTo('');
     setPage(1);
-  };
-
-  const handleOpenDetail = (expense: any) => {
-    setSelectedExpense(expense);
-    setSlideOverOpen(true);
-    setDeleteError('');
-  };
-
-  const handleDelete = () => {
-    if (selectedExpense) {
-      deleteMutation.mutate({ id: selectedExpense.id });
-    }
   };
 
   const getCategoryLabel = (expense: any) => {
@@ -226,12 +188,6 @@ function PengeluaranListPage() {
         </div>
       </div>
 
-      {deleteError && (
-        <Alert variant="error" title="Gagal Menghapus" onClose={() => setDeleteError('')}>
-          {deleteError}
-        </Alert>
-      )}
-
       {isError ? (
         <Alert variant="error" title="Gagal Memuat Data">
           Terjadi kesalahan saat memuat data pengeluaran. Silakan coba lagi.
@@ -308,12 +264,13 @@ function PengeluaranListPage() {
                         {formatCurrency(Number(expense.amount))}
                       </td>
                       <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                        <button
-                          onClick={() => handleOpenDetail(expense)}
+                        <Link
+                          to="/keuangan/pengeluaran/$id"
+                          params={{ id: String(expense.id) }}
                           className="inline-flex items-center text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                         >
                           Detail <ChevronRight className="w-4 h-4 ml-1" />
-                        </button>
+                        </Link>
                       </td>
                     </tr>
                   ))
@@ -355,110 +312,6 @@ function PengeluaranListPage() {
         </div>
       )}
 
-      <SlideOver
-        isOpen={slideOverOpen}
-        onClose={() => { setSlideOverOpen(false); setSelectedExpense(null); }}
-        title="Detail Pengeluaran"
-        footer={
-          <>
-            <Button
-              variant="danger"
-              onClick={() => setConfirmDeleteOpen(true)}
-              disabled={deleteMutation.isPending}
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Hapus
-            </Button>
-          </>
-        }
-      >
-        {selectedExpense && (
-          <div className="space-y-5">
-            <dl className="divide-y divide-gray-200">
-              <div className="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
-                <dt className="text-sm font-medium text-gray-500">Tanggal</dt>
-                <dd className="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
-                  {formatDate(selectedExpense.expense_date)}
-                </dd>
-              </div>
-              <div className="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
-                <dt className="text-sm font-medium text-gray-500">Kategori</dt>
-                <dd className="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
-                  {(() => {
-                    const cat = selectedExpense.expense_category;
-                    if (cat?.parent) return cat.parent.name;
-                    const mapped = categoryMap[selectedExpense.expense_category_id];
-                    return mapped?.parentName || '-';
-                  })()}
-                </dd>
-              </div>
-              <div className="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
-                <dt className="text-sm font-medium text-gray-500">Sub-kategori</dt>
-                <dd className="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
-                  {(() => {
-                    const cat = selectedExpense.expense_category;
-                    if (cat?.parent) return cat.name;
-                    const mapped = categoryMap[selectedExpense.expense_category_id];
-                    return mapped?.childName || cat?.name || '-';
-                  })()}
-                </dd>
-              </div>
-              <div className="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
-                <dt className="text-sm font-medium text-gray-500">Nominal</dt>
-                <dd className="mt-1 text-sm font-semibold text-gray-900 sm:col-span-2 sm:mt-0">
-                  {formatCurrency(Number(selectedExpense.amount))}
-                </dd>
-              </div>
-              <div className="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
-                <dt className="text-sm font-medium text-gray-500">Keterangan</dt>
-                <dd className="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
-                  {selectedExpense.description || '-'}
-                </dd>
-              </div>
-              <div className="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
-                <dt className="text-sm font-medium text-gray-500">Bukti</dt>
-                <dd className="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
-                  {selectedExpense.receipt_url ? (
-                    <a
-                      href={selectedExpense.receipt_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center text-indigo-600 hover:text-indigo-500"
-                    >
-                      Lihat Bukti <ExternalLink className="w-3 h-3 ml-1" />
-                    </a>
-                  ) : (
-                    <span className="text-gray-400">Tidak ada</span>
-                  )}
-                </dd>
-              </div>
-              <div className="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
-                <dt className="text-sm font-medium text-gray-500">Dicatat oleh</dt>
-                <dd className="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
-                  {selectedExpense.created_by?.name || selectedExpense.user?.name || '-'}
-                </dd>
-              </div>
-              <div className="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
-                <dt className="text-sm font-medium text-gray-500">Waktu Dicatat</dt>
-                <dd className="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
-                  {formatDateTime(selectedExpense.created_at)}
-                </dd>
-              </div>
-            </dl>
-          </div>
-        )}
-      </SlideOver>
-
-      <ConfirmDialog
-        open={confirmDeleteOpen}
-        title="Hapus Pengeluaran"
-        description={`Apakah Anda yakin ingin menghapus pengeluaran "${selectedExpense?.description || ''}" sebesar ${selectedExpense ? formatCurrency(Number(selectedExpense.amount)) : ''}? Tindakan ini tidak dapat dibatalkan.`}
-        variant="danger"
-        confirmLabel="Hapus"
-        cancelLabel="Batal"
-        onConfirm={handleDelete}
-        onCancel={() => setConfirmDeleteOpen(false)}
-      />
     </div>
   );
 }

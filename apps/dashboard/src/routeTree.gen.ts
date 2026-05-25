@@ -30,7 +30,9 @@ import { Route as AuthenticatedAdministrasiRombelIndexRouteImport } from './rout
 import { Route as AuthenticatedAdministrasiDaycareIndexRouteImport } from './routes/_authenticated/administrasi/daycare/index'
 import { Route as AuthenticatedPengaturanTarifIdRouteImport } from './routes/_authenticated/pengaturan/tarif/$id'
 import { Route as AuthenticatedKeuanganTagihanIdRouteImport } from './routes/_authenticated/keuangan/tagihan/$id'
+import { Route as AuthenticatedKeuanganPengeluaranKategoriRouteImport } from './routes/_authenticated/keuangan/pengeluaran/kategori'
 import { Route as AuthenticatedKeuanganPengeluaranBaruRouteImport } from './routes/_authenticated/keuangan/pengeluaran/baru'
+import { Route as AuthenticatedKeuanganPengeluaranIdRouteImport } from './routes/_authenticated/keuangan/pengeluaran/$id'
 import { Route as AuthenticatedKeuanganPembayaranBaruRouteImport } from './routes/_authenticated/keuangan/pembayaran/baru'
 import { Route as AuthenticatedKeuanganPembayaranIdRouteImport } from './routes/_authenticated/keuangan/pembayaran/$id'
 import { Route as AuthenticatedKeuanganLaporanTahunanRouteImport } from './routes/_authenticated/keuangan/laporan/tahunan'
@@ -183,10 +185,22 @@ const AuthenticatedKeuanganTagihanIdRoute =
     path: '/keuangan/tagihan/$id',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedKeuanganPengeluaranKategoriRoute =
+  AuthenticatedKeuanganPengeluaranKategoriRouteImport.update({
+    id: '/keuangan/pengeluaran/kategori',
+    path: '/keuangan/pengeluaran/kategori',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedKeuanganPengeluaranBaruRoute =
   AuthenticatedKeuanganPengeluaranBaruRouteImport.update({
     id: '/keuangan/pengeluaran/baru',
     path: '/keuangan/pengeluaran/baru',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedKeuanganPengeluaranIdRoute =
+  AuthenticatedKeuanganPengeluaranIdRouteImport.update({
+    id: '/keuangan/pengeluaran/$id',
+    path: '/keuangan/pengeluaran/$id',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedKeuanganPembayaranBaruRoute =
@@ -396,7 +410,9 @@ export interface FileRoutesByFullPath {
   '/keuangan/laporan/tahunan': typeof AuthenticatedKeuanganLaporanTahunanRoute
   '/keuangan/pembayaran/$id': typeof AuthenticatedKeuanganPembayaranIdRoute
   '/keuangan/pembayaran/baru': typeof AuthenticatedKeuanganPembayaranBaruRoute
+  '/keuangan/pengeluaran/$id': typeof AuthenticatedKeuanganPengeluaranIdRoute
   '/keuangan/pengeluaran/baru': typeof AuthenticatedKeuanganPengeluaranBaruRoute
+  '/keuangan/pengeluaran/kategori': typeof AuthenticatedKeuanganPengeluaranKategoriRoute
   '/keuangan/tagihan/$id': typeof AuthenticatedKeuanganTagihanIdRoute
   '/pengaturan/tarif/$id': typeof AuthenticatedPengaturanTarifIdRoute
   '/administrasi/daycare/': typeof AuthenticatedAdministrasiDaycareIndexRoute
@@ -448,7 +464,9 @@ export interface FileRoutesByTo {
   '/keuangan/laporan/tahunan': typeof AuthenticatedKeuanganLaporanTahunanRoute
   '/keuangan/pembayaran/$id': typeof AuthenticatedKeuanganPembayaranIdRoute
   '/keuangan/pembayaran/baru': typeof AuthenticatedKeuanganPembayaranBaruRoute
+  '/keuangan/pengeluaran/$id': typeof AuthenticatedKeuanganPengeluaranIdRoute
   '/keuangan/pengeluaran/baru': typeof AuthenticatedKeuanganPengeluaranBaruRoute
+  '/keuangan/pengeluaran/kategori': typeof AuthenticatedKeuanganPengeluaranKategoriRoute
   '/keuangan/tagihan/$id': typeof AuthenticatedKeuanganTagihanIdRoute
   '/pengaturan/tarif/$id': typeof AuthenticatedPengaturanTarifIdRoute
   '/administrasi/daycare': typeof AuthenticatedAdministrasiDaycareIndexRoute
@@ -503,7 +521,9 @@ export interface FileRoutesById {
   '/_authenticated/keuangan/laporan/tahunan': typeof AuthenticatedKeuanganLaporanTahunanRoute
   '/_authenticated/keuangan/pembayaran/$id': typeof AuthenticatedKeuanganPembayaranIdRoute
   '/_authenticated/keuangan/pembayaran/baru': typeof AuthenticatedKeuanganPembayaranBaruRoute
+  '/_authenticated/keuangan/pengeluaran/$id': typeof AuthenticatedKeuanganPengeluaranIdRoute
   '/_authenticated/keuangan/pengeluaran/baru': typeof AuthenticatedKeuanganPengeluaranBaruRoute
+  '/_authenticated/keuangan/pengeluaran/kategori': typeof AuthenticatedKeuanganPengeluaranKategoriRoute
   '/_authenticated/keuangan/tagihan/$id': typeof AuthenticatedKeuanganTagihanIdRoute
   '/_authenticated/pengaturan/tarif/$id': typeof AuthenticatedPengaturanTarifIdRoute
   '/_authenticated/administrasi/daycare/': typeof AuthenticatedAdministrasiDaycareIndexRoute
@@ -558,7 +578,9 @@ export interface FileRouteTypes {
     | '/keuangan/laporan/tahunan'
     | '/keuangan/pembayaran/$id'
     | '/keuangan/pembayaran/baru'
+    | '/keuangan/pengeluaran/$id'
     | '/keuangan/pengeluaran/baru'
+    | '/keuangan/pengeluaran/kategori'
     | '/keuangan/tagihan/$id'
     | '/pengaturan/tarif/$id'
     | '/administrasi/daycare/'
@@ -610,7 +632,9 @@ export interface FileRouteTypes {
     | '/keuangan/laporan/tahunan'
     | '/keuangan/pembayaran/$id'
     | '/keuangan/pembayaran/baru'
+    | '/keuangan/pengeluaran/$id'
     | '/keuangan/pengeluaran/baru'
+    | '/keuangan/pengeluaran/kategori'
     | '/keuangan/tagihan/$id'
     | '/pengaturan/tarif/$id'
     | '/administrasi/daycare'
@@ -664,7 +688,9 @@ export interface FileRouteTypes {
     | '/_authenticated/keuangan/laporan/tahunan'
     | '/_authenticated/keuangan/pembayaran/$id'
     | '/_authenticated/keuangan/pembayaran/baru'
+    | '/_authenticated/keuangan/pengeluaran/$id'
     | '/_authenticated/keuangan/pengeluaran/baru'
+    | '/_authenticated/keuangan/pengeluaran/kategori'
     | '/_authenticated/keuangan/tagihan/$id'
     | '/_authenticated/pengaturan/tarif/$id'
     | '/_authenticated/administrasi/daycare/'
@@ -847,11 +873,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedKeuanganTagihanIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/keuangan/pengeluaran/kategori': {
+      id: '/_authenticated/keuangan/pengeluaran/kategori'
+      path: '/keuangan/pengeluaran/kategori'
+      fullPath: '/keuangan/pengeluaran/kategori'
+      preLoaderRoute: typeof AuthenticatedKeuanganPengeluaranKategoriRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/keuangan/pengeluaran/baru': {
       id: '/_authenticated/keuangan/pengeluaran/baru'
       path: '/keuangan/pengeluaran/baru'
       fullPath: '/keuangan/pengeluaran/baru'
       preLoaderRoute: typeof AuthenticatedKeuanganPengeluaranBaruRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/keuangan/pengeluaran/$id': {
+      id: '/_authenticated/keuangan/pengeluaran/$id'
+      path: '/keuangan/pengeluaran/$id'
+      fullPath: '/keuangan/pengeluaran/$id'
+      preLoaderRoute: typeof AuthenticatedKeuanganPengeluaranIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/keuangan/pembayaran/baru': {
@@ -1118,7 +1158,9 @@ interface AuthenticatedRouteChildren {
   AuthenticatedKeuanganLaporanTahunanRoute: typeof AuthenticatedKeuanganLaporanTahunanRoute
   AuthenticatedKeuanganPembayaranIdRoute: typeof AuthenticatedKeuanganPembayaranIdRoute
   AuthenticatedKeuanganPembayaranBaruRoute: typeof AuthenticatedKeuanganPembayaranBaruRoute
+  AuthenticatedKeuanganPengeluaranIdRoute: typeof AuthenticatedKeuanganPengeluaranIdRoute
   AuthenticatedKeuanganPengeluaranBaruRoute: typeof AuthenticatedKeuanganPengeluaranBaruRoute
+  AuthenticatedKeuanganPengeluaranKategoriRoute: typeof AuthenticatedKeuanganPengeluaranKategoriRoute
   AuthenticatedKeuanganTagihanIdRoute: typeof AuthenticatedKeuanganTagihanIdRoute
   AuthenticatedPengaturanTarifIdRoute: typeof AuthenticatedPengaturanTarifIdRoute
   AuthenticatedAdministrasiDaycareIndexRoute: typeof AuthenticatedAdministrasiDaycareIndexRoute
@@ -1184,8 +1226,12 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedKeuanganPembayaranIdRoute,
   AuthenticatedKeuanganPembayaranBaruRoute:
     AuthenticatedKeuanganPembayaranBaruRoute,
+  AuthenticatedKeuanganPengeluaranIdRoute:
+    AuthenticatedKeuanganPengeluaranIdRoute,
   AuthenticatedKeuanganPengeluaranBaruRoute:
     AuthenticatedKeuanganPengeluaranBaruRoute,
+  AuthenticatedKeuanganPengeluaranKategoriRoute:
+    AuthenticatedKeuanganPengeluaranKategoriRoute,
   AuthenticatedKeuanganTagihanIdRoute: AuthenticatedKeuanganTagihanIdRoute,
   AuthenticatedPengaturanTarifIdRoute: AuthenticatedPengaturanTarifIdRoute,
   AuthenticatedAdministrasiDaycareIndexRoute:

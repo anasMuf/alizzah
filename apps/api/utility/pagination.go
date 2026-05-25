@@ -16,8 +16,8 @@ func ParsePagination(c echo.Context) (page, limit int) {
 		page = p
 	}
 	if l, err := strconv.Atoi(c.QueryParam("limit")); err == nil && l > 0 {
-		if l > 100 {
-			l = 100 // cap at 100 to prevent abuse
+		if l > 1000 {
+			l = 1000 // cap at 1000 to prevent abuse
 		}
 		limit = l
 	}

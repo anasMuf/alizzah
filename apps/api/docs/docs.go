@@ -3667,6 +3667,64 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/extracurriculars/sync-invoices": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Generate missing monthly invoice items for all active extracurricular enrollments",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "student-extracurriculars"
+                ],
+                "summary": "Sync extracurricular monthly invoices",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/dto.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.ExtracurricularSyncResult"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/extracurriculars/{id}": {
             "put": {
                 "security": [
@@ -9060,6 +9118,9 @@ const docTemplate = `{
                         "P"
                     ]
                 },
+                "is_mandatory": {
+                    "type": "boolean"
+                },
                 "item_key": {
                     "type": "string",
                     "maxLength": 50
@@ -9670,6 +9731,40 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.ExtracurricularSyncError": {
+            "type": "object",
+            "properties": {
+                "extracurricular_id": {
+                    "type": "integer"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "student_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.ExtracurricularSyncResult": {
+            "type": "object",
+            "properties": {
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ExtracurricularSyncError"
+                    }
+                },
+                "total_enrollments": {
+                    "type": "integer"
+                },
+                "total_skipped": {
+                    "type": "integer"
+                },
+                "total_synced": {
+                    "type": "integer"
+                }
+            }
+        },
         "dto.FeeConfigItemResponse": {
             "type": "object",
             "properties": {
@@ -9684,6 +9779,9 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "integer"
+                },
+                "is_mandatory": {
+                    "type": "boolean"
                 },
                 "item_key": {
                     "type": "string"

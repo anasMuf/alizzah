@@ -10,6 +10,7 @@ type FeeConfigItem struct {
 	Gender      string  `gorm:"size:5;not null;default:all;uniqueIndex:uq_fee_config_items,priority:4"`
 	Amount      float64 `gorm:"type:decimal(15,2);not null"`
 	Unit        string  `gorm:"size:20;not null;default:fixed"`
+	IsMandatory bool    `gorm:"not null;default:false"` // true = otomatis masuk tagihan per jenjang, false = perlu enrollment manual
 	BaseModelTimeAt
 
 	FeeConfig FeeConfig `gorm:"foreignKey:FeeConfigID"`

@@ -11,6 +11,8 @@ type StudentExtracurricularRepository interface {
 	FindByStudentID(studentID uint, params dto.StudentExtracurricularQueryParams) ([]model.StudentExtracurricular, error)
 	FindByID(id uint) (*model.StudentExtracurricular, error)
 	FindActiveByStudentID(studentID, academicYearID uint) ([]model.StudentExtracurricular, error)
+	FindActiveByStudentAndExtracurricular(studentID, extracurricularID, academicYearID uint) (*model.StudentExtracurricular, error)
+	FindAllActiveByAcademicYear(academicYearID uint) ([]model.StudentExtracurricular, error)
 	Create(se *model.StudentExtracurricular) error
 	Update(se *model.StudentExtracurricular) error
 	Delete(id uint) error
@@ -46,6 +48,25 @@ func (r *studentExtracurricularRepository) FindByID(id uint) (*model.StudentExtr
 func (r *studentExtracurricularRepository) FindActiveByStudentID(studentID, academicYearID uint) ([]model.StudentExtracurricular, error) {
 	var ses []model.StudentExtracurricular
 	err := r.db.Preload("Extracurricular").Where("student_id = ? AND academic_year_id = ? AND end_date IS NULL", studentID, academicYearID).Find(&ses).Error
+	return ses, err
+}
+
+func (r *studentExtracurricularRepository) FindActiveByStudentAndExtracurricular(studentID, extracurricularID, academicYearID uint) (*model.StudentExtracurricular, error) {
+	var se model.StudentExtracurricular
+	err := r.db.Preload("Extracurricular").
+		Where("student_id = ? AND extracurricular_id = ? AND academic_year_id = ? AND end_date IS NULL", studentID, extracurricularID, academicYearID).
+		First(&se).Error
+	if err != nil {
+		return nil, err
+	}
+	return &se, nil
+}
+
+func (r *studentExtracurricularRepository) FindAllActiveByAcademicYear(academicYearID uint) ([]model.StudentExtracurricular, error) {
+	var ses []model.StudentExtracurricular
+	err := r.db.Preload("Extracurricular").Preload("Student").Preload("AcademicYear").
+		Where("academic_year_id = ? AND end_date IS NULL", academicYearID).
+		Find(&ses).Error
 	return ses, err
 }
 

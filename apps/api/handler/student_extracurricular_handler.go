@@ -11,11 +11,12 @@ import (
 )
 
 type StudentExtracurricularHandler struct {
-	seService service.StudentExtracurricularService
+	seService  service.StudentExtracurricularService
+	invoiceGen service.InvoiceGenerateService
 }
 
-func NewStudentExtracurricularHandler(seService service.StudentExtracurricularService) *StudentExtracurricularHandler {
-	return &StudentExtracurricularHandler{seService: seService}
+func NewStudentExtracurricularHandler(seService service.StudentExtracurricularService, invoiceGen service.InvoiceGenerateService) *StudentExtracurricularHandler {
+	return &StudentExtracurricularHandler{seService: seService, invoiceGen: invoiceGen}
 }
 
 // GetByStudent godoc
@@ -244,5 +245,34 @@ func (h *StudentExtracurricularHandler) Unenroll(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, dto.SuccessResponse{
 		Message: "Berhasil mencabut ekstrakurikuler siswa",
+	})
+}
+
+// SyncInvoices godoc
+// @Summary      Sync extracurricular monthly invoices
+// @Description  Generate missing monthly invoice items for all active extracurricular enrollments
+// @Tags         student-extracurriculars
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Success      200  {object}  dto.SuccessResponse{data=dto.ExtracurricularSyncResult}
+// @Failure      401  {object}  dto.ErrorResponse
+// @Failure      403  {object}  dto.ErrorResponse
+// @Failure      500  {object}  dto.ErrorResponse
+// @Router       /v1/extracurriculars/sync-invoices [post]
+func (h *StudentExtracurricularHandler) SyncInvoices(c echo.Context) error {
+	result, err := h.invoiceGen.SyncExtracurricularMonthlyInvoices()
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{
+			Status:  status,
+			Code:    code,
+			Message: err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "Sinkronisasi tagihan ekstrakurikuler bulanan selesai",
+		Data:    result,
 	})
 }

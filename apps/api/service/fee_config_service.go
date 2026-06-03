@@ -143,6 +143,7 @@ func (s *feeConfigService) CreateItem(feeConfigID uint, req dto.CreateFeeConfigI
 		Gender:      req.Gender,
 		Amount:      req.Amount,
 		Unit:        req.Unit,
+		IsMandatory: req.IsMandatory,
 	}
 
 	if err := s.itemRepo.Create(item); err != nil {
@@ -170,6 +171,7 @@ func (s *feeConfigService) UpdateItem(feeConfigID, itemID uint, req dto.CreateFe
 	item.Gender = req.Gender
 	item.Amount = req.Amount
 	item.Unit = req.Unit
+	item.IsMandatory = req.IsMandatory
 
 	if err := s.itemRepo.Update(item); err != nil {
 		return nil, err
@@ -219,13 +221,14 @@ func mapFeeConfigToResponse(fc model.FeeConfig) *dto.FeeConfigResponse {
 
 func mapFeeConfigItemToResponse(item model.FeeConfigItem) *dto.FeeConfigItemResponse {
 	return &dto.FeeConfigItemResponse{
-		ID:       item.ID,
-		Category: item.Category,
-		ItemKey:  item.ItemKey,
-		Name:     item.Name,
-		Level:    item.Level,
-		Gender:   item.Gender,
-		Amount:   item.Amount,
-		Unit:     item.Unit,
+		ID:          item.ID,
+		Category:    item.Category,
+		ItemKey:     item.ItemKey,
+		Name:        item.Name,
+		Level:       item.Level,
+		Gender:      item.Gender,
+		Amount:      item.Amount,
+		Unit:        item.Unit,
+		IsMandatory: item.IsMandatory,
 	}
 }

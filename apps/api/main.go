@@ -228,7 +228,7 @@ func main() {
 	enrollmentHandler := handler.NewStudentEnrollmentHandler(enrollmentService)
 	effectiveDayHandler := handler.NewEffectiveDayHandler(effectiveDayService)
 	extracurricularHandler := handler.NewExtracurricularHandler(extracurricularService)
-	seHandler := handler.NewStudentExtracurricularHandler(seService)
+	seHandler := handler.NewStudentExtracurricularHandler(seService, invoiceGenService)
 	eventHandler := handler.NewAcademicEventHandler(eventService, academicService)
 	daycareHandler := handler.NewDaycareEnrollmentHandler(daycareService, invoiceGenService)
 
@@ -330,6 +330,7 @@ func main() {
 
 	// Extracurriculars
 	extracurriculars := api.Group("/extracurriculars", middleware.JWTAuth, middleware.RequireRoles("superadmin", "admin_administrasi"))
+	extracurriculars.POST("/sync-invoices", seHandler.SyncInvoices)
 	extracurriculars.GET("", extracurricularHandler.List)
 	extracurriculars.POST("", extracurricularHandler.Create)
 	extracurriculars.PUT("/:id", extracurricularHandler.Update)

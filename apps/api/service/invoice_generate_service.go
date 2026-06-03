@@ -22,8 +22,9 @@ type InvoiceGenerateService interface {
 	RemoveDaycareFromFutureInvoices(studentID uint, fromMonth, fromYear uint) error
 	SyncDaycareMonthlyInvoices() (*dto.DaycareSyncResult, error)
 	RecalculateInfaqHarian(classGroupID, month, year uint) error
-	AddExtracurricularToNextMonthly(studentID, extracurricularID, academicYearID uint) error
-	RemoveExtracurricularFromNextMonthly(studentID, extracurricularID, academicYearID uint) error
+	AddExtracurricularToMonthlyRange(studentID, extracurricularID, academicYearID uint) error
+	RemoveExtracurricularFromFutureInvoices(studentID, extracurricularID, academicYearID uint) error
+	SyncExtracurricularMonthlyInvoices() (*dto.ExtracurricularSyncResult, error)
 }
 
 type invoiceGenerateService struct {
@@ -192,7 +193,18 @@ func (s *invoiceGenerateService) GenerateMonthly(params dto.GenerateMonthlyInvoi
 		})
 	}
 
-	// Pasta / Calisan / Ekskul
+	// Item wajib otomatis (is_mandatory=true di fee config): Calisan, Aslin, dll
+	mandatoryExtras, _ := s.feeConfigItemRepo.FindMandatoryByStudent(feeConfig.ID, params.Level, params.Gender)
+	for _, item := range mandatoryExtras {
+		invoiceItems = append(invoiceItems, model.InvoiceItem{
+			Name:        item.Name,
+			Category:    item.Category,
+			Amount:      item.Amount,
+			IsMandatory: true,
+		})
+	}
+
+	// Pasta opsional (hanya jika siswa terdaftar via enrollment manual)
 	for _, exID := range params.ExtracurricularIDs {
 		ex, err := s.extracurricularRepo.FindByID(exID)
 		if err != nil {
@@ -200,6 +212,10 @@ func (s *invoiceGenerateService) GenerateMonthly(params dto.GenerateMonthlyInvoi
 		}
 		feeItems, _ := s.feeConfigItemRepo.FindByExtracurricular(feeConfig.ID, ex.Type, ex.Name)
 		for _, feeItem := range feeItems {
+			// Skip jika item ini sudah masuk sebagai mandatory
+			if feeItem.IsMandatory {
+				continue
+			}
 			invoiceItems = append(invoiceItems, model.InvoiceItem{
 				Name:        feeItem.Name,
 				Category:    feeItem.Category,
@@ -414,7 +430,7 @@ func (s *invoiceGenerateService) RecalculateInfaqHarian(classGroupID, month, yea
 	return nil
 }
 
-func (s *invoiceGenerateService) AddExtracurricularToNextMonthly(studentID, extracurricularID, academicYearID uint) error {
+func (s *invoiceGenerateService) AddExtracurricularToMonthlyRange(studentID, extracurricularID, academicYearID uint) error {
 	ex, err := s.extracurricularRepo.FindByID(extracurricularID)
 	if err != nil {
 		return err
@@ -430,16 +446,48 @@ func (s *invoiceGenerateService) AddExtracurricularToNextMonthly(studentID, extr
 		return nil // no fee configured for this extracurricular
 	}
 
-	// Determine next month
-	nextMonth, nextYear := getNextMonth()
-
-	invoice, err := s.invoiceRepo.FindMonthlyByStudent(studentID, nextMonth, nextYear)
+	ay, err := s.acRepo.FindByID(academicYearID)
 	if err != nil {
-		return nil // no monthly invoice for next month yet
+		return nil
 	}
 
-	// Add items
+	// Get the student's extracurricular enrollment to determine start date
+	se, _ := s.seRepo.FindActiveByStudentAndExtracurricular(studentID, extracurricularID, academicYearID)
+	if se == nil {
+		return nil
+	}
+
+	months := utility.MonthRangeFromDate(se.StartDate, ay.EndDate)
+
+	for _, m := range months {
+		if err := s.addExtracurricularItemToMonthly(studentID, academicYearID, m.Month, m.Year, feeItems); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *invoiceGenerateService) addExtracurricularItemToMonthly(studentID, academicYearID, month, year uint, feeItems []model.FeeConfigItem) error {
+	invoice, err := s.invoiceRepo.FindMonthlyByStudent(studentID, month, year)
+	if err != nil {
+		return nil // no monthly invoice for this month yet, skip
+	}
+
+	// Check idempotency: if any of these fee items already exist on this invoice, skip
+	existingItems, _ := s.invoiceItemRepo.FindByInvoiceID(invoice.ID)
 	for _, feeItem := range feeItems {
+		alreadyExists := false
+		for _, existing := range existingItems {
+			if existing.Name == feeItem.Name && existing.Category == feeItem.Category {
+				alreadyExists = true
+				break
+			}
+		}
+		if alreadyExists {
+			continue
+		}
+
 		item := &model.InvoiceItem{
 			InvoiceID:   invoice.ID,
 			Name:        feeItem.Name,
@@ -455,7 +503,7 @@ func (s *invoiceGenerateService) AddExtracurricularToNextMonthly(studentID, extr
 	return s.recalculateInvoiceTotal(invoice.ID)
 }
 
-func (s *invoiceGenerateService) RemoveExtracurricularFromNextMonthly(studentID, extracurricularID, academicYearID uint) error {
+func (s *invoiceGenerateService) RemoveExtracurricularFromFutureInvoices(studentID, extracurricularID, academicYearID uint) error {
 	ex, err := s.extracurricularRepo.FindByID(extracurricularID)
 	if err != nil {
 		return err
@@ -471,24 +519,67 @@ func (s *invoiceGenerateService) RemoveExtracurricularFromNextMonthly(studentID,
 		return nil
 	}
 
-	nextMonth, nextYear := getNextMonth()
+	// Get current month onwards
+	now := time.Now()
+	curMonth := uint(now.Month())
+	curYear := uint(now.Year())
 
-	invoice, err := s.invoiceRepo.FindMonthlyByStudent(studentID, nextMonth, nextYear)
+	invoices, err := s.invoiceRepo.FindMonthlyByStudentFromMonth(studentID, curMonth, curYear)
 	if err != nil {
 		return nil
 	}
 
-	// Find and delete unpaid items matching this extracurricular
-	items, _ := s.invoiceItemRepo.FindByInvoiceID(invoice.ID)
-	for _, item := range items {
-		for _, feeItem := range feeItems {
-			if item.Name == feeItem.Name && item.Category == feeItem.Category && item.PaidAmount == 0 {
-				s.invoiceItemRepo.Delete(item.ID)
+	for _, inv := range invoices {
+		items, _ := s.invoiceItemRepo.FindByInvoiceID(inv.ID)
+		deleted := false
+		for _, item := range items {
+			for _, feeItem := range feeItems {
+				if item.Name == feeItem.Name && item.Category == feeItem.Category && item.PaidAmount == 0 {
+					s.invoiceItemRepo.Delete(item.ID)
+					deleted = true
+				}
 			}
+		}
+		if deleted {
+			s.recalculateInvoiceTotal(inv.ID)
 		}
 	}
 
-	return s.recalculateInvoiceTotal(invoice.ID)
+	return nil
+}
+
+// SyncExtracurricularMonthlyInvoices backfills extracurricular items into existing monthly invoices.
+func (s *invoiceGenerateService) SyncExtracurricularMonthlyInvoices() (*dto.ExtracurricularSyncResult, error) {
+	ay, err := s.acRepo.FindActive()
+	if err != nil {
+		return nil, fmt.Errorf("tahun ajaran aktif tidak ditemukan")
+	}
+
+	// Get all active student extracurriculars for this academic year
+	allSE, err := s.seRepo.FindAllActiveByAcademicYear(ay.ID)
+	if err != nil {
+		return nil, fmt.Errorf("gagal mengambil data ekskul: %v", err)
+	}
+
+	result := &dto.ExtracurricularSyncResult{
+		TotalEnrollments: len(allSE),
+	}
+
+	for _, se := range allSE {
+		err := s.AddExtracurricularToMonthlyRange(se.StudentID, se.ExtracurricularID, se.AcademicYearID)
+		if err != nil {
+			result.Errors = append(result.Errors, dto.ExtracurricularSyncError{
+				StudentID:         se.StudentID,
+				ExtracurricularID: se.ExtracurricularID,
+				Message:           err.Error(),
+			})
+			continue
+		}
+		result.TotalSynced++
+	}
+
+	result.TotalSkipped = len(result.Errors)
+	return result, nil
 }
 
 // GenerateMonthlyRange generates monthly invoices for a date range (called from enrollment service).
@@ -699,13 +790,3 @@ func (s *invoiceGenerateService) RemoveDaycareFromFutureInvoices(studentID uint,
 	return nil
 }
 
-func getNextMonth() (uint, uint) {
-	now := time.Now()
-	nextMonth := uint(now.Month()) + 1
-	nextYear := uint(now.Year())
-	if nextMonth > 12 {
-		nextMonth = 1
-		nextYear++
-	}
-	return nextMonth, nextYear
-}

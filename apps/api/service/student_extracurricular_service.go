@@ -94,9 +94,9 @@ func (s *studentExtracurricularService) Enroll(studentID uint, req dto.EnrollExt
 		return nil, err
 	}
 
-	// Batch 5: tambahkan item tagihan pasta/calisan/ekskul ke invoice bulanan berikutnya
+	// Tambahkan item tagihan pasta/calisan/ekskul ke semua invoice bulanan (dari start_date sampai akhir TA)
 	if s.invoiceGen != nil {
-		go s.invoiceGen.AddExtracurricularToNextMonthly(studentID, req.ExtracurricularID, req.AcademicYearID)
+		go s.invoiceGen.AddExtracurricularToMonthlyRange(studentID, req.ExtracurricularID, req.AcademicYearID)
 	}
 
 	savedSe, _ := s.seRepo.FindByID(se.ID)
@@ -135,9 +135,9 @@ func (s *studentExtracurricularService) Unenroll(studentID, seID uint) error {
 		return err
 	}
 
-	// Batch 5: hapus item tagihan dari invoice bulan depan jika belum dibayar
+	// Hapus item tagihan ekskul dari semua invoice bulan ini ke depan yang belum dibayar
 	if s.invoiceGen != nil {
-		go s.invoiceGen.RemoveExtracurricularFromNextMonthly(studentID, se.ExtracurricularID, se.AcademicYearID)
+		go s.invoiceGen.RemoveExtracurricularFromFutureInvoices(studentID, se.ExtracurricularID, se.AcademicYearID)
 	}
 
 	return nil

@@ -23,6 +23,7 @@ type FeeConfigItemRepository interface {
 	FindByStudentForCategory(feeConfigID uint, category, level, gender string) ([]model.FeeConfigItem, error)
 	FindByExtracurricular(feeConfigID uint, exType, exName string) ([]model.FeeConfigItem, error)
 	FindByItemKeys(feeConfigID uint, itemKeys []string) ([]model.FeeConfigItem, error)
+	FindMandatoryByStudent(feeConfigID uint, level, gender string) ([]model.FeeConfigItem, error)
 }
 
 type feeConfigItemRepository struct {
@@ -123,5 +124,16 @@ func (r *feeConfigItemRepository) FindByExtracurricular(feeConfigID uint, exType
 func (r *feeConfigItemRepository) FindByItemKeys(feeConfigID uint, itemKeys []string) ([]model.FeeConfigItem, error) {
 	var items []model.FeeConfigItem
 	err := r.db.Where("fee_config_id = ? AND item_key IN ?", feeConfigID, itemKeys).Find(&items).Error
+	return items, err
+}
+
+// FindMandatoryByStudent returns fee config items marked as is_mandatory=true that match the student's level and gender.
+// These items are automatically included in monthly invoices without requiring manual enrollment.
+func (r *feeConfigItemRepository) FindMandatoryByStudent(feeConfigID uint, level, gender string) ([]model.FeeConfigItem, error) {
+	var items []model.FeeConfigItem
+	err := r.db.Where(
+		"fee_config_id = ? AND is_mandatory = ? AND (level = 'all' OR level = ?) AND (gender = 'all' OR gender = ?)",
+		feeConfigID, true, level, gender,
+	).Find(&items).Error
 	return items, err
 }

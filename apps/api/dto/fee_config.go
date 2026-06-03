@@ -20,24 +20,26 @@ type FeeConfigResponse struct {
 
 // FeeConfigItem
 type CreateFeeConfigItemRequest struct {
-	Category string  `json:"category" validate:"required,oneof=initial registration monthly_spp monthly_infaq pasta calisan ekskul savings_mandatory daycare graduation"`
-	ItemKey  string  `json:"item_key" validate:"required,max=50"`
-	Name     string  `json:"name" validate:"required,max=100"`
-	Level    string  `json:"level" validate:"required,oneof=all mutiara intan berlian"`
-	Gender   string  `json:"gender" validate:"required,oneof=all L P"`
-	Amount   float64 `json:"amount" validate:"required,min=0"`
-	Unit     string  `json:"unit" validate:"required,oneof=fixed per_day per_monday percent"`
+	Category    string  `json:"category" validate:"required,oneof=initial registration monthly_spp monthly_infaq pasta calisan ekskul savings_mandatory daycare graduation"`
+	ItemKey     string  `json:"item_key" validate:"required,max=50"`
+	Name        string  `json:"name" validate:"required,max=100"`
+	Level       string  `json:"level" validate:"required,oneof=all mutiara intan berlian"`
+	Gender      string  `json:"gender" validate:"required,oneof=all L P"`
+	Amount      float64 `json:"amount" validate:"required,min=0"`
+	Unit        string  `json:"unit" validate:"required,oneof=fixed per_day per_monday percent"`
+	IsMandatory bool    `json:"is_mandatory"`
 }
 
 type FeeConfigItemResponse struct {
-	ID       uint    `json:"id"`
-	Category string  `json:"category"`
-	ItemKey  string  `json:"item_key"`
-	Name     string  `json:"name"`
-	Level    string  `json:"level"`
-	Gender   string  `json:"gender"`
-	Amount   float64 `json:"amount"`
-	Unit     string  `json:"unit"`
+	ID          uint    `json:"id"`
+	Category    string  `json:"category"`
+	ItemKey     string  `json:"item_key"`
+	Name        string  `json:"name"`
+	Level       string  `json:"level"`
+	Gender      string  `json:"gender"`
+	Amount      float64 `json:"amount"`
+	Unit        string  `json:"unit"`
+	IsMandatory bool    `json:"is_mandatory"`
 }
 
 type FeeConfigItemQueryParams struct {

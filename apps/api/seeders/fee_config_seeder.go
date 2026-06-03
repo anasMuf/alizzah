@@ -8,13 +8,14 @@ import (
 )
 
 type feeItemDef struct {
-	Category string
-	ItemKey  string
-	Name     string
-	Level    string
-	Gender   string
-	Amount   float64
-	Unit     string
+	Category    string
+	ItemKey     string
+	Name        string
+	Level       string
+	Gender      string
+	Amount      float64
+	Unit        string
+	IsMandatory bool // true = otomatis masuk tagihan per jenjang
 }
 
 func SeedFeeConfigs(db *gorm.DB) {
@@ -51,6 +52,7 @@ func SeedFeeConfigs(db *gorm.DB) {
 			Gender:      item.Gender,
 			Amount:      item.Amount,
 			Unit:        item.Unit,
+			IsMandatory: item.IsMandatory,
 		}
 		if err := db.Create(&fci).Error; err != nil {
 			log.Printf("Gagal membuat fee item '%s' (level=%s): %v", item.Name, item.Level, err)
@@ -64,14 +66,14 @@ func buildFeeConfigItems() []feeItemDef {
 
 	// === SPP (monthly_spp) ===
 	items = append(items,
-		feeItemDef{"monthly_spp", "spp_kb", "SPP KB", "mutiara", "all", 150000, "fixed"},
-		feeItemDef{"monthly_spp", "spp_tk", "SPP TK", "intan", "all", 150000, "fixed"},
-		feeItemDef{"monthly_spp", "spp_tk", "SPP TK", "berlian", "all", 150000, "fixed"},
+		feeItemDef{"monthly_spp", "spp_kb", "SPP KB", "mutiara", "all", 150000, "fixed", false},
+		feeItemDef{"monthly_spp", "spp_tk", "SPP TK", "intan", "all", 150000, "fixed", false},
+		feeItemDef{"monthly_spp", "spp_tk", "SPP TK", "berlian", "all", 150000, "fixed", false},
 	)
 
 	// === Infaq Harian (monthly_infaq) ===
 	items = append(items,
-		feeItemDef{"monthly_infaq", "infaq_harian", "Infaq Harian", "all", "all", 7000, "per_day"},
+		feeItemDef{"monthly_infaq", "infaq_harian", "Infaq Harian", "all", "all", 7000, "per_day", false},
 	)
 
 	// === Biaya Awal (initial) ===
@@ -92,7 +94,7 @@ func buildFeeConfigItems() []feeItemDef {
 		{"biaya_psikotes", "Biaya Psikotes IQ", 150000},
 	}
 	for _, it := range initialItems {
-		items = append(items, feeItemDef{"initial", it.key, it.name, "all", "all", it.amount, "fixed"})
+		items = append(items, feeItemDef{"initial", it.key, it.name, "all", "all", it.amount, "fixed", false})
 	}
 
 	// === Biaya Registrasi (registration) — per jenjang ===
@@ -130,7 +132,7 @@ func buildFeeConfigItems() []feeItemDef {
 		}
 		for level, amount := range levelAmounts {
 			if amount > 0 {
-				items = append(items, feeItemDef{"registration", r.key, r.name, level, r.gender, amount, "fixed"})
+				items = append(items, feeItemDef{"registration", r.key, r.name, level, r.gender, amount, "fixed", false})
 			}
 		}
 	}
@@ -151,24 +153,24 @@ func buildFeeConfigItems() []feeItemDef {
 		{"pasta_menyanyi", "Pasta Menyanyi", 50000},
 	}
 	for _, p := range pastaItems {
-		items = append(items, feeItemDef{"pasta", p.key, p.name, "all", "all", p.amount, "fixed"})
+		items = append(items, feeItemDef{"pasta", p.key, p.name, "all", "all", p.amount, "fixed", false})
 	}
 
-	// === Calisan ===
+	// === Calisan (wajib per jenjang) ===
 	items = append(items,
-		feeItemDef{"calisan", "calisan_kb", "Calisan KB", "mutiara", "all", 50000, "fixed"},
-		feeItemDef{"calisan", "calisan_tk", "Calisan TK", "intan", "all", 50000, "fixed"},
-		feeItemDef{"calisan", "calisan_tk", "Calisan TK", "berlian", "all", 50000, "fixed"},
+		feeItemDef{"calisan", "calisan_kb", "Calisan KB", "mutiara", "all", 50000, "fixed", true},
+		feeItemDef{"calisan", "calisan_tk", "Calisan TK", "intan", "all", 50000, "fixed", true},
+		feeItemDef{"calisan", "calisan_tk", "Calisan TK", "berlian", "all", 50000, "fixed", true},
 	)
 
-	// === Ekskul ===
+	// === Ekskul wajib (Aslin untuk Berlian) ===
 	items = append(items,
-		feeItemDef{"ekskul", "ekskul_aslin", "Aslin", "berlian", "all", 25000, "fixed"},
+		feeItemDef{"ekskul", "ekskul_aslin", "Aslin", "berlian", "all", 25000, "fixed", true},
 	)
 
 	// === Tabungan Wajib Berlian ===
 	items = append(items,
-		feeItemDef{"savings_mandatory", "tabungan_wajib", "Tabungan Wajib Berlian", "berlian", "all", 10000, "per_monday"},
+		feeItemDef{"savings_mandatory", "tabungan_wajib", "Tabungan Wajib Berlian", "berlian", "all", 10000, "per_monday", false},
 	)
 
 	// === Daycare ===
@@ -189,12 +191,12 @@ func buildFeeConfigItems() []feeItemDef {
 		{"daycare_konsumsi", "Biaya Konsumsi", 20000, "per_day"},
 	}
 	for _, d := range daycareItems {
-		items = append(items, feeItemDef{"daycare", d.key, d.name, "all", "all", d.amount, d.unit})
+		items = append(items, feeItemDef{"daycare", d.key, d.name, "all", "all", d.amount, d.unit, false})
 	}
 
 	// === Wisuda (placeholder) ===
 	items = append(items,
-		feeItemDef{"graduation", "biaya_wisuda", "Biaya Wisuda", "berlian", "all", 0, "fixed"},
+		feeItemDef{"graduation", "biaya_wisuda", "Biaya Wisuda", "berlian", "all", 0, "fixed", false},
 	)
 
 	return items

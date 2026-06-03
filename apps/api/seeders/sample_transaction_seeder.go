@@ -64,6 +64,16 @@ func SeedSampleTransactions(db *gorm.DB) {
 		return matched
 	}
 
+	findMandatoryFeeItems := func(level, gender string) []model.FeeConfigItem {
+		var matched []model.FeeConfigItem
+		for _, fi := range feeItems {
+			if fi.IsMandatory && (fi.Level == level || fi.Level == "all") && (fi.Gender == gender || fi.Gender == "all") {
+				matched = append(matched, fi)
+			}
+		}
+		return matched
+	}
+
 	// === Tagihan Biaya Awal (initial) — siswa baru & mutasi ===
 	var totalInitial, totalRegistration int
 	for _, enr := range enrollments {
@@ -232,6 +242,18 @@ func SeedSampleTransactions(db *gorm.DB) {
 				IsMandatory: true,
 				Notes:       infaqNotes,
 			})
+
+			// Item wajib otomatis (is_mandatory=true di fee config): Calisan, Aslin, dll
+			mandatoryExtras := findMandatoryFeeItems(level, enr.Student.Gender)
+			for _, mi := range mandatoryExtras {
+				totalAmount += mi.Amount
+				items = append(items, model.InvoiceItem{
+					Name:        mi.Name,
+					Category:    mi.Category,
+					Amount:      mi.Amount,
+					IsMandatory: true,
+				})
+			}
 
 			// Berlian: tabungan wajib
 			if level == "berlian" && hasEd {

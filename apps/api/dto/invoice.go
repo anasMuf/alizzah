@@ -153,3 +153,16 @@ type DaycareSyncError struct {
 	StudentID uint   `json:"student_id"`
 	Message   string `json:"message"`
 }
+
+type ExtracurricularSyncResult struct {
+	TotalEnrollments int                          `json:"total_enrollments"`
+	TotalSynced      int                          `json:"total_synced"`
+	TotalSkipped     int                          `json:"total_skipped"`
+	Errors           []ExtracurricularSyncError   `json:"errors,omitempty"`
+}
+
+type ExtracurricularSyncError struct {
+	StudentID         uint   `json:"student_id"`
+	ExtracurricularID uint   `json:"extracurricular_id"`
+	Message           string `json:"message"`
+}

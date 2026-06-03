@@ -74,6 +74,73 @@ func SeedSampleTransactions(db *gorm.DB) {
 		return matched
 	}
 
+	// === Enroll siswa ke ekskul/pasta (data akademik) ===
+	var allExtracurriculars []model.Extracurricular
+	db.Find(&allExtracurriculars)
+
+	exByName := make(map[string]model.Extracurricular)
+	var pastaList []model.Extracurricular
+	for _, ex := range allExtracurriculars {
+		exByName[ex.Name] = ex
+		if ex.Type == "pasta" {
+			pastaList = append(pastaList, ex)
+		}
+	}
+
+	rng := rand.New(rand.NewSource(42)) // deterministic for reproducibility
+	taStartDate := activeYear.StartDate
+
+	var totalSERecords int
+	for _, enr := range enrollments {
+		level := enr.ClassGroup.Level
+
+		// Wajib: Calisan sesuai jenjang
+		if level == "mutiara" {
+			if ex, ok := exByName["Calisan KB"]; ok {
+				db.Create(&model.StudentExtracurricular{
+					StudentID: enr.StudentID, ExtracurricularID: ex.ID,
+					AcademicYearID: activeYear.ID, StartDate: taStartDate,
+				})
+				totalSERecords++
+			}
+		} else {
+			// intan & berlian → Calisan TK
+			if ex, ok := exByName["Calisan TK"]; ok {
+				db.Create(&model.StudentExtracurricular{
+					StudentID: enr.StudentID, ExtracurricularID: ex.ID,
+					AcademicYearID: activeYear.ID, StartDate: taStartDate,
+				})
+				totalSERecords++
+			}
+		}
+
+		// Wajib: Aslin untuk Berlian
+		if level == "berlian" {
+			if ex, ok := exByName["Aslin"]; ok {
+				db.Create(&model.StudentExtracurricular{
+					StudentID: enr.StudentID, ExtracurricularID: ex.ID,
+					AcademicYearID: activeYear.ID, StartDate: taStartDate,
+				})
+				totalSERecords++
+			}
+		}
+
+		// Opsional: ~40% siswa ikut 1-2 pasta random
+		if rng.Float64() < 0.40 && len(pastaList) > 0 {
+			numPasta := 1 + rng.Intn(2) // 1 atau 2 pasta
+			perm := rng.Perm(len(pastaList))
+			for i := 0; i < numPasta && i < len(perm); i++ {
+				pasta := pastaList[perm[i]]
+				db.Create(&model.StudentExtracurricular{
+					StudentID: enr.StudentID, ExtracurricularID: pasta.ID,
+					AcademicYearID: activeYear.ID, StartDate: taStartDate,
+				})
+				totalSERecords++
+			}
+		}
+	}
+	log.Printf("  → %d student extracurricular enrollments", totalSERecords)
+
 	// === Tagihan Biaya Awal (initial) — siswa baru & mutasi ===
 	var totalInitial, totalRegistration int
 	for _, enr := range enrollments {
@@ -195,8 +262,6 @@ func SeedSampleTransactions(db *gorm.DB) {
 	}
 
 	var totalInvoices, totalPayments, totalExpenses int
-
-	rng := rand.New(rand.NewSource(42)) // deterministic for reproducibility
 
 	// === Generate Invoices for all months ===
 	for _, tm := range targetMonths {

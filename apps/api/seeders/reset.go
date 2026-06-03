@@ -61,6 +61,7 @@ var AvailableGroups = map[string]SeederGroup{
 			"invoice_installments",
 			"invoice_items",
 			"invoices",
+			"student_extracurriculars",
 		},
 		Seed: SeedSampleTransactions,
 	},

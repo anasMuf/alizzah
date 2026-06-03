@@ -89,6 +89,11 @@ func main() {
 	}
 	log.Println("AutoMigrate berhasil")
 
+	// Partial unique index: satu siswa hanya boleh punya satu enrollment aktif per tahun ajaran
+	db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS uq_active_enrollment_per_year
+		ON student_enrollments (student_id, academic_year_id)
+		WHERE status = 'active'`)
+
 	// Reset data jika flag --reseed diberikan
 	if *reseed != "" {
 		if *reseed == "all" {
@@ -195,7 +200,7 @@ func main() {
 	reportService := service.NewReportService(reportRepo, ayRepo, cashTxnRepo, vaultTxnRepo, dailyClosingRepo, studentRepo, invoiceRepo, invoiceItemRepo, paymentRepo, savingsService, classGroupRepo)
 
 	// Batch 3 (updated with Batch 5+6 dependencies)
-	studentService := service.NewStudentService(studentRepo, enrollmentRepo, invoiceRepo, savingsService)
+	studentService := service.NewStudentService(db, studentRepo, enrollmentRepo, classGroupRepo, invoiceRepo, savingsService)
 	enrollmentService := service.NewStudentEnrollmentService(enrollmentRepo, studentRepo, classGroupRepo)
 	effectiveDayService := service.NewEffectiveDayService(effectiveDayRepo, classGroupRepo, invoiceGenService)
 	extracurricularService := service.NewExtracurricularService(extracurricularRepo)
@@ -308,6 +313,7 @@ func main() {
 	classGroups := api.Group("/class-groups", middleware.JWTAuth)
 	classGroups.GET("", classGroupHandler.List, middleware.RequireRoles("superadmin", "admin_administrasi", "admin_keuangan"))
 	classGroups.POST("", classGroupHandler.Create, middleware.RequireRoles("superadmin", "admin_administrasi"))
+	classGroups.POST("/clone", classGroupHandler.Clone, middleware.RequireRoles("superadmin", "admin_administrasi"))
 	classGroups.GET("/:id", classGroupHandler.Get, middleware.RequireRoles("superadmin", "admin_administrasi", "admin_keuangan"))
 	classGroups.PUT("/:id", classGroupHandler.Update, middleware.RequireRoles("superadmin", "admin_administrasi"))
 	classGroups.DELETE("/:id", classGroupHandler.Delete, middleware.RequireRoles("superadmin", "admin_administrasi"))
@@ -335,6 +341,7 @@ func main() {
 
 	// Batch 4: Academic Events
 	events := api.Group("/academic-events", middleware.JWTAuth, middleware.RequireRoles("superadmin", "admin_administrasi"))
+	events.POST("/promotions/preview", eventHandler.PromotionPreview)
 	events.POST("/promotions", eventHandler.Promotion)
 	events.POST("/graduations", eventHandler.Graduation)
 	events.POST("/class-changes", eventHandler.ClassChange)

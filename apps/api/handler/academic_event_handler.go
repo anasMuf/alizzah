@@ -65,6 +65,53 @@ func (h *AcademicEventHandler) GetByStudent(c echo.Context) error {
 
 // Batch 4 Handlers
 
+// PromotionPreview godoc
+// @Summary      Preview promotion results (dry run)
+// @Description  Preview what will happen when promotions run, without making any changes
+// @Tags         academic-events
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        request  body      dto.PromotionRequest  true  "Promotion data"
+// @Success      200      {object}  dto.SuccessResponse{data=dto.PromotionPreviewResult}
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      401      {object}  dto.ErrorResponse
+// @Failure      403      {object}  dto.ErrorResponse
+// @Failure      500      {object}  dto.ErrorResponse
+// @Router       /v1/academic-events/promotions/preview [post]
+func (h *AcademicEventHandler) PromotionPreview(c echo.Context) error {
+	var req dto.PromotionRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status:  http.StatusBadRequest,
+			Code:    "BAD_REQUEST",
+			Message: err.Error(),
+		})
+	}
+	if err := c.Validate(req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status:  http.StatusBadRequest,
+			Code:    "VALIDATION_ERROR",
+			Message: err.Error(),
+		})
+	}
+
+	result, err := h.academicService.PreviewPromotion(req)
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{
+			Status:  status,
+			Code:    code,
+			Message: err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "Preview kenaikan kelas berhasil",
+		Data:    result,
+	})
+}
+
 // Promotion godoc
 // @Summary      Process student promotion
 // @Description  Process promotion of students to the next class group

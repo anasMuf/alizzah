@@ -18,23 +18,27 @@ const dateLayout = "2006-01-02"
 type StudentService interface {
 	GetAll(params dto.StudentQueryParams) ([]dto.StudentListResponse, *dto.Meta, error)
 	GetByID(id uint) (*dto.StudentDetailResponse, error)
-	Create(req dto.CreateStudentRequest) (*dto.StudentDetailResponse, error)
+	Create(createdBy uint, req dto.CreateStudentRequest) (*dto.StudentDetailResponse, error)
 	Update(id uint, req dto.UpdateStudentRequest) (*dto.StudentDetailResponse, error)
 	Delete(id uint) error
 	Import(file *multipart.FileHeader) (*dto.ImportSummaryResponse, error)
 }
 
 type studentService struct {
+	db             *gorm.DB
 	studentRepo    repository.StudentRepository
 	enrollmentRepo repository.StudentEnrollmentRepository
+	classGroupRepo repository.ClassGroupRepository
 	invoiceRepo    repository.InvoiceRepository
 	savingsService SavingsService
 }
 
-func NewStudentService(studentRepo repository.StudentRepository, enrollmentRepo repository.StudentEnrollmentRepository, invoiceRepo repository.InvoiceRepository, savingsService SavingsService) StudentService {
+func NewStudentService(db *gorm.DB, studentRepo repository.StudentRepository, enrollmentRepo repository.StudentEnrollmentRepository, classGroupRepo repository.ClassGroupRepository, invoiceRepo repository.InvoiceRepository, savingsService SavingsService) StudentService {
 	return &studentService{
+		db:             db,
 		studentRepo:    studentRepo,
 		enrollmentRepo: enrollmentRepo,
+		classGroupRepo: classGroupRepo,
 		invoiceRepo:    invoiceRepo,
 		savingsService: savingsService,
 	}
@@ -110,10 +114,40 @@ func (s *studentService) GetByID(id uint) (*dto.StudentDetailResponse, error) {
 	return resp, nil
 }
 
-func (s *studentService) Create(req dto.CreateStudentRequest) (*dto.StudentDetailResponse, error) {
+func (s *studentService) Create(createdBy uint, req dto.CreateStudentRequest) (*dto.StudentDetailResponse, error) {
 	birthDate, err := time.Parse(dateLayout, req.BirthDate)
 	if err != nil {
 		return nil, errors.New("Format birth_date tidak valid (YYYY-MM-DD)")
+	}
+
+	wantEnrollment := req.ClassGroupID != 0
+
+	if wantEnrollment && req.AcademicYearID == 0 {
+		return nil, errors.New("academic_year_id wajib diisi jika class_group_id diberikan")
+	}
+
+	if wantEnrollment {
+		cg, err := s.classGroupRepo.FindByID(req.ClassGroupID)
+		if err != nil {
+			return nil, errors.New("Rombel tidak ditemukan")
+		}
+		if cg.AcademicYearID != req.AcademicYearID {
+			return nil, errors.New("Rombel tidak termasuk dalam tahun ajaran yang dipilih")
+		}
+	}
+
+	enrollmentType := req.EnrollmentType
+	if enrollmentType == "" {
+		enrollmentType = "new"
+	}
+
+	startDate := time.Now()
+	if req.StartDate != "" {
+		sd, err := time.Parse("2006-01-02", req.StartDate)
+		if err != nil {
+			return nil, errors.New("Format start_date tidak valid (YYYY-MM-DD)")
+		}
+		startDate = sd
 	}
 
 	student := &model.Student{
@@ -126,7 +160,6 @@ func (s *studentService) Create(req dto.CreateStudentRequest) (*dto.StudentDetai
 		Status:        "active",
 	}
 
-	// Prepare inline guardians if any
 	if len(req.Guardians) > 0 {
 		var sgLinks []model.StudentGuardian
 		for _, gReq := range req.Guardians {
@@ -143,11 +176,31 @@ func (s *studentService) Create(req dto.CreateStudentRequest) (*dto.StudentDetai
 		student.StudentGuardians = sgLinks
 	}
 
-	if err := s.studentRepo.Create(student); err != nil {
+	err = s.db.Transaction(func(tx *gorm.DB) error {
+		if err := s.studentRepo.WithTx(tx).Create(student); err != nil {
+			return err
+		}
+
+		if wantEnrollment {
+			enrollment := &model.StudentEnrollment{
+				StudentID:      student.ID,
+				ClassGroupID:   req.ClassGroupID,
+				AcademicYearID: req.AcademicYearID,
+				EnrollmentType: enrollmentType,
+				StartDate:      startDate,
+				Status:         "active",
+				CreatedBy:      createdBy,
+			}
+			if err := s.enrollmentRepo.WithTx(tx).Create(enrollment); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
 		return nil, err
 	}
 
-	// Fetch again to get the full struct including generated IDs
 	createdStudent, _ := s.studentRepo.FindByID(student.ID)
 	return mapStudentToDetailResponse(*createdStudent), nil
 }

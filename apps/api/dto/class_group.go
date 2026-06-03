@@ -37,3 +37,16 @@ type ClassGroupQueryParams struct {
 	AcademicYearID uint
 	Level          string
 }
+
+// CloneClassGroupsRequest clones all class groups from one academic year to another.
+type CloneClassGroupsRequest struct {
+	FromAcademicYearID uint `json:"from_academic_year_id" validate:"required"`
+	ToAcademicYearID   uint `json:"to_academic_year_id" validate:"required"`
+}
+
+// CloneClassGroupsResult is the response from cloning class groups.
+type CloneClassGroupsResult struct {
+	Created int                  `json:"created"`
+	Skipped int                  `json:"skipped"`
+	Groups  []ClassGroupResponse `json:"groups"`
+}

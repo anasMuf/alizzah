@@ -17,6 +17,7 @@ type ClassGroupService interface {
 	Create(req dto.CreateClassGroupRequest) (*dto.ClassGroupResponse, error)
 	Update(id uint, req dto.CreateClassGroupRequest) (*dto.ClassGroupResponse, error)
 	Delete(id uint) error
+	CloneToYear(req dto.CloneClassGroupsRequest) (*dto.CloneClassGroupsResult, error)
 }
 
 type classGroupService struct {
@@ -117,6 +118,55 @@ func (s *classGroupService) Delete(id uint) error {
 	}
 
 	return s.classGroupRepo.Delete(id)
+}
+
+func (s *classGroupService) CloneToYear(req dto.CloneClassGroupsRequest) (*dto.CloneClassGroupsResult, error) {
+	if req.FromAcademicYearID == req.ToAcademicYearID {
+		return nil, errors.New("Tahun ajaran asal dan tujuan tidak boleh sama")
+	}
+
+	sourceCGs, err := s.classGroupRepo.FindAll(dto.ClassGroupQueryParams{AcademicYearID: req.FromAcademicYearID})
+	if err != nil {
+		return nil, err
+	}
+	if len(sourceCGs) == 0 {
+		return nil, errors.New("Tidak ada rombel di tahun ajaran asal")
+	}
+
+	existingCGs, err := s.classGroupRepo.FindAll(dto.ClassGroupQueryParams{AcademicYearID: req.ToAcademicYearID})
+	if err != nil {
+		return nil, err
+	}
+	existingNames := make(map[string]bool)
+	for _, cg := range existingCGs {
+		existingNames[cg.Name] = true
+	}
+
+	result := &dto.CloneClassGroupsResult{
+		Groups: []dto.ClassGroupResponse{},
+	}
+
+	for _, src := range sourceCGs {
+		if existingNames[src.Name] {
+			result.Skipped++
+			continue
+		}
+
+		newCG := &model.ClassGroup{
+			AcademicYearID: req.ToAcademicYearID,
+			Name:           src.Name,
+			Level:          src.Level,
+			Schedule:       src.Schedule,
+		}
+		if err := s.classGroupRepo.Create(newCG); err != nil {
+			return nil, err
+		}
+
+		result.Groups = append(result.Groups, *mapClassGroupToResponse(*newCG, 0))
+		result.Created++
+	}
+
+	return result, nil
 }
 
 func mapClassGroupToResponse(cg model.ClassGroup, studentCount int) *dto.ClassGroupResponse {

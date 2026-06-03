@@ -5,6 +5,7 @@ import (
 	"api/model"
 	"api/repository"
 	"errors"
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -24,6 +25,7 @@ type SavingsManager interface {
 }
 
 type AcademicEventService interface {
+	PreviewPromotion(req dto.PromotionRequest) (*dto.PromotionPreviewResult, error)
 	ProcessPromotion(createdBy uint, req dto.PromotionRequest) (*dto.PromotionResult, error)
 	ProcessGraduation(createdBy uint, req dto.GraduationRequest) (*dto.GraduationResult, error)
 	ProcessClassChange(createdBy uint, req dto.ClassChangeRequest) error
@@ -69,6 +71,130 @@ func NewAcademicEventService(
 	}
 }
 
+func (s *academicEventService) PreviewPromotion(req dto.PromotionRequest) (*dto.PromotionPreviewResult, error) {
+	if req.FromAcademicYearID == req.ToAcademicYearID {
+		return nil, errors.New("Tahun ajaran asal dan tujuan tidak boleh sama")
+	}
+
+	_, err := s.academicYearRepo.FindByID(req.ToAcademicYearID)
+	if err != nil {
+		return nil, errors.New("Tahun ajaran tujuan tidak ditemukan")
+	}
+
+	enrollments, err := s.enrollmentRepo.FindAllActiveByAcademicYear(req.FromAcademicYearID)
+	if err != nil {
+		return nil, err
+	}
+
+	targetClassGroups, err := s.classGroupRepo.FindAll(dto.ClassGroupQueryParams{AcademicYearID: req.ToAcademicYearID})
+	if err != nil {
+		return nil, err
+	}
+
+	targetCGByID := make(map[uint]*model.ClassGroup)
+	for i := range targetClassGroups {
+		targetCGByID[targetClassGroups[i].ID] = &targetClassGroups[i]
+	}
+
+	explicitMapping := make(map[uint]*model.ClassGroup)
+	for _, m := range req.Mappings {
+		if tCG, ok := targetCGByID[m.ToClassGroupID]; ok {
+			explicitMapping[m.FromClassGroupID] = tCG
+		}
+	}
+
+	firstClassGroupByLevel := make(map[string]*model.ClassGroup)
+	for i, cg := range targetClassGroups {
+		if _, exists := firstClassGroupByLevel[cg.Level]; !exists {
+			firstClassGroupByLevel[cg.Level] = &targetClassGroups[i]
+		}
+	}
+
+	retainedMap := make(map[uint]bool)
+	for _, id := range req.RetainedStudentIDs {
+		retainedMap[id] = true
+	}
+
+	result := &dto.PromotionPreviewResult{
+		Students: []dto.PromotionPreviewStudent{},
+		Errors:   []dto.EventError{},
+	}
+
+	for _, enrollment := range enrollments {
+		studentLevel := enrollment.ClassGroup.Level
+		isRetained := retainedMap[enrollment.StudentID]
+
+		if !isRetained && studentLevel == "berlian" {
+			result.Students = append(result.Students, dto.PromotionPreviewStudent{
+				StudentID:   enrollment.StudentID,
+				StudentName: enrollment.Student.FullName,
+				FromClass:   enrollment.ClassGroup.Name,
+				ToClass:     "-",
+				Action:      "skipped_berlian",
+			})
+			result.Skipped++
+			continue
+		}
+
+		var newLevel string
+		var action string
+		if isRetained {
+			newLevel = studentLevel
+			action = "retained"
+		} else {
+			if studentLevel == "mutiara" {
+				newLevel = "intan"
+			} else if studentLevel == "intan" {
+				newLevel = "berlian"
+			}
+			action = "promotion"
+		}
+
+		exists, _ := s.enrollmentRepo.ExistsByStudentAndYear(enrollment.StudentID, req.ToAcademicYearID)
+		if exists {
+			result.Errors = append(result.Errors, dto.EventError{
+				StudentID:   enrollment.StudentID,
+				StudentName: enrollment.Student.FullName,
+				Message:     "Sudah diproses untuk tahun ajaran tujuan",
+			})
+			continue
+		}
+
+		targetCG := explicitMapping[enrollment.ClassGroupID]
+		if targetCG == nil {
+			targetCG = firstClassGroupByLevel[newLevel]
+		}
+
+		toClassName := "(tidak ada rombel " + newLevel + ")"
+		if targetCG != nil {
+			toClassName = targetCG.Name
+		} else {
+			result.Errors = append(result.Errors, dto.EventError{
+				StudentID:   enrollment.StudentID,
+				StudentName: enrollment.Student.FullName,
+				Message:     "Tidak ada rombel " + newLevel + " di tahun ajaran tujuan",
+			})
+		}
+
+		result.Students = append(result.Students, dto.PromotionPreviewStudent{
+			StudentID:   enrollment.StudentID,
+			StudentName: enrollment.Student.FullName,
+			FromClass:   enrollment.ClassGroup.Name,
+			ToClass:     toClassName,
+			Action:      action,
+		})
+
+		if action == "retained" {
+			result.ToRetain++
+		} else {
+			result.ToPromote++
+		}
+	}
+
+	result.TotalStudents = len(enrollments)
+	return result, nil
+}
+
 func (s *academicEventService) ProcessPromotion(createdBy uint, req dto.PromotionRequest) (*dto.PromotionResult, error) {
 	if req.FromAcademicYearID == req.ToAcademicYearID {
 		return nil, errors.New("Tahun ajaran asal dan tujuan tidak boleh sama")
@@ -77,6 +203,11 @@ func (s *academicEventService) ProcessPromotion(createdBy uint, req dto.Promotio
 	_, err := s.academicYearRepo.FindByID(req.ToAcademicYearID)
 	if err != nil {
 		return nil, errors.New("Tahun ajaran tujuan tidak ditemukan")
+	}
+
+	eventDate, err := time.Parse("2006-01-02", req.EventDate)
+	if err != nil {
+		return nil, fmt.Errorf("Format event_date tidak valid (gunakan YYYY-MM-DD): %s", req.EventDate)
 	}
 
 	result := &dto.PromotionResult{
@@ -93,13 +224,29 @@ func (s *academicEventService) ProcessPromotion(createdBy uint, req dto.Promotio
 			return err
 		}
 
-		// Pre-fetch all class groups for target academic year to find default assignments
+		// Pre-fetch all class groups for target academic year
 		targetClassGroups, err := s.classGroupRepo.WithTx(tx).FindAll(dto.ClassGroupQueryParams{AcademicYearID: req.ToAcademicYearID})
 		if err != nil {
 			return err
 		}
 
-		// Map to quickly find first class group per level
+		// Build target class group lookup by ID
+		targetCGByID := make(map[uint]*model.ClassGroup)
+		for i := range targetClassGroups {
+			targetCGByID[targetClassGroups[i].ID] = &targetClassGroups[i]
+		}
+
+		// Build explicit mapping: source class group ID → target class group
+		explicitMapping := make(map[uint]*model.ClassGroup)
+		for _, m := range req.Mappings {
+			tCG, ok := targetCGByID[m.ToClassGroupID]
+			if !ok {
+				return fmt.Errorf("Rombel tujuan ID %d tidak ditemukan di tahun ajaran tujuan", m.ToClassGroupID)
+			}
+			explicitMapping[m.FromClassGroupID] = tCG
+		}
+
+		// Fallback: first class group per level (used when no explicit mapping)
 		firstClassGroupByLevel := make(map[string]*model.ClassGroup)
 		for i, cg := range targetClassGroups {
 			if _, exists := firstClassGroupByLevel[cg.Level]; !exists {
@@ -111,8 +258,6 @@ func (s *academicEventService) ProcessPromotion(createdBy uint, req dto.Promotio
 		for _, id := range req.RetainedStudentIDs {
 			retainedMap[id] = true
 		}
-
-		eventDate, _ := time.Parse("2006-01-02", req.EventDate)
 
 		for _, enrollment := range enrollments {
 			studentLevel := enrollment.ClassGroup.Level
@@ -147,7 +292,11 @@ func (s *academicEventService) ProcessPromotion(createdBy uint, req dto.Promotio
 				continue
 			}
 
-			targetCG := firstClassGroupByLevel[newLevel]
+			// Prefer explicit mapping, fall back to first class group per level
+			targetCG := explicitMapping[enrollment.ClassGroupID]
+			if targetCG == nil {
+				targetCG = firstClassGroupByLevel[newLevel]
+			}
 			if targetCG == nil {
 				result.Errors = append(result.Errors, dto.EventError{
 					StudentID:   enrollment.StudentID,
@@ -171,6 +320,7 @@ func (s *academicEventService) ProcessPromotion(createdBy uint, req dto.Promotio
 				StartDate:      eventDate,
 				Status:         "active",
 				Notes:          "Auto-assigned saat kenaikan kelas. Mohon sesuaikan via pindah rombel.",
+				CreatedBy:      createdBy,
 			}
 			if err := txEnrollmentRepo.Create(newEnrollment); err != nil {
 				return err
@@ -229,31 +379,49 @@ func (s *academicEventService) ProcessGraduation(createdBy uint, req dto.Graduat
 		return nil, errors.New("Tahun ajaran tidak ditemukan")
 	}
 
-	eventDate, _ := time.Parse("2006-01-02", req.EventDate)
+	eventDate, err := time.Parse("2006-01-02", req.EventDate)
+	if err != nil {
+		return nil, fmt.Errorf("Format event_date tidak valid (gunakan YYYY-MM-DD): %s", req.EventDate)
+	}
 
 	result := &dto.GraduationResult{
 		Results: []dto.GraduationStudentResult{},
 	}
 
-	for _, studentID := range req.StudentIDs {
-		studentResult, err := s.processOneGraduation(studentID, req.AcademicYearID, eventDate, req.Notes, createdBy)
-		if err != nil {
-			continue
+	err = s.db.Transaction(func(tx *gorm.DB) error {
+		for _, studentID := range req.StudentIDs {
+			studentResult, err := s.processOneGraduation(tx, studentID, req.AcademicYearID, eventDate, req.Notes, createdBy)
+			if err != nil {
+				result.Errors = append(result.Errors, dto.EventError{
+					StudentID: studentID,
+					Message:   err.Error(),
+				})
+				continue
+			}
+			result.Results = append(result.Results, *studentResult)
+			result.Total++
 		}
-		result.Results = append(result.Results, *studentResult)
-		result.Total++
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
 	}
 
 	return result, nil
 }
 
-func (s *academicEventService) processOneGraduation(studentID, academicYearID uint, eventDate time.Time, notes string, createdBy uint) (*dto.GraduationStudentResult, error) {
-	student, err := s.studentRepo.FindByID(studentID)
+func (s *academicEventService) processOneGraduation(tx *gorm.DB, studentID, academicYearID uint, eventDate time.Time, notes string, createdBy uint) (*dto.GraduationStudentResult, error) {
+	txStudentRepo := s.studentRepo.WithTx(tx)
+	txEnrollmentRepo := s.enrollmentRepo.WithTx(tx)
+	txEventRepo := s.academicEventRepo.WithTx(tx)
+
+	student, err := txStudentRepo.FindByID(studentID)
 	if err != nil || student.Status != "active" {
 		return nil, errors.New("Siswa tidak ditemukan atau tidak aktif")
 	}
 
-	activeEnrollment, err := s.enrollmentRepo.FindActiveByStudentID(studentID)
+	activeEnrollment, err := txEnrollmentRepo.FindActiveByStudentID(studentID)
 	if err != nil {
 		return nil, errors.New("Siswa tidak memiliki pendaftaran aktif")
 	}
@@ -280,49 +448,51 @@ func (s *academicEventService) processOneGraduation(studentID, academicYearID ui
 		mandatorySavingsUsed = graduationAmount
 		surplus = mandatoryBalance - graduationAmount
 
-		s.savingsManager.DebitMandatory(studentID, mandatoryBalance, "graduation", invoice.ID, createdBy)
-		s.invoiceCreator.FullyPayInvoice(invoice.ID, graduationAmount)
+		if err := s.savingsManager.DebitMandatory(studentID, mandatoryBalance, "graduation", invoice.ID, createdBy); err != nil {
+			return nil, fmt.Errorf("gagal debit tabungan wajib: %w", err)
+		}
+		if err := s.invoiceCreator.FullyPayInvoice(invoice.ID, graduationAmount); err != nil {
+			return nil, fmt.Errorf("gagal melunasi invoice kelulusan: %w", err)
+		}
 
 		if surplus > 0 {
-			s.savingsManager.CreditGeneral(studentID, surplus, "graduation_surplus", invoice.ID, createdBy)
+			if err := s.savingsManager.CreditGeneral(studentID, surplus, "graduation_surplus", invoice.ID, createdBy); err != nil {
+				return nil, fmt.Errorf("gagal credit surplus ke tabungan umum: %w", err)
+			}
 		}
 	} else {
 		mandatorySavingsUsed = mandatoryBalance
 		remainingDebt = graduationAmount - mandatoryBalance
 
 		if mandatoryBalance > 0 {
-			s.savingsManager.DebitMandatory(studentID, mandatoryBalance, "graduation", invoice.ID, createdBy)
-			s.invoiceCreator.PartialPayInvoice(invoice.ID, mandatoryBalance)
+			if err := s.savingsManager.DebitMandatory(studentID, mandatoryBalance, "graduation", invoice.ID, createdBy); err != nil {
+				return nil, fmt.Errorf("gagal debit tabungan wajib: %w", err)
+			}
+			if err := s.invoiceCreator.PartialPayInvoice(invoice.ID, mandatoryBalance); err != nil {
+				return nil, fmt.Errorf("gagal partial pay invoice kelulusan: %w", err)
+			}
 		}
 	}
 
-	err = s.db.Transaction(func(tx *gorm.DB) error {
-		txEnrollmentRepo := s.enrollmentRepo.WithTx(tx)
-		txStudentRepo := s.studentRepo.WithTx(tx)
-		txEventRepo := s.academicEventRepo.WithTx(tx)
+	if err := txEnrollmentRepo.CloseEnrollment(activeEnrollment.ID, eventDate, "completed"); err != nil {
+		return nil, err
+	}
 
-		if err := txEnrollmentRepo.CloseEnrollment(activeEnrollment.ID, eventDate, "completed"); err != nil {
-			return err
-		}
+	if err := txStudentRepo.UpdateStatus(studentID, "graduated"); err != nil {
+		return nil, err
+	}
 
-		if err := txStudentRepo.UpdateStatus(studentID, "graduated"); err != nil {
-			return err
-		}
-
-		event := &model.StudentAcademicEvent{
-			StudentID:        studentID,
-			AcademicYearID:   academicYearID,
-			FromClassGroupID: &activeEnrollment.ClassGroupID,
-			ToClassGroupID:   nil,
-			EventType:        "graduation",
-			EventDate:        eventDate,
-			Notes:            notes,
-			CreatedBy:        createdBy,
-		}
-		return txEventRepo.Create(event)
-	})
-
-	if err != nil {
+	event := &model.StudentAcademicEvent{
+		StudentID:        studentID,
+		AcademicYearID:   academicYearID,
+		FromClassGroupID: &activeEnrollment.ClassGroupID,
+		ToClassGroupID:   nil,
+		EventType:        "graduation",
+		EventDate:        eventDate,
+		Notes:            notes,
+		CreatedBy:        createdBy,
+	}
+	if err := txEventRepo.Create(event); err != nil {
 		return nil, err
 	}
 
@@ -340,6 +510,11 @@ func (s *academicEventService) processOneGraduation(studentID, academicYearID ui
 func (s *academicEventService) ProcessClassChange(createdBy uint, req dto.ClassChangeRequest) error {
 	if req.FromClassGroupID == req.ToClassGroupID {
 		return errors.New("Rombel asal dan tujuan tidak boleh sama")
+	}
+
+	eventDate, err := time.Parse("2006-01-02", req.EventDate)
+	if err != nil {
+		return fmt.Errorf("Format event_date tidak valid (gunakan YYYY-MM-DD): %s", req.EventDate)
 	}
 
 	return s.db.Transaction(func(tx *gorm.DB) error {
@@ -370,14 +545,10 @@ func (s *academicEventService) ProcessClassChange(createdBy uint, req dto.ClassC
 			return errors.New("Siswa tidak terdaftar aktif di rombel asal")
 		}
 
-		eventDate, _ := time.Parse("2006-01-02", req.EventDate)
-
-		// 1. Close old enrollment
 		if err := txEnrollmentRepo.CloseEnrollment(activeEnrollment.ID, eventDate, "completed"); err != nil {
 			return err
 		}
 
-		// 2. Create new enrollment
 		newEnrollment := &model.StudentEnrollment{
 			StudentID:      req.StudentID,
 			ClassGroupID:   toCG.ID,
@@ -385,12 +556,12 @@ func (s *academicEventService) ProcessClassChange(createdBy uint, req dto.ClassC
 			EnrollmentType: "class_change",
 			StartDate:      eventDate,
 			Status:         "active",
+			CreatedBy:      createdBy,
 		}
 		if err := txEnrollmentRepo.Create(newEnrollment); err != nil {
 			return err
 		}
 
-		// 3. Log event
 		event := &model.StudentAcademicEvent{
 			StudentID:        req.StudentID,
 			AcademicYearID:   activeEnrollment.AcademicYearID,
@@ -423,6 +594,11 @@ func (s *academicEventService) ProcessTransferIn(createdBy uint, req dto.Transfe
 		return errors.New("Tahun ajaran tidak ditemukan")
 	}
 
+	startDate, err := time.Parse("2006-01-02", req.StartDate)
+	if err != nil {
+		return fmt.Errorf("Format start_date tidak valid (gunakan YYYY-MM-DD): %s", req.StartDate)
+	}
+
 	return s.db.Transaction(func(tx *gorm.DB) error {
 		txEnrollmentRepo := s.enrollmentRepo.WithTx(tx)
 		txStudentRepo := s.studentRepo.WithTx(tx)
@@ -438,8 +614,6 @@ func (s *academicEventService) ProcessTransferIn(createdBy uint, req dto.Transfe
 			return errors.New("Siswa sudah memiliki enrollment di tahun ajaran ini")
 		}
 
-		startDate, _ := time.Parse("2006-01-02", req.StartDate)
-
 		newEnrollment := &model.StudentEnrollment{
 			StudentID:      req.StudentID,
 			ClassGroupID:   req.ToClassGroupID,
@@ -447,6 +621,7 @@ func (s *academicEventService) ProcessTransferIn(createdBy uint, req dto.Transfe
 			EnrollmentType: "mutation",
 			StartDate:      startDate,
 			Status:         "active",
+			CreatedBy:      createdBy,
 		}
 		if err := txEnrollmentRepo.Create(newEnrollment); err != nil {
 			return err
@@ -512,6 +687,11 @@ func (s *academicEventService) ProcessTransferIn(createdBy uint, req dto.Transfe
 }
 
 func (s *academicEventService) ProcessWithdrawal(createdBy uint, req dto.WithdrawalRequest) error {
+	eventDate, err := time.Parse("2006-01-02", req.EventDate)
+	if err != nil {
+		return fmt.Errorf("Format event_date tidak valid (gunakan YYYY-MM-DD): %s", req.EventDate)
+	}
+
 	return s.db.Transaction(func(tx *gorm.DB) error {
 		txEnrollmentRepo := s.enrollmentRepo.WithTx(tx)
 		txStudentRepo := s.studentRepo.WithTx(tx)
@@ -527,14 +707,10 @@ func (s *academicEventService) ProcessWithdrawal(createdBy uint, req dto.Withdra
 			return errors.New("Siswa tidak memiliki pendaftaran aktif")
 		}
 
-		eventDate, _ := time.Parse("2006-01-02", req.EventDate)
-
-		// 1. Close enrollment
 		if err := txEnrollmentRepo.CloseEnrollment(activeEnrollment.ID, eventDate, "dropped"); err != nil {
 			return err
 		}
 
-		// 2. Update student status
 		newStatus := "transferred"
 		if req.EventType == "dropout" {
 			newStatus = "dropped"
@@ -543,7 +719,6 @@ func (s *academicEventService) ProcessWithdrawal(createdBy uint, req dto.Withdra
 			return err
 		}
 
-		// 3. Log event
 		event := &model.StudentAcademicEvent{
 			StudentID:        req.StudentID,
 			AcademicYearID:   activeEnrollment.AcademicYearID,
@@ -558,9 +733,11 @@ func (s *academicEventService) ProcessWithdrawal(createdBy uint, req dto.Withdra
 			return err
 		}
 
-		tx.Model(&model.Invoice{}).
+		if err := tx.Model(&model.Invoice{}).
 			Where("student_id = ? AND status != ?", req.StudentID, "paid").
-			Update("notes", "[DIBEKUKAN] Tagihan dibekukan karena siswa keluar/pindah")
+			Update("notes", "[DIBEKUKAN] Tagihan dibekukan karena siswa keluar/pindah").Error; err != nil {
+			return fmt.Errorf("gagal membekukan tagihan: %w", err)
+		}
 
 		return nil
 	})

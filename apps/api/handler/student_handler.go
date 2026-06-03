@@ -94,7 +94,8 @@ func (h *StudentHandler) Create(c echo.Context) error {
 		return err
 	}
 
-	student, err := h.studentService.Create(req)
+	userID := c.Get("user_id").(uint)
+	student, err := h.studentService.Create(userID, req)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}

@@ -187,3 +187,36 @@ func (h *ClassGroupHandler) Delete(c echo.Context) error {
 		Message: "Rombel berhasil dihapus",
 	})
 }
+
+// Clone godoc
+// @Summary      Clone class groups to another academic year
+// @Description  Copy all class groups (name, level, schedule) from one academic year to another. Skips duplicates.
+// @Tags         class-groups
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        request  body      dto.CloneClassGroupsRequest  true  "Clone parameters"
+// @Success      200      {object}  dto.SuccessResponse{data=dto.CloneClassGroupsResult}
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      401      {object}  dto.ErrorResponse
+// @Failure      403      {object}  dto.ErrorResponse
+// @Router       /v1/class-groups/clone [post]
+func (h *ClassGroupHandler) Clone(c echo.Context) error {
+	var req dto.CloneClassGroupsRequest
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Format request tidak valid")
+	}
+	if err := c.Validate(&req); err != nil {
+		return err
+	}
+
+	result, err := h.classGroupService.CloneToYear(req)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "Rombel berhasil di-clone",
+		Data:    result,
+	})
+}

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
-import { Trophy, Plus } from 'lucide-react';
+import { Trophy, Plus, ShieldCheck, Palette } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   useGetV1StudentsIdExtracurriculars,
@@ -32,7 +32,6 @@ function SiswaEkskulPage() {
   const [selectedSeId, setSelectedSeId] = useState<number | null>(null);
   const [selectedSeName, setSelectedSeName] = useState('');
 
-  // Form state
   const [formData, setFormData] = useState({
     extracurricular_id: 0,
     academic_year_id: 0,
@@ -42,7 +41,6 @@ function SiswaEkskulPage() {
   const { data: response, isLoading, isError } = useGetV1StudentsIdExtracurriculars(studentId);
   const studentEkskuls = (response?.data as any)?.data || [];
 
-  // Master data for form
   const { data: ekskulResponse } = useGetV1Extracurriculars();
   const allEkskuls = (ekskulResponse?.data as any)?.data || [];
 
@@ -53,7 +51,7 @@ function SiswaEkskulPage() {
   const enrollMutation = usePostV1StudentsIdExtracurriculars({
     mutation: {
       onSuccess: () => {
-        addToast({ variant: 'success', title: 'Berhasil', message: 'Siswa berhasil didaftarkan ke ekstrakurikuler.' });
+        addToast({ variant: 'success', title: 'Berhasil', message: 'Siswa berhasil didaftarkan ke PASTA.' });
         queryClient.invalidateQueries({ queryKey: getGetV1StudentsIdExtracurricularsQueryKey(studentId) });
         setIsFormOpen(false);
         resetForm();
@@ -68,7 +66,7 @@ function SiswaEkskulPage() {
   const unenrollMutation = useDeleteV1StudentsIdExtracurricularsSeId({
     mutation: {
       onSuccess: () => {
-        addToast({ variant: 'success', title: 'Berhasil', message: 'Siswa berhasil dicabut dari ekstrakurikuler.' });
+        addToast({ variant: 'success', title: 'Berhasil', message: 'Siswa berhasil dicabut dari PASTA.' });
         queryClient.invalidateQueries({ queryKey: getGetV1StudentsIdExtracurricularsQueryKey(studentId) });
         setIsUnenrollOpen(false);
         setSelectedSeId(null);
@@ -100,7 +98,7 @@ function SiswaEkskulPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.extracurricular_id || !formData.academic_year_id) {
-      addToast({ variant: 'error', title: 'Validasi', message: 'Pilih ekstrakurikuler dan tahun ajaran.' });
+      addToast({ variant: 'error', title: 'Validasi', message: 'Pilih PASTA dan tahun ajaran.' });
       return;
     }
     enrollMutation.mutate({
@@ -111,7 +109,7 @@ function SiswaEkskulPage() {
 
   const handleUnenroll = (se: any) => {
     setSelectedSeId(se.id);
-    setSelectedSeName(se.extracurricular?.name || 'Ekskul');
+    setSelectedSeName(se.extracurricular?.name || 'PASTA');
     setIsUnenrollOpen(true);
   };
 
@@ -129,11 +127,16 @@ function SiswaEkskulPage() {
     return <div className="p-8 bg-red-50 text-red-800 rounded-xl">Gagal memuat data ekstrakurikuler.</div>;
   }
 
+  const isMandatoryType = (type: string) => type === 'calisan' || type === 'ekskul';
+
+  const mandatoryItems = studentEkskuls.filter((se: any) => isMandatoryType(se.extracurricular?.type));
+  const optionalItems = studentEkskuls.filter((se: any) => !isMandatoryType(se.extracurricular?.type));
+
   const getEkskulTypeBadge = (type: string) => {
     switch (type?.toLowerCase()) {
-      case 'pasta': return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200">PASTA</Badge>;
-      case 'calisan': return <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200">CALISAN</Badge>;
-      case 'ekskul': return <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200">EKSKUL</Badge>;
+      case 'pasta': return <Badge className="bg-blue-100 text-blue-700">PASTA</Badge>;
+      case 'calisan': return <Badge className="bg-emerald-100 text-emerald-700">CALISAN</Badge>;
+      case 'ekskul': return <Badge className="bg-purple-100 text-purple-700">EKSKUL</Badge>;
       default: return <Badge variant="secondary">{type}</Badge>;
     }
   };
@@ -146,81 +149,128 @@ function SiswaEkskulPage() {
     });
   };
 
-  // Filter out already-enrolled ekskuls for the form dropdown
+  // Form dropdown: only show pasta (optional) items, exclude already-enrolled
   const enrolledIds = studentEkskuls
     .filter((se: any) => !se.end_date)
     .map((se: any) => se.extracurricular?.id);
-  const availableEkskuls = allEkskuls.filter((e: any) => !enrolledIds.includes(e.id));
+  const availablePasta = allEkskuls.filter(
+    (e: any) => e.type === 'pasta' && !enrolledIds.includes(e.id)
+  );
 
   return (
     <>
-      <div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden">
-        <div className="px-4 py-5 sm:px-6 border-b border-gray-200 flex justify-between items-center">
-          <div>
-            <h3 className="text-base font-semibold leading-6 text-gray-900">Daftar Ekstrakurikuler</h3>
-            <p className="mt-1 max-w-2xl text-sm text-gray-500">Kegiatan PASTA, CALISAN, dan Ekskul yang diikuti siswa.</p>
-          </div>
-          <Button size="sm" onClick={handleOpenForm} className="flex items-center gap-1.5">
-            <Plus className="h-4 w-4" />
-            Daftar Ekskul
-          </Button>
-        </div>
-
-        <div className="p-0">
-          {studentEkskuls.length === 0 ? (
-            <div className="p-12 text-center text-gray-500">
-              <Trophy className="mx-auto h-8 w-8 text-gray-300 mb-3" />
-              Siswa ini belum terdaftar di kegiatan ekskul apapun.
+      <div className="space-y-6">
+        {/* === Kegiatan Wajib === */}
+        <div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden">
+          <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-emerald-600" />
+              <div>
+                <h3 className="text-base font-semibold leading-6 text-gray-900">Kegiatan Wajib</h3>
+                <p className="mt-0.5 text-sm text-gray-500">Calisan dan Ekskul yang otomatis terdaftar sesuai jenjang siswa.</p>
+              </div>
             </div>
-          ) : (
-            <ul role="list" className="divide-y divide-gray-100">
-              {studentEkskuls.map((se: any) => {
-                const isActive = !se.end_date;
-                return (
-                  <li key={se.id} className="px-4 py-5 sm:px-6 hover:bg-gray-50 transition-colors">
+          </div>
+
+          <div className="p-0">
+            {mandatoryItems.length === 0 ? (
+              <div className="p-8 text-center text-gray-500">
+                <p className="text-sm">Belum ada kegiatan wajib yang terdaftar.</p>
+              </div>
+            ) : (
+              <ul role="list" className="divide-y divide-gray-100">
+                {mandatoryItems.map((se: any) => (
+                  <li key={se.id} className="px-4 py-4 sm:px-6">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-start gap-x-4">
-                        <div className="mt-1">
-                          {getEkskulTypeBadge(se.extracurricular?.type)}
-                        </div>
+                      <div className="flex items-center gap-x-3">
+                        {getEkskulTypeBadge(se.extracurricular?.type)}
                         <div>
                           <h4 className="text-sm font-semibold text-gray-900">{se.extracurricular?.name}</h4>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Sejak: {formatDate(se.start_date)} {se.end_date ? `s/d ${formatDate(se.end_date)}` : ''}
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            Sejak {formatDate(se.start_date)}
                           </p>
                         </div>
                       </div>
-                      <div className="flex flex-col items-end gap-2">
-                        {isActive ? (
-                          <>
-                            <Badge variant="success">Aktif</Badge>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                              onClick={() => handleUnenroll(se)}
-                            >
-                              Berhenti
-                            </Button>
-                          </>
-                        ) : (
-                          <Badge variant="secondary">Tidak Aktif</Badge>
-                        )}
-                      </div>
+                      <Badge className="bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20">Wajib</Badge>
                     </div>
                   </li>
-                );
-              })}
-            </ul>
-          )}
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+
+        {/* === PASTA (Opsional) === */}
+        <div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden">
+          <div className="px-4 py-5 sm:px-6 border-b border-gray-200 flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <Palette className="h-5 w-5 text-blue-600" />
+              <div>
+                <h3 className="text-base font-semibold leading-6 text-gray-900">PASTA (Tambahan)</h3>
+                <p className="mt-0.5 text-sm text-gray-500">Kegiatan pilihan yang bisa diikuti siswa.</p>
+              </div>
+            </div>
+            <Button size="sm" onClick={handleOpenForm} className="flex items-center gap-1.5">
+              <Plus className="h-4 w-4" />
+              Tambah PASTA
+            </Button>
+          </div>
+
+          <div className="p-0">
+            {optionalItems.length === 0 ? (
+              <div className="p-8 text-center text-gray-500">
+                <Trophy className="mx-auto h-7 w-7 text-gray-300 mb-2" />
+                <p className="text-sm">Siswa belum mengikuti PASTA apapun.</p>
+              </div>
+            ) : (
+              <ul role="list" className="divide-y divide-gray-100">
+                {optionalItems.map((se: any) => {
+                  const isActive = !se.end_date;
+                  return (
+                    <li key={se.id} className="px-4 py-4 sm:px-6 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-x-3">
+                          {getEkskulTypeBadge(se.extracurricular?.type)}
+                          <div>
+                            <h4 className="text-sm font-semibold text-gray-900">{se.extracurricular?.name}</h4>
+                            <p className="text-xs text-gray-500 mt-0.5">
+                              Sejak {formatDate(se.start_date)}
+                              {se.end_date ? ` s/d ${formatDate(se.end_date)}` : ''}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {isActive ? (
+                            <>
+                              <Badge variant="success">Aktif</Badge>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => handleUnenroll(se)}
+                              >
+                                Berhenti
+                              </Button>
+                            </>
+                          ) : (
+                            <Badge variant="secondary">Tidak Aktif</Badge>
+                          )}
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Enrollment Form */}
+      {/* Enrollment Form — hanya PASTA */}
       <SlideOver
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}
-        title="Daftarkan Ekstrakurikuler"
+        title="Tambah PASTA"
         footer={
           <>
             <Button variant="secondary" onClick={() => setIsFormOpen(false)} disabled={enrollMutation.isPending}>
@@ -235,10 +285,10 @@ function SiswaEkskulPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-medium leading-6 text-gray-900 mb-2">
-              Kegiatan Ekstrakurikuler <span className="text-red-500">*</span>
+              Pilih PASTA <span className="text-red-500">*</span>
             </label>
-            {availableEkskuls.length === 0 ? (
-              <p className="text-sm text-gray-500">Semua ekstrakurikuler sudah terdaftar.</p>
+            {availablePasta.length === 0 ? (
+              <p className="text-sm text-gray-500">Semua PASTA sudah terdaftar untuk siswa ini.</p>
             ) : (
               <select
                 value={formData.extracurricular_id}
@@ -246,11 +296,9 @@ function SiswaEkskulPage() {
                 className="block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
                 required
               >
-                <option value={0}>-- Pilih Kegiatan --</option>
-                {availableEkskuls.map((e: any) => (
-                  <option key={e.id} value={e.id}>
-                    {e.name} ({(e.type || '').toUpperCase()})
-                  </option>
+                <option value={0}>-- Pilih PASTA --</option>
+                {availablePasta.map((e: any) => (
+                  <option key={e.id} value={e.id}>{e.name}</option>
                 ))}
               </select>
             )}
@@ -290,18 +338,18 @@ function SiswaEkskulPage() {
 
           <div className="rounded-md bg-blue-50 p-4">
             <p className="text-sm text-blue-700">
-              Tagihan bulanan untuk kegiatan ini akan otomatis ditambahkan ke invoice siswa mulai dari bulan yang dipilih hingga akhir tahun ajaran.
+              Tagihan PASTA akan otomatis ditambahkan ke invoice bulanan siswa mulai bulan yang dipilih hingga akhir tahun ajaran.
             </p>
           </div>
         </form>
       </SlideOver>
 
-      {/* Unenroll Confirmation */}
+      {/* Unenroll Confirmation — hanya untuk PASTA */}
       <ConfirmDialog
         open={isUnenrollOpen}
         onCancel={() => { setIsUnenrollOpen(false); setSelectedSeId(null); }}
         onConfirm={confirmUnenroll}
-        title="Berhenti Ekstrakurikuler"
+        title="Berhenti PASTA"
         variant="danger"
       >
         <p>

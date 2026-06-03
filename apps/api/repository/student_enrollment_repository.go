@@ -9,6 +9,7 @@ import (
 )
 
 type StudentEnrollmentRepository interface {
+	FindByID(id uint) (*model.StudentEnrollment, error)
 	FindByStudentID(studentID uint, params dto.EnrollmentQueryParams) ([]model.StudentEnrollment, error)
 	FindActiveByStudentID(studentID uint) (*model.StudentEnrollment, error)
 	FindActiveByClassGroupID(classGroupID uint) ([]model.StudentEnrollment, error)
@@ -29,6 +30,12 @@ type studentEnrollmentRepository struct {
 
 func NewStudentEnrollmentRepository(db *gorm.DB) StudentEnrollmentRepository {
 	return &studentEnrollmentRepository{db: db}
+}
+
+func (r *studentEnrollmentRepository) FindByID(id uint) (*model.StudentEnrollment, error) {
+	var enrollment model.StudentEnrollment
+	err := r.db.Preload("ClassGroup").Preload("AcademicYear").Preload("Student").First(&enrollment, id).Error
+	return &enrollment, err
 }
 
 func (r *studentEnrollmentRepository) FindByStudentID(studentID uint, params dto.EnrollmentQueryParams) ([]model.StudentEnrollment, error) {
@@ -68,7 +75,7 @@ func (r *studentEnrollmentRepository) UpdateStatus(id uint, status string, endDa
 
 func (r *studentEnrollmentRepository) ExistsByStudentAndYear(studentID, academicYearID uint) (bool, error) {
 	var count int64
-	err := r.db.Model(&model.StudentEnrollment{}).Where("student_id = ? AND academic_year_id = ?", studentID, academicYearID).Count(&count).Error
+	err := r.db.Model(&model.StudentEnrollment{}).Where("student_id = ? AND academic_year_id = ? AND status = ?", studentID, academicYearID, "active").Count(&count).Error
 	return count > 0, err
 }
 

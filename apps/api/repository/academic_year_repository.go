@@ -2,6 +2,7 @@ package repository
 
 import (
 	"api/model"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -11,6 +12,7 @@ type AcademicYearRepository interface {
 	FindByID(id uint) (*model.AcademicYear, error)
 	FindActive() (*model.AcademicYear, error)
 	FindByName(name string) (*model.AcademicYear, error)
+	FindOverlapping(startDate, endDate time.Time, excludeID uint) (*model.AcademicYear, error)
 	Create(ay *model.AcademicYear) error
 	Update(ay *model.AcademicYear) error
 	SetActive(id uint) error
@@ -45,6 +47,16 @@ func (r *academicYearRepository) FindActive() (*model.AcademicYear, error) {
 func (r *academicYearRepository) FindByName(name string) (*model.AcademicYear, error) {
 	var ay model.AcademicYear
 	err := r.db.Where("name = ?", name).First(&ay).Error
+	return &ay, err
+}
+
+func (r *academicYearRepository) FindOverlapping(startDate, endDate time.Time, excludeID uint) (*model.AcademicYear, error) {
+	var ay model.AcademicYear
+	query := r.db.Where("start_date < ? AND end_date > ?", endDate, startDate)
+	if excludeID > 0 {
+		query = query.Where("id != ?", excludeID)
+	}
+	err := query.First(&ay).Error
 	return &ay, err
 }
 

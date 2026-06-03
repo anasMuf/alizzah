@@ -105,3 +105,41 @@ func (h *StudentEnrollmentHandler) GetStudentsByClassGroup(c echo.Context) error
 		Data:    students,
 	})
 }
+
+// ActivateEnrollment godoc
+// @Summary      Activate a pending enrollment
+// @Description  Change enrollment status from 'pending' to 'active'
+// @Tags         student-enrollments
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id   path      int  true  "Enrollment ID"
+// @Success      200  {object}  dto.SuccessResponse
+// @Failure      400  {object}  dto.ErrorResponse
+// @Failure      401  {object}  dto.ErrorResponse
+// @Failure      403  {object}  dto.ErrorResponse
+// @Failure      404  {object}  dto.ErrorResponse
+// @Router       /v1/enrollments/{id}/activate [patch]
+func (h *StudentEnrollmentHandler) ActivateEnrollment(c echo.Context) error {
+	enrollmentID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status:  http.StatusBadRequest,
+			Code:    "BAD_REQUEST",
+			Message: "ID enrollment tidak valid",
+		})
+	}
+
+	if err := h.enrollmentService.ActivateEnrollment(uint(enrollmentID)); err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{
+			Status:  status,
+			Code:    code,
+			Message: err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "Enrollment berhasil diaktifkan",
+	})
+}

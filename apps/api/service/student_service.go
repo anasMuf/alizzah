@@ -141,6 +141,11 @@ func (s *studentService) Create(createdBy uint, req dto.CreateStudentRequest) (*
 		enrollmentType = "new"
 	}
 
+	enrollmentStatus := req.EnrollmentStatus
+	if enrollmentStatus == "" {
+		enrollmentStatus = "active"
+	}
+
 	startDate := time.Now()
 	if req.StartDate != "" {
 		sd, err := time.Parse("2006-01-02", req.StartDate)
@@ -188,7 +193,7 @@ func (s *studentService) Create(createdBy uint, req dto.CreateStudentRequest) (*
 				AcademicYearID: req.AcademicYearID,
 				EnrollmentType: enrollmentType,
 				StartDate:      startDate,
-				Status:         "active",
+				Status:         enrollmentStatus,
 				CreatedBy:      createdBy,
 			}
 			if err := s.enrollmentRepo.WithTx(tx).Create(enrollment); err != nil {

@@ -77,6 +77,13 @@ func (s *academicYearService) Create(req dto.CreateAcademicYearRequest) (*dto.Ac
 		return nil, errors.New("Nama tahun ajaran sudah digunakan")
 	}
 
+	// Check date overlap with existing academic years
+	overlapping, err := s.ayRepo.FindOverlapping(startDate, endDate, 0)
+	if err == nil && overlapping.ID > 0 {
+		return nil, fmt.Errorf("Rentang tanggal overlap dengan tahun ajaran '%s' (%s s/d %s)",
+			overlapping.Name, overlapping.StartDate.Format(dateFormat), overlapping.EndDate.Format(dateFormat))
+	}
+
 	ay := &model.AcademicYear{
 		Name:      req.Name,
 		StartDate: startDate,
@@ -121,6 +128,13 @@ func (s *academicYearService) Update(id uint, req dto.CreateAcademicYearRequest)
 		if err == nil && existing.ID != id {
 			return nil, errors.New("Nama tahun ajaran sudah digunakan")
 		}
+	}
+
+	// Check date overlap (exclude self)
+	overlapping, err := s.ayRepo.FindOverlapping(startDate, endDate, id)
+	if err == nil && overlapping.ID > 0 {
+		return nil, fmt.Errorf("Rentang tanggal overlap dengan tahun ajaran '%s' (%s s/d %s)",
+			overlapping.Name, overlapping.StartDate.Format(dateFormat), overlapping.EndDate.Format(dateFormat))
 	}
 
 	ay.Name = req.Name

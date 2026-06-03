@@ -297,6 +297,10 @@ func main() {
 	students.DELETE("/:id/extracurriculars/:se_id", seHandler.Unenroll, middleware.RequireRoles("superadmin", "admin_administrasi"))
 	students.GET("/:id/academic-events", eventHandler.GetByStudent, middleware.RequireRoles("superadmin", "admin_administrasi"))
 
+	// Enrollment management
+	enrollments := api.Group("/enrollments", middleware.JWTAuth, middleware.RequireRoles("superadmin", "admin_administrasi"))
+	enrollments.PATCH("/:id/activate", enrollmentHandler.ActivateEnrollment)
+
 	// Guardians (Standalone)
 	guardians := api.Group("/guardians", middleware.JWTAuth, middleware.RequireRoles("superadmin", "admin_administrasi"))
 	guardians.POST("", guardianHandler.Create)

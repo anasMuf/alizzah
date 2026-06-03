@@ -12,6 +12,7 @@ import (
 type StudentEnrollmentService interface {
 	GetByStudentID(studentID uint, params dto.EnrollmentQueryParams) ([]dto.EnrollmentDetailResponse, error)
 	GetStudentsByClassGroup(classGroupID uint) ([]dto.StudentListResponse, error)
+	ActivateEnrollment(enrollmentID uint) error
 }
 
 type studentEnrollmentService struct {
@@ -95,6 +96,25 @@ func (s *studentEnrollmentService) GetStudentsByClassGroup(classGroupID uint) ([
 	}
 
 	return responses, nil
+}
+
+func (s *studentEnrollmentService) ActivateEnrollment(enrollmentID uint) error {
+	enrollments, err := s.enrollmentRepo.FindByID(enrollmentID)
+	if err != nil {
+		return errors.New("Enrollment tidak ditemukan")
+	}
+
+	if enrollments.Status != "pending" {
+		return errors.New("Hanya enrollment berstatus 'pending' yang bisa diaktifkan")
+	}
+
+	// Check no other active enrollment for this student in same year
+	exists, _ := s.enrollmentRepo.ExistsByStudentAndYear(enrollments.StudentID, enrollments.AcademicYearID)
+	if exists {
+		return errors.New("Siswa sudah memiliki enrollment aktif di tahun ajaran ini")
+	}
+
+	return s.enrollmentRepo.UpdateStatus(enrollmentID, "active", nil)
 }
 
 func mapEnrollmentToDetailResponse(e model.StudentEnrollment) *dto.EnrollmentDetailResponse {

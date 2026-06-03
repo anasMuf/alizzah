@@ -52,7 +52,7 @@ export function Sidebar({ isOpen }: SidebarProps) {
         </div>
 
         <nav className="flex-1 space-y-1 px-3 py-4">
-          <NavLink to="/" icon={LayoutDashboard}>
+          <NavLink to="/" icon={LayoutDashboard} exact>
             Dashboard
           </NavLink>
 
@@ -75,7 +75,7 @@ export function Sidebar({ isOpen }: SidebarProps) {
               <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                 Keuangan
               </p>
-              <NavLink to="/keuangan" icon={CircleDollarSign}>Overview</NavLink>
+              <NavLink to="/keuangan" icon={CircleDollarSign} exact>Overview</NavLink>
 
               {isAdminKeuangan && (
                 <>
@@ -107,10 +107,11 @@ export function Sidebar({ isOpen }: SidebarProps) {
   )
 }
 
-function NavLink({ to, icon: Icon, children }: { to: string; icon: React.ElementType; children: React.ReactNode }) {
+function NavLink({ to, icon: Icon, children, exact }: { to: string; icon: React.ElementType; children: React.ReactNode; exact?: boolean }) {
   return (
     <Link
       to={to}
+      activeOptions={exact ? { exact: true } : undefined}
       className="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:text-indigo-600 hover:bg-gray-50 [&.active]:bg-indigo-50 [&.active]:text-indigo-600 transition-colors"
     >
       <Icon className="mr-3 flex-shrink-0 h-5 w-5 text-gray-400 group-hover:text-indigo-600 group-[.active]:text-indigo-600 transition-colors" />

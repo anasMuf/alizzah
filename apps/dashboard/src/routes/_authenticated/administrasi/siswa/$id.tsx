@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, Link, useRouter } from '@tanstack/react-router';
+import { createFileRoute, Outlet, Link, useRouterState, useNavigate } from '@tanstack/react-router';
 import { useGetV1StudentsId } from '../../../../api/endpoints/students/students';
 import { ChevronRight, UserCircle, GraduationCap, Trophy, Wallet, User } from 'lucide-react';
 import { Badge } from '../../../../components/atoms/Badge';
@@ -10,10 +10,9 @@ export const Route = createFileRoute('/_authenticated/administrasi/siswa/$id')({
 function StudentLayout() {
   const { id } = Route.useParams();
   const studentId = Number(id);
-  const router = useRouter();
-
-  // Active path to determine which tab is active
-  const currentPath = router.state.location.pathname;
+  // Active path to determine which tab is active (useRouterState is reactive, unlike useRouter)
+  const currentPath = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
 
   const { data: response, isLoading, isError } = useGetV1StudentsId(studentId);
   const student = (response?.data as any)?.data;
@@ -108,7 +107,7 @@ function StudentLayout() {
               name="tabs"
               className="block w-full rounded-md border-none focus:ring-0 focus:ring-indigo-500 py-3 pl-3 pr-10 text-base sm:text-sm"
               value={currentPath}
-              onChange={(e) => router.navigate({ to: e.target.value })}
+              onChange={(e) => navigate({ to: e.target.value })}
             >
               {tabs.filter(t => t.show).map((tab) => (
                 <option key={tab.name} value={tab.href}>{tab.name}</option>
@@ -120,7 +119,7 @@ function StudentLayout() {
               {tabs.filter(t => t.show).map((tab) => {
                 const normalizedPath = currentPath.replace(/\/+$/, '');
                 const normalizedHref = tab.href.replace(/\/+$/, '');
-                const isActive = normalizedPath === normalizedHref || normalizedPath.startsWith(normalizedHref + '/') || (normalizedPath === `/administrasi/siswa/${id}` && tab.name === 'Profil');
+                const isActive = normalizedPath === normalizedHref || (normalizedPath === `/administrasi/siswa/${id}` && tab.name === 'Profil');
                 return (
                   <Link
                     key={tab.name}

@@ -64,14 +64,14 @@ function SiswaAkademikPage() {
                     <div>
                       <h4 className="text-sm font-semibold text-gray-900">{enrollment.class_group.name}</h4>
                       <p className="text-xs text-gray-500 mt-1">
-                        Tahun Ajaran: {enrollment.class_group.academic_year?.name}
+                        Tahun Ajaran: {enrollment.academic_year.name || '-'}
                       </p>
                     </div>
                   </div>
                   <div className="flex flex-col items-end">
                     {getStatusBadge(enrollment.status)}
                     <p className="text-xs text-gray-500 mt-2 text-right">
-                      Sejak {formatDate(enrollment.enrollment_date)}
+                      Sejak {enrollment.start_date ? formatDate(enrollment.start_date) : '-'}
                     </p>
                   </div>
                 </div>

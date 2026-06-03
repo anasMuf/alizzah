@@ -4,6 +4,7 @@ import (
 	"api/dto"
 	"api/model"
 	"api/repository"
+	"api/utility"
 	"encoding/csv"
 	"errors"
 	"mime/multipart"
@@ -115,7 +116,7 @@ func (s *studentService) GetByID(id uint) (*dto.StudentDetailResponse, error) {
 }
 
 func (s *studentService) Create(createdBy uint, req dto.CreateStudentRequest) (*dto.StudentDetailResponse, error) {
-	birthDate, err := time.Parse(dateLayout, req.BirthDate)
+	birthDate, err := utility.ParseDate(req.BirthDate)
 	if err != nil {
 		return nil, errors.New("Format birth_date tidak valid (YYYY-MM-DD)")
 	}
@@ -148,7 +149,7 @@ func (s *studentService) Create(createdBy uint, req dto.CreateStudentRequest) (*
 
 	startDate := time.Now()
 	if req.StartDate != "" {
-		sd, err := time.Parse("2006-01-02", req.StartDate)
+		sd, err := utility.ParseDate(req.StartDate)
 		if err != nil {
 			return nil, errors.New("Format start_date tidak valid (YYYY-MM-DD)")
 		}
@@ -219,7 +220,7 @@ func (s *studentService) Update(id uint, req dto.UpdateStudentRequest) (*dto.Stu
 		return nil, err
 	}
 
-	birthDate, err := time.Parse(dateLayout, req.BirthDate)
+	birthDate, err := utility.ParseDate(req.BirthDate)
 	if err != nil {
 		return nil, errors.New("Format birth_date tidak valid (YYYY-MM-DD)")
 	}

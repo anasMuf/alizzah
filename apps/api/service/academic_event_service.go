@@ -4,6 +4,7 @@ import (
 	"api/dto"
 	"api/model"
 	"api/repository"
+	"api/utility"
 	"errors"
 	"fmt"
 	"time"
@@ -205,7 +206,7 @@ func (s *academicEventService) ProcessPromotion(createdBy uint, req dto.Promotio
 		return nil, errors.New("Tahun ajaran tujuan tidak ditemukan")
 	}
 
-	eventDate, err := time.Parse("2006-01-02", req.EventDate)
+	eventDate, err := utility.ParseDate( req.EventDate)
 	if err != nil {
 		return nil, fmt.Errorf("Format event_date tidak valid (gunakan YYYY-MM-DD): %s", req.EventDate)
 	}
@@ -379,7 +380,7 @@ func (s *academicEventService) ProcessGraduation(createdBy uint, req dto.Graduat
 		return nil, errors.New("Tahun ajaran tidak ditemukan")
 	}
 
-	eventDate, err := time.Parse("2006-01-02", req.EventDate)
+	eventDate, err := utility.ParseDate( req.EventDate)
 	if err != nil {
 		return nil, fmt.Errorf("Format event_date tidak valid (gunakan YYYY-MM-DD): %s", req.EventDate)
 	}
@@ -512,7 +513,7 @@ func (s *academicEventService) ProcessClassChange(createdBy uint, req dto.ClassC
 		return errors.New("Rombel asal dan tujuan tidak boleh sama")
 	}
 
-	eventDate, err := time.Parse("2006-01-02", req.EventDate)
+	eventDate, err := utility.ParseDate( req.EventDate)
 	if err != nil {
 		return fmt.Errorf("Format event_date tidak valid (gunakan YYYY-MM-DD): %s", req.EventDate)
 	}
@@ -594,7 +595,7 @@ func (s *academicEventService) ProcessTransferIn(createdBy uint, req dto.Transfe
 		return errors.New("Tahun ajaran tidak ditemukan")
 	}
 
-	startDate, err := time.Parse("2006-01-02", req.StartDate)
+	startDate, err := utility.ParseDate( req.StartDate)
 	if err != nil {
 		return fmt.Errorf("Format start_date tidak valid (gunakan YYYY-MM-DD): %s", req.StartDate)
 	}
@@ -687,7 +688,7 @@ func (s *academicEventService) ProcessTransferIn(createdBy uint, req dto.Transfe
 }
 
 func (s *academicEventService) ProcessWithdrawal(createdBy uint, req dto.WithdrawalRequest) error {
-	eventDate, err := time.Parse("2006-01-02", req.EventDate)
+	eventDate, err := utility.ParseDate( req.EventDate)
 	if err != nil {
 		return fmt.Errorf("Format event_date tidak valid (gunakan YYYY-MM-DD): %s", req.EventDate)
 	}

@@ -133,3 +133,23 @@ type GenerateGraduationInvoiceParams struct {
 	AcademicYearID uint
 	CreatedBy      uint
 }
+
+type GenerateDaycareMonthlyParams struct {
+	StudentID      uint
+	AcademicYearID uint
+	PackageType    string
+	StartDate      string
+	CreatedBy      uint
+}
+
+type DaycareSyncResult struct {
+	TotalEnrollments int                `json:"total_enrollments"`
+	TotalSynced      int                `json:"total_synced"`
+	TotalSkipped     int                `json:"total_skipped"`
+	Errors           []DaycareSyncError `json:"errors,omitempty"`
+}
+
+type DaycareSyncError struct {
+	StudentID uint   `json:"student_id"`
+	Message   string `json:"message"`
+}

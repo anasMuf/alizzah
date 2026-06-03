@@ -4,6 +4,7 @@ import (
 	"api/dto"
 	"api/model"
 	"api/repository"
+	"api/utility"
 	"errors"
 	"time"
 
@@ -77,7 +78,7 @@ func (s *studentExtracurricularService) Enroll(studentID uint, req dto.EnrollExt
 		return nil, errors.New("Siswa sudah terdaftar di ekstrakurikuler ini untuk tahun ajaran tersebut")
 	}
 
-	startDate, err := time.Parse("2006-01-02", req.StartDate)
+	startDate, err := utility.ParseDate( req.StartDate)
 	if err != nil {
 		return nil, errors.New("Format start_date tidak valid (YYYY-MM-DD)")
 	}
@@ -108,7 +109,7 @@ func (s *studentExtracurricularService) Update(studentID, seID uint, req dto.Upd
 		return nil, errors.New("Data pendaftaran ekstrakurikuler tidak ditemukan")
 	}
 
-	endDate, err := time.Parse("2006-01-02", req.EndDate)
+	endDate, err := utility.ParseDate( req.EndDate)
 	if err != nil {
 		return nil, errors.New("Format end_date tidak valid (YYYY-MM-DD)")
 	}

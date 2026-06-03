@@ -12,6 +12,7 @@ type DaycareEnrollmentRepository interface {
 	FindAll(params dto.DaycareEnrollmentQueryParams) ([]model.DaycareEnrollment, int64, error)
 	FindByID(id uint) (*model.DaycareEnrollment, error)
 	FindActiveByStudentID(studentID, academicYearID uint) (*model.DaycareEnrollment, error)
+	FindAllActive() ([]model.DaycareEnrollment, error)
 	Create(de *model.DaycareEnrollment) error
 	Update(de *model.DaycareEnrollment) error
 	UpdateStatus(id uint, status string, endDate *time.Time) error
@@ -67,6 +68,12 @@ func (r *daycareEnrollmentRepository) FindActiveByStudentID(studentID, academicY
 		return nil, err
 	}
 	return &de, nil
+}
+
+func (r *daycareEnrollmentRepository) FindAllActive() ([]model.DaycareEnrollment, error) {
+	var enrollments []model.DaycareEnrollment
+	err := r.db.Preload("Student").Preload("AcademicYear").Where("status = 'active'").Find(&enrollments).Error
+	return enrollments, err
 }
 
 func (r *daycareEnrollmentRepository) Create(de *model.DaycareEnrollment) error {

@@ -183,7 +183,7 @@ func main() {
 	classGroupService := service.NewClassGroupService(classGroupRepo)
 
 	// Batch 5: create generate service first (other services depend on it)
-	invoiceGenService := service.NewInvoiceGenerateService(db, invoiceRepo, invoiceItemRepo, fcRepo, fcItemRepo, effectiveDayRepo, enrollmentRepo, extracurricularRepo, seRepo)
+	invoiceGenService := service.NewInvoiceGenerateService(db, invoiceRepo, invoiceItemRepo, fcRepo, fcItemRepo, effectiveDayRepo, enrollmentRepo, extracurricularRepo, seRepo, ayRepo, daycareRepo)
 	invoiceService := service.NewInvoiceService(invoiceRepo, invoiceItemRepo, invoiceInstallmentRepo)
 
 	// Batch 6: create transaction infrastructure first
@@ -230,7 +230,7 @@ func main() {
 	extracurricularHandler := handler.NewExtracurricularHandler(extracurricularService)
 	seHandler := handler.NewStudentExtracurricularHandler(seService)
 	eventHandler := handler.NewAcademicEventHandler(eventService, academicService)
-	daycareHandler := handler.NewDaycareEnrollmentHandler(daycareService)
+	daycareHandler := handler.NewDaycareEnrollmentHandler(daycareService, invoiceGenService)
 
 	// Batch 4
 	feeConfigHandler := handler.NewFeeConfigHandler(fcService)
@@ -339,6 +339,7 @@ func main() {
 	daycare := api.Group("/daycare-enrollments", middleware.JWTAuth, middleware.RequireRoles("superadmin", "admin_administrasi"))
 	daycare.GET("", daycareHandler.List)
 	daycare.POST("", daycareHandler.Create)
+	daycare.POST("/sync-invoices", daycareHandler.SyncInvoices)
 	daycare.GET("/:id", daycareHandler.Get)
 	daycare.PUT("/:id", daycareHandler.Update)
 	daycare.PATCH("/:id/status", daycareHandler.UpdateStatus)

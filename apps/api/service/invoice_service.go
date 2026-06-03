@@ -6,7 +6,6 @@ import (
 	"api/repository"
 	"api/utility"
 	"errors"
-	"time"
 
 	"gorm.io/gorm"
 )
@@ -212,7 +211,7 @@ func (s *invoiceService) CreateInstallmentSchedule(invoiceID uint, req dto.Creat
 	// Create new schedule
 	var installments []model.InvoiceInstallment
 	for _, item := range req.Installments {
-		dueDate, _ := time.Parse("2006-01-02", item.DueDate)
+		dueDate, _ := utility.ParseDate( item.DueDate)
 		installments = append(installments, model.InvoiceInstallment{
 			InvoiceID:         invoiceID,
 			InstallmentNumber: item.InstallmentNumber,
@@ -241,7 +240,7 @@ func (s *invoiceService) UpdateInstallment(invoiceID, instID uint, req dto.Updat
 		return nil, errors.New("Cicilan tidak ditemukan pada invoice ini")
 	}
 
-	dueDate, _ := time.Parse("2006-01-02", req.DueDate)
+	dueDate, _ := utility.ParseDate( req.DueDate)
 	inst.DueDate = dueDate
 	inst.Amount = req.Amount
 	inst.Notes = req.Notes

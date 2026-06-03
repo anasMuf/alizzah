@@ -18,21 +18,26 @@ type InvoiceGenerateService interface {
 	GenerateMonthlyRange(studentID, academicYearID, classGroupID uint, level, gender string, startDate, endDate time.Time, createdBy uint) error
 	GenerateGraduation(params dto.GenerateGraduationInvoiceParams) (*model.Invoice, error)
 	GenerateDaycareInitial(params dto.GenerateInitialInvoiceParams) error
+	GenerateDaycareMonthlyRange(params dto.GenerateDaycareMonthlyParams) error
+	RemoveDaycareFromFutureInvoices(studentID uint, fromMonth, fromYear uint) error
+	SyncDaycareMonthlyInvoices() (*dto.DaycareSyncResult, error)
 	RecalculateInfaqHarian(classGroupID, month, year uint) error
 	AddExtracurricularToNextMonthly(studentID, extracurricularID, academicYearID uint) error
 	RemoveExtracurricularFromNextMonthly(studentID, extracurricularID, academicYearID uint) error
 }
 
 type invoiceGenerateService struct {
-	db                *gorm.DB
-	invoiceRepo       repository.InvoiceRepository
-	invoiceItemRepo   repository.InvoiceItemRepository
-	feeConfigRepo     repository.FeeConfigRepository
-	feeConfigItemRepo repository.FeeConfigItemRepository
-	effectiveDayRepo  repository.EffectiveDayRepository
-	enrollmentRepo    repository.StudentEnrollmentRepository
+	db                  *gorm.DB
+	invoiceRepo         repository.InvoiceRepository
+	invoiceItemRepo     repository.InvoiceItemRepository
+	feeConfigRepo       repository.FeeConfigRepository
+	feeConfigItemRepo   repository.FeeConfigItemRepository
+	effectiveDayRepo    repository.EffectiveDayRepository
+	enrollmentRepo      repository.StudentEnrollmentRepository
 	extracurricularRepo repository.ExtracurricularRepository
-	seRepo            repository.StudentExtracurricularRepository
+	seRepo              repository.StudentExtracurricularRepository
+	acRepo              repository.AcademicYearRepository
+	daycareRepo         repository.DaycareEnrollmentRepository
 }
 
 func NewInvoiceGenerateService(
@@ -45,6 +50,8 @@ func NewInvoiceGenerateService(
 	enrollmentRepo repository.StudentEnrollmentRepository,
 	extracurricularRepo repository.ExtracurricularRepository,
 	seRepo repository.StudentExtracurricularRepository,
+	acRepo repository.AcademicYearRepository,
+	daycareRepo repository.DaycareEnrollmentRepository,
 ) InvoiceGenerateService {
 	return &invoiceGenerateService{
 		db:                  db,
@@ -56,6 +63,8 @@ func NewInvoiceGenerateService(
 		enrollmentRepo:      enrollmentRepo,
 		extracurricularRepo: extracurricularRepo,
 		seRepo:              seRepo,
+		acRepo:              acRepo,
+		daycareRepo:         daycareRepo,
 	}
 }
 
@@ -216,6 +225,24 @@ func (s *invoiceGenerateService) GenerateMonthly(params dto.GenerateMonthlyInvoi
 				Amount:      amount,
 				IsMandatory: true,
 			})
+		}
+	}
+
+	// Daycare bulanan
+	if s.daycareRepo != nil {
+		de, err := s.daycareRepo.FindActiveByStudentID(params.StudentID, params.AcademicYearID)
+		if err == nil && de != nil {
+			if itemKey, ok := daycarePackageToItemKey[de.PackageType]; ok {
+				feeItems, _ := s.feeConfigItemRepo.FindByItemKeys(feeConfig.ID, []string{itemKey})
+				if len(feeItems) > 0 {
+					invoiceItems = append(invoiceItems, model.InvoiceItem{
+						Name:        feeItems[0].Name,
+						Category:    "daycare",
+						Amount:      feeItems[0].Amount,
+						IsMandatory: true,
+					})
+				}
+			}
 		}
 	}
 
@@ -532,6 +559,144 @@ func (s *invoiceGenerateService) recalculateInvoiceTotal(invoiceID uint) error {
 		return err
 	}
 	return s.invoiceRepo.UpdateStatus(invoiceID, status, paid)
+}
+
+var daycarePackageToItemKey = map[string]string{
+	"monthly_kb":         "daycare_spd_kb",
+	"monthly_tk":         "daycare_spd_tk",
+	"monthly_package_kb": "daycare_paket_kb",
+	"monthly_package_tk": "daycare_paket_tk",
+}
+
+func (s *invoiceGenerateService) GenerateDaycareMonthlyRange(params dto.GenerateDaycareMonthlyParams) error {
+	itemKey, ok := daycarePackageToItemKey[params.PackageType]
+	if !ok {
+		return nil
+	}
+
+	startDate, err := utility.ParseDate(params.StartDate)
+	if err != nil {
+		return fmt.Errorf("format start_date tidak valid")
+	}
+
+	ay, err := s.acRepo.FindByID(params.AcademicYearID)
+	if err != nil {
+		return fmt.Errorf("tahun ajaran tidak ditemukan")
+	}
+
+	feeConfig, err := s.feeConfigRepo.FindByAcademicYearID(params.AcademicYearID)
+	if err != nil {
+		return nil
+	}
+
+	feeItems, err := s.feeConfigItemRepo.FindByItemKeys(feeConfig.ID, []string{itemKey})
+	if err != nil || len(feeItems) == 0 {
+		return nil
+	}
+	feeItem := feeItems[0]
+
+	months := utility.MonthRangeFromDate(startDate, ay.EndDate)
+
+	for _, m := range months {
+		if err := s.addDaycareItemToMonthly(params.StudentID, params.AcademicYearID, m.Month, m.Year, feeItem); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *invoiceGenerateService) addDaycareItemToMonthly(studentID, academicYearID, month, year uint, feeItem model.FeeConfigItem) error {
+	invoice, err := s.invoiceRepo.FindMonthlyByStudent(studentID, month, year)
+	if err != nil {
+		invoice = &model.Invoice{
+			StudentID:      studentID,
+			AcademicYearID: academicYearID,
+			Type:           "monthly",
+			Month:          &month,
+			Year:           &year,
+			Status:         "unpaid",
+			TotalAmount:    0,
+		}
+		if err := s.invoiceRepo.Create(invoice); err != nil {
+			return err
+		}
+	}
+
+	_, err = s.invoiceItemRepo.FindByInvoiceAndCategory(invoice.ID, "daycare")
+	if err == nil {
+		return nil // sudah ada item daycare, skip
+	}
+
+	item := &model.InvoiceItem{
+		InvoiceID:   invoice.ID,
+		Name:        feeItem.Name,
+		Category:    "daycare",
+		Amount:      feeItem.Amount,
+		IsMandatory: true,
+	}
+	if err := s.invoiceItemRepo.Create(item); err != nil {
+		return err
+	}
+
+	return s.recalculateInvoiceTotal(invoice.ID)
+}
+
+func (s *invoiceGenerateService) SyncDaycareMonthlyInvoices() (*dto.DaycareSyncResult, error) {
+	enrollments, err := s.daycareRepo.FindAllActive()
+	if err != nil {
+		return nil, fmt.Errorf("gagal mengambil data daycare: %v", err)
+	}
+
+	result := &dto.DaycareSyncResult{
+		TotalEnrollments: len(enrollments),
+	}
+
+	for _, de := range enrollments {
+		if _, ok := daycarePackageToItemKey[de.PackageType]; !ok {
+			result.TotalSkipped++
+			continue
+		}
+
+		err := s.GenerateDaycareMonthlyRange(dto.GenerateDaycareMonthlyParams{
+			StudentID:      de.StudentID,
+			AcademicYearID: de.AcademicYearID,
+			PackageType:    de.PackageType,
+			StartDate:      de.StartDate.Format("2006-01-02"),
+		})
+		if err != nil {
+			result.Errors = append(result.Errors, dto.DaycareSyncError{
+				StudentID: de.StudentID,
+				Message:   err.Error(),
+			})
+			continue
+		}
+		result.TotalSynced++
+	}
+
+	result.TotalSkipped += len(result.Errors)
+	return result, nil
+}
+
+func (s *invoiceGenerateService) RemoveDaycareFromFutureInvoices(studentID uint, fromMonth, fromYear uint) error {
+	invoices, err := s.invoiceRepo.FindMonthlyByStudentFromMonth(studentID, fromMonth, fromYear)
+	if err != nil {
+		return err
+	}
+
+	for _, inv := range invoices {
+		deleted, err := s.invoiceItemRepo.DeleteUnpaidByInvoiceAndCategory(inv.ID, "daycare")
+		if err != nil {
+			return err
+		}
+		if deleted > 0 {
+			if err := s.recalculateInvoiceTotal(inv.ID); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func getNextMonth() (uint, uint) {

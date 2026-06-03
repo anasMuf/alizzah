@@ -13,10 +13,11 @@ import (
 
 type DaycareEnrollmentHandler struct {
 	daycareService service.DaycareEnrollmentService
+	invoiceGen     service.InvoiceGenerateService
 }
 
-func NewDaycareEnrollmentHandler(daycareService service.DaycareEnrollmentService) *DaycareEnrollmentHandler {
-	return &DaycareEnrollmentHandler{daycareService: daycareService}
+func NewDaycareEnrollmentHandler(daycareService service.DaycareEnrollmentService, invoiceGen service.InvoiceGenerateService) *DaycareEnrollmentHandler {
+	return &DaycareEnrollmentHandler{daycareService: daycareService, invoiceGen: invoiceGen}
 }
 
 // List godoc
@@ -285,5 +286,34 @@ func (h *DaycareEnrollmentHandler) UpdateStatus(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, dto.SuccessResponse{
 		Message: "Berhasil memperbarui status daycare",
+	})
+}
+
+// SyncInvoices godoc
+// @Summary      Sync daycare monthly invoices
+// @Description  Generate missing monthly invoices for all active daycare enrollments
+// @Tags         daycare-enrollments
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Success      200  {object}  dto.SuccessResponse{data=dto.DaycareSyncResult}
+// @Failure      401  {object}  dto.ErrorResponse
+// @Failure      403  {object}  dto.ErrorResponse
+// @Failure      500  {object}  dto.ErrorResponse
+// @Router       /v1/daycare-enrollments/sync-invoices [post]
+func (h *DaycareEnrollmentHandler) SyncInvoices(c echo.Context) error {
+	result, err := h.invoiceGen.SyncDaycareMonthlyInvoices()
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{
+			Status:  status,
+			Code:    code,
+			Message: err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "Sinkronisasi tagihan daycare bulanan selesai",
+		Data:    result,
 	})
 }

@@ -186,6 +186,16 @@ definitions:
       name:
         type: string
     type: object
+  dto.ClassGroupMapping:
+    properties:
+      from_class_group_id:
+        type: integer
+      to_class_group_id:
+        type: integer
+    required:
+    - from_class_group_id
+    - to_class_group_id
+    type: object
   dto.ClassGroupReportResponse:
     properties:
       class_group:
@@ -233,6 +243,27 @@ definitions:
         $ref: '#/definitions/dto.ScheduleBlock'
       weekend:
         $ref: '#/definitions/dto.ScheduleBlock'
+    type: object
+  dto.CloneClassGroupsRequest:
+    properties:
+      from_academic_year_id:
+        type: integer
+      to_academic_year_id:
+        type: integer
+    required:
+    - from_academic_year_id
+    - to_academic_year_id
+    type: object
+  dto.CloneClassGroupsResult:
+    properties:
+      created:
+        type: integer
+      groups:
+        items:
+          $ref: '#/definitions/dto.ClassGroupResponse'
+        type: array
+      skipped:
+        type: integer
     type: object
   dto.ConfirmDailyClosingRequest:
     properties:
@@ -482,6 +513,10 @@ definitions:
     properties:
       academic_year_id:
         type: integer
+      incidental_items:
+        items:
+          $ref: '#/definitions/dto.IncidentalItemReq'
+        type: array
       items:
         items:
           $ref: '#/definitions/dto.PaymentItemReq'
@@ -508,11 +543,25 @@ definitions:
     type: object
   dto.CreateStudentRequest:
     properties:
+      academic_year_id:
+        type: integer
       birth_date:
-        description: Changed validation datetime format to custom
         type: string
       birth_place:
         maxLength: 100
+        type: string
+      class_group_id:
+        description: 'Optional: langsung enroll ke kelas saat pendaftaran'
+        type: integer
+      enrollment_status:
+        enum:
+        - active
+        - pending
+        type: string
+      enrollment_type:
+        enum:
+        - new
+        - mutation
         type: string
       full_name:
         maxLength: 100
@@ -531,6 +580,8 @@ definitions:
         type: boolean
       religion:
         maxLength: 30
+        type: string
+      start_date:
         type: string
     required:
     - birth_date
@@ -629,6 +680,26 @@ definitions:
       student:
         $ref: '#/definitions/dto.StudentBriefResponse'
     type: object
+  dto.DaycareSyncError:
+    properties:
+      message:
+        type: string
+      student_id:
+        type: integer
+    type: object
+  dto.DaycareSyncResult:
+    properties:
+      errors:
+        items:
+          $ref: '#/definitions/dto.DaycareSyncError'
+        type: array
+      total_enrollments:
+        type: integer
+      total_skipped:
+        type: integer
+      total_synced:
+        type: integer
+    type: object
   dto.EffectiveDayResponse:
     properties:
       class_group_id:
@@ -661,12 +732,21 @@ definitions:
     - extracurricular_id
     - start_date
     type: object
+  dto.EnrollmentBriefForStudent:
+    properties:
+      class_group:
+        $ref: '#/definitions/dto.ClassGroupBriefResponse'
+      class_group_id:
+        type: integer
+    type: object
   dto.EnrollmentBriefResponse:
     properties:
       academic_year_id:
         type: integer
       academic_year_name:
         type: string
+      class_group:
+        $ref: '#/definitions/dto.ClassGroupBriefResponse'
       class_group_id:
         type: integer
       class_group_name:
@@ -821,6 +901,10 @@ definitions:
     type: object
   dto.GraduationResult:
     properties:
+      errors:
+        items:
+          $ref: '#/definitions/dto.EventError'
+        type: array
       results:
         items:
           $ref: '#/definitions/dto.GraduationStudentResult'
@@ -898,6 +982,18 @@ definitions:
         type: integer
       total_success:
         type: integer
+    type: object
+  dto.IncidentalItemReq:
+    properties:
+      amount:
+        minimum: 1
+        type: number
+      name:
+        maxLength: 100
+        type: string
+    required:
+    - amount
+    - name
     type: object
   dto.IncomeSummaryResponse:
     properties:
@@ -1153,6 +1249,8 @@ definitions:
         type: string
       payment_date:
         type: string
+      savings_deposit:
+        type: number
       source:
         type: string
       student:
@@ -1199,12 +1297,49 @@ definitions:
       total_amount:
         type: number
     type: object
+  dto.PromotionPreviewResult:
+    properties:
+      errors:
+        items:
+          $ref: '#/definitions/dto.EventError'
+        type: array
+      skipped:
+        type: integer
+      students:
+        items:
+          $ref: '#/definitions/dto.PromotionPreviewStudent'
+        type: array
+      to_promote:
+        type: integer
+      to_retain:
+        type: integer
+      total_students:
+        type: integer
+    type: object
+  dto.PromotionPreviewStudent:
+    properties:
+      action:
+        description: promotion | retained | skipped_berlian
+        type: string
+      from_class:
+        type: string
+      student_id:
+        type: integer
+      student_name:
+        type: string
+      to_class:
+        type: string
+    type: object
   dto.PromotionRequest:
     properties:
       event_date:
         type: string
       from_academic_year_id:
         type: integer
+      mappings:
+        items:
+          $ref: '#/definitions/dto.ClassGroupMapping'
+        type: array
       notes:
         type: string
       retained_student_ids:
@@ -1284,6 +1419,8 @@ definitions:
     type: object
   dto.StudentBriefResponse:
     properties:
+      active_enrollment:
+        $ref: '#/definitions/dto.EnrollmentBriefForStudent'
       full_name:
         type: string
       gender:
@@ -1295,14 +1432,14 @@ definitions:
     type: object
   dto.StudentDetailResponse:
     properties:
+      active_enrollment:
+        $ref: '#/definitions/dto.EnrollmentBriefResponse'
       birth_date:
         type: string
       birth_place:
         type: string
       created_at:
         type: string
-      current_enrollment:
-        $ref: '#/definitions/dto.EnrollmentBriefResponse'
       financial_summary:
         $ref: '#/definitions/dto.FinancialSummaryResponse'
       full_name:
@@ -1337,10 +1474,10 @@ definitions:
     type: object
   dto.StudentListResponse:
     properties:
+      active_enrollment:
+        $ref: '#/definitions/dto.EnrollmentBriefResponse'
       birth_date:
         type: string
-      current_enrollment:
-        $ref: '#/definitions/dto.EnrollmentBriefResponse'
       full_name:
         type: string
       gender:
@@ -1778,6 +1915,52 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Process student promotion
+      tags:
+      - academic-events
+  /v1/academic-events/promotions/preview:
+    post:
+      consumes:
+      - application/json
+      description: Preview what will happen when promotions run, without making any
+        changes
+      parameters:
+      - description: Promotion data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.PromotionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.PromotionPreviewResult'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Preview promotion results (dry run)
       tags:
       - academic-events
   /v1/academic-events/transfers:
@@ -2735,6 +2918,48 @@ paths:
       summary: Get students by class group
       tags:
       - student-enrollments
+  /v1/class-groups/clone:
+    post:
+      consumes:
+      - application/json
+      description: Copy all class groups (name, level, schedule) from one academic
+        year to another. Skips duplicates.
+      parameters:
+      - description: Clone parameters
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CloneClassGroupsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.CloneClassGroupsResult'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Clone class groups to another academic year
+      tags:
+      - class-groups
   /v1/daily-closings:
     get:
       consumes:
@@ -3196,6 +3421,79 @@ paths:
       summary: Update daycare status
       tags:
       - daycare-enrollments
+  /v1/daycare-enrollments/sync-invoices:
+    post:
+      consumes:
+      - application/json
+      description: Generate missing monthly invoices for all active daycare enrollments
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.DaycareSyncResult'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Sync daycare monthly invoices
+      tags:
+      - daycare-enrollments
+  /v1/enrollments/{id}/activate:
+    patch:
+      consumes:
+      - application/json
+      description: Change enrollment status from 'pending' to 'active'
+      parameters:
+      - description: Enrollment ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Activate a pending enrollment
+      tags:
+      - student-enrollments
   /v1/expense-categories:
     get:
       consumes:

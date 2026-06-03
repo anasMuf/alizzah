@@ -4,6 +4,7 @@ import (
 	"api/dto"
 	"api/model"
 	"api/repository"
+	"api/utility"
 	"errors"
 	"time"
 
@@ -84,7 +85,7 @@ func (s *daycareEnrollmentService) Create(createdBy uint, req dto.CreateDaycareE
 		return nil, errors.New("Siswa sudah memiliki pendaftaran daycare aktif di tahun ajaran ini")
 	}
 
-	startDate, err := time.Parse("2006-01-02", req.StartDate)
+	startDate, err := utility.ParseDate(req.StartDate)
 	if err != nil {
 		return nil, errors.New("Format start_date tidak valid (YYYY-MM-DD)")
 	}
@@ -115,6 +116,14 @@ func (s *daycareEnrollmentService) Create(createdBy uint, req dto.CreateDaycareE
 				CreatedBy:      createdBy,
 			})
 		}
+
+		s.invoiceGen.GenerateDaycareMonthlyRange(dto.GenerateDaycareMonthlyParams{
+			StudentID:      req.StudentID,
+			AcademicYearID: req.AcademicYearID,
+			PackageType:    req.PackageType,
+			StartDate:      req.StartDate,
+			CreatedBy:      createdBy,
+		})
 	}
 
 	savedDe, _ := s.daycareRepo.FindByID(de.ID)
@@ -127,7 +136,7 @@ func (s *daycareEnrollmentService) Update(id uint, req dto.CreateDaycareEnrollme
 		return nil, errors.New("Pendaftaran daycare tidak ditemukan")
 	}
 
-	startDate, err := time.Parse("2006-01-02", req.StartDate)
+	startDate, err := utility.ParseDate(req.StartDate)
 	if err != nil {
 		return nil, errors.New("Format start_date tidak valid (YYYY-MM-DD)")
 	}
@@ -146,7 +155,7 @@ func (s *daycareEnrollmentService) Update(id uint, req dto.CreateDaycareEnrollme
 }
 
 func (s *daycareEnrollmentService) UpdateStatus(id uint, req dto.UpdateDaycareStatusRequest) error {
-	_, err := s.daycareRepo.FindByID(id)
+	de, err := s.daycareRepo.FindByID(id)
 	if err != nil {
 		return errors.New("Pendaftaran daycare tidak ditemukan")
 	}
@@ -156,14 +165,23 @@ func (s *daycareEnrollmentService) UpdateStatus(id uint, req dto.UpdateDaycareSt
 		if req.EndDate == "" {
 			return errors.New("end_date wajib diisi jika status diubah menjadi inactive")
 		}
-		parsed, err := time.Parse("2006-01-02", req.EndDate)
+		parsed, err := utility.ParseDate(req.EndDate)
 		if err != nil {
 			return errors.New("Format end_date tidak valid (YYYY-MM-DD)")
 		}
 		endDate = &parsed
 	}
 
-	return s.daycareRepo.UpdateStatus(id, req.Status, endDate)
+	if err := s.daycareRepo.UpdateStatus(id, req.Status, endDate); err != nil {
+		return err
+	}
+
+	if req.Status == "inactive" && s.invoiceGen != nil {
+		now := time.Now()
+		s.invoiceGen.RemoveDaycareFromFutureInvoices(de.StudentID, uint(now.Month()), uint(now.Year()))
+	}
+
+	return nil
 }
 
 func mapDaycareEnrollmentToResponse(de model.DaycareEnrollment) *dto.DaycareEnrollmentResponse {

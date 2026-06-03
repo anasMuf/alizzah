@@ -64,7 +64,7 @@ func (s *reportService) GetDailyReport(req dto.DailyReportRequest) (*dto.DailyRe
 		academicYearID = ay.ID
 	}
 
-	date, _ := time.Parse("2006-01-02", req.Date)
+	date, _ := utility.ParseDate(req.Date)
 	startOfDay := date
 	endOfDay := date.Add(23*time.Hour + 59*time.Minute + 59*time.Second)
 

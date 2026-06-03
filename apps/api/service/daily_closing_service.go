@@ -4,6 +4,7 @@ import (
 	"api/dto"
 	"api/model"
 	"api/repository"
+	"api/utility"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -58,7 +59,7 @@ func (s *dailyClosingService) GetByID(id uint) (*dto.DailyClosingListResponse, e
 }
 
 func (s *dailyClosingService) Create(closedBy uint, req dto.CreateDailyClosingRequest) (*dto.DailyClosingListResponse, error) {
-	closingDate, _ := time.Parse("2006-01-02", req.ClosingDate)
+	closingDate, _ := utility.ParseDate(req.ClosingDate)
 
 	existing, _ := s.repo.FindByDate(closingDate)
 	if existing != nil {

@@ -234,6 +234,81 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/academic-events/promotions/preview": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Preview what will happen when promotions run, without making any changes",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "academic-events"
+                ],
+                "summary": "Preview promotion results (dry run)",
+                "parameters": [
+                    {
+                        "description": "Promotion data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.PromotionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/dto.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.PromotionPreviewResult"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/academic-events/transfers": {
             "post": {
                 "security": [
@@ -1213,6 +1288,75 @@ const docTemplate = `{
                                     "properties": {
                                         "data": {
                                             "$ref": "#/definitions/dto.ClassGroupResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/class-groups/clone": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Copy all class groups (name, level, schedule) from one academic year to another. Skips duplicates.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "class-groups"
+                ],
+                "summary": "Clone class groups to another academic year",
+                "parameters": [
+                    {
+                        "description": "Clone parameters",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CloneClassGroupsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/dto.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.CloneClassGroupsResult"
                                         }
                                     }
                                 }
@@ -2296,6 +2440,64 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/daycare-enrollments/sync-invoices": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Generate missing monthly invoices for all active daycare enrollments",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "daycare-enrollments"
+                ],
+                "summary": "Sync daycare monthly invoices",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/dto.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.DaycareSyncResult"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/daycare-enrollments/{id}": {
             "get": {
                 "security": [
@@ -2530,6 +2732,67 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/enrollments/{id}/activate": {
+            "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Change enrollment status from 'pending' to 'active'",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "student-enrollments"
+                ],
+                "summary": "Activate a pending enrollment",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Enrollment ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/dto.ErrorResponse"
                         }
@@ -8460,6 +8723,21 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.ClassGroupMapping": {
+            "type": "object",
+            "required": [
+                "from_class_group_id",
+                "to_class_group_id"
+            ],
+            "properties": {
+                "from_class_group_id": {
+                    "type": "integer"
+                },
+                "to_class_group_id": {
+                    "type": "integer"
+                }
+            }
+        },
         "dto.ClassGroupReportResponse": {
             "type": "object",
             "properties": {
@@ -8531,6 +8809,38 @@ const docTemplate = `{
                 },
                 "weekend": {
                     "$ref": "#/definitions/dto.ScheduleBlock"
+                }
+            }
+        },
+        "dto.CloneClassGroupsRequest": {
+            "type": "object",
+            "required": [
+                "from_academic_year_id",
+                "to_academic_year_id"
+            ],
+            "properties": {
+                "from_academic_year_id": {
+                    "type": "integer"
+                },
+                "to_academic_year_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.CloneClassGroupsResult": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "integer"
+                },
+                "groups": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ClassGroupResponse"
+                    }
+                },
+                "skipped": {
+                    "type": "integer"
                 }
             }
         },
@@ -8883,6 +9193,12 @@ const docTemplate = `{
                 "academic_year_id": {
                     "type": "integer"
                 },
+                "incidental_items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.IncidentalItemReq"
+                    }
+                },
                 "items": {
                     "type": "array",
                     "items": {
@@ -8920,13 +9236,33 @@ const docTemplate = `{
                 "gender"
             ],
             "properties": {
+                "academic_year_id": {
+                    "type": "integer"
+                },
                 "birth_date": {
-                    "description": "Changed validation datetime format to custom",
                     "type": "string"
                 },
                 "birth_place": {
                     "type": "string",
                     "maxLength": 100
+                },
+                "class_group_id": {
+                    "description": "Optional: langsung enroll ke kelas saat pendaftaran",
+                    "type": "integer"
+                },
+                "enrollment_status": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "pending"
+                    ]
+                },
+                "enrollment_type": {
+                    "type": "string",
+                    "enum": [
+                        "new",
+                        "mutation"
+                    ]
                 },
                 "full_name": {
                     "type": "string",
@@ -8952,6 +9288,9 @@ const docTemplate = `{
                 "religion": {
                     "type": "string",
                     "maxLength": 30
+                },
+                "start_date": {
+                    "type": "string"
                 }
             }
         },
@@ -9089,6 +9428,37 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.DaycareSyncError": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "student_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.DaycareSyncResult": {
+            "type": "object",
+            "properties": {
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.DaycareSyncError"
+                    }
+                },
+                "total_enrollments": {
+                    "type": "integer"
+                },
+                "total_skipped": {
+                    "type": "integer"
+                },
+                "total_synced": {
+                    "type": "integer"
+                }
+            }
+        },
         "dto.EffectiveDayResponse": {
             "type": "object",
             "properties": {
@@ -9137,6 +9507,17 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.EnrollmentBriefForStudent": {
+            "type": "object",
+            "properties": {
+                "class_group": {
+                    "$ref": "#/definitions/dto.ClassGroupBriefResponse"
+                },
+                "class_group_id": {
+                    "type": "integer"
+                }
+            }
+        },
         "dto.EnrollmentBriefResponse": {
             "type": "object",
             "properties": {
@@ -9145,6 +9526,9 @@ const docTemplate = `{
                 },
                 "academic_year_name": {
                     "type": "string"
+                },
+                "class_group": {
+                    "$ref": "#/definitions/dto.ClassGroupBriefResponse"
                 },
                 "class_group_id": {
                     "type": "integer"
@@ -9381,6 +9765,12 @@ const docTemplate = `{
         "dto.GraduationResult": {
             "type": "object",
             "properties": {
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.EventError"
+                    }
+                },
                 "results": {
                     "type": "array",
                     "items": {
@@ -9498,6 +9888,23 @@ const docTemplate = `{
                 },
                 "total_success": {
                     "type": "integer"
+                }
+            }
+        },
+        "dto.IncidentalItemReq": {
+            "type": "object",
+            "required": [
+                "amount",
+                "name"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "number",
+                    "minimum": 1
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100
                 }
             }
         },
@@ -9887,6 +10294,9 @@ const docTemplate = `{
                 "payment_date": {
                     "type": "string"
                 },
+                "savings_deposit": {
+                    "type": "number"
+                },
                 "source": {
                     "type": "string"
                 },
@@ -9957,6 +10367,56 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.PromotionPreviewResult": {
+            "type": "object",
+            "properties": {
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.EventError"
+                    }
+                },
+                "skipped": {
+                    "type": "integer"
+                },
+                "students": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.PromotionPreviewStudent"
+                    }
+                },
+                "to_promote": {
+                    "type": "integer"
+                },
+                "to_retain": {
+                    "type": "integer"
+                },
+                "total_students": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.PromotionPreviewStudent": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "description": "promotion | retained | skipped_berlian",
+                    "type": "string"
+                },
+                "from_class": {
+                    "type": "string"
+                },
+                "student_id": {
+                    "type": "integer"
+                },
+                "student_name": {
+                    "type": "string"
+                },
+                "to_class": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.PromotionRequest": {
             "type": "object",
             "required": [
@@ -9970,6 +10430,12 @@ const docTemplate = `{
                 },
                 "from_academic_year_id": {
                     "type": "integer"
+                },
+                "mappings": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ClassGroupMapping"
+                    }
                 },
                 "notes": {
                     "type": "string"
@@ -10086,6 +10552,9 @@ const docTemplate = `{
         "dto.StudentBriefResponse": {
             "type": "object",
             "properties": {
+                "active_enrollment": {
+                    "$ref": "#/definitions/dto.EnrollmentBriefForStudent"
+                },
                 "full_name": {
                     "type": "string"
                 },
@@ -10103,6 +10572,9 @@ const docTemplate = `{
         "dto.StudentDetailResponse": {
             "type": "object",
             "properties": {
+                "active_enrollment": {
+                    "$ref": "#/definitions/dto.EnrollmentBriefResponse"
+                },
                 "birth_date": {
                     "type": "string"
                 },
@@ -10111,9 +10583,6 @@ const docTemplate = `{
                 },
                 "created_at": {
                     "type": "string"
-                },
-                "current_enrollment": {
-                    "$ref": "#/definitions/dto.EnrollmentBriefResponse"
                 },
                 "financial_summary": {
                     "$ref": "#/definitions/dto.FinancialSummaryResponse"
@@ -10167,11 +10636,11 @@ const docTemplate = `{
         "dto.StudentListResponse": {
             "type": "object",
             "properties": {
+                "active_enrollment": {
+                    "$ref": "#/definitions/dto.EnrollmentBriefResponse"
+                },
                 "birth_date": {
                     "type": "string"
-                },
-                "current_enrollment": {
-                    "$ref": "#/definitions/dto.EnrollmentBriefResponse"
                 },
                 "full_name": {
                     "type": "string"

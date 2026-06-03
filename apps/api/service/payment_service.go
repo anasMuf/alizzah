@@ -4,9 +4,9 @@ import (
 	"api/dto"
 	"api/model"
 	"api/repository"
+	"api/utility"
 	"errors"
 	"fmt"
-	"time"
 
 	"gorm.io/gorm"
 )
@@ -126,7 +126,7 @@ func (s *paymentService) Create(createdBy uint, req dto.CreatePaymentRequest) (*
 		}
 	}
 
-	paymentDate, _ := time.Parse("2006-01-02", req.PaymentDate)
+	paymentDate, _ := utility.ParseDate(req.PaymentDate)
 
 	var result *model.Payment
 	err = s.db.Transaction(func(tx *gorm.DB) error {

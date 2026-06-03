@@ -17,6 +17,7 @@ type InvoiceItemRepository interface {
 	UpdatePaidAmount(id uint, paidAmount float64, status string) error
 	Delete(id uint) error
 	HasPayments(id uint) (bool, error)
+	DeleteUnpaidByInvoiceAndCategory(invoiceID uint, category string) (int64, error)
 	WithTx(tx *gorm.DB) InvoiceItemRepository
 }
 
@@ -80,6 +81,11 @@ func (r *invoiceItemRepository) UpdatePaidAmount(id uint, paidAmount float64, st
 
 func (r *invoiceItemRepository) Delete(id uint) error {
 	return r.db.Delete(&model.InvoiceItem{}, id).Error
+}
+
+func (r *invoiceItemRepository) DeleteUnpaidByInvoiceAndCategory(invoiceID uint, category string) (int64, error) {
+	result := r.db.Where("invoice_id = ? AND category = ? AND paid_amount = 0", invoiceID, category).Delete(&model.InvoiceItem{})
+	return result.RowsAffected, result.Error
 }
 
 func (r *invoiceItemRepository) HasPayments(id uint) (bool, error) {

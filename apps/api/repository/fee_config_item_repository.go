@@ -22,6 +22,7 @@ type FeeConfigItemRepository interface {
 	// Batch 5 additions
 	FindByStudentForCategory(feeConfigID uint, category, level, gender string) ([]model.FeeConfigItem, error)
 	FindByExtracurricular(feeConfigID uint, exType, exName string) ([]model.FeeConfigItem, error)
+	FindByItemKeys(feeConfigID uint, itemKeys []string) ([]model.FeeConfigItem, error)
 }
 
 type feeConfigItemRepository struct {
@@ -116,5 +117,11 @@ func (r *feeConfigItemRepository) FindByExtracurricular(feeConfigID uint, exType
 	itemKey := fmt.Sprintf("%s_%s", exType, slug)
 	var items []model.FeeConfigItem
 	err := r.db.Where("fee_config_id = ? AND item_key = ?", feeConfigID, itemKey).Find(&items).Error
+	return items, err
+}
+
+func (r *feeConfigItemRepository) FindByItemKeys(feeConfigID uint, itemKeys []string) ([]model.FeeConfigItem, error) {
+	var items []model.FeeConfigItem
+	err := r.db.Where("fee_config_id = ? AND item_key IN ?", feeConfigID, itemKeys).Find(&items).Error
 	return items, err
 }

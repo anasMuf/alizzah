@@ -21,6 +21,7 @@ type InvoiceRepository interface {
 	ExistsRegistrationByStudent(studentID, academicYearID uint) (bool, error)
 	ExistsMonthlyByStudent(studentID, month, year uint) (bool, error)
 	SumUnpaidByStudent(studentID uint) (float64, error)
+	FindMonthlyByStudentFromMonth(studentID, fromMonth, fromYear uint) ([]model.Invoice, error)
 	WithTx(tx *gorm.DB) InvoiceRepository
 }
 
@@ -186,4 +187,13 @@ func (r *invoiceRepository) SumUnpaidByStudent(studentID uint) (float64, error) 
 		Where("student_id = ? AND status != ?", studentID, "paid").
 		Scan(&result).Error
 	return result.Total, err
+}
+
+func (r *invoiceRepository) FindMonthlyByStudentFromMonth(studentID, fromMonth, fromYear uint) ([]model.Invoice, error) {
+	var invoices []model.Invoice
+	err := r.db.Where(
+		"student_id = ? AND type = 'monthly' AND (year > ? OR (year = ? AND month >= ?))",
+		studentID, fromYear, fromYear, fromMonth,
+	).Find(&invoices).Error
+	return invoices, err
 }

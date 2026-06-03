@@ -32,9 +32,10 @@ type studentService struct {
 	classGroupRepo repository.ClassGroupRepository
 	invoiceRepo    repository.InvoiceRepository
 	savingsService SavingsService
+	invoiceGen     InvoiceGenerateService
 }
 
-func NewStudentService(db *gorm.DB, studentRepo repository.StudentRepository, enrollmentRepo repository.StudentEnrollmentRepository, classGroupRepo repository.ClassGroupRepository, invoiceRepo repository.InvoiceRepository, savingsService SavingsService) StudentService {
+func NewStudentService(db *gorm.DB, studentRepo repository.StudentRepository, enrollmentRepo repository.StudentEnrollmentRepository, classGroupRepo repository.ClassGroupRepository, invoiceRepo repository.InvoiceRepository, savingsService SavingsService, invoiceGen InvoiceGenerateService) StudentService {
 	return &studentService{
 		db:             db,
 		studentRepo:    studentRepo,
@@ -42,6 +43,7 @@ func NewStudentService(db *gorm.DB, studentRepo repository.StudentRepository, en
 		classGroupRepo: classGroupRepo,
 		invoiceRepo:    invoiceRepo,
 		savingsService: savingsService,
+		invoiceGen:     invoiceGen,
 	}
 }
 
@@ -182,6 +184,14 @@ func (s *studentService) Create(createdBy uint, req dto.CreateStudentRequest) (*
 		student.StudentGuardians = sgLinks
 	}
 
+	var classGroupLevel string
+	if wantEnrollment {
+		cg, _ := s.classGroupRepo.FindByID(req.ClassGroupID)
+		if cg != nil {
+			classGroupLevel = cg.Level
+		}
+	}
+
 	err = s.db.Transaction(func(tx *gorm.DB) error {
 		if err := s.studentRepo.WithTx(tx).Create(student); err != nil {
 			return err
@@ -205,6 +215,30 @@ func (s *studentService) Create(createdBy uint, req dto.CreateStudentRequest) (*
 	})
 	if err != nil {
 		return nil, err
+	}
+
+	// Generate tagihan biaya awal & registrasi setelah enrollment berhasil
+	if wantEnrollment && enrollmentStatus == "active" && s.invoiceGen != nil {
+		level := classGroupLevel
+		gender := student.Gender
+
+		// Biaya Awal — sekali saat pertama masuk
+		s.invoiceGen.GenerateInitial(dto.GenerateInitialInvoiceParams{
+			StudentID:      student.ID,
+			AcademicYearID: req.AcademicYearID,
+			Level:          level,
+			Gender:         gender,
+			CreatedBy:      createdBy,
+		})
+
+		// Registrasi Tahunan
+		s.invoiceGen.GenerateRegistration(dto.GenerateRegistrationInvoiceParams{
+			StudentID:      student.ID,
+			AcademicYearID: req.AcademicYearID,
+			Level:          level,
+			Gender:         gender,
+			CreatedBy:      createdBy,
+		})
 	}
 
 	createdStudent, _ := s.studentRepo.FindByID(student.ID)

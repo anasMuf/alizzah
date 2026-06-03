@@ -31,14 +31,14 @@ func SeedEffectiveDays(db *gorm.DB) {
 	var classGroups []model.ClassGroup
 	db.Where("academic_year_id = ?", activeYear.ID).Find(&classGroups)
 
-	// Academic year months: Jul 2025 – May 2026 (11 months)
+	// Academic year months: Jul 2025 – Jun 2026 (12 months)
 	type monthYear struct {
 		Month int
 		Year  int
 	}
 	months := []monthYear{
 		{7, 2025}, {8, 2025}, {9, 2025}, {10, 2025}, {11, 2025}, {12, 2025},
-		{1, 2026}, {2, 2026}, {3, 2026}, {4, 2026}, {5, 2026},
+		{1, 2026}, {2, 2026}, {3, 2026}, {4, 2026}, {5, 2026}, {6, 2026},
 	}
 
 	var total int

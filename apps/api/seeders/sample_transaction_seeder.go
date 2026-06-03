@@ -4,6 +4,7 @@ import (
 	"api/model"
 	"fmt"
 	"log"
+	"math/rand"
 	"time"
 
 	"gorm.io/gorm"
@@ -29,22 +30,19 @@ func SeedSampleTransactions(db *gorm.DB) {
 		return
 	}
 
-	// Load all enrollments with class group info
 	var enrollments []model.StudentEnrollment
-	db.Preload("ClassGroup").Where("academic_year_id = ? AND status = ?", activeYear.ID, "active").Find(&enrollments)
+	db.Preload("ClassGroup").Preload("Student").
+		Where("academic_year_id = ? AND status = ?", activeYear.ID, "active").Find(&enrollments)
 
-	// Load fee config
 	var feeConfig model.FeeConfig
 	if err := db.Where("academic_year_id = ?", activeYear.ID).First(&feeConfig).Error; err != nil {
 		log.Println("Gagal cari fee config untuk transaction seeder:", err)
 		return
 	}
 
-	// Load fee config items indexed by category+level
 	var feeItems []model.FeeConfigItem
 	db.Where("fee_config_id = ?", feeConfig.ID).Find(&feeItems)
 
-	// Helper to find fee amount
 	findFee := func(category, itemKey, level string) float64 {
 		for _, fi := range feeItems {
 			if fi.Category == category && fi.ItemKey == itemKey {
@@ -56,48 +54,165 @@ func SeedSampleTransactions(db *gorm.DB) {
 		return 0
 	}
 
-	// Generate invoices for Juli & Agustus 2025
-	targetMonths := []struct {
+	findFeeItems := func(category, level, gender string) []model.FeeConfigItem {
+		var matched []model.FeeConfigItem
+		for _, fi := range feeItems {
+			if fi.Category == category && (fi.Level == level || fi.Level == "all") && (fi.Gender == gender || fi.Gender == "all") {
+				matched = append(matched, fi)
+			}
+		}
+		return matched
+	}
+
+	// === Tagihan Biaya Awal (initial) — siswa baru & mutasi ===
+	var totalInitial, totalRegistration int
+	for _, enr := range enrollments {
+		level := enr.ClassGroup.Level
+		gender := enr.Student.Gender
+
+		// Biaya Awal: hanya untuk siswa baru (enrollment_type = "new") dan mutasi (enrollment_type = "mutation")
+		if enr.EnrollmentType == "new" || enr.EnrollmentType == "mutation" {
+			initialItems := findFeeItems("initial", level, gender)
+			if len(initialItems) > 0 {
+				var totalAmount float64
+				var invoiceItems []model.InvoiceItem
+				for _, fi := range initialItems {
+					totalAmount += fi.Amount
+					invoiceItems = append(invoiceItems, model.InvoiceItem{
+						Name:        fi.Name,
+						Category:    "initial",
+						Amount:      fi.Amount,
+						IsMandatory: true,
+					})
+				}
+
+				invoice := model.Invoice{
+					StudentID:      enr.StudentID,
+					AcademicYearID: activeYear.ID,
+					Type:           "initial",
+					Status:         "unpaid",
+					TotalAmount:    totalAmount,
+				}
+				if err := db.Create(&invoice).Error; err == nil {
+					for i := range invoiceItems {
+						invoiceItems[i].InvoiceID = invoice.ID
+						db.Create(&invoiceItems[i])
+					}
+					totalInitial++
+				}
+			}
+		}
+
+		// Registrasi Tahunan: semua siswa aktif
+		regItems := findFeeItems("registration", level, gender)
+		if len(regItems) > 0 {
+			var totalAmount float64
+			var invoiceItems []model.InvoiceItem
+			for _, fi := range regItems {
+				totalAmount += fi.Amount
+				invoiceItems = append(invoiceItems, model.InvoiceItem{
+					Name:        fi.Name,
+					Category:    "registration",
+					Amount:      fi.Amount,
+					IsMandatory: true,
+				})
+			}
+
+			invoice := model.Invoice{
+				StudentID:      enr.StudentID,
+				AcademicYearID: activeYear.ID,
+				Type:           "registration",
+				Status:         "unpaid",
+				TotalAmount:    totalAmount,
+			}
+			if err := db.Create(&invoice).Error; err == nil {
+				for i := range invoiceItems {
+					invoiceItems[i].InvoiceID = invoice.ID
+					db.Create(&invoiceItems[i])
+				}
+				totalRegistration++
+			}
+		}
+	}
+	log.Printf("  → %d tagihan biaya awal, %d tagihan registrasi", totalInitial, totalRegistration)
+
+	// All months in TA: Juli 2025 – Juni 2026
+	type targetMonth struct {
 		Month   uint
 		Year    uint
 		DueDay  int
 		DueMon  time.Month
 		DueYear int
-	}{
+	}
+	targetMonths := []targetMonth{
 		{7, 2025, 10, time.August, 2025},
 		{8, 2025, 10, time.September, 2025},
+		{9, 2025, 10, time.October, 2025},
+		{10, 2025, 10, time.November, 2025},
+		{11, 2025, 10, time.December, 2025},
+		{12, 2025, 10, time.January, 2026},
+		{1, 2026, 10, time.February, 2026},
+		{2, 2026, 10, time.March, 2026},
+		{3, 2026, 10, time.April, 2026},
+		{4, 2026, 10, time.May, 2026},
+		{5, 2026, 10, time.June, 2026},
+		{6, 2026, 10, time.June, 2026}, // Juni: due date akhir bulan
+	}
+
+	// Load effective days
+	var allEds []model.EffectiveDay
+	db.Where("academic_year_id = ?", activeYear.ID).Find(&allEds)
+	edMap := make(map[string]model.EffectiveDay)
+	for _, ed := range allEds {
+		key := fmt.Sprintf("%d-%d-%d", ed.ClassGroupID, ed.Month, ed.Year)
+		edMap[key] = ed
+	}
+
+	// Load active daycare enrollments
+	var daycareEnrollments []model.DaycareEnrollment
+	db.Where("academic_year_id = ? AND status = 'active'", activeYear.ID).Find(&daycareEnrollments)
+	daycareByStudent := make(map[uint]*model.DaycareEnrollment)
+	for i := range daycareEnrollments {
+		daycareByStudent[daycareEnrollments[i].StudentID] = &daycareEnrollments[i]
+	}
+
+	// Daycare package → fee item_key mapping
+	daycarePackageToItemKey := map[string]string{
+		"monthly_kb":         "daycare_spd_kb",
+		"monthly_tk":         "daycare_spd_tk",
+		"monthly_package_kb": "daycare_paket_kb",
+		"monthly_package_tk": "daycare_paket_tk",
 	}
 
 	var totalInvoices, totalPayments, totalExpenses int
 
+	rng := rand.New(rand.NewSource(42)) // deterministic for reproducibility
+
+	// === Generate Invoices for all months ===
 	for _, tm := range targetMonths {
-		// Get effective days for this month (we need per class group)
-		edMap := make(map[uint]model.EffectiveDay)
-		var eds []model.EffectiveDay
-		db.Where("academic_year_id = ? AND month = ? AND year = ?", activeYear.ID, tm.Month, tm.Year).Find(&eds)
-		for _, ed := range eds {
-			edMap[ed.ClassGroupID] = ed
-		}
-
 		for _, enr := range enrollments {
-			ed, ok := edMap[enr.ClassGroupID]
-			if !ok {
-				continue
-			}
-
 			level := enr.ClassGroup.Level
+
+			edKey := fmt.Sprintf("%d-%d-%d", enr.ClassGroupID, tm.Month, tm.Year)
+			ed, hasEd := edMap[edKey]
+
 			sppKey := "spp_kb"
 			if level == "intan" || level == "berlian" {
 				sppKey = "spp_tk"
 			}
 
 			sppAmount := findFee("monthly_spp", sppKey, level)
+
+			var infaqTotal float64
+			var infaqDays uint
 			infaqPerDay := findFee("monthly_infaq", "infaq_harian", level)
-			infaqTotal := infaqPerDay * float64(ed.TotalDays)
+			if hasEd {
+				infaqDays = ed.TotalDays
+				infaqTotal = infaqPerDay * float64(infaqDays)
+			}
 
 			totalAmount := sppAmount + infaqTotal
 
-			// Build invoice items
 			var items []model.InvoiceItem
 			items = append(items, model.InvoiceItem{
 				Name:        fmt.Sprintf("SPP %s", monthName(int(tm.Month))),
@@ -105,15 +220,21 @@ func SeedSampleTransactions(db *gorm.DB) {
 				Amount:      sppAmount,
 				IsMandatory: true,
 			})
+
+			infaqNotes := ""
+			if !hasEd {
+				infaqNotes = "Menunggu input hari efektif"
+			}
 			items = append(items, model.InvoiceItem{
-				Name:        fmt.Sprintf("Infaq Harian %s (%d hari)", monthName(int(tm.Month)), ed.TotalDays),
+				Name:        fmt.Sprintf("Infaq Harian %s (%d hari)", monthName(int(tm.Month)), infaqDays),
 				Category:    "monthly_infaq",
 				Amount:      infaqTotal,
 				IsMandatory: true,
+				Notes:       infaqNotes,
 			})
 
-			// Berlian: add tabungan wajib
-			if level == "berlian" {
+			// Berlian: tabungan wajib
+			if level == "berlian" && hasEd {
 				tabAmount := findFee("savings_mandatory", "tabungan_wajib", level) * float64(ed.TotalMondays)
 				if tabAmount > 0 {
 					totalAmount += tabAmount
@@ -123,6 +244,25 @@ func SeedSampleTransactions(db *gorm.DB) {
 						Amount:      tabAmount,
 						IsMandatory: true,
 					})
+				}
+			}
+
+			// Daycare: add monthly item if student has active daycare
+			if de, ok := daycareByStudent[enr.StudentID]; ok {
+				monthDate := time.Date(int(tm.Year), time.Month(tm.Month), 1, 0, 0, 0, 0, time.UTC)
+				if !monthDate.Before(de.StartDate) {
+					if itemKey, mapped := daycarePackageToItemKey[de.PackageType]; mapped {
+						daycareAmount := findFee("daycare", itemKey, "all")
+						if daycareAmount > 0 {
+							totalAmount += daycareAmount
+							items = append(items, model.InvoiceItem{
+								Name:        findFeeName("daycare", itemKey, feeItems),
+								Category:    "daycare",
+								Amount:      daycareAmount,
+								IsMandatory: true,
+							})
+						}
+					}
 				}
 			}
 
@@ -154,126 +294,288 @@ func SeedSampleTransactions(db *gorm.DB) {
 		}
 	}
 
-	// === Sample Payments (50 payments spread across Juli invoices) ===
-	var juliInvoices []model.Invoice
-	juliMonth := uint(7)
-	db.Preload("Items").Where("academic_year_id = ? AND month = ? AND year = ? AND status = ?",
-		activeYear.ID, juliMonth, 2025, "unpaid").
-		Limit(50).Find(&juliInvoices)
+	// === Payments: biaya awal & registrasi (mayoritas lunas) ===
+	payInitialAndReg := func(invoiceType string, payRate float64, payBaseDate time.Time) {
+		var invoices []model.Invoice
+		db.Preload("Items").
+			Where("academic_year_id = ? AND type = ? AND status = 'unpaid'", activeYear.ID, invoiceType).
+			Find(&invoices)
 
-	for _, inv := range juliInvoices {
-		paymentDate := time.Date(2025, time.July, 15+(int(inv.StudentID)%15), 0, 0, 0, 0, time.UTC)
-
-		payment := model.Payment{
-			StudentID:      inv.StudentID,
-			AcademicYearID: activeYear.ID,
-			PaymentDate:    paymentDate,
-			TotalAmount:    inv.TotalAmount,
-			Source:         "cash",
-			CreatedBy:      admin.ID,
-		}
-		if err := db.Create(&payment).Error; err != nil {
-			log.Printf("Gagal membuat payment: %v", err)
-			continue
-		}
-
-		// Create payment items for each invoice item
-		for _, item := range inv.Items {
-			pi := model.PaymentItem{
-				PaymentID:     payment.ID,
-				InvoiceItemID: item.ID,
-				Amount:        item.Amount,
-			}
-			if err := db.Create(&pi).Error; err != nil {
-				log.Printf("Gagal membuat payment item: %v", err)
-			}
-
-			// Update invoice item paid
-			db.Model(&item).Updates(map[string]interface{}{
-				"paid_amount": item.Amount,
-				"status":      "paid",
-			})
-		}
-
-		// Update invoice status
-		db.Model(&inv).Updates(map[string]interface{}{
-			"paid_amount": inv.TotalAmount,
-			"status":      "paid",
+		payCount := int(float64(len(invoices)) * payRate)
+		rng.Shuffle(len(invoices), func(i, j int) {
+			invoices[i], invoices[j] = invoices[j], invoices[i]
 		})
 
-		// Create cash transaction (credit)
-		cashTxn := model.CashTransaction{
-			AcademicYearID:  activeYear.ID,
-			TransactionDate: paymentDate,
-			TransactionType: "credit",
-			Amount:          payment.TotalAmount,
-			SourceType:      "payment",
-			SourceID:        &payment.ID,
-			Description:     fmt.Sprintf("Pembayaran tagihan Juli 2025 - %s", studentNameByID(db, inv.StudentID)),
-			CreatedBy:       admin.ID,
-		}
-		db.Create(&cashTxn)
+		for idx := 0; idx < payCount && idx < len(invoices); idx++ {
+			inv := invoices[idx]
+			payDay := payBaseDate.Day() + (int(inv.StudentID) % 14)
+			if payDay > 28 {
+				payDay = 28
+			}
+			paymentDate := time.Date(payBaseDate.Year(), payBaseDate.Month(), payDay, 0, 0, 0, 0, time.UTC)
 
-		totalPayments++
+			payment := model.Payment{
+				StudentID:      inv.StudentID,
+				AcademicYearID: activeYear.ID,
+				PaymentDate:    paymentDate,
+				TotalAmount:    inv.TotalAmount,
+				Source:         "cash",
+				CreatedBy:      admin.ID,
+			}
+			if err := db.Create(&payment).Error; err != nil {
+				continue
+			}
+
+			for _, item := range inv.Items {
+				db.Create(&model.PaymentItem{PaymentID: payment.ID, InvoiceItemID: item.ID, Amount: item.Amount})
+				db.Model(&item).Updates(map[string]interface{}{"paid_amount": item.Amount, "status": "paid"})
+			}
+			db.Model(&inv).Updates(map[string]interface{}{"paid_amount": inv.TotalAmount, "status": "paid"})
+
+			db.Create(&model.CashTransaction{
+				AcademicYearID:  activeYear.ID,
+				TransactionDate: paymentDate,
+				TransactionType: "credit",
+				Amount:          payment.TotalAmount,
+				SourceType:      "payment",
+				SourceID:        &payment.ID,
+				Description:     fmt.Sprintf("Pembayaran %s - %s", invoiceType, studentNameByID(db, inv.StudentID)),
+				CreatedBy:       admin.ID,
+			})
+			totalPayments++
+		}
 	}
 
-	// === Sample Expenses (10 expenses) ===
-	// Find sub-categories for expenses
+	// Biaya awal: 85% lunas (dibayar sekitar Juli 2025)
+	payInitialAndReg("initial", 0.85, time.Date(2025, time.July, 5, 0, 0, 0, 0, time.UTC))
+	// Registrasi: 75% lunas (dibayar sekitar Juli-Agustus 2025, bisa dicicil sisanya)
+	payInitialAndReg("registration", 0.75, time.Date(2025, time.July, 10, 0, 0, 0, 0, time.UTC))
+
+	// === Payments: tagihan bulanan (distribusi realistis) ===
+	// Bulan lama → lebih banyak lunas, bulan baru → lebih sedikit
+	paymentMonths := []struct {
+		Month      uint
+		Year       uint
+		PayRate    float64 // 0.0 - 1.0 percentage of students who pay
+		PayMonth   time.Month
+		PayYear    int
+		DayOffset  int // base payment day in the month
+	}{
+		{7, 2025, 0.90, time.July, 2025, 15},
+		{8, 2025, 0.85, time.August, 2025, 15},
+		{9, 2025, 0.80, time.September, 2025, 15},
+		{10, 2025, 0.75, time.October, 2025, 15},
+		{11, 2025, 0.70, time.November, 2025, 15},
+		{12, 2025, 0.65, time.December, 2025, 15},
+		{1, 2026, 0.60, time.January, 2026, 15},
+		{2, 2026, 0.55, time.February, 2026, 15},
+		{3, 2026, 0.45, time.March, 2026, 15},
+		{4, 2026, 0.35, time.April, 2026, 15},
+		{5, 2026, 0.20, time.May, 2026, 15},
+		// Juni 2026: belum ada yang bayar (bulan berjalan)
+	}
+
+	for _, pm := range paymentMonths {
+		var invoices []model.Invoice
+		db.Preload("Items").
+			Where("academic_year_id = ? AND month = ? AND year = ? AND type = 'monthly' AND status = 'unpaid'",
+				activeYear.ID, pm.Month, pm.Year).
+			Find(&invoices)
+
+		payCount := int(float64(len(invoices)) * pm.PayRate)
+
+		// Shuffle deterministically then pick first payCount
+		rng.Shuffle(len(invoices), func(i, j int) {
+			invoices[i], invoices[j] = invoices[j], invoices[i]
+		})
+
+		for idx := 0; idx < payCount && idx < len(invoices); idx++ {
+			inv := invoices[idx]
+			payDay := pm.DayOffset + (int(inv.StudentID) % 14)
+			if payDay > 28 {
+				payDay = 28
+			}
+			paymentDate := time.Date(pm.PayYear, pm.PayMonth, payDay, 0, 0, 0, 0, time.UTC)
+
+			payment := model.Payment{
+				StudentID:      inv.StudentID,
+				AcademicYearID: activeYear.ID,
+				PaymentDate:    paymentDate,
+				TotalAmount:    inv.TotalAmount,
+				Source:         "cash",
+				CreatedBy:      admin.ID,
+			}
+			if err := db.Create(&payment).Error; err != nil {
+				continue
+			}
+
+			for _, item := range inv.Items {
+				pi := model.PaymentItem{
+					PaymentID:     payment.ID,
+					InvoiceItemID: item.ID,
+					Amount:        item.Amount,
+				}
+				db.Create(&pi)
+				db.Model(&item).Updates(map[string]interface{}{
+					"paid_amount": item.Amount,
+					"status":      "paid",
+				})
+			}
+
+			db.Model(&inv).Updates(map[string]interface{}{
+				"paid_amount": inv.TotalAmount,
+				"status":      "paid",
+			})
+
+			cashTxn := model.CashTransaction{
+				AcademicYearID:  activeYear.ID,
+				TransactionDate: paymentDate,
+				TransactionType: "credit",
+				Amount:          payment.TotalAmount,
+				SourceType:      "payment",
+				SourceID:        &payment.ID,
+				Description:     fmt.Sprintf("Pembayaran tagihan %s %d - %s", monthName(int(pm.Month)), pm.Year, studentNameByID(db, inv.StudentID)),
+				CreatedBy:       admin.ID,
+			}
+			db.Create(&cashTxn)
+
+			totalPayments++
+		}
+	}
+
+	// === Expenses: spread across 12 months ===
 	var expCategories []model.ExpenseCategory
 	db.Where("parent_id IS NOT NULL").Find(&expCategories)
 
-	sampleExpenses := []struct {
-		Description string
-		Amount      float64
-		DateOffset  int // days from July 1st
-		CatIndex    int // index into expCategories
+	monthlyExpenses := []struct {
+		Month    time.Month
+		Year     int
+		Expenses []struct {
+			Description string
+			Amount      float64
+			Day         int
+			CatIndex    int
+		}
 	}{
-		{"Pembelian ATK kantor", 350000, 3, 0},
-		{"Bayar listrik bulan Juli", 1500000, 5, 1},
-		{"Pembelian alat kebersihan", 275000, 8, 0},
-		{"Honor guru les tambahan", 2000000, 10, 2},
-		{"Perbaikan AC ruang guru", 800000, 14, 1},
-		{"Cetak rapor siswa", 600000, 18, 0},
-		{"Pembelian buku perpustakaan", 1200000, 22, 0},
-		{"Biaya perjalanan dinas", 500000, 25, 1},
-		{"Bayar air PDAM bulan Juli", 450000, 5, 1},
-		{"Pembelian toner printer", 350000, 28, 0},
+		{time.July, 2025, []struct {
+			Description string; Amount float64; Day int; CatIndex int
+		}{
+			{"Pembelian ATK kantor", 350000, 3, 0},
+			{"Bayar listrik bulan Juli", 1500000, 5, 1},
+			{"Honor guru les tambahan", 2000000, 10, 2},
+		}},
+		{time.August, 2025, []struct {
+			Description string; Amount float64; Day int; CatIndex int
+		}{
+			{"Bayar listrik bulan Agustus", 1450000, 5, 1},
+			{"Pembelian alat kebersihan", 275000, 8, 0},
+			{"Dekorasi HUT RI", 500000, 12, 0},
+		}},
+		{time.September, 2025, []struct {
+			Description string; Amount float64; Day int; CatIndex int
+		}{
+			{"Bayar listrik bulan September", 1400000, 5, 1},
+			{"Bayar air PDAM", 450000, 5, 1},
+			{"Cetak rapor siswa", 600000, 18, 0},
+		}},
+		{time.October, 2025, []struct {
+			Description string; Amount float64; Day int; CatIndex int
+		}{
+			{"Bayar listrik bulan Oktober", 1500000, 5, 1},
+			{"Pembelian toner printer", 350000, 10, 0},
+			{"Perbaikan AC ruang guru", 800000, 14, 1},
+		}},
+		{time.November, 2025, []struct {
+			Description string; Amount float64; Day int; CatIndex int
+		}{
+			{"Bayar listrik bulan November", 1350000, 5, 1},
+			{"Pembelian buku perpustakaan", 1200000, 12, 0},
+			{"Biaya perjalanan dinas", 500000, 20, 1},
+		}},
+		{time.December, 2025, []struct {
+			Description string; Amount float64; Day int; CatIndex int
+		}{
+			{"Bayar listrik bulan Desember", 1300000, 5, 1},
+			{"Hampers akhir tahun guru", 750000, 10, 2},
+			{"Perlengkapan acara Natal", 400000, 15, 0},
+		}},
+		{time.January, 2026, []struct {
+			Description string; Amount float64; Day int; CatIndex int
+		}{
+			{"Bayar listrik bulan Januari", 1400000, 5, 1},
+			{"Bayar air PDAM semester 2", 450000, 5, 1},
+			{"Pembelian ATK semester 2", 400000, 8, 0},
+		}},
+		{time.February, 2026, []struct {
+			Description string; Amount float64; Day int; CatIndex int
+		}{
+			{"Bayar listrik bulan Februari", 1350000, 5, 1},
+			{"Pembelian cat tembok kelas", 900000, 12, 1},
+		}},
+		{time.March, 2026, []struct {
+			Description string; Amount float64; Day int; CatIndex int
+		}{
+			{"Bayar listrik bulan Maret", 1400000, 5, 1},
+			{"Biaya field trip mutiara", 1500000, 18, 0},
+			{"Konsumsi rapat wali murid", 350000, 20, 0},
+		}},
+		{time.April, 2026, []struct {
+			Description string; Amount float64; Day int; CatIndex int
+		}{
+			{"Bayar listrik bulan April", 1450000, 5, 1},
+			{"Pembelian alat olahraga", 650000, 10, 0},
+			{"Honor panitia UTS", 1000000, 15, 2},
+		}},
+		{time.May, 2026, []struct {
+			Description string; Amount float64; Day int; CatIndex int
+		}{
+			{"Bayar listrik bulan Mei", 1400000, 5, 1},
+			{"Persiapan wisuda berlian", 2500000, 12, 0},
+			{"Pembelian piala dan sertifikat", 750000, 18, 0},
+		}},
+		{time.June, 2026, []struct {
+			Description string; Amount float64; Day int; CatIndex int
+		}{
+			{"Bayar listrik bulan Juni", 1300000, 5, 1},
+			{"Biaya acara wisuda", 3000000, 10, 0},
+		}},
 	}
 
-	for _, se := range sampleExpenses {
-		catIdx := se.CatIndex
-		if catIdx >= len(expCategories) {
-			catIdx = 0
-		}
+	for _, me := range monthlyExpenses {
+		for _, se := range me.Expenses {
+			catIdx := se.CatIndex
+			if catIdx >= len(expCategories) {
+				catIdx = 0
+			}
 
-		expenseDate := time.Date(2025, time.July, 1+se.DateOffset, 0, 0, 0, 0, time.UTC)
-		expense := model.Expense{
-			AcademicYearID:    activeYear.ID,
-			ExpenseCategoryID: expCategories[catIdx].ID,
-			ExpenseDate:       expenseDate,
-			Amount:            se.Amount,
-			Description:       se.Description,
-			CreatedBy:         admin.ID,
-		}
-		if err := db.Create(&expense).Error; err != nil {
-			log.Printf("Gagal membuat expense: %v", err)
-			continue
-		}
+			expenseDate := time.Date(me.Year, me.Month, se.Day, 0, 0, 0, 0, time.UTC)
+			expense := model.Expense{
+				AcademicYearID:    activeYear.ID,
+				ExpenseCategoryID: expCategories[catIdx].ID,
+				ExpenseDate:       expenseDate,
+				Amount:            se.Amount,
+				Description:       se.Description,
+				CreatedBy:         admin.ID,
+			}
+			if err := db.Create(&expense).Error; err != nil {
+				log.Printf("Gagal membuat expense: %v", err)
+				continue
+			}
 
-		// Create cash transaction (debit)
-		cashTxn := model.CashTransaction{
-			AcademicYearID:  activeYear.ID,
-			TransactionDate: expenseDate,
-			TransactionType: "debit",
-			Amount:          se.Amount,
-			SourceType:      "expense",
-			SourceID:        &expense.ID,
-			Description:     se.Description,
-			CreatedBy:       admin.ID,
-		}
-		db.Create(&cashTxn)
+			cashTxn := model.CashTransaction{
+				AcademicYearID:  activeYear.ID,
+				TransactionDate: expenseDate,
+				TransactionType: "debit",
+				Amount:          se.Amount,
+				SourceType:      "expense",
+				SourceID:        &expense.ID,
+				Description:     se.Description,
+				CreatedBy:       admin.ID,
+			}
+			db.Create(&cashTxn)
 
-		totalExpenses++
+			totalExpenses++
+		}
 	}
 
 	log.Printf("Sample transaction seeder berhasil (%d invoices, %d payments, %d expenses)", totalInvoices, totalPayments, totalExpenses)
@@ -294,4 +596,13 @@ func studentNameByID(db *gorm.DB, id uint) string {
 		return fmt.Sprintf("Siswa #%d", id)
 	}
 	return s.FullName
+}
+
+func findFeeName(category, itemKey string, feeItems []model.FeeConfigItem) string {
+	for _, fi := range feeItems {
+		if fi.Category == category && fi.ItemKey == itemKey {
+			return fi.Name
+		}
+	}
+	return itemKey
 }

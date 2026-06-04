@@ -13,6 +13,7 @@ type ReportService interface {
 	GetAnnualReport(req dto.AnnualReportRequest) (*dto.AnnualReportResponse, error)
 	GetStudentReport(studentID uint, req dto.StudentReportRequest) (*dto.StudentReportResponse, error)
 	GetClassGroupReport(classGroupID uint, req dto.ClassGroupReportRequest) (*dto.ClassGroupReportResponse, error)
+	GetPosisiKas(req dto.PosisiKasRequest) (*dto.PosisiKasResponse, error)
 }
 
 type reportService struct {
@@ -297,5 +298,179 @@ func (s *reportService) GetClassGroupReport(classGroupID uint, req dto.ClassGrou
 			PaymentRate:   paymentRate,
 		},
 		Students: students,
+	}, nil
+}
+
+// invoiceCategoryLabels maps invoice_items.category to display labels
+var invoiceCategoryLabels = map[string]string{
+	"monthly_spp":       "SPP",
+	"monthly_infaq":     "Infaq Harian",
+	"initial":           "Biaya Awal Masuk",
+	"registration":      "Biaya Registrasi",
+	"pasta":             "PASTA",
+	"calisan":           "Calisan",
+	"ekskul":            "Ekskul",
+	"savings_mandatory": "Tabungan Wajib Berlian",
+	"daycare":           "Daycare",
+	"graduation":        "Wisuda",
+}
+
+// invoiceCategoryOrder defines display order for posisi kas report
+var invoiceCategoryOrder = []string{
+	"monthly_spp",
+	"monthly_infaq",
+	"initial",
+	"registration",
+	"pasta",
+	"calisan",
+	"ekskul",
+	"savings_mandatory",
+	"daycare",
+	"graduation",
+}
+
+func (s *reportService) GetPosisiKas(req dto.PosisiKasRequest) (*dto.PosisiKasResponse, error) {
+	academicYearID := utility.ResolveAcademicYear(req.AcademicYearID, s.academicYearRepo)
+	ay, err := s.academicYearRepo.FindByID(academicYearID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Date ranges
+	startOfMonth := time.Date(int(req.Year), time.Month(req.Month), 1, 0, 0, 0, 0, time.UTC)
+	endOfMonth := startOfMonth.AddDate(0, 1, -1)
+	endOfPrevMonth := startOfMonth.AddDate(0, 0, -1)
+
+	// Penerimaan bulan ini per category
+	penerimaanBulan, err := s.reportRepo.SumPenerimaanByInvoiceCategory(academicYearID, startOfMonth, endOfMonth)
+	if err != nil {
+		return nil, err
+	}
+
+	// Pengeluaran bulan ini per category (with details)
+	pengeluaranBulan, err := s.reportRepo.SumPengeluaranByInvoiceCategory(academicYearID, startOfMonth, endOfMonth)
+	if err != nil {
+		return nil, err
+	}
+
+	// Saldo sebelum: penerimaan - pengeluaran from start of AY to end of prev month
+	penerimaanSebelum, err := s.reportRepo.SumPenerimaanByInvoiceCategory(academicYearID, ay.StartDate, endOfPrevMonth)
+	if err != nil {
+		return nil, err
+	}
+
+	pengeluaranSebelumRaw, err := s.reportRepo.SumPengeluaranByInvoiceCategory(academicYearID, ay.StartDate, endOfPrevMonth)
+	if err != nil {
+		return nil, err
+	}
+	// Sum pengeluaran sebelum per category
+	pengeluaranSebelumTotal := make(map[string]float64)
+	for cat, details := range pengeluaranSebelumRaw {
+		for _, d := range details {
+			pengeluaranSebelumTotal[cat] += d.Amount
+		}
+	}
+
+	// Collect all categories that have any data
+	categorySet := make(map[string]bool)
+	for cat := range penerimaanBulan {
+		categorySet[cat] = true
+	}
+	for cat := range pengeluaranBulan {
+		categorySet[cat] = true
+	}
+	for cat := range penerimaanSebelum {
+		categorySet[cat] = true
+	}
+	for cat := range pengeluaranSebelumTotal {
+		categorySet[cat] = true
+	}
+
+	// Build posts in defined order
+	var posts []dto.PosisiKasPost
+	var grandTotal dto.PosisiKasTotal
+
+	for _, cat := range invoiceCategoryOrder {
+		if !categorySet[cat] {
+			continue
+		}
+
+		saldoSebelum := penerimaanSebelum[cat] - pengeluaranSebelumTotal[cat]
+		penerimaan := penerimaanBulan[cat]
+
+		// Sum pengeluaran bulan for this category
+		var totalPengeluaran float64
+		for _, d := range pengeluaranBulan[cat] {
+			totalPengeluaran += d.Amount
+		}
+
+		saldoBulan := penerimaan - totalPengeluaran
+		saldoSampai := saldoSebelum + saldoBulan
+
+		label := cat
+		if l, ok := invoiceCategoryLabels[cat]; ok {
+			label = l
+		}
+
+		posts = append(posts, dto.PosisiKasPost{
+			Name:           label,
+			Category:       cat,
+			SaldoSebelum:   saldoSebelum,
+			Penerimaan:     penerimaan,
+			Pengeluaran:    totalPengeluaran,
+			SaldoBulan:     saldoBulan,
+			SaldoSampai:    saldoSampai,
+			ExpenseDetails: pengeluaranBulan[cat],
+		})
+
+		grandTotal.SaldoSebelum += saldoSebelum
+		grandTotal.Penerimaan += penerimaan
+		grandTotal.Pengeluaran += totalPengeluaran
+		grandTotal.SaldoBulan += saldoBulan
+		grandTotal.SaldoSampai += saldoSampai
+
+		delete(categorySet, cat)
+	}
+
+	// Any categories not in the predefined order
+	for cat := range categorySet {
+		saldoSebelum := penerimaanSebelum[cat] - pengeluaranSebelumTotal[cat]
+		penerimaan := penerimaanBulan[cat]
+		var totalPengeluaran float64
+		for _, d := range pengeluaranBulan[cat] {
+			totalPengeluaran += d.Amount
+		}
+		saldoBulan := penerimaan - totalPengeluaran
+		saldoSampai := saldoSebelum + saldoBulan
+
+		label := cat
+		if l, ok := invoiceCategoryLabels[cat]; ok {
+			label = l
+		}
+
+		posts = append(posts, dto.PosisiKasPost{
+			Name:           label,
+			Category:       cat,
+			SaldoSebelum:   saldoSebelum,
+			Penerimaan:     penerimaan,
+			Pengeluaran:    totalPengeluaran,
+			SaldoBulan:     saldoBulan,
+			SaldoSampai:    saldoSampai,
+			ExpenseDetails: pengeluaranBulan[cat],
+		})
+
+		grandTotal.SaldoSebelum += saldoSebelum
+		grandTotal.Penerimaan += penerimaan
+		grandTotal.Pengeluaran += totalPengeluaran
+		grandTotal.SaldoBulan += saldoBulan
+		grandTotal.SaldoSampai += saldoSampai
+	}
+
+	return &dto.PosisiKasResponse{
+		Month:        req.Month,
+		Year:         req.Year,
+		AcademicYear: ay.Name,
+		Posts:        posts,
+		GrandTotal:   grandTotal,
 	}, nil
 }

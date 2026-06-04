@@ -8,12 +8,13 @@ import (
 )
 
 var defaultExpenseCategories = []struct {
-	Name     string
-	Children []string
+	Name            string
+	InvoiceCategory string // mapping ke invoice_items.category
+	Children        []string
 }{
-	{"Biaya Awal", []string{"Infaq Sarpras", "Infaq APE", "Biaya Psikotes IQ", "Koperasi"}},
-	{"Biaya Registrasi", []string{"Biaya MPLS", "Buku PK Karakter", "Alat Belajar", "Iuran Kegiatan Kecamatan/Kabupaten", "Administrasi LPP", "Kalender", "Koperasi"}},
-	{"SPP", []string{"Gaji Guru"}},
+	{"Biaya Awal", "initial", []string{"Infaq Sarpras", "Infaq APE", "Biaya Psikotes IQ", "Koperasi"}},
+	{"Biaya Registrasi", "registration", []string{"Biaya MPLS", "Buku PK Karakter", "Alat Belajar", "Iuran Kegiatan Kecamatan/Kabupaten", "Administrasi LPP", "Kalender", "Koperasi"}},
+	{"SPP", "monthly_spp", []string{"Gaji Guru"}},
 }
 
 func SeedExpenseCategories(db *gorm.DB) {
@@ -25,7 +26,7 @@ func SeedExpenseCategories(db *gorm.DB) {
 	}
 
 	for _, cat := range defaultExpenseCategories {
-		parent := model.ExpenseCategory{Name: cat.Name}
+		parent := model.ExpenseCategory{Name: cat.Name, InvoiceCategory: cat.InvoiceCategory}
 		if err := db.Create(&parent).Error; err != nil {
 			log.Printf("Gagal membuat kategori '%s': %v", cat.Name, err)
 			continue

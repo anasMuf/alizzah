@@ -14,6 +14,10 @@ type ReportRepository interface {
 	GetMonthlyBreakdown(academicYearID uint) ([]dto.MonthlyBreakdown, error)
 	GetInvoiceSummaryByStudent(studentID uint, academicYearID uint) (*dto.InvoiceSummary, error)
 	GetStudentsByClassGroupForMonth(classGroupID uint, month, year uint, academicYearID uint) ([]dto.StudentPaymentStatusInReport, error)
+
+	// Posisi Kas
+	SumPenerimaanByInvoiceCategory(academicYearID uint, startDate, endDate time.Time) (map[string]float64, error)
+	SumPengeluaranByInvoiceCategory(academicYearID uint, startDate, endDate time.Time) (map[string][]dto.PosisiKasExpense, error)
 }
 
 type reportRepository struct {
@@ -155,4 +159,55 @@ func (r *reportRepository) GetStudentsByClassGroupForMonth(classGroupID uint, mo
 		Scan(&results).Error
 
 	return results, err
+}
+
+// SumPenerimaanByInvoiceCategory: total payment_items grouped by invoice_items.category
+func (r *reportRepository) SumPenerimaanByInvoiceCategory(academicYearID uint, startDate, endDate time.Time) (map[string]float64, error) {
+	type row struct {
+		Category string
+		Total    float64
+	}
+	var rows []row
+
+	err := r.db.Table("payment_items pi").
+		Select("ii.category, SUM(pi.amount) as total").
+		Joins("JOIN invoice_items ii ON ii.id = pi.invoice_item_id").
+		Joins("JOIN payments p ON p.id = pi.payment_id").
+		Where("p.academic_year_id = ? AND p.payment_date BETWEEN ? AND ?", academicYearID, startDate, endDate).
+		Group("ii.category").
+		Scan(&rows).Error
+
+	result := make(map[string]float64)
+	for _, r := range rows {
+		result[r.Category] = r.Total
+	}
+	return result, err
+}
+
+// SumPengeluaranByInvoiceCategory: expenses grouped by parent expense_category's invoice_category, with child details
+func (r *reportRepository) SumPengeluaranByInvoiceCategory(academicYearID uint, startDate, endDate time.Time) (map[string][]dto.PosisiKasExpense, error) {
+	type row struct {
+		InvoiceCategory string
+		ChildName       string
+		Total           float64
+	}
+	var rows []row
+
+	err := r.db.Table("expenses e").
+		Select("pec.invoice_category, ec.name as child_name, SUM(e.amount) as total").
+		Joins("JOIN expense_categories ec ON ec.id = e.expense_category_id").
+		Joins("LEFT JOIN expense_categories pec ON pec.id = ec.parent_id").
+		Where("e.academic_year_id = ? AND e.expense_date BETWEEN ? AND ?", academicYearID, startDate, endDate).
+		Where("pec.invoice_category IS NOT NULL AND pec.invoice_category != ''").
+		Group("pec.invoice_category, ec.name").
+		Scan(&rows).Error
+
+	result := make(map[string][]dto.PosisiKasExpense)
+	for _, r := range rows {
+		result[r.InvoiceCategory] = append(result[r.InvoiceCategory], dto.PosisiKasExpense{
+			Name:   r.ChildName,
+			Amount: r.Total,
+		})
+	}
+	return result, err
 }

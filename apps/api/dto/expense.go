@@ -12,8 +12,9 @@ type ExpenseQueryParams struct {
 
 // Request
 type CreateExpenseCategoryRequest struct {
-	Name     string `json:"name" validate:"required,max=100"`
-	ParentID *uint  `json:"parent_id" validate:"omitempty"`
+	Name            string `json:"name" validate:"required,max=100"`
+	ParentID        *uint  `json:"parent_id" validate:"omitempty"`
+	InvoiceCategory string `json:"invoice_category" validate:"omitempty,max=30"`
 }
 
 type CreateExpenseRequest struct {
@@ -27,10 +28,11 @@ type CreateExpenseRequest struct {
 
 // Response
 type ExpenseCategoryResponse struct {
-	ID       uint                      `json:"id"`
-	Name     string                    `json:"name"`
-	ParentID *uint                     `json:"parent_id"`
-	Children []ExpenseCategoryResponse `json:"children,omitempty"`
+	ID              uint                      `json:"id"`
+	Name            string                    `json:"name"`
+	ParentID        *uint                     `json:"parent_id"`
+	InvoiceCategory string                    `json:"invoice_category,omitempty"`
+	Children        []ExpenseCategoryResponse `json:"children,omitempty"`
 }
 
 type ExpenseResponse struct {

@@ -6,6 +6,7 @@ import {
   User,
   School,
   ArrowRight,
+  Wallet,
 } from 'lucide-react';
 
 export const Route = createFileRoute(
@@ -40,6 +41,15 @@ const REPORT_CARDS = [
     to: '/keuangan/laporan/tahunan',
     color: 'text-purple-600',
     bg: 'bg-purple-50',
+  },
+  {
+    title: 'Posisi Kas',
+    description:
+      'Saldo semua pos pemasukan beserta rincian pengeluaran per pos.',
+    icon: Wallet,
+    to: '/keuangan/laporan/posisi-kas',
+    color: 'text-teal-600',
+    bg: 'bg-teal-50',
   },
   {
     title: 'Rekap per Siswa',

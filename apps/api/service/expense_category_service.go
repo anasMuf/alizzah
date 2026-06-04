@@ -46,8 +46,9 @@ func (s *expenseCategoryService) Create(req dto.CreateExpenseCategoryRequest) (*
 	}
 
 	cat := &model.ExpenseCategory{
-		Name:     req.Name,
-		ParentID: req.ParentID,
+		Name:            req.Name,
+		ParentID:        req.ParentID,
+		InvoiceCategory: req.InvoiceCategory,
 	}
 	if err := s.repo.Create(cat); err != nil {
 		return nil, err
@@ -64,6 +65,7 @@ func (s *expenseCategoryService) Update(id uint, req dto.CreateExpenseCategoryRe
 	}
 
 	cat.Name = req.Name
+	cat.InvoiceCategory = req.InvoiceCategory
 	if err := s.repo.Update(cat); err != nil {
 		return nil, err
 	}
@@ -93,9 +95,10 @@ func (s *expenseCategoryService) Delete(id uint) error {
 
 func mapExpenseCategoryToResponse(cat model.ExpenseCategory) dto.ExpenseCategoryResponse {
 	resp := dto.ExpenseCategoryResponse{
-		ID:       cat.ID,
-		Name:     cat.Name,
-		ParentID: cat.ParentID,
+		ID:              cat.ID,
+		Name:            cat.Name,
+		ParentID:        cat.ParentID,
+		InvoiceCategory: cat.InvoiceCategory,
 	}
 	for _, child := range cat.Children {
 		resp.Children = append(resp.Children, mapExpenseCategoryToResponse(child))

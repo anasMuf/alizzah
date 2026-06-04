@@ -154,6 +154,40 @@ func (h *ReportHandler) ByStudent(c echo.Context) error {
 	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil mengambil laporan siswa", Data: report})
 }
 
+// PosisiKas godoc
+// @Summary      Cash position report
+// @Description  Get cash position report showing balance of all income posts with expense details
+// @Tags         reports
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        month             query  int  true   "Month (1-12)"
+// @Param        year              query  int  true   "Year"
+// @Param        academic_year_id  query  int  false  "Academic Year ID"
+// @Success      200               {object}  dto.SuccessResponse{data=dto.PosisiKasResponse}
+// @Failure      400               {object}  dto.ErrorResponse
+// @Failure      401               {object}  dto.ErrorResponse
+// @Failure      403               {object}  dto.ErrorResponse
+// @Failure      500               {object}  dto.ErrorResponse
+// @Router       /v1/reports/posisi-kas [get]
+func (h *ReportHandler) PosisiKas(c echo.Context) error {
+	var req dto.PosisiKasRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: err.Error()})
+	}
+	if err := c.Validate(req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "VALIDATION_ERROR", Message: err.Error()})
+	}
+
+	report, err := h.service.GetPosisiKas(req)
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{Status: status, Code: code, Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil mengambil laporan posisi kas", Data: report})
+}
+
 // ByClassGroup godoc
 // @Summary      Report by class group
 // @Description  Get financial report for a specific class group

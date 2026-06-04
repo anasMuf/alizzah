@@ -184,3 +184,43 @@ type StudentPaymentStatusInReport struct {
 	PaidAmount    float64 `json:"paid_amount"`
 	UnpaidAmount  float64 `json:"unpaid_amount"`
 }
+
+// ===== Laporan Posisi Kas =====
+
+type PosisiKasRequest struct {
+	Month          uint `query:"month" validate:"required,min=1,max=12"`
+	Year           uint `query:"year" validate:"required"`
+	AcademicYearID uint `query:"academic_year_id"`
+}
+
+type PosisiKasResponse struct {
+	Month        uint               `json:"month"`
+	Year         uint               `json:"year"`
+	AcademicYear string             `json:"academic_year"`
+	Posts        []PosisiKasPost    `json:"posts"`
+	GrandTotal   PosisiKasTotal     `json:"grand_total"`
+}
+
+type PosisiKasPost struct {
+	Name           string                `json:"name"`
+	Category       string                `json:"category"`
+	SaldoSebelum   float64               `json:"saldo_sebelum"`
+	Penerimaan     float64               `json:"penerimaan"`
+	Pengeluaran    float64               `json:"pengeluaran"`
+	SaldoBulan     float64               `json:"saldo_bulan"`
+	SaldoSampai    float64               `json:"saldo_sampai"`
+	ExpenseDetails []PosisiKasExpense    `json:"expense_details"`
+}
+
+type PosisiKasExpense struct {
+	Name   string  `json:"name"`
+	Amount float64 `json:"amount"`
+}
+
+type PosisiKasTotal struct {
+	SaldoSebelum float64 `json:"saldo_sebelum"`
+	Penerimaan   float64 `json:"penerimaan"`
+	Pengeluaran  float64 `json:"pengeluaran"`
+	SaldoBulan   float64 `json:"saldo_bulan"`
+	SaldoSampai  float64 `json:"saldo_sampai"`
+}

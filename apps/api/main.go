@@ -204,7 +204,7 @@ func main() {
 	cashService := service.NewCashService(db, cashTxnRepo, txnWriterService)
 	vaultService := service.NewVaultService(vaultTxnRepo, savingsRepo)
 	dailyClosingService := service.NewDailyClosingService(dailyClosingRepo, cashTxnRepo)
-	reportService := service.NewReportService(reportRepo, ayRepo, cashTxnRepo, vaultTxnRepo, dailyClosingRepo, studentRepo, invoiceRepo, invoiceItemRepo, paymentRepo, savingsService, classGroupRepo)
+	reportService := service.NewReportService(reportRepo, ayRepo, cashTxnRepo, vaultTxnRepo, dailyClosingRepo, studentRepo, invoiceRepo, invoiceItemRepo, paymentRepo, savingsService, classGroupRepo, savingsTxnRepo)
 
 	// Batch 3 (updated with Batch 5+6 dependencies)
 	studentService := service.NewStudentService(db, studentRepo, enrollmentRepo, classGroupRepo, invoiceRepo, savingsService, invoiceGenService)
@@ -453,6 +453,7 @@ func main() {
 	reports.GET("/saldo", reportHandler.Saldo, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah"))
 	reports.GET("/transaksi-pengeluaran", reportHandler.TransaksiPengeluaran, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah"))
 	reports.GET("/tabungan", reportHandler.TabunganReport, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah"))
+	reports.GET("/savings/students/:id", reportHandler.TabunganSiswaReport, middleware.RequireRoles("superadmin", "admin_keuangan"))
 	reports.GET("/students/:id", reportHandler.ByStudent, middleware.RequireRoles("superadmin", "admin_keuangan"))
 	reports.GET("/class-groups/:id", reportHandler.ByClassGroup, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah"))
 

@@ -291,6 +291,41 @@ func (h *ReportHandler) TabunganReport(c echo.Context) error {
 	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil mengambil laporan tabungan", Data: report})
 }
 
+// TabunganSiswaReport godoc
+// @Summary      Savings report per student
+// @Description  Get individual student savings report with running balance for print
+// @Tags         reports
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id          path   int     true   "Student ID"
+// @Param        start_date  query  string  false  "Start Date (YYYY-MM-DD)"
+// @Param        end_date    query  string  false  "End Date (YYYY-MM-DD)"
+// @Success      200         {object}  dto.SuccessResponse{data=dto.TabunganSiswaReportResponse}
+// @Failure      400         {object}  dto.ErrorResponse
+// @Failure      401         {object}  dto.ErrorResponse
+// @Failure      404         {object}  dto.ErrorResponse
+// @Router       /v1/reports/savings/students/{id} [get]
+func (h *ReportHandler) TabunganSiswaReport(c echo.Context) error {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: "ID siswa tidak valid"})
+	}
+
+	var req dto.TabunganSiswaReportRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: err.Error()})
+	}
+
+	report, err := h.service.GetTabunganSiswaReport(uint(id), req)
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{Status: status, Code: code, Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil mengambil laporan tabungan siswa", Data: report})
+}
+
 // ByClassGroup godoc
 // @Summary      Report by class group
 // @Description  Get financial report for a specific class group

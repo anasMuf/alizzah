@@ -74,3 +74,63 @@ export function useGetReportsTabungan(
     ...options?.query,
   });
 }
+
+// ===== Laporan Tabungan Per Siswa =====
+
+export interface TabunganSiswaParams {
+  start_date?: string;
+  end_date?: string;
+}
+
+export interface TabunganSiswaRow {
+  date: string;
+  type: string;
+  description: string;
+  debit: number;
+  credit: number;
+  saldo: number;
+}
+
+export interface TabunganSiswaReportData {
+  student: { id: number; full_name: string; class_group: string };
+  period: { start_date: string; end_date: string };
+  saldo_awal: number;
+  rows: TabunganSiswaRow[];
+  total_debit: number;
+  total_credit: number;
+  saldo_akhir: number;
+}
+
+interface TabunganSiswaApiResponse {
+  data: { message: string; data: TabunganSiswaReportData };
+  status: number;
+}
+
+export const getReportsTabunganSiswa = async (
+  studentId: number,
+  params?: TabunganSiswaParams,
+  options?: RequestInit,
+): Promise<TabunganSiswaApiResponse> => {
+  return customInstance<TabunganSiswaApiResponse>(`/v1/reports/savings/students/${studentId}`, {
+    ...options,
+    method: 'GET',
+    params: params as unknown as Record<string, unknown>,
+  });
+};
+
+export function useGetReportsTabunganSiswa(
+  studentId: number,
+  params?: TabunganSiswaParams,
+  options?: { query?: Partial<UseQueryOptions<TabunganSiswaApiResponse>> },
+) {
+  const queryKey = [`/v1/reports/savings/students/${studentId}`, ...(params ? [params] : [])] as const;
+  const queryFn = ({ signal }: { signal: AbortSignal }) =>
+    getReportsTabunganSiswa(studentId, params, { signal });
+
+  return useQuery({
+    queryKey,
+    queryFn,
+    enabled: !!studentId,
+    ...options?.query,
+  } as any);
+}

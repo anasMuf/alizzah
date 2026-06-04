@@ -323,3 +323,40 @@ type TabunganReportRow struct {
 	Selisih     float64 `json:"selisih"`
 	Saldo       float64 `json:"saldo"`
 }
+
+// ===== Laporan Tabungan Per Siswa =====
+
+type TabunganSiswaReportRequest struct {
+	StartDate string `query:"start_date"` // opsional, default: awal tahun ajaran aktif
+	EndDate   string `query:"end_date"`   // opsional, default: hari ini
+}
+
+type TabunganSiswaReportResponse struct {
+	Student     TabunganSiswaStudent `json:"student"`
+	Period      TabunganSiswaPeriod  `json:"period"`
+	SaldoAwal   float64              `json:"saldo_awal"`
+	Rows        []TabunganSiswaRow   `json:"rows"`
+	TotalDebit  float64              `json:"total_debit"`
+	TotalCredit float64              `json:"total_credit"`
+	SaldoAkhir  float64              `json:"saldo_akhir"`
+}
+
+type TabunganSiswaStudent struct {
+	ID         uint   `json:"id"`
+	FullName   string `json:"full_name"`
+	ClassGroup string `json:"class_group"`
+}
+
+type TabunganSiswaPeriod struct {
+	StartDate string `json:"start_date"`
+	EndDate   string `json:"end_date"`
+}
+
+type TabunganSiswaRow struct {
+	Date        string  `json:"date"`
+	Type        string  `json:"type"`        // deposit | withdrawal | usage | allocation | return
+	Description string  `json:"description"`
+	Debit       float64 `json:"debit"`       // masuk (setoran)
+	Credit      float64 `json:"credit"`      // keluar (penarikan)
+	Saldo       float64 `json:"saldo"`       // running balance
+}

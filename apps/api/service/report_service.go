@@ -4,6 +4,7 @@ import (
 	"api/dto"
 	"api/repository"
 	"api/utility"
+	"fmt"
 	"time"
 )
 
@@ -17,6 +18,7 @@ type ReportService interface {
 	GetSaldo(req dto.SaldoRequest) (*dto.SaldoResponse, error)
 	GetTransaksiPengeluaran(req dto.TransaksiPengeluaranRequest) (*dto.TransaksiPengeluaranResponse, error)
 	GetTabunganReport(req dto.TabunganReportRequest) (*dto.TabunganReportResponse, error)
+	GetTabunganSiswaReport(studentID uint, req dto.TabunganSiswaReportRequest) (*dto.TabunganSiswaReportResponse, error)
 }
 
 type reportService struct {
@@ -31,6 +33,7 @@ type reportService struct {
 	paymentRepo      repository.PaymentRepository
 	savingsService   SavingsService
 	classGroupRepo   repository.ClassGroupRepository
+	savingsTxnRepo   repository.SavingsTransactionRepository
 }
 
 func NewReportService(
@@ -45,6 +48,7 @@ func NewReportService(
 	paymentRepo repository.PaymentRepository,
 	savingsService SavingsService,
 	classGroupRepo repository.ClassGroupRepository,
+	savingsTxnRepo repository.SavingsTransactionRepository,
 ) ReportService {
 	return &reportService{
 		reportRepo:       reportRepo,
@@ -58,6 +62,7 @@ func NewReportService(
 		paymentRepo:      paymentRepo,
 		savingsService:   savingsService,
 		classGroupRepo:   classGroupRepo,
+		savingsTxnRepo:   savingsTxnRepo,
 	}
 }
 
@@ -752,5 +757,112 @@ func (s *reportService) GetTabunganReport(req dto.TabunganReportRequest) (*dto.T
 			Selisih:     totalCredit - totalDebit,
 		},
 		SaldoAkhir: runningBalance,
+	}, nil
+}
+
+func (s *reportService) GetTabunganSiswaReport(studentID uint, req dto.TabunganSiswaReportRequest) (*dto.TabunganSiswaReportResponse, error) {
+	// Get student info
+	student, err := s.studentRepo.FindByID(studentID)
+	if err != nil {
+		return nil, fmt.Errorf("siswa tidak ditemukan")
+	}
+
+	// Determine period
+	var startDate, endDate time.Time
+	if req.StartDate != "" {
+		startDate, _ = time.Parse("2006-01-02", req.StartDate)
+	} else {
+		// Default: awal tahun ajaran aktif
+		ay, _ := s.academicYearRepo.FindActive()
+		if ay != nil {
+			startDate = ay.StartDate
+		} else {
+			startDate = time.Date(time.Now().Year(), 7, 1, 0, 0, 0, 0, time.UTC)
+		}
+	}
+	if req.EndDate != "" {
+		endDate, _ = time.Parse("2006-01-02", req.EndDate)
+	} else {
+		endDate = time.Now()
+	}
+
+	// Get class group name
+	classGroupName := ""
+	for _, enr := range student.Enrollments {
+		if enr.Status == "active" {
+			classGroupName = enr.ClassGroup.Name
+			break
+		}
+	}
+
+	// Saldo awal = sum credits - sum debits before startDate
+	creditBefore, _ := s.savingsTxnRepo.SumCreditByStudentBefore(studentID, startDate)
+	debitBefore, _ := s.savingsTxnRepo.SumDebitByStudentBefore(studentID, startDate)
+	saldoAwal := creditBefore - debitBefore
+
+	// Get all transactions in period
+	txns, err := s.savingsTxnRepo.FindAllByStudentID(studentID, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+
+	// Build rows with running balance
+	var rows []dto.TabunganSiswaRow
+	runningBalance := saldoAwal
+	var totalDebit, totalCredit float64
+
+	sourceTypeLabels := map[string]string{
+		"payment_deposit":        "Setoran via pembayaran",
+		"guardian_withdrawal":    "Penarikan oleh wali murid",
+		"payment_usage":          "Alokasi untuk pembayaran tagihan",
+		"graduation_allocation":  "Alokasi untuk wisuda",
+		"transfer_return":        "Pengembalian sisa tabungan wajib",
+	}
+
+	for _, txn := range txns {
+		debit := float64(0)
+		credit := float64(0)
+		if txn.TransactionType == "credit" {
+			debit = txn.NetAmount
+			totalDebit += debit
+		} else {
+			credit = txn.NetAmount
+			totalCredit += credit
+		}
+		runningBalance += debit - credit
+
+		desc := sourceTypeLabels[txn.SourceType]
+		if desc == "" {
+			desc = txn.SourceType
+		}
+		if txn.Notes != "" {
+			desc = txn.Notes
+		}
+
+		rows = append(rows, dto.TabunganSiswaRow{
+			Date:        txn.CreatedAt.Format("2006-01-02"),
+			Type:        txn.SourceType,
+			Description: desc,
+			Debit:       debit,
+			Credit:      credit,
+			Saldo:       runningBalance,
+		})
+	}
+
+	return &dto.TabunganSiswaReportResponse{
+		Student: dto.TabunganSiswaStudent{
+			ID:         student.ID,
+			FullName:   student.FullName,
+			ClassGroup: classGroupName,
+		},
+		Period: dto.TabunganSiswaPeriod{
+			StartDate: startDate.Format("2006-01-02"),
+			EndDate:   endDate.Format("2006-01-02"),
+		},
+		SaldoAwal:   saldoAwal,
+		Rows:        rows,
+		TotalDebit:  totalDebit,
+		TotalCredit: totalCredit,
+		SaldoAkhir:  runningBalance,
 	}, nil
 }

@@ -82,7 +82,7 @@ export function Sidebar({ isOpen }: SidebarProps) {
                   <NavLink to="/keuangan/tagihan" icon={FileText}>Tagihan</NavLink>
                   <NavLink to="/keuangan/pembayaran" icon={CreditCard}>Pembayaran</NavLink>
                   <NavLink to="/keuangan/tabungan" icon={PiggyBank}>Tabungan</NavLink>
-                  <NavLink to="/keuangan/pengeluaran" icon={TrendingDown}>Pengeluaran</NavLink>
+                  <NavLink to="/keuangan/pengeluaran" icon={TrendingDown} exact>Pengeluaran</NavLink>
                   <NavLink to="/keuangan/pengeluaran/kategori" icon={FolderTree}>Kategori Pengeluaran</NavLink>
                   <NavLink to="/keuangan/kas" icon={Vault}>Kas & Berangkas</NavLink>
                 </>

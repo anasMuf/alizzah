@@ -15,6 +15,9 @@ const config = defineConfig({
     tanstackRouter({ target: 'react', autoCodeSplitting: true }),
     viteReact(),
   ],
+  server: {
+    allowedHosts: ['react-grab.com', '4ac5-182-253-216-67.ngrok-free.app']
+  }
 })
 
 export default config

@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alizzah Ecosystem — Module Diagram</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .header h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #38bdf8, #818cf8, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      color: #94a3b8;
+      font-size: 0.95rem;
+    }
+
+    .phase-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .phase-active {
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+
+    .phase-planned {
+      background: rgba(148, 163, 184, 0.1);
+      color: #94a3b8;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+
+    /* Central Hub */
+    .hub {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 40px;
+    }
+
+    .hub-core {
+      background: linear-gradient(135deg, #1e293b, #334155);
+      border: 2px solid #475569;
+      border-radius: 20px;
+      padding: 28px 48px;
+      text-align: center;
+      position: relative;
+    }
+
+    .hub-core::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #38bdf8, #818cf8, #c084fc);
+      z-index: -1;
+      opacity: 0.5;
+    }
+
+    .hub-core h2 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #f1f5f9;
+      margin-bottom: 4px;
+    }
+
+    .hub-core p {
+      color: #94a3b8;
+      font-size: 0.8rem;
+    }
+
+    .hub-icon {
+      font-size: 2rem;
+      margin-bottom: 8px;
+    }
+
+    /* Modules Grid */
+    .modules-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+
+    .module-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 24px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .module-card:hover {
+      border-color: #475569;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+
+    .module-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+    }
+
+    .module-card.blue::before { background: linear-gradient(90deg, #38bdf8, #0ea5e9); }
+    .module-card.purple::before { background: linear-gradient(90deg, #a78bfa, #8b5cf6); }
+    .module-card.green::before { background: linear-gradient(90deg, #4ade80, #22c55e); }
+    .module-card.amber::before { background: linear-gradient(90deg, #fbbf24, #f59e0b); }
+    .module-card.rose::before { background: linear-gradient(90deg, #fb7185, #f43f5e); }
+
+    .module-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .module-title-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .module-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      flex-shrink: 0;
+    }
+
+    .module-card.blue .module-icon { background: rgba(56, 189, 248, 0.15); }
+    .module-card.purple .module-icon { background: rgba(167, 139, 250, 0.15); }
+    .module-card.green .module-icon { background: rgba(74, 222, 128, 0.15); }
+    .module-card.amber .module-icon { background: rgba(251, 191, 36, 0.15); }
+    .module-card.rose .module-icon { background: rgba(251, 113, 133, 0.15); }
+
+    .module-number {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .module-name {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+
+    .module-platform {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 6px;
+      font-size: 0.65rem;
+      font-weight: 600;
+      background: rgba(100, 116, 139, 0.2);
+      color: #94a3b8;
+      border: 1px solid rgba(100, 116, 139, 0.2);
+    }
+
+    .module-desc {
+      color: #94a3b8;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+
+    .sub-modules {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .sub-module {
+      padding: 5px 12px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      background: rgba(100, 116, 139, 0.1);
+      color: #cbd5e1;
+      border: 1px solid rgba(100, 116, 139, 0.15);
+    }
+
+    .module-card.blue .sub-module { background: rgba(56, 189, 248, 0.08); border-color: rgba(56, 189, 248, 0.15); }
+    .module-card.purple .sub-module { background: rgba(167, 139, 250, 0.08); border-color: rgba(167, 139, 250, 0.15); }
+    .module-card.green .sub-module { background: rgba(74, 222, 128, 0.08); border-color: rgba(74, 222, 128, 0.15); }
+    .module-card.amber .sub-module { background: rgba(251, 191, 36, 0.08); border-color: rgba(251, 191, 36, 0.15); }
+    .module-card.rose .sub-module { background: rgba(251, 113, 133, 0.08); border-color: rgba(251, 113, 133, 0.15); }
+
+    /* Connection Lines Section */
+    .connections {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 28px;
+      margin-bottom: 40px;
+    }
+
+    .connections h3 {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #f1f5f9;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .conn-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 12px;
+    }
+
+    .conn-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: rgba(100, 116, 139, 0.08);
+      border-radius: 10px;
+      font-size: 0.8rem;
+      color: #94a3b8;
+    }
+
+    .conn-arrow {
+      color: #64748b;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    /* Tech Stack */
+    .tech-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      padding: 20px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+    }
+
+    .tech-item {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: rgba(100, 116, 139, 0.15);
+      color: #94a3b8;
+    }
+
+    /* Full-width card */
+    .module-card.full-width {
+      grid-column: 1 / -1;
+    }
+
+    .sub-group {
+      margin-bottom: 12px;
+    }
+
+    .sub-group-title {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    /* Responsive */
+    @media (max-width: 720px) {
+      .modules-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1>Alizzah Ecosystem</h1>
+      <p>Platform Digital Terpadu untuk Manajemen Sekolah KB/TK</p>
+    </div>
+
+    <!-- Central Hub -->
+    <div class="hub">
+      <div class="hub-core">
+        <div class="hub-icon">🏫</div>
+        <h2>Alizzah Platform</h2>
+        <p>Go API + PostgreSQL (Shared Backend)</p>
+      </div>
+    </div>
+
+    <!-- Module Cards -->
+    <div class="modules-grid">
+
+      <!-- Module 1: Website Profil -->
+      <div class="module-card blue">
+        <div class="module-header">
+          <div class="module-title-group">
+            <div class="module-icon">🌐</div>
+            <div>
+              <div class="module-number">Modul 1</div>
+              <div class="module-name">Website Profil Sekolah</div>
+            </div>
+          </div>
+          <div>
+            <span class="module-platform">🖥 Web Publik</span>
+            <div style="margin-top: 6px; text-align: right;">
+              <span class="phase-badge phase-planned">Planned</span>
+            </div>
+          </div>
+        </div>
+        <p class="module-desc">Landing page publik sebagai wajah digital sekolah. Informasi sekolah, program, galeri kegiatan, dan kontak.</p>
+        <div class="sub-modules">
+          <span class="sub-module">Profil Sekolah</span>
+          <span class="sub-module">Program & Kurikulum</span>
+          <span class="sub-module">Galeri Kegiatan</span>
+          <span class="sub-module">Berita & Pengumuman</span>
+          <span class="sub-module">Kontak & Lokasi</span>
+        </div>
+      </div>
+
+      <!-- Module 2: PPDB Online -->
+      <div class="module-card purple">
+        <div class="module-header">
+          <div class="module-title-group">
+            <div class="module-icon">📝</div>
+            <div>
+              <div class="module-number">Modul 2</div>
+              <div class="module-name">PPDB Online</div>
+            </div>
+          </div>
+          <div>
+            <span class="module-platform">🖥 Web Publik</span>
+            <div style="margin-top: 6px; text-align: right;">
+              <span class="phase-badge phase-planned">Planned</span>
+            </div>
+          </div>
+        </div>
+        <p class="module-desc">Pendaftaran murid baru secara online. Wali murid bisa mendaftar, mengisi formulir, dan memantau status penerimaan.</p>
+        <div class="sub-modules">
+          <span class="sub-module">Formulir Pendaftaran</span>
+          <span class="sub-module">Upload Dokumen</span>
+          <span class="sub-module">Seleksi & Verifikasi</span>
+          <span class="sub-module">Pengumuman Hasil</span>
+          <span class="sub-module">Registrasi Ulang</span>
+        </div>
+      </div>
+
+      <!-- Module 3: Dashboard Manajemen (Full Width) -->
+      <div class="module-card green full-width">
+        <div class="module-header">
+          <div class="module-title-group">
+            <div class="module-icon">📊</div>
+            <div>
+              <div class="module-number">Modul 3 — Core Platform</div>
+              <div class="module-name">Dashboard Manajemen</div>
+            </div>
+          </div>
+          <div>
+            <span class="module-platform">🖥 Web Internal</span>
+            <div style="margin-top: 6px; text-align: right;">
+              <span class="phase-badge phase-active">Fase 1 — In Progress</span>
+            </div>
+          </div>
+        </div>
+        <p class="module-desc">Dashboard terpusat untuk seluruh operasional sekolah. Diakses oleh Superadmin, Admin Administrasi, Admin Keuangan, Kepala Sekolah, dan Yayasan sesuai peran masing-masing (RBAC).</p>
+
+        <div class="sub-group">
+          <div class="sub-group-title">Administrasi ✅ Fase 1</div>
+          <div class="sub-modules" style="margin-bottom: 10px;">
+            <span class="sub-module">Tahun Ajaran</span>
+            <span class="sub-module">Data Siswa & Wali</span>
+            <span class="sub-module">Rombel</span>
+            <span class="sub-module">Siklus Akademik</span>
+            <span class="sub-module">Kalender Akademik</span>
+          </div>
+        </div>
+
+        <div class="sub-group">
+          <div class="sub-group-title">Keuangan ✅ Fase 1</div>
+          <div class="sub-modules" style="margin-bottom: 10px;">
+            <span class="sub-module">Konfigurasi Tarif</span>
+            <span class="sub-module">Tagihan</span>
+            <span class="sub-module">Pembayaran</span>
+            <span class="sub-module">Tabungan</span>
+            <span class="sub-module">Pengeluaran</span>
+            <span class="sub-module">Kas & Berangkas</span>
+            <span class="sub-module">Laporan Keuangan</span>
+          </div>
+        </div>
+
+        <div class="sub-group">
+          <div class="sub-group-title">SDM / HR 🔜 Planned</div>
+          <div class="sub-modules" style="margin-bottom: 10px;">
+            <span class="sub-module">Data Karyawan</span>
+            <span class="sub-module">Absensi</span>
+            <span class="sub-module">Penggajian</span>
+            <span class="sub-module">Cuti & Izin</span>
+          </div>
+        </div>
+
+        <div class="sub-group">
+          <div class="sub-group-title">Inventory Koperasi 🔜 Planned</div>
+          <div class="sub-modules">
+            <span class="sub-module">Stok Barang</span>
+            <span class="sub-module">Transaksi Jual</span>
+            <span class="sub-module">Laporan Koperasi</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Module 4: Mobile Guru -->
+      <div class="module-card amber">
+        <div class="module-header">
+          <div class="module-title-group">
+            <div class="module-icon">👩‍🏫</div>
+            <div>
+              <div class="module-number">Modul 4</div>
+              <div class="module-name">Mobile App — Guru & Karyawan</div>
+            </div>
+          </div>
+          <div>
+            <span class="module-platform">📱 Mobile</span>
+            <div style="margin-top: 6px; text-align: right;">
+              <span class="phase-badge phase-planned">Planned</span>
+            </div>
+          </div>
+        </div>
+        <p class="module-desc">Aplikasi mobile untuk guru dan karyawan sekolah. Akses cepat ke informasi internal, absensi, dan tugas harian.</p>
+        <div class="sub-modules">
+          <span class="sub-module">Absensi Harian</span>
+          <span class="sub-module">Info & Pengumuman</span>
+          <span class="sub-module">Jadwal Mengajar</span>
+          <span class="sub-module">Slip Gaji</span>
+          <span class="sub-module">Pengajuan Cuti</span>
+        </div>
+      </div>
+
+      <!-- Module 5: Mobile Wali Murid -->
+      <div class="module-card rose">
+        <div class="module-header">
+          <div class="module-title-group">
+            <div class="module-icon">👨‍👩‍👧</div>
+            <div>
+              <div class="module-number">Modul 5</div>
+              <div class="module-name">Mobile App — Wali Murid</div>
+            </div>
+          </div>
+          <div>
+            <span class="module-platform">📱 Mobile</span>
+            <div style="margin-top: 6px; text-align: right;">
+              <span class="phase-badge phase-planned">Planned</span>
+            </div>
+          </div>
+        </div>
+        <p class="module-desc">Pengganti buku bayar fisik. Wali murid bisa memantau tagihan, riwayat pembayaran, tabungan anak, dan informasi sekolah langsung dari HP.</p>
+        <div class="sub-modules">
+          <span class="sub-module">Info Tagihan & Pembayaran</span>
+          <span class="sub-module">Riwayat Transaksi</span>
+          <span class="sub-module">Saldo Tabungan</span>
+          <span class="sub-module">Notifikasi</span>
+          <span class="sub-module">Info Anak & Kelas</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Connections -->
+    <div class="connections">
+      <h3>Integrasi Antar Modul</h3>
+      <div class="conn-grid">
+        <div class="conn-item">
+          <span>📝 PPDB</span>
+          <span class="conn-arrow">→</span>
+          <span>📊 Data siswa otomatis masuk ke Administrasi</span>
+        </div>
+        <div class="conn-item">
+          <span>📊 Siklus Akademik</span>
+          <span class="conn-arrow">→</span>
+          <span>💰 Trigger generate tagihan otomatis</span>
+        </div>
+        <div class="conn-item">
+          <span>💰 Keuangan</span>
+          <span class="conn-arrow">→</span>
+          <span>📱 Wali murid lihat tagihan & bayar real-time</span>
+        </div>
+        <div class="conn-item">
+          <span>👩‍🏫 SDM/HR</span>
+          <span class="conn-arrow">→</span>
+          <span>📱 Guru akses absensi & slip gaji via mobile</span>
+        </div>
+        <div class="conn-item">
+          <span>🌐 Website</span>
+          <span class="conn-arrow">→</span>
+          <span>📝 Link langsung ke formulir PPDB Online</span>
+        </div>
+        <div class="conn-item">
+          <span>📊 Semua Modul</span>
+          <span class="conn-arrow">→</span>
+          <span>🏫 Shared API Backend (Go + PostgreSQL)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tech Stack -->
+    <div class="tech-bar">
+      <span class="tech-item">Go (Echo)</span>
+      <span class="tech-item">PostgreSQL</span>
+      <span class="tech-item">React 19</span>
+      <span class="tech-item">TanStack</span>
+      <span class="tech-item">Tailwind v4</span>
+      <span class="tech-item">Vite</span>
+      <span class="tech-item">Nx Monorepo</span>
+      <span class="tech-item">JWT + RBAC</span>
+      <span class="tech-item">Orval (Codegen)</span>
+      <span class="tech-item">React Native / Flutter (TBD)</span>
+    </div>
+  </div>
+</body>
+</html>

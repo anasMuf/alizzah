@@ -24,7 +24,7 @@ func NewFeeConfigRepository(db *gorm.DB) FeeConfigRepository {
 
 func (r *feeConfigRepository) FindAll() ([]model.FeeConfig, error) {
 	var fcs []model.FeeConfig
-	err := r.db.Preload("AcademicYear").Order("created_at DESC").Find(&fcs).Error
+	err := r.db.Preload("AcademicYear").Preload("Items").Order("created_at DESC").Find(&fcs).Error
 	return fcs, err
 }
 

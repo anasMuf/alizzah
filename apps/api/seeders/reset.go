@@ -51,6 +51,7 @@ var AvailableGroups = map[string]SeederGroup{
 	"transactions": {
 		Tables: []string{
 			"daily_closings",
+			"income_transactions",
 			"cash_transactions",
 			"vault_transactions",
 			"expenses",
@@ -72,6 +73,8 @@ var AvailableGroups = map[string]SeederGroup{
 var allTablesOrdered = []string{
 	// Batch 7
 	"daily_closings",
+	// Income transactions
+	"income_transactions",
 	// Batch 6
 	"cash_transactions",
 	"vault_transactions",

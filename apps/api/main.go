@@ -74,6 +74,8 @@ func main() {
 		&model.VaultTransaction{},
 		// Batch 7
 		&model.DailyClosing{},
+		// Income transactions
+		&model.IncomeTransaction{},
 	); err != nil {
 		log.Fatal("Gagal AutoMigrate:", err)
 	}
@@ -112,7 +114,8 @@ func main() {
 	seeders.SeedExpenseCategories(db)  // 6. Kategori Pengeluaran
 	seeders.SeedStudentsFromLegacy(db) // 7. Siswa + Enrollment + Savings (depends on #1,2,3)
 	seeders.SeedEffectiveDays(db)      // 8. Hari Efektif (depends on #3)
-	seeders.SeedSampleTransactions(db) // 9. Sample Tagihan/Bayar/Pengeluaran (depends on #5,7,8)
+	seeders.SeedSampleTransactions(db)  // 9. Sample Tagihan/Bayar/Pengeluaran (depends on #5,7,8)
+	seeders.SeedIncomeTransactions(db)  // 10. Sample Penerimaan Dana Bantuan (depends on #2)
 
 	// Data migrations / fixes
 	seeders.FixClassGroupSchedules(db) // Fix schedule JSON format from old "groups" to "weekdays/weekend"
@@ -193,6 +196,10 @@ func main() {
 	expCatService := service.NewExpenseCategoryService(expCatRepo)
 	expenseService := service.NewExpenseService(db, expenseRepo, expCatRepo, ayRepo, txnWriterService)
 
+	// Income transactions
+	incomeRepo := repository.NewIncomeTransactionRepository(db)
+	incomeService := service.NewIncomeTransactionService(db, incomeRepo, ayRepo, txnWriterService)
+
 	// Batch 7
 	cashService := service.NewCashService(db, cashTxnRepo, txnWriterService)
 	vaultService := service.NewVaultService(vaultTxnRepo, savingsRepo)
@@ -243,6 +250,9 @@ func main() {
 	savingsHandler := handler.NewSavingsHandler(savingsService)
 	expCatHandler := handler.NewExpenseCategoryHandler(expCatService)
 	expenseHandler := handler.NewExpenseHandler(expenseService)
+
+	// Income transactions
+	incomeHandler := handler.NewIncomeTransactionHandler(incomeService)
 
 	// Batch 7
 	cashHandler := handler.NewCashHandler(cashService)
@@ -407,6 +417,14 @@ func main() {
 	expenses.GET("/:id", expenseHandler.Get)
 	expenses.PUT("/:id", expenseHandler.Update)
 	expenses.DELETE("/:id", expenseHandler.Delete)
+
+	// Income Transactions (Dana Bantuan)
+	incomes := api.Group("/income-transactions", middleware.JWTAuth, middleware.RequireRoles("superadmin", "admin_keuangan"))
+	incomes.GET("", incomeHandler.List)
+	incomes.POST("", incomeHandler.Create)
+	incomes.GET("/:id", incomeHandler.Get)
+	incomes.PUT("/:id", incomeHandler.Update)
+	incomes.DELETE("/:id", incomeHandler.Delete)
 
 	// Batch 7: Cash
 	cash := api.Group("/cash", middleware.JWTAuth)

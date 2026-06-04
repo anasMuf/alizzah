@@ -1,0 +1,193 @@
+package service
+
+import (
+	"api/dto"
+	"api/model"
+	"api/repository"
+	"errors"
+	"fmt"
+	"time"
+
+	"gorm.io/gorm"
+)
+
+type IncomeTransactionService interface {
+	GetAll(params dto.IncomeTransactionQueryParams) ([]dto.IncomeTransactionResponse, *dto.Meta, error)
+	GetByID(id uint) (*dto.IncomeTransactionResponse, error)
+	Create(createdBy uint, req dto.CreateIncomeTransactionRequest) (*dto.IncomeTransactionResponse, error)
+	Update(id uint, req dto.CreateIncomeTransactionRequest) (*dto.IncomeTransactionResponse, error)
+	Delete(id uint) error
+}
+
+type incomeTransactionService struct {
+	db        *gorm.DB
+	repo      repository.IncomeTransactionRepository
+	ayRepo    repository.AcademicYearRepository
+	txnWriter TransactionWriterService
+}
+
+func NewIncomeTransactionService(
+	db *gorm.DB,
+	repo repository.IncomeTransactionRepository,
+	ayRepo repository.AcademicYearRepository,
+	txnWriter TransactionWriterService,
+) IncomeTransactionService {
+	return &incomeTransactionService{
+		db:        db,
+		repo:      repo,
+		ayRepo:    ayRepo,
+		txnWriter: txnWriter,
+	}
+}
+
+func (s *incomeTransactionService) GetAll(params dto.IncomeTransactionQueryParams) ([]dto.IncomeTransactionResponse, *dto.Meta, error) {
+	txns, total, err := s.repo.FindAll(params)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var responses []dto.IncomeTransactionResponse
+	for _, t := range txns {
+		responses = append(responses, mapIncomeTransactionToResponse(t))
+	}
+
+	page := params.Page
+	if page < 1 {
+		page = 1
+	}
+	limit := params.Limit
+	if limit < 1 {
+		limit = 20
+	}
+
+	meta := &dto.Meta{Page: page, Limit: limit, Total: total}
+	return responses, meta, nil
+}
+
+func (s *incomeTransactionService) GetByID(id uint) (*dto.IncomeTransactionResponse, error) {
+	it, err := s.repo.FindByID(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("Transaksi penerimaan tidak ditemukan")
+		}
+		return nil, err
+	}
+	resp := mapIncomeTransactionToResponse(*it)
+	return &resp, nil
+}
+
+func (s *incomeTransactionService) Create(createdBy uint, req dto.CreateIncomeTransactionRequest) (*dto.IncomeTransactionResponse, error) {
+	txnDate, _ := time.Parse("2006-01-02", req.TransactionDate)
+
+	locked, _ := s.repo.IsDateLocked(txnDate)
+	if locked {
+		return nil, errors.New("Tanggal sudah dikunci oleh tutup buku")
+	}
+
+	categoryLabels := map[string]string{
+		"bos":     "Dana BOS",
+		"donasi":  "Donasi",
+		"hibah":   "Hibah",
+		"lainnya": "Penerimaan Lainnya",
+	}
+
+	var income model.IncomeTransaction
+	err := s.db.Transaction(func(tx *gorm.DB) error {
+		income = model.IncomeTransaction{
+			AcademicYearID:  req.AcademicYearID,
+			Category:        req.Category,
+			SourceName:      req.SourceName,
+			Amount:          req.Amount,
+			TransactionDate: txnDate,
+			ReferenceNumber: req.ReferenceNumber,
+			Notes:           req.Notes,
+			CreatedBy:       createdBy,
+		}
+		if err := s.repo.CreateWithTx(&income, tx); err != nil {
+			return err
+		}
+
+		label := categoryLabels[req.Category]
+		desc := fmt.Sprintf("%s: %s", label, req.SourceName)
+		return s.txnWriter.WriteCashCredit(
+			req.AcademicYearID, txnDate, req.Amount,
+			"income", &income.ID, desc, createdBy, tx,
+		)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	saved, _ := s.repo.FindByID(income.ID)
+	resp := mapIncomeTransactionToResponse(*saved)
+	return &resp, nil
+}
+
+func (s *incomeTransactionService) Update(id uint, req dto.CreateIncomeTransactionRequest) (*dto.IncomeTransactionResponse, error) {
+	it, err := s.repo.FindByID(id)
+	if err != nil {
+		return nil, errors.New("Transaksi penerimaan tidak ditemukan")
+	}
+
+	locked, _ := s.repo.IsDateLocked(it.TransactionDate)
+	if locked {
+		return nil, errors.New("Tanggal sudah dikunci oleh tutup buku")
+	}
+
+	txnDate, _ := time.Parse("2006-01-02", req.TransactionDate)
+	it.AcademicYearID = req.AcademicYearID
+	it.Category = req.Category
+	it.SourceName = req.SourceName
+	it.Amount = req.Amount
+	it.TransactionDate = txnDate
+	it.ReferenceNumber = req.ReferenceNumber
+	it.Notes = req.Notes
+
+	if err := s.repo.Update(it); err != nil {
+		return nil, err
+	}
+
+	saved, _ := s.repo.FindByID(id)
+	resp := mapIncomeTransactionToResponse(*saved)
+	return &resp, nil
+}
+
+func (s *incomeTransactionService) Delete(id uint) error {
+	it, err := s.repo.FindByID(id)
+	if err != nil {
+		return errors.New("Transaksi penerimaan tidak ditemukan")
+	}
+
+	locked, _ := s.repo.IsDateLocked(it.TransactionDate)
+	if locked {
+		return errors.New("Tanggal sudah dikunci oleh tutup buku")
+	}
+
+	return s.repo.Delete(id)
+}
+
+func mapIncomeTransactionToResponse(it model.IncomeTransaction) dto.IncomeTransactionResponse {
+	resp := dto.IncomeTransactionResponse{
+		ID: it.ID,
+		AcademicYear: dto.AcademicYearBriefResponse{
+			ID:   it.AcademicYear.ID,
+			Name: it.AcademicYear.Name,
+		},
+		Category:        it.Category,
+		SourceName:      it.SourceName,
+		Amount:          it.Amount,
+		TransactionDate: it.TransactionDate.Format("2006-01-02"),
+		CreatedBy: dto.UserBriefResponse{
+			ID:       it.Creator.ID,
+			FullName: it.Creator.FullName,
+		},
+		CreatedAt: it.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+	}
+	if it.ReferenceNumber != "" {
+		resp.ReferenceNumber = &it.ReferenceNumber
+	}
+	if it.Notes != "" {
+		resp.Notes = &it.Notes
+	}
+	return resp
+}

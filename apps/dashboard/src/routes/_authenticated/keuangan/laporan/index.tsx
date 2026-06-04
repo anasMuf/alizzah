@@ -8,6 +8,7 @@ import {
   ArrowRight,
   Wallet,
   BarChart3,
+  Receipt,
 } from 'lucide-react';
 
 export const Route = createFileRoute(
@@ -60,6 +61,15 @@ const REPORT_CARDS = [
     to: '/keuangan/laporan/saldo',
     color: 'text-cyan-600',
     bg: 'bg-cyan-50',
+  },
+  {
+    title: 'Transaksi Pengeluaran',
+    description:
+      'Daftar semua transaksi pengeluaran per bulan dalam format blok/kartu.',
+    icon: Receipt,
+    to: '/keuangan/laporan/pengeluaran',
+    color: 'text-orange-600',
+    bg: 'bg-orange-50',
   },
   {
     title: 'Rekap per Siswa',

@@ -260,3 +260,39 @@ type SaldoTotalBulan struct {
 	Pengeluaran float64 `json:"pengeluaran"`
 	Selisih     float64 `json:"selisih"`
 }
+
+// ===== Laporan Transaksi Pengeluaran =====
+
+type TransaksiPengeluaranRequest struct {
+	Month          uint `query:"month" validate:"required,min=1,max=12"`
+	Year           uint `query:"year" validate:"required"`
+	AcademicYearID uint `query:"academic_year_id"`
+}
+
+type TransaksiPengeluaranResponse struct {
+	Month        uint                        `json:"month"`
+	Year         uint                        `json:"year"`
+	AcademicYear string                      `json:"academic_year"`
+	Transactions []TransaksiPengeluaranBlock `json:"transactions"`
+	GrandTotal   float64                     `json:"grand_total"`
+}
+
+type TransaksiPengeluaranBlock struct {
+	ID              uint                        `json:"id"`
+	TransactionDate string                      `json:"transaction_date"`
+	Source          string                      `json:"source"`
+	TotalAmount     float64                     `json:"total_amount"`
+	TotalTerbilang  string                      `json:"total_terbilang"`
+	Description     string                      `json:"description"`
+	CategoryName    string                      `json:"category_name"`
+	CreatedByName   string                      `json:"created_by_name"`
+	CreatedAt       string                      `json:"created_at"`
+	Items           []TransaksiPengeluaranItem  `json:"items"`
+}
+
+type TransaksiPengeluaranItem struct {
+	No           int     `json:"no"`
+	CategoryName string  `json:"category_name"`
+	Description  string  `json:"description"`
+	Amount       float64 `json:"amount"`
+}

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"api/dto"
+	"api/model"
 	"time"
 
 	"gorm.io/gorm"
@@ -18,6 +19,9 @@ type ReportRepository interface {
 	// Posisi Kas
 	SumPenerimaanByInvoiceCategory(academicYearID uint, startDate, endDate time.Time) (map[string]float64, error)
 	SumPengeluaranByInvoiceCategory(academicYearID uint, startDate, endDate time.Time) (map[string][]dto.PosisiKasExpense, error)
+
+	// Transaksi Pengeluaran
+	FindExpensesForMonth(academicYearID uint, startDate, endDate time.Time) ([]model.Expense, error)
 
 	// Saldo Per Pos / Semua Pos
 	DailyPenerimaan(academicYearID uint, startDate, endDate time.Time, category string) (map[string]float64, error)
@@ -314,4 +318,17 @@ func (r *reportRepository) SumPengeluaran(academicYearID uint, startDate, endDat
 
 	err := query.Scan(&total).Error
 	return total, err
+}
+
+// FindExpensesForMonth: all expenses in a month with category + creator preloaded
+func (r *reportRepository) FindExpensesForMonth(academicYearID uint, startDate, endDate time.Time) ([]model.Expense, error) {
+	var expenses []model.Expense
+	err := r.db.
+		Preload("ExpenseCategory").
+		Preload("ExpenseCategory.Parent").
+		Preload("Creator").
+		Where("academic_year_id = ? AND expense_date BETWEEN ? AND ?", academicYearID, startDate, endDate).
+		Order("expense_date ASC, created_at ASC").
+		Find(&expenses).Error
+	return expenses, err
 }

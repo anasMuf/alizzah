@@ -15,6 +15,7 @@ type ReportService interface {
 	GetClassGroupReport(classGroupID uint, req dto.ClassGroupReportRequest) (*dto.ClassGroupReportResponse, error)
 	GetPosisiKas(req dto.PosisiKasRequest) (*dto.PosisiKasResponse, error)
 	GetSaldo(req dto.SaldoRequest) (*dto.SaldoResponse, error)
+	GetTransaksiPengeluaran(req dto.TransaksiPengeluaranRequest) (*dto.TransaksiPengeluaranResponse, error)
 }
 
 type reportService struct {
@@ -593,4 +594,71 @@ func sortStrings(s []string) {
 			s[j], s[j-1] = s[j-1], s[j]
 		}
 	}
+}
+
+func (s *reportService) GetTransaksiPengeluaran(req dto.TransaksiPengeluaranRequest) (*dto.TransaksiPengeluaranResponse, error) {
+	academicYearID := utility.ResolveAcademicYear(req.AcademicYearID, s.academicYearRepo)
+	ay, err := s.academicYearRepo.FindByID(academicYearID)
+	if err != nil {
+		return nil, err
+	}
+
+	startOfMonth := time.Date(int(req.Year), time.Month(req.Month), 1, 0, 0, 0, 0, time.UTC)
+	endOfMonth := startOfMonth.AddDate(0, 1, -1)
+
+	expenses, err := s.reportRepo.FindExpensesForMonth(academicYearID, startOfMonth, endOfMonth)
+	if err != nil {
+		return nil, err
+	}
+
+	var transactions []dto.TransaksiPengeluaranBlock
+	var grandTotal float64
+
+	for _, exp := range expenses {
+		// Category name: use parent if available, else child
+		categoryName := exp.ExpenseCategory.Name
+		parentName := ""
+		if exp.ExpenseCategory.Parent != nil {
+			parentName = exp.ExpenseCategory.Parent.Name
+		}
+
+		// Description for block header: parent category name or child
+		keterangan := parentName
+		if keterangan == "" {
+			keterangan = categoryName
+		}
+
+		createdByName := exp.Creator.FullName
+
+		block := dto.TransaksiPengeluaranBlock{
+			ID:              exp.ID,
+			TransactionDate: exp.ExpenseDate.Format("2006-01-02"),
+			Source:          "cash", // currently all cash
+			TotalAmount:     exp.Amount,
+			TotalTerbilang:  utility.Terbilang(exp.Amount),
+			Description:     keterangan,
+			CategoryName:    keterangan,
+			CreatedByName:   createdByName,
+			CreatedAt:       exp.CreatedAt.Format("2006-01-02 15:04:05"),
+			Items: []dto.TransaksiPengeluaranItem{
+				{
+					No:           1,
+					CategoryName: categoryName,
+					Description:  exp.Description,
+					Amount:       exp.Amount,
+				},
+			},
+		}
+
+		transactions = append(transactions, block)
+		grandTotal += exp.Amount
+	}
+
+	return &dto.TransaksiPengeluaranResponse{
+		Month:        req.Month,
+		Year:         req.Year,
+		AcademicYear: ay.Name,
+		Transactions: transactions,
+		GrandTotal:   grandTotal,
+	}, nil
 }

@@ -49,13 +49,15 @@ type InvoiceDetailResponse struct {
 
 // Response — Item
 type InvoiceItemResponse struct {
-	ID          uint    `json:"id"`
-	Name        string  `json:"name"`
-	Category    string  `json:"category"`
-	Amount      float64 `json:"amount"`
-	PaidAmount  float64 `json:"paid_amount"`
-	Status      string  `json:"status"`
-	IsMandatory bool    `json:"is_mandatory"`
+	ID          uint     `json:"id"`
+	Name        string   `json:"name"`
+	Category    string   `json:"category"`
+	Amount      float64  `json:"amount"`
+	PaidAmount  float64  `json:"paid_amount"`
+	Status      string   `json:"status"`
+	IsMandatory bool     `json:"is_mandatory"`
+	Quantity    *uint    `json:"quantity,omitempty"`
+	UnitPrice   *float64 `json:"unit_price,omitempty"`
 }
 
 // Request — Add Item
@@ -69,6 +71,11 @@ type AddInvoiceItemRequest struct {
 type UpdateInvoiceItemRequest struct {
 	Name   string  `json:"name" validate:"required,max=100"`
 	Amount float64 `json:"amount" validate:"required,min=1"`
+}
+
+// Request — Update Item Quantity (override hari efektif per item)
+type UpdateInvoiceItemQuantityRequest struct {
+	Quantity uint `json:"quantity" validate:"required,min=1"`
 }
 
 // Response — Installment

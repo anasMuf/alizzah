@@ -300,10 +300,13 @@ func SeedSampleTransactions(db *gorm.DB) {
 			if !hasEd {
 				infaqNotes = "Menunggu input hari efektif"
 			}
+			infaqUnitPrice := infaqPerDay
 			items = append(items, model.InvoiceItem{
 				Name:        fmt.Sprintf("Infaq Harian %s (%d hari)", monthName(int(tm.Month)), infaqDays),
 				Category:    "monthly_infaq",
 				Amount:      infaqTotal,
+				Quantity:    &infaqDays,
+				UnitPrice:   &infaqUnitPrice,
 				IsMandatory: true,
 				Notes:       infaqNotes,
 			})
@@ -322,13 +325,17 @@ func SeedSampleTransactions(db *gorm.DB) {
 
 			// Berlian: tabungan wajib
 			if level == "berlian" && hasEd {
-				tabAmount := findFee("savings_mandatory", "tabungan_wajib", level) * float64(ed.TotalMondays)
+				tabUnitPrice := findFee("savings_mandatory", "tabungan_wajib", level)
+				tabAmount := tabUnitPrice * float64(ed.TotalMondays)
 				if tabAmount > 0 {
 					totalAmount += tabAmount
+					tabMondays := ed.TotalMondays
 					items = append(items, model.InvoiceItem{
 						Name:        fmt.Sprintf("Tabungan Wajib %s (%d Senin)", monthName(int(tm.Month)), ed.TotalMondays),
 						Category:    "savings_mandatory",
 						Amount:      tabAmount,
+						Quantity:    &tabMondays,
+						UnitPrice:   &tabUnitPrice,
 						IsMandatory: true,
 					})
 				}

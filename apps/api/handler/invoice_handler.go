@@ -306,6 +306,81 @@ func (h *InvoiceHandler) UpdateItem(c echo.Context) error {
 	})
 }
 
+// UpdateItemQuantity godoc
+// @Summary      Update invoice item quantity
+// @Description  Update the quantity (number of days/Mondays) of a specific invoice item. Only applicable to items with per_day or per_monday unit pricing.
+// @Tags         invoices
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id       path      int                                    true  "Invoice ID"
+// @Param        item_id  path      int                                    true  "Item ID"
+// @Param        request  body      dto.UpdateInvoiceItemQuantityRequest   true  "New quantity"
+// @Success      200      {object}  dto.SuccessResponse{data=dto.InvoiceItemResponse}
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      401      {object}  dto.ErrorResponse
+// @Failure      403      {object}  dto.ErrorResponse
+// @Failure      404      {object}  dto.ErrorResponse
+// @Failure      422      {object}  dto.ErrorResponse
+// @Failure      500      {object}  dto.ErrorResponse
+// @Router       /v1/invoices/{id}/items/{item_id}/quantity [put]
+func (h *InvoiceHandler) UpdateItemQuantity(c echo.Context) error {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status:  http.StatusBadRequest,
+			Code:    "BAD_REQUEST",
+			Message: "ID invoice tidak valid",
+		})
+	}
+	itemID, err := strconv.Atoi(c.Param("item_id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status:  http.StatusBadRequest,
+			Code:    "BAD_REQUEST",
+			Message: "ID item tidak valid",
+		})
+	}
+
+	var req dto.UpdateInvoiceItemQuantityRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status:  http.StatusBadRequest,
+			Code:    "BAD_REQUEST",
+			Message: err.Error(),
+		})
+	}
+	if err := c.Validate(req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status:  http.StatusBadRequest,
+			Code:    "VALIDATION_ERROR",
+			Message: err.Error(),
+		})
+	}
+
+	item, err := h.service.UpdateItemQuantity(uint(id), uint(itemID), req)
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		errMsg := err.Error()
+		if errMsg == "Item ini bukan item berbasis kuantitas (per hari/per Senin)" ||
+			errMsg == "Item sudah lunas, tidak bisa diubah" ||
+			errMsg == "Nominal baru tidak boleh kurang dari jumlah yang sudah dibayar" {
+			status = http.StatusUnprocessableEntity
+			code = "UNPROCESSABLE_ENTITY"
+		}
+		return c.JSON(status, dto.ErrorResponse{
+			Status:  status,
+			Code:    code,
+			Message: err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "Berhasil memperbarui jumlah hari/Senin item tagihan",
+		Data:    item,
+	})
+}
+
 // DeleteItem godoc
 // @Summary      Delete invoice item
 // @Description  Delete an item from an invoice

@@ -371,6 +371,7 @@ func main() {
 	invoices.GET("/:id", invoiceHandler.Get)
 	invoices.POST("/:id/items", invoiceHandler.AddItem)
 	invoices.PUT("/:id/items/:item_id", invoiceHandler.UpdateItem)
+	invoices.PUT("/:id/items/:item_id/quantity", invoiceHandler.UpdateItemQuantity)
 	invoices.DELETE("/:id/items/:item_id", invoiceHandler.DeleteItem)
 	invoices.GET("/:id/installments", invoiceHandler.GetInstallments)
 	invoices.POST("/:id/installments", invoiceHandler.CreateInstallments)

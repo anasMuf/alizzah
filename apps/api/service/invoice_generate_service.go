@@ -184,10 +184,13 @@ func (s *invoiceGenerateService) GenerateMonthly(params dto.GenerateMonthlyInvoi
 			amount = 0
 			notes = "Menunggu input hari efektif"
 		}
+		unitPrice := item.Amount
 		invoiceItems = append(invoiceItems, model.InvoiceItem{
 			Name:        fmt.Sprintf("%s (%d hari)", item.Name, totalDays),
 			Category:    item.Category,
 			Amount:      amount,
+			Quantity:    &totalDays,
+			UnitPrice:   &unitPrice,
 			IsMandatory: true,
 			Notes:       notes,
 		})
@@ -235,10 +238,13 @@ func (s *invoiceGenerateService) GenerateMonthly(params dto.GenerateMonthlyInvoi
 				totalMondays = effectiveDays.TotalMondays
 				amount = item.Amount * float64(totalMondays)
 			}
+			unitPrice := item.Amount
 			invoiceItems = append(invoiceItems, model.InvoiceItem{
 				Name:        fmt.Sprintf("%s (%d Senin)", item.Name, totalMondays),
 				Category:    "savings_mandatory",
 				Amount:      amount,
+				Quantity:    &totalMondays,
+				UnitPrice:   &unitPrice,
 				IsMandatory: true,
 			})
 		}
@@ -369,6 +375,12 @@ func (s *invoiceGenerateService) RecalculateInfaqHarian(classGroupID, month, yea
 		needsRecalc := false
 		for _, item := range items {
 			if item.Category == "monthly_infaq" {
+				// Skip item yang sudah di-override manual per siswa
+				// Override terdeteksi jika quantity berbeda dari effective_days.TotalDays
+				if item.Quantity != nil && *item.Quantity != effectiveDays.TotalDays {
+					continue
+				}
+
 				// Get the infaq rate from fee config
 				feeConfig, _ := s.feeConfigRepo.FindByAcademicYearID(invoice.AcademicYearID)
 				if feeConfig == nil {
@@ -380,15 +392,21 @@ func (s *invoiceGenerateService) RecalculateInfaqHarian(classGroupID, month, yea
 				}
 
 				newAmount := infaqFeeItems[0].Amount * float64(effectiveDays.TotalDays)
+				newQuantity := effectiveDays.TotalDays
+				unitPrice := infaqFeeItems[0].Amount
 
 				if item.PaidAmount == 0 {
 					item.Amount = newAmount
+					item.Quantity = &newQuantity
+					item.UnitPrice = &unitPrice
 					item.Name = fmt.Sprintf("%s (%d hari)", infaqFeeItems[0].Name, effectiveDays.TotalDays)
 					item.Notes = ""
 					s.invoiceItemRepo.Update(&item)
 					needsRecalc = true
 				} else if newAmount >= item.PaidAmount {
 					item.Amount = newAmount
+					item.Quantity = &newQuantity
+					item.UnitPrice = &unitPrice
 					item.Name = fmt.Sprintf("%s (%d hari)", infaqFeeItems[0].Name, effectiveDays.TotalDays)
 					s.invoiceItemRepo.Update(&item)
 					needsRecalc = true
@@ -397,6 +415,11 @@ func (s *invoiceGenerateService) RecalculateInfaqHarian(classGroupID, month, yea
 			}
 
 			if item.Category == "savings_mandatory" && enrollment.ClassGroup.Level == "berlian" {
+				// Skip item yang sudah di-override manual per siswa
+				if item.Quantity != nil && *item.Quantity != effectiveDays.TotalMondays {
+					continue
+				}
+
 				feeConfig, _ := s.feeConfigRepo.FindByAcademicYearID(invoice.AcademicYearID)
 				if feeConfig == nil {
 					continue
@@ -407,14 +430,20 @@ func (s *invoiceGenerateService) RecalculateInfaqHarian(classGroupID, month, yea
 				}
 
 				newAmount := mandatoryItems[0].Amount * float64(effectiveDays.TotalMondays)
+				newQuantity := effectiveDays.TotalMondays
+				unitPrice := mandatoryItems[0].Amount
 
 				if item.PaidAmount == 0 {
 					item.Amount = newAmount
+					item.Quantity = &newQuantity
+					item.UnitPrice = &unitPrice
 					item.Name = fmt.Sprintf("%s (%d Senin)", mandatoryItems[0].Name, effectiveDays.TotalMondays)
 					s.invoiceItemRepo.Update(&item)
 					needsRecalc = true
 				} else if newAmount >= item.PaidAmount {
 					item.Amount = newAmount
+					item.Quantity = &newQuantity
+					item.UnitPrice = &unitPrice
 					item.Name = fmt.Sprintf("%s (%d Senin)", mandatoryItems[0].Name, effectiveDays.TotalMondays)
 					s.invoiceItemRepo.Update(&item)
 					needsRecalc = true

@@ -3,14 +3,15 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAtom } from 'jotai';
 import { ChevronRight, Plus, Printer, Edit2, Trash2, CalendarDays } from 'lucide-react';
-import { 
-  useGetV1InvoicesId, 
+import {
+  useGetV1InvoicesId,
   useGetV1InvoicesIdInstallments,
   usePostV1InvoicesIdItems,
   useDeleteV1InvoicesIdItemsItemId,
   usePutV1InvoicesIdItemsItemId,
   usePostV1InvoicesIdInstallments
 } from '../../../../api/endpoints/invoices/invoices';
+import { usePutV1InvoicesIdItemsItemIdQuantity } from '../../../../api/endpoints/invoices/invoice-quantity';
 import { useGetV1FeeConfigs, useGetV1FeeConfigsIdItems } from '../../../../api/endpoints/fee-configs/fee-configs';
 import { academicYearAtom } from '../../../../store/global';
 import { Badge } from '../../../../components/atoms/Badge';
@@ -115,7 +116,14 @@ function DetailTagihanPage() {
 
   // Validasi tombol submit
   const canSubmit = useMemo(() => {
-    if (editingItem) return !!itemName && Number(itemAmount) > 0;
+    if (editingItem) {
+      // Item berbasis kuantitas: validasi unitQuantity
+      if (editingItem.quantity != null && editingItem.unit_price != null) {
+        return Number(unitQuantity) > 0;
+      }
+      // Item flat: validasi nama dan nominal
+      return !!itemName && Number(itemAmount) > 0;
+    }
     if (!selectedFeeItemId) return false;
     if (selectedFeeItemId === 'custom') {
       return !!itemName && Number(itemAmount) > 0;
@@ -130,7 +138,7 @@ function DetailTagihanPage() {
     mutation: {
       onSuccess: () => {
         addToast({ variant: 'success', title: 'Berhasil', message: 'Item berhasil ditambahkan.' });
-        queryClient.invalidateQueries({ queryKey: ['/v1/invoices', Number(id)] });
+        queryClient.invalidateQueries({ queryKey: [`/v1/invoices/${id}`] });
         setIsAddItemOpen(false);
       },
       onError: (err: any) => {
@@ -143,7 +151,7 @@ function DetailTagihanPage() {
     mutation: {
       onSuccess: () => {
         addToast({ variant: 'success', title: 'Berhasil', message: 'Item berhasil diubah.' });
-        queryClient.invalidateQueries({ queryKey: ['/v1/invoices', Number(id)] });
+        queryClient.invalidateQueries({ queryKey: [`/v1/invoices/${id}`] });
         setEditingItem(null);
       },
       onError: (err: any) => {
@@ -156,7 +164,7 @@ function DetailTagihanPage() {
     mutation: {
       onSuccess: () => {
         addToast({ variant: 'success', title: 'Berhasil', message: 'Item berhasil dihapus.' });
-        queryClient.invalidateQueries({ queryKey: ['/v1/invoices', Number(id)] });
+        queryClient.invalidateQueries({ queryKey: [`/v1/invoices/${id}`] });
         setDeletingItem(null);
       },
       onError: (err: any) => {
@@ -165,11 +173,24 @@ function DetailTagihanPage() {
     }
   });
 
+  const quantityMutation = usePutV1InvoicesIdItemsItemIdQuantity({
+    mutation: {
+      onSuccess: () => {
+        addToast({ variant: 'success', title: 'Berhasil', message: 'Jumlah hari/Senin berhasil diubah.' });
+        queryClient.invalidateQueries({ queryKey: [`/v1/invoices/${id}`] });
+        setEditingItem(null);
+      },
+      onError: (err: any) => {
+        addToast({ variant: 'error', title: 'Gagal', message: err.message || 'Gagal mengubah jumlah.' });
+      }
+    }
+  });
+
   const installmentsMutation = usePostV1InvoicesIdInstallments({
     mutation: {
       onSuccess: () => {
         addToast({ variant: 'success', title: 'Berhasil', message: 'Jadwal cicilan berhasil disimpan.' });
-        queryClient.invalidateQueries({ queryKey: ['/v1/invoices', Number(id), 'installments'] });
+        queryClient.invalidateQueries({ queryKey: [`/v1/invoices/${id}/installments`] });
         setIsInstallmentOpen(false);
       },
       onError: (err: any) => {
@@ -241,20 +262,35 @@ function DetailTagihanPage() {
     setItemName(item.name);
     setItemAmount(item.amount.toString());
     setItemCategory(item.category || 'incidental');
+    // Pre-fill quantity for per_day/per_monday items
+    if (item.quantity != null) {
+      setUnitQuantity(item.quantity.toString());
+    } else {
+      setUnitQuantity('');
+    }
     setEditingItem(item);
   };
 
   const handleSaveItem = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingItem) {
-      editItemMutation.mutate({
-        id: Number(id),
-        itemId: editingItem.id,
-        data: {
-          name: itemName,
-          amount: Number(itemAmount)
-        }
-      });
+      // Jika item punya quantity (per_day/per_monday), gunakan endpoint quantity
+      if (editingItem.quantity != null && editingItem.unit_price != null) {
+        quantityMutation.mutate({
+          invoiceId: Number(id),
+          itemId: editingItem.id,
+          data: { quantity: Number(unitQuantity) }
+        });
+      } else {
+        editItemMutation.mutate({
+          id: Number(id),
+          itemId: editingItem.id,
+          data: {
+            name: itemName,
+            amount: Number(itemAmount)
+          }
+        });
+      }
     } else {
       let finalName = itemName;
       let finalAmount = Number(itemAmount);
@@ -427,6 +463,8 @@ function DetailTagihanPage() {
                 const itemSisa = itemTotal - itemPaid;
                 const isPaid = itemPaid >= itemTotal;
                 const isPartial = itemPaid > 0 && !isPaid;
+                const hasQuantity = item.quantity != null && item.unit_price != null;
+                const unitLabel = item.category === 'savings_mandatory' ? 'Senin' : 'hari';
 
                 return (
                   <li key={item.id} className="p-4 sm:px-6 hover:bg-gray-50">
@@ -443,13 +481,22 @@ function DetailTagihanPage() {
                           )}
                         </div>
                         {item.category === 'incidental' && <p className="text-xs text-gray-500 mt-1">Tagihan Tambahan/Insidental</p>}
+
+                        {/* Quantity breakdown info */}
+                        {hasQuantity && (
+                          <div className="mt-1.5">
+                            <span className="text-xs text-gray-500">
+                              {item.quantity} {unitLabel} &times; {formatCurrency(item.unit_price)}
+                            </span>
+                          </div>
+                        )}
                       </div>
                       <div className="text-right ml-4">
                         <div className="text-sm font-semibold text-gray-900">{formatCurrency(itemTotal)}</div>
                         {!isPaid && (
                           <div className="mt-2 flex gap-2 justify-end">
-                            <button 
-                              type="button" 
+                            <button
+                              type="button"
                               className={`text-xs flex items-center font-medium ${itemPaid > 0 ? 'text-gray-400 cursor-not-allowed' : 'text-indigo-600 hover:text-indigo-800'}`}
                               onClick={() => handleOpenEditItem(item)}
                               disabled={itemPaid > 0}
@@ -457,8 +504,8 @@ function DetailTagihanPage() {
                             >
                               <Edit2 className="w-3 h-3 mr-1" /> Edit
                             </button>
-                            <button 
-                              type="button" 
+                            <button
+                              type="button"
                               className={`text-xs flex items-center font-medium ${itemPaid > 0 || item.is_mandatory ? 'text-gray-400 cursor-not-allowed' : 'text-rose-600 hover:text-rose-800'}`}
                               onClick={() => {
                                 if (itemPaid === 0 && !item.is_mandatory) setDeletingItem(item);
@@ -616,8 +663,50 @@ function DetailTagihanPage() {
 
             {/* === FORM FIELDS BERDASARKAN UNIT TYPE === */}
 
-            {/* Mode Edit — field nama dan nominal bebas diedit */}
-            {editingItem && (
+            {/* Mode Edit — item berbasis kuantitas (per_day/per_monday) */}
+            {editingItem && editingItem.quantity != null && editingItem.unit_price != null && (
+              <>
+                <FormField
+                  id="itemName"
+                  label="Nama Item"
+                  value={itemName}
+                  onChange={() => {}}
+                  disabled
+                />
+                <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                  <div className="text-xs text-gray-500 mb-1">
+                    Tarif per {editingItem.category === 'savings_mandatory' ? 'Senin' : 'Hari'}
+                  </div>
+                  <div className="text-sm font-semibold text-gray-900">
+                    {formatCurrency(editingItem.unit_price)} / {editingItem.category === 'savings_mandatory' ? 'Senin' : 'hari'}
+                  </div>
+                </div>
+                <FormField
+                  id="editUnitQuantity"
+                  type="number"
+                  label={editingItem.category === 'savings_mandatory' ? 'Jumlah Senin' : 'Jumlah Hari'}
+                  value={unitQuantity}
+                  onChange={(e: any) => setUnitQuantity(e.target.value)}
+                  required
+                  min="1"
+                  placeholder={editingItem.category === 'savings_mandatory' ? 'Masukkan jumlah Senin' : 'Masukkan jumlah hari efektif'}
+                />
+                {Number(unitQuantity) > 0 && (
+                  <div className="bg-indigo-50 rounded-md p-3 border border-indigo-200">
+                    <div className="text-xs text-indigo-600 mb-1">Total</div>
+                    <div className="text-lg font-bold text-indigo-700">
+                      {formatCurrency(Number(unitQuantity) * editingItem.unit_price)}
+                    </div>
+                    <div className="text-xs text-indigo-500 mt-0.5">
+                      {formatCurrency(editingItem.unit_price)} &times; {unitQuantity} {editingItem.category === 'savings_mandatory' ? 'Senin' : 'hari'}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Mode Edit — item flat (tanpa kuantitas) */}
+            {editingItem && (editingItem.quantity == null || editingItem.unit_price == null) && (
               <>
                 <FormField
                   id="itemName"

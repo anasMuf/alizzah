@@ -9,6 +9,8 @@ type InvoiceItem struct {
 	PaidAmount  float64 `gorm:"type:decimal(15,2);not null;default:0"`
 	Status      string  `gorm:"size:20;not null;default:unpaid"` // unpaid | partial | paid
 	IsMandatory bool    `gorm:"default:true"`
+	Quantity    *uint    `gorm:""`                   // jumlah hari/senin (nil = item fixed/flat)
+	UnitPrice   *float64 `gorm:"type:decimal(15,2)"` // harga satuan per hari/senin (nil = item fixed/flat)
 	Notes       string  `gorm:"type:text"`
 	BaseModelTimeAt
 

@@ -6,6 +6,9 @@ import (
 	"api/repository"
 	"api/utility"
 	"errors"
+	"fmt"
+	"regexp"
+	"strconv"
 
 	"gorm.io/gorm"
 )
@@ -17,6 +20,7 @@ type InvoiceService interface {
 	// Item management
 	AddItem(invoiceID uint, req dto.AddInvoiceItemRequest) (*dto.InvoiceItemResponse, error)
 	UpdateItem(invoiceID, itemID uint, req dto.UpdateInvoiceItemRequest) (*dto.InvoiceItemResponse, error)
+	UpdateItemQuantity(invoiceID, itemID uint, req dto.UpdateInvoiceItemQuantityRequest) (*dto.InvoiceItemResponse, error)
 	DeleteItem(invoiceID, itemID uint) error
 	// Installment management
 	GetInstallments(invoiceID uint) ([]dto.InstallmentResponse, error)
@@ -142,6 +146,46 @@ func (s *invoiceService) UpdateItem(invoiceID, itemID uint, req dto.UpdateInvoic
 
 	item.Name = req.Name
 	item.Amount = req.Amount
+	if err := s.itemRepo.Update(item); err != nil {
+		return nil, err
+	}
+
+	if err := s.RecalculateTotalAmount(invoiceID, nil); err != nil {
+		return nil, err
+	}
+
+	resp := mapInvoiceItemToResponse(*item)
+	return &resp, nil
+}
+
+func (s *invoiceService) UpdateItemQuantity(invoiceID, itemID uint, req dto.UpdateInvoiceItemQuantityRequest) (*dto.InvoiceItemResponse, error) {
+	item, err := s.itemRepo.FindByID(itemID)
+	if err != nil || item.InvoiceID != invoiceID {
+		return nil, errors.New("Item tidak ditemukan pada invoice ini")
+	}
+
+	if item.UnitPrice == nil {
+		return nil, errors.New("Item ini bukan item berbasis kuantitas (per hari/per Senin)")
+	}
+
+	if item.Status == "paid" {
+		return nil, errors.New("Item sudah lunas, tidak bisa diubah")
+	}
+
+	newAmount := *item.UnitPrice * float64(req.Quantity)
+
+	// Jika sudah ada pembayaran parsial, amount baru tidak boleh kurang dari paid_amount
+	if item.PaidAmount > 0 && newAmount < item.PaidAmount {
+		return nil, errors.New("Nominal baru tidak boleh kurang dari jumlah yang sudah dibayar")
+	}
+
+	quantity := req.Quantity
+	item.Quantity = &quantity
+	item.Amount = newAmount
+
+	// Update nama item agar mencerminkan jumlah baru
+	item.Name = updateItemNameQuantity(item.Name, item.Category, quantity)
+
 	if err := s.itemRepo.Update(item); err != nil {
 		return nil, err
 	}
@@ -384,7 +428,7 @@ func mapInvoiceToDetailResponse(inv model.Invoice) dto.InvoiceDetailResponse {
 }
 
 func mapInvoiceItemToResponse(item model.InvoiceItem) dto.InvoiceItemResponse {
-	return dto.InvoiceItemResponse{
+	resp := dto.InvoiceItemResponse{
 		ID:          item.ID,
 		Name:        item.Name,
 		Category:    item.Category,
@@ -392,7 +436,10 @@ func mapInvoiceItemToResponse(item model.InvoiceItem) dto.InvoiceItemResponse {
 		PaidAmount:  item.PaidAmount,
 		Status:      item.Status,
 		IsMandatory: item.IsMandatory,
+		Quantity:    item.Quantity,
+		UnitPrice:   item.UnitPrice,
 	}
+	return resp
 }
 
 func mapInstallmentToResponse(inst model.InvoiceInstallment) dto.InstallmentResponse {
@@ -406,4 +453,27 @@ func mapInstallmentToResponse(inst model.InvoiceInstallment) dto.InstallmentResp
 		resp.Notes = &inst.Notes
 	}
 	return resp
+}
+
+// updateItemNameQuantity updates the quantity part in item names like "Infaq Harian (22 hari)" or "Tab. Wajib (4 Senin)"
+func updateItemNameQuantity(name, category string, newQuantity uint) string {
+	// Pattern: "Base Name (N hari)" or "Base Name (N Senin)"
+	re := regexp.MustCompile(`^(.+?)\s*\(\d+\s+(hari|Senin)\)$`)
+	matches := re.FindStringSubmatch(name)
+
+	if len(matches) >= 3 {
+		baseName := matches[1]
+		unit := matches[2]
+		return fmt.Sprintf("%s (%s %s)", baseName, strconv.FormatUint(uint64(newQuantity), 10), unit)
+	}
+
+	// Fallback: determine unit suffix from category
+	switch category {
+	case "monthly_infaq":
+		return fmt.Sprintf("%s (%d hari)", name, newQuantity)
+	case "savings_mandatory":
+		return fmt.Sprintf("%s (%d Senin)", name, newQuantity)
+	default:
+		return name
+	}
 }

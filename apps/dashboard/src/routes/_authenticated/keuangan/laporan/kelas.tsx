@@ -107,7 +107,7 @@ function RekapKelasPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between print:hidden">
         <div>
           <nav className="flex items-center text-sm text-gray-500 mb-2">
             <Link to="/keuangan/laporan" className="hover:text-indigo-600 transition-colors">

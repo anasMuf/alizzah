@@ -28,6 +28,12 @@ type ReportRepository interface {
 	DailyPengeluaran(academicYearID uint, startDate, endDate time.Time, category string) (map[string]float64, error)
 	SumPenerimaan(academicYearID uint, startDate, endDate time.Time, category string) (float64, error)
 	SumPengeluaran(academicYearID uint, startDate, endDate time.Time, category string) (float64, error)
+
+	// Tabungan
+	DailySavingsCredit(startDate, endDate time.Time, savingsType string) (map[string]float64, error)
+	DailySavingsDebit(startDate, endDate time.Time, savingsType string) (map[string]float64, error)
+	SumSavingsCredit(startDate, endDate time.Time, savingsType string) (float64, error)
+	SumSavingsDebit(startDate, endDate time.Time, savingsType string) (float64, error)
 }
 
 type reportRepository struct {
@@ -331,4 +337,82 @@ func (r *reportRepository) FindExpensesForMonth(academicYearID uint, startDate, 
 		Order("expense_date ASC, created_at ASC").
 		Find(&expenses).Error
 	return expenses, err
+}
+
+// savingsTypeFilter adds optional savings type filter via JOIN
+func savingsTypeFilter(query *gorm.DB, savingsType string) *gorm.DB {
+	if savingsType != "" {
+		return query.
+			Joins("JOIN student_savings ss ON ss.id = st.student_savings_id").
+			Where("ss.type = ?", savingsType)
+	}
+	return query
+}
+
+// DailySavingsCredit: credit transactions per day
+func (r *reportRepository) DailySavingsCredit(startDate, endDate time.Time, savingsType string) (map[string]float64, error) {
+	type row struct {
+		Date  time.Time
+		Total float64
+	}
+	var rows []row
+
+	query := r.db.Table("savings_transactions st").
+		Select("DATE(st.created_at) as date, SUM(st.net_amount) as total").
+		Where("st.transaction_type = 'credit' AND st.created_at >= ? AND st.created_at < ?", startDate, endDate.Add(24*time.Hour))
+
+	query = savingsTypeFilter(query, savingsType)
+	err := query.Group("DATE(st.created_at)").Scan(&rows).Error
+
+	result := make(map[string]float64)
+	for _, r := range rows {
+		result[r.Date.Format("2006-01-02")] = r.Total
+	}
+	return result, err
+}
+
+// DailySavingsDebit: debit transactions per day
+func (r *reportRepository) DailySavingsDebit(startDate, endDate time.Time, savingsType string) (map[string]float64, error) {
+	type row struct {
+		Date  time.Time
+		Total float64
+	}
+	var rows []row
+
+	query := r.db.Table("savings_transactions st").
+		Select("DATE(st.created_at) as date, SUM(st.net_amount) as total").
+		Where("st.transaction_type = 'debit' AND st.created_at >= ? AND st.created_at < ?", startDate, endDate.Add(24*time.Hour))
+
+	query = savingsTypeFilter(query, savingsType)
+	err := query.Group("DATE(st.created_at)").Scan(&rows).Error
+
+	result := make(map[string]float64)
+	for _, r := range rows {
+		result[r.Date.Format("2006-01-02")] = r.Total
+	}
+	return result, err
+}
+
+// SumSavingsCredit: total credit in range
+func (r *reportRepository) SumSavingsCredit(startDate, endDate time.Time, savingsType string) (float64, error) {
+	var total float64
+	query := r.db.Table("savings_transactions st").
+		Select("COALESCE(SUM(st.net_amount), 0)").
+		Where("st.transaction_type = 'credit' AND st.created_at >= ? AND st.created_at < ?", startDate, endDate.Add(24*time.Hour))
+
+	query = savingsTypeFilter(query, savingsType)
+	err := query.Scan(&total).Error
+	return total, err
+}
+
+// SumSavingsDebit: total debit in range
+func (r *reportRepository) SumSavingsDebit(startDate, endDate time.Time, savingsType string) (float64, error) {
+	var total float64
+	query := r.db.Table("savings_transactions st").
+		Select("COALESCE(SUM(st.net_amount), 0)").
+		Where("st.transaction_type = 'debit' AND st.created_at >= ? AND st.created_at < ?", startDate, endDate.Add(24*time.Hour))
+
+	query = savingsTypeFilter(query, savingsType)
+	err := query.Scan(&total).Error
+	return total, err
 }

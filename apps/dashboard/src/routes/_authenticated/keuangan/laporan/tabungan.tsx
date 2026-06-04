@@ -1,17 +1,15 @@
 import { useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { useAtom } from 'jotai';
 import { ChevronRight, Printer } from 'lucide-react';
-import { useGetReportsSaldo } from '../../../../api/endpoints/reports/saldo';
-import type { SaldoRow } from '../../../../api/endpoints/reports/saldo';
-import { academicYearAtom } from '../../../../store/global';
+import { useGetReportsTabungan } from '../../../../api/endpoints/reports/tabungan';
+import type { TabunganReportRow } from '../../../../api/endpoints/reports/tabungan';
 import { Button } from '../../../../components/atoms/Button';
 import { Alert } from '../../../../components/atoms/Alert';
 
 export const Route = createFileRoute(
-  '/_authenticated/keuangan/laporan/saldo',
+  '/_authenticated/keuangan/laporan/tabungan',
 )({
-  component: LaporanSaldoPage,
+  component: LaporanTabunganPage,
 });
 
 const MONTH_NAMES = [
@@ -19,19 +17,10 @@ const MONTH_NAMES = [
   'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
 ];
 
-/** Daftar pos pemasukan untuk dropdown filter */
-const CATEGORY_OPTIONS = [
-  { value: '', label: 'Semua Pos' },
-  { value: 'monthly_spp', label: 'SPP' },
-  { value: 'monthly_infaq', label: 'Infaq Harian' },
-  { value: 'initial', label: 'Biaya Awal Masuk' },
-  { value: 'registration', label: 'Biaya Registrasi' },
-  { value: 'pasta', label: 'PASTA' },
-  { value: 'calisan', label: 'Calisan' },
-  { value: 'ekskul', label: 'Ekskul' },
-  { value: 'savings_mandatory', label: 'Tabungan Wajib Berlian' },
-  { value: 'daycare', label: 'Daycare' },
-  { value: 'graduation', label: 'Wisuda' },
+const TYPE_OPTIONS = [
+  { value: '', label: 'Semua Tabungan' },
+  { value: 'general', label: 'Tabungan Umum' },
+  { value: 'mandatory', label: 'Tabungan Wajib Berlian' },
 ];
 
 function formatRupiah(amount: number): string {
@@ -50,37 +39,35 @@ function formatDateID(dateStr: string): string {
   return d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
-function LaporanSaldoPage() {
-  const [activeAy] = useAtom(academicYearAtom);
+function LaporanTabunganPage() {
   const now = new Date();
 
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedType, setSelectedType] = useState('');
 
   const [reportMonth, setReportMonth] = useState(0);
   const [reportYear, setReportYear] = useState(0);
-  const [reportCategory, setReportCategory] = useState('');
+  const [reportType, setReportType] = useState('');
 
-  const shouldFetch = reportMonth > 0 && reportYear > 0 && !!activeAy?.id;
+  const shouldFetch = reportMonth > 0 && reportYear > 0;
 
-  const { data: reportData, isLoading, isError } = useGetReportsSaldo(
+  const { data: reportData, isLoading, isError } = useGetReportsTabungan(
     {
       month: reportMonth,
       year: reportYear,
-      category: reportCategory || undefined,
-      academic_year_id: activeAy?.id,
+      type: reportType || undefined,
     },
     { query: { enabled: shouldFetch } },
   );
 
   const report = shouldFetch ? (reportData?.data as any)?.data : null;
-  const rows: SaldoRow[] = report?.rows || [];
+  const rows: TabunganReportRow[] = report?.rows || [];
 
   const handleShow = () => {
     setReportMonth(selectedMonth);
     setReportYear(selectedYear);
-    setReportCategory(selectedCategory);
+    setReportType(selectedType);
   };
 
   const handleChangeFilter = () => {
@@ -90,8 +77,6 @@ function LaporanSaldoPage() {
 
   const currentYear = now.getFullYear();
   const yearOptions = Array.from({ length: 3 }, (_, i) => currentYear - i);
-
-  const isSemuaPos = !reportCategory;
 
   return (
     <div className="space-y-6">
@@ -103,21 +88,16 @@ function LaporanSaldoPage() {
               Laporan
             </Link>
             <ChevronRight className="w-4 h-4 mx-1" />
-            <span className="text-gray-900 font-medium">Saldo {isSemuaPos ? 'Semua Pos' : 'Per Pos'}</span>
+            <span className="text-gray-900 font-medium">Tabungan Siswa</span>
           </nav>
           <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:tracking-tight">
             {report
-              ? `Laporan Saldo — ${report.post_name}`
-              : 'Laporan Saldo'}
+              ? `Laporan Tabungan — ${report.type_label}`
+              : 'Laporan Tabungan Siswa'}
           </h2>
           {report && (
             <p className="mt-1 text-sm text-gray-500">
-              {MONTH_NAMES[reportMonth - 1]} {reportYear} &middot; TA {report.academic_year || activeAy?.name || '-'}
-            </p>
-          )}
-          {report?.post_list && report.post_list.length > 0 && (
-            <p className="mt-0.5 text-xs text-gray-400">
-              Pos: {report.post_list.join(', ')}
+              {MONTH_NAMES[reportMonth - 1]} {reportYear}
             </p>
           )}
         </div>
@@ -133,12 +113,11 @@ function LaporanSaldoPage() {
       <div className="hidden print:block border-b border-gray-300 pb-4 mb-6">
         <h1 className="text-lg font-bold text-center">PAUD AL-IZZAH</h1>
         <p className="text-sm text-gray-600 text-center">
-          Laporan Saldo {isSemuaPos ? 'Semua Pos' : `Per Pos — ${report?.post_name || ''}`}
+          Laporan Tabungan Siswa — {report?.type_label || ''}
         </p>
         <div className="mt-2 text-sm text-gray-700 space-y-0.5">
           <p>Periode: {reportMonth > 0 ? `${MONTH_NAMES[reportMonth - 1]} ${reportYear}` : '-'}</p>
-          <p>Pos: {report?.post_name || '-'}</p>
-          <p>TA: {report?.academic_year || activeAy?.name || '-'}</p>
+          <p>Jenis: {report?.type_label || '-'}</p>
         </div>
       </div>
 
@@ -146,13 +125,13 @@ function LaporanSaldoPage() {
       <div className="bg-white p-4 rounded-xl shadow-sm ring-1 ring-gray-900/5 print:hidden">
         <div className="flex flex-wrap gap-4 items-end">
           <div>
-            <label className="block text-sm font-medium leading-6 text-gray-900 mb-1">Pos Pemasukan</label>
+            <label className="block text-sm font-medium leading-6 text-gray-900 mb-1">Jenis Tabungan</label>
             <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
+              value={selectedType}
+              onChange={(e) => setSelectedType(e.target.value)}
               className="block w-full sm:w-52 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
             >
-              {CATEGORY_OPTIONS.map((opt) => (
+              {TYPE_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
@@ -181,17 +160,8 @@ function LaporanSaldoPage() {
               ))}
             </select>
           </div>
-          <div>
-            <label className="block text-sm font-medium leading-6 text-gray-900 mb-1">TA</label>
-            <input
-              type="text"
-              value={activeAy?.name || '-'}
-              disabled
-              className="block w-full sm:w-36 rounded-md border-0 py-1.5 px-3 text-gray-500 bg-gray-50 ring-1 ring-inset ring-gray-300 sm:text-sm sm:leading-6"
-            />
-          </div>
           {!report ? (
-            <Button onClick={handleShow} disabled={!activeAy?.id}>
+            <Button onClick={handleShow}>
               Tampilkan Laporan
             </Button>
           ) : (
@@ -215,7 +185,7 @@ function LaporanSaldoPage() {
 
       {isError && (
         <Alert variant="error" title="Gagal Memuat">
-          Terjadi kesalahan saat memuat laporan saldo.
+          Terjadi kesalahan saat memuat laporan tabungan.
         </Alert>
       )}
 
@@ -233,10 +203,10 @@ function LaporanSaldoPage() {
                     Tanggal
                   </th>
                   <th className="px-3 py-3 text-right text-sm font-semibold text-gray-900">
-                    Jumlah Penerimaan
+                    Penerimaan (Setor)
                   </th>
                   <th className="px-3 py-3 text-right text-sm font-semibold text-gray-900">
-                    Jumlah Pengeluaran
+                    Pengeluaran (Tarik)
                   </th>
                   <th className="px-3 py-3 text-right text-sm font-semibold text-gray-900">
                     Selisih
@@ -262,7 +232,7 @@ function LaporanSaldoPage() {
                 </tr>
 
                 {rows.length > 0 ? (
-                  rows.map((row, idx) => (
+                  rows.map((row: TabunganReportRow, idx: number) => (
                     <tr key={row.date} className="hover:bg-gray-50">
                       <td className="py-2 pl-6 pr-3 text-sm text-gray-500 tabular-nums">
                         {idx + 1}.
@@ -287,7 +257,7 @@ function LaporanSaldoPage() {
                 ) : (
                   <tr>
                     <td colSpan={6} className="px-6 py-8 text-center text-sm text-gray-500">
-                      Tidak ada transaksi pada bulan ini.
+                      Tidak ada transaksi tabungan pada bulan ini.
                     </td>
                   </tr>
                 )}

@@ -7,7 +7,7 @@ export function DashboardLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-gray-50 print:block print:h-auto print:overflow-visible print:bg-white">
       {/* Mobile overlay */}
       {isSidebarOpen && (
         <div
@@ -18,10 +18,10 @@ export function DashboardLayout() {
 
       <Sidebar isOpen={isSidebarOpen} />
 
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden print:overflow-visible">
         <Topbar onMenuClick={() => setIsSidebarOpen(true)} />
 
-        <main className="flex-1 overflow-y-auto overflow-x-hidden bg-gray-50 p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden bg-gray-50 p-4 sm:p-6 lg:p-8 print:overflow-visible print:bg-white print:p-0">
           <Outlet />
         </main>
       </div>

@@ -257,6 +257,40 @@ func (h *ReportHandler) TransaksiPengeluaran(c echo.Context) error {
 	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil mengambil laporan transaksi pengeluaran", Data: report})
 }
 
+// TabunganReport godoc
+// @Summary      Savings report
+// @Description  Get savings transaction report with daily running balance, optionally filtered by type (general/mandatory)
+// @Tags         reports
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        month  query  int     true   "Month (1-12)"
+// @Param        year   query  int     true   "Year"
+// @Param        type   query  string  false  "Savings type filter: general, mandatory, or empty for all"
+// @Success      200    {object}  dto.SuccessResponse{data=dto.TabunganReportResponse}
+// @Failure      400    {object}  dto.ErrorResponse
+// @Failure      401    {object}  dto.ErrorResponse
+// @Failure      403    {object}  dto.ErrorResponse
+// @Failure      500    {object}  dto.ErrorResponse
+// @Router       /v1/reports/tabungan [get]
+func (h *ReportHandler) TabunganReport(c echo.Context) error {
+	var req dto.TabunganReportRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: err.Error()})
+	}
+	if err := c.Validate(req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "VALIDATION_ERROR", Message: err.Error()})
+	}
+
+	report, err := h.service.GetTabunganReport(req)
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{Status: status, Code: code, Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil mengambil laporan tabungan", Data: report})
+}
+
 // ByClassGroup godoc
 // @Summary      Report by class group
 // @Description  Get financial report for a specific class group

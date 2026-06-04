@@ -351,6 +351,8 @@ function DetailTagihanPage() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
+      {/* Screen-only content — hidden when printing (print uses .print-invoice below) */}
+      <div className="contents print:hidden">
       {/* Breadcrumb */}
       <nav className="flex" aria-label="Breadcrumb">
         <ol role="list" className="flex items-center space-x-2 text-sm text-gray-500">
@@ -520,6 +522,8 @@ function DetailTagihanPage() {
           </div>
         </div>
       </div>
+
+      </div>{/* end screen-only content */}
 
       {/* Printable Invoice - hidden on screen, shown on print */}
       <div className="hidden print:block print-invoice">

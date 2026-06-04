@@ -296,3 +296,30 @@ type TransaksiPengeluaranItem struct {
 	Description  string  `json:"description"`
 	Amount       float64 `json:"amount"`
 }
+
+// ===== Laporan Tabungan =====
+
+type TabunganReportRequest struct {
+	Month uint   `query:"month" validate:"required,min=1,max=12"`
+	Year  uint   `query:"year" validate:"required"`
+	Type  string `query:"type"` // general | mandatory | kosong = semua
+}
+
+type TabunganReportResponse struct {
+	Month        uint                `json:"month"`
+	Year         uint                `json:"year"`
+	TypeLabel    string              `json:"type_label"`
+	Type         string              `json:"type,omitempty"`
+	SaldoSebelum float64             `json:"saldo_sebelum"`
+	Rows         []TabunganReportRow `json:"rows"`
+	TotalBulan   SaldoTotalBulan     `json:"total_bulan"`
+	SaldoAkhir   float64             `json:"saldo_akhir"`
+}
+
+type TabunganReportRow struct {
+	Date        string  `json:"date"`
+	Penerimaan  float64 `json:"penerimaan"`
+	Pengeluaran float64 `json:"pengeluaran"`
+	Selisih     float64 `json:"selisih"`
+	Saldo       float64 `json:"saldo"`
+}

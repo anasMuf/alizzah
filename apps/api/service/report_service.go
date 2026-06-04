@@ -16,6 +16,7 @@ type ReportService interface {
 	GetPosisiKas(req dto.PosisiKasRequest) (*dto.PosisiKasResponse, error)
 	GetSaldo(req dto.SaldoRequest) (*dto.SaldoResponse, error)
 	GetTransaksiPengeluaran(req dto.TransaksiPengeluaranRequest) (*dto.TransaksiPengeluaranResponse, error)
+	GetTabunganReport(req dto.TabunganReportRequest) (*dto.TabunganReportResponse, error)
 }
 
 type reportService struct {
@@ -660,5 +661,96 @@ func (s *reportService) GetTransaksiPengeluaran(req dto.TransaksiPengeluaranRequ
 		AcademicYear: ay.Name,
 		Transactions: transactions,
 		GrandTotal:   grandTotal,
+	}, nil
+}
+
+func (s *reportService) GetTabunganReport(req dto.TabunganReportRequest) (*dto.TabunganReportResponse, error) {
+	savingsType := req.Type // "" = semua, "general", "mandatory"
+
+	startOfMonth := time.Date(int(req.Year), time.Month(req.Month), 1, 0, 0, 0, 0, time.UTC)
+	endOfMonth := startOfMonth.AddDate(0, 1, -1)
+	// Use a very early date as "beginning of time" for saldo sebelum
+	beginningOfTime := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+	endOfPrevMonth := startOfMonth.AddDate(0, 0, -1)
+
+	// Saldo sebelum
+	creditSebelum, err := s.reportRepo.SumSavingsCredit(beginningOfTime, endOfPrevMonth, savingsType)
+	if err != nil {
+		return nil, err
+	}
+	debitSebelum, err := s.reportRepo.SumSavingsDebit(beginningOfTime, endOfPrevMonth, savingsType)
+	if err != nil {
+		return nil, err
+	}
+	saldoSebelum := creditSebelum - debitSebelum
+
+	// Daily data
+	dailyCredit, err := s.reportRepo.DailySavingsCredit(startOfMonth, endOfMonth, savingsType)
+	if err != nil {
+		return nil, err
+	}
+	dailyDebit, err := s.reportRepo.DailySavingsDebit(startOfMonth, endOfMonth, savingsType)
+	if err != nil {
+		return nil, err
+	}
+
+	// Collect dates
+	dateSet := make(map[string]bool)
+	for d := range dailyCredit {
+		dateSet[d] = true
+	}
+	for d := range dailyDebit {
+		dateSet[d] = true
+	}
+	var dates []string
+	for d := range dateSet {
+		dates = append(dates, d)
+	}
+	sortStrings(dates)
+
+	// Build rows
+	var rows []dto.TabunganReportRow
+	runningBalance := saldoSebelum
+	var totalCredit, totalDebit float64
+
+	for _, d := range dates {
+		credit := dailyCredit[d]
+		debit := dailyDebit[d]
+		selisih := credit - debit
+		runningBalance += selisih
+		totalCredit += credit
+		totalDebit += debit
+
+		rows = append(rows, dto.TabunganReportRow{
+			Date:        d,
+			Penerimaan:  credit,
+			Pengeluaran: debit,
+			Selisih:     selisih,
+			Saldo:       runningBalance,
+		})
+	}
+
+	// Type label
+	typeLabel := "Tabungan Siswa (Semua)"
+	switch savingsType {
+	case "general":
+		typeLabel = "Tabungan Umum"
+	case "mandatory":
+		typeLabel = "Tabungan Wajib"
+	}
+
+	return &dto.TabunganReportResponse{
+		Month:        req.Month,
+		Year:         req.Year,
+		TypeLabel:    typeLabel,
+		Type:         savingsType,
+		SaldoSebelum: saldoSebelum,
+		Rows:         rows,
+		TotalBulan: dto.SaldoTotalBulan{
+			Penerimaan:  totalCredit,
+			Pengeluaran: totalDebit,
+			Selisih:     totalCredit - totalDebit,
+		},
+		SaldoAkhir: runningBalance,
 	}, nil
 }

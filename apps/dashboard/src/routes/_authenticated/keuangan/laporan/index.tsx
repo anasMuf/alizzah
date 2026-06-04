@@ -9,6 +9,7 @@ import {
   Wallet,
   BarChart3,
   Receipt,
+  PiggyBank,
 } from 'lucide-react';
 
 export const Route = createFileRoute(
@@ -70,6 +71,15 @@ const REPORT_CARDS = [
     to: '/keuangan/laporan/pengeluaran',
     color: 'text-orange-600',
     bg: 'bg-orange-50',
+  },
+  {
+    title: 'Tabungan Siswa',
+    description:
+      'Saldo dan mutasi harian tabungan umum atau tabungan wajib berlian.',
+    icon: PiggyBank,
+    to: '/keuangan/laporan/tabungan',
+    color: 'text-pink-600',
+    bg: 'bg-pink-50',
   },
   {
     title: 'Rekap per Siswa',

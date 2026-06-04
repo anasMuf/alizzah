@@ -224,3 +224,39 @@ type PosisiKasTotal struct {
 	SaldoBulan   float64 `json:"saldo_bulan"`
 	SaldoSampai  float64 `json:"saldo_sampai"`
 }
+
+// ===== Laporan Saldo Per Pos / Semua Pos =====
+
+type SaldoRequest struct {
+	Month          uint   `query:"month" validate:"required,min=1,max=12"`
+	Year           uint   `query:"year" validate:"required"`
+	Category       string `query:"category"` // kosong = semua pos
+	AcademicYearID uint   `query:"academic_year_id"`
+}
+
+type SaldoResponse struct {
+	Month        uint            `json:"month"`
+	Year         uint            `json:"year"`
+	AcademicYear string          `json:"academic_year"`
+	PostName     string          `json:"post_name"`
+	Category     string          `json:"category,omitempty"`
+	PostList     []string        `json:"post_list,omitempty"` // hanya jika semua pos
+	SaldoSebelum float64         `json:"saldo_sebelum"`
+	Rows         []SaldoRow      `json:"rows"`
+	TotalBulan   SaldoTotalBulan `json:"total_bulan"`
+	SaldoAkhir   float64         `json:"saldo_akhir"`
+}
+
+type SaldoRow struct {
+	Date        string  `json:"date"`
+	Penerimaan  float64 `json:"penerimaan"`
+	Pengeluaran float64 `json:"pengeluaran"`
+	Selisih     float64 `json:"selisih"`
+	Saldo       float64 `json:"saldo"`
+}
+
+type SaldoTotalBulan struct {
+	Penerimaan  float64 `json:"penerimaan"`
+	Pengeluaran float64 `json:"pengeluaran"`
+	Selisih     float64 `json:"selisih"`
+}

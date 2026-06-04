@@ -7,6 +7,7 @@ import {
   School,
   ArrowRight,
   Wallet,
+  BarChart3,
 } from 'lucide-react';
 
 export const Route = createFileRoute(
@@ -50,6 +51,15 @@ const REPORT_CARDS = [
     to: '/keuangan/laporan/posisi-kas',
     color: 'text-teal-600',
     bg: 'bg-teal-50',
+  },
+  {
+    title: 'Saldo Per Pos',
+    description:
+      'Rincian transaksi harian dan saldo berjalan per pos pemasukan atau semua pos.',
+    icon: BarChart3,
+    to: '/keuangan/laporan/saldo',
+    color: 'text-cyan-600',
+    bg: 'bg-cyan-50',
   },
   {
     title: 'Rekap per Siswa',

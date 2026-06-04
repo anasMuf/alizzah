@@ -18,6 +18,12 @@ type ReportRepository interface {
 	// Posisi Kas
 	SumPenerimaanByInvoiceCategory(academicYearID uint, startDate, endDate time.Time) (map[string]float64, error)
 	SumPengeluaranByInvoiceCategory(academicYearID uint, startDate, endDate time.Time) (map[string][]dto.PosisiKasExpense, error)
+
+	// Saldo Per Pos / Semua Pos
+	DailyPenerimaan(academicYearID uint, startDate, endDate time.Time, category string) (map[string]float64, error)
+	DailyPengeluaran(academicYearID uint, startDate, endDate time.Time, category string) (map[string]float64, error)
+	SumPenerimaan(academicYearID uint, startDate, endDate time.Time, category string) (float64, error)
+	SumPengeluaran(academicYearID uint, startDate, endDate time.Time, category string) (float64, error)
 }
 
 type reportRepository struct {
@@ -210,4 +216,102 @@ func (r *reportRepository) SumPengeluaranByInvoiceCategory(academicYearID uint, 
 		})
 	}
 	return result, err
+}
+
+// DailyPenerimaan: penerimaan per hari, optionally filtered by invoice category
+func (r *reportRepository) DailyPenerimaan(academicYearID uint, startDate, endDate time.Time, category string) (map[string]float64, error) {
+	type row struct {
+		Date  time.Time
+		Total float64
+	}
+	var rows []row
+
+	query := r.db.Table("payment_items pi").
+		Select("p.payment_date as date, SUM(pi.amount) as total").
+		Joins("JOIN invoice_items ii ON ii.id = pi.invoice_item_id").
+		Joins("JOIN payments p ON p.id = pi.payment_id").
+		Where("p.academic_year_id = ? AND p.payment_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
+
+	if category != "" {
+		query = query.Where("ii.category = ?", category)
+	}
+
+	err := query.Group("p.payment_date").Scan(&rows).Error
+
+	result := make(map[string]float64)
+	for _, r := range rows {
+		result[r.Date.Format("2006-01-02")] = r.Total
+	}
+	return result, err
+}
+
+// DailyPengeluaran: pengeluaran per hari, optionally filtered by parent expense_category invoice_category
+func (r *reportRepository) DailyPengeluaran(academicYearID uint, startDate, endDate time.Time, category string) (map[string]float64, error) {
+	type row struct {
+		Date  time.Time
+		Total float64
+	}
+	var rows []row
+
+	query := r.db.Table("expenses e").
+		Select("e.expense_date as date, SUM(e.amount) as total")
+
+	if category != "" {
+		query = query.
+			Joins("JOIN expense_categories ec ON ec.id = e.expense_category_id").
+			Joins("LEFT JOIN expense_categories pec ON pec.id = ec.parent_id").
+			Where("e.academic_year_id = ? AND e.expense_date BETWEEN ? AND ?", academicYearID, startDate, endDate).
+			Where("pec.invoice_category = ?", category)
+	} else {
+		query = query.
+			Where("e.academic_year_id = ? AND e.expense_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
+	}
+
+	err := query.Group("e.expense_date").Scan(&rows).Error
+
+	result := make(map[string]float64)
+	for _, r := range rows {
+		result[r.Date.Format("2006-01-02")] = r.Total
+	}
+	return result, err
+}
+
+// SumPenerimaan: total penerimaan in range, optionally filtered by category
+func (r *reportRepository) SumPenerimaan(academicYearID uint, startDate, endDate time.Time, category string) (float64, error) {
+	var total float64
+
+	query := r.db.Table("payment_items pi").
+		Select("COALESCE(SUM(pi.amount), 0)").
+		Joins("JOIN invoice_items ii ON ii.id = pi.invoice_item_id").
+		Joins("JOIN payments p ON p.id = pi.payment_id").
+		Where("p.academic_year_id = ? AND p.payment_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
+
+	if category != "" {
+		query = query.Where("ii.category = ?", category)
+	}
+
+	err := query.Scan(&total).Error
+	return total, err
+}
+
+// SumPengeluaran: total pengeluaran in range, optionally filtered by parent category
+func (r *reportRepository) SumPengeluaran(academicYearID uint, startDate, endDate time.Time, category string) (float64, error) {
+	var total float64
+
+	query := r.db.Table("expenses e").
+		Select("COALESCE(SUM(e.amount), 0)")
+
+	if category != "" {
+		query = query.
+			Joins("JOIN expense_categories ec ON ec.id = e.expense_category_id").
+			Joins("LEFT JOIN expense_categories pec ON pec.id = ec.parent_id").
+			Where("e.academic_year_id = ? AND e.expense_date BETWEEN ? AND ?", academicYearID, startDate, endDate).
+			Where("pec.invoice_category = ?", category)
+	} else {
+		query = query.
+			Where("e.academic_year_id = ? AND e.expense_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
+	}
+
+	err := query.Scan(&total).Error
+	return total, err
 }

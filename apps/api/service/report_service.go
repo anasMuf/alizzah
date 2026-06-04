@@ -14,6 +14,7 @@ type ReportService interface {
 	GetStudentReport(studentID uint, req dto.StudentReportRequest) (*dto.StudentReportResponse, error)
 	GetClassGroupReport(classGroupID uint, req dto.ClassGroupReportRequest) (*dto.ClassGroupReportResponse, error)
 	GetPosisiKas(req dto.PosisiKasRequest) (*dto.PosisiKasResponse, error)
+	GetSaldo(req dto.SaldoRequest) (*dto.SaldoResponse, error)
 }
 
 type reportService struct {
@@ -473,4 +474,123 @@ func (s *reportService) GetPosisiKas(req dto.PosisiKasRequest) (*dto.PosisiKasRe
 		Posts:        posts,
 		GrandTotal:   grandTotal,
 	}, nil
+}
+
+func (s *reportService) GetSaldo(req dto.SaldoRequest) (*dto.SaldoResponse, error) {
+	academicYearID := utility.ResolveAcademicYear(req.AcademicYearID, s.academicYearRepo)
+	ay, err := s.academicYearRepo.FindByID(academicYearID)
+	if err != nil {
+		return nil, err
+	}
+
+	category := req.Category // "" = semua pos
+
+	// Date ranges
+	startOfMonth := time.Date(int(req.Year), time.Month(req.Month), 1, 0, 0, 0, 0, time.UTC)
+	endOfMonth := startOfMonth.AddDate(0, 1, -1)
+	endOfPrevMonth := startOfMonth.AddDate(0, 0, -1)
+
+	// Saldo sebelum: penerimaan - pengeluaran from start of AY to end of prev month
+	penerimaanSebelum, err := s.reportRepo.SumPenerimaan(academicYearID, ay.StartDate, endOfPrevMonth, category)
+	if err != nil {
+		return nil, err
+	}
+	pengeluaranSebelum, err := s.reportRepo.SumPengeluaran(academicYearID, ay.StartDate, endOfPrevMonth, category)
+	if err != nil {
+		return nil, err
+	}
+	saldoSebelum := penerimaanSebelum - pengeluaranSebelum
+
+	// Daily data for the month
+	dailyIncome, err := s.reportRepo.DailyPenerimaan(academicYearID, startOfMonth, endOfMonth, category)
+	if err != nil {
+		return nil, err
+	}
+	dailyExpense, err := s.reportRepo.DailyPengeluaran(academicYearID, startOfMonth, endOfMonth, category)
+	if err != nil {
+		return nil, err
+	}
+
+	// Collect all dates that have transactions
+	dateSet := make(map[string]bool)
+	for d := range dailyIncome {
+		dateSet[d] = true
+	}
+	for d := range dailyExpense {
+		dateSet[d] = true
+	}
+
+	// Sort dates
+	var dates []string
+	for d := range dateSet {
+		dates = append(dates, d)
+	}
+	sortStrings(dates)
+
+	// Build rows with running balance
+	var rows []dto.SaldoRow
+	runningBalance := saldoSebelum
+	var totalPenerimaan, totalPengeluaran float64
+
+	for _, d := range dates {
+		penerimaan := dailyIncome[d]
+		pengeluaran := dailyExpense[d]
+		selisih := penerimaan - pengeluaran
+		runningBalance += selisih
+
+		totalPenerimaan += penerimaan
+		totalPengeluaran += pengeluaran
+
+		rows = append(rows, dto.SaldoRow{
+			Date:        d,
+			Penerimaan:  penerimaan,
+			Pengeluaran: pengeluaran,
+			Selisih:     selisih,
+			Saldo:       runningBalance,
+		})
+	}
+
+	// Post name & post list
+	postName := "Semua Pos"
+	var postList []string
+	if category != "" {
+		if label, ok := invoiceCategoryLabels[category]; ok {
+			postName = label
+		} else {
+			postName = category
+		}
+	} else {
+		// List all categories for sub-header
+		for _, cat := range invoiceCategoryOrder {
+			if label, ok := invoiceCategoryLabels[cat]; ok {
+				postList = append(postList, label)
+			}
+		}
+	}
+
+	return &dto.SaldoResponse{
+		Month:        req.Month,
+		Year:         req.Year,
+		AcademicYear: ay.Name,
+		PostName:     postName,
+		Category:     category,
+		PostList:     postList,
+		SaldoSebelum: saldoSebelum,
+		Rows:         rows,
+		TotalBulan: dto.SaldoTotalBulan{
+			Penerimaan:  totalPenerimaan,
+			Pengeluaran: totalPengeluaran,
+			Selisih:     totalPenerimaan - totalPengeluaran,
+		},
+		SaldoAkhir: runningBalance,
+	}, nil
+}
+
+// sortStrings sorts a slice of strings in place
+func sortStrings(s []string) {
+	for i := 1; i < len(s); i++ {
+		for j := i; j > 0 && s[j] < s[j-1]; j-- {
+			s[j], s[j-1] = s[j-1], s[j]
+		}
+	}
 }

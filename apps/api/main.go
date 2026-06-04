@@ -431,6 +431,7 @@ func main() {
 	reports.GET("/monthly", reportHandler.Monthly, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah"))
 	reports.GET("/annual", reportHandler.Annual, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah", "yayasan"))
 	reports.GET("/posisi-kas", reportHandler.PosisiKas, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah"))
+	reports.GET("/saldo", reportHandler.Saldo, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah"))
 	reports.GET("/students/:id", reportHandler.ByStudent, middleware.RequireRoles("superadmin", "admin_keuangan"))
 	reports.GET("/class-groups/:id", reportHandler.ByClassGroup, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah"))
 

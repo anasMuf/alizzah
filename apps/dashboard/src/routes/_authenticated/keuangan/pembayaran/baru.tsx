@@ -87,13 +87,29 @@ function WizardPembayaranPage() {
   // Flatten all invoice items from selected invoices
   const invoiceItems = useMemo(() => {
     const items: any[] = [];
+    const hasDispensation = new Set<number>(); // invoice IDs that have dispensation items
+
+    // First pass: detect which invoices have dispensation items
+    invoiceDetailQueries.forEach((q) => {
+      const detail = (q.data?.data as any)?.data;
+      if (detail?.items) {
+        detail.items.forEach((item: any) => {
+          if (item.category === 'dispensation') {
+            hasDispensation.add(detail.id);
+          }
+        });
+      }
+    });
+
+    // Second pass: build items list
     invoiceDetailQueries.forEach((q) => {
       const detail = (q.data?.data as any)?.data;
       if (detail?.items) {
         detail.items.forEach((item: any) => {
           const sisa = Number(item.amount || 0) - Number(item.paid_amount || 0);
-          // Include items with sisa > 0 (normal) OR dispensation items (negative amount)
           if (sisa > 0 || item.category === 'dispensation') {
+            // Lock SPP items that have dispensation (prevent manual edit)
+            const isLockedBySpp = item.category === 'monthly_spp' && hasDispensation.has(detail.id);
             items.push({
               id: item.id,
               invoice_id: detail.id,
@@ -101,11 +117,20 @@ function WizardPembayaranPage() {
               category: item.category,
               sisa_tagihan: sisa,
               is_dispensation: item.category === 'dispensation',
+              is_locked: isLockedBySpp,
             });
           }
         });
       }
     });
+
+    // Sort: regular items first, dispensation items last
+    items.sort((a, b) => {
+      if (a.is_dispensation && !b.is_dispensation) return 1;
+      if (!a.is_dispensation && b.is_dispensation) return -1;
+      return 0;
+    });
+
     return items;
   }, [invoiceDetailQueries.map((q) => q.data).join(',')]);
 
@@ -424,6 +449,9 @@ function WizardPembayaranPage() {
                           <tr key={item.id} className={item.is_dispensation ? 'bg-green-50' : ''}>
                             <td className={`py-3 text-sm ${item.is_dispensation ? 'text-green-700 italic' : 'text-gray-900'}`}>
                               {item.name}
+                              {item.is_locked && (
+                                <span className="ml-2 inline-flex items-center rounded-full bg-indigo-100 px-1.5 py-0.5 text-xs font-medium text-indigo-700">Ada dispensasi</span>
+                              )}
                             </td>
                             <td className={`py-3 text-sm text-right ${item.is_dispensation ? 'text-green-600 font-medium' : 'text-gray-500'}`}>
                               {formatCurrency(item.sisa_tagihan)}
@@ -431,6 +459,8 @@ function WizardPembayaranPage() {
                             <td className="py-3 text-right">
                               {item.is_dispensation ? (
                                 <span className="text-sm font-medium text-green-600 pr-2">{formatCurrency(item.sisa_tagihan)}</span>
+                              ) : item.is_locked ? (
+                                <span className="text-sm font-medium text-gray-900 pr-2">{formatCurrency(item.sisa_tagihan)}</span>
                               ) : (
                                 <input
                                   type="number"

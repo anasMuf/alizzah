@@ -256,8 +256,8 @@ func (s *paymentService) Create(createdBy uint, req dto.CreatePaymentRequest) (*
 			if err := s.savingsTxnRepo.CreateWithTx(stxn, tx); err != nil {
 				return err
 			}
-			if err := s.savingsRepo.UpdateBalance(savings.ID, savings.Balance-totalAmount, tx); err != nil {
-				return err
+			if err := s.savingsRepo.DebitBalance(tx, savings.ID, totalAmount); err != nil {
+				return fmt.Errorf("gagal mendebit tabungan: %w", err)
 			}
 			if err := s.txnWriter.WriteVaultDebit(req.AcademicYearID, paymentDate, totalAmount, "savings_withdrawal", &result.ID, fmt.Sprintf("Penggunaan tabungan %s", student.FullName), createdBy, tx); err != nil {
 				return err
@@ -266,7 +266,7 @@ func (s *paymentService) Create(createdBy uint, req dto.CreatePaymentRequest) (*
 
 		// [H] Savings deposit
 		if req.SavingsDeposit > 0 {
-			savings, err := s.savingsRepo.FindByStudentAndType(req.StudentID, "general")
+			savings, err := s.savingsRepo.FindByStudentAndTypeForUpdate(tx, req.StudentID, "general")
 			if err != nil {
 				// Create if not exists
 				savings = &model.StudentSavings{StudentID: req.StudentID, Type: "general", Balance: 0}
@@ -287,8 +287,8 @@ func (s *paymentService) Create(createdBy uint, req dto.CreatePaymentRequest) (*
 			if err := s.savingsTxnRepo.CreateWithTx(stxn, tx); err != nil {
 				return err
 			}
-			if err := s.savingsRepo.UpdateBalance(savings.ID, savings.Balance+req.SavingsDeposit, tx); err != nil {
-				return err
+			if err := s.savingsRepo.CreditBalance(tx, savings.ID, req.SavingsDeposit); err != nil {
+				return fmt.Errorf("gagal mengkredit tabungan: %w", err)
 			}
 			if err := s.txnWriter.WriteVaultCredit(req.AcademicYearID, paymentDate, req.SavingsDeposit, "savings_deposit", &result.ID, fmt.Sprintf("Setoran tabungan %s", student.FullName), createdBy, tx); err != nil {
 				return err

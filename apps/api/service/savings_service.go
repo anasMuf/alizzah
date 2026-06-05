@@ -122,34 +122,33 @@ func (s *savingsService) GetTransactions(studentID uint, params dto.SavingsTrans
 }
 
 func (s *savingsService) GuardianWithdrawal(studentID, createdBy uint, req dto.SavingsWithdrawalRequest) (*dto.WithdrawalResponse, error) {
-	savings, err := s.savingsRepo.FindByStudentAndType(studentID, "general")
-	if err != nil {
-		return nil, errors.New("Tabungan umum siswa tidak ditemukan")
-	}
+	var adminFee, netAmount, remainingBalance float64
+	err := s.db.Transaction(func(tx *gorm.DB) error {
+		// Layer 1: Lock row & baca saldo terkini
+		savings, err := s.savingsRepo.FindByStudentAndTypeForUpdate(tx, studentID, "general")
+		if err != nil {
+			return errors.New("Tabungan umum siswa tidak ditemukan")
+		}
+		if req.Amount > savings.Balance {
+			return fmt.Errorf("Saldo tidak mencukupi. Saldo: %.0f, Diminta: %.0f", savings.Balance, req.Amount)
+		}
 
-	if req.Amount > savings.Balance {
-		return nil, fmt.Errorf("Saldo tidak mencukupi. Saldo: %.0f, Diminta: %.0f", savings.Balance, req.Amount)
-	}
+		// Baca konfigurasi dalam transaksi
+		activeAY, err := s.ayRepo.FindActive()
+		if err != nil {
+			return errors.New("Tahun ajaran aktif tidak ditemukan")
+		}
 
-	// Get active academic year for fee config
-	activeAY, err := s.ayRepo.FindActive()
-	if err != nil {
-		return nil, errors.New("Tahun ajaran aktif tidak ditemukan")
-	}
+		adminRate := float64(0)
+		fc, err := s.fcRepo.FindByAcademicYearID(activeAY.ID)
+		if err == nil && fc != nil {
+			adminRate = fc.SavingsAdminRate
+		}
 
-	// Get savings_admin_rate from fee_config
-	adminRate := float64(0)
-	fc, err := s.fcRepo.FindByAcademicYearID(activeAY.ID)
-	if err == nil && fc != nil {
-		adminRate = fc.SavingsAdminRate
-	}
+		adminFee = req.Amount * (adminRate / 100)
+		netAmount = req.Amount - adminFee
 
-	adminFee := req.Amount * (adminRate / 100)
-	netAmount := req.Amount - adminFee
-	now := time.Now()
-
-	var remainingBalance float64
-	err = s.db.Transaction(func(tx *gorm.DB) error {
+		// Buat SavingsTransaction record
 		stxn := &model.SavingsTransaction{
 			StudentSavingsID: savings.ID,
 			TransactionType:  "debit",
@@ -164,12 +163,17 @@ func (s *savingsService) GuardianWithdrawal(studentID, createdBy uint, req dto.S
 			return err
 		}
 
-		remainingBalance = savings.Balance - req.Amount
-		if err := s.savingsRepo.UpdateBalance(savings.ID, remainingBalance, tx); err != nil {
+		// Layer 2: Optimistic locking — UPDATE balance hanya jika cukup
+		if err := s.savingsRepo.DebitBalance(tx, savings.ID, req.Amount); err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return errors.New("Saldo tidak mencukupi atau terjadi transaksi bersamaan")
+			}
 			return err
 		}
 
-		if err := s.txnWriter.WriteVaultDebit(activeAY.ID, now, netAmount, "savings_withdrawal", nil, fmt.Sprintf("Penarikan tabungan siswa ID:%d", studentID), createdBy, tx); err != nil {
+		remainingBalance = savings.Balance - req.Amount
+
+		if err := s.txnWriter.WriteVaultDebit(activeAY.ID, time.Now(), netAmount, "savings_withdrawal", nil, fmt.Sprintf("Penarikan tabungan siswa ID:%d", studentID), createdBy, tx); err != nil {
 			return err
 		}
 
@@ -205,7 +209,7 @@ func (s *savingsService) InitForNewStudent(studentID uint, level string, tx *gor
 }
 
 func (s *savingsService) DebitMandatory(studentID uint, amount float64, sourceType string, sourceID *uint, notes string, createdBy uint, tx *gorm.DB) error {
-	savings, err := s.savingsRepo.FindByStudentAndType(studentID, "mandatory")
+	savings, err := s.savingsRepo.FindByStudentAndTypeForUpdate(tx, studentID, "mandatory")
 	if err != nil {
 		return errors.New("Tabungan wajib siswa tidak ditemukan")
 	}
@@ -224,11 +228,17 @@ func (s *savingsService) DebitMandatory(studentID uint, amount float64, sourceTy
 		return err
 	}
 
-	return s.savingsRepo.UpdateBalance(savings.ID, savings.Balance-amount, tx)
+	if err := s.savingsRepo.DebitBalance(tx, savings.ID, amount); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("Saldo tabungan wajib tidak mencukupi")
+		}
+		return err
+	}
+	return nil
 }
 
 func (s *savingsService) CreditGeneral(studentID uint, amount float64, sourceType string, sourceID *uint, notes string, createdBy uint, tx *gorm.DB) error {
-	savings, err := s.savingsRepo.FindByStudentAndType(studentID, "general")
+	savings, err := s.savingsRepo.FindByStudentAndTypeForUpdate(tx, studentID, "general")
 	if err != nil {
 		return errors.New("Tabungan umum siswa tidak ditemukan")
 	}
@@ -247,5 +257,5 @@ func (s *savingsService) CreditGeneral(studentID uint, amount float64, sourceTyp
 		return err
 	}
 
-	return s.savingsRepo.UpdateBalance(savings.ID, savings.Balance+amount, tx)
+	return s.savingsRepo.CreditBalance(tx, savings.ID, amount)
 }

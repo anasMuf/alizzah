@@ -15,6 +15,8 @@ type StudentSavingsRepository interface {
 	SumBalanceByType(academicYearID uint, savingsType string) (float64, error)
 	Create(savings *model.StudentSavings) error
 	UpdateBalance(id uint, balance float64, tx *gorm.DB) error
+	DebitBalance(tx *gorm.DB, id uint, amount float64) error
+	CreditBalance(tx *gorm.DB, id uint, amount float64) error
 	WithTx(tx *gorm.DB) StudentSavingsRepository
 }
 
@@ -78,4 +80,23 @@ func (r *studentSavingsRepository) UpdateBalance(id uint, balance float64, tx *g
 		db = tx
 	}
 	return db.Model(&model.StudentSavings{}).Where("id = ?", id).Update("balance", balance).Error
+}
+
+func (r *studentSavingsRepository) DebitBalance(tx *gorm.DB, id uint, amount float64) error {
+	result := tx.Model(&model.StudentSavings{}).
+		Where("id = ? AND balance >= ?", id, amount).
+		Update("balance", gorm.Expr("balance - ?", amount))
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
+func (r *studentSavingsRepository) CreditBalance(tx *gorm.DB, id uint, amount float64) error {
+	return tx.Model(&model.StudentSavings{}).
+		Where("id = ?", id).
+		Update("balance", gorm.Expr("balance + ?", amount)).Error
 }

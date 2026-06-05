@@ -80,7 +80,7 @@ function KasirPembayaranPage() {
 
   const { data: invoicesResp, isLoading: isInvoicesLoading } = useGetV1StudentsIdInvoices(
     selectedStudent?.id || 0,
-    { academic_year_id: activeAy?.id, status: 'unpaid' },
+    { academic_year_id: activeAy?.id },
     { query: { enabled: !!selectedStudent?.id } }
   );
   const allInvoices = (invoicesResp?.data as any)?.data || [];

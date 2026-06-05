@@ -15,17 +15,16 @@ type CustomValidator struct {
 func (cv *CustomValidator) Validate(i interface{}) error {
 	if err := cv.Validator.Struct(i); err != nil {
 		if validationErrors, ok := err.(validator.ValidationErrors); ok {
-			details := make([]map[string]string, 0, len(validationErrors))
+			// Build a human-readable message from all validation errors
+			messages := make([]string, 0, len(validationErrors))
 			for _, e := range validationErrors {
-				details = append(details, map[string]string{
-					"field":   e.Field(),
-					"message": formatValidationMessage(e),
-				})
+				messages = append(messages, formatValidationMessage(e))
 			}
-			return echo.NewHTTPError(http.StatusBadRequest, map[string]interface{}{
-				"message": "Validasi gagal",
-				"details": details,
-			})
+			combined := messages[0]
+			if len(messages) > 1 {
+				combined = fmt.Sprintf("%s (dan %d kesalahan lainnya)", messages[0], len(messages)-1)
+			}
+			return echo.NewHTTPError(http.StatusBadRequest, combined)
 		}
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}

@@ -5,6 +5,7 @@ import (
 	"api/repository"
 	"api/utility"
 	"fmt"
+	"sync"
 	"time"
 )
 
@@ -173,15 +174,21 @@ func (s *reportService) GetMonthlyReport(req dto.MonthlyReportRequest) (*dto.Mon
 	}, nil
 }
 
-var annualReportCache = map[uint]*dto.AnnualReportResponse{}
-var annualReportCacheTime = map[uint]time.Time{}
+var (
+	annualReportCache     = map[uint]*dto.AnnualReportResponse{}
+	annualReportCacheTime = map[uint]time.Time{}
+	annualReportMu        sync.RWMutex
+)
 
 func (s *reportService) GetAnnualReport(req dto.AnnualReportRequest) (*dto.AnnualReportResponse, error) {
+	annualReportMu.RLock()
 	if cached, ok := annualReportCache[req.AcademicYearID]; ok {
 		if time.Since(annualReportCacheTime[req.AcademicYearID]) < time.Hour {
+			annualReportMu.RUnlock()
 			return cached, nil
 		}
 	}
+	annualReportMu.RUnlock()
 
 	ay, err := s.academicYearRepo.FindByID(req.AcademicYearID)
 	if err != nil {
@@ -216,8 +223,10 @@ func (s *reportService) GetAnnualReport(req dto.AnnualReportRequest) (*dto.Annua
 		VaultBalance:   vaultBalance,
 	}
 
+	annualReportMu.Lock()
 	annualReportCache[req.AcademicYearID] = result
 	annualReportCacheTime[req.AcademicYearID] = time.Now()
+	annualReportMu.Unlock()
 
 	return result, nil
 }

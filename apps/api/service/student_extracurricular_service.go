@@ -6,6 +6,7 @@ import (
 	"api/repository"
 	"api/utility"
 	"errors"
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -99,7 +100,10 @@ func (s *studentExtracurricularService) Enroll(studentID uint, req dto.EnrollExt
 		go s.invoiceGen.AddExtracurricularToMonthlyRange(studentID, req.ExtracurricularID, req.AcademicYearID)
 	}
 
-	savedSe, _ := s.seRepo.FindByID(se.ID)
+	savedSe, err := s.seRepo.FindByID(se.ID)
+	if err != nil {
+		return nil, fmt.Errorf("gagal mengambil data ekskul: %w", err)
+	}
 	return mapStudentExtracurricularToResponse(*savedSe), nil
 }
 
@@ -119,7 +123,10 @@ func (s *studentExtracurricularService) Update(studentID, seID uint, req dto.Upd
 		return nil, err
 	}
 
-	savedSe, _ := s.seRepo.FindByID(seID)
+	savedSe, err := s.seRepo.FindByID(seID)
+	if err != nil {
+		return nil, fmt.Errorf("gagal mengambil data ekskul: %w", err)
+	}
 	return mapStudentExtracurricularToResponse(*savedSe), nil
 }
 

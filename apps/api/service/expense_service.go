@@ -88,15 +88,21 @@ func (s *expenseService) Create(createdBy uint, req dto.CreateExpenseRequest) (*
 	// If it's not a leaf node, it's a root category
 	if !isLeaf {
 		// Check if it's actually a root (has no parent)
-		cat, _ := s.categoryRepo.FindByID(req.ExpenseCategoryID)
-		if cat != nil && cat.ParentID == nil {
+		cat, err := s.categoryRepo.FindByID(req.ExpenseCategoryID)
+		if err == nil && cat.ParentID == nil {
 			return nil, errors.New("Tidak bisa menggunakan kategori root, pilih sub-kategori")
 		}
 	}
 
-	expenseDate, _ := time.Parse("2006-01-02", req.ExpenseDate)
+	expenseDate, err := time.Parse("2006-01-02", req.ExpenseDate)
+	if err != nil {
+		return nil, fmt.Errorf("Format expense_date tidak valid (YYYY-MM-DD): %w", err)
+	}
 
-	locked, _ := s.expenseRepo.IsDateLocked(expenseDate)
+	locked, err := s.expenseRepo.IsDateLocked(expenseDate)
+	if err != nil {
+		return nil, fmt.Errorf("Gagal memeriksa status kunci tanggal: %w", err)
+	}
 	if locked {
 		return nil, errors.New("Tanggal sudah dikunci oleh tutup buku")
 	}
@@ -123,7 +129,10 @@ func (s *expenseService) Create(createdBy uint, req dto.CreateExpenseRequest) (*
 		return nil, err
 	}
 
-	saved, _ := s.expenseRepo.FindByID(expense.ID)
+	saved, err := s.expenseRepo.FindByID(expense.ID)
+	if err != nil {
+		return nil, fmt.Errorf("Gagal mengambil data pengeluaran: %w", err)
+	}
 	resp := mapExpenseToResponse(*saved)
 	return &resp, nil
 }
@@ -135,12 +144,18 @@ func (s *expenseService) Update(id uint, req dto.CreateExpenseRequest) (*dto.Exp
 	}
 
 	// Check if date is locked
-	locked, _ := s.expenseRepo.IsDateLocked(expense.ExpenseDate)
+	locked, err := s.expenseRepo.IsDateLocked(expense.ExpenseDate)
+	if err != nil {
+		return nil, fmt.Errorf("Gagal memeriksa status kunci tanggal: %w", err)
+	}
 	if locked {
 		return nil, errors.New("Tanggal sudah dikunci oleh tutup buku")
 	}
 
-	expenseDate, _ := time.Parse("2006-01-02", req.ExpenseDate)
+	expenseDate, err := time.Parse("2006-01-02", req.ExpenseDate)
+	if err != nil {
+		return nil, fmt.Errorf("Format expense_date tidak valid (YYYY-MM-DD): %w", err)
+	}
 	expense.AcademicYearID = req.AcademicYearID
 	expense.ExpenseCategoryID = req.ExpenseCategoryID
 	expense.ExpenseDate = expenseDate
@@ -152,7 +167,10 @@ func (s *expenseService) Update(id uint, req dto.CreateExpenseRequest) (*dto.Exp
 		return nil, err
 	}
 
-	saved, _ := s.expenseRepo.FindByID(id)
+	saved, err := s.expenseRepo.FindByID(id)
+	if err != nil {
+		return nil, fmt.Errorf("Gagal mengambil data pengeluaran: %w", err)
+	}
 	resp := mapExpenseToResponse(*saved)
 	return &resp, nil
 }
@@ -163,7 +181,10 @@ func (s *expenseService) Delete(id uint) error {
 		return errors.New("Pengeluaran tidak ditemukan")
 	}
 
-	locked, _ := s.expenseRepo.IsDateLocked(expense.ExpenseDate)
+	locked, err := s.expenseRepo.IsDateLocked(expense.ExpenseDate)
+	if err != nil {
+		return fmt.Errorf("Gagal memeriksa status kunci tanggal: %w", err)
+	}
 	if locked {
 		return errors.New("Tanggal sudah dikunci oleh tutup buku")
 	}

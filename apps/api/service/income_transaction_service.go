@@ -77,9 +77,15 @@ func (s *incomeTransactionService) GetByID(id uint) (*dto.IncomeTransactionRespo
 }
 
 func (s *incomeTransactionService) Create(createdBy uint, req dto.CreateIncomeTransactionRequest) (*dto.IncomeTransactionResponse, error) {
-	txnDate, _ := time.Parse("2006-01-02", req.TransactionDate)
+	txnDate, err := time.Parse("2006-01-02", req.TransactionDate)
+	if err != nil {
+		return nil, fmt.Errorf("Format transaction_date tidak valid (YYYY-MM-DD): %w", err)
+	}
 
-	locked, _ := s.repo.IsDateLocked(txnDate)
+	locked, err := s.repo.IsDateLocked(txnDate)
+	if err != nil {
+		return nil, fmt.Errorf("Gagal memeriksa status kunci tanggal: %w", err)
+	}
 	if locked {
 		return nil, errors.New("Tanggal sudah dikunci oleh tutup buku")
 	}
@@ -92,7 +98,7 @@ func (s *incomeTransactionService) Create(createdBy uint, req dto.CreateIncomeTr
 	}
 
 	var income model.IncomeTransaction
-	err := s.db.Transaction(func(tx *gorm.DB) error {
+	err = s.db.Transaction(func(tx *gorm.DB) error {
 		income = model.IncomeTransaction{
 			AcademicYearID:  req.AcademicYearID,
 			Category:        req.Category,
@@ -118,7 +124,10 @@ func (s *incomeTransactionService) Create(createdBy uint, req dto.CreateIncomeTr
 		return nil, err
 	}
 
-	saved, _ := s.repo.FindByID(income.ID)
+	saved, err := s.repo.FindByID(income.ID)
+	if err != nil {
+		return nil, fmt.Errorf("Gagal mengambil data transaksi: %w", err)
+	}
 	resp := mapIncomeTransactionToResponse(*saved)
 	return &resp, nil
 }
@@ -129,12 +138,18 @@ func (s *incomeTransactionService) Update(id uint, req dto.CreateIncomeTransacti
 		return nil, errors.New("Transaksi penerimaan tidak ditemukan")
 	}
 
-	locked, _ := s.repo.IsDateLocked(it.TransactionDate)
+	locked, err := s.repo.IsDateLocked(it.TransactionDate)
+	if err != nil {
+		return nil, fmt.Errorf("Gagal memeriksa status kunci tanggal: %w", err)
+	}
 	if locked {
 		return nil, errors.New("Tanggal sudah dikunci oleh tutup buku")
 	}
 
-	txnDate, _ := time.Parse("2006-01-02", req.TransactionDate)
+	txnDate, err := time.Parse("2006-01-02", req.TransactionDate)
+	if err != nil {
+		return nil, fmt.Errorf("Format transaction_date tidak valid (YYYY-MM-DD): %w", err)
+	}
 	it.AcademicYearID = req.AcademicYearID
 	it.Category = req.Category
 	it.SourceName = req.SourceName
@@ -147,7 +162,10 @@ func (s *incomeTransactionService) Update(id uint, req dto.CreateIncomeTransacti
 		return nil, err
 	}
 
-	saved, _ := s.repo.FindByID(id)
+	saved, err := s.repo.FindByID(id)
+	if err != nil {
+		return nil, fmt.Errorf("Gagal mengambil data transaksi: %w", err)
+	}
 	resp := mapIncomeTransactionToResponse(*saved)
 	return &resp, nil
 }
@@ -158,7 +176,10 @@ func (s *incomeTransactionService) Delete(id uint) error {
 		return errors.New("Transaksi penerimaan tidak ditemukan")
 	}
 
-	locked, _ := s.repo.IsDateLocked(it.TransactionDate)
+	locked, err := s.repo.IsDateLocked(it.TransactionDate)
+	if err != nil {
+		return fmt.Errorf("Gagal memeriksa status kunci tanggal: %w", err)
+	}
 	if locked {
 		return errors.New("Tanggal sudah dikunci oleh tutup buku")
 	}

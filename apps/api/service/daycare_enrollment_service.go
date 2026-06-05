@@ -6,6 +6,7 @@ import (
 	"api/repository"
 	"api/utility"
 	"errors"
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -107,7 +108,10 @@ func (s *daycareEnrollmentService) Create(createdBy uint, req dto.CreateDaycareE
 		var daycareCount int64
 		s.db.Model(&model.DaycareEnrollment{}).Where("student_id = ?", req.StudentID).Count(&daycareCount)
 		if daycareCount == 1 {
-			student, _ := s.studentRepo.FindByID(req.StudentID)
+			student, err := s.studentRepo.FindByID(req.StudentID)
+			if err != nil {
+				return nil, fmt.Errorf("gagal mengambil data siswa: %w", err)
+			}
 			s.invoiceGen.GenerateDaycareInitial(dto.GenerateInitialInvoiceParams{
 				StudentID:      req.StudentID,
 				AcademicYearID: req.AcademicYearID,
@@ -126,7 +130,10 @@ func (s *daycareEnrollmentService) Create(createdBy uint, req dto.CreateDaycareE
 		})
 	}
 
-	savedDe, _ := s.daycareRepo.FindByID(de.ID)
+	savedDe, err := s.daycareRepo.FindByID(de.ID)
+	if err != nil {
+		return nil, fmt.Errorf("gagal mengambil data daycare: %w", err)
+	}
 	return mapDaycareEnrollmentToResponse(*savedDe), nil
 }
 
@@ -150,7 +157,10 @@ func (s *daycareEnrollmentService) Update(id uint, req dto.CreateDaycareEnrollme
 		return nil, err
 	}
 
-	savedDe, _ := s.daycareRepo.FindByID(de.ID)
+	savedDe, err := s.daycareRepo.FindByID(de.ID)
+	if err != nil {
+		return nil, fmt.Errorf("gagal mengambil data daycare: %w", err)
+	}
 	return mapDaycareEnrollmentToResponse(*savedDe), nil
 }
 

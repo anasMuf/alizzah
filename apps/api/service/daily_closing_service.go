@@ -5,6 +5,7 @@ import (
 	"api/model"
 	"api/repository"
 	"api/utility"
+	"fmt"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -59,9 +60,15 @@ func (s *dailyClosingService) GetByID(id uint) (*dto.DailyClosingListResponse, e
 }
 
 func (s *dailyClosingService) Create(closedBy uint, req dto.CreateDailyClosingRequest) (*dto.DailyClosingListResponse, error) {
-	closingDate, _ := utility.ParseDate(req.ClosingDate)
+	closingDate, err := utility.ParseDate(req.ClosingDate)
+	if err != nil {
+		return nil, echo.NewHTTPError(400, "Format closing_date tidak valid (YYYY-MM-DD)")
+	}
 
-	existing, _ := s.repo.FindByDate(closingDate)
+	existing, err := s.repo.FindByDate(closingDate)
+	if err != nil {
+		return nil, fmt.Errorf("gagal memeriksa tutup buku existing: %w", err)
+	}
 	if existing != nil {
 		return nil, echo.NewHTTPError(409, "Tutup buku untuk tanggal ini sudah ada")
 	}
@@ -70,7 +77,10 @@ func (s *dailyClosingService) Create(closedBy uint, req dto.CreateDailyClosingRe
 		return nil, echo.NewHTTPError(400, "Tanggal tutup buku tidak boleh di masa depan")
 	}
 
-	systemCash, _ := s.cashRepo.GetBalanceUpToDate(req.AcademicYearID, closingDate)
+	systemCash, err := s.cashRepo.GetBalanceUpToDate(req.AcademicYearID, closingDate)
+	if err != nil {
+		return nil, fmt.Errorf("gagal menghitung saldo kas sistem: %w", err)
+	}
 
 	difference := req.PhysicalCashAmount - systemCash
 
@@ -94,7 +104,10 @@ func (s *dailyClosingService) Create(closedBy uint, req dto.CreateDailyClosingRe
 	}
 
 	// Fetch again to get relations
-	createdDc, _ := s.repo.FindByID(dc.ID)
+	createdDc, err := s.repo.FindByID(dc.ID)
+	if err != nil {
+		return nil, fmt.Errorf("gagal mengambil data tutup buku: %w", err)
+	}
 
 	resp := s.mapToResponse(createdDc)
 	return &resp, nil

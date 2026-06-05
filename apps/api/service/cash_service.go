@@ -32,9 +32,18 @@ func NewCashService(db *gorm.DB, cashRepo repository.CashTransactionRepository, 
 }
 
 func (s *cashService) GetBalance(academicYearID uint) (*dto.CashBalanceResponse, error) {
-	balance, _ := s.cashRepo.GetCurrentBalance(academicYearID)
-	lastClosing, _ := s.cashRepo.GetLastClosingDate(academicYearID)
-	todayCredit, todayDebit, _ := s.cashRepo.GetTodaySummary(academicYearID)
+	balance, err := s.cashRepo.GetCurrentBalance(academicYearID)
+	if err != nil {
+		return nil, fmt.Errorf("gagal membaca saldo kas: %w", err)
+	}
+	lastClosing, err := s.cashRepo.GetLastClosingDate(academicYearID)
+	if err != nil {
+		return nil, fmt.Errorf("gagal membaca tanggal tutup buku terakhir: %w", err)
+	}
+	todayCredit, todayDebit, err := s.cashRepo.GetTodaySummary(academicYearID)
+	if err != nil {
+		return nil, fmt.Errorf("gagal membaca ringkasan kas hari ini: %w", err)
+	}
 
 	var lastClosingStr *string
 	if lastClosing != nil {

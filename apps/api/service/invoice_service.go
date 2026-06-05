@@ -282,7 +282,10 @@ func (s *invoiceService) CreateInstallmentSchedule(invoiceID uint, req dto.Creat
 	// Create new schedule
 	var installments []model.InvoiceInstallment
 	for _, item := range req.Installments {
-		dueDate, _ := utility.ParseDate( item.DueDate)
+		dueDate, err := utility.ParseDate(item.DueDate)
+		if err != nil {
+			return nil, fmt.Errorf("Format due_date tidak valid (YYYY-MM-DD) untuk cicilan ke-%d: %w", item.InstallmentNumber, err)
+		}
 		installments = append(installments, model.InvoiceInstallment{
 			InvoiceID:         invoiceID,
 			InstallmentNumber: item.InstallmentNumber,
@@ -311,7 +314,10 @@ func (s *invoiceService) UpdateInstallment(invoiceID, instID uint, req dto.Updat
 		return nil, errors.New("Cicilan tidak ditemukan pada invoice ini")
 	}
 
-	dueDate, _ := utility.ParseDate( req.DueDate)
+	dueDate, err := utility.ParseDate(req.DueDate)
+	if err != nil {
+		return nil, fmt.Errorf("Format due_date tidak valid (YYYY-MM-DD): %w", err)
+	}
 	inst.DueDate = dueDate
 	inst.Amount = req.Amount
 	inst.Notes = req.Notes

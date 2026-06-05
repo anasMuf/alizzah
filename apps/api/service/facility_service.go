@@ -6,6 +6,7 @@ import (
 	"api/repository"
 	"api/utility"
 	"errors"
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -189,7 +190,10 @@ func (s *studentFacilityService) Enroll(studentID uint, req dto.EnrollFacilityRe
 		go s.invoiceGen.AddFacilityToMonthlyRange(studentID, req.FacilityID, req.AcademicYearID)
 	}
 
-	saved, _ := s.sfRepo.FindByID(sf.ID)
+	saved, err := s.sfRepo.FindByID(sf.ID)
+	if err != nil {
+		return nil, fmt.Errorf("gagal mengambil data fasilitas: %w", err)
+	}
 	resp := mapStudentFacilityToResponse(*saved)
 	return &resp, nil
 }

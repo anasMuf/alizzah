@@ -4,6 +4,7 @@ import (
 	"api/dto"
 	"api/model"
 	"api/repository"
+	"fmt"
 )
 
 type VaultService interface {
@@ -24,10 +25,19 @@ func NewVaultService(vaultRepo repository.VaultTransactionRepository, savingsRep
 }
 
 func (s *vaultService) GetBalance(academicYearID uint) (*dto.VaultBalanceResponse, error) {
-	balance, _ := s.vaultRepo.GetCurrentBalance(academicYearID)
+	balance, err := s.vaultRepo.GetCurrentBalance(academicYearID)
+	if err != nil {
+		return nil, fmt.Errorf("gagal membaca saldo vault: %w", err)
+	}
 
-	totalGeneral, _ := s.savingsRepo.SumBalanceByType(academicYearID, "general")
-	totalMandatory, _ := s.savingsRepo.SumBalanceByType(academicYearID, "mandatory")
+	totalGeneral, err := s.savingsRepo.SumBalanceByType(academicYearID, "general")
+	if err != nil {
+		return nil, fmt.Errorf("gagal membaca total tabungan umum: %w", err)
+	}
+	totalMandatory, err := s.savingsRepo.SumBalanceByType(academicYearID, "mandatory")
+	if err != nil {
+		return nil, fmt.Errorf("gagal membaca total tabungan wajib: %w", err)
+	}
 
 	return &dto.VaultBalanceResponse{
 		Balance:               balance,

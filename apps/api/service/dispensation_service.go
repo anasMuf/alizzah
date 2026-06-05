@@ -120,7 +120,10 @@ func (s *dispensationService) Create(studentID, createdBy uint, req dto.CreateDi
 		go s.invoiceGen.ApplyDispensationToExistingInvoices(studentID, req.AcademicYearID)
 	}
 
-	saved, _ := s.repo.FindByID(d.ID)
+	saved, err := s.repo.FindByID(d.ID)
+	if err != nil {
+		return nil, fmt.Errorf("gagal mengambil data dispensasi: %w", err)
+	}
 	resp := mapDispensationToResponse(*saved)
 	return &resp, nil
 }
@@ -158,7 +161,10 @@ func (s *dispensationService) Update(id uint, req dto.UpdateDispensationRequest)
 		go s.invoiceGen.ApplyDispensationToExistingInvoices(d.StudentID, d.AcademicYearID)
 	}
 
-	saved, _ := s.repo.FindByID(id)
+	saved, err := s.repo.FindByID(id)
+	if err != nil {
+		return nil, fmt.Errorf("gagal mengambil data dispensasi: %w", err)
+	}
 	resp := mapDispensationToResponse(*saved)
 	return &resp, nil
 }
@@ -179,7 +185,10 @@ func (s *dispensationService) Toggle(id uint) (*dto.DispensationResponse, error)
 		go s.invoiceGen.ApplyDispensationToExistingInvoices(d.StudentID, d.AcademicYearID)
 	}
 
-	saved, _ := s.repo.FindByID(id)
+	saved, err := s.repo.FindByID(id)
+	if err != nil {
+		return nil, fmt.Errorf("gagal mengambil data dispensasi: %w", err)
+	}
 	resp := mapDispensationToResponse(*saved)
 	return &resp, nil
 }

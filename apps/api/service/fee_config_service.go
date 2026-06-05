@@ -5,6 +5,7 @@ import (
 	"api/model"
 	"api/repository"
 	"errors"
+	"fmt"
 
 	"gorm.io/gorm"
 )
@@ -91,7 +92,10 @@ func (s *feeConfigService) Create(req dto.CreateFeeConfigRequest) (*dto.FeeConfi
 		return nil, err
 	}
 
-	savedFc, _ := s.fcRepo.FindByID(fc.ID)
+	savedFc, err := s.fcRepo.FindByID(fc.ID)
+	if err != nil {
+		return nil, fmt.Errorf("gagal mengambil data konfigurasi tarif: %w", err)
+	}
 	return mapFeeConfigToResponse(*savedFc), nil
 }
 
@@ -106,7 +110,10 @@ func (s *feeConfigService) Update(id uint, req dto.UpdateFeeConfigRequest) (*dto
 		return nil, err
 	}
 
-	savedFc, _ := s.fcRepo.FindByID(id)
+	savedFc, err := s.fcRepo.FindByID(id)
+	if err != nil {
+		return nil, fmt.Errorf("gagal mengambil data konfigurasi tarif: %w", err)
+	}
 	return mapFeeConfigToResponse(*savedFc), nil
 }
 

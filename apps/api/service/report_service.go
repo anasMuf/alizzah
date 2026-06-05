@@ -69,11 +69,17 @@ func NewReportService(
 func (s *reportService) GetDailyReport(req dto.DailyReportRequest) (*dto.DailyReportResponse, error) {
 	academicYearID := req.AcademicYearID
 	if academicYearID == 0 {
-		ay, _ := s.academicYearRepo.FindActive()
+		ay, err := s.academicYearRepo.FindActive()
+		if err != nil {
+			return nil, fmt.Errorf("gagal mengambil tahun ajaran aktif: %w", err)
+		}
 		academicYearID = ay.ID
 	}
 
-	date, _ := utility.ParseDate(req.Date)
+	date, err := utility.ParseDate(req.Date)
+	if err != nil {
+		return nil, fmt.Errorf("format date tidak valid (YYYY-MM-DD): %w", err)
+	}
 	startOfDay := date
 	endOfDay := date.Add(23*time.Hour + 59*time.Minute + 59*time.Second)
 
@@ -100,7 +106,10 @@ func (s *reportService) GetDailyReport(req dto.DailyReportRequest) (*dto.DailyRe
 		}
 	}
 
-	ay, _ := s.academicYearRepo.FindByID(academicYearID)
+	ay, err := s.academicYearRepo.FindByID(academicYearID)
+	if err != nil {
+		return nil, fmt.Errorf("gagal mengambil data tahun ajaran: %w", err)
+	}
 	return &dto.DailyReportResponse{
 		Date:         req.Date,
 		AcademicYear: ay.Name,
@@ -174,7 +183,10 @@ func (s *reportService) GetAnnualReport(req dto.AnnualReportRequest) (*dto.Annua
 		}
 	}
 
-	ay, _ := s.academicYearRepo.FindByID(req.AcademicYearID)
+	ay, err := s.academicYearRepo.FindByID(req.AcademicYearID)
+	if err != nil {
+		return nil, fmt.Errorf("gagal mengambil data tahun ajaran: %w", err)
+	}
 
 	byCategory, _ := s.reportRepo.SumInvoiceByCategory(req.AcademicYearID, 0, 0)
 	totalBilled := utility.SumBilled(byCategory)
@@ -211,7 +223,10 @@ func (s *reportService) GetAnnualReport(req dto.AnnualReportRequest) (*dto.Annua
 }
 
 func (s *reportService) GetStudentReport(studentID uint, req dto.StudentReportRequest) (*dto.StudentReportResponse, error) {
-	student, _ := s.studentRepo.FindByID(studentID)
+	student, err := s.studentRepo.FindByID(studentID)
+	if err != nil {
+		return nil, fmt.Errorf("gagal mengambil data siswa: %w", err)
+	}
 
 	academicYearID := uint(0)
 	if !req.All {
@@ -273,7 +288,10 @@ func (s *reportService) GetStudentReport(studentID uint, req dto.StudentReportRe
 
 func (s *reportService) GetClassGroupReport(classGroupID uint, req dto.ClassGroupReportRequest) (*dto.ClassGroupReportResponse, error) {
 	academicYearID := utility.ResolveAcademicYear(req.AcademicYearID, s.academicYearRepo)
-	classGroup, _ := s.classGroupRepo.FindByID(classGroupID)
+	classGroup, err := s.classGroupRepo.FindByID(classGroupID)
+	if err != nil {
+		return nil, fmt.Errorf("gagal mengambil data rombel: %w", err)
+	}
 
 	students, _ := s.reportRepo.GetStudentsByClassGroupForMonth(
 		classGroupID, req.Month, req.Year, academicYearID,

@@ -206,7 +206,10 @@ func (s *paymentService) Create(createdBy uint, req dto.CreatePaymentRequest) (*
 
 		// [D] Update invoice items
 		for _, item := range req.Items {
-			invoiceItem, _ := s.invoiceItemRepo.FindByID(item.InvoiceItemID)
+			invoiceItem, err := s.invoiceItemRepo.FindByID(item.InvoiceItemID)
+			if err != nil {
+				return fmt.Errorf("gagal mengambil item tagihan %d: %w", item.InvoiceItemID, err)
+			}
 			newPaid := invoiceItem.PaidAmount + item.Amount
 			newStatus := "partial"
 			if newPaid >= invoiceItem.Amount {
@@ -299,7 +302,10 @@ func (s *paymentService) Create(createdBy uint, req dto.CreatePaymentRequest) (*
 		return nil, err
 	}
 
-	saved, _ := s.paymentRepo.FindByID(result.ID)
+	saved, err := s.paymentRepo.FindByID(result.ID)
+	if err != nil {
+		return nil, fmt.Errorf("gagal mengambil data pembayaran: %w", err)
+	}
 	resp := mapPaymentToDetailResponse(*saved)
 	return &resp, nil
 }

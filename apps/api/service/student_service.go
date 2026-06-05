@@ -7,6 +7,7 @@ import (
 	"api/utility"
 	"encoding/csv"
 	"errors"
+	"fmt"
 	"mime/multipart"
 	"strings"
 	"time"
@@ -186,7 +187,10 @@ func (s *studentService) Create(createdBy uint, req dto.CreateStudentRequest) (*
 
 	var classGroupLevel string
 	if wantEnrollment {
-		cg, _ := s.classGroupRepo.FindByID(req.ClassGroupID)
+		cg, err := s.classGroupRepo.FindByID(req.ClassGroupID)
+		if err != nil {
+			return nil, fmt.Errorf("gagal mengambil data rombel: %w", err)
+		}
 		if cg != nil {
 			classGroupLevel = cg.Level
 		}
@@ -241,7 +245,10 @@ func (s *studentService) Create(createdBy uint, req dto.CreateStudentRequest) (*
 		})
 	}
 
-	createdStudent, _ := s.studentRepo.FindByID(student.ID)
+	createdStudent, err := s.studentRepo.FindByID(student.ID)
+	if err != nil {
+		return nil, fmt.Errorf("gagal mengambil data siswa: %w", err)
+	}
 	return mapStudentToDetailResponse(*createdStudent), nil
 }
 
@@ -370,7 +377,10 @@ func (s *studentService) Import(file *multipart.FileHeader) (*dto.ImportSummaryR
 	}
 
 	if len(students) > 0 {
-		successCount, dbResults, _ := s.studentRepo.BulkCreate(students)
+		successCount, dbResults, err := s.studentRepo.BulkCreate(students)
+		if err != nil {
+			return nil, fmt.Errorf("gagal import data siswa: %w", err)
+		}
 		details = append(details, dbResults...)
 
 		return &dto.ImportSummaryResponse{

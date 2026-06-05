@@ -92,13 +92,15 @@ function WizardPembayaranPage() {
       if (detail?.items) {
         detail.items.forEach((item: any) => {
           const sisa = Number(item.amount || 0) - Number(item.paid_amount || 0);
-          if (sisa > 0) {
+          // Include items with sisa > 0 (normal) OR dispensation items (negative amount)
+          if (sisa > 0 || item.category === 'dispensation') {
             items.push({
               id: item.id,
               invoice_id: detail.id,
               name: item.name,
               category: item.category,
               sisa_tagihan: sisa,
+              is_dispensation: item.category === 'dispensation',
             });
           }
         });
@@ -419,18 +421,26 @@ function WizardPembayaranPage() {
                       </thead>
                       <tbody className="divide-y divide-gray-200">
                         {invoiceItems.map((item: any) => (
-                          <tr key={item.id}>
-                            <td className="py-3 text-sm text-gray-900">{item.name}</td>
-                            <td className="py-3 text-sm text-gray-500 text-right">{formatCurrency(item.sisa_tagihan)}</td>
+                          <tr key={item.id} className={item.is_dispensation ? 'bg-green-50' : ''}>
+                            <td className={`py-3 text-sm ${item.is_dispensation ? 'text-green-700 italic' : 'text-gray-900'}`}>
+                              {item.name}
+                            </td>
+                            <td className={`py-3 text-sm text-right ${item.is_dispensation ? 'text-green-600 font-medium' : 'text-gray-500'}`}>
+                              {formatCurrency(item.sisa_tagihan)}
+                            </td>
                             <td className="py-3 text-right">
-                              <input
-                                type="number"
-                                className="block w-32 ml-auto rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 text-right"
-                                value={payAmounts[item.id] || ''}
-                                onChange={(e) => handleAmountChange(item.id, e.target.value)}
-                                max={item.sisa_tagihan}
-                                min={0}
-                              />
+                              {item.is_dispensation ? (
+                                <span className="text-sm font-medium text-green-600 pr-2">{formatCurrency(item.sisa_tagihan)}</span>
+                              ) : (
+                                <input
+                                  type="number"
+                                  className="block w-32 ml-auto rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 text-right"
+                                  value={payAmounts[item.id] || ''}
+                                  onChange={(e) => handleAmountChange(item.id, e.target.value)}
+                                  max={item.sisa_tagihan}
+                                  min={0}
+                                />
+                              )}
                             </td>
                           </tr>
                         ))}

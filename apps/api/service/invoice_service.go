@@ -36,17 +36,20 @@ type invoiceService struct {
 	invoiceRepo     repository.InvoiceRepository
 	itemRepo        repository.InvoiceItemRepository
 	installmentRepo repository.InvoiceInstallmentRepository
+	paymentRepo     repository.PaymentRepository
 }
 
 func NewInvoiceService(
 	invoiceRepo repository.InvoiceRepository,
 	itemRepo repository.InvoiceItemRepository,
 	installmentRepo repository.InvoiceInstallmentRepository,
+	paymentRepo repository.PaymentRepository,
 ) InvoiceService {
 	return &invoiceService{
 		invoiceRepo:     invoiceRepo,
 		itemRepo:        itemRepo,
 		installmentRepo: installmentRepo,
+		paymentRepo:     paymentRepo,
 	}
 }
 
@@ -88,6 +91,30 @@ func (s *invoiceService) GetByID(id uint) (*dto.InvoiceDetailResponse, error) {
 		return nil, err
 	}
 	resp := mapInvoiceToDetailResponse(*invoice)
+
+	// Attach payment history for this invoice
+	if s.paymentRepo != nil {
+		payments, _ := s.paymentRepo.FindByInvoiceID(id)
+		for _, p := range payments {
+			// Sum the payment items that belong to this invoice
+			paidForInvoice := float64(0)
+			for _, pi := range p.Items {
+				for _, ii := range invoice.Items {
+					if pi.InvoiceItemID == ii.ID {
+						paidForInvoice += pi.Amount
+					}
+				}
+			}
+			resp.Payments = append(resp.Payments, dto.InvoicePaymentBrief{
+				ID:          p.ID,
+				PaymentDate: p.PaymentDate.Format("2006-01-02"),
+				Amount:      paidForInvoice,
+				Source:      p.Source,
+				CreatedBy:   dto.UserBriefResponse{ID: p.Creator.ID, FullName: p.Creator.FullName},
+			})
+		}
+	}
+
 	return &resp, nil
 }
 

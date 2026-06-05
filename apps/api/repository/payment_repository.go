@@ -12,6 +12,7 @@ type PaymentRepository interface {
 	FindAll(params dto.PaymentQueryParams) ([]model.Payment, int64, error)
 	FindByID(id uint) (*model.Payment, error)
 	FindByStudentID(studentID uint, params dto.StudentPaymentQueryParams) ([]model.Payment, error)
+	FindByInvoiceID(invoiceID uint) ([]model.Payment, error)
 	Create(payment *model.Payment) error
 	WithTx(tx *gorm.DB) PaymentRepository
 }
@@ -102,6 +103,20 @@ func (r *paymentRepository) FindByStudentID(studentID uint, params dto.StudentPa
 	}
 
 	err := query.Order("created_at DESC").Find(&payments).Error
+	return payments, err
+}
+
+func (r *paymentRepository) FindByInvoiceID(invoiceID uint) ([]model.Payment, error) {
+	var payments []model.Payment
+	err := r.db.
+		Preload("Creator").
+		Preload("Items").
+		Joins("JOIN payment_items pi ON pi.payment_id = payments.id").
+		Joins("JOIN invoice_items ii ON ii.id = pi.invoice_item_id").
+		Where("ii.invoice_id = ?", invoiceID).
+		Group("payments.id").
+		Order("payments.payment_date DESC").
+		Find(&payments).Error
 	return payments, err
 }
 

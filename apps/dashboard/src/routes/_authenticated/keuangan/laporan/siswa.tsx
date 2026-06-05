@@ -73,7 +73,7 @@ function RekapSiswaPage() {
     },
   );
 
-  const studentResults: any[] = (studentsData?.data as any)?.data?.data || [];
+  const studentResults: any[] = (studentsData?.data as any)?.data || [];
 
   const { data: reportData, isLoading: reportLoading, isError } =
     useGetV1ReportsStudentsId(

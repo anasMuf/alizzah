@@ -44,7 +44,16 @@ type InvoiceDetailResponse struct {
 	Notes        *string                  `json:"notes"`
 	Items        []InvoiceItemResponse    `json:"items"`
 	Installments []InstallmentResponse    `json:"installments"`
+	Payments     []InvoicePaymentBrief    `json:"payments"`
 	CreatedAt    string                   `json:"created_at"`
+}
+
+type InvoicePaymentBrief struct {
+	ID          uint              `json:"id"`
+	PaymentDate string            `json:"payment_date"`
+	Amount      float64           `json:"amount"`
+	Source      string            `json:"source"`
+	CreatedBy   UserBriefResponse `json:"created_by"`
 }
 
 // Response — Item

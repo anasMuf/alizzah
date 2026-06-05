@@ -563,9 +563,34 @@ function DetailTagihanPage() {
              <div className="px-4 py-5 sm:px-6 border-b border-gray-200 bg-gray-50">
                 <h3 className="text-base font-semibold leading-6 text-gray-900">Riwayat Pembayaran</h3>
              </div>
-             <div className="p-4 sm:px-6">
-                <p className="text-sm text-gray-500 italic">Belum ada riwayat pembayaran yang diimplementasikan UI-nya di halaman ini.</p>
-             </div>
+             {invoice.payments && invoice.payments.length > 0 ? (
+               <table className="min-w-full divide-y divide-gray-300">
+                 <thead className="bg-gray-50">
+                   <tr>
+                     <th className="py-3 pl-6 pr-3 text-left text-sm font-semibold text-gray-900">Tanggal</th>
+                     <th className="px-3 py-3 text-left text-sm font-semibold text-gray-900">Sumber</th>
+                     <th className="px-3 py-3 text-left text-sm font-semibold text-gray-900">Petugas</th>
+                     <th className="px-3 py-3 text-right text-sm font-semibold text-gray-900 pr-6">Nominal</th>
+                   </tr>
+                 </thead>
+                 <tbody className="divide-y divide-gray-100">
+                   {invoice.payments.map((p: any) => (
+                     <tr key={p.id} className="hover:bg-gray-50">
+                       <td className="py-3 pl-6 pr-3 text-sm text-gray-900">{formatDate(p.payment_date)}</td>
+                       <td className="px-3 py-3 text-sm text-gray-500">{p.source === 'cash' ? 'Tunai (Kas)' : 'Tabungan'}</td>
+                       <td className="px-3 py-3 text-sm text-gray-500">{p.created_by?.full_name || '-'}</td>
+                       <td className="px-3 py-3 text-sm text-right font-medium text-gray-900 pr-6 tabular-nums">
+                         {formatCurrency(Number(p.amount))}
+                       </td>
+                     </tr>
+                   ))}
+                 </tbody>
+               </table>
+             ) : (
+               <div className="p-4 sm:px-6">
+                 <p className="text-sm text-gray-500 italic">Belum ada pembayaran untuk tagihan ini.</p>
+               </div>
+             )}
           </div>
         </div>
       </div>

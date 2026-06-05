@@ -201,7 +201,7 @@ func main() {
 	dispensationRepo := repository.NewDispensationRepository(db)
 
 	invoiceGenService := service.NewInvoiceGenerateService(db, invoiceRepo, invoiceItemRepo, fcRepo, fcItemRepo, effectiveDayRepo, enrollmentRepo, extracurricularRepo, seRepo, ayRepo, daycareRepo, facilityRepo, sfRepo, dispensationRepo)
-	invoiceService := service.NewInvoiceService(invoiceRepo, invoiceItemRepo, invoiceInstallmentRepo)
+	invoiceService := service.NewInvoiceService(invoiceRepo, invoiceItemRepo, invoiceInstallmentRepo, paymentRepo)
 
 	// Batch 6: create transaction infrastructure first
 	txnWriterService := service.NewTransactionWriterService(cashTxnRepo, vaultTxnRepo)

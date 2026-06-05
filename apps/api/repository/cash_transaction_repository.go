@@ -16,6 +16,7 @@ type CashTransactionRepository interface {
 	SumByDateRange(academicYearID uint, start, end time.Time) (credit, debit float64, err error)
 	SumByMonth(academicYearID uint, month, year uint) (credit, debit float64, err error)
 	GetCurrentBalance(academicYearID uint) (float64, error)
+	GetCurrentBalanceWithTx(academicYearID uint, tx *gorm.DB) (float64, error)
 	GetBalanceUpToDate(academicYearID uint, date time.Time) (float64, error)
 	GetLastClosingDate(academicYearID uint) (*time.Time, error)
 	GetTodaySummary(academicYearID uint) (credit, debit float64, err error)
@@ -121,6 +122,27 @@ func (r *cashTransactionRepository) GetCurrentBalance(academicYearID uint) (floa
 	var res Result
 
 	query := r.db.Model(&model.CashTransaction{}).
+		Select("COALESCE(SUM(CASE WHEN transaction_type = 'credit' THEN amount ELSE 0 END), 0) as credit, COALESCE(SUM(CASE WHEN transaction_type = 'debit' THEN amount ELSE 0 END), 0) as debit")
+
+	if academicYearID != 0 {
+		query = query.Where("academic_year_id = ?", academicYearID)
+	}
+
+	err := query.Scan(&res).Error
+	if err != nil {
+		return 0, err
+	}
+	return res.Credit - res.Debit, nil
+}
+
+func (r *cashTransactionRepository) GetCurrentBalanceWithTx(academicYearID uint, tx *gorm.DB) (float64, error) {
+	type Result struct {
+		Credit float64
+		Debit  float64
+	}
+	var res Result
+
+	query := tx.Model(&model.CashTransaction{}).
 		Select("COALESCE(SUM(CASE WHEN transaction_type = 'credit' THEN amount ELSE 0 END), 0) as credit, COALESCE(SUM(CASE WHEN transaction_type = 'debit' THEN amount ELSE 0 END), 0) as debit")
 
 	if academicYearID != 0 {

@@ -71,15 +71,24 @@ func (s *cashService) GetTransactions(params dto.CashTransactionQueryParams) ([]
 }
 
 func (s *cashService) TransferToVault(createdBy uint, req dto.TransferToCashRequest, academicYearID uint) error {
-	balance, _ := s.cashRepo.GetCurrentBalance(academicYearID)
-	if req.Amount > balance {
-		return echo.NewHTTPError(422, fmt.Sprintf(
-			"Saldo kas tidak mencukupi. Saldo: %.0f, Transfer: %.0f",
-			balance, req.Amount,
-		))
-	}
-
 	return s.db.Transaction(func(tx *gorm.DB) error {
+		// Advisory lock per academic year untuk serialisasi concurrent transfer
+		if err := tx.Exec("SELECT pg_advisory_xact_lock(?)", academicYearID).Error; err != nil {
+			return fmt.Errorf("gagal memperoleh lock: %w", err)
+		}
+
+		// Baca balance dalam transaksi (setelah lock)
+		balance, err := s.cashRepo.GetCurrentBalanceWithTx(academicYearID, tx)
+		if err != nil {
+			return fmt.Errorf("gagal membaca saldo kas: %w", err)
+		}
+		if req.Amount > balance {
+			return echo.NewHTTPError(422, fmt.Sprintf(
+				"Saldo kas tidak mencukupi. Saldo: %.0f, Transfer: %.0f",
+				balance, req.Amount,
+			))
+		}
+
 		now := time.Now()
 		if err := s.txWriter.WriteCashDebit(
 			academicYearID, now, req.Amount,

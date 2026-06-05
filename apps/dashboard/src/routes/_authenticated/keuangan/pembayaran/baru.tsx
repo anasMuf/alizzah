@@ -287,7 +287,7 @@ function KasirPembayaranPage() {
 
   // ─── RENDER ────────────────────────────────────────────────────────
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col">
+    <div className="h-full flex flex-col">
 
       {/* ═══ TOP BAR: Search Siswa ═══ */}
       <div className="flex-shrink-0 bg-white border-b border-gray-200 px-6 py-3">

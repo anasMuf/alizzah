@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   Users,
   BookOpen,
+  Bus,
   CircleDollarSign,
   Calendar,
   Layers,
@@ -66,6 +67,7 @@ export function Sidebar({ isOpen }: SidebarProps) {
               <NavLink to="/administrasi/rombel" icon={Layers}>Rombel</NavLink>
               <NavLink to="/administrasi/siswa" icon={Users}>Siswa</NavLink>
               <NavLink to="/administrasi/ekskul" icon={BookOpen}>Ekstrakurikuler</NavLink>
+              <NavLink to="/administrasi/fasilitas" icon={Bus}>Fasilitas</NavLink>
               <NavLink to="/administrasi/daycare" icon={Baby}>Daycare</NavLink>
               <NavLink to="/administrasi/siklus" icon={RefreshCw}>Siklus Akademik</NavLink>
             </div>

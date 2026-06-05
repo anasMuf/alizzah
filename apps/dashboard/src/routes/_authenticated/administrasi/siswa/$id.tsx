@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, Link, useRouterState, useNavigate } from '@tanstack/react-router';
 import { useGetV1StudentsId } from '../../../../api/endpoints/students/students';
-import { ChevronRight, UserCircle, GraduationCap, Trophy, Wallet, User } from 'lucide-react';
+import { ChevronRight, UserCircle, GraduationCap, Trophy, Bus, Wallet, User } from 'lucide-react';
 import { Badge } from '../../../../components/atoms/Badge';
 
 export const Route = createFileRoute('/_authenticated/administrasi/siswa/$id')({
@@ -39,6 +39,7 @@ function StudentLayout() {
     { name: 'Profil', href: `/administrasi/siswa/${id}/profil`, icon: User, show: true },
     { name: 'Akademik', href: `/administrasi/siswa/${id}/akademik`, icon: GraduationCap, show: !student.is_daycare_only },
     { name: 'Ekskul', href: `/administrasi/siswa/${id}/ekskul`, icon: Trophy, show: true },
+    { name: 'Fasilitas', href: `/administrasi/siswa/${id}/fasilitas`, icon: Bus, show: true },
     { name: 'Keuangan', href: `/administrasi/siswa/${id}/keuangan`, icon: Wallet, show: true },
   ];
 

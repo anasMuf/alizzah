@@ -6,6 +6,7 @@ import (
 	"api/repository"
 	"api/utility"
 	"fmt"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -25,6 +26,8 @@ type InvoiceGenerateService interface {
 	AddExtracurricularToMonthlyRange(studentID, extracurricularID, academicYearID uint) error
 	RemoveExtracurricularFromFutureInvoices(studentID, extracurricularID, academicYearID uint) error
 	SyncExtracurricularMonthlyInvoices() (*dto.ExtracurricularSyncResult, error)
+	AddFacilityToMonthlyRange(studentID, facilityID, academicYearID uint) error
+	RemoveFacilityFromFutureInvoices(studentID, facilityID, academicYearID uint) error
 }
 
 type invoiceGenerateService struct {
@@ -39,6 +42,8 @@ type invoiceGenerateService struct {
 	seRepo              repository.StudentExtracurricularRepository
 	acRepo              repository.AcademicYearRepository
 	daycareRepo         repository.DaycareEnrollmentRepository
+	facilityRepo        repository.FacilityRepository
+	sfRepo              repository.StudentFacilityRepository
 }
 
 func NewInvoiceGenerateService(
@@ -53,6 +58,8 @@ func NewInvoiceGenerateService(
 	seRepo repository.StudentExtracurricularRepository,
 	acRepo repository.AcademicYearRepository,
 	daycareRepo repository.DaycareEnrollmentRepository,
+	facilityRepo repository.FacilityRepository,
+	sfRepo repository.StudentFacilityRepository,
 ) InvoiceGenerateService {
 	return &invoiceGenerateService{
 		db:                  db,
@@ -66,6 +73,8 @@ func NewInvoiceGenerateService(
 		seRepo:              seRepo,
 		acRepo:              acRepo,
 		daycareRepo:         daycareRepo,
+		facilityRepo:        facilityRepo,
+		sfRepo:              sfRepo,
 	}
 }
 
@@ -264,6 +273,38 @@ func (s *invoiceGenerateService) GenerateMonthly(params dto.GenerateMonthlyInvoi
 						IsMandatory: true,
 					})
 				}
+			}
+		}
+	}
+
+	// Fasilitas opsional (antar jemput, dll)
+	if s.sfRepo != nil {
+		activeFacilities, _ := s.sfRepo.FindActiveByStudentID(params.StudentID, params.AcademicYearID)
+		for _, sf := range activeFacilities {
+			facilityFeeItems, _ := s.feeConfigItemRepo.FindByItemKeys(feeConfig.ID, []string{facilityItemKey(sf.Facility.Name)})
+			for _, feeItem := range facilityFeeItems {
+				amount := feeItem.Amount
+				itemName := feeItem.Name
+				var qty *uint
+				var unitPx *float64
+
+				if feeItem.Unit == "per_day" && effectiveDays != nil {
+					totalDays := effectiveDays.TotalDays
+					amount = feeItem.Amount * float64(totalDays)
+					itemName = fmt.Sprintf("%s (%d hari)", feeItem.Name, totalDays)
+					qty = &totalDays
+					up := feeItem.Amount
+					unitPx = &up
+				}
+
+				invoiceItems = append(invoiceItems, model.InvoiceItem{
+					Name:        itemName,
+					Category:    "facility",
+					Amount:      amount,
+					Quantity:    qty,
+					UnitPrice:   unitPx,
+					IsMandatory: true,
+				})
 			}
 		}
 	}
@@ -813,6 +854,135 @@ func (s *invoiceGenerateService) RemoveDaycareFromFutureInvoices(studentID uint,
 			if err := s.recalculateInvoiceTotal(inv.ID); err != nil {
 				return err
 			}
+		}
+	}
+
+	return nil
+}
+
+// ─── Facility Methods ────────────────────────────────────────────────
+
+func facilityItemKey(facilityName string) string {
+	slug := strings.ToLower(strings.ReplaceAll(facilityName, " ", "_"))
+	return "facility_" + slug
+}
+
+func (s *invoiceGenerateService) AddFacilityToMonthlyRange(studentID, facilityID, academicYearID uint) error {
+	facility, err := s.facilityRepo.FindByID(facilityID)
+	if err != nil {
+		return err
+	}
+
+	feeConfig, err := s.feeConfigRepo.FindByAcademicYearID(academicYearID)
+	if err != nil {
+		return nil
+	}
+
+	itemKey := facilityItemKey(facility.Name)
+	feeItems, _ := s.feeConfigItemRepo.FindByItemKeys(feeConfig.ID, []string{itemKey})
+	if len(feeItems) == 0 {
+		return nil
+	}
+
+	ay, err := s.acRepo.FindByID(academicYearID)
+	if err != nil {
+		return nil
+	}
+
+	allSF, _ := s.sfRepo.FindActiveByStudentID(studentID, academicYearID)
+	var startDate time.Time
+	for _, enrollment := range allSF {
+		if enrollment.FacilityID == facilityID {
+			startDate = enrollment.StartDate
+			break
+		}
+	}
+	if startDate.IsZero() {
+		return nil
+	}
+
+	months := utility.MonthRangeFromDate(startDate, ay.EndDate)
+
+	for _, m := range months {
+		invoice, err := s.invoiceRepo.FindMonthlyByStudent(studentID, m.Month, m.Year)
+		if err != nil {
+			continue
+		}
+
+		existingItems, _ := s.invoiceItemRepo.FindByInvoiceID(invoice.ID)
+		for _, feeItem := range feeItems {
+			alreadyExists := false
+			for _, existing := range existingItems {
+				if existing.Category == "facility" && strings.Contains(existing.Name, facility.Name) {
+					alreadyExists = true
+					break
+				}
+			}
+			if alreadyExists {
+				continue
+			}
+
+			amount := feeItem.Amount
+			itemName := feeItem.Name
+			var qty *uint
+			var unitPx *float64
+
+			if feeItem.Unit == "per_day" {
+				enrollment, _ := s.enrollmentRepo.FindActiveByStudentID(studentID)
+				if enrollment != nil {
+					ed, _ := s.effectiveDayRepo.FindByClassGroupMonthYear(enrollment.ClassGroupID, m.Month, m.Year)
+					if ed != nil {
+						totalDays := ed.TotalDays
+						amount = feeItem.Amount * float64(totalDays)
+						itemName = fmt.Sprintf("%s (%d hari)", feeItem.Name, totalDays)
+						qty = &totalDays
+						up := feeItem.Amount
+						unitPx = &up
+					}
+				}
+			}
+
+			item := &model.InvoiceItem{
+				InvoiceID:   invoice.ID,
+				Name:        itemName,
+				Category:    "facility",
+				Amount:      amount,
+				Quantity:    qty,
+				UnitPrice:   unitPx,
+				IsMandatory: true,
+			}
+			s.invoiceItemRepo.Create(item)
+		}
+
+		s.recalculateInvoiceTotal(invoice.ID)
+	}
+
+	return nil
+}
+
+func (s *invoiceGenerateService) RemoveFacilityFromFutureInvoices(studentID, facilityID, academicYearID uint) error {
+	facility, err := s.facilityRepo.FindByID(facilityID)
+	if err != nil {
+		return err
+	}
+
+	now := time.Now()
+	curMonth := uint(now.Month())
+	curYear := uint(now.Year())
+
+	invoices, _ := s.invoiceRepo.FindMonthlyByStudentFromMonth(studentID, curMonth, curYear)
+
+	for _, inv := range invoices {
+		items, _ := s.invoiceItemRepo.FindByInvoiceID(inv.ID)
+		deleted := false
+		for _, item := range items {
+			if item.Category == "facility" && strings.Contains(item.Name, facility.Name) && item.PaidAmount == 0 {
+				s.invoiceItemRepo.Delete(item.ID)
+				deleted = true
+			}
+		}
+		if deleted {
+			s.recalculateInvoiceTotal(inv.ID)
 		}
 	}
 

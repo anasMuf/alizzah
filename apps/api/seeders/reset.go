@@ -91,6 +91,9 @@ var allTablesOrdered = []string{
 	// Batch 4
 	"fee_config_items",
 	"fee_configs",
+	// Facilities
+	"student_facilities",
+	"facilities",
 	// Batch 3
 	"student_extracurriculars",
 	"student_academic_events",

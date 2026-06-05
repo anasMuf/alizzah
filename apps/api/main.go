@@ -76,6 +76,9 @@ func main() {
 		&model.DailyClosing{},
 		// Income transactions
 		&model.IncomeTransaction{},
+		// Facilities
+		&model.Facility{},
+		&model.StudentFacility{},
 	); err != nil {
 		log.Fatal("Gagal AutoMigrate:", err)
 	}
@@ -112,6 +115,7 @@ func main() {
 	seeders.SeedExtracurriculars(db)   // 4. Ekskul/Pasta
 	seeders.SeedFeeConfigs(db)         // 5. Tarif (depends on #2)
 	seeders.SeedExpenseCategories(db)  // 6. Kategori Pengeluaran
+	seeders.SeedFacilities(db)         // 6b. Fasilitas (Antar Jemput, dll)
 	seeders.SeedStudentsFromLegacy(db) // 7. Siswa + Enrollment + Savings (depends on #1,2,3)
 	seeders.SeedEffectiveDays(db)      // 8. Hari Efektif (depends on #3)
 	seeders.SeedSampleTransactions(db)  // 9. Sample Tagihan/Bayar/Pengeluaran (depends on #5,7,8)
@@ -186,7 +190,11 @@ func main() {
 	classGroupService := service.NewClassGroupService(classGroupRepo)
 
 	// Batch 5: create generate service first (other services depend on it)
-	invoiceGenService := service.NewInvoiceGenerateService(db, invoiceRepo, invoiceItemRepo, fcRepo, fcItemRepo, effectiveDayRepo, enrollmentRepo, extracurricularRepo, seRepo, ayRepo, daycareRepo)
+	// Facility repos (needed before invoiceGenService)
+	facilityRepo := repository.NewFacilityRepository(db)
+	sfRepo := repository.NewStudentFacilityRepository(db)
+
+	invoiceGenService := service.NewInvoiceGenerateService(db, invoiceRepo, invoiceItemRepo, fcRepo, fcItemRepo, effectiveDayRepo, enrollmentRepo, extracurricularRepo, seRepo, ayRepo, daycareRepo, facilityRepo, sfRepo)
 	invoiceService := service.NewInvoiceService(invoiceRepo, invoiceItemRepo, invoiceInstallmentRepo)
 
 	// Batch 6: create transaction infrastructure first
@@ -254,6 +262,11 @@ func main() {
 	// Income transactions
 	incomeHandler := handler.NewIncomeTransactionHandler(incomeService)
 
+	// Facilities
+	facilityService := service.NewFacilityService(facilityRepo)
+	sfService := service.NewStudentFacilityService(sfRepo, studentRepo, facilityRepo, ayRepo, invoiceGenService)
+	facilityHandler := handler.NewFacilityHandler(facilityService, sfService)
+
 	// Batch 7
 	cashHandler := handler.NewCashHandler(cashService)
 	vaultHandler := handler.NewVaultHandler(vaultService)
@@ -305,6 +318,9 @@ func main() {
 	students.POST("/:id/extracurriculars", seHandler.Enroll, middleware.RequireRoles("superadmin", "admin_administrasi"))
 	students.PUT("/:id/extracurriculars/:se_id", seHandler.Update, middleware.RequireRoles("superadmin", "admin_administrasi"))
 	students.DELETE("/:id/extracurriculars/:se_id", seHandler.Unenroll, middleware.RequireRoles("superadmin", "admin_administrasi"))
+	students.GET("/:id/facilities", facilityHandler.ListByStudent, middleware.RequireRoles("superadmin", "admin_administrasi"))
+	students.POST("/:id/facilities", facilityHandler.Enroll, middleware.RequireRoles("superadmin", "admin_administrasi"))
+	students.DELETE("/:id/facilities/:facilityId", facilityHandler.Unenroll, middleware.RequireRoles("superadmin", "admin_administrasi"))
 	students.GET("/:id/academic-events", eventHandler.GetByStudent, middleware.RequireRoles("superadmin", "admin_administrasi"))
 
 	// Enrollment management
@@ -417,6 +433,13 @@ func main() {
 	expenses.GET("/:id", expenseHandler.Get)
 	expenses.PUT("/:id", expenseHandler.Update)
 	expenses.DELETE("/:id", expenseHandler.Delete)
+
+	// Facilities (master)
+	facilities := api.Group("/facilities", middleware.JWTAuth)
+	facilities.GET("", facilityHandler.List, middleware.RequireRoles("superadmin", "admin_administrasi"))
+	facilities.POST("", facilityHandler.Create, middleware.RequireRoles("superadmin", "admin_administrasi"))
+	facilities.PUT("/:id", facilityHandler.Update, middleware.RequireRoles("superadmin", "admin_administrasi"))
+	facilities.DELETE("/:id", facilityHandler.Delete, middleware.RequireRoles("superadmin"))
 
 	// Income Transactions (Dana Bantuan)
 	incomes := api.Group("/income-transactions", middleware.JWTAuth, middleware.RequireRoles("superadmin", "admin_keuangan"))

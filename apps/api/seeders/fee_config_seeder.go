@@ -199,5 +199,10 @@ func buildFeeConfigItems() []feeItemDef {
 		feeItemDef{"graduation", "biaya_wisuda", "Biaya Wisuda", "berlian", "all", 0, "fixed", false},
 	)
 
+	// === Fasilitas ===
+	items = append(items,
+		feeItemDef{"facility", "facility_antar_jemput", "Antar Jemput", "all", "all", 15000, "per_day", false},
+	)
+
 	return items
 }

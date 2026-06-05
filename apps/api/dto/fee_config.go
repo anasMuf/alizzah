@@ -20,7 +20,7 @@ type FeeConfigResponse struct {
 
 // FeeConfigItem
 type CreateFeeConfigItemRequest struct {
-	Category    string  `json:"category" validate:"required,oneof=initial registration monthly_spp monthly_infaq pasta calisan ekskul savings_mandatory daycare graduation"`
+	Category    string  `json:"category" validate:"required,oneof=initial registration monthly_spp monthly_infaq pasta calisan ekskul savings_mandatory daycare graduation facility"`
 	ItemKey     string  `json:"item_key" validate:"required,max=50"`
 	Name        string  `json:"name" validate:"required,max=100"`
 	Level       string  `json:"level" validate:"required,oneof=all mutiara intan berlian"`

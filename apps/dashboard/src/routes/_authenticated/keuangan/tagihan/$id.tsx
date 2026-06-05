@@ -435,7 +435,7 @@ function DetailTagihanPage() {
           <Button variant="secondary" onClick={() => window.print()}>
             <Printer className="w-4 h-4 mr-2" /> Cetak Tagihan
           </Button>
-          <Link to="/keuangan/pembayaran/baru" search={{ student_id: invoice.student?.id }}>
+          <Link to="/keuangan/pembayaran/baru" search={{ student_id: invoice.student?.id, invoice_id: invoice.id }}>
             <Button variant="primary" disabled={invoice.status === 'paid'}>
               + Catat Pembayaran
             </Button>

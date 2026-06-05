@@ -63,7 +63,7 @@ function PembayaranListPage() {
           </p>
         </div>
         <div className="mt-4 sm:ml-4 sm:mt-0 flex gap-2">
-          <Link to="/keuangan/pembayaran/baru" search={{ student_id: undefined }}>
+          <Link to="/keuangan/pembayaran/baru" search={{ student_id: undefined, invoice_id: undefined }}>
             <Button variant="primary">
               <Plus className="-ml-0.5 mr-1.5 h-5 w-5" aria-hidden="true" />
               Catat Pembayaran Baru

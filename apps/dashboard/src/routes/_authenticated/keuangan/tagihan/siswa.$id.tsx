@@ -68,7 +68,7 @@ function TagihanSiswaPage() {
           </p>
         </div>
         <div className="mt-4 sm:ml-4 sm:mt-0">
-          <Link to="/keuangan/pembayaran/baru" search={{ student_id: student.id }}>
+          <Link to="/keuangan/pembayaran/baru" search={{ student_id: student.id, invoice_id: undefined }}>
             <Button variant="primary">
               + Catat Pembayaran
             </Button>

@@ -17,6 +17,7 @@ export const Route = createFileRoute('/_authenticated/keuangan/pembayaran/baru')
   component: KasirPembayaranPage,
   validateSearch: (search: Record<string, unknown>) => ({
     student_id: search.student_id ? Number(search.student_id) : undefined,
+    invoice_id: search.invoice_id ? Number(search.invoice_id) : undefined,
   }),
 });
 
@@ -24,6 +25,7 @@ function KasirPembayaranPage() {
   const navigate = useNavigate();
   const searchParams = useSearch({ from: '/_authenticated/keuangan/pembayaran/baru' }) as any;
   const initialStudentId = searchParams.student_id ? Number(searchParams.student_id) : null;
+  const initialInvoiceId = searchParams.invoice_id ? Number(searchParams.invoice_id) : null;
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const [activeAy] = useAtom(academicYearAtom);
@@ -84,12 +86,15 @@ function KasirPembayaranPage() {
   const allInvoices = (invoicesResp?.data as any)?.data || [];
   const unpaidInvoices = allInvoices.filter((inv: any) => inv.status !== 'paid');
 
-  // Auto-select all invoices when student is selected
+  // Auto-select invoice only if navigated from tagihan detail (with invoice_id param)
   useEffect(() => {
-    if (unpaidInvoices.length > 0 && selectedStudent && selectedInvoices.length === 0) {
-      setSelectedInvoices(unpaidInvoices.map((inv: any) => inv.id));
+    if (unpaidInvoices.length > 0 && initialInvoiceId && selectedInvoices.length === 0) {
+      const matched = unpaidInvoices.find((inv: any) => inv.id === initialInvoiceId);
+      if (matched) {
+        setSelectedInvoices([matched.id]);
+      }
     }
-  }, [unpaidInvoices, selectedStudent]);
+  }, [unpaidInvoices, initialInvoiceId]);
 
   const invoiceDetailQueries = useQueries({
     queries: selectedInvoices.map((invId) => ({

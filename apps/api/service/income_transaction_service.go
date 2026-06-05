@@ -150,6 +150,7 @@ func (s *incomeTransactionService) Update(id uint, req dto.CreateIncomeTransacti
 	if err != nil {
 		return nil, fmt.Errorf("Format transaction_date tidak valid (YYYY-MM-DD): %w", err)
 	}
+
 	it.AcademicYearID = req.AcademicYearID
 	it.Category = req.Category
 	it.SourceName = req.SourceName
@@ -158,7 +159,33 @@ func (s *incomeTransactionService) Update(id uint, req dto.CreateIncomeTransacti
 	it.ReferenceNumber = req.ReferenceNumber
 	it.Notes = req.Notes
 
-	if err := s.repo.Update(it); err != nil {
+	categoryLabels := map[string]string{
+		"bos":     "Dana BOS",
+		"donasi":  "Donasi",
+		"hibah":   "Hibah",
+		"lainnya": "Penerimaan Lainnya",
+	}
+
+	err = s.db.Transaction(func(tx *gorm.DB) error {
+		// 1. Hapus CashTransaction lama
+		if err := s.txnWriter.DeleteCashBySource(tx, "income", it.ID); err != nil {
+			return fmt.Errorf("gagal menghapus transaksi kas lama: %w", err)
+		}
+
+		// 2. Update income transaction
+		if err := s.repo.WithTx(tx).Update(it); err != nil {
+			return err
+		}
+
+		// 3. Tulis CashTransaction baru
+		label := categoryLabels[req.Category]
+		desc := fmt.Sprintf("%s: %s", label, req.SourceName)
+		return s.txnWriter.WriteCashCredit(
+			req.AcademicYearID, txnDate, req.Amount,
+			"income", &it.ID, desc, it.CreatedBy, tx,
+		)
+	})
+	if err != nil {
 		return nil, err
 	}
 

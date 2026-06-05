@@ -21,6 +21,7 @@ type CashTransactionRepository interface {
 	GetLastClosingDate(academicYearID uint) (*time.Time, error)
 	GetTodaySummary(academicYearID uint) (credit, debit float64, err error)
 	SumByCategory(academicYearID uint, start, end time.Time) ([]dto.CategoryAmount, error)
+	DeleteBySource(tx *gorm.DB, sourceType string, sourceID uint) error
 }
 
 type cashTransactionRepository struct {
@@ -209,4 +210,9 @@ func (r *cashTransactionRepository) SumByCategory(academicYearID uint, start, en
 		Group("ii.category").
 		Scan(&results).Error
 	return results, err
+}
+
+func (r *cashTransactionRepository) DeleteBySource(tx *gorm.DB, sourceType string, sourceID uint) error {
+	return tx.Where("source_type = ? AND source_id = ?", sourceType, sourceID).
+		Delete(&model.CashTransaction{}).Error
 }

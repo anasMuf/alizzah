@@ -156,6 +156,8 @@ func (s *expenseService) Update(id uint, req dto.CreateExpenseRequest) (*dto.Exp
 	if err != nil {
 		return nil, fmt.Errorf("Format expense_date tidak valid (YYYY-MM-DD): %w", err)
 	}
+
+	oldCategoryID := expense.ExpenseCategoryID
 	expense.AcademicYearID = req.AcademicYearID
 	expense.ExpenseCategoryID = req.ExpenseCategoryID
 	expense.ExpenseDate = expenseDate
@@ -163,7 +165,26 @@ func (s *expenseService) Update(id uint, req dto.CreateExpenseRequest) (*dto.Exp
 	expense.Description = req.Description
 	expense.ReceiptURL = req.ReceiptURL
 
-	if err := s.expenseRepo.Update(expense); err != nil {
+	err = s.db.Transaction(func(tx *gorm.DB) error {
+		// 1. Hapus CashTransaction lama
+		if err := s.txnWriter.DeleteCashBySource(tx, "expense", expense.ID); err != nil {
+			return fmt.Errorf("gagal menghapus transaksi kas lama: %w", err)
+		}
+
+		// 2. Update expense
+		if err := s.expenseRepo.WithTx(tx).Update(expense); err != nil {
+			return err
+		}
+
+		// 3. Tulis CashTransaction baru dengan nominal yang sudah diupdate
+		desc := req.Description
+		if oldCategoryID != req.ExpenseCategoryID {
+			desc = fmt.Sprintf("[Kategori diperbarui] %s", desc)
+		}
+		return s.txnWriter.WriteCashDebit(req.AcademicYearID, expenseDate, req.Amount,
+			"expense", &expense.ID, fmt.Sprintf("Pengeluaran: %s", desc), expense.CreatedBy, tx)
+	})
+	if err != nil {
 		return nil, err
 	}
 

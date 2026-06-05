@@ -210,7 +210,14 @@ func (s *expenseService) Delete(id uint) error {
 		return errors.New("Tanggal sudah dikunci oleh tutup buku")
 	}
 
-	return s.expenseRepo.Delete(id)
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		// 1. Hapus CashTransaction terkait
+		if err := s.txnWriter.DeleteCashBySource(tx, "expense", expense.ID); err != nil {
+			return fmt.Errorf("gagal menghapus transaksi kas: %w", err)
+		}
+		// 2. Hapus Expense
+		return s.expenseRepo.WithTx(tx).Delete(id)
+	})
 }
 
 func mapExpenseToResponse(exp model.Expense) dto.ExpenseResponse {

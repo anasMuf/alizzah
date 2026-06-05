@@ -211,7 +211,14 @@ func (s *incomeTransactionService) Delete(id uint) error {
 		return errors.New("Tanggal sudah dikunci oleh tutup buku")
 	}
 
-	return s.repo.Delete(id)
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		// 1. Hapus CashTransaction terkait
+		if err := s.txnWriter.DeleteCashBySource(tx, "income", it.ID); err != nil {
+			return fmt.Errorf("gagal menghapus transaksi kas: %w", err)
+		}
+		// 2. Hapus IncomeTransaction
+		return s.repo.WithTx(tx).Delete(id)
+	})
 }
 
 func mapIncomeTransactionToResponse(it model.IncomeTransaction) dto.IncomeTransactionResponse {

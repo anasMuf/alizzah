@@ -227,22 +227,26 @@ func (s *studentService) Create(createdBy uint, req dto.CreateStudentRequest) (*
 		gender := student.Gender
 
 		// Biaya Awal — sekali saat pertama masuk
-		s.invoiceGen.GenerateInitial(dto.GenerateInitialInvoiceParams{
+		if err := s.invoiceGen.GenerateInitial(dto.GenerateInitialInvoiceParams{
 			StudentID:      student.ID,
 			AcademicYearID: req.AcademicYearID,
 			Level:          level,
 			Gender:         gender,
 			CreatedBy:      createdBy,
-		})
+		}); err != nil {
+			return nil, fmt.Errorf("gagal generate invoice biaya awal: %w", err)
+		}
 
 		// Registrasi Tahunan
-		s.invoiceGen.GenerateRegistration(dto.GenerateRegistrationInvoiceParams{
+		if err := s.invoiceGen.GenerateRegistration(dto.GenerateRegistrationInvoiceParams{
 			StudentID:      student.ID,
 			AcademicYearID: req.AcademicYearID,
 			Level:          level,
 			Gender:         gender,
 			CreatedBy:      createdBy,
-		})
+		}); err != nil {
+			return nil, fmt.Errorf("gagal generate invoice registrasi: %w", err)
+		}
 	}
 
 	createdStudent, err := s.studentRepo.FindByID(student.ID)

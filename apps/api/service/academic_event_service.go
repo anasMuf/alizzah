@@ -350,13 +350,19 @@ func (s *academicEventService) ProcessPromotion(createdBy uint, req dto.Promotio
 
 			// Generate tagihan registrasi tahunan untuk tahun ajaran baru
 			if s.invoiceGen != nil {
-				_ = s.invoiceGen.GenerateRegistration(dto.GenerateRegistrationInvoiceParams{
+				if err := s.invoiceGen.GenerateRegistration(dto.GenerateRegistrationInvoiceParams{
 					StudentID:      enrollment.StudentID,
 					AcademicYearID: req.ToAcademicYearID,
 					Level:          newLevel,
 					Gender:         enrollment.Student.Gender,
 					CreatedBy:      createdBy,
-				})
+				}); err != nil {
+					result.Errors = append(result.Errors, dto.EventError{
+						StudentID:   enrollment.StudentID,
+						StudentName: enrollment.Student.FullName,
+						Message:     fmt.Sprintf("Gagal generate invoice registrasi: %v", err),
+					})
+				}
 			}
 		}
 
@@ -654,32 +660,39 @@ func (s *academicEventService) ProcessTransferIn(createdBy uint, req dto.Transfe
 			gender := student.Gender
 
 			// 1. Biaya Awal (initial)
-			_ = s.invoiceGen.GenerateInitial(dto.GenerateInitialInvoiceParams{
+			if err := s.invoiceGen.GenerateInitial(dto.GenerateInitialInvoiceParams{
 				StudentID:      req.StudentID,
 				AcademicYearID: req.AcademicYearID,
 				Level:          level,
 				Gender:         gender,
 				CreatedBy:      createdBy,
-			})
+			}); err != nil {
+				return fmt.Errorf("gagal generate invoice biaya awal: %w", err)
+			}
 
 			// 2. Registrasi Tahunan
-			_ = s.invoiceGen.GenerateRegistration(dto.GenerateRegistrationInvoiceParams{
+			if err := s.invoiceGen.GenerateRegistration(dto.GenerateRegistrationInvoiceParams{
 				StudentID:      req.StudentID,
 				AcademicYearID: req.AcademicYearID,
 				Level:          level,
 				Gender:         gender,
 				CreatedBy:      createdBy,
-			})
+			}); err != nil {
+				return fmt.Errorf("gagal generate invoice registrasi: %w", err)
+			}
 
 			// 3. Tagihan Bulanan mulai dari bulan masuk sampai akhir tahun ajaran
 			ay, ayErr := s.academicYearRepo.FindByID(req.AcademicYearID)
-			if ayErr == nil {
-				_ = s.invoiceGen.GenerateMonthlyRange(
-					req.StudentID, req.AcademicYearID, req.ToClassGroupID,
-					level, gender,
-					startDate, ay.EndDate,
-					createdBy,
-				)
+			if ayErr != nil {
+				return fmt.Errorf("gagal mengambil data tahun ajaran: %w", ayErr)
+			}
+			if err := s.invoiceGen.GenerateMonthlyRange(
+				req.StudentID, req.AcademicYearID, req.ToClassGroupID,
+				level, gender,
+				startDate, ay.EndDate,
+				createdBy,
+			); err != nil {
+				return fmt.Errorf("gagal generate invoice bulanan: %w", err)
 			}
 		}
 

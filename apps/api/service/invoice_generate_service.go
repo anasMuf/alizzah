@@ -28,6 +28,7 @@ type InvoiceGenerateService interface {
 	SyncExtracurricularMonthlyInvoices() (*dto.ExtracurricularSyncResult, error)
 	AddFacilityToMonthlyRange(studentID, facilityID, academicYearID uint) error
 	RemoveFacilityFromFutureInvoices(studentID, facilityID, academicYearID uint) error
+	ApplyDispensationToExistingInvoices(studentID, academicYearID uint) error
 }
 
 type invoiceGenerateService struct {
@@ -1036,6 +1037,108 @@ func (s *invoiceGenerateService) RemoveFacilityFromFutureInvoices(studentID, fac
 		if deleted {
 			s.recalculateInvoiceTotal(inv.ID)
 		}
+	}
+
+	return nil
+}
+
+// ─── Dispensation Methods ────────────────────────────────────────────
+
+// ApplyDispensationToExistingInvoices recalculates dispensation items on all
+// unpaid/partial monthly invoices for the student in the given academic year.
+// It removes old dispensation items and re-applies based on current active dispensations.
+func (s *invoiceGenerateService) ApplyDispensationToExistingInvoices(studentID, academicYearID uint) error {
+	if s.dispensationRepo == nil {
+		return nil
+	}
+
+	// Get all monthly invoices for this student in this academic year
+	invoices, err := s.invoiceRepo.FindMonthlyByStudentAcademicYear(studentID, academicYearID)
+	if err != nil {
+		return nil
+	}
+
+	for _, inv := range invoices {
+		if inv.Status == "paid" {
+			continue // skip fully paid invoices
+		}
+		month := uint(0)
+		year := uint(0)
+		if inv.Month != nil {
+			month = *inv.Month
+		}
+		if inv.Year != nil {
+			year = *inv.Year
+		}
+		if month == 0 || year == 0 {
+			continue
+		}
+
+		items, _ := s.invoiceItemRepo.FindByInvoiceID(inv.ID)
+
+		// 1. Remove existing dispensation items that haven't been paid
+		for _, item := range items {
+			if item.Category == "dispensation" && item.PaidAmount == 0 {
+				s.invoiceItemRepo.Delete(item.ID)
+			}
+		}
+
+		// 2. Calculate SPP amount (original, without dispensation)
+		sppAmount := float64(0)
+		for _, item := range items {
+			if item.Category == "monthly_spp" {
+				sppAmount += item.Amount
+			}
+		}
+		if sppAmount <= 0 {
+			s.recalculateInvoiceTotal(inv.ID)
+			continue
+		}
+
+		// 3. Find active dispensations for this month
+		dispensations, _ := s.dispensationRepo.FindActiveForStudentMonth(
+			studentID, academicYearID, month, year, "monthly_spp",
+		)
+
+		if len(dispensations) == 0 {
+			s.recalculateInvoiceTotal(inv.ID)
+			continue
+		}
+
+		// 4. Apply dispensation items
+		totalDiscount := CalculateTotalDiscount(sppAmount, dispensations)
+		remainingDiscount := totalDiscount
+
+		for _, d := range dispensations {
+			discountForThis := float64(0)
+			if d.DiscountType == "percent" {
+				discountForThis = sppAmount * d.DiscountValue / 100
+			} else {
+				discountForThis = d.DiscountValue
+			}
+			if discountForThis > remainingDiscount {
+				discountForThis = remainingDiscount
+			}
+			remainingDiscount -= discountForThis
+
+			if discountForThis > 0 {
+				label := fmt.Sprintf("Dispensasi: %s", d.Reason)
+				if d.DiscountType == "percent" {
+					label = fmt.Sprintf("Dispensasi: %s (%.0f%%)", d.Reason, d.DiscountValue)
+				}
+				newItem := &model.InvoiceItem{
+					InvoiceID:   inv.ID,
+					Name:        label,
+					Category:    "dispensation",
+					Amount:      -discountForThis,
+					IsMandatory: true,
+					Notes:       d.Notes,
+				}
+				s.invoiceItemRepo.Create(newItem)
+			}
+		}
+
+		s.recalculateInvoiceTotal(inv.ID)
 	}
 
 	return nil

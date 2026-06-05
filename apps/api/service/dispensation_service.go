@@ -24,14 +24,16 @@ type dispensationService struct {
 	repo        repository.DispensationRepository
 	studentRepo repository.StudentRepository
 	acRepo      repository.AcademicYearRepository
+	invoiceGen  InvoiceGenerateService
 }
 
 func NewDispensationService(
 	repo repository.DispensationRepository,
 	studentRepo repository.StudentRepository,
 	acRepo repository.AcademicYearRepository,
+	invoiceGen InvoiceGenerateService,
 ) DispensationService {
-	return &dispensationService{repo: repo, studentRepo: studentRepo, acRepo: acRepo}
+	return &dispensationService{repo: repo, studentRepo: studentRepo, acRepo: acRepo, invoiceGen: invoiceGen}
 }
 
 func (s *dispensationService) GetByStudentID(studentID uint, params dto.DispensationQueryParams) ([]dto.DispensationResponse, error) {
@@ -113,6 +115,11 @@ func (s *dispensationService) Create(studentID, createdBy uint, req dto.CreateDi
 		return nil, err
 	}
 
+	// Apply to existing unpaid invoices
+	if s.invoiceGen != nil {
+		go s.invoiceGen.ApplyDispensationToExistingInvoices(studentID, req.AcademicYearID)
+	}
+
 	saved, _ := s.repo.FindByID(d.ID)
 	resp := mapDispensationToResponse(*saved)
 	return &resp, nil
@@ -146,6 +153,11 @@ func (s *dispensationService) Update(id uint, req dto.UpdateDispensationRequest)
 		return nil, err
 	}
 
+	// Re-apply to existing invoices
+	if s.invoiceGen != nil {
+		go s.invoiceGen.ApplyDispensationToExistingInvoices(d.StudentID, d.AcademicYearID)
+	}
+
 	saved, _ := s.repo.FindByID(id)
 	resp := mapDispensationToResponse(*saved)
 	return &resp, nil
@@ -162,17 +174,35 @@ func (s *dispensationService) Toggle(id uint) (*dto.DispensationResponse, error)
 		return nil, err
 	}
 
+	// Re-apply to existing invoices
+	if s.invoiceGen != nil {
+		go s.invoiceGen.ApplyDispensationToExistingInvoices(d.StudentID, d.AcademicYearID)
+	}
+
 	saved, _ := s.repo.FindByID(id)
 	resp := mapDispensationToResponse(*saved)
 	return &resp, nil
 }
 
 func (s *dispensationService) Delete(id uint) error {
-	_, err := s.repo.FindByID(id)
+	d, err := s.repo.FindByID(id)
 	if err != nil {
 		return errors.New("Dispensasi tidak ditemukan")
 	}
-	return s.repo.Delete(id)
+
+	studentID := d.StudentID
+	ayID := d.AcademicYearID
+
+	if err := s.repo.Delete(id); err != nil {
+		return err
+	}
+
+	// Re-apply to existing invoices (removes deleted dispensation items)
+	if s.invoiceGen != nil {
+		go s.invoiceGen.ApplyDispensationToExistingInvoices(studentID, ayID)
+	}
+
+	return nil
 }
 
 func (s *dispensationService) CarryOverPermanent(studentID, fromAcademicYearID, toAcademicYearID, startMonth, startYear uint) error {

@@ -269,7 +269,7 @@ func main() {
 	incomeHandler := handler.NewIncomeTransactionHandler(incomeService)
 
 	// Dispensations
-	dispensationService := service.NewDispensationService(dispensationRepo, studentRepo, ayRepo)
+	dispensationService := service.NewDispensationService(dispensationRepo, studentRepo, ayRepo, invoiceGenService)
 	dispensationHandler := handler.NewDispensationHandler(dispensationService)
 
 	// Facilities

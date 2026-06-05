@@ -52,7 +52,7 @@ function DetailTabunganSiswaPage() {
     mutation: {
       onSuccess: () => {
         addToast({ variant: 'success', title: 'Berhasil', message: 'Penarikan tabungan berhasil dicatat.' });
-        queryClient.invalidateQueries({ queryKey: ['/v1/students', Number(id), 'savings'] });
+        queryClient.invalidateQueries({ queryKey: [`/v1/students/${id}/savings`] });
         setIsWithdrawOpen(false);
         setWithdrawAmount('');
         setWithdrawNotes('');
@@ -97,7 +97,7 @@ function DetailTabunganSiswaPage() {
 
   const handleWithdraw = (e: React.FormEvent) => {
     e.preventDefault();
-    if (Number(withdrawAmount) > (savings?.general_balance || 0)) {
+    if (Number(withdrawAmount) > (savings?.general?.balance || 0)) {
       addToast({ variant: 'error', title: 'Validasi Gagal', message: 'Nominal penarikan tidak boleh melebihi saldo Tabungan Umum.' });
       return;
     }
@@ -277,7 +277,7 @@ function DetailTabunganSiswaPage() {
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">Saldo Tabungan Umum</dt>
                   <dd>
-                    <div className="text-2xl font-bold text-gray-900">{formatCurrency(savings?.general_balance || 0)}</div>
+                    <div className="text-2xl font-bold text-gray-900">{formatCurrency(savings?.general?.balance || 0)}</div>
                   </dd>
                 </dl>
               </div>
@@ -287,7 +287,7 @@ function DetailTabunganSiswaPage() {
                 variant="primary" 
                 className="w-full justify-center" 
                 onClick={() => setIsWithdrawOpen(true)}
-                disabled={Number(savings?.general_balance) <= 0}
+                disabled={Number(savings?.general?.balance) <= 0}
               >
                 Tarik Saldo
               </Button>
@@ -306,7 +306,7 @@ function DetailTabunganSiswaPage() {
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">Saldo Tabungan Wajib (Berlian)</dt>
                   <dd>
-                    <div className="text-2xl font-bold text-gray-900">{formatCurrency(savings?.mandatory_balance || 0)}</div>
+                    <div className="text-2xl font-bold text-gray-900">{formatCurrency(savings?.mandatory?.balance || 0)}</div>
                   </dd>
                 </dl>
               </div>
@@ -399,7 +399,7 @@ function DetailTabunganSiswaPage() {
             <div className="bg-indigo-50 p-4 rounded-lg flex justify-between items-center">
               <div>
                 <p className="text-sm font-medium text-indigo-900">Saldo Tersedia</p>
-                <p className="text-2xl font-bold text-indigo-700">{formatCurrency(savings?.general_balance || 0)}</p>
+                <p className="text-2xl font-bold text-indigo-700">{formatCurrency(savings?.general?.balance || 0)}</p>
               </div>
             </div>
             
@@ -411,7 +411,7 @@ function DetailTabunganSiswaPage() {
               onChange={(e: any) => setWithdrawAmount(e.target.value)}
               required
               min="1"
-              max={savings?.general_balance || 0}
+              max={savings?.general?.balance || 0}
             />
             
             <FormField
@@ -428,7 +428,7 @@ function DetailTabunganSiswaPage() {
           </div>
           <div className="flex-shrink-0 border-t border-gray-200 px-4 py-5 sm:px-6 flex justify-end gap-3">
             <Button type="button" variant="secondary" onClick={() => setIsWithdrawOpen(false)}>Batal</Button>
-            <Button type="submit" variant="primary" disabled={withdrawMutation.isPending || !withdrawAmount || Number(withdrawAmount) > (savings?.general_balance || 0)}>
+            <Button type="submit" variant="primary" disabled={withdrawMutation.isPending || !withdrawAmount || Number(withdrawAmount) > (savings?.general?.balance || 0)}>
               Proses Penarikan
             </Button>
           </div>

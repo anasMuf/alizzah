@@ -91,6 +91,8 @@ var allTablesOrdered = []string{
 	// Batch 4
 	"fee_config_items",
 	"fee_configs",
+	// Dispensations
+	"dispensations",
 	// Facilities
 	"student_facilities",
 	"facilities",

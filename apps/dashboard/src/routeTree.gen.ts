@@ -70,6 +70,7 @@ import { Route as AuthenticatedAdministrasiSiswaIdProfilRouteImport } from './ro
 import { Route as AuthenticatedAdministrasiSiswaIdKeuanganRouteImport } from './routes/_authenticated/administrasi/siswa/$id/keuangan'
 import { Route as AuthenticatedAdministrasiSiswaIdFasilitasRouteImport } from './routes/_authenticated/administrasi/siswa/$id/fasilitas'
 import { Route as AuthenticatedAdministrasiSiswaIdEkskulRouteImport } from './routes/_authenticated/administrasi/siswa/$id/ekskul'
+import { Route as AuthenticatedAdministrasiSiswaIdDispensasiRouteImport } from './routes/_authenticated/administrasi/siswa/$id/dispensasi'
 import { Route as AuthenticatedAdministrasiSiswaIdAkademikRouteImport } from './routes/_authenticated/administrasi/siswa/$id/akademik'
 import { Route as AuthenticatedAdministrasiRombelIdHariEfektifRouteImport } from './routes/_authenticated/administrasi/rombel/$id/hari-efektif'
 
@@ -434,6 +435,12 @@ const AuthenticatedAdministrasiSiswaIdEkskulRoute =
     path: '/ekskul',
     getParentRoute: () => AuthenticatedAdministrasiSiswaIdRoute,
   } as any)
+const AuthenticatedAdministrasiSiswaIdDispensasiRoute =
+  AuthenticatedAdministrasiSiswaIdDispensasiRouteImport.update({
+    id: '/dispensasi',
+    path: '/dispensasi',
+    getParentRoute: () => AuthenticatedAdministrasiSiswaIdRoute,
+  } as any)
 const AuthenticatedAdministrasiSiswaIdAkademikRoute =
   AuthenticatedAdministrasiSiswaIdAkademikRouteImport.update({
     id: '/akademik',
@@ -499,6 +506,7 @@ export interface FileRoutesByFullPath {
   '/pengaturan/tarif/': typeof AuthenticatedPengaturanTarifIndexRoute
   '/administrasi/rombel/$id/hari-efektif': typeof AuthenticatedAdministrasiRombelIdHariEfektifRoute
   '/administrasi/siswa/$id/akademik': typeof AuthenticatedAdministrasiSiswaIdAkademikRoute
+  '/administrasi/siswa/$id/dispensasi': typeof AuthenticatedAdministrasiSiswaIdDispensasiRoute
   '/administrasi/siswa/$id/ekskul': typeof AuthenticatedAdministrasiSiswaIdEkskulRoute
   '/administrasi/siswa/$id/fasilitas': typeof AuthenticatedAdministrasiSiswaIdFasilitasRoute
   '/administrasi/siswa/$id/keuangan': typeof AuthenticatedAdministrasiSiswaIdKeuanganRoute
@@ -562,6 +570,7 @@ export interface FileRoutesByTo {
   '/pengaturan/tarif': typeof AuthenticatedPengaturanTarifIndexRoute
   '/administrasi/rombel/$id/hari-efektif': typeof AuthenticatedAdministrasiRombelIdHariEfektifRoute
   '/administrasi/siswa/$id/akademik': typeof AuthenticatedAdministrasiSiswaIdAkademikRoute
+  '/administrasi/siswa/$id/dispensasi': typeof AuthenticatedAdministrasiSiswaIdDispensasiRoute
   '/administrasi/siswa/$id/ekskul': typeof AuthenticatedAdministrasiSiswaIdEkskulRoute
   '/administrasi/siswa/$id/fasilitas': typeof AuthenticatedAdministrasiSiswaIdFasilitasRoute
   '/administrasi/siswa/$id/keuangan': typeof AuthenticatedAdministrasiSiswaIdKeuanganRoute
@@ -628,6 +637,7 @@ export interface FileRoutesById {
   '/_authenticated/pengaturan/tarif/': typeof AuthenticatedPengaturanTarifIndexRoute
   '/_authenticated/administrasi/rombel/$id/hari-efektif': typeof AuthenticatedAdministrasiRombelIdHariEfektifRoute
   '/_authenticated/administrasi/siswa/$id/akademik': typeof AuthenticatedAdministrasiSiswaIdAkademikRoute
+  '/_authenticated/administrasi/siswa/$id/dispensasi': typeof AuthenticatedAdministrasiSiswaIdDispensasiRoute
   '/_authenticated/administrasi/siswa/$id/ekskul': typeof AuthenticatedAdministrasiSiswaIdEkskulRoute
   '/_authenticated/administrasi/siswa/$id/fasilitas': typeof AuthenticatedAdministrasiSiswaIdFasilitasRoute
   '/_authenticated/administrasi/siswa/$id/keuangan': typeof AuthenticatedAdministrasiSiswaIdKeuanganRoute
@@ -694,6 +704,7 @@ export interface FileRouteTypes {
     | '/pengaturan/tarif/'
     | '/administrasi/rombel/$id/hari-efektif'
     | '/administrasi/siswa/$id/akademik'
+    | '/administrasi/siswa/$id/dispensasi'
     | '/administrasi/siswa/$id/ekskul'
     | '/administrasi/siswa/$id/fasilitas'
     | '/administrasi/siswa/$id/keuangan'
@@ -757,6 +768,7 @@ export interface FileRouteTypes {
     | '/pengaturan/tarif'
     | '/administrasi/rombel/$id/hari-efektif'
     | '/administrasi/siswa/$id/akademik'
+    | '/administrasi/siswa/$id/dispensasi'
     | '/administrasi/siswa/$id/ekskul'
     | '/administrasi/siswa/$id/fasilitas'
     | '/administrasi/siswa/$id/keuangan'
@@ -822,6 +834,7 @@ export interface FileRouteTypes {
     | '/_authenticated/pengaturan/tarif/'
     | '/_authenticated/administrasi/rombel/$id/hari-efektif'
     | '/_authenticated/administrasi/siswa/$id/akademik'
+    | '/_authenticated/administrasi/siswa/$id/dispensasi'
     | '/_authenticated/administrasi/siswa/$id/ekskul'
     | '/_authenticated/administrasi/siswa/$id/fasilitas'
     | '/_authenticated/administrasi/siswa/$id/keuangan'
@@ -1270,6 +1283,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdministrasiSiswaIdEkskulRouteImport
       parentRoute: typeof AuthenticatedAdministrasiSiswaIdRoute
     }
+    '/_authenticated/administrasi/siswa/$id/dispensasi': {
+      id: '/_authenticated/administrasi/siswa/$id/dispensasi'
+      path: '/dispensasi'
+      fullPath: '/administrasi/siswa/$id/dispensasi'
+      preLoaderRoute: typeof AuthenticatedAdministrasiSiswaIdDispensasiRouteImport
+      parentRoute: typeof AuthenticatedAdministrasiSiswaIdRoute
+    }
     '/_authenticated/administrasi/siswa/$id/akademik': {
       id: '/_authenticated/administrasi/siswa/$id/akademik'
       path: '/akademik'
@@ -1289,6 +1309,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedAdministrasiSiswaIdRouteChildren {
   AuthenticatedAdministrasiSiswaIdAkademikRoute: typeof AuthenticatedAdministrasiSiswaIdAkademikRoute
+  AuthenticatedAdministrasiSiswaIdDispensasiRoute: typeof AuthenticatedAdministrasiSiswaIdDispensasiRoute
   AuthenticatedAdministrasiSiswaIdEkskulRoute: typeof AuthenticatedAdministrasiSiswaIdEkskulRoute
   AuthenticatedAdministrasiSiswaIdFasilitasRoute: typeof AuthenticatedAdministrasiSiswaIdFasilitasRoute
   AuthenticatedAdministrasiSiswaIdKeuanganRoute: typeof AuthenticatedAdministrasiSiswaIdKeuanganRoute
@@ -1300,6 +1321,8 @@ const AuthenticatedAdministrasiSiswaIdRouteChildren: AuthenticatedAdministrasiSi
   {
     AuthenticatedAdministrasiSiswaIdAkademikRoute:
       AuthenticatedAdministrasiSiswaIdAkademikRoute,
+    AuthenticatedAdministrasiSiswaIdDispensasiRoute:
+      AuthenticatedAdministrasiSiswaIdDispensasiRoute,
     AuthenticatedAdministrasiSiswaIdEkskulRoute:
       AuthenticatedAdministrasiSiswaIdEkskulRoute,
     AuthenticatedAdministrasiSiswaIdFasilitasRoute:

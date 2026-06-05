@@ -44,6 +44,7 @@ type invoiceGenerateService struct {
 	daycareRepo         repository.DaycareEnrollmentRepository
 	facilityRepo        repository.FacilityRepository
 	sfRepo              repository.StudentFacilityRepository
+	dispensationRepo    repository.DispensationRepository
 }
 
 func NewInvoiceGenerateService(
@@ -60,6 +61,7 @@ func NewInvoiceGenerateService(
 	daycareRepo repository.DaycareEnrollmentRepository,
 	facilityRepo repository.FacilityRepository,
 	sfRepo repository.StudentFacilityRepository,
+	dispensationRepo repository.DispensationRepository,
 ) InvoiceGenerateService {
 	return &invoiceGenerateService{
 		db:                  db,
@@ -75,6 +77,7 @@ func NewInvoiceGenerateService(
 		daycareRepo:         daycareRepo,
 		facilityRepo:        facilityRepo,
 		sfRepo:              sfRepo,
+		dispensationRepo:    dispensationRepo,
 	}
 }
 
@@ -305,6 +308,55 @@ func (s *invoiceGenerateService) GenerateMonthly(params dto.GenerateMonthlyInvoi
 					UnitPrice:   unitPx,
 					IsMandatory: true,
 				})
+			}
+		}
+	}
+
+	// Dispensasi SPP — item potongan dengan amount negatif
+	if s.dispensationRepo != nil {
+		dispensations, _ := s.dispensationRepo.FindActiveForStudentMonth(
+			params.StudentID, params.AcademicYearID,
+			params.Month, params.Year, "monthly_spp",
+		)
+
+		if len(dispensations) > 0 {
+			sppOriginalAmount := float64(0)
+			for _, item := range invoiceItems {
+				if item.Category == "monthly_spp" {
+					sppOriginalAmount += item.Amount
+				}
+			}
+
+			if sppOriginalAmount > 0 {
+				totalDiscount := CalculateTotalDiscount(sppOriginalAmount, dispensations)
+				remainingDiscount := totalDiscount
+
+				for _, d := range dispensations {
+					discountForThis := float64(0)
+					if d.DiscountType == "percent" {
+						discountForThis = sppOriginalAmount * d.DiscountValue / 100
+					} else {
+						discountForThis = d.DiscountValue
+					}
+					if discountForThis > remainingDiscount {
+						discountForThis = remainingDiscount
+					}
+					remainingDiscount -= discountForThis
+
+					if discountForThis > 0 {
+						label := fmt.Sprintf("Dispensasi: %s", d.Reason)
+						if d.DiscountType == "percent" {
+							label = fmt.Sprintf("Dispensasi: %s (%.0f%%)", d.Reason, d.DiscountValue)
+						}
+						invoiceItems = append(invoiceItems, model.InvoiceItem{
+							Name:        label,
+							Category:    "dispensation",
+							Amount:      -discountForThis,
+							IsMandatory: true,
+							Notes:       d.Notes,
+						})
+					}
+				}
 			}
 		}
 	}

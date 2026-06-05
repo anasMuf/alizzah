@@ -48,8 +48,8 @@ function BerangkasTransaksiPage() {
     { query: { enabled: !!activeAy?.id } },
   );
 
-  const transactions = (txData?.data as any)?.data?.data || [];
-  const meta = (txData?.data as any)?.data?.meta;
+  const transactions = (txData?.data as any)?.data || [];
+  const meta = (txData?.data as any)?.meta;
 
   const { totalCredit, totalDebit } = useMemo(() => {
     let credit = 0;

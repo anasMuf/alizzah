@@ -112,21 +112,10 @@ func (s *paymentService) Create(createdBy uint, req dto.CreatePaymentRequest) (*
 		return nil, errors.New("Siswa tidak ditemukan atau tidak aktif")
 	}
 
-	if req.Source == "savings" {
-		balance, _ := s.savingsRepo.GetBalance(req.StudentID, "general")
-		totalItems := float64(0)
-		for _, item := range req.Items {
-			totalItems += item.Amount
-		}
-		for _, item := range req.IncidentalItems {
-			totalItems += item.Amount
-		}
-		if totalItems > balance {
-			return nil, fmt.Errorf("Saldo tabungan tidak mencukupi. Saldo: %.0f, Dibutuhkan: %.0f", balance, totalItems)
-		}
+	paymentDate, err := utility.ParseDate(req.PaymentDate)
+	if err != nil {
+		return nil, fmt.Errorf("Format payment_date tidak valid (YYYY-MM-DD): %w", err)
 	}
-
-	paymentDate, _ := utility.ParseDate(req.PaymentDate)
 
 	var result *model.Payment
 	err = s.db.Transaction(func(tx *gorm.DB) error {
@@ -244,9 +233,12 @@ func (s *paymentService) Create(createdBy uint, req dto.CreatePaymentRequest) (*
 
 		// [G] Savings source → debit general savings
 		if req.Source == "savings" && totalAmount > 0 {
-			savings, err := s.savingsRepo.FindByStudentAndType(req.StudentID, "general")
+			savings, err := s.savingsRepo.FindByStudentAndTypeForUpdate(tx, req.StudentID, "general")
 			if err != nil {
 				return errors.New("Tabungan umum siswa tidak ditemukan")
+			}
+			if totalAmount > savings.Balance {
+				return fmt.Errorf("Saldo tabungan tidak mencukupi. Saldo: %.0f, Dibutuhkan: %.0f", savings.Balance, totalAmount)
 			}
 			stxn := &model.SavingsTransaction{
 				StudentSavingsID: savings.ID,

@@ -4,11 +4,13 @@ import (
 	"api/model"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type StudentSavingsRepository interface {
 	FindByStudentID(studentID uint) ([]model.StudentSavings, error)
 	FindByStudentAndType(studentID uint, savingsType string) (*model.StudentSavings, error)
+	FindByStudentAndTypeForUpdate(tx *gorm.DB, studentID uint, savingsType string) (*model.StudentSavings, error)
 	GetBalance(studentID uint, savingsType string) (float64, error)
 	SumBalanceByType(academicYearID uint, savingsType string) (float64, error)
 	Create(savings *model.StudentSavings) error
@@ -37,6 +39,14 @@ func (r *studentSavingsRepository) FindByStudentID(studentID uint) ([]model.Stud
 func (r *studentSavingsRepository) FindByStudentAndType(studentID uint, savingsType string) (*model.StudentSavings, error) {
 	var savings model.StudentSavings
 	err := r.db.Where("student_id = ? AND type = ?", studentID, savingsType).First(&savings).Error
+	return &savings, err
+}
+
+func (r *studentSavingsRepository) FindByStudentAndTypeForUpdate(tx *gorm.DB, studentID uint, savingsType string) (*model.StudentSavings, error) {
+	var savings model.StudentSavings
+	err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+		Where("student_id = ? AND type = ?", studentID, savingsType).
+		First(&savings).Error
 	return &savings, err
 }
 

@@ -48,12 +48,12 @@ export function Sidebar({ isOpen }: SidebarProps) {
         <h1 className="text-xl font-bold text-gray-900">Alizzah Manajemen</h1>
       </div>
 
-      <div className="flex flex-col flex-1 overflow-y-auto">
-        <div className="p-4 border-b border-gray-200">
+      <div className="flex flex-col flex-1 min-h-0">
+        <div className="flex-shrink-0 p-4 border-b border-gray-200">
           <AcademicYearSelector />
         </div>
 
-        <nav className="flex-1 space-y-1 px-3 py-4">
+        <nav className="flex-1 overflow-y-auto space-y-1 px-3 py-4">
           <NavLink to="/" icon={LayoutDashboard} exact>
             Dashboard
           </NavLink>

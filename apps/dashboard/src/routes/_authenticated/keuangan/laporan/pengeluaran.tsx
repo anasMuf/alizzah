@@ -47,37 +47,25 @@ function LaporanPengeluaranPage() {
   const [activeAy] = useAtom(academicYearAtom);
   const now = new Date();
 
-  const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
-  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
-  const [reportMonth, setReportMonth] = useState(0);
-  const [reportYear, setReportYear] = useState(0);
-
-  const shouldFetch = reportMonth > 0 && reportYear > 0 && !!activeAy?.id;
+  const [month, setMonth] = useState(now.getMonth() + 1);
+  const [year, setYear] = useState(now.getFullYear());
 
   const { data: reportData, isLoading, isError } = useGetReportsTransaksiPengeluaran(
     {
-      month: reportMonth,
-      year: reportYear,
+      month,
+      year,
       academic_year_id: activeAy?.id,
     },
-    { query: { enabled: shouldFetch } },
+    { query: { enabled: !!activeAy?.id } },
   );
 
-  const report = shouldFetch ? (reportData?.data as any)?.data : null;
+  const report = (reportData?.data as any)?.data || null;
   const transactions: TransaksiPengeluaranBlock[] = report?.transactions || [];
-
-  const handleShow = () => {
-    setReportMonth(selectedMonth);
-    setReportYear(selectedYear);
-  };
-
-  const handleChangeFilter = () => {
-    setReportMonth(0);
-    setReportYear(0);
-  };
 
   const currentYear = now.getFullYear();
   const yearOptions = Array.from({ length: 3 }, (_, i) => currentYear - i);
+
+  const isCurrentMonth = month === now.getMonth() + 1 && year === now.getFullYear();
 
   return (
     <div className="space-y-6">
@@ -92,13 +80,9 @@ function LaporanPengeluaranPage() {
             <span className="text-gray-900 font-medium">Transaksi Pengeluaran</span>
           </nav>
           <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:tracking-tight">
-            {report
-              ? `Transaksi Pengeluaran — ${MONTH_NAMES[reportMonth - 1]} ${reportYear}`
-              : 'Laporan Transaksi Pengeluaran'}
+            Transaksi Pengeluaran — {MONTH_NAMES[month - 1]} {year}
           </h2>
-          {report && (
-            <p className="mt-1 text-sm text-gray-500">TA {report.academic_year || activeAy?.name || '-'}</p>
-          )}
+          <p className="mt-1 text-sm text-gray-500">TA {report?.academic_year || activeAy?.name || '-'}</p>
         </div>
         {report && (
           <Button variant="secondary" onClick={() => window.print()} className="print:hidden">
@@ -113,19 +97,19 @@ function LaporanPengeluaranPage() {
         <h1 className="text-lg font-bold text-center">PAUD AL-IZZAH</h1>
         <p className="text-sm text-gray-600 text-center">Laporan Transaksi Pengeluaran</p>
         <div className="mt-2 text-sm text-gray-700 space-y-0.5">
-          <p>Periode: {reportMonth > 0 ? `${MONTH_NAMES[reportMonth - 1]} ${reportYear}` : '-'}</p>
+          <p>Periode: {MONTH_NAMES[month - 1]} {year}</p>
           <p>TA: {report?.academic_year || activeAy?.name || '-'}</p>
         </div>
       </div>
 
-      {/* Filter */}
+      {/* Filter — auto-fetch */}
       <div className="bg-white p-4 rounded-xl shadow-sm ring-1 ring-gray-900/5 print:hidden">
         <div className="flex flex-wrap gap-4 items-end">
           <div>
             <label className="block text-sm font-medium leading-6 text-gray-900 mb-1">Bulan</label>
             <select
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(Number(e.target.value))}
+              value={month}
+              onChange={(e) => setMonth(Number(e.target.value))}
               className="block w-full sm:w-40 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
             >
               {MONTH_NAMES.map((name, idx) => (
@@ -136,8 +120,8 @@ function LaporanPengeluaranPage() {
           <div>
             <label className="block text-sm font-medium leading-6 text-gray-900 mb-1">Tahun</label>
             <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              value={year}
+              onChange={(e) => setYear(Number(e.target.value))}
               className="block w-full sm:w-28 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
             >
               {yearOptions.map((y) => (
@@ -145,26 +129,13 @@ function LaporanPengeluaranPage() {
               ))}
             </select>
           </div>
-          <div>
-            <label className="block text-sm font-medium leading-6 text-gray-900 mb-1">TA</label>
-            <input
-              type="text"
-              value={activeAy?.name || '-'}
-              disabled
-              className="block w-full sm:w-36 rounded-md border-0 py-1.5 px-3 text-gray-500 bg-gray-50 ring-1 ring-inset ring-gray-300 sm:text-sm sm:leading-6"
-            />
-          </div>
-          {!report ? (
-            <Button onClick={handleShow} disabled={!activeAy?.id}>
-              Tampilkan Laporan
-            </Button>
-          ) : (
+          {!isCurrentMonth && (
             <button
               type="button"
-              onClick={handleChangeFilter}
+              onClick={() => { setMonth(now.getMonth() + 1); setYear(now.getFullYear()); }}
               className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
             >
-              Ganti Filter
+              Reset Filter
             </button>
           )}
         </div>
@@ -197,7 +168,7 @@ function LaporanPengeluaranPage() {
               <div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-6">
                 <div className="flex justify-between items-center">
                   <span className="text-base font-bold text-gray-900">
-                    Grand Total Pengeluaran {MONTH_NAMES[reportMonth - 1]} {reportYear}
+                    Grand Total Pengeluaran {MONTH_NAMES[month - 1]} {year}
                   </span>
                   <span className="text-lg font-bold text-gray-900 tabular-nums">
                     Rp. {formatRupiah(report.grand_total)}
@@ -213,7 +184,7 @@ function LaporanPengeluaranPage() {
         </>
       )}
 
-      {shouldFetch && !isLoading && !isError && !report && (
+      {!isLoading && !isError && !report && (
         <div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-12 text-center">
           <p className="text-sm text-gray-500">Belum ada data untuk bulan ini.</p>
         </div>

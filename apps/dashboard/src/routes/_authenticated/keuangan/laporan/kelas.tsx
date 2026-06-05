@@ -25,13 +25,9 @@ function RekapKelasPage() {
   const [activeAy] = useAtom(academicYearAtom);
   const now = new Date();
 
-  const [selectedClassId, setSelectedClassId] = useState('');
-  const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
-  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
-
-  const [reportClassId, setReportClassId] = useState(0);
-  const [reportMonth, setReportMonth] = useState(0);
-  const [reportYear, setReportYear] = useState(0);
+  const [classId, setClassId] = useState('');
+  const [month, setMonth] = useState(now.getMonth() + 1);
+  const [year, setYear] = useState(now.getFullYear());
   const [statusFilter, setStatusFilter] = useState('');
 
   const { data: classGroupsData } = useGetV1ClassGroups(
@@ -40,13 +36,14 @@ function RekapKelasPage() {
   );
   const classGroups: any[] = (classGroupsData?.data as any)?.data || [];
 
-  const shouldFetch = reportClassId > 0 && reportMonth > 0 && reportYear > 0 && !!activeAy?.id;
+  const classIdNum = Number(classId);
+  const shouldFetch = classIdNum > 0 && !!activeAy?.id;
 
   const { data: reportData, isLoading, isError } = useGetV1ReportsClassGroupsId(
-    reportClassId,
+    classIdNum,
     {
-      month: reportMonth,
-      year: reportYear,
+      month,
+      year,
       academic_year_id: activeAy?.id,
     },
     { query: { enabled: shouldFetch } },
@@ -65,20 +62,6 @@ function RekapKelasPage() {
     return students.filter((s: any) => s.invoice_status !== 'paid');
   }, [students, statusFilter]);
 
-  const handleShow = () => {
-    if (!selectedClassId) return;
-    setReportClassId(Number(selectedClassId));
-    setReportMonth(selectedMonth);
-    setReportYear(selectedYear);
-    setStatusFilter('');
-  };
-
-  const handleChangeFilter = () => {
-    setReportClassId(0);
-    setReportMonth(0);
-    setReportYear(0);
-  };
-
   const currentYear = now.getFullYear();
   const yearOptions = Array.from({ length: 3 }, (_, i) => currentYear - i);
 
@@ -92,6 +75,15 @@ function RekapKelasPage() {
     }
     return groups;
   }, [classGroups]);
+
+  const isDefault = !classId && month === now.getMonth() + 1 && year === now.getFullYear();
+
+  const handleReset = () => {
+    setClassId('');
+    setMonth(now.getMonth() + 1);
+    setYear(now.getFullYear());
+    setStatusFilter('');
+  };
 
   const statusBadge = (status: string) => {
     switch (status) {
@@ -118,7 +110,7 @@ function RekapKelasPage() {
           </nav>
           <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:tracking-tight">
             {report
-              ? `Rekap ${classGroup?.name || ''} — ${MONTH_NAMES[reportMonth - 1]} ${reportYear}`
+              ? `Rekap ${classGroup?.name || ''} — ${MONTH_NAMES[month - 1]} ${year}`
               : 'Rekap per Kelas'}
           </h2>
         </div>
@@ -137,12 +129,12 @@ function RekapKelasPage() {
         <div className="mt-2 text-sm text-gray-700 space-y-0.5">
           <p>Jenis: Rekap per Kelas</p>
           <p>Kelas: {classGroup?.name || '-'}</p>
-          <p>Periode: {reportMonth > 0 ? `${MONTH_NAMES[reportMonth - 1]} ${reportYear}` : '-'}</p>
+          <p>Periode: {MONTH_NAMES[month - 1]} {year}</p>
           <p>TA: {activeAy?.name || '-'}</p>
         </div>
       </div>
 
-      {/* Filter */}
+      {/* Filter — auto-fetch when class is selected */}
       <div className="bg-white p-4 rounded-xl shadow-sm ring-1 ring-gray-900/5 print:hidden">
         <div className="flex flex-wrap gap-4 items-end">
           <div>
@@ -150,8 +142,8 @@ function RekapKelasPage() {
               Rombel <span className="text-red-500">*</span>
             </label>
             <select
-              value={selectedClassId}
-              onChange={(e) => setSelectedClassId(e.target.value)}
+              value={classId}
+              onChange={(e) => { setClassId(e.target.value); setStatusFilter(''); }}
               className="block w-full sm:w-48 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
             >
               <option value="">Pilih Rombel</option>
@@ -166,11 +158,11 @@ function RekapKelasPage() {
           </div>
           <div>
             <label className="block text-sm font-medium leading-6 text-gray-900 mb-1">
-              Bulan <span className="text-red-500">*</span>
+              Bulan
             </label>
             <select
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(Number(e.target.value))}
+              value={month}
+              onChange={(e) => setMonth(Number(e.target.value))}
               className="block w-full sm:w-36 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
             >
               {MONTH_NAMES.map((name, idx) => (
@@ -180,11 +172,11 @@ function RekapKelasPage() {
           </div>
           <div>
             <label className="block text-sm font-medium leading-6 text-gray-900 mb-1">
-              Tahun <span className="text-red-500">*</span>
+              Tahun
             </label>
             <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              value={year}
+              onChange={(e) => setYear(Number(e.target.value))}
               className="block w-full sm:w-24 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
             >
               {yearOptions.map((y) => (
@@ -192,21 +184,24 @@ function RekapKelasPage() {
               ))}
             </select>
           </div>
-          {!report ? (
-            <Button onClick={handleShow} disabled={!selectedClassId || !activeAy?.id}>
-              Tampilkan Laporan
-            </Button>
-          ) : (
+          {!isDefault && (
             <button
               type="button"
-              onClick={handleChangeFilter}
+              onClick={handleReset}
               className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
             >
-              Ganti Filter
+              Reset Filter
             </button>
           )}
         </div>
       </div>
+
+      {/* Prompt to select a class */}
+      {!classId && (
+        <div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-12 text-center">
+          <p className="text-sm text-gray-500">Pilih rombel di atas untuk melihat rekap kelas.</p>
+        </div>
+      )}
 
       {/* Loading */}
       {isLoading && (

@@ -9,7 +9,6 @@ import {
   AlertTriangle,
   Lock,
   Clock,
-  Calendar,
 } from 'lucide-react';
 import { useGetV1ReportsDaily } from '../../../../api/endpoints/reports/reports';
 import { academicYearAtom } from '../../../../store/global';
@@ -31,32 +30,17 @@ function getTodayString() {
 
 function LaporanHarianPage() {
   const [activeAy] = useAtom(academicYearAtom);
-  const [selectedDate, setSelectedDate] = useState(getTodayString());
-  const [reportDate, setReportDate] = useState('');
-
-  const shouldFetch = !!reportDate && !!activeAy?.id;
+  const [date, setDate] = useState(getTodayString());
 
   const { data: reportData, isLoading, isError } = useGetV1ReportsDaily(
     {
-      date: reportDate,
+      date,
       academic_year_id: activeAy?.id,
     },
-    { query: { enabled: shouldFetch } },
+    { query: { enabled: !!date && !!activeAy?.id } },
   );
 
-  const report = shouldFetch ? (reportData?.data as any)?.data : null;
-
-  const handleShow = () => {
-    if (selectedDate) setReportDate(selectedDate);
-  };
-
-  const handleChangeFilter = () => {
-    setReportDate('');
-  };
-
-  const handlePrint = () => {
-    window.print();
-  };
+  const report = (reportData?.data as any)?.data || null;
 
   const income = report?.income_summary;
   const expense = report?.expense_summary;
@@ -80,99 +64,48 @@ function LaporanHarianPage() {
             <span className="text-gray-900 font-medium">Laporan Harian</span>
           </nav>
           <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:tracking-tight">
-            {report
-              ? `Laporan Harian — ${formatDate(reportDate)}`
-              : 'Laporan Harian'}
+            Laporan Harian
           </h2>
-          {report && (
-            <p className="mt-1 text-sm text-gray-500">
-              TA {activeAy?.name || '-'}
-            </p>
-          )}
+          <p className="mt-1 text-sm text-gray-500">TA {activeAy?.name || '-'}</p>
         </div>
         {report && (
-          <Button variant="secondary" onClick={handlePrint} className="print:hidden">
+          <Button variant="secondary" onClick={() => window.print()} className="print:hidden">
             <Printer className="w-4 h-4 mr-2" />
             Cetak
           </Button>
         )}
       </div>
 
-      {/* Print Header — only visible when printing */}
+      {/* Print Header */}
       <div className="hidden print:block border-b border-gray-300 pb-4 mb-6">
         <h1 className="text-lg font-bold">ALIZZAH MANAJEMEN</h1>
         <p className="text-sm text-gray-600">Laporan Keuangan</p>
         <div className="mt-2 text-sm text-gray-700 space-y-0.5">
           <p>Jenis: Laporan Harian</p>
-          <p>Periode: {reportDate ? formatDate(reportDate) : '-'}</p>
+          <p>Periode: {date ? formatDate(date) : '-'}</p>
           <p>TA: {activeAy?.name || '-'}</p>
-          <p>
-            Dicetak:{' '}
-            {new Date().toLocaleDateString('id-ID', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric',
-            })}{' '}
-            ·{' '}
-            {new Date().toLocaleTimeString('id-ID', {
-              hour: '2-digit',
-              minute: '2-digit',
-            })}{' '}
-            WIB
-          </p>
         </div>
       </div>
 
-      {/* Filter */}
-      {!report && (
-        <div className="bg-white p-6 rounded-xl shadow-sm ring-1 ring-gray-900/5">
-          <div className="flex flex-wrap gap-4 items-end">
-            <div>
-              <label className="block text-sm font-medium leading-6 text-gray-900 mb-1">
-                Tanggal <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="block w-full sm:w-64 rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium leading-6 text-gray-900 mb-1">
-                Tahun Ajaran
-              </label>
-              <input
-                type="text"
-                value={activeAy?.name || '-'}
-                disabled
-                className="block w-full sm:w-48 rounded-md border-0 py-1.5 px-3 text-gray-500 bg-gray-50 ring-1 ring-inset ring-gray-300 sm:text-sm sm:leading-6"
-              />
-            </div>
-            <Button onClick={handleShow} disabled={!selectedDate || !activeAy?.id}>
-              Tampilkan Laporan
-            </Button>
+      {/* Filter — always visible */}
+      <div className="bg-white p-4 rounded-xl shadow-sm ring-1 ring-gray-900/5 print:hidden">
+        <div className="flex flex-wrap gap-4 items-end">
+          <div>
+            <label className="block text-sm font-medium leading-6 text-gray-900 mb-1">Tanggal</label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="block w-full sm:w-48 rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
+            />
           </div>
+          {date !== getTodayString() && (
+            <button type="button" onClick={() => setDate(getTodayString())} className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+              Reset ke Hari Ini
+            </button>
+          )}
         </div>
-      )}
-
-      {/* Active filter bar */}
-      {report && (
-        <div className="flex flex-wrap items-center gap-2 print:hidden">
-          <Badge variant="info">
-            <Calendar className="w-3 h-3 mr-1" />
-            {formatDate(reportDate)}
-          </Badge>
-          <Badge variant="secondary">TA {activeAy?.name}</Badge>
-          <button
-            type="button"
-            onClick={handleChangeFilter}
-            className="text-sm font-medium text-indigo-600 hover:text-indigo-500 ml-2"
-          >
-            Ganti Filter
-          </button>
-        </div>
-      )}
+      </div>
 
       {/* Loading */}
       {isLoading && (
@@ -410,7 +343,7 @@ function LaporanHarianPage() {
       )}
 
       {/* Empty state — report fetched but no data */}
-      {shouldFetch && !isLoading && !isError && !report && (
+      {!!date && !isLoading && !isError && !report && (
         <div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-12 text-center">
           <p className="text-sm text-gray-500">
             Belum ada transaksi pada tanggal ini.

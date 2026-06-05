@@ -42,41 +42,26 @@ function formatDateID(dateStr: string): string {
 function LaporanTabunganPage() {
   const now = new Date();
 
-  const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
-  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
-  const [selectedType, setSelectedType] = useState('');
-
-  const [reportMonth, setReportMonth] = useState(0);
-  const [reportYear, setReportYear] = useState(0);
-  const [reportType, setReportType] = useState('');
-
-  const shouldFetch = reportMonth > 0 && reportYear > 0;
+  const [month, setMonth] = useState(now.getMonth() + 1);
+  const [year, setYear] = useState(now.getFullYear());
+  const [type, setType] = useState('');
 
   const { data: reportData, isLoading, isError } = useGetReportsTabungan(
     {
-      month: reportMonth,
-      year: reportYear,
-      type: reportType || undefined,
+      month,
+      year,
+      type: type || undefined,
     },
-    { query: { enabled: shouldFetch } },
+    { query: { enabled: true } },
   );
 
-  const report = shouldFetch ? (reportData?.data as any)?.data : null;
+  const report = (reportData?.data as any)?.data || null;
   const rows: TabunganReportRow[] = report?.rows || [];
-
-  const handleShow = () => {
-    setReportMonth(selectedMonth);
-    setReportYear(selectedYear);
-    setReportType(selectedType);
-  };
-
-  const handleChangeFilter = () => {
-    setReportMonth(0);
-    setReportYear(0);
-  };
 
   const currentYear = now.getFullYear();
   const yearOptions = Array.from({ length: 3 }, (_, i) => currentYear - i);
+
+  const isDefault = month === now.getMonth() + 1 && year === now.getFullYear() && !type;
 
   return (
     <div className="space-y-6">
@@ -91,15 +76,11 @@ function LaporanTabunganPage() {
             <span className="text-gray-900 font-medium">Tabungan Siswa</span>
           </nav>
           <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:tracking-tight">
-            {report
-              ? `Laporan Tabungan — ${report.type_label}`
-              : 'Laporan Tabungan Siswa'}
+            Laporan Tabungan — {report?.type_label || 'Semua Tabungan'}
           </h2>
-          {report && (
-            <p className="mt-1 text-sm text-gray-500">
-              {MONTH_NAMES[reportMonth - 1]} {reportYear}
-            </p>
-          )}
+          <p className="mt-1 text-sm text-gray-500">
+            {MONTH_NAMES[month - 1]} {year}
+          </p>
         </div>
         {report && (
           <Button variant="secondary" onClick={() => window.print()} className="print:hidden">
@@ -116,19 +97,19 @@ function LaporanTabunganPage() {
           Laporan Tabungan Siswa — {report?.type_label || ''}
         </p>
         <div className="mt-2 text-sm text-gray-700 space-y-0.5">
-          <p>Periode: {reportMonth > 0 ? `${MONTH_NAMES[reportMonth - 1]} ${reportYear}` : '-'}</p>
+          <p>Periode: {MONTH_NAMES[month - 1]} {year}</p>
           <p>Jenis: {report?.type_label || '-'}</p>
         </div>
       </div>
 
-      {/* Filter */}
+      {/* Filter — auto-fetch */}
       <div className="bg-white p-4 rounded-xl shadow-sm ring-1 ring-gray-900/5 print:hidden">
         <div className="flex flex-wrap gap-4 items-end">
           <div>
             <label className="block text-sm font-medium leading-6 text-gray-900 mb-1">Jenis Tabungan</label>
             <select
-              value={selectedType}
-              onChange={(e) => setSelectedType(e.target.value)}
+              value={type}
+              onChange={(e) => setType(e.target.value)}
               className="block w-full sm:w-52 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
             >
               {TYPE_OPTIONS.map((opt) => (
@@ -139,8 +120,8 @@ function LaporanTabunganPage() {
           <div>
             <label className="block text-sm font-medium leading-6 text-gray-900 mb-1">Bulan</label>
             <select
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(Number(e.target.value))}
+              value={month}
+              onChange={(e) => setMonth(Number(e.target.value))}
               className="block w-full sm:w-40 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
             >
               {MONTH_NAMES.map((name, idx) => (
@@ -151,8 +132,8 @@ function LaporanTabunganPage() {
           <div>
             <label className="block text-sm font-medium leading-6 text-gray-900 mb-1">Tahun</label>
             <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              value={year}
+              onChange={(e) => setYear(Number(e.target.value))}
               className="block w-full sm:w-28 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
             >
               {yearOptions.map((y) => (
@@ -160,17 +141,13 @@ function LaporanTabunganPage() {
               ))}
             </select>
           </div>
-          {!report ? (
-            <Button onClick={handleShow}>
-              Tampilkan Laporan
-            </Button>
-          ) : (
+          {!isDefault && (
             <button
               type="button"
-              onClick={handleChangeFilter}
+              onClick={() => { setMonth(now.getMonth() + 1); setYear(now.getFullYear()); setType(''); }}
               className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
             >
-              Ganti Filter
+              Reset Filter
             </button>
           )}
         </div>
@@ -221,7 +198,7 @@ function LaporanTabunganPage() {
                 <tr className="bg-gray-50/50">
                   <td className="py-2.5 pl-6 pr-3 text-sm text-gray-500" />
                   <td className="px-3 py-2.5 text-sm text-gray-500 italic">
-                    Saldo Sebelum {MONTH_NAMES[reportMonth - 1]} {reportYear}
+                    Saldo Sebelum {MONTH_NAMES[month - 1]} {year}
                   </td>
                   <td className="px-3 py-2.5" />
                   <td className="px-3 py-2.5" />
@@ -267,7 +244,7 @@ function LaporanTabunganPage() {
                   <tr className="bg-gray-50 border-t-2 border-gray-300 font-semibold">
                     <td className="py-3 pl-6 pr-3" />
                     <td className="px-3 py-3 text-sm text-gray-900">
-                      Jumlah Bulan {MONTH_NAMES[reportMonth - 1]} {reportYear}
+                      Jumlah Bulan {MONTH_NAMES[month - 1]} {year}
                     </td>
                     <td className="px-3 py-3 text-sm text-right tabular-nums text-gray-900">
                       {formatRupiah(report.total_bulan.penerimaan)}
@@ -286,7 +263,7 @@ function LaporanTabunganPage() {
                 <tr className="bg-gray-100 border-t border-gray-300 font-bold">
                   <td className="py-3 pl-6 pr-3" />
                   <td className="px-3 py-3 text-sm text-gray-900">
-                    Saldo Akhir {MONTH_NAMES[reportMonth - 1]} {reportYear}
+                    Saldo Akhir {MONTH_NAMES[month - 1]} {year}
                   </td>
                   <td className="px-3 py-3" />
                   <td className="px-3 py-3" />
@@ -301,7 +278,7 @@ function LaporanTabunganPage() {
         </div>
       )}
 
-      {shouldFetch && !isLoading && !isError && !report && (
+      {!isLoading && !isError && !report && (
         <div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-12 text-center">
           <p className="text-sm text-gray-500">Belum ada data untuk bulan ini.</p>
         </div>

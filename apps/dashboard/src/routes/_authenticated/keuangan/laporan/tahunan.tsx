@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useAtom } from 'jotai';
 import { ChevronRight, Printer } from 'lucide-react';
@@ -21,16 +20,13 @@ const MONTH_NAMES_SHORT = [
 
 function LaporanTahunanPage() {
   const [activeAy] = useAtom(academicYearAtom);
-  const [showReport, setShowReport] = useState(false);
-
-  const shouldFetch = showReport && !!activeAy?.id;
 
   const { data: reportData, isLoading, isError } = useGetV1ReportsAnnual(
     { academic_year_id: activeAy?.id! },
-    { query: { enabled: shouldFetch } },
+    { query: { enabled: !!activeAy?.id } },
   );
 
-  const report = shouldFetch ? (reportData?.data as any)?.data : null;
+  const report = (reportData?.data as any)?.data || null;
 
   const income = report?.income_summary;
   const expense = report?.expense_summary;
@@ -51,9 +47,7 @@ function LaporanTahunanPage() {
             <span className="text-gray-900 font-medium">Laporan Tahunan</span>
           </nav>
           <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:tracking-tight">
-            {report
-              ? `Laporan Tahunan — TA ${activeAy?.name}`
-              : 'Laporan Tahunan'}
+            Laporan Tahunan — TA {activeAy?.name || '-'}
           </h2>
         </div>
         {report && (
@@ -74,7 +68,7 @@ function LaporanTahunanPage() {
         </div>
       </div>
 
-      {/* Filter */}
+      {/* Filter — TA is read-only from global state */}
       <div className="bg-white p-4 rounded-xl shadow-sm ring-1 ring-gray-900/5 print:hidden">
         <div className="flex flex-wrap gap-4 items-end">
           <div>
@@ -88,19 +82,6 @@ function LaporanTahunanPage() {
               className="block w-full sm:w-48 rounded-md border-0 py-1.5 px-3 text-gray-500 bg-gray-50 ring-1 ring-inset ring-gray-300 sm:text-sm sm:leading-6"
             />
           </div>
-          {!report ? (
-            <Button onClick={() => setShowReport(true)} disabled={!activeAy?.id}>
-              Tampilkan Laporan
-            </Button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setShowReport(false)}
-              className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
-            >
-              Ganti Filter
-            </button>
-          )}
         </div>
       </div>
 
@@ -248,7 +229,7 @@ function LaporanTahunanPage() {
         </>
       )}
 
-      {shouldFetch && !isLoading && !isError && !report && (
+      {!!activeAy?.id && !isLoading && !isError && !report && (
         <div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-12 text-center">
           <p className="text-sm text-gray-500">Belum ada data untuk tahun ajaran ini.</p>
         </div>

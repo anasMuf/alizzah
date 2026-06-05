@@ -101,19 +101,12 @@ function LaporanTabunganPage() {
             </p>
           )}
         </div>
-        <div className="flex gap-3">
-          <Link to="/keuangan/laporan/tabungan-siswa">
-            <Button variant="secondary" className="print:hidden">
-              Lihat Per Siswa
-            </Button>
-          </Link>
-          {report && (
-            <Button variant="secondary" onClick={() => window.print()} className="print:hidden">
-              <Printer className="w-4 h-4 mr-2" />
-              Cetak
-            </Button>
-          )}
-        </div>
+        {report && (
+          <Button variant="secondary" onClick={() => window.print()} className="print:hidden">
+            <Printer className="w-4 h-4 mr-2" />
+            Cetak
+          </Button>
+        )}
       </div>
 
       {/* Print Header */}

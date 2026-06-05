@@ -1,13 +1,17 @@
 import { useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { ChevronRight, ArrowUpCircle, ArrowDownCircle, Banknote } from 'lucide-react';
-import { 
-  useGetV1StudentsIdSavings, 
-  useGetV1StudentsIdSavingsTransactions, 
-  usePostV1StudentsIdSavingsWithdrawals 
+import { ChevronRight, ArrowUpCircle, ArrowDownCircle, Banknote, Printer } from 'lucide-react';
+import {
+  useGetV1StudentsIdSavings,
+  useGetV1StudentsIdSavingsTransactions,
+  usePostV1StudentsIdSavingsWithdrawals
 } from '../../../../api/endpoints/savings/savings';
 import { useGetV1StudentsId } from '../../../../api/endpoints/students/students';
+import {
+  useGetReportsTabunganSiswa,
+  type TabunganSiswaRow,
+} from '../../../../api/endpoints/reports/tabungan';
 import { Button } from '../../../../components/atoms/Button';
 import { formatCurrency, formatDate } from '../../../../utils/format';
 import { useToast } from '../../../../components/molecules/Toast';
@@ -59,6 +63,38 @@ function DetailTabunganSiswaPage() {
     }
   });
 
+  // Print report state
+  const [showPrintFilter, setShowPrintFilter] = useState(false);
+  const [printStartDate, setPrintStartDate] = useState('');
+  const [printEndDate, setPrintEndDate] = useState('');
+  const [printReady, setPrintReady] = useState(false);
+
+  const { data: printReportResp, isLoading: isPrintLoading } = useGetReportsTabunganSiswa(
+    Number(id),
+    {
+      ...(printStartDate ? { start_date: printStartDate } : {}),
+      ...(printEndDate ? { end_date: printEndDate } : {}),
+    },
+    { query: { enabled: printReady && !!id } },
+  );
+  const printReport = printReady ? ((printReportResp as any)?.data as any)?.data : null;
+  const printRows: TabunganSiswaRow[] = printReport?.rows || [];
+
+  const handleGenerateReport = () => {
+    setPrintReady(true);
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleClosePrint = () => {
+    setShowPrintFilter(false);
+    setPrintReady(false);
+    setPrintStartDate('');
+    setPrintEndDate('');
+  };
+
   const handleWithdraw = (e: React.FormEvent) => {
     e.preventDefault();
     if (Number(withdrawAmount) > (savings?.general_balance || 0)) {
@@ -89,16 +125,147 @@ function DetailTabunganSiswaPage() {
         </ol>
       </nav>
 
-      <div className="border-b border-gray-200 pb-5">
-        <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:tracking-tight flex items-center">
-          Detail Tabungan: {student.full_name}
-        </h2>
-        <p className="mt-1 text-sm text-gray-500">
-          {student.nisn ? `NISN: ${student.nisn}` : 'Belum ada NISN'} &bull; {student.active_enrollment?.class_group?.name || 'Tanpa Rombel'}
-        </p>
+      <div className="border-b border-gray-200 pb-5 flex items-start justify-between print:hidden">
+        <div>
+          <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:tracking-tight flex items-center">
+            Detail Tabungan: {student.full_name}
+          </h2>
+          <p className="mt-1 text-sm text-gray-500">
+            {student.nisn ? `NISN: ${student.nisn}` : 'Belum ada NISN'} &bull; {student.active_enrollment?.class_group?.name || 'Tanpa Rombel'}
+          </p>
+        </div>
+        <Button
+          variant="secondary"
+          onClick={() => setShowPrintFilter(!showPrintFilter)}
+        >
+          <Printer className="w-4 h-4 mr-2" />
+          Cetak Laporan
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Print Filter */}
+      {showPrintFilter && (
+        <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 print:hidden">
+          <div className="flex flex-wrap gap-4 items-end">
+            <div>
+              <label className="block text-sm font-medium text-gray-900 mb-1">Dari Tanggal</label>
+              <input
+                type="date"
+                value={printStartDate}
+                onChange={(e) => { setPrintStartDate(e.target.value); setPrintReady(false); }}
+                className="block w-full sm:w-40 rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-900 mb-1">Sampai Tanggal</label>
+              <input
+                type="date"
+                value={printEndDate}
+                onChange={(e) => { setPrintEndDate(e.target.value); setPrintReady(false); }}
+                className="block w-full sm:w-40 rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
+              />
+            </div>
+            <Button variant="primary" onClick={handleGenerateReport}>
+              Tampilkan
+            </Button>
+            {printReport && (
+              <Button variant="secondary" onClick={handlePrint}>
+                <Printer className="w-4 h-4 mr-2" /> Cetak
+              </Button>
+            )}
+            <button type="button" onClick={handleClosePrint} className="text-sm text-gray-500 hover:text-gray-700 ml-auto">
+              Tutup
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Print Preview Table (visible on screen when generated, and used for print) */}
+      {printReport && showPrintFilter && (
+        <div className="print-report-container">
+          {/* Print Header — only visible when printing */}
+          <div className="hidden print:block border-b border-gray-300 pb-4 mb-4">
+            <h1 className="text-lg font-bold text-center">PAUD AL-IZZAH</h1>
+            <p className="text-sm text-gray-600 text-center">Laporan Tabungan Umum Per Siswa</p>
+            <div className="mt-2 text-sm text-gray-700 space-y-0.5">
+              <p>Nama: {printReport.student.full_name}</p>
+              <p>Rombel: {printReport.student.class_group || '-'}</p>
+              <p>Periode: {printReport.period.start_date} — {printReport.period.end_date}</p>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden print:shadow-none print:ring-0">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-300">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="py-2.5 pl-6 pr-3 text-left text-xs font-semibold text-gray-900 w-10">No.</th>
+                    <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-900 w-24">Tanggal</th>
+                    <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-900">Keterangan</th>
+                    <th className="px-3 py-2.5 text-right text-xs font-semibold text-gray-900">Debit</th>
+                    <th className="px-3 py-2.5 text-right text-xs font-semibold text-gray-900">Kredit</th>
+                    <th className="px-3 py-2.5 text-right text-xs font-semibold text-gray-900 pr-6">Saldo</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 bg-white text-sm">
+                  {/* Saldo Awal */}
+                  <tr className="bg-gray-50/50">
+                    <td className="py-2 pl-6 pr-3" />
+                    <td className="px-3 py-2 text-gray-500 italic" colSpan={2}>Saldo Awal</td>
+                    <td className="px-3 py-2" />
+                    <td className="px-3 py-2" />
+                    <td className={`px-3 py-2 text-right tabular-nums font-semibold pr-6 ${printReport.saldo_awal < 0 ? 'text-red-600' : ''}`}>
+                      {formatCurrency(printReport.saldo_awal)}
+                    </td>
+                  </tr>
+                  {printRows.map((row: TabunganSiswaRow, idx: number) => (
+                    <tr key={idx} className="hover:bg-gray-50">
+                      <td className="py-1.5 pl-6 pr-3 text-gray-500 tabular-nums">{idx + 1}.</td>
+                      <td className="px-3 py-1.5 tabular-nums whitespace-nowrap">{formatDate(row.date)}</td>
+                      <td className="px-3 py-1.5">{row.description}</td>
+                      <td className="px-3 py-1.5 text-right tabular-nums">{row.debit ? formatCurrency(row.debit) : ''}</td>
+                      <td className="px-3 py-1.5 text-right tabular-nums">{row.credit ? formatCurrency(row.credit) : ''}</td>
+                      <td className={`px-3 py-1.5 text-right tabular-nums pr-6 ${row.saldo < 0 ? 'text-red-600' : ''}`}>{formatCurrency(row.saldo)}</td>
+                    </tr>
+                  ))}
+                  {printRows.length === 0 && (
+                    <tr><td colSpan={6} className="px-6 py-6 text-center text-gray-500">Tidak ada transaksi pada periode ini.</td></tr>
+                  )}
+                  {/* Total */}
+                  {printRows.length > 0 && (
+                    <tr className="bg-gray-50 border-t-2 border-gray-300 font-semibold">
+                      <td className="py-2.5 pl-6 pr-3" />
+                      <td className="px-3 py-2.5" colSpan={2}>Total</td>
+                      <td className="px-3 py-2.5 text-right tabular-nums">{formatCurrency(printReport.total_debit)}</td>
+                      <td className="px-3 py-2.5 text-right tabular-nums">{formatCurrency(printReport.total_credit)}</td>
+                      <td className="px-3 py-2.5" />
+                    </tr>
+                  )}
+                  {/* Saldo Akhir */}
+                  <tr className="bg-gray-100 border-t font-bold">
+                    <td className="py-2.5 pl-6 pr-3" />
+                    <td className="px-3 py-2.5" colSpan={2}>Saldo Akhir</td>
+                    <td className="px-3 py-2.5" />
+                    <td className="px-3 py-2.5" />
+                    <td className={`px-3 py-2.5 text-right tabular-nums pr-6 ${printReport.saldo_akhir < 0 ? 'text-red-600' : ''}`}>{formatCurrency(printReport.saldo_akhir)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Print footer */}
+          <div className="hidden print:block mt-6 text-xs text-gray-500 text-center">
+            <p>Dokumen ini dicetak secara otomatis oleh sistem Alizzah School.</p>
+          </div>
+        </div>
+      )}
+
+      {isPrintLoading && showPrintFilter && (
+        <div className="animate-pulse h-48 bg-gray-200 rounded-xl print:hidden" />
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 print:hidden">
         {/* Tabungan Umum */}
         <div className="overflow-hidden rounded-lg bg-white shadow ring-1 ring-gray-900/5">
           <div className="p-6">
@@ -152,7 +319,7 @@ function DetailTabunganSiswaPage() {
       </div>
 
       {/* Riwayat Transaksi */}
-      <div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden mt-8">
+      <div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden mt-8 print:hidden">
         <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
           <h3 className="text-base font-semibold leading-6 text-gray-900">Riwayat Mutasi Tabungan</h3>
         </div>

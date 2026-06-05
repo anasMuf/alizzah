@@ -12,7 +12,7 @@ type FinancialSummaryResponse struct {
 type CreateStudentRequest struct {
 	FullName      string                 `json:"full_name" validate:"required,min=3,max=100"`
 	BirthPlace    string                 `json:"birth_place" validate:"required,max=100"`
-	BirthDate     string                 `json:"birth_date" validate:"required,datetime"`
+	BirthDate     string                 `json:"birth_date" validate:"required,datetime=2006-01-02"`
 	Gender        string                 `json:"gender" validate:"required,oneof=L P"`
 	Religion      string                 `json:"religion" validate:"omitempty,max=30"`
 	IsDaycareOnly bool                   `json:"is_daycare_only"`

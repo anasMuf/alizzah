@@ -5,6 +5,7 @@ import (
 	"api/repository"
 	"api/utility"
 	"fmt"
+	"sort"
 	"sync"
 	"time"
 )
@@ -559,7 +560,7 @@ func (s *reportService) GetSaldo(req dto.SaldoRequest) (*dto.SaldoResponse, erro
 	for d := range dateSet {
 		dates = append(dates, d)
 	}
-	sortStrings(dates)
+	sort.Strings(dates)
 
 	// Build rows with running balance
 	var rows []dto.SaldoRow
@@ -618,15 +619,6 @@ func (s *reportService) GetSaldo(req dto.SaldoRequest) (*dto.SaldoResponse, erro
 		},
 		SaldoAkhir: runningBalance,
 	}, nil
-}
-
-// sortStrings sorts a slice of strings in place
-func sortStrings(s []string) {
-	for i := 1; i < len(s); i++ {
-		for j := i; j > 0 && s[j] < s[j-1]; j-- {
-			s[j], s[j-1] = s[j-1], s[j]
-		}
-	}
 }
 
 func (s *reportService) GetTransaksiPengeluaran(req dto.TransaksiPengeluaranRequest) (*dto.TransaksiPengeluaranResponse, error) {
@@ -738,7 +730,7 @@ func (s *reportService) GetTabunganReport(req dto.TabunganReportRequest) (*dto.T
 	for d := range dateSet {
 		dates = append(dates, d)
 	}
-	sortStrings(dates)
+	sort.Strings(dates)
 
 	// Build rows
 	var rows []dto.TabunganReportRow

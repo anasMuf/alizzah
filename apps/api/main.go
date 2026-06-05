@@ -9,9 +9,15 @@ import (
 	"api/seeders"
 	"api/service"
 	"api/utility"
+	"context"
 	"flag"
 	"log"
+	"net/http"
 	"os"
+	"os/signal"
+	"strings"
+	"syscall"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
@@ -133,8 +139,12 @@ func main() {
 	e.Validator = &utility.CustomValidator{Validator: validator.New()}
 
 	// Global middleware
+	corsOrigins := strings.Split(os.Getenv("CORS_ALLOWED_ORIGINS"), ",")
+	if len(corsOrigins) == 1 && corsOrigins[0] == "" {
+		corsOrigins = []string{"http://localhost:5173"}
+	}
 	e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
-		AllowOrigins: []string{"*"},
+		AllowOrigins: corsOrigins,
 		AllowMethods: []string{echo.GET, echo.POST, echo.PUT, echo.PATCH, echo.DELETE},
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
 	}))
@@ -286,19 +296,19 @@ func main() {
 	// =====================
 	// Routes — /api/v1
 	// =====================
-	api := e.Group("/api/v1")
+	api := e.Group("/api/v1", middleware.RateLimiter(20, 40))
 
-	// Auth — public
+	// Rate limiting: 1 req/detik untuk login (anti brute-force)
 	auth := api.Group("/auth")
-	auth.POST("/login", authHandler.Login)
+	auth.POST("/login", authHandler.Login, middleware.RateLimiter(1, 5))
 
 	// Auth — protected
-	authProtected := api.Group("/auth", middleware.JWTAuth)
+	authProtected := api.Group("/auth", middleware.JWTAuth, middleware.RateLimiter(20, 40))
 	authProtected.POST("/logout", authHandler.Logout)
 	authProtected.GET("/me", authHandler.Me)
 
 	// Users — superadmin only
-	users := api.Group("/users", middleware.JWTAuth, middleware.RequireRoles("superadmin"))
+	users := api.Group("/users", middleware.JWTAuth, middleware.RateLimiter(20, 40), middleware.RequireRoles("superadmin"))
 	users.GET("", userHandler.List)
 	users.POST("", userHandler.Create)
 	users.GET("/:id", userHandler.Get)
@@ -498,10 +508,28 @@ func main() {
 	reports.GET("/students/:id", reportHandler.ByStudent, middleware.RequireRoles("superadmin", "admin_keuangan"))
 	reports.GET("/class-groups/:id", reportHandler.ByClassGroup, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah"))
 
-	// Start server
+	// Start server with graceful shutdown
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
-	e.Logger.Fatal(e.Start(":" + port))
+
+	go func() {
+		if err := e.Start(":" + port); err != nil && err != http.ErrServerClosed {
+			e.Logger.Fatal("shutting down the server")
+		}
+	}()
+
+	// Wait for interrupt signal
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+	<-quit
+
+	log.Println("Menerima sinyal shutdown, menunggu request selesai...")
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	if err := e.Shutdown(ctx); err != nil {
+		e.Logger.Fatal(err)
+	}
+	log.Println("Server berhenti")
 }

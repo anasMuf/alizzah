@@ -9,6 +9,8 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
+
 // JWTClaims defines the claims stored in JWT token.
 type JWTClaims struct {
 	UserID uint   `json:"user_id"`
@@ -24,13 +26,11 @@ func JWTAuth(next echo.HandlerFunc) echo.HandlerFunc {
 			return echo.NewHTTPError(http.StatusUnauthorized, "Missing or invalid Authorization header")
 		}
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-		secret := os.Getenv("JWT_SECRET")
-
 		token, err := jwt.ParseWithClaims(tokenString, &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, echo.NewHTTPError(http.StatusUnauthorized, "Invalid signing method")
 			}
-			return []byte(secret), nil
+			return jwtSecret, nil
 		})
 		if err != nil || !token.Valid {
 			return echo.NewHTTPError(http.StatusUnauthorized, "Invalid or expired token")

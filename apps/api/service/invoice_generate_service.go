@@ -464,89 +464,97 @@ func (s *invoiceGenerateService) RecalculateInfaqHarian(classGroupID, month, yea
 			continue // no monthly invoice for this student yet
 		}
 
-		items, _ := s.invoiceItemRepo.FindByInvoiceID(invoice.ID)
+		// Bungkus update per-invoice dalam transaksi agar atomic
+		err = s.db.Transaction(func(tx *gorm.DB) error {
+			txItemRepo := s.invoiceItemRepo.WithTx(tx)
 
-		needsRecalc := false
-		for _, item := range items {
-			if item.Category == "monthly_infaq" {
-				// Skip item yang sudah di-override manual per siswa
-				// Override terdeteksi jika quantity berbeda dari effective_days.TotalDays
-				if item.Quantity != nil && *item.Quantity != effectiveDays.TotalDays {
-					continue
-				}
-
-				// Get the infaq rate from fee config
-				feeConfig, _ := s.feeConfigRepo.FindByAcademicYearID(invoice.AcademicYearID)
-				if feeConfig == nil {
-					continue
-				}
-				infaqFeeItems, _ := s.feeConfigItemRepo.FindByStudentForCategory(feeConfig.ID, "monthly_infaq", enrollment.ClassGroup.Level, enrollment.Student.Gender)
-				if len(infaqFeeItems) == 0 {
-					continue
-				}
-
-				newAmount := infaqFeeItems[0].Amount * float64(effectiveDays.TotalDays)
-				newQuantity := effectiveDays.TotalDays
-				unitPrice := infaqFeeItems[0].Amount
-
-				if item.PaidAmount == 0 {
-					item.Amount = newAmount
-					item.Quantity = &newQuantity
-					item.UnitPrice = &unitPrice
-					item.Name = fmt.Sprintf("%s (%d hari)", infaqFeeItems[0].Name, effectiveDays.TotalDays)
-					item.Notes = ""
-					s.invoiceItemRepo.Update(&item)
-					needsRecalc = true
-				} else if newAmount >= item.PaidAmount {
-					item.Amount = newAmount
-					item.Quantity = &newQuantity
-					item.UnitPrice = &unitPrice
-					item.Name = fmt.Sprintf("%s (%d hari)", infaqFeeItems[0].Name, effectiveDays.TotalDays)
-					s.invoiceItemRepo.Update(&item)
-					needsRecalc = true
-				}
-				// else: skip, amount baru < paid_amount
+			items, err := txItemRepo.FindByInvoiceID(invoice.ID)
+			if err != nil {
+				return err
 			}
 
-			if item.Category == "savings_mandatory" && enrollment.ClassGroup.Level == "berlian" {
-				// Skip item yang sudah di-override manual per siswa
-				if item.Quantity != nil && *item.Quantity != effectiveDays.TotalMondays {
-					continue
+			needsRecalc := false
+			for _, item := range items {
+				if item.Category == "monthly_infaq" {
+					// Skip item yang sudah di-override manual per siswa
+					if item.Quantity != nil && *item.Quantity != effectiveDays.TotalDays {
+						continue
+					}
+
+					feeConfig, _ := s.feeConfigRepo.FindByAcademicYearID(invoice.AcademicYearID)
+					if feeConfig == nil {
+						continue
+					}
+					infaqFeeItems, _ := s.feeConfigItemRepo.FindByStudentForCategory(feeConfig.ID, "monthly_infaq", enrollment.ClassGroup.Level, enrollment.Student.Gender)
+					if len(infaqFeeItems) == 0 {
+						continue
+					}
+
+					newAmount := infaqFeeItems[0].Amount * float64(effectiveDays.TotalDays)
+					newQuantity := effectiveDays.TotalDays
+					unitPrice := infaqFeeItems[0].Amount
+
+					if item.PaidAmount == 0 {
+						item.Amount = newAmount
+						item.Quantity = &newQuantity
+						item.UnitPrice = &unitPrice
+						item.Name = fmt.Sprintf("%s (%d hari)", infaqFeeItems[0].Name, effectiveDays.TotalDays)
+						item.Notes = ""
+						txItemRepo.Update(&item)
+						needsRecalc = true
+					} else if newAmount >= item.PaidAmount {
+						item.Amount = newAmount
+						item.Quantity = &newQuantity
+						item.UnitPrice = &unitPrice
+						item.Name = fmt.Sprintf("%s (%d hari)", infaqFeeItems[0].Name, effectiveDays.TotalDays)
+						txItemRepo.Update(&item)
+						needsRecalc = true
+					}
 				}
 
-				feeConfig, _ := s.feeConfigRepo.FindByAcademicYearID(invoice.AcademicYearID)
-				if feeConfig == nil {
-					continue
-				}
-				mandatoryItems, _ := s.feeConfigItemRepo.FindByStudentForCategory(feeConfig.ID, "savings_mandatory", "berlian", enrollment.Student.Gender)
-				if len(mandatoryItems) == 0 {
-					continue
-				}
+				if item.Category == "savings_mandatory" && enrollment.ClassGroup.Level == "berlian" {
+					if item.Quantity != nil && *item.Quantity != effectiveDays.TotalMondays {
+						continue
+					}
 
-				newAmount := mandatoryItems[0].Amount * float64(effectiveDays.TotalMondays)
-				newQuantity := effectiveDays.TotalMondays
-				unitPrice := mandatoryItems[0].Amount
+					feeConfig, _ := s.feeConfigRepo.FindByAcademicYearID(invoice.AcademicYearID)
+					if feeConfig == nil {
+						continue
+					}
+					mandatoryItems, _ := s.feeConfigItemRepo.FindByStudentForCategory(feeConfig.ID, "savings_mandatory", "berlian", enrollment.Student.Gender)
+					if len(mandatoryItems) == 0 {
+						continue
+					}
 
-				if item.PaidAmount == 0 {
-					item.Amount = newAmount
-					item.Quantity = &newQuantity
-					item.UnitPrice = &unitPrice
-					item.Name = fmt.Sprintf("%s (%d Senin)", mandatoryItems[0].Name, effectiveDays.TotalMondays)
-					s.invoiceItemRepo.Update(&item)
-					needsRecalc = true
-				} else if newAmount >= item.PaidAmount {
-					item.Amount = newAmount
-					item.Quantity = &newQuantity
-					item.UnitPrice = &unitPrice
-					item.Name = fmt.Sprintf("%s (%d Senin)", mandatoryItems[0].Name, effectiveDays.TotalMondays)
-					s.invoiceItemRepo.Update(&item)
-					needsRecalc = true
+					newAmount := mandatoryItems[0].Amount * float64(effectiveDays.TotalMondays)
+					newQuantity := effectiveDays.TotalMondays
+					unitPrice := mandatoryItems[0].Amount
+
+					if item.PaidAmount == 0 {
+						item.Amount = newAmount
+						item.Quantity = &newQuantity
+						item.UnitPrice = &unitPrice
+						item.Name = fmt.Sprintf("%s (%d Senin)", mandatoryItems[0].Name, effectiveDays.TotalMondays)
+						txItemRepo.Update(&item)
+						needsRecalc = true
+					} else if newAmount >= item.PaidAmount {
+						item.Amount = newAmount
+						item.Quantity = &newQuantity
+						item.UnitPrice = &unitPrice
+						item.Name = fmt.Sprintf("%s (%d Senin)", mandatoryItems[0].Name, effectiveDays.TotalMondays)
+						txItemRepo.Update(&item)
+						needsRecalc = true
+					}
 				}
 			}
-		}
 
-		if needsRecalc {
-			s.recalculateInvoiceTotal(invoice.ID)
+			if needsRecalc {
+				return s.recalculateInvoiceTotalWithTx(tx, invoice.ID)
+			}
+			return nil
+		})
+		if err != nil {
+			continue // log error silently, lanjut ke siswa berikutnya
 		}
 	}
 
@@ -773,6 +781,29 @@ func (s *invoiceGenerateService) recalculateInvoiceTotal(invoiceID uint) error {
 		return err
 	}
 	return s.invoiceRepo.UpdateStatus(invoiceID, status, paid)
+}
+
+func (s *invoiceGenerateService) recalculateInvoiceTotalWithTx(tx *gorm.DB, invoiceID uint) error {
+	txItemRepo := s.invoiceItemRepo.WithTx(tx)
+	txInvoiceRepo := s.invoiceRepo.WithTx(tx)
+
+	items, err := txItemRepo.FindByInvoiceID(invoiceID)
+	if err != nil {
+		return err
+	}
+
+	total := float64(0)
+	paid := float64(0)
+	for _, item := range items {
+		total += item.Amount
+		paid += item.PaidAmount
+	}
+
+	status := utility.CalculateInvoiceStatus(total, paid)
+	if err := txInvoiceRepo.UpdateTotalAmount(invoiceID, total); err != nil {
+		return err
+	}
+	return txInvoiceRepo.UpdateStatus(invoiceID, status, paid)
 }
 
 var daycarePackageToItemKey = map[string]string{

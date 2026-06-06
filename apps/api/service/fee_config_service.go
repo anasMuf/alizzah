@@ -4,6 +4,7 @@ import (
 	"api/dto"
 	"api/model"
 	"api/repository"
+	"api/utility"
 	"errors"
 	"fmt"
 
@@ -80,7 +81,7 @@ func (s *feeConfigService) Create(req dto.CreateFeeConfigRequest) (*dto.FeeConfi
 
 	existing, _ := s.fcRepo.FindByAcademicYearID(req.AcademicYearID)
 	if existing != nil {
-		return nil, errors.New("Konfigurasi tarif sudah ada untuk tahun ajaran ini")
+		return nil, utility.NewConflictError("Konfigurasi tarif sudah ada untuk tahun ajaran ini")
 	}
 
 	fc := &model.FeeConfig{
@@ -138,7 +139,7 @@ func (s *feeConfigService) CreateItem(feeConfigID uint, req dto.CreateFeeConfigI
 
 	existing, _ := s.itemRepo.FindByItemKey(feeConfigID, req.ItemKey, req.Level, req.Gender)
 	if existing != nil {
-		return nil, errors.New("Kombinasi item tarif sudah ada untuk fee config ini")
+		return nil, utility.NewConflictError("Kombinasi item tarif sudah ada untuk fee config ini")
 	}
 
 	item := &model.FeeConfigItem{
@@ -168,7 +169,7 @@ func (s *feeConfigService) UpdateItem(feeConfigID, itemID uint, req dto.CreateFe
 
 	existing, _ := s.itemRepo.FindByItemKey(feeConfigID, req.ItemKey, req.Level, req.Gender)
 	if existing != nil && existing.ID != itemID {
-		return nil, errors.New("Kombinasi item tarif sudah ada untuk fee config ini")
+		return nil, utility.NewConflictError("Kombinasi item tarif sudah ada untuk fee config ini")
 	}
 
 	item.Category = req.Category
@@ -198,7 +199,7 @@ func (s *feeConfigService) DeleteItem(feeConfigID, itemID uint) error {
 		return err
 	}
 	if used {
-		return errors.New("Tidak bisa menghapus item yang sudah digunakan pada tagihan")
+		return utility.NewUnprocessableError("Tidak bisa menghapus item yang sudah digunakan pada tagihan")
 	}
 
 	return s.itemRepo.Delete(itemID)

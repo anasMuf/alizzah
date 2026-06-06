@@ -187,10 +187,6 @@ func (h *ExtracurricularHandler) Delete(c echo.Context) error {
 
 	if err := h.extracurricularService.Delete(uint(id)); err != nil {
 		status, code := utility.GetErrorStatusAndCode(err)
-		if err.Error() == "Tidak bisa menghapus ekstrakurikuler karena masih diikuti oleh siswa" {
-			status = http.StatusUnprocessableEntity
-			code = "UNPROCESSABLE_ENTITY"
-		}
 		return c.JSON(status, dto.ErrorResponse{
 			Status:  status,
 			Code:    code,

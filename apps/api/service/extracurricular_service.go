@@ -4,6 +4,7 @@ import (
 	"api/dto"
 	"api/model"
 	"api/repository"
+	"api/utility"
 	"errors"
 
 	"gorm.io/gorm"
@@ -87,7 +88,7 @@ func (s *extracurricularService) Delete(id uint) error {
 		return err
 	}
 	if isUsed {
-		return errors.New("Tidak bisa menghapus ekstrakurikuler karena masih diikuti oleh siswa")
+		return utility.NewUnprocessableError("Tidak bisa menghapus ekstrakurikuler karena masih diikuti oleh siswa")
 	}
 
 	_, err = s.extracurricularRepo.FindByID(id)

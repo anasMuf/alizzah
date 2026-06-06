@@ -310,10 +310,6 @@ func (h *AcademicEventHandler) TransferIn(c echo.Context) error {
 	}
 	if err := h.academicService.ProcessTransferIn(userID, req); err != nil {
 		status, code := utility.GetErrorStatusAndCode(err)
-		if err.Error() == "Mutasi hanya diperbolehkan ke jenjang intan" || err.Error() == "Mutasi hanya diperbolehkan ke Intan 1 atau Intan 8" {
-			status = http.StatusUnprocessableEntity
-			code = "UNPROCESSABLE_ENTITY"
-		}
 		return c.JSON(status, dto.ErrorResponse{
 			Status:  status,
 			Code:    code,

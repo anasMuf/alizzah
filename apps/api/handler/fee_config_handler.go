@@ -82,10 +82,6 @@ func (h *FeeConfigHandler) Create(c echo.Context) error {
 	fc, err := h.service.Create(req)
 	if err != nil {
 		status, code := utility.GetErrorStatusAndCode(err)
-		if err.Error() == "Konfigurasi tarif sudah ada untuk tahun ajaran ini" {
-			status = http.StatusConflict
-			code = "CONFLICT"
-		}
 		return c.JSON(status, dto.ErrorResponse{
 			Status:  status,
 			Code:    code,
@@ -366,10 +362,6 @@ func (h *FeeConfigHandler) UpdateItem(c echo.Context) error {
 	item, err := h.service.UpdateItem(uint(id), uint(itemID), req)
 	if err != nil {
 		status, code := utility.GetErrorStatusAndCode(err)
-		if err.Error() == "Kombinasi item tarif sudah ada untuk fee config ini" {
-			status = http.StatusConflict
-			code = "CONFLICT"
-		}
 		return c.JSON(status, dto.ErrorResponse{
 			Status:  status,
 			Code:    code,
@@ -420,10 +412,6 @@ func (h *FeeConfigHandler) DeleteItem(c echo.Context) error {
 
 	if err := h.service.DeleteItem(uint(id), uint(itemID)); err != nil {
 		status, code := utility.GetErrorStatusAndCode(err)
-		if err.Error() == "Tidak bisa menghapus item yang sudah digunakan pada tagihan" {
-			status = http.StatusUnprocessableEntity
-			code = "UNPROCESSABLE_ENTITY"
-		}
 		return c.JSON(status, dto.ErrorResponse{
 			Status:  status,
 			Code:    code,

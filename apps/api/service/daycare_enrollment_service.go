@@ -83,7 +83,7 @@ func (s *daycareEnrollmentService) Create(createdBy uint, req dto.CreateDaycareE
 	// Cek duplikasi
 	existing, _ := s.daycareRepo.FindActiveByStudentID(req.StudentID, req.AcademicYearID)
 	if existing != nil {
-		return nil, errors.New("Siswa sudah memiliki pendaftaran daycare aktif di tahun ajaran ini")
+		return nil, utility.NewConflictError("Siswa sudah memiliki pendaftaran daycare aktif di tahun ajaran ini")
 	}
 
 	startDate, err := utility.ParseDate(req.StartDate)

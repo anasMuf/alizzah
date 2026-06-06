@@ -596,10 +596,10 @@ func (s *academicEventService) ProcessTransferIn(createdBy uint, req dto.Transfe
 	}
 
 	if classGroup.Level != "intan" {
-		return errors.New("Mutasi hanya diperbolehkan ke jenjang intan")
+		return utility.NewUnprocessableError("Mutasi hanya diperbolehkan ke jenjang intan")
 	}
 	if classGroup.Name != "Intan 1" && classGroup.Name != "Intan 8" {
-		return errors.New("Mutasi hanya diperbolehkan ke Intan 1 atau Intan 8")
+		return utility.NewUnprocessableError("Mutasi hanya diperbolehkan ke Intan 1 atau Intan 8")
 	}
 
 	_, err = s.academicYearRepo.FindByID(req.AcademicYearID)

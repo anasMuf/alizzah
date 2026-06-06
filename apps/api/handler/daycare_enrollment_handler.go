@@ -156,10 +156,6 @@ func (h *DaycareEnrollmentHandler) Create(c echo.Context) error {
 	de, err := h.daycareService.Create(userID, req)
 	if err != nil {
 		status, code := utility.GetErrorStatusAndCode(err)
-		if err.Error() == "Siswa sudah memiliki pendaftaran daycare aktif di tahun ajaran ini" {
-			status = http.StatusConflict
-			code = "CONFLICT"
-		}
 		return c.JSON(status, dto.ErrorResponse{
 			Status:  status,
 			Code:    code,

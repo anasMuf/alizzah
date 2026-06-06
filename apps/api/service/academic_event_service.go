@@ -99,6 +99,9 @@ func (s *academicEventService) PreviewPromotion(req dto.PromotionRequest) (*dto.
 
 	explicitMapping := make(map[uint]*model.ClassGroup)
 	for _, m := range req.Mappings {
+		if _, exists := explicitMapping[m.FromClassGroupID]; exists {
+			return nil, fmt.Errorf("Duplicate mapping untuk rombel asal ID %d", m.FromClassGroupID)
+		}
 		if tCG, ok := targetCGByID[m.ToClassGroupID]; ok {
 			explicitMapping[m.FromClassGroupID] = tCG
 		}
@@ -240,6 +243,9 @@ func (s *academicEventService) ProcessPromotion(createdBy uint, req dto.Promotio
 		// Build explicit mapping: source class group ID → target class group
 		explicitMapping := make(map[uint]*model.ClassGroup)
 		for _, m := range req.Mappings {
+			if _, exists := explicitMapping[m.FromClassGroupID]; exists {
+				return fmt.Errorf("Duplicate mapping untuk rombel asal ID %d", m.FromClassGroupID)
+			}
 			tCG, ok := targetCGByID[m.ToClassGroupID]
 			if !ok {
 				return fmt.Errorf("Rombel tujuan ID %d tidak ditemukan di tahun ajaran tujuan", m.ToClassGroupID)

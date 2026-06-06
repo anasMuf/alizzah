@@ -2,6 +2,7 @@ package handler
 
 import (
 	"api/dto"
+	"api/middleware"
 	"api/service"
 	"api/utility"
 	"net/http"
@@ -115,7 +116,10 @@ func (h *CashHandler) TransferToVault(c echo.Context) error {
 	}
 
 	academicYearID, _ := strconv.Atoi(c.QueryParam("academic_year_id"))
-	createdBy := c.Get("user_id").(uint)
+	createdBy, err := middleware.GetUserID(c)
+	if err != nil {
+		return err
+	}
 
 	if err := h.service.TransferToVault(createdBy, req, uint(academicYearID)); err != nil {
 		status, code := utility.GetErrorStatusAndCode(err)

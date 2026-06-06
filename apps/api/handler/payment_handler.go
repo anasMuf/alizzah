@@ -2,6 +2,7 @@ package handler
 
 import (
 	"api/dto"
+	"api/middleware"
 	"api/service"
 	"api/utility"
 	"net/http"
@@ -90,7 +91,10 @@ func (h *PaymentHandler) Create(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "VALIDATION_ERROR", Message: err.Error()})
 	}
 
-	createdBy := c.Get("user_id").(uint)
+	createdBy, err := middleware.GetUserID(c)
+	if err != nil {
+		return err
+	}
 	payment, err := h.service.Create(createdBy, req)
 	if err != nil {
 		status, code := utility.GetErrorStatusAndCode(err)

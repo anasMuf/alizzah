@@ -2,6 +2,7 @@ package handler
 
 import (
 	"api/dto"
+	"api/middleware"
 	"api/service"
 	"api/utility"
 	"net/http"
@@ -124,7 +125,10 @@ func (h *DailyClosingHandler) Create(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "VALIDATION_ERROR", Message: err.Error()})
 	}
 
-	createdBy := c.Get("user_id").(uint)
+	createdBy, err := middleware.GetUserID(c)
+	if err != nil {
+		return err
+	}
 
 	dc, err := h.service.Create(createdBy, req)
 	if err != nil {
@@ -166,7 +170,10 @@ func (h *DailyClosingHandler) Confirm(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "VALIDATION_ERROR", Message: err.Error()})
 	}
 
-	confirmedBy := c.Get("user_id").(uint)
+	confirmedBy, err := middleware.GetUserID(c)
+	if err != nil {
+		return err
+	}
 
 	if err := h.service.Confirm(uint(id), confirmedBy, req); err != nil {
 		status, code := utility.GetErrorStatusAndCode(err)

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"api/dto"
+	"api/middleware"
 	"api/service"
 	"api/utility"
 	"net/http"
@@ -143,7 +144,10 @@ func (h *AcademicEventHandler) Promotion(c echo.Context) error {
 		})
 	}
 
-	userID := c.Get("user_id").(uint)
+	userID, err := middleware.GetUserID(c)
+	if err != nil {
+		return err
+	}
 	result, err := h.academicService.ProcessPromotion(userID, req)
 	if err != nil {
 		status, code := utility.GetErrorStatusAndCode(err)
@@ -192,7 +196,10 @@ func (h *AcademicEventHandler) Graduation(c echo.Context) error {
 		})
 	}
 
-	userID := c.Get("user_id").(uint)
+	userID, err := middleware.GetUserID(c)
+	if err != nil {
+		return err
+	}
 	result, err := h.academicService.ProcessGraduation(userID, req)
 	if err != nil {
 		if err.Error() == "501_NOT_IMPLEMENTED" {
@@ -247,7 +254,10 @@ func (h *AcademicEventHandler) ClassChange(c echo.Context) error {
 		})
 	}
 
-	userID := c.Get("user_id").(uint)
+	userID, err := middleware.GetUserID(c)
+	if err != nil {
+		return err
+	}
 	if err := h.academicService.ProcessClassChange(userID, req); err != nil {
 		status, code := utility.GetErrorStatusAndCode(err)
 		return c.JSON(status, dto.ErrorResponse{
@@ -294,7 +304,10 @@ func (h *AcademicEventHandler) TransferIn(c echo.Context) error {
 		})
 	}
 
-	userID := c.Get("user_id").(uint)
+	userID, err := middleware.GetUserID(c)
+	if err != nil {
+		return err
+	}
 	if err := h.academicService.ProcessTransferIn(userID, req); err != nil {
 		status, code := utility.GetErrorStatusAndCode(err)
 		if err.Error() == "Mutasi hanya diperbolehkan ke jenjang intan" || err.Error() == "Mutasi hanya diperbolehkan ke Intan 1 atau Intan 8" {
@@ -344,7 +357,10 @@ func (h *AcademicEventHandler) Withdrawal(c echo.Context) error {
 		})
 	}
 
-	userID := c.Get("user_id").(uint)
+	userID, err := middleware.GetUserID(c)
+	if err != nil {
+		return err
+	}
 	if err := h.academicService.ProcessWithdrawal(userID, req); err != nil {
 		status, code := utility.GetErrorStatusAndCode(err)
 		return c.JSON(status, dto.ErrorResponse{

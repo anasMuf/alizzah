@@ -1,7 +1,5 @@
 package model
 
-import "time"
-
 type SavingsTransaction struct {
 	PrimaryKey
 	StudentSavingsID uint    `gorm:"not null;index"`
@@ -14,8 +12,7 @@ type SavingsTransaction struct {
 	SourceID  *uint  `gorm:""`
 	Notes     string `gorm:"type:text"`
 	CreatedBy uint   `gorm:"not null"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	BaseModelTimeAt
 
 	StudentSavings StudentSavings `gorm:"foreignKey:StudentSavingsID"`
 	Creator        User           `gorm:"foreignKey:CreatedBy"`

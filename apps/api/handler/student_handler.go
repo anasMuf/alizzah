@@ -2,6 +2,7 @@ package handler
 
 import (
 	"api/dto"
+	"api/middleware"
 	"api/service"
 	"api/utility"
 	"net/http"
@@ -94,7 +95,10 @@ func (h *StudentHandler) Create(c echo.Context) error {
 		return err
 	}
 
-	userID := c.Get("user_id").(uint)
+	userID, err := middleware.GetUserID(c)
+	if err != nil {
+		return err
+	}
 	student, err := h.studentService.Create(userID, req)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())

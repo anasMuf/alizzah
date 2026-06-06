@@ -693,8 +693,12 @@ func (s *reportService) GetTabunganReport(req dto.TabunganReportRequest) (*dto.T
 
 	startOfMonth := time.Date(int(req.Year), time.Month(req.Month), 1, 0, 0, 0, 0, time.UTC)
 	endOfMonth := startOfMonth.AddDate(0, 1, -1)
-	// Use a very early date as "beginning of time" for saldo sebelum
-	beginningOfTime := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+	// Use the start of the active academic year as baseline
+	ay, ayErr := s.academicYearRepo.FindActive()
+	if ayErr != nil {
+		return nil, fmt.Errorf("gagal mengambil tahun ajaran aktif: %w", ayErr)
+	}
+	beginningOfTime := ay.StartDate
 	endOfPrevMonth := startOfMonth.AddDate(0, 0, -1)
 
 	// Saldo sebelum

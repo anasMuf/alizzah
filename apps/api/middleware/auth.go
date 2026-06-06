@@ -59,3 +59,12 @@ func GetCurrentUserID(c echo.Context) uint {
 	claims := GetCurrentUser(c)
 	return claims.UserID
 }
+
+// GetUserID safely extracts the user ID from context with comma-ok check.
+func GetUserID(c echo.Context) (uint, error) {
+	id, ok := c.Get("user_id").(uint)
+	if !ok {
+		return 0, echo.NewHTTPError(http.StatusUnauthorized, "User ID tidak ditemukan di context")
+	}
+	return id, nil
+}

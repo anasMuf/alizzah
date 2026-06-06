@@ -107,6 +107,10 @@ func main() {
 		ON student_enrollments (student_id, academic_year_id)
 		WHERE status = 'active'`)
 
+	// Unique constraint: satu tanggal hanya boleh ada satu tutup buku
+	db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS uq_daily_closing_date
+		ON daily_closings (closing_date)`)
+
 	// Reset data jika flag --reseed diberikan
 	if *reseed != "" {
 		if *reseed == "all" {

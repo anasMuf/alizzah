@@ -6,6 +6,7 @@ import (
 	"api/repository"
 	"api/utility"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -65,14 +66,6 @@ func (s *dailyClosingService) Create(closedBy uint, req dto.CreateDailyClosingRe
 		return nil, echo.NewHTTPError(400, "Format closing_date tidak valid (YYYY-MM-DD)")
 	}
 
-	existing, err := s.repo.FindByDate(closingDate)
-	if err != nil {
-		return nil, fmt.Errorf("gagal memeriksa tutup buku existing: %w", err)
-	}
-	if existing != nil {
-		return nil, echo.NewHTTPError(409, "Tutup buku untuk tanggal ini sudah ada")
-	}
-
 	if closingDate.After(time.Now()) {
 		return nil, echo.NewHTTPError(400, "Tanggal tutup buku tidak boleh di masa depan")
 	}
@@ -100,6 +93,10 @@ func (s *dailyClosingService) Create(closedBy uint, req dto.CreateDailyClosingRe
 	}
 
 	if err := s.repo.Create(dc); err != nil {
+		// Unique constraint violation → concurrent create
+		if strings.Contains(err.Error(), "duplicate key") || strings.Contains(err.Error(), "uq_daily_closing_date") {
+			return nil, echo.NewHTTPError(409, "Tutup buku untuk tanggal ini sudah ada")
+		}
 		return nil, err
 	}
 

@@ -4,6 +4,7 @@ import (
 	"api/dto"
 	"api/model"
 	"api/repository"
+	"api/utility"
 	"errors"
 	"fmt"
 	"time"
@@ -54,14 +55,7 @@ func (s *expenseService) GetAll(params dto.ExpenseQueryParams) ([]dto.ExpenseRes
 		responses = append(responses, mapExpenseToResponse(exp))
 	}
 
-	page := params.Page
-	if page < 1 {
-		page = 1
-	}
-	limit := params.Limit
-	if limit < 1 {
-		limit = 20
-	}
+	page, limit := utility.NormalizePagination(params.Page, params.Limit)
 
 	meta := &dto.Meta{Page: page, Limit: limit, Total: total}
 	return responses, meta, nil

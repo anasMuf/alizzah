@@ -64,14 +64,7 @@ func (s *invoiceService) GetAll(params dto.InvoiceQueryParams) ([]dto.InvoiceLis
 		responses = append(responses, mapInvoiceToListResponse(inv))
 	}
 
-	page := params.Page
-	if page < 1 {
-		page = 1
-	}
-	limit := params.Limit
-	if limit < 1 {
-		limit = 20
-	}
+	page, limit := utility.NormalizePagination(params.Page, params.Limit)
 
 	meta := &dto.Meta{
 		Page:  page,

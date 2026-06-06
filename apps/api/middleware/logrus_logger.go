@@ -26,7 +26,20 @@ func MakeLogEntry(c echo.Context) *log.Entry {
 
 func MiddlewareLogging(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		MakeLogEntry(c).Info("incoming request")
-		return next(c)
+		start := time.Now()
+		err := next(c)
+
+		entry := MakeLogEntry(c).WithFields(log.Fields{
+			"status":  c.Response().Status,
+			"latency": time.Since(start).String(),
+		})
+
+		if err != nil {
+			entry.WithError(err).Error("request failed")
+		} else {
+			entry.Info("request completed")
+		}
+
+		return err
 	}
 }

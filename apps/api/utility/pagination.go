@@ -29,3 +29,14 @@ func ParsePagination(c echo.Context) (page, limit int) {
 func Offset(page, limit int) int {
 	return (page - 1) * limit
 }
+
+// NormalizePagination ensures page >= 1 and limit >= 1 (default 20).
+func NormalizePagination(page, limit int) (int, int) {
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = 20
+	}
+	return page, limit
+}

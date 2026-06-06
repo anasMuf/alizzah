@@ -4,8 +4,10 @@ import (
 	"api/dto"
 	"api/service"
 	"api/utility"
+	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 )
@@ -651,5 +653,53 @@ func (h *InvoiceHandler) DeleteInstallment(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, dto.SuccessResponse{
 		Message: "Berhasil menghapus cicilan",
+	})
+}
+
+// Batch godoc
+// @Summary      Get multiple invoices by IDs
+// @Description  Get invoice details for multiple IDs at once (for payment page)
+// @Tags         invoices
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        ids  query  string  true  "Comma-separated invoice IDs (e.g. 1,2,3)"
+// @Success      200  {object}  dto.SuccessResponse{data=[]dto.InvoiceDetailResponse}
+// @Failure      400  {object}  dto.ErrorResponse
+// @Failure      401  {object}  dto.ErrorResponse
+// @Failure      403  {object}  dto.ErrorResponse
+// @Router       /v1/invoices/batch [get]
+func (h *InvoiceHandler) Batch(c echo.Context) error {
+	idsStr := c.QueryParam("ids")
+	if idsStr == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: "Parameter ids wajib diisi (comma-separated)",
+		})
+	}
+
+	parts := strings.Split(idsStr, ",")
+	ids := make([]uint, 0, len(parts))
+	for _, p := range parts {
+		id, err := strconv.Atoi(strings.TrimSpace(p))
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+				Status: http.StatusBadRequest, Code: "BAD_REQUEST",
+				Message: fmt.Sprintf("ID tidak valid: '%s'", p),
+			})
+		}
+		ids = append(ids, uint(id))
+	}
+
+	invoices, err := h.service.GetBatch(ids)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+			Status: http.StatusInternalServerError, Code: "INTERNAL_ERROR",
+			Message: fmt.Sprintf("Gagal mengambil invoice: %v", err),
+		})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "Berhasil mengambil invoice",
+		Data:    invoices,
 	})
 }

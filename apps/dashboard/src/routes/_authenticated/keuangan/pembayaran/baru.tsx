@@ -2,10 +2,10 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router';
 import { useAtom } from 'jotai';
 import { useDebounce } from 'use-debounce';
-import { useQueries } from '@tanstack/react-query';
+import { useGetV1InvoicesBatch } from '../../../../api/endpoints/invoices/invoice-batch';
 import { Search, User, Wallet, FileText, AlertCircle, Plus, Trash2, X } from 'lucide-react';
 import { useGetV1Students, useGetV1StudentsId } from '../../../../api/endpoints/students/students';
-import { useGetV1StudentsIdInvoices, getGetV1InvoicesIdQueryOptions } from '../../../../api/endpoints/invoices/invoices';
+import { useGetV1StudentsIdInvoices } from '../../../../api/endpoints/invoices/invoices';
 import { usePostV1Payments } from '../../../../api/endpoints/payments/payments';
 import { useGetV1StudentsIdSavings } from '../../../../api/endpoints/savings/savings';
 import { academicYearAtom } from '../../../../store/global';
@@ -96,19 +96,16 @@ function KasirPembayaranPage() {
     }
   }, [unpaidInvoices, initialInvoiceId]);
 
-  const invoiceDetailQueries = useQueries({
-    queries: selectedInvoices.map((invId) => ({
-      ...getGetV1InvoicesIdQueryOptions(invId),
-      enabled: selectedInvoices.length > 0,
-    })),
+  // Batch fetch invoice details (single request instead of N useQueries)
+  const { data: invoiceDetails = [] } = useGetV1InvoicesBatch(selectedInvoices, {
+    enabled: selectedInvoices.length > 0,
   });
 
   const invoiceItems = useMemo(() => {
     const items: any[] = [];
     const hasDispensation = new Set<number>();
 
-    invoiceDetailQueries.forEach((q) => {
-      const detail = (q.data?.data as any)?.data;
+    invoiceDetails.forEach((detail: any) => {
       if (detail?.items) {
         detail.items.forEach((item: any) => {
           if (item.category === 'dispensation') hasDispensation.add(detail.id);
@@ -116,8 +113,7 @@ function KasirPembayaranPage() {
       }
     });
 
-    invoiceDetailQueries.forEach((q) => {
-      const detail = (q.data?.data as any)?.data;
+    invoiceDetails.forEach((detail: any) => {
       if (detail?.items) {
         detail.items.forEach((item: any) => {
           const sisa = Number(item.amount || 0) - Number(item.paid_amount || 0);
@@ -144,7 +140,7 @@ function KasirPembayaranPage() {
     });
 
     return items;
-  }, [invoiceDetailQueries.map((q) => q.data).join(',')]);
+  }, [invoiceDetails]);
 
   useEffect(() => {
     if (invoiceItems.length > 0) {

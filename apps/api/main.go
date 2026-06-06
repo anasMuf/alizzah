@@ -423,6 +423,7 @@ func main() {
 	// Batch 5: Invoices
 	invoices := api.Group("/invoices", middleware.JWTAuth(tokenBlacklistRepo), middleware.RequireRoles("superadmin", "admin_keuangan"))
 	invoices.GET("", invoiceHandler.List)
+	invoices.GET("/batch", invoiceHandler.Batch)
 	invoices.GET("/:id", invoiceHandler.Get)
 	invoices.POST("/:id/items", invoiceHandler.AddItem)
 	invoices.PUT("/:id/items/:item_id", invoiceHandler.UpdateItem)

@@ -10,6 +10,7 @@ import (
 type InvoiceRepository interface {
 	FindAll(params dto.InvoiceQueryParams) ([]model.Invoice, int64, error)
 	FindByID(id uint) (*model.Invoice, error)
+	FindByIDs(ids []uint) ([]model.Invoice, error)
 	FindByStudentID(studentID uint, invoiceType, status string, academicYearID uint) ([]model.Invoice, error)
 	FindMonthlyByStudent(studentID, month, year uint) (*model.Invoice, error)
 	Create(invoice *model.Invoice) error
@@ -112,6 +113,22 @@ func (r *invoiceRepository) FindByID(id uint) (*model.Invoice, error) {
 		Preload("Items").
 		Preload("Installments").First(&invoice, id).Error
 	return &invoice, err
+}
+
+func (r *invoiceRepository) FindByIDs(ids []uint) ([]model.Invoice, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	var invoices []model.Invoice
+	err := r.db.Preload("Student").
+		Preload("Student.Enrollments", "status = ?", "active").
+		Preload("Student.Enrollments.ClassGroup").
+		Preload("AcademicYear").
+		Preload("Items").
+		Preload("Installments").
+		Where("id IN ?", ids).
+		Find(&invoices).Error
+	return invoices, err
 }
 
 func (r *invoiceRepository) FindByStudentID(studentID uint, invoiceType, status string, academicYearID uint) ([]model.Invoice, error) {

@@ -16,6 +16,7 @@ import (
 type InvoiceService interface {
 	GetAll(params dto.InvoiceQueryParams) ([]dto.InvoiceListResponse, *dto.Meta, error)
 	GetByID(id uint) (*dto.InvoiceDetailResponse, error)
+	GetBatch(ids []uint) ([]dto.InvoiceDetailResponse, error)
 	GetByStudentID(studentID uint, invoiceType, status string, academicYearID uint) ([]dto.InvoiceListResponse, error)
 	// Item management
 	AddItem(invoiceID uint, req dto.AddInvoiceItemRequest) (*dto.InvoiceItemResponse, error)
@@ -120,6 +121,21 @@ func (s *invoiceService) GetByStudentID(studentID uint, invoiceType, status stri
 	var responses []dto.InvoiceListResponse
 	for _, inv := range invoices {
 		responses = append(responses, mapInvoiceToListResponse(inv))
+	}
+	return responses, nil
+}
+
+func (s *invoiceService) GetBatch(ids []uint) ([]dto.InvoiceDetailResponse, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	invoices, err := s.invoiceRepo.FindByIDs(ids)
+	if err != nil {
+		return nil, err
+	}
+	responses := make([]dto.InvoiceDetailResponse, len(invoices))
+	for i, inv := range invoices {
+		responses[i] = mapInvoiceToDetailResponse(inv)
 	}
 	return responses, nil
 }

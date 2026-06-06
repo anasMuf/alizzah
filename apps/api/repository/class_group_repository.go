@@ -43,7 +43,7 @@ func (r *classGroupRepository) FindAll(params dto.ClassGroupQueryParams) ([]mode
 
 func (r *classGroupRepository) FindByID(id uint) (*model.ClassGroup, error) {
 	var cg model.ClassGroup
-	err := r.db.First(&cg, id).Error
+	err := r.db.Preload("AcademicYear").First(&cg, id).Error
 	return &cg, err
 }
 

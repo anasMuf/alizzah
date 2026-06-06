@@ -213,22 +213,28 @@ func (s *studentEnrollmentService) EnrollStudent(studentID, createdBy uint, req 
 		gender := student.Gender
 
 		// Biaya awal
-		_ = s.invoiceGen.GenerateInitial(dto.GenerateInitialInvoiceParams{
+		if err := s.invoiceGen.GenerateInitial(dto.GenerateInitialInvoiceParams{
 			StudentID: studentID, AcademicYearID: req.AcademicYearID,
 			Level: level, Gender: gender, CreatedBy: createdBy,
-		})
+		}); err != nil {
+			return nil, fmt.Errorf("gagal generate invoice biaya awal: %w", err)
+		}
 
 		// Registrasi tahunan
-		_ = s.invoiceGen.GenerateRegistration(dto.GenerateRegistrationInvoiceParams{
+		if err := s.invoiceGen.GenerateRegistration(dto.GenerateRegistrationInvoiceParams{
 			StudentID: studentID, AcademicYearID: req.AcademicYearID,
 			Level: level, Gender: gender, CreatedBy: createdBy,
-		})
+		}); err != nil {
+			return nil, fmt.Errorf("gagal generate invoice registrasi: %w", err)
+		}
 
 		// Bulanan (dari start_date sampai akhir TA)
-		_ = s.invoiceGen.GenerateMonthlyRange(
+		if err := s.invoiceGen.GenerateMonthlyRange(
 			studentID, req.AcademicYearID, req.ClassGroupID,
 			level, gender, startDate, cg.AcademicYear.EndDate, createdBy,
-		)
+		); err != nil {
+			return nil, fmt.Errorf("gagal generate invoice bulanan: %w", err)
+		}
 	}
 
 	// Init tabungan

@@ -3,18 +3,22 @@ package handler
 import (
 	"api/dto"
 	"api/middleware"
+	"api/repository"
 	"api/service"
 	"net/http"
+	"time"
 
+	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
 )
 
 type AuthHandler struct {
 	authService service.AuthService
+	blacklistRepo repository.TokenBlacklistRepository
 }
 
-func NewAuthHandler(authService service.AuthService) *AuthHandler {
-	return &AuthHandler{authService: authService}
+func NewAuthHandler(authService service.AuthService, blacklistRepo repository.TokenBlacklistRepository) *AuthHandler {
+	return &AuthHandler{authService: authService, blacklistRepo: blacklistRepo}
 }
 
 // Login godoc
@@ -59,6 +63,25 @@ func (h *AuthHandler) Login(c echo.Context) error {
 // @Failure      401  {object}  dto.ErrorResponse
 // @Router       /v1/auth/logout [post]
 func (h *AuthHandler) Logout(c echo.Context) error {
+	// Blacklist token jika repo tersedia
+	if h.blacklistRepo != nil {
+		token, ok := c.Get("user").(*jwt.Token)
+		if ok {
+			tokenString := c.Get("token_raw").(string)
+			tokenHash := middleware.HashToken(tokenString)
+
+			// Ambil expiry dari claims
+			var expiresAt time.Time
+			if claims, ok := token.Claims.(*middleware.JWTClaims); ok {
+				expiresAt = time.Unix(claims.ExpiresAt, 0)
+			} else {
+				expiresAt = time.Now().Add(24 * time.Hour)
+			}
+
+			_ = h.blacklistRepo.Create(tokenHash, expiresAt)
+		}
+	}
+
 	return c.JSON(http.StatusOK, dto.SuccessResponse{
 		Message: "Logout berhasil",
 	})

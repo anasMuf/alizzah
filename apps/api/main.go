@@ -87,6 +87,8 @@ func main() {
 		&model.StudentFacility{},
 		// Dispensations
 		&model.Dispensation{},
+		// Token blacklist
+		&model.TokenBlacklist{},
 	); err != nil {
 		log.Fatal("Gagal AutoMigrate:", err)
 	}
@@ -163,6 +165,7 @@ func main() {
 
 	// Repositories
 	userRepo := repository.NewUserRepository(db)
+	tokenBlacklistRepo := repository.NewTokenBlacklistRepository(db)
 	ayRepo := repository.NewAcademicYearRepository(db)
 	studentRepo := repository.NewStudentRepository(db)
 	guardianRepo := repository.NewGuardianRepository(db)
@@ -252,7 +255,7 @@ func main() {
 	academicService := service.NewAcademicEventService(db, enrollmentRepo, studentRepo, eventRepo, classGroupRepo, ayRepo, invoiceCreator, savingsManager, invoiceGenService)
 
 	// Handlers
-	authHandler := handler.NewAuthHandler(authService)
+	authHandler := handler.NewAuthHandler(authService, tokenBlacklistRepo)
 	userHandler := handler.NewUserHandler(userService)
 	ayHandler := handler.NewAcademicYearHandler(ayService)
 	studentHandler := handler.NewStudentHandler(studentService)
@@ -307,12 +310,12 @@ func main() {
 	auth.POST("/login", authHandler.Login, middleware.RateLimiter(1, 5))
 
 	// Auth — protected
-	authProtected := api.Group("/auth", middleware.JWTAuth, middleware.RateLimiter(20, 40))
+	authProtected := api.Group("/auth", middleware.JWTAuth(tokenBlacklistRepo), middleware.RateLimiter(20, 40))
 	authProtected.POST("/logout", authHandler.Logout)
 	authProtected.GET("/me", authHandler.Me)
 
 	// Users — superadmin only
-	users := api.Group("/users", middleware.JWTAuth, middleware.RateLimiter(20, 40), middleware.RequireRoles("superadmin"))
+	users := api.Group("/users", middleware.JWTAuth(tokenBlacklistRepo), middleware.RateLimiter(20, 40), middleware.RequireRoles("superadmin"))
 	users.GET("", userHandler.List)
 	users.POST("", userHandler.Create)
 	users.GET("/:id", userHandler.Get)
@@ -320,7 +323,7 @@ func main() {
 	users.DELETE("/:id", userHandler.Delete)
 
 	// Academic Years
-	ay := api.Group("/academic-years", middleware.JWTAuth)
+	ay := api.Group("/academic-years", middleware.JWTAuth(tokenBlacklistRepo))
 	ay.GET("", ayHandler.List, middleware.RequireRoles("superadmin", "admin_administrasi"))
 	ay.POST("", ayHandler.Create, middleware.RequireRoles("superadmin", "admin_administrasi"))
 	ay.GET("/:id", ayHandler.Get, middleware.RequireRoles("superadmin", "admin_administrasi"))
@@ -328,7 +331,7 @@ func main() {
 	ay.PATCH("/:id/activate", ayHandler.Activate, middleware.RequireRoles("superadmin"))
 
 	// Students
-	students := api.Group("/students", middleware.JWTAuth)
+	students := api.Group("/students", middleware.JWTAuth(tokenBlacklistRepo))
 	students.GET("", studentHandler.List, middleware.RequireRoles("superadmin", "admin_administrasi", "admin_keuangan"))
 	students.POST("", studentHandler.Create, middleware.RequireRoles("superadmin", "admin_administrasi"))
 	students.POST("/import", studentHandler.Import, middleware.RequireRoles("superadmin", "admin_administrasi"))
@@ -350,11 +353,11 @@ func main() {
 	students.GET("/:id/academic-events", eventHandler.GetByStudent, middleware.RequireRoles("superadmin", "admin_administrasi"))
 
 	// Enrollment management
-	enrollments := api.Group("/enrollments", middleware.JWTAuth, middleware.RequireRoles("superadmin", "admin_administrasi"))
+	enrollments := api.Group("/enrollments", middleware.JWTAuth(tokenBlacklistRepo), middleware.RequireRoles("superadmin", "admin_administrasi"))
 	enrollments.PATCH("/:id/activate", enrollmentHandler.ActivateEnrollment)
 
 	// Guardians (Standalone)
-	guardians := api.Group("/guardians", middleware.JWTAuth, middleware.RequireRoles("superadmin", "admin_administrasi"))
+	guardians := api.Group("/guardians", middleware.JWTAuth(tokenBlacklistRepo), middleware.RequireRoles("superadmin", "admin_administrasi"))
 	guardians.POST("", guardianHandler.Create)
 	guardians.GET("/:id", guardianHandler.Get)
 	guardians.PUT("/:id", guardianHandler.Update)
@@ -366,7 +369,7 @@ func main() {
 	students.PATCH("/:id/guardians/:guardian_id/primary", guardianHandler.SetPrimary, middleware.RequireRoles("superadmin", "admin_administrasi"))
 
 	// Class Groups
-	classGroups := api.Group("/class-groups", middleware.JWTAuth)
+	classGroups := api.Group("/class-groups", middleware.JWTAuth(tokenBlacklistRepo))
 	classGroups.GET("", classGroupHandler.List, middleware.RequireRoles("superadmin", "admin_administrasi", "admin_keuangan"))
 	classGroups.POST("", classGroupHandler.Create, middleware.RequireRoles("superadmin", "admin_administrasi"))
 	classGroups.POST("/clone", classGroupHandler.Clone, middleware.RequireRoles("superadmin", "admin_administrasi"))
@@ -381,7 +384,7 @@ func main() {
 	classGroups.PUT("/:id/effective-days/:ed_id", effectiveDayHandler.Update, middleware.RequireRoles("superadmin", "admin_administrasi"))
 
 	// Extracurriculars
-	extracurriculars := api.Group("/extracurriculars", middleware.JWTAuth, middleware.RequireRoles("superadmin", "admin_administrasi"))
+	extracurriculars := api.Group("/extracurriculars", middleware.JWTAuth(tokenBlacklistRepo), middleware.RequireRoles("superadmin", "admin_administrasi"))
 	extracurriculars.POST("/sync-invoices", seHandler.SyncInvoices)
 	extracurriculars.GET("", extracurricularHandler.List)
 	extracurriculars.POST("", extracurricularHandler.Create)
@@ -389,7 +392,7 @@ func main() {
 	extracurriculars.DELETE("/:id", extracurricularHandler.Delete)
 
 	// Daycare Enrollments
-	daycare := api.Group("/daycare-enrollments", middleware.JWTAuth, middleware.RequireRoles("superadmin", "admin_administrasi"))
+	daycare := api.Group("/daycare-enrollments", middleware.JWTAuth(tokenBlacklistRepo), middleware.RequireRoles("superadmin", "admin_administrasi"))
 	daycare.GET("", daycareHandler.List)
 	daycare.POST("", daycareHandler.Create)
 	daycare.POST("/sync-invoices", daycareHandler.SyncInvoices)
@@ -398,7 +401,7 @@ func main() {
 	daycare.PATCH("/:id/status", daycareHandler.UpdateStatus)
 
 	// Batch 4: Academic Events
-	events := api.Group("/academic-events", middleware.JWTAuth, middleware.RequireRoles("superadmin", "admin_administrasi"))
+	events := api.Group("/academic-events", middleware.JWTAuth(tokenBlacklistRepo), middleware.RequireRoles("superadmin", "admin_administrasi"))
 	events.POST("/promotions/preview", eventHandler.PromotionPreview)
 	events.POST("/promotions", eventHandler.Promotion)
 	events.POST("/graduations", eventHandler.Graduation)
@@ -407,7 +410,7 @@ func main() {
 	events.POST("/withdrawals", eventHandler.Withdrawal)
 
 	// Batch 4: Fee Configs
-	feeConfigs := api.Group("/fee-configs", middleware.JWTAuth, middleware.RequireRoles("superadmin"))
+	feeConfigs := api.Group("/fee-configs", middleware.JWTAuth(tokenBlacklistRepo), middleware.RequireRoles("superadmin"))
 	feeConfigs.GET("", feeConfigHandler.List)
 	feeConfigs.POST("", feeConfigHandler.Create)
 	feeConfigs.GET("/:id", feeConfigHandler.Get)
@@ -418,7 +421,7 @@ func main() {
 	feeConfigs.DELETE("/:id/items/:item_id", feeConfigHandler.DeleteItem)
 
 	// Batch 5: Invoices
-	invoices := api.Group("/invoices", middleware.JWTAuth, middleware.RequireRoles("superadmin", "admin_keuangan"))
+	invoices := api.Group("/invoices", middleware.JWTAuth(tokenBlacklistRepo), middleware.RequireRoles("superadmin", "admin_keuangan"))
 	invoices.GET("", invoiceHandler.List)
 	invoices.GET("/:id", invoiceHandler.Get)
 	invoices.POST("/:id/items", invoiceHandler.AddItem)
@@ -434,7 +437,7 @@ func main() {
 	students.GET("/:id/invoices", invoiceHandler.GetByStudent, middleware.RequireRoles("superadmin", "admin_keuangan"))
 
 	// Batch 6: Payments
-	payments := api.Group("/payments", middleware.JWTAuth, middleware.RequireRoles("superadmin", "admin_keuangan"))
+	payments := api.Group("/payments", middleware.JWTAuth(tokenBlacklistRepo), middleware.RequireRoles("superadmin", "admin_keuangan"))
 	payments.GET("", paymentHandler.List)
 	payments.POST("", paymentHandler.Create)
 	payments.GET("/:id", paymentHandler.Get)
@@ -446,14 +449,14 @@ func main() {
 	students.POST("/:id/savings/withdrawals", savingsHandler.GuardianWithdrawal, middleware.RequireRoles("superadmin", "admin_keuangan"))
 
 	// Batch 6: Expense Categories
-	expCats := api.Group("/expense-categories", middleware.JWTAuth)
+	expCats := api.Group("/expense-categories", middleware.JWTAuth(tokenBlacklistRepo))
 	expCats.GET("", expCatHandler.List, middleware.RequireRoles("superadmin", "admin_keuangan"))
 	expCats.POST("", expCatHandler.Create, middleware.RequireRoles("superadmin", "admin_keuangan"))
 	expCats.PUT("/:id", expCatHandler.Update, middleware.RequireRoles("superadmin"))
 	expCats.DELETE("/:id", expCatHandler.Delete, middleware.RequireRoles("superadmin"))
 
 	// Batch 6: Expenses
-	expenses := api.Group("/expenses", middleware.JWTAuth, middleware.RequireRoles("superadmin", "admin_keuangan"))
+	expenses := api.Group("/expenses", middleware.JWTAuth(tokenBlacklistRepo), middleware.RequireRoles("superadmin", "admin_keuangan"))
 	expenses.GET("", expenseHandler.List)
 	expenses.POST("", expenseHandler.Create)
 	expenses.GET("/:id", expenseHandler.Get)
@@ -461,20 +464,20 @@ func main() {
 	expenses.DELETE("/:id", expenseHandler.Delete)
 
 	// Dispensations
-	dispensations := api.Group("/dispensations", middleware.JWTAuth, middleware.RequireRoles("superadmin", "admin_keuangan"))
+	dispensations := api.Group("/dispensations", middleware.JWTAuth(tokenBlacklistRepo), middleware.RequireRoles("superadmin", "admin_keuangan"))
 	dispensations.PUT("/:id", dispensationHandler.Update)
 	dispensations.PATCH("/:id/toggle", dispensationHandler.Toggle)
 	dispensations.DELETE("/:id", dispensationHandler.Delete)
 
 	// Facilities (master)
-	facilities := api.Group("/facilities", middleware.JWTAuth)
+	facilities := api.Group("/facilities", middleware.JWTAuth(tokenBlacklistRepo))
 	facilities.GET("", facilityHandler.List, middleware.RequireRoles("superadmin", "admin_administrasi"))
 	facilities.POST("", facilityHandler.Create, middleware.RequireRoles("superadmin", "admin_administrasi"))
 	facilities.PUT("/:id", facilityHandler.Update, middleware.RequireRoles("superadmin", "admin_administrasi"))
 	facilities.DELETE("/:id", facilityHandler.Delete, middleware.RequireRoles("superadmin"))
 
 	// Income Transactions (Dana Bantuan)
-	incomes := api.Group("/income-transactions", middleware.JWTAuth, middleware.RequireRoles("superadmin", "admin_keuangan"))
+	incomes := api.Group("/income-transactions", middleware.JWTAuth(tokenBlacklistRepo), middleware.RequireRoles("superadmin", "admin_keuangan"))
 	incomes.GET("", incomeHandler.List)
 	incomes.POST("", incomeHandler.Create)
 	incomes.GET("/:id", incomeHandler.Get)
@@ -482,25 +485,25 @@ func main() {
 	incomes.DELETE("/:id", incomeHandler.Delete)
 
 	// Batch 7: Cash
-	cash := api.Group("/cash", middleware.JWTAuth)
+	cash := api.Group("/cash", middleware.JWTAuth(tokenBlacklistRepo))
 	cash.GET("/balance", cashHandler.GetBalance, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah"))
 	cash.GET("/transactions", cashHandler.GetTransactions, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah"))
 	cash.POST("/transfers", cashHandler.TransferToVault, middleware.RequireRoles("superadmin", "admin_keuangan"))
 
 	// Batch 7: Vault
-	vault := api.Group("/vault", middleware.JWTAuth)
+	vault := api.Group("/vault", middleware.JWTAuth(tokenBlacklistRepo))
 	vault.GET("/balance", vaultHandler.GetBalance, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah"))
 	vault.GET("/transactions", vaultHandler.GetTransactions, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah"))
 
 	// Batch 7: Daily Closings
-	dc := api.Group("/daily-closings", middleware.JWTAuth)
+	dc := api.Group("/daily-closings", middleware.JWTAuth(tokenBlacklistRepo))
 	dc.GET("", dailyClosingHandler.List, middleware.RequireRoles("superadmin", "admin_keuangan"))
 	dc.POST("", dailyClosingHandler.Create, middleware.RequireRoles("superadmin", "admin_keuangan"))
 	dc.GET("/:id", dailyClosingHandler.Get, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah", "yayasan"))
 	dc.PATCH("/:id/confirm", dailyClosingHandler.Confirm, middleware.RequireRoles("superadmin", "admin_keuangan"))
 
 	// Batch 7: Reports
-	reports := api.Group("/reports", middleware.JWTAuth)
+	reports := api.Group("/reports", middleware.JWTAuth(tokenBlacklistRepo))
 	reports.GET("/daily", reportHandler.Daily, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah"))
 	reports.GET("/monthly", reportHandler.Monthly, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah"))
 	reports.GET("/annual", reportHandler.Annual, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah", "yayasan"))
@@ -511,6 +514,16 @@ func main() {
 	reports.GET("/savings/students/:id", reportHandler.TabunganSiswaReport, middleware.RequireRoles("superadmin", "admin_keuangan"))
 	reports.GET("/students/:id", reportHandler.ByStudent, middleware.RequireRoles("superadmin", "admin_keuangan"))
 	reports.GET("/class-groups/:id", reportHandler.ByClassGroup, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah"))
+
+	// Background: hapus token blacklist expired tiap 10 menit
+	go func() {
+		for {
+			time.Sleep(10 * time.Minute)
+			if count, err := tokenBlacklistRepo.DeleteExpired(); err == nil && count > 0 {
+				log.Printf("Token blacklist: %d token expired dihapus", count)
+			}
+		}
+	}()
 
 	// Start server with graceful shutdown
 	port := os.Getenv("PORT")

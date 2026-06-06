@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, type ReactNode, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, type ReactNode, useRef, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useGetV1AuthMe, getGetV1AuthMeQueryKey } from '../../api/endpoints/auth/auth';
 
@@ -23,17 +23,27 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+// ─── In-memory token storage (M03: mitigasi XSS vs localStorage) ───
+let _token: string | null = null;
+
+export function getToken(): string | null {
+  return _token;
+}
+
+export function setTokenValue(token: string | null) {
+  _token = token;
+}
+
 /**
- * Checks if a token exists in localStorage.
- * Used by route guards (beforeLoad) which run BEFORE React renders,
- * so we can't rely on React state there — only on localStorage directly.
+ * Checks if a token exists in memory.
+ * Used by route guards (beforeLoad) which run BEFORE React renders.
  */
 export function hasToken(): boolean {
-  return !!localStorage.getItem('alizzah_token');
+  return !!_token;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('alizzah_token'));
+  const [token, setToken] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   // Fetch user profile when token is available
@@ -41,25 +51,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     { query: { enabled: !!token, retry: false, staleTime: 5 * 60 * 1000 } }
   );
 
-  const logout = useCallback(() => {
-    localStorage.removeItem('alizzah_token');
-    localStorage.removeItem('alizzah_role');
-    setToken(null);
-    // Clear all React Query cache so stale user data doesn't persist
-    queryClient.removeQueries({ queryKey: getGetV1AuthMeQueryKey() });
-  }, [queryClient]);
+  // Gunakan ref untuk stabilkan referensi logout (M02: cegah effect loop)
+  const logoutRef = useRef<() => void>(() => {});
 
+  logoutRef.current = () => {
+    setTokenValue(null);
+    setToken(null);
+    localStorage.removeItem('alizzah_role');
+    queryClient.removeQueries({ queryKey: getGetV1AuthMeQueryKey() });
+  };
+
+  const logout = useCallback(() => {
+    logoutRef.current();
+  }, []);
+
+  // M02: Effect hanya depend pada isError — logout via ref tidak trigger re-run
   useEffect(() => {
     if (isError) {
-      // Token expired or invalid — force logout
-      logout();
+      logoutRef.current();
     }
-  }, [isError, logout]);
+  }, [isError]);
 
   const login = useCallback((newToken: string) => {
-    localStorage.setItem('alizzah_token', newToken);
+    setTokenValue(newToken);
     setToken(newToken);
-    // Invalidate the user query so it refetches with the new token
     queryClient.invalidateQueries({ queryKey: getGetV1AuthMeQueryKey() });
   }, [queryClient]);
 
@@ -68,7 +83,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!userResponse?.data) return null;
     if ('data' in userResponse.data) {
       const u = userResponse.data.data as User;
-      // Store role in local storage for route guards
       if (u && u.role) {
         localStorage.setItem('alizzah_role', u.role);
       }

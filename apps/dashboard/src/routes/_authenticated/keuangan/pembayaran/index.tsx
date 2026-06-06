@@ -3,9 +3,11 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { useAtom } from 'jotai';
 import { ChevronRight, Filter, Receipt, Plus } from 'lucide-react';
 import { useGetV1Payments } from '../../../../api/endpoints/payments/payments';
+import type { DtoPaymentListResponse } from '../../../../api/model/dtoPaymentListResponse';
 import { academicYearAtom } from '../../../../store/global';
 import { Badge } from '../../../../components/atoms/Badge';
 import { formatCurrency, formatDate } from '../../../../utils/format';
+import { extractListData, extractMeta } from '../../../../utils/api-helpers';
 import { Button } from '../../../../components/atoms/Button';
 import { Pagination } from '../../../../components/molecules/Pagination';
 
@@ -35,8 +37,8 @@ function PembayaranListPage() {
     { query: { enabled: !!activeAy?.id } }
   );
 
-  const payments = (paymentsData?.data as any)?.data || [];
-  const meta = (paymentsData?.data as any)?.meta;
+  const payments = extractListData<DtoPaymentListResponse>(paymentsData);
+  const meta = extractMeta(paymentsData);
 
   const handleReset = () => {
     setSelectedSource('');

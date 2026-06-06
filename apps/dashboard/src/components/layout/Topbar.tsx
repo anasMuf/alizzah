@@ -4,6 +4,7 @@ import { useAuth } from '../../features/auth/AuthContext'
 import { useState } from 'react'
 import { ConfirmDialog } from '../molecules/ConfirmDialog'
 import { useRouterState } from '@tanstack/react-router'
+import { usePostV1AuthLogout } from '../../api/endpoints/auth/auth'
 
 interface TopbarProps {
   onMenuClick: () => void
@@ -12,6 +13,11 @@ interface TopbarProps {
 export function Topbar({ onMenuClick }: TopbarProps) {
   const { user, logout } = useAuth()
   const [showLogoutDialog, setShowLogoutDialog] = useState(false)
+  const logoutMutation = usePostV1AuthLogout()
+
+  const handleLogout = () => {
+    logoutMutation.mutate(undefined, { onSettled: () => logout() })
+  }
   
   // Simple breadcrumb logic from router state
   const routerState = useRouterState()
@@ -67,7 +73,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
         confirmLabel="Ya, Keluar"
         cancelLabel="Batal"
         variant="danger"
-        onConfirm={logout}
+        onConfirm={handleLogout}
         onCancel={() => setShowLogoutDialog(false)}
       />
     </header>

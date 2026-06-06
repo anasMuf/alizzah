@@ -1,3 +1,5 @@
+import { getToken } from '../../features/auth/AuthContext';
+
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
 export class ApiError extends Error {
@@ -28,7 +30,7 @@ export const customInstance = async <T>(
     });
   }
 
-  const token = localStorage.getItem('alizzah_token');
+  const token = getToken();
 
   const response = await fetch(url.toString(), {
     ...options,

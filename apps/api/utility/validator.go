@@ -12,6 +12,25 @@ type CustomValidator struct {
 	Validator *validator.Validate
 }
 
+// NewValidator membuat instance validator dengan aturan kustom terdaftar.
+func NewValidator() *validator.Validate {
+	v := validator.New()
+
+	// "dateonly": menerima tanggal "YYYY-MM-DD" maupun RFC3339
+	// (mis. "2026-01-02T00:00:00Z"), konsisten dengan utility.ParseDate.
+	// Menggantikan "datetime=2006-01-02" yang menolak input ISO datetime dari frontend.
+	_ = v.RegisterValidation("dateonly", func(fl validator.FieldLevel) bool {
+		s := fl.Field().String()
+		if s == "" {
+			return true // biarkan required/omitempty yang menangani kekosongan
+		}
+		_, err := ParseDate(s)
+		return err == nil
+	})
+
+	return v
+}
+
 func (cv *CustomValidator) Validate(i interface{}) error {
 	if err := cv.Validator.Struct(i); err != nil {
 		if validationErrors, ok := err.(validator.ValidationErrors); ok {
@@ -43,7 +62,7 @@ func formatValidationMessage(e validator.FieldError) string {
 		return fmt.Sprintf("%s maksimal %s karakter", e.Field(), e.Param())
 	case "oneof":
 		return fmt.Sprintf("%s harus salah satu dari: %s", e.Field(), e.Param())
-	case "datetime":
+	case "dateonly", "datetime":
 		return fmt.Sprintf("%s harus berformat tanggal yang valid (YYYY-MM-DD)", e.Field())
 	case "gt":
 		return fmt.Sprintf("%s harus lebih besar dari %s", e.Field(), e.Param())

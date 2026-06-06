@@ -20,7 +20,7 @@ type CreateExpenseCategoryRequest struct {
 type CreateExpenseRequest struct {
 	AcademicYearID    uint    `json:"academic_year_id" validate:"required"`
 	ExpenseCategoryID uint    `json:"expense_category_id" validate:"required"`
-	ExpenseDate       string  `json:"expense_date" validate:"required,datetime=2006-01-02"`
+	ExpenseDate       string  `json:"expense_date" validate:"required,dateonly"`
 	Amount            float64 `json:"amount" validate:"required,min=1"`
 	Description       string  `json:"description" validate:"required"`
 	ReceiptURL        string  `json:"receipt_url" validate:"omitempty,url"`

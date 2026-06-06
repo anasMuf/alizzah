@@ -16,7 +16,7 @@ type CreateIncomeTransactionRequest struct {
 	Category        string  `json:"category" validate:"required,oneof=bos donasi hibah lainnya"`
 	SourceName      string  `json:"source_name" validate:"required,max=100"`
 	Amount          float64 `json:"amount" validate:"required,min=1"`
-	TransactionDate string  `json:"transaction_date" validate:"required,datetime=2006-01-02"`
+	TransactionDate string  `json:"transaction_date" validate:"required,dateonly"`
 	ReferenceNumber string  `json:"reference_number" validate:"omitempty,max=50"`
 	Notes           string  `json:"notes" validate:"omitempty"`
 }

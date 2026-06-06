@@ -21,7 +21,7 @@ type StudentPaymentQueryParams struct {
 type CreatePaymentRequest struct {
 	StudentID       uint                `json:"student_id" validate:"required"`
 	AcademicYearID  uint                `json:"academic_year_id" validate:"required"`
-	PaymentDate     string              `json:"payment_date" validate:"required,datetime=2006-01-02"`
+	PaymentDate     string              `json:"payment_date" validate:"required,dateonly"`
 	Source          string              `json:"source" validate:"required,oneof=cash savings"`
 	Notes           string              `json:"notes" validate:"omitempty"`
 	Items           []PaymentItemReq    `json:"items" validate:"omitempty,dive"`

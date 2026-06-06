@@ -23,7 +23,7 @@ type CreateStudentRequest struct {
 	AcademicYearID   uint   `json:"academic_year_id" validate:"omitempty"`
 	EnrollmentType   string `json:"enrollment_type" validate:"omitempty,oneof=new mutation"`
 	EnrollmentStatus string `json:"enrollment_status" validate:"omitempty,oneof=active pending"`
-	StartDate        string `json:"start_date" validate:"omitempty,datetime=2006-01-02"`
+	StartDate        string `json:"start_date" validate:"omitempty,dateonly"`
 }
 
 // CreateGuardianInline is used within CreateStudentRequest to optionally add guardians during student creation.

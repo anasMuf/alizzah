@@ -2,7 +2,7 @@ package dto
 
 type CreateDailyClosingRequest struct {
 	AcademicYearID     uint    `json:"academic_year_id" validate:"required"`
-	ClosingDate        string  `json:"closing_date" validate:"required,datetime=2006-01-02"`
+	ClosingDate        string  `json:"closing_date" validate:"required,dateonly"`
 	PhysicalCashAmount float64 `json:"physical_cash_amount" validate:"required,min=0"`
 	Notes              string  `json:"notes" validate:"omitempty"`
 }

@@ -3,11 +3,11 @@ package dto
 type EnrollExtracurricularRequest struct {
 	ExtracurricularID uint   `json:"extracurricular_id" validate:"required"`
 	AcademicYearID    uint   `json:"academic_year_id" validate:"required"`
-	StartDate         string `json:"start_date" validate:"required,datetime=2006-01-02"`
+	StartDate         string `json:"start_date" validate:"required,dateonly"`
 }
 
 type UpdateStudentExtracurricularRequest struct {
-	EndDate string `json:"end_date" validate:"required,datetime=2006-01-02"`
+	EndDate string `json:"end_date" validate:"required,dateonly"`
 }
 
 type StudentExtracurricularResponse struct {

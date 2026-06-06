@@ -2,7 +2,7 @@ package dto
 
 // Laporan Harian
 type DailyReportRequest struct {
-	Date           string `query:"date" validate:"required,datetime=2006-01-02"`
+	Date           string `query:"date" validate:"required,dateonly"`
 	AcademicYearID uint   `query:"academic_year_id"`
 }
 

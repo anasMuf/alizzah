@@ -19,7 +19,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	echoMiddleware "github.com/labstack/echo/v4/middleware"
 	echoSwagger "github.com/swaggo/echo-swagger"
@@ -142,7 +141,7 @@ func main() {
 	// Initialize Echo
 	e := echo.New()
 	e.HTTPErrorHandler = handler.CustomHTTPErrorHandler
-	e.Validator = &utility.CustomValidator{Validator: validator.New()}
+	e.Validator = &utility.CustomValidator{Validator: utility.NewValidator()}
 
 	// Global middleware
 	corsOrigins := strings.Split(os.Getenv("CORS_ALLOWED_ORIGINS"), ",")

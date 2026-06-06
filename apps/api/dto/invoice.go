@@ -103,14 +103,14 @@ type CreateInstallmentScheduleRequest struct {
 
 type InstallmentItem struct {
 	InstallmentNumber uint    `json:"installment_number" validate:"required,min=1"`
-	DueDate           string  `json:"due_date" validate:"required,datetime=2006-01-02"`
+	DueDate           string  `json:"due_date" validate:"required,dateonly"`
 	Amount            float64 `json:"amount" validate:"required,min=1"`
 	Notes             string  `json:"notes" validate:"omitempty"`
 }
 
 // Request — Update Installment
 type UpdateInstallmentRequest struct {
-	DueDate string  `json:"due_date" validate:"required,datetime=2006-01-02"`
+	DueDate string  `json:"due_date" validate:"required,dateonly"`
 	Amount  float64 `json:"amount" validate:"required,min=1"`
 	Notes   string  `json:"notes" validate:"omitempty"`
 }

@@ -10,7 +10,7 @@ type ClassGroupMapping struct {
 type PromotionRequest struct {
 	FromAcademicYearID uint                `json:"from_academic_year_id" validate:"required"`
 	ToAcademicYearID   uint                `json:"to_academic_year_id" validate:"required"`
-	EventDate          string              `json:"event_date" validate:"required,datetime=2006-01-02"`
+	EventDate          string              `json:"event_date" validate:"required,dateonly"`
 	RetainedStudentIDs []uint              `json:"retained_student_ids" validate:"omitempty"`
 	Mappings           []ClassGroupMapping `json:"mappings" validate:"omitempty,dive"`
 	Notes              string              `json:"notes" validate:"omitempty"`
@@ -45,7 +45,7 @@ type PromotionPreviewResult struct {
 type GraduationRequest struct {
 	StudentIDs     []uint `json:"student_ids" validate:"required,min=1"`
 	AcademicYearID uint   `json:"academic_year_id" validate:"required"`
-	EventDate      string `json:"event_date" validate:"required,datetime=2006-01-02"`
+	EventDate      string `json:"event_date" validate:"required,dateonly"`
 	Notes          string `json:"notes" validate:"omitempty"`
 }
 
@@ -70,7 +70,7 @@ type ClassChangeRequest struct {
 	StudentID        uint   `json:"student_id" validate:"required"`
 	FromClassGroupID uint   `json:"from_class_group_id" validate:"required"`
 	ToClassGroupID   uint   `json:"to_class_group_id" validate:"required"`
-	EventDate        string `json:"event_date" validate:"required,datetime=2006-01-02"`
+	EventDate        string `json:"event_date" validate:"required,dateonly"`
 	Notes            string `json:"notes" validate:"omitempty"`
 }
 
@@ -79,14 +79,14 @@ type TransferInRequest struct {
 	StudentID      uint   `json:"student_id" validate:"required"`
 	ToClassGroupID uint   `json:"to_class_group_id" validate:"required"`
 	AcademicYearID uint   `json:"academic_year_id" validate:"required"`
-	StartDate      string `json:"start_date" validate:"required,datetime=2006-01-02"`
+	StartDate      string `json:"start_date" validate:"required,dateonly"`
 	Notes          string `json:"notes" validate:"omitempty"`
 }
 
 // Keluar / Pindah Sekolah
 type WithdrawalRequest struct {
 	StudentID uint   `json:"student_id" validate:"required"`
-	EventDate string `json:"event_date" validate:"required,datetime=2006-01-02"`
+	EventDate string `json:"event_date" validate:"required,dateonly"`
 	EventType string `json:"event_type" validate:"required,oneof=transfer_out dropout"`
 	Notes     string `json:"notes" validate:"omitempty"`
 }

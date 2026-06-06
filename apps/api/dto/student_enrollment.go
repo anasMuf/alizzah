@@ -31,5 +31,5 @@ type CreateEnrollmentRequest struct {
 	ClassGroupID   uint   `json:"class_group_id" validate:"required"`
 	AcademicYearID uint   `json:"academic_year_id" validate:"required"`
 	EnrollmentType string `json:"enrollment_type" validate:"oneof=new mutation transfer"`
-	StartDate      string `json:"start_date" validate:"required,datetime=2006-01-02"`
+	StartDate      string `json:"start_date" validate:"required,dateonly"`
 }

@@ -13,7 +13,14 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
+var jwtSecret []byte
+
+func getJWTSecret() []byte {
+	if jwtSecret == nil {
+		jwtSecret = []byte(os.Getenv("JWT_SECRET"))
+	}
+	return jwtSecret
+}
 
 // JWTClaims defines the claims stored in JWT token.
 type JWTClaims struct {
@@ -51,7 +58,7 @@ func JWTAuth(blacklistRepo repository.TokenBlacklistRepository) echo.MiddlewareF
 				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 					return nil, echo.NewHTTPError(http.StatusUnauthorized, "Invalid signing method")
 				}
-				return jwtSecret, nil
+				return getJWTSecret(), nil
 			})
 			if err != nil || !token.Valid {
 				return echo.NewHTTPError(http.StatusUnauthorized, "Invalid or expired token")

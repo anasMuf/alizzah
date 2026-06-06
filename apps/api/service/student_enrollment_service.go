@@ -4,7 +4,9 @@ import (
 	"api/dto"
 	"api/model"
 	"api/repository"
+	"api/utility"
 	"errors"
+	"fmt"
 
 	"gorm.io/gorm"
 )
@@ -13,19 +15,30 @@ type StudentEnrollmentService interface {
 	GetByStudentID(studentID uint, params dto.EnrollmentQueryParams) ([]dto.EnrollmentDetailResponse, error)
 	GetStudentsByClassGroup(classGroupID uint) ([]dto.StudentListResponse, error)
 	ActivateEnrollment(enrollmentID uint) error
+	EnrollStudent(studentID, createdBy uint, req dto.CreateEnrollmentRequest) (*dto.EnrollmentDetailResponse, error)
 }
 
 type studentEnrollmentService struct {
 	enrollmentRepo repository.StudentEnrollmentRepository
 	studentRepo    repository.StudentRepository
 	classGroupRepo repository.ClassGroupRepository
+	invoiceGen     InvoiceGenerateService
+	savingsService SavingsService
 }
 
-func NewStudentEnrollmentService(enrollmentRepo repository.StudentEnrollmentRepository, studentRepo repository.StudentRepository, classGroupRepo repository.ClassGroupRepository) StudentEnrollmentService {
+func NewStudentEnrollmentService(
+	enrollmentRepo repository.StudentEnrollmentRepository,
+	studentRepo repository.StudentRepository,
+	classGroupRepo repository.ClassGroupRepository,
+	invoiceGen InvoiceGenerateService,
+	savingsService SavingsService,
+) StudentEnrollmentService {
 	return &studentEnrollmentService{
 		enrollmentRepo: enrollmentRepo,
 		studentRepo:    studentRepo,
 		classGroupRepo: classGroupRepo,
+		invoiceGen:     invoiceGen,
+		savingsService: savingsService,
 	}
 }
 
@@ -146,4 +159,88 @@ func mapEnrollmentToDetailResponse(e model.StudentEnrollment) *dto.EnrollmentDet
 		EnrollmentType: e.EnrollmentType,
 		Notes:          notesStr,
 	}
+}
+
+func (s *studentEnrollmentService) EnrollStudent(studentID, createdBy uint, req dto.CreateEnrollmentRequest) (*dto.EnrollmentDetailResponse, error) {
+	// Validasi siswa
+	student, err := s.studentRepo.FindByID(studentID)
+	if err != nil || student.Status != "active" {
+		return nil, errors.New("Siswa tidak ditemukan atau tidak aktif")
+	}
+
+	// Validasi rombel
+	cg, err := s.classGroupRepo.FindByID(req.ClassGroupID)
+	if err != nil {
+		return nil, errors.New("Rombel tidak ditemukan")
+	}
+	if cg.AcademicYearID != req.AcademicYearID {
+		return nil, errors.New("Rombel tidak termasuk dalam tahun ajaran yang dipilih")
+	}
+
+	// Cek duplikasi
+	exists, _ := s.enrollmentRepo.ExistsByStudentAndYear(studentID, req.AcademicYearID)
+	if exists {
+		return nil, errors.New("Siswa sudah memiliki enrollment di tahun ajaran ini")
+	}
+
+	startDate, err := utility.ParseDate(req.StartDate)
+	if err != nil {
+		return nil, fmt.Errorf("Format start_date tidak valid (YYYY-MM-DD): %w", err)
+	}
+
+	enrollmentType := req.EnrollmentType
+	if enrollmentType == "" {
+		enrollmentType = "new"
+	}
+
+	// Buat enrollment
+	enrollment := &model.StudentEnrollment{
+		StudentID:      studentID,
+		ClassGroupID:   req.ClassGroupID,
+		AcademicYearID: req.AcademicYearID,
+		EnrollmentType: enrollmentType,
+		StartDate:      startDate,
+		Status:         "active",
+		CreatedBy:      createdBy,
+	}
+	if err := s.enrollmentRepo.Create(enrollment); err != nil {
+		return nil, fmt.Errorf("gagal membuat enrollment: %w", err)
+	}
+
+	// Generate invoice
+	if s.invoiceGen != nil {
+		level := cg.Level
+		gender := student.Gender
+
+		// Biaya awal
+		_ = s.invoiceGen.GenerateInitial(dto.GenerateInitialInvoiceParams{
+			StudentID: studentID, AcademicYearID: req.AcademicYearID,
+			Level: level, Gender: gender, CreatedBy: createdBy,
+		})
+
+		// Registrasi tahunan
+		_ = s.invoiceGen.GenerateRegistration(dto.GenerateRegistrationInvoiceParams{
+			StudentID: studentID, AcademicYearID: req.AcademicYearID,
+			Level: level, Gender: gender, CreatedBy: createdBy,
+		})
+
+		// Bulanan (dari start_date sampai akhir TA)
+		_ = s.invoiceGen.GenerateMonthlyRange(
+			studentID, req.AcademicYearID, req.ClassGroupID,
+			level, gender, startDate, cg.AcademicYear.EndDate, createdBy,
+		)
+	}
+
+	// Init tabungan
+	if s.savingsService != nil {
+		_ = s.savingsService.InitForNewStudent(studentID, cg.Level, nil)
+	}
+
+	// Fetch result
+	saved, err := s.enrollmentRepo.FindByID(enrollment.ID)
+	if err != nil {
+		return nil, fmt.Errorf("gagal mengambil data enrollment: %w", err)
+	}
+
+	return mapEnrollmentToDetailResponse(*saved), nil
 }

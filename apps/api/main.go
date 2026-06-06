@@ -239,7 +239,7 @@ func main() {
 
 	// Batch 3 (updated with Batch 5+6 dependencies)
 	studentService := service.NewStudentService(db, studentRepo, enrollmentRepo, classGroupRepo, invoiceRepo, savingsService, invoiceGenService)
-	enrollmentService := service.NewStudentEnrollmentService(enrollmentRepo, studentRepo, classGroupRepo)
+	enrollmentService := service.NewStudentEnrollmentService(enrollmentRepo, studentRepo, classGroupRepo, invoiceGenService, savingsService)
 	effectiveDayService := service.NewEffectiveDayService(effectiveDayRepo, classGroupRepo, invoiceGenService)
 	extracurricularService := service.NewExtracurricularService(extracurricularRepo)
 	seService := service.NewStudentExtracurricularService(seRepo, studentRepo, extracurricularRepo, ayRepo, invoiceGenService)
@@ -341,6 +341,7 @@ func main() {
 
 	// Batch 3: Student nested endpoints
 	students.GET("/:id/enrollments", enrollmentHandler.GetByStudent, middleware.RequireRoles("superadmin", "admin_administrasi", "admin_keuangan"))
+	students.POST("/:id/enrollments", enrollmentHandler.Enroll, middleware.RequireRoles("superadmin", "admin_administrasi"))
 	students.GET("/:id/extracurriculars", seHandler.GetByStudent, middleware.RequireRoles("superadmin", "admin_administrasi"))
 	students.POST("/:id/extracurriculars", seHandler.Enroll, middleware.RequireRoles("superadmin", "admin_administrasi"))
 	students.PUT("/:id/extracurriculars/:se_id", seHandler.Update, middleware.RequireRoles("superadmin", "admin_administrasi"))

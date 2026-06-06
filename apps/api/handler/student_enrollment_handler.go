@@ -2,6 +2,7 @@ package handler
 
 import (
 	"api/dto"
+	"api/middleware"
 	"api/service"
 	"api/utility"
 	"net/http"
@@ -141,5 +142,55 @@ func (h *StudentEnrollmentHandler) ActivateEnrollment(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, dto.SuccessResponse{
 		Message: "Enrollment berhasil diaktifkan",
+	})
+}
+
+// Enroll godoc
+// @Summary      Enroll a student into a class group
+// @Description  Create a new enrollment for an existing student + generate invoices
+// @Tags         student-enrollments
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id       path      int                            true  "Student ID"
+// @Param        request  body      dto.CreateEnrollmentRequest    true  "Enrollment data"
+// @Success      201      {object}  dto.SuccessResponse{data=dto.EnrollmentDetailResponse}
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      401      {object}  dto.ErrorResponse
+// @Failure      403      {object}  dto.ErrorResponse
+// @Failure      409      {object}  dto.ErrorResponse
+// @Router       /v1/students/{id}/enrollments [post]
+func (h *StudentEnrollmentHandler) Enroll(c echo.Context) error {
+	studentID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: "ID siswa tidak valid",
+		})
+	}
+
+	var req dto.CreateEnrollmentRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: err.Error(),
+		})
+	}
+	if err := c.Validate(req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status: http.StatusBadRequest, Code: "VALIDATION_ERROR", Message: err.Error(),
+		})
+	}
+
+	createdBy := middleware.GetCurrentUserID(c)
+	result, err := h.enrollmentService.EnrollStudent(uint(studentID), createdBy, req)
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{
+			Status: status, Code: code, Message: err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusCreated, dto.SuccessResponse{
+		Message: "Siswa berhasil didaftarkan ke rombel",
+		Data:    result,
 	})
 }

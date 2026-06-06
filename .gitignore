@@ -43,3 +43,6 @@ docs/core/src/
 # OS
 .DS_Store
 Thumbs.db
+
+# Go binary
+apps/api/api

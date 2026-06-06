@@ -5,6 +5,7 @@ import (
 	"api/middleware"
 	"api/service"
 	"api/utility"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -192,5 +193,64 @@ func (h *StudentEnrollmentHandler) Enroll(c echo.Context) error {
 	return c.JSON(http.StatusCreated, dto.SuccessResponse{
 		Message: "Siswa berhasil didaftarkan ke rombel",
 		Data:    result,
+	})
+}
+
+// BatchEnrollRequest is the request body for bulk student enrollment.
+type BatchEnrollRequest struct {
+	StudentIDs []uint `json:"student_ids"`
+	dto.CreateEnrollmentRequest
+}
+
+// EnrollBatch godoc
+// @Summary      Bulk enroll students into a class group
+// @Description  Enroll multiple existing students into the same rombel + generate invoices
+// @Tags         student-enrollments
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        request  body      BatchEnrollRequest  true  "Batch enrollment data"
+// @Success      201      {object}  dto.SuccessResponse
+// @Failure      400      {object}  dto.ErrorResponse
+// @Router       /v1/students/enrollments/batch [post]
+func (h *StudentEnrollmentHandler) EnrollBatch(c echo.Context) error {
+	var req BatchEnrollRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: err.Error(),
+		})
+	}
+	if err := c.Validate(req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status: http.StatusBadRequest, Code: "VALIDATION_ERROR", Message: err.Error(),
+		})
+	}
+	if len(req.StudentIDs) == 0 {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: "Minimal satu siswa harus dipilih",
+		})
+	}
+
+	createdBy := middleware.GetCurrentUserID(c)
+	var success, failed int
+	var errors []string
+
+	for _, sid := range req.StudentIDs {
+		_, err := h.enrollmentService.EnrollStudent(sid, createdBy, req.CreateEnrollmentRequest)
+		if err != nil {
+			failed++
+			errors = append(errors, fmt.Sprintf("Siswa ID %d: %s", sid, err.Error()))
+		} else {
+			success++
+		}
+	}
+
+	return c.JSON(http.StatusCreated, dto.SuccessResponse{
+		Message: fmt.Sprintf("%d berhasil, %d gagal", success, failed),
+		Data: map[string]interface{}{
+			"success": success,
+			"failed":  failed,
+			"errors":  errors,
+		},
 	})
 }

@@ -342,6 +342,7 @@ func main() {
 	// Batch 3: Student nested endpoints
 	students.GET("/:id/enrollments", enrollmentHandler.GetByStudent, middleware.RequireRoles("superadmin", "admin_administrasi", "admin_keuangan"))
 	students.POST("/:id/enrollments", enrollmentHandler.Enroll, middleware.RequireRoles("superadmin", "admin_administrasi"))
+	students.POST("/enrollments/batch", enrollmentHandler.EnrollBatch, middleware.RequireRoles("superadmin", "admin_administrasi"))
 	students.GET("/:id/extracurriculars", seHandler.GetByStudent, middleware.RequireRoles("superadmin", "admin_administrasi"))
 	students.POST("/:id/extracurriculars", seHandler.Enroll, middleware.RequireRoles("superadmin", "admin_administrasi"))
 	students.PUT("/:id/extracurriculars/:se_id", seHandler.Update, middleware.RequireRoles("superadmin", "admin_administrasi"))

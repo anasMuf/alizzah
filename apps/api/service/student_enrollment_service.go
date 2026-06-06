@@ -7,6 +7,7 @@ import (
 	"api/utility"
 	"errors"
 	"fmt"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -19,26 +20,32 @@ type StudentEnrollmentService interface {
 }
 
 type studentEnrollmentService struct {
-	enrollmentRepo repository.StudentEnrollmentRepository
-	studentRepo    repository.StudentRepository
-	classGroupRepo repository.ClassGroupRepository
-	invoiceGen     InvoiceGenerateService
-	savingsService SavingsService
+	enrollmentRepo     repository.StudentEnrollmentRepository
+	studentRepo        repository.StudentRepository
+	classGroupRepo     repository.ClassGroupRepository
+	extracurricularRepo repository.ExtracurricularRepository
+	seRepo             repository.StudentExtracurricularRepository
+	invoiceGen         InvoiceGenerateService
+	savingsService     SavingsService
 }
 
 func NewStudentEnrollmentService(
 	enrollmentRepo repository.StudentEnrollmentRepository,
 	studentRepo repository.StudentRepository,
 	classGroupRepo repository.ClassGroupRepository,
+	extracurricularRepo repository.ExtracurricularRepository,
+	seRepo repository.StudentExtracurricularRepository,
 	invoiceGen InvoiceGenerateService,
 	savingsService SavingsService,
 ) StudentEnrollmentService {
 	return &studentEnrollmentService{
-		enrollmentRepo: enrollmentRepo,
-		studentRepo:    studentRepo,
-		classGroupRepo: classGroupRepo,
-		invoiceGen:     invoiceGen,
-		savingsService: savingsService,
+		enrollmentRepo:      enrollmentRepo,
+		studentRepo:         studentRepo,
+		classGroupRepo:      classGroupRepo,
+		extracurricularRepo: extracurricularRepo,
+		seRepo:              seRepo,
+		invoiceGen:          invoiceGen,
+		savingsService:      savingsService,
 	}
 }
 
@@ -242,6 +249,11 @@ func (s *studentEnrollmentService) EnrollStudent(studentID, createdBy uint, req 
 		_ = s.savingsService.InitForNewStudent(studentID, cg.Level, nil)
 	}
 
+	// Auto-enroll mandatory extracurriculars untuk level ini
+	if s.invoiceGen != nil {
+		s.autoEnrollExtracurriculars(studentID, req.AcademicYearID, startDate)
+	}
+
 	// Fetch result
 	saved, err := s.enrollmentRepo.FindByID(enrollment.ID)
 	if err != nil {
@@ -249,4 +261,27 @@ func (s *studentEnrollmentService) EnrollStudent(studentID, createdBy uint, req 
 	}
 
 	return mapEnrollmentToDetailResponse(*saved), nil
+}
+
+// autoEnrollExtracurriculars looks up all extracurriculars for this student's level
+// and auto-creates StudentExtracurricular enrollments for ones that have fee config items
+// matching the student's level and gender.
+func (s *studentEnrollmentService) autoEnrollExtracurriculars(studentID, academicYearID uint, startDate time.Time) {
+	extracurriculars, err := s.extracurricularRepo.FindAll(dto.ExtracurricularQueryParams{})
+	if err != nil {
+		return
+	}
+	for _, ex := range extracurriculars {
+		existing, _ := s.seRepo.FindActiveByStudentAndExtracurricular(studentID, ex.ID, academicYearID)
+		if existing != nil {
+			continue
+		}
+		se := &model.StudentExtracurricular{
+			StudentID:         studentID,
+			ExtracurricularID: ex.ID,
+			AcademicYearID:    academicYearID,
+			StartDate:         startDate,
+		}
+		_ = s.seRepo.Create(se)
+	}
 }

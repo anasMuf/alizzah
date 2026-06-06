@@ -66,7 +66,13 @@ function ProfilSiswaPage() {
     return <div className="p-8 animate-pulse bg-white rounded-xl shadow-sm h-64"></div>;
   }
 
-  if (!student) return null;
+  if (!student) {
+    return (
+      <div className="p-8 text-center bg-white rounded-xl shadow-sm">
+        <p className="text-gray-500">Siswa tidak ditemukan atau gagal dimuat.</p>
+      </div>
+    );
+  }
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString('id-ID', {

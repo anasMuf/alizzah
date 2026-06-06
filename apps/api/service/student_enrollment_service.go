@@ -249,8 +249,8 @@ func (s *studentEnrollmentService) EnrollStudent(studentID, createdBy uint, req 
 		_ = s.savingsService.InitForNewStudent(studentID, cg.Level, nil)
 	}
 
-	// Auto-enroll mandatory extracurriculars untuk level ini
-	if s.invoiceGen != nil {
+	// Auto-enroll semua ekskul untuk level ini
+	if s.seRepo != nil {
 		s.autoEnrollExtracurriculars(studentID, req.AcademicYearID, startDate)
 	}
 

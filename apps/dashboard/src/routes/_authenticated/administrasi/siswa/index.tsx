@@ -40,7 +40,9 @@ function SiswaIndexPage() {
     {
       academic_year_id: activeAy?.id as any, page, limit, search,
       status: statusFilter,
-      class_group_id: classGroupFilter ? Number(classGroupFilter) : undefined,
+      ...(classGroupFilter === '__none__'
+        ? { no_class_group: true }
+        : { class_group_id: classGroupFilter ? Number(classGroupFilter) : undefined }),
     },
     { query: { enabled: !!activeAy?.id, keepPreviousData: true } as any }
   );

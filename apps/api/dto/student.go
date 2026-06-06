@@ -50,6 +50,7 @@ type StudentQueryParams struct {
 	Search         string
 	Status         string
 	ClassGroupID   uint
+	NoClassGroup   bool
 	AcademicYearID uint
 	IsDaycareOnly  *bool
 	Page           int

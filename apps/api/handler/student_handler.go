@@ -55,6 +55,7 @@ func (h *StudentHandler) List(c echo.Context) error {
 		Search:         c.QueryParam("search"),
 		Status:         c.QueryParam("status"),
 		ClassGroupID:   uint(classGroupID),
+		NoClassGroup:   c.QueryParam("no_class_group") == "true",
 		AcademicYearID: uint(academicYearID),
 		IsDaycareOnly:  isDaycare,
 		Page:           page,

@@ -52,7 +52,16 @@ func (r *studentRepository) FindAll(params dto.StudentQueryParams) ([]model.Stud
 				Where("class_group_id = ? AND status = ?", params.ClassGroupID, "active"),
 		)
 	}
-	if params.AcademicYearID != 0 {
+	if params.NoClassGroup {
+		enrQuery := r.db.Model(&model.StudentEnrollment{}).
+			Select("student_id").
+			Where("status = ?", "active")
+		if params.AcademicYearID != 0 {
+			enrQuery = enrQuery.Where("academic_year_id = ?", params.AcademicYearID)
+		}
+		query = query.Where("id NOT IN (?)", enrQuery)
+	}
+	if params.AcademicYearID != 0 && !params.NoClassGroup {
 		query = query.Where("id IN (?)",
 			r.db.Model(&model.StudentEnrollment{}).
 				Select("student_id").

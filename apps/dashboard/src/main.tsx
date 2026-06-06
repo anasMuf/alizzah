@@ -9,6 +9,7 @@ import { routeTree } from './routeTree.gen'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider, useAuth } from './features/auth/AuthContext'
 import { ToastProvider } from './components/molecules/Toast'
+import { ErrorBoundary } from './components/molecules/ErrorBoundary'
 
 const queryClient = new QueryClient()
 
@@ -44,7 +45,9 @@ if (!rootElement.innerHTML) {
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
         <AuthProvider>
-          <InnerApp />
+          <ErrorBoundary>
+            <InnerApp />
+          </ErrorBoundary>
         </AuthProvider>
       </ToastProvider>
     </QueryClientProvider>

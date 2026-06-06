@@ -94,6 +94,7 @@ func (s *guardianService) GetByStudentID(studentID uint) ([]dto.GuardianBriefRes
 			FullName:     sg.Guardian.FullName,
 			Relationship: sg.Guardian.Relationship,
 			Phone:        sg.Guardian.Phone,
+			Address:      sg.Guardian.Address,
 			IsPrimary:    sg.IsPrimary,
 		})
 	}

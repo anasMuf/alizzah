@@ -245,7 +245,12 @@ func (h *StudentEnrollmentHandler) EnrollBatch(c echo.Context) error {
 		}
 	}
 
-	return c.JSON(http.StatusCreated, dto.SuccessResponse{
+	status := http.StatusCreated
+	if success == 0 {
+		status = http.StatusBadRequest
+	}
+
+	return c.JSON(status, dto.SuccessResponse{
 		Message: fmt.Sprintf("%d berhasil, %d gagal", success, failed),
 		Data: map[string]interface{}{
 			"success": success,

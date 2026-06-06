@@ -29,6 +29,9 @@ type InvoiceGenerateService interface {
 	AddFacilityToMonthlyRange(studentID, facilityID, academicYearID uint) error
 	RemoveFacilityFromFutureInvoices(studentID, facilityID, academicYearID uint) error
 	ApplyDispensationToExistingInvoices(studentID, academicYearID uint) error
+	// WithTx returns an instance whose write-transactions run within tx (as savepoints),
+	// so invoice generation can participate in a larger atomic operation.
+	WithTx(tx *gorm.DB) InvoiceGenerateService
 }
 
 type invoiceGenerateService struct {
@@ -80,6 +83,15 @@ func NewInvoiceGenerateService(
 		sfRepo:              sfRepo,
 		dispensationRepo:    dispensationRepo,
 	}
+}
+
+func (s *invoiceGenerateService) WithTx(tx *gorm.DB) InvoiceGenerateService {
+	if tx == nil {
+		return s
+	}
+	clone := *s
+	clone.db = tx
+	return &clone
 }
 
 func (s *invoiceGenerateService) GenerateInitial(params dto.GenerateInitialInvoiceParams) error {

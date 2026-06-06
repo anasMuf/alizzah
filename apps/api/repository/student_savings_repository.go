@@ -29,6 +29,9 @@ func NewStudentSavingsRepository(db *gorm.DB) StudentSavingsRepository {
 }
 
 func (r *studentSavingsRepository) WithTx(tx *gorm.DB) StudentSavingsRepository {
+	if tx == nil {
+		return r
+	}
 	return &studentSavingsRepository{db: tx}
 }
 

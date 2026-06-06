@@ -27,24 +27,44 @@ type StudentService interface {
 }
 
 type studentService struct {
-	db             *gorm.DB
-	studentRepo    repository.StudentRepository
-	enrollmentRepo repository.StudentEnrollmentRepository
-	classGroupRepo repository.ClassGroupRepository
-	invoiceRepo    repository.InvoiceRepository
-	savingsService SavingsService
-	invoiceGen     InvoiceGenerateService
+	db                  *gorm.DB
+	studentRepo         repository.StudentRepository
+	enrollmentRepo      repository.StudentEnrollmentRepository
+	classGroupRepo      repository.ClassGroupRepository
+	invoiceRepo         repository.InvoiceRepository
+	extracurricularRepo repository.ExtracurricularRepository
+	seRepo              repository.StudentExtracurricularRepository
+	feeConfigRepo       repository.FeeConfigRepository
+	feeConfigItemRepo   repository.FeeConfigItemRepository
+	savingsService      SavingsService
+	invoiceGen          InvoiceGenerateService
 }
 
-func NewStudentService(db *gorm.DB, studentRepo repository.StudentRepository, enrollmentRepo repository.StudentEnrollmentRepository, classGroupRepo repository.ClassGroupRepository, invoiceRepo repository.InvoiceRepository, savingsService SavingsService, invoiceGen InvoiceGenerateService) StudentService {
+func NewStudentService(
+	db *gorm.DB,
+	studentRepo repository.StudentRepository,
+	enrollmentRepo repository.StudentEnrollmentRepository,
+	classGroupRepo repository.ClassGroupRepository,
+	invoiceRepo repository.InvoiceRepository,
+	extracurricularRepo repository.ExtracurricularRepository,
+	seRepo repository.StudentExtracurricularRepository,
+	feeConfigRepo repository.FeeConfigRepository,
+	feeConfigItemRepo repository.FeeConfigItemRepository,
+	savingsService SavingsService,
+	invoiceGen InvoiceGenerateService,
+) StudentService {
 	return &studentService{
-		db:             db,
-		studentRepo:    studentRepo,
-		enrollmentRepo: enrollmentRepo,
-		classGroupRepo: classGroupRepo,
-		invoiceRepo:    invoiceRepo,
-		savingsService: savingsService,
-		invoiceGen:     invoiceGen,
+		db:                  db,
+		studentRepo:         studentRepo,
+		enrollmentRepo:      enrollmentRepo,
+		classGroupRepo:      classGroupRepo,
+		invoiceRepo:         invoiceRepo,
+		extracurricularRepo: extracurricularRepo,
+		seRepo:              seRepo,
+		feeConfigRepo:       feeConfigRepo,
+		feeConfigItemRepo:   feeConfigItemRepo,
+		savingsService:      savingsService,
+		invoiceGen:          invoiceGen,
 	}
 }
 
@@ -196,23 +216,78 @@ func (s *studentService) Create(createdBy uint, req dto.CreateStudentRequest) (*
 		}
 	}
 
+	var cgForInvoice *model.ClassGroup
+	if wantEnrollment {
+		cgForInvoice, _ = s.classGroupRepo.FindByID(req.ClassGroupID)
+	}
+
+	// Siswa + enrollment + tabungan + ekskul + invoice dalam SATU transaksi atomik.
 	err = s.db.Transaction(func(tx *gorm.DB) error {
 		if err := s.studentRepo.WithTx(tx).Create(student); err != nil {
 			return err
 		}
 
-		if wantEnrollment {
-			enrollment := &model.StudentEnrollment{
-				StudentID:      student.ID,
-				ClassGroupID:   req.ClassGroupID,
-				AcademicYearID: req.AcademicYearID,
-				EnrollmentType: enrollmentType,
-				StartDate:      startDate,
-				Status:         enrollmentStatus,
-				CreatedBy:      createdBy,
+		if !wantEnrollment {
+			return nil
+		}
+
+		enrollment := &model.StudentEnrollment{
+			StudentID:      student.ID,
+			ClassGroupID:   req.ClassGroupID,
+			AcademicYearID: req.AcademicYearID,
+			EnrollmentType: enrollmentType,
+			StartDate:      startDate,
+			Status:         enrollmentStatus,
+			CreatedBy:      createdBy,
+		}
+		if err := s.enrollmentRepo.WithTx(tx).Create(enrollment); err != nil {
+			return err
+		}
+
+		// Tagihan & turunannya hanya untuk enrollment aktif
+		if enrollmentStatus != "active" {
+			return nil
+		}
+
+		level := classGroupLevel
+		gender := student.Gender
+
+		if s.savingsService != nil {
+			if err := s.savingsService.InitForNewStudent(student.ID, level, tx); err != nil {
+				return fmt.Errorf("gagal inisialisasi tabungan: %w", err)
 			}
-			if err := s.enrollmentRepo.WithTx(tx).Create(enrollment); err != nil {
-				return err
+		}
+
+		if s.seRepo != nil {
+			if err := s.autoEnrollExtracurriculars(tx, student.ID, req.AcademicYearID, level, gender, startDate); err != nil {
+				return fmt.Errorf("gagal mendaftarkan ekskul wajib: %w", err)
+			}
+		}
+
+		if s.invoiceGen != nil {
+			ig := s.invoiceGen.WithTx(tx)
+
+			if err := ig.GenerateInitial(dto.GenerateInitialInvoiceParams{
+				StudentID: student.ID, AcademicYearID: req.AcademicYearID,
+				Level: level, Gender: gender, CreatedBy: createdBy,
+			}); err != nil {
+				return fmt.Errorf("gagal generate invoice biaya awal: %w", err)
+			}
+
+			if err := ig.GenerateRegistration(dto.GenerateRegistrationInvoiceParams{
+				StudentID: student.ID, AcademicYearID: req.AcademicYearID,
+				Level: level, Gender: gender, CreatedBy: createdBy,
+			}); err != nil {
+				return fmt.Errorf("gagal generate invoice registrasi: %w", err)
+			}
+
+			if cgForInvoice != nil && cgForInvoice.AcademicYear.EndDate.After(startDate) {
+				if err := ig.GenerateMonthlyRange(
+					student.ID, req.AcademicYearID, req.ClassGroupID,
+					level, gender, startDate, cgForInvoice.AcademicYear.EndDate, createdBy,
+				); err != nil {
+					return fmt.Errorf("gagal generate invoice bulanan: %w", err)
+				}
 			}
 		}
 		return nil
@@ -221,39 +296,58 @@ func (s *studentService) Create(createdBy uint, req dto.CreateStudentRequest) (*
 		return nil, err
 	}
 
-	// Generate tagihan biaya awal & registrasi setelah enrollment berhasil
-	if wantEnrollment && enrollmentStatus == "active" && s.invoiceGen != nil {
-		level := classGroupLevel
-		gender := student.Gender
-
-		// Biaya Awal — sekali saat pertama masuk
-		if err := s.invoiceGen.GenerateInitial(dto.GenerateInitialInvoiceParams{
-			StudentID:      student.ID,
-			AcademicYearID: req.AcademicYearID,
-			Level:          level,
-			Gender:         gender,
-			CreatedBy:      createdBy,
-		}); err != nil {
-			return nil, fmt.Errorf("gagal generate invoice biaya awal: %w", err)
-		}
-
-		// Registrasi Tahunan
-		if err := s.invoiceGen.GenerateRegistration(dto.GenerateRegistrationInvoiceParams{
-			StudentID:      student.ID,
-			AcademicYearID: req.AcademicYearID,
-			Level:          level,
-			Gender:         gender,
-			CreatedBy:      createdBy,
-		}); err != nil {
-			return nil, fmt.Errorf("gagal generate invoice registrasi: %w", err)
-		}
-	}
-
 	createdStudent, err := s.studentRepo.FindByID(student.ID)
 	if err != nil {
 		return nil, fmt.Errorf("gagal mengambil data siswa: %w", err)
 	}
 	return mapStudentToDetailResponse(*createdStudent), nil
+}
+
+func (s *studentService) autoEnrollExtracurriculars(tx *gorm.DB, studentID, academicYearID uint, level, gender string, startDate time.Time) error {
+	if s.seRepo == nil || s.feeConfigRepo == nil || s.feeConfigItemRepo == nil {
+		return nil
+	}
+
+	fc, err := s.feeConfigRepo.FindByAcademicYearID(academicYearID)
+	if err != nil {
+		return nil
+	}
+
+	mandatoryItems, err := s.feeConfigItemRepo.FindMandatoryByStudent(fc.ID, level, gender)
+	if err != nil || len(mandatoryItems) == 0 {
+		return nil
+	}
+
+	mandatoryNames := make(map[string]bool)
+	for _, item := range mandatoryItems {
+		mandatoryNames[item.Name] = true
+	}
+
+	extracurriculars, err := s.extracurricularRepo.FindAll(dto.ExtracurricularQueryParams{})
+	if err != nil {
+		return nil
+	}
+
+	seRepo := s.seRepo.WithTx(tx)
+	for _, ex := range extracurriculars {
+		if !mandatoryNames[ex.Name] {
+			continue
+		}
+		existing, _ := seRepo.FindActiveByStudentAndExtracurricular(studentID, ex.ID, academicYearID)
+		if existing != nil {
+			continue
+		}
+		se := &model.StudentExtracurricular{
+			StudentID:         studentID,
+			ExtracurricularID: ex.ID,
+			AcademicYearID:    academicYearID,
+			StartDate:         startDate,
+		}
+		if err := seRepo.Create(se); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *studentService) Update(id uint, req dto.UpdateStudentRequest) (*dto.StudentDetailResponse, error) {
@@ -411,6 +505,7 @@ func mapStudentToDetailResponse(st model.Student) *dto.StudentDetailResponse {
 			FullName:     sg.Guardian.FullName,
 			Relationship: sg.Guardian.Relationship,
 			Phone:        sg.Guardian.Phone,
+			Address:      sg.Guardian.Address,
 			IsPrimary:    sg.IsPrimary,
 		})
 	}

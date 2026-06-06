@@ -83,7 +83,7 @@ func (r *studentRepository) FindAll(params dto.StudentQueryParams) ([]model.Stud
 
 func (r *studentRepository) FindByID(id uint) (*model.Student, error) {
 	var student model.Student
-	err := r.db.Preload("Guardians").Preload("StudentGuardians").First(&student, id).Error
+	err := r.db.Preload("StudentGuardians.Guardian").First(&student, id).Error
 	return &student, err
 }
 

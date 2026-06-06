@@ -139,15 +139,15 @@ function ProfilSiswaPage() {
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                        {g.guardian?.full_name || '(tanpa nama)'}
+                        {g.full_name || '(tanpa nama)'}
                         {g.is_primary && <Star className="h-4 w-4 text-amber-400 fill-amber-400" />}
                       </h4>
-                      <p className="text-xs text-gray-500 capitalize">{g.guardian?.relationship || '-'}</p>
+                      <p className="text-xs text-gray-500 capitalize">{g.relationship || '-'}</p>
                     </div>
                     <div className="flex gap-2">
                       {!g.is_primary && (
-                        <button 
-                          onClick={() => setPrimaryMutation.mutate({ id: studentId, guardianId: g.guardian_id })}
+                        <button
+                          onClick={() => setPrimaryMutation.mutate({ id: studentId, guardianId: g.id })}
                           className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
                           title="Jadikan Utama"
                         >
@@ -168,11 +168,11 @@ function ProfilSiswaPage() {
                   <div className="space-y-3 mt-4 text-sm text-gray-600">
                     <div className="flex items-center gap-3">
                       <Phone className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                      <span>{g.guardian?.phone || '-'}</span>
+                      <span>{g.phone || '-'}</span>
                     </div>
                     <div className="flex items-start gap-3">
                       <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
-                      <span className="line-clamp-2">{g.guardian?.address || '-'}</span>
+                      <span className="line-clamp-2">{g.address || '-'}</span>
                     </div>
                   </div>
                 </div>

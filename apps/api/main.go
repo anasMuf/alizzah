@@ -154,6 +154,7 @@ func main() {
 		AllowMethods: []string{echo.GET, echo.POST, echo.PUT, echo.PATCH, echo.DELETE},
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
 	}))
+	e.Use(echoMiddleware.Recover())
 	e.Use(middleware.MiddlewareLogging)
 
 	// Swagger
@@ -238,8 +239,8 @@ func main() {
 	reportService := service.NewReportService(reportRepo, ayRepo, cashTxnRepo, vaultTxnRepo, dailyClosingRepo, studentRepo, invoiceRepo, invoiceItemRepo, paymentRepo, savingsService, classGroupRepo, savingsTxnRepo)
 
 	// Batch 3 (updated with Batch 5+6 dependencies)
-	studentService := service.NewStudentService(db, studentRepo, enrollmentRepo, classGroupRepo, invoiceRepo, savingsService, invoiceGenService)
-	enrollmentService := service.NewStudentEnrollmentService(enrollmentRepo, studentRepo, classGroupRepo, extracurricularRepo, seRepo, invoiceGenService, savingsService)
+	studentService := service.NewStudentService(db, studentRepo, enrollmentRepo, classGroupRepo, invoiceRepo, extracurricularRepo, seRepo, fcRepo, fcItemRepo, savingsService, invoiceGenService)
+	enrollmentService := service.NewStudentEnrollmentService(db, enrollmentRepo, studentRepo, classGroupRepo, extracurricularRepo, seRepo, fcRepo, fcItemRepo, invoiceGenService, savingsService)
 	effectiveDayService := service.NewEffectiveDayService(effectiveDayRepo, classGroupRepo, invoiceGenService)
 	extracurricularService := service.NewExtracurricularService(extracurricularRepo)
 	seService := service.NewStudentExtracurricularService(seRepo, studentRepo, extracurricularRepo, ayRepo, invoiceGenService)

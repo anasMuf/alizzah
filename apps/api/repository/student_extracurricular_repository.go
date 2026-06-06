@@ -17,6 +17,7 @@ type StudentExtracurricularRepository interface {
 	Update(se *model.StudentExtracurricular) error
 	Delete(id uint) error
 	AlreadyEnrolled(studentID, extracurricularID, academicYearID uint) (bool, error)
+	WithTx(tx *gorm.DB) StudentExtracurricularRepository
 }
 
 type studentExtracurricularRepository struct {
@@ -25,6 +26,13 @@ type studentExtracurricularRepository struct {
 
 func NewStudentExtracurricularRepository(db *gorm.DB) StudentExtracurricularRepository {
 	return &studentExtracurricularRepository{db: db}
+}
+
+func (r *studentExtracurricularRepository) WithTx(tx *gorm.DB) StudentExtracurricularRepository {
+	if tx == nil {
+		return r
+	}
+	return &studentExtracurricularRepository{db: tx}
 }
 
 func (r *studentExtracurricularRepository) FindByStudentID(studentID uint, params dto.StudentExtracurricularQueryParams) ([]model.StudentExtracurricular, error) {

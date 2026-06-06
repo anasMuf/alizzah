@@ -30,5 +30,6 @@ type GuardianBriefResponse struct {
 	FullName     string `json:"full_name"`
 	Relationship string `json:"relationship"`
 	Phone        string `json:"phone"`
+	Address      string `json:"address"`
 	IsPrimary    bool   `json:"is_primary"`
 }

@@ -23,8 +23,16 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-// ─── In-memory token storage (M03: mitigasi XSS vs localStorage) ───
-let _token: string | null = null;
+// ─── Token storage ───
+// Disimpan di localStorage agar sesi bertahan saat halaman di-reload.
+// Token JWT punya masa berlaku (exp) dan tetap divalidasi ke server via /auth/me,
+// jadi token kedaluwarsa/invalid otomatis memicu logout.
+const TOKEN_KEY = 'alizzah_token';
+
+// Inisialisasi dari localStorage saat modul dimuat, supaya hasToken() sudah
+// tersedia untuk route guard (beforeLoad) yang jalan SEBELUM React render.
+let _token: string | null =
+  typeof localStorage !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null;
 
 export function getToken(): string | null {
   return _token;
@@ -32,6 +40,12 @@ export function getToken(): string | null {
 
 export function setTokenValue(token: string | null) {
   _token = token;
+  if (typeof localStorage === 'undefined') return;
+  if (token) {
+    localStorage.setItem(TOKEN_KEY, token);
+  } else {
+    localStorage.removeItem(TOKEN_KEY);
+  }
 }
 
 /**
@@ -43,7 +57,8 @@ export function hasToken(): boolean {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(null);
+  // Inisialisasi dari token yang sudah dipersist (bertahan saat reload)
+  const [token, setToken] = useState<string | null>(() => getToken());
   const queryClient = useQueryClient();
 
   // Fetch user profile when token is available

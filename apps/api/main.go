@@ -147,7 +147,7 @@ func main() {
 	// Global middleware
 	corsOrigins := strings.Split(os.Getenv("CORS_ALLOWED_ORIGINS"), ",")
 	if len(corsOrigins) == 1 && corsOrigins[0] == "" {
-		corsOrigins = []string{"http://localhost:5173"}
+		corsOrigins = []string{"http://localhost:3000", "http://localhost:5173"}
 	}
 	e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
 		AllowOrigins: corsOrigins,

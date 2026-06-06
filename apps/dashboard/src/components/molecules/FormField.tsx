@@ -4,10 +4,11 @@ import { Input } from '../atoms/Input';
 
 interface FormFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
+  error?: string;
 }
 
 export const FormField = forwardRef<HTMLInputElement, FormFieldProps>(
-  ({ label, id, type, ...props }, ref) => {
+  ({ label, id, type, error, ...props }, ref) => {
     const isPassword = type === 'password';
     const [showPassword, setShowPassword] = useState(false);
 
@@ -20,7 +21,7 @@ export const FormField = forwardRef<HTMLInputElement, FormFieldProps>(
             ref={ref}
             type={isPassword && showPassword ? 'text' : type}
             {...props}
-            className={isPassword ? 'pr-14' : ''}
+            className={`${isPassword ? 'pr-14' : ''} ${error ? 'ring-1 ring-red-500' : ''}`}
           />
           {isPassword && (
             <button
@@ -32,6 +33,9 @@ export const FormField = forwardRef<HTMLInputElement, FormFieldProps>(
             </button>
           )}
         </div>
+        {error && (
+          <p className="mt-1 text-sm text-red-600">{error}</p>
+        )}
       </div>
     );
   }

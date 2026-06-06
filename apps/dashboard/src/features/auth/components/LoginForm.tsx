@@ -1,18 +1,23 @@
-import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { FormField } from '../../../components/molecules/FormField';
 import { Button } from '../../../components/atoms/Button';
 import { useToast } from '../../../components/molecules/Toast';
 import { usePostV1AuthLogin, type postV1AuthLoginResponse } from '../../../api/endpoints/auth/auth';
 import { ApiError } from '../../../api/mutator/custom-instance';
 import { useAuth } from '../AuthContext';
+import { loginSchema, type LoginFormData } from '../../../utils/validation';
 
 export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
   const { login } = useAuth();
   const { addToast } = useToast();
 
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
   });
 
   const loginMutation = usePostV1AuthLogin({
@@ -29,37 +34,30 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
           ? error.message
           : 'An unexpected error occurred. Please try again.';
         addToast({ variant: 'error', title: 'Sign in failed', message });
-      }
-    }
+      },
+    },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    loginMutation.mutate({ data: { email: formData.email, password: formData.password } });
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const onSubmit = (data: LoginFormData) => {
+    loginMutation.mutate({ data });
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <FormField
         id="email"
-        name="email"
         type="email"
         label="Email address"
-        onChange={handleChange}
-        required
+        error={errors.email?.message}
+        {...register('email')}
       />
 
       <FormField
         id="password"
-        name="password"
         type="password"
         label="Password"
-        onChange={handleChange}
-        required
+        error={errors.password?.message}
+        {...register('password')}
       />
 
       <Button

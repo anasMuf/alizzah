@@ -11,7 +11,18 @@ import { AuthProvider, useAuth } from './features/auth/AuthContext'
 import { ToastProvider } from './components/molecules/Toast'
 import { ErrorBoundary } from './components/molecules/ErrorBoundary'
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+      staleTime: 30 * 1000,
+    },
+    mutations: {
+      retry: 1,
+    },
+  },
+})
 
 const router = createRouter({
   routeTree,

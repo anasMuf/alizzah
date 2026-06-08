@@ -8,6 +8,12 @@ import (
 )
 
 func SeedDispensations(db *gorm.DB) {
+	// Dispensasi/keringanan ini DATA CONTOH (ditempel ke beberapa siswa pertama).
+	// Ikut dimatikan saat sample finance off, agar tagihan produksi bersih tanpa diskon contoh.
+	if !seedSampleFinance {
+		return
+	}
+
 	var count int64
 	db.Model(&model.Dispensation{}).Count(&count)
 	if count > 0 {

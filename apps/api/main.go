@@ -159,6 +159,11 @@ func main() {
 	// Swagger
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
+	// Health check (untuk Docker healthcheck & reverse proxy)
+	e.GET("/health", func(c echo.Context) error {
+		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
+	})
+
 	// =====================
 	// Dependency Injection
 	// =====================

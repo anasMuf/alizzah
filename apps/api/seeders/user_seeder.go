@@ -3,6 +3,7 @@ package seeders
 import (
 	"api/model"
 	"log"
+	"os"
 
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -21,7 +22,13 @@ var defaultUsers = []struct {
 }
 
 func SeedUsers(db *gorm.DB) {
-	hash, err := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
+	// Password user awal dibaca dari env SEED_ADMIN_PASSWORD (wajib diisi di produksi),
+	// fallback "password123" untuk dev/lokal.
+	seedPassword := os.Getenv("SEED_ADMIN_PASSWORD")
+	if seedPassword == "" {
+		seedPassword = "password123"
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(seedPassword), bcrypt.DefaultCost)
 	if err != nil {
 		log.Println("Gagal hash password seeder:", err)
 		return

@@ -1,0 +1,16 @@
+node_modules
+dist
+.tanstack
+.nx
+.output
+.nitro
+.vite
+.git
+.vscode
+.agents
+.claude
+.qwen
+skills
+*.log
+Dockerfile
+.dockerignore

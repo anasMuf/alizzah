@@ -1,0 +1,38 @@
+# api.<domain>  ->  container api (Go/Echo :8080)
+# ${API_DOMAIN} disubstitusi dari environment oleh entrypoint nginx.
+# Catatan: CORS ditangani oleh aplikasi Go (env CORS_ALLOWED_ORIGINS), bukan di sini,
+# agar header tidak terduplikasi.
+
+server {
+    listen 80;
+    server_name ${API_DOMAIN};
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name ${API_DOMAIN};
+
+    ssl_certificate     /etc/letsencrypt/live/${API_DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${API_DOMAIN}/privkey.pem;
+    include /etc/nginx/snippets/ssl-params.conf;
+
+    # Naikkan kalau ada upload berkas besar
+    client_max_body_size 25m;
+
+    location / {
+        proxy_pass http://api:8080;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

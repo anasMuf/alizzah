@@ -1,0 +1,15 @@
+# Binari hasil build (jangan ikut ke context)
+api
+bin/
+tmp/
+*.test
+*.out
+
+# Dev & lokal
+.air.toml
+.env
+.env.*
+
+# Docker
+Dockerfile
+.dockerignore

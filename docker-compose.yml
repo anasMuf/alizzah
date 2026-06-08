@@ -1,5 +1,6 @@
-# Stack PRODUKSI Alizzah (dijalankan di VPS).
-# Variabel dibaca dari file `.env` di direktori yang sama (lihat .env.production.example).
+# Stack PRODUKSI Alizzah (VPS multi-app, di belakang nginx HOST).
+# Container hanya expose ke localhost; nginx host yang terminate TLS & proxy.
+# Variabel dibaca dari `.env` di direktori yang sama (lihat .env.production.example).
 #
 #   docker compose pull && docker compose up -d
 #
@@ -21,6 +22,7 @@ services:
       timeout: 5s
       retries: 5
     networks: [appnet]
+    # Tidak publish port — DB internal saja.
 
   api:
     image: ${REGISTRY:-ghcr.io}/${IMAGE_OWNER}/alizzah-api:${IMAGE_TAG:-latest}
@@ -39,6 +41,9 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
       SSL_MODE: disable
+    # Hanya di loopback host → di-proxy nginx host
+    ports:
+      - "127.0.0.1:${API_PORT:-8091}:8080"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
       interval: 15s
@@ -50,6 +55,8 @@ services:
   dashboard:
     image: ${REGISTRY:-ghcr.io}/${IMAGE_OWNER}/alizzah-dashboard:${IMAGE_TAG:-latest}
     restart: unless-stopped
+    ports:
+      - "127.0.0.1:${WEB_PORT:-8090}:80"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
       interval: 30s
@@ -57,40 +64,8 @@ services:
       retries: 3
     networks: [appnet]
 
-  nginx:
-    image: nginx:1.27-alpine
-    restart: unless-stopped
-    depends_on: [api, dashboard]
-    ports:
-      - "80:80"
-      - "443:443"
-    environment:
-      APP_DOMAIN: ${APP_DOMAIN}
-      API_DOMAIN: ${API_DOMAIN}
-    volumes:
-      - ./deploy/nginx/templates:/etc/nginx/templates:ro
-      - ./deploy/nginx/snippets:/etc/nginx/snippets:ro
-      - certbot-www:/var/www/certbot:ro
-      - letsencrypt:/etc/letsencrypt:ro
-    # nginx foreground (lifecycle container) + reload tiap 6 jam agar cert hasil renew terpakai
-    command: >-
-      /bin/sh -c "while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g 'daemon off;'"
-    networks: [appnet]
-
-  certbot:
-    image: certbot/certbot
-    restart: unless-stopped
-    volumes:
-      - certbot-www:/var/www/certbot
-      - letsencrypt:/etc/letsencrypt
-    # Coba perpanjang sertifikat tiap 12 jam (no-op bila belum waktunya)
-    entrypoint: >-
-      /bin/sh -c "trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot; sleep 12h & wait $${!}; done"
-
 volumes:
   pgdata:
-  letsencrypt:
-  certbot-www:
 
 networks:
   appnet:

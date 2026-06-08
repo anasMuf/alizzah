@@ -1,0 +1,18 @@
+# Context build root (dipakai image dashboard yang build dari workspace).
+**/node_modules
+.git
+.github
+.nx
+.turbo
+apps/*/dist
+apps/*/.tanstack
+apps/*/.output
+apps/*/.nitro
+apps/api/api
+apps/api/bin
+apps/api/tmp
+**/*.log
+.env
+.env.*
+.DS_Store
+docs

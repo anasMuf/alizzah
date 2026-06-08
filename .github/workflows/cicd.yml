@@ -68,14 +68,17 @@ jobs:
       contents: read
       packages: write
     strategy:
+      fail-fast: false   # api & dashboard build independen
       matrix:
         include:
           - app: api
             context: ./apps/api
+            file: ./apps/api/Dockerfile
             image: alizzah-api
             build_args: ""
           - app: dashboard
-            context: ./apps/dashboard
+            context: .
+            file: ./apps/dashboard/Dockerfile
             image: alizzah-dashboard
             build_args: |
               VITE_API_URL=${{ vars.VITE_API_URL }}
@@ -93,6 +96,7 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
           push: true
           build-args: ${{ matrix.build_args }}
           tags: |

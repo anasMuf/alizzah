@@ -118,7 +118,10 @@ jobs:
           script: |
             set -e
             cd "${{ secrets.DEPLOY_PATH }}"
-            git pull --ff-only
+            # Paksa direktori deploy persis sama dengan main (apa pun branch lokalnya).
+            # .env aman karena gitignored.
+            git fetch origin main
+            git reset --hard origin/main
             if [ -n "${{ secrets.GHCR_PAT }}" ]; then
               echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
             fi

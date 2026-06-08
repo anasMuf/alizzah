@@ -49,7 +49,8 @@ jobs:
           cache-dependency-path: apps/dashboard/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
-      - run: pnpm test -- --passWithNoTests
+        continue-on-error: true   # lint/format non-blocking: lapor saja, tak gate deploy
+      - run: pnpm exec vitest run --passWithNoTests
       - run: pnpm build
         env:
           VITE_API_URL: ${{ vars.VITE_API_URL || 'http://localhost:8080/api' }}

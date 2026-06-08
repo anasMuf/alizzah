@@ -42,8 +42,12 @@ Migrasi DB otomatis saat container API start (GORM AutoMigrate).
 | Nama | Isi |
 |------|-----|
 | `DEPLOY_PATH` | path clone repo di VPS, mis. `/home/anas/alizzah-app` |
-| `VITE_API_URL` | `https://api.alizzah.anaslabs.my.id/api` (di-bake saat build) |
 | `GHCR_PAT` | opsional — hanya bila package GHCR privat |
+
+**Repository variables** (tab **Variables**, bukan Secrets — URL publik, tidak sensitif):
+| Nama | Isi |
+|------|-----|
+| `VITE_API_URL` | `https://api.alizzah.anaslabs.my.id/api` (di-bake saat build) |
 
 **`.env` di VPS** (jangan di-commit): `DB_PASSWORD`, `JWT_SECRET`, `SEED_ADMIN_PASSWORD`,
 `CORS_ALLOWED_ORIGINS`, `IMAGE_OWNER`, dst (lihat `.env.production.example`).

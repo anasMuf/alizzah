@@ -39,20 +39,19 @@ Migrasi DB jalan otomatis saat container API start (GORM AutoMigrate).
 ### 3. GitHub (repo `anasMuf/alizzah`)
 Tambahkan di **Settings → Secrets and variables → Actions**:
 
-**Secrets**
+**Environment secrets** — environment `ANASLABS_VPS` (sudah ada dari deploy sebelumnya):
 | Nama | Isi |
 |------|-----|
-| `SSH_HOST` | IP/hostname VPS |
-| `SSH_USER` | user SSH (mis. `deploy`) |
-| `SSH_KEY` | **private key** untuk deploy (lihat langkah kunci di bawah) |
-| `SSH_PORT` | port SSH (opsional, default `22`) |
-| `DEPLOY_PATH` | path repo di VPS, mis. `/opt/alizzah` |
-| `GHCR_PAT` | opsional — hanya bila package GHCR di-set privat |
+| `VPS_HOST` | IP/hostname VPS |
+| `VPS_USER` | user SSH |
+| `VPS_KEY` | **private key** deploy (boleh pakai yang lama — tak perlu generate ulang) |
 
-**Variables**
+**Repository secrets**:
 | Nama | Isi |
 |------|-----|
-| `VITE_API_URL` | URL API yang ditanam ke frontend, mis. `https://api.<domain>/api` |
+| `DEPLOY_PATH` | path clone repo di VPS, mis. `/opt/alizzah` |
+| `VITE_API_URL` | URL API yang di-bake ke frontend: `https://api.alizzah.anaslabs.my.id/api` |
+| `GHCR_PAT` | opsional — hanya bila package GHCR di-set privat |
 
 ### 4. Secret aplikasi (diisi di file `.env` pada VPS)
 - [ ] `DB_PASSWORD` — password Postgres yang kuat.
@@ -72,13 +71,15 @@ curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker $USER   # logout-login agar berlaku
 ```
 
-### 2. Buat user deploy & kunci SSH untuk CI
-Di **mesin lokal**, buat keypair khusus CI (tanpa passphrase):
+### 2. Kunci SSH untuk CI
+> Sudah pernah deploy? `VPS_HOST/USER/KEY` yang lama bisa **dipakai ulang** — lewati langkah ini (key tidak terkait isi repo).
+
+Kalau belum ada, di **mesin lokal** buat keypair khusus CI (tanpa passphrase):
 ```bash
 ssh-keygen -t ed25519 -f alizzah_deploy -C "github-actions"
 ```
-- Isi **public key** (`alizzah_deploy.pub`) ke `~/.ssh/authorized_keys` user deploy di VPS.
-- Isi **private key** (`alizzah_deploy`) ke GitHub Secret `SSH_KEY`.
+- Isi **public key** (`alizzah_deploy.pub`) ke `~/.ssh/authorized_keys` user di VPS.
+- Isi **private key** (`alizzah_deploy`) ke environment secret `VPS_KEY`.
 
 ### 3. Clone repo & siapkan `.env`
 ```bash

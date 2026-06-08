@@ -52,7 +52,7 @@ jobs:
       - run: pnpm test -- --passWithNoTests
       - run: pnpm build
         env:
-          VITE_API_URL: ${{ vars.VITE_API_URL || 'http://localhost:8080/api' }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL || 'http://localhost:8080/api' }}
 
   # ---------------------------------------------------------------
   # BUILD & PUSH IMAGE — hanya saat push ke main, setelah checks hijau
@@ -77,7 +77,7 @@ jobs:
             context: ./apps/dashboard
             image: alizzah-dashboard
             build_args: |
-              VITE_API_URL=${{ vars.VITE_API_URL }}
+              VITE_API_URL=${{ secrets.VITE_API_URL }}
     steps:
       - uses: actions/checkout@v4
       - name: Owner huruf kecil (syarat GHCR)
@@ -107,14 +107,14 @@ jobs:
     name: Deploy ke VPS
     needs: build
     runs-on: ubuntu-latest
+    environment: ANASLABS_VPS   # agar bisa baca secret VPS_HOST/USER/KEY
     steps:
       - name: SSH & docker compose up
         uses: appleboy/ssh-action@v1
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT }}
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_KEY }}
           script: |
             set -e
             cd "${{ secrets.DEPLOY_PATH }}"

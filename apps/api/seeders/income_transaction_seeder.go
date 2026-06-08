@@ -9,6 +9,11 @@ import (
 )
 
 func SeedIncomeTransactions(db *gorm.DB) {
+	// Data keuangan sample dimatikan (lihat seedSampleFinance): kas mulai kosong.
+	if !seedSampleFinance {
+		return
+	}
+
 	var count int64
 	db.Model(&model.IncomeTransaction{}).Count(&count)
 	if count > 0 {

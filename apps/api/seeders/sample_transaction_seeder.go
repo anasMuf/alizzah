@@ -213,27 +213,16 @@ func SeedSampleTransactions(db *gorm.DB) {
 	}
 	log.Printf("  → %d tagihan biaya awal, %d tagihan registrasi", totalInitial, totalRegistration)
 
-	// All months in TA: Juli 2025 – Juni 2026
+	// Bulan tahun ajaran diturunkan dari tahun aktif; jatuh tempo = tanggal 10 bulan berikutnya.
 	type targetMonth struct {
-		Month   uint
-		Year    uint
-		DueDay  int
-		DueMon  time.Month
-		DueYear int
+		Month uint
+		Year  uint
+		Due   time.Time
 	}
-	targetMonths := []targetMonth{
-		{7, 2025, 10, time.August, 2025},
-		{8, 2025, 10, time.September, 2025},
-		{9, 2025, 10, time.October, 2025},
-		{10, 2025, 10, time.November, 2025},
-		{11, 2025, 10, time.December, 2025},
-		{12, 2025, 10, time.January, 2026},
-		{1, 2026, 10, time.February, 2026},
-		{2, 2026, 10, time.March, 2026},
-		{3, 2026, 10, time.April, 2026},
-		{4, 2026, 10, time.May, 2026},
-		{5, 2026, 10, time.June, 2026},
-		{6, 2026, 10, time.June, 2026}, // Juni: due date akhir bulan
+	var targetMonths []targetMonth
+	for _, my := range acadMonthYears(activeYear) {
+		due := time.Date(my.Year, time.Month(my.Month), 1, 0, 0, 0, 0, time.UTC).AddDate(0, 1, 9)
+		targetMonths = append(targetMonths, targetMonth{Month: uint(my.Month), Year: uint(my.Year), Due: due})
 	}
 
 	// Load effective days
@@ -360,7 +349,7 @@ func SeedSampleTransactions(db *gorm.DB) {
 				}
 			}
 
-			dueDate := time.Date(tm.DueYear, tm.DueMon, tm.DueDay, 0, 0, 0, 0, time.UTC)
+			dueDate := tm.Due
 			invoice := model.Invoice{
 				StudentID:      enr.StudentID,
 				AcademicYearID: activeYear.ID,
@@ -440,33 +429,40 @@ func SeedSampleTransactions(db *gorm.DB) {
 		}
 	}
 
-	// Biaya awal: 85% lunas (dibayar sekitar Juli 2025)
-	payInitialAndReg("initial", 0.85, time.Date(2025, time.July, 5, 0, 0, 0, 0, time.UTC))
-	// Registrasi: 75% lunas (dibayar sekitar Juli-Agustus 2025, bisa dicicil sisanya)
-	payInitialAndReg("registration", 0.75, time.Date(2025, time.July, 10, 0, 0, 0, 0, time.UTC))
+	// Biaya awal & registrasi dibayar sekitar awal tahun ajaran (diturunkan dari tahun aktif)
+	startY, startMon := activeYear.StartDate.Year(), activeYear.StartDate.Month()
+	// Biaya awal: 85% lunas
+	payInitialAndReg("initial", 0.85, time.Date(startY, startMon, 5, 0, 0, 0, 0, time.UTC))
+	// Registrasi: 75% lunas (sisanya bisa dicicil)
+	payInitialAndReg("registration", 0.75, time.Date(startY, startMon, 10, 0, 0, 0, 0, time.UTC))
 
 	// === Payments: tagihan bulanan (distribusi realistis) ===
 	// Bulan lama → lebih banyak lunas, bulan baru → lebih sedikit
-	paymentMonths := []struct {
-		Month      uint
-		Year       uint
-		PayRate    float64 // 0.0 - 1.0 percentage of students who pay
-		PayMonth   time.Month
-		PayYear    int
-		DayOffset  int // base payment day in the month
-	}{
-		{7, 2025, 0.90, time.July, 2025, 15},
-		{8, 2025, 0.85, time.August, 2025, 15},
-		{9, 2025, 0.80, time.September, 2025, 15},
-		{10, 2025, 0.75, time.October, 2025, 15},
-		{11, 2025, 0.70, time.November, 2025, 15},
-		{12, 2025, 0.65, time.December, 2025, 15},
-		{1, 2026, 0.60, time.January, 2026, 15},
-		{2, 2026, 0.55, time.February, 2026, 15},
-		{3, 2026, 0.45, time.March, 2026, 15},
-		{4, 2026, 0.35, time.April, 2026, 15},
-		{5, 2026, 0.20, time.May, 2026, 15},
-		// Juni 2026: belum ada yang bayar (bulan berjalan)
+	// Rasio lunas per bulan (urut dari bulan pertama TA): bulan lama lebih banyak lunas.
+	// Bulan terakhir (mis. Juni) sengaja dilewati = "bulan berjalan". Bulan/tahun diturunkan
+	// dari tahun aktif sehingga otomatis mengikuti TA.
+	type paymentMonth struct {
+		Month     uint
+		Year      uint
+		PayRate   float64 // 0.0 - 1.0 percentage of students who pay
+		PayMonth  time.Month
+		PayYear   int
+		DayOffset int // base payment day in the month
+	}
+	var paymentMonths []paymentMonth
+	{
+		payRates := []float64{0.90, 0.85, 0.80, 0.75, 0.70, 0.65, 0.60, 0.55, 0.45, 0.35, 0.20}
+		acadMonths := acadMonthYears(activeYear)
+		for i, rate := range payRates {
+			if i >= len(acadMonths) {
+				break
+			}
+			my := acadMonths[i]
+			paymentMonths = append(paymentMonths, paymentMonth{
+				Month: uint(my.Month), Year: uint(my.Year), PayRate: rate,
+				PayMonth: time.Month(my.Month), PayYear: my.Year, DayOffset: 15,
+			})
+		}
 	}
 
 	for _, pm := range paymentMonths {
@@ -541,9 +537,9 @@ func SeedSampleTransactions(db *gorm.DB) {
 	var expCategories []model.ExpenseCategory
 	db.Where("parent_id IS NOT NULL").Find(&expCategories)
 
+	// Tahun tiap bulan diturunkan dari tahun aktif (lihat yearForMonth) — tanpa hardcode tahun.
 	monthlyExpenses := []struct {
 		Month    time.Month
-		Year     int
 		Expenses []struct {
 			Description string
 			Amount      float64
@@ -551,84 +547,120 @@ func SeedSampleTransactions(db *gorm.DB) {
 			CatIndex    int
 		}
 	}{
-		{time.July, 2025, []struct {
-			Description string; Amount float64; Day int; CatIndex int
+		{time.July, []struct {
+			Description string
+			Amount      float64
+			Day         int
+			CatIndex    int
 		}{
 			{"Pembelian ATK kantor", 350000, 3, 0},
 			{"Bayar listrik bulan Juli", 1500000, 5, 1},
 			{"Honor guru les tambahan", 2000000, 10, 2},
 		}},
-		{time.August, 2025, []struct {
-			Description string; Amount float64; Day int; CatIndex int
+		{time.August, []struct {
+			Description string
+			Amount      float64
+			Day         int
+			CatIndex    int
 		}{
 			{"Bayar listrik bulan Agustus", 1450000, 5, 1},
 			{"Pembelian alat kebersihan", 275000, 8, 0},
 			{"Dekorasi HUT RI", 500000, 12, 0},
 		}},
-		{time.September, 2025, []struct {
-			Description string; Amount float64; Day int; CatIndex int
+		{time.September, []struct {
+			Description string
+			Amount      float64
+			Day         int
+			CatIndex    int
 		}{
 			{"Bayar listrik bulan September", 1400000, 5, 1},
 			{"Bayar air PDAM", 450000, 5, 1},
 			{"Cetak rapor siswa", 600000, 18, 0},
 		}},
-		{time.October, 2025, []struct {
-			Description string; Amount float64; Day int; CatIndex int
+		{time.October, []struct {
+			Description string
+			Amount      float64
+			Day         int
+			CatIndex    int
 		}{
 			{"Bayar listrik bulan Oktober", 1500000, 5, 1},
 			{"Pembelian toner printer", 350000, 10, 0},
 			{"Perbaikan AC ruang guru", 800000, 14, 1},
 		}},
-		{time.November, 2025, []struct {
-			Description string; Amount float64; Day int; CatIndex int
+		{time.November, []struct {
+			Description string
+			Amount      float64
+			Day         int
+			CatIndex    int
 		}{
 			{"Bayar listrik bulan November", 1350000, 5, 1},
 			{"Pembelian buku perpustakaan", 1200000, 12, 0},
 			{"Biaya perjalanan dinas", 500000, 20, 1},
 		}},
-		{time.December, 2025, []struct {
-			Description string; Amount float64; Day int; CatIndex int
+		{time.December, []struct {
+			Description string
+			Amount      float64
+			Day         int
+			CatIndex    int
 		}{
 			{"Bayar listrik bulan Desember", 1300000, 5, 1},
 			{"Hampers akhir tahun guru", 750000, 10, 2},
 			{"Perlengkapan acara Natal", 400000, 15, 0},
 		}},
-		{time.January, 2026, []struct {
-			Description string; Amount float64; Day int; CatIndex int
+		{time.January, []struct {
+			Description string
+			Amount      float64
+			Day         int
+			CatIndex    int
 		}{
 			{"Bayar listrik bulan Januari", 1400000, 5, 1},
 			{"Bayar air PDAM semester 2", 450000, 5, 1},
 			{"Pembelian ATK semester 2", 400000, 8, 0},
 		}},
-		{time.February, 2026, []struct {
-			Description string; Amount float64; Day int; CatIndex int
+		{time.February, []struct {
+			Description string
+			Amount      float64
+			Day         int
+			CatIndex    int
 		}{
 			{"Bayar listrik bulan Februari", 1350000, 5, 1},
 			{"Pembelian cat tembok kelas", 900000, 12, 1},
 		}},
-		{time.March, 2026, []struct {
-			Description string; Amount float64; Day int; CatIndex int
+		{time.March, []struct {
+			Description string
+			Amount      float64
+			Day         int
+			CatIndex    int
 		}{
 			{"Bayar listrik bulan Maret", 1400000, 5, 1},
 			{"Biaya field trip mutiara", 1500000, 18, 0},
 			{"Konsumsi rapat wali murid", 350000, 20, 0},
 		}},
-		{time.April, 2026, []struct {
-			Description string; Amount float64; Day int; CatIndex int
+		{time.April, []struct {
+			Description string
+			Amount      float64
+			Day         int
+			CatIndex    int
 		}{
 			{"Bayar listrik bulan April", 1450000, 5, 1},
 			{"Pembelian alat olahraga", 650000, 10, 0},
 			{"Honor panitia UTS", 1000000, 15, 2},
 		}},
-		{time.May, 2026, []struct {
-			Description string; Amount float64; Day int; CatIndex int
+		{time.May, []struct {
+			Description string
+			Amount      float64
+			Day         int
+			CatIndex    int
 		}{
 			{"Bayar listrik bulan Mei", 1400000, 5, 1},
 			{"Persiapan wisuda berlian", 2500000, 12, 0},
 			{"Pembelian piala dan sertifikat", 750000, 18, 0},
 		}},
-		{time.June, 2026, []struct {
-			Description string; Amount float64; Day int; CatIndex int
+		{time.June, []struct {
+			Description string
+			Amount      float64
+			Day         int
+			CatIndex    int
 		}{
 			{"Bayar listrik bulan Juni", 1300000, 5, 1},
 			{"Biaya acara wisuda", 3000000, 10, 0},
@@ -636,13 +668,14 @@ func SeedSampleTransactions(db *gorm.DB) {
 	}
 
 	for _, me := range monthlyExpenses {
+		meYear := yearForMonth(activeYear, int(me.Month))
 		for _, se := range me.Expenses {
 			catIdx := se.CatIndex
 			if catIdx >= len(expCategories) {
 				catIdx = 0
 			}
 
-			expenseDate := time.Date(me.Year, me.Month, se.Day, 0, 0, 0, 0, time.UTC)
+			expenseDate := time.Date(meYear, me.Month, se.Day, 0, 0, 0, 0, time.UTC)
 			expense := model.Expense{
 				AcademicYearID:    activeYear.ID,
 				ExpenseCategoryID: expCategories[catIdx].ID,

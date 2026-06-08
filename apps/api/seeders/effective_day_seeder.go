@@ -2,6 +2,7 @@ package seeders
 
 import (
 	"api/model"
+	"fmt"
 	"log"
 	"time"
 
@@ -31,20 +32,14 @@ func SeedEffectiveDays(db *gorm.DB) {
 	var classGroups []model.ClassGroup
 	db.Where("academic_year_id = ?", activeYear.ID).Find(&classGroups)
 
-	// Academic year months: Jul 2025 – Jun 2026 (12 months)
-	type monthYear struct {
-		Month int
-		Year  int
-	}
-	months := []monthYear{
-		{7, 2025}, {8, 2025}, {9, 2025}, {10, 2025}, {11, 2025}, {12, 2025},
-		{1, 2026}, {2, 2026}, {3, 2026}, {4, 2026}, {5, 2026}, {6, 2026},
-	}
+	// Bulan tahun ajaran diturunkan dari tahun aktif (otomatis ikut TA aktif)
+	months := acadMonthYears(activeYear)
+	holidays := nationalHolidays(activeYear)
 
 	var total int
 	for _, cg := range classGroups {
 		for _, my := range months {
-			totalDays, totalMondays := countEffectiveDays(cg.Name, cg.Level, my.Month, my.Year)
+			totalDays, totalMondays := countEffectiveDays(cg.Name, cg.Level, my.Month, my.Year, holidays)
 
 			ed := model.EffectiveDay{
 				ClassGroupID:   cg.ID,
@@ -71,7 +66,7 @@ func SeedEffectiveDays(db *gorm.DB) {
 //   - Mutiara 4,5,6: Sel, Kam, Sab
 //   - Intan 1-8: Sen-Sab (6 days/week)
 //   - Berlian 1-8: Sen-Sab (6 days/week)
-func countEffectiveDays(name, level string, month, year int) (int, int) {
+func countEffectiveDays(name, level string, month, year int, holidays map[string]bool) (int, int) {
 	// Determine which weekdays are school days
 	var schoolDays map[time.Weekday]bool
 
@@ -98,9 +93,6 @@ func countEffectiveDays(name, level string, month, year int) (int, int) {
 			time.Saturday:  true,
 		}
 	}
-
-	// National holidays (approximate for 2025-2026)
-	holidays := nationalHolidays()
 
 	totalDays := 0
 	totalMondays := 0
@@ -134,26 +126,37 @@ func isMutiara456(name string) bool {
 	return name == "Mutiara 4" || name == "Mutiara 5" || name == "Mutiara 6"
 }
 
-// nationalHolidays returns a set of national holiday dates for the 2025/2026 academic year.
-// These are approximate dates — the school admin can adjust effective days later via the UI.
-func nationalHolidays() map[string]bool {
-	return map[string]bool{
-		// 2025
-		"2025-08-17": true, // Hari Kemerdekaan (Minggu - tapi tetap ditandai)
-		"2025-09-05": true, // Maulid Nabi
-		"2025-10-20": true, // Tahun Baru Islam placeholder
-		"2025-12-25": true, // Natal
-		"2025-12-26": true, // Cuti bersama
-
-		// 2026
-		"2026-01-01": true, // Tahun Baru
-		"2026-01-29": true, // Imlek
-		"2026-03-20": true, // Isra Miraj (approx)
-		"2026-03-21": true, // Nyepi (approx)
-		"2026-03-22": true, // Cuti bersama Nyepi
-		"2026-04-03": true, // Wafat Isa Al Masih (approx)
-		"2026-05-01": true, // Hari Buruh
-		"2026-05-14": true, // Kenaikan Isa Al Masih (approx)
-		"2026-05-16": true, // Waisak (approx)
+// nationalHolidays mengembalikan perkiraan tanggal libur nasional untuk tahun ajaran ay.
+// Libur tanggal-tetap (Kemerdekaan, Natal, Tahun Baru, Hari Buruh, Pancasila) diturunkan
+// otomatis dari tahun ajaran. Libur lunar/berubah (Maulid, Isra Miraj, Idul Fitri/Adha,
+// Imlek, Nyepi, Waisak) bersifat APPROXIMATE — admin menyesuaikan via UI; perbarui daftar
+// lunar ini saat berganti tahun ajaran.
+func nationalHolidays(ay model.AcademicYear) map[string]bool {
+	startY := ay.StartDate.Year()
+	endY := ay.EndDate.Year()
+	h := map[string]bool{
+		// Libur tanggal tetap (otomatis ikut tahun ajaran)
+		fmt.Sprintf("%d-08-17", startY): true, // Hari Kemerdekaan
+		fmt.Sprintf("%d-12-25", startY): true, // Natal
+		fmt.Sprintf("%d-12-26", startY): true, // Cuti bersama Natal
+		fmt.Sprintf("%d-01-01", endY):   true, // Tahun Baru Masehi
+		fmt.Sprintf("%d-05-01", endY):   true, // Hari Buruh
+		fmt.Sprintf("%d-06-01", endY):   true, // Hari Lahir Pancasila
 	}
+	// Libur lunar/berubah — perkiraan untuk TA 2026/2027 (verifikasi & sesuaikan via UI).
+	for _, d := range []string{
+		"2026-08-26", // Maulid Nabi (approx)
+		"2027-01-15", // Isra Miraj (approx)
+		"2027-02-06", // Tahun Baru Imlek (approx)
+		"2027-03-09", // Hari Raya Nyepi (approx)
+		"2027-03-11", // Idul Fitri 1448H hari ke-1 (approx)
+		"2027-03-12", // Idul Fitri 1448H hari ke-2 (approx)
+		"2027-03-26", // Wafat Isa Al Masih (approx)
+		"2027-05-06", // Kenaikan Isa Al Masih (approx)
+		"2027-05-18", // Idul Adha (approx)
+		"2027-05-20", // Hari Raya Waisak (approx)
+	} {
+		h[d] = true
+	}
+	return h
 }

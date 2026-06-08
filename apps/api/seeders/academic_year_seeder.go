@@ -27,13 +27,13 @@ func SeedAcademicYears(db *gorm.DB) {
 			Name:      "2025/2026",
 			StartDate: time.Date(2025, 7, 14, 0, 0, 0, 0, time.UTC),
 			EndDate:   time.Date(2026, 6, 30, 0, 0, 0, 0, time.UTC),
-			IsActive:  true,
+			IsActive:  false,
 		},
 		{
 			Name:      "2026/2027",
 			StartDate: time.Date(2026, 7, 13, 0, 0, 0, 0, time.UTC),
 			EndDate:   time.Date(2027, 6, 30, 0, 0, 0, 0, time.UTC),
-			IsActive:  false,
+			IsActive:  true,
 		},
 	}
 

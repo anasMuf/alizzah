@@ -72,12 +72,9 @@ jobs:
           - app: api
             context: ./apps/api
             image: alizzah-api
-            build_args: ""
           - app: dashboard
             context: ./apps/dashboard
             image: alizzah-dashboard
-            build_args: |
-              VITE_API_URL=${{ secrets.VITE_API_URL }}
     steps:
       - uses: actions/checkout@v4
       - name: Owner huruf kecil (syarat GHCR)
@@ -93,7 +90,8 @@ jobs:
         with:
           context: ${{ matrix.context }}
           push: true
-          build-args: ${{ matrix.build_args }}
+          # secrets HANYA boleh di step (bukan di matrix). VITE_API_URL di-bake khusus dashboard.
+          build-args: ${{ matrix.app == 'dashboard' && format('VITE_API_URL={0}', secrets.VITE_API_URL) || '' }}
           tags: |
             ghcr.io/${{ steps.owner.outputs.name }}/${{ matrix.image }}:latest
             ghcr.io/${{ steps.owner.outputs.name }}/${{ matrix.image }}:${{ github.sha }}

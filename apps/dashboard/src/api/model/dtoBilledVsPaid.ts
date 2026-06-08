@@ -7,7 +7,7 @@
  */
 
 export interface DtoBilledVsPaid {
-  billed?: number;
-  category?: string;
-  paid?: number;
+	billed?: number;
+	category?: string;
+	paid?: number;
 }

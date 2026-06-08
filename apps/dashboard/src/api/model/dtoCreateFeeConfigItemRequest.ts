@@ -5,20 +5,20 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoCreateFeeConfigItemRequestCategory } from './dtoCreateFeeConfigItemRequestCategory';
-import type { DtoCreateFeeConfigItemRequestGender } from './dtoCreateFeeConfigItemRequestGender';
-import type { DtoCreateFeeConfigItemRequestLevel } from './dtoCreateFeeConfigItemRequestLevel';
-import type { DtoCreateFeeConfigItemRequestUnit } from './dtoCreateFeeConfigItemRequestUnit';
+import type { DtoCreateFeeConfigItemRequestCategory } from "./dtoCreateFeeConfigItemRequestCategory";
+import type { DtoCreateFeeConfigItemRequestGender } from "./dtoCreateFeeConfigItemRequestGender";
+import type { DtoCreateFeeConfigItemRequestLevel } from "./dtoCreateFeeConfigItemRequestLevel";
+import type { DtoCreateFeeConfigItemRequestUnit } from "./dtoCreateFeeConfigItemRequestUnit";
 
 export interface DtoCreateFeeConfigItemRequest {
-  /** @minimum 0 */
-  amount: number;
-  category: DtoCreateFeeConfigItemRequestCategory;
-  gender: DtoCreateFeeConfigItemRequestGender;
-  /** @maxLength 50 */
-  item_key: string;
-  level: DtoCreateFeeConfigItemRequestLevel;
-  /** @maxLength 100 */
-  name: string;
-  unit: DtoCreateFeeConfigItemRequestUnit;
+	/** @minimum 0 */
+	amount: number;
+	category: DtoCreateFeeConfigItemRequestCategory;
+	gender: DtoCreateFeeConfigItemRequestGender;
+	/** @maxLength 50 */
+	item_key: string;
+	level: DtoCreateFeeConfigItemRequestLevel;
+	/** @maxLength 100 */
+	name: string;
+	unit: DtoCreateFeeConfigItemRequestUnit;
 }

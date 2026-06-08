@@ -7,8 +7,8 @@
  */
 
 export interface DtoExpenseCategoryResponse {
-  children?: DtoExpenseCategoryResponse[];
-  id?: number;
-  name?: string;
-  parent_id?: number;
+	children?: DtoExpenseCategoryResponse[];
+	id?: number;
+	name?: string;
+	parent_id?: number;
 }

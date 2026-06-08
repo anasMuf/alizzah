@@ -7,13 +7,13 @@
  */
 
 export interface DtoSavingsTransactionResponse {
-  admin_fee?: number;
-  amount?: number;
-  created_at?: string;
-  id?: number;
-  net_amount?: number;
-  notes?: string;
-  savings_type?: string;
-  source_type?: string;
-  transaction_type?: string;
+	admin_fee?: number;
+	amount?: number;
+	created_at?: string;
+	id?: number;
+	net_amount?: number;
+	notes?: string;
+	savings_type?: string;
+	source_type?: string;
+	transaction_type?: string;
 }

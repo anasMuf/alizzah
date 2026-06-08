@@ -1,11 +1,13 @@
-import { type InputHTMLAttributes, forwardRef } from 'react';
+import { forwardRef, type InputHTMLAttributes } from "react";
 
-export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
-  ({ className = '', ...props }, ref) => {
-    return (
-      <input
-        ref={ref}
-        className={`
+export const Input = forwardRef<
+	HTMLInputElement,
+	InputHTMLAttributes<HTMLInputElement>
+>(({ className = "", ...props }, ref) => {
+	return (
+		<input
+			ref={ref}
+			className={`
           block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900
           outline-1 -outline-offset-1 outline-gray-300
           placeholder:text-gray-400
@@ -13,10 +15,9 @@ export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputE
           sm:text-sm/6
           ${className}
         `}
-        {...props}
-      />
-    );
-  }
-);
+			{...props}
+		/>
+	);
+});
 
-Input.displayName = 'Input';
+Input.displayName = "Input";

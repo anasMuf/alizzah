@@ -7,12 +7,12 @@
  */
 
 export type GetV1ReportsStudentsIdParams = {
-/**
- * Academic Year ID
- */
-academic_year_id?: number;
-/**
- * Across all academic years
- */
-all?: boolean;
+	/**
+	 * Academic Year ID
+	 */
+	academic_year_id?: number;
+	/**
+	 * Across all academic years
+	 */
+	all?: boolean;
 };

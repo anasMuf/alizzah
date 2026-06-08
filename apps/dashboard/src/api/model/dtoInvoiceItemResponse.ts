@@ -7,11 +7,11 @@
  */
 
 export interface DtoInvoiceItemResponse {
-  amount?: number;
-  category?: string;
-  id?: number;
-  is_mandatory?: boolean;
-  name?: string;
-  paid_amount?: number;
-  status?: string;
+	amount?: number;
+	category?: string;
+	id?: number;
+	is_mandatory?: boolean;
+	name?: string;
+	paid_amount?: number;
+	status?: string;
 }

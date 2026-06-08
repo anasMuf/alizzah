@@ -7,8 +7,8 @@
  */
 
 export interface DtoCreateAcademicYearRequest {
-  end_date: string;
-  /** @maxLength 20 */
-  name: string;
-  start_date: string;
+	end_date: string;
+	/** @maxLength 20 */
+	name: string;
+	start_date: string;
 }

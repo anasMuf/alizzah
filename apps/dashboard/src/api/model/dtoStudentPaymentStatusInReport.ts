@@ -7,10 +7,10 @@
  */
 
 export interface DtoStudentPaymentStatusInReport {
-  invoice_status?: string;
-  paid_amount?: number;
-  student_id?: number;
-  student_name?: string;
-  total_amount?: number;
-  unpaid_amount?: number;
+	invoice_status?: string;
+	paid_amount?: number;
+	student_id?: number;
+	student_name?: string;
+	total_amount?: number;
+	unpaid_amount?: number;
 }

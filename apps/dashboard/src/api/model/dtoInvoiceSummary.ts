@@ -7,7 +7,7 @@
  */
 
 export interface DtoInvoiceSummary {
-  total_billed?: number;
-  total_paid?: number;
-  total_unpaid?: number;
+	total_billed?: number;
+	total_paid?: number;
+	total_unpaid?: number;
 }

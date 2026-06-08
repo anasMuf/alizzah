@@ -5,346 +5,419 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import {
-  useMutation,
-  useQuery
-} from '@tanstack/react-query';
-import type {
-  DataTag,
-  DefinedInitialDataOptions,
-  DefinedUseQueryResult,
-  MutationFunction,
-  QueryClient,
-  QueryFunction,
-  QueryKey,
-  UndefinedInitialDataOptions,
-  UseMutationOptions,
-  UseMutationResult,
-  UseQueryOptions,
-  UseQueryResult
-} from '@tanstack/react-query';
 
 import type {
-  DtoErrorResponse,
-  DtoLoginRequest,
-  DtoSuccessResponse,
-  GetV1AuthMe200,
-  PostV1AuthLogin200
-} from '../../model';
+	DataTag,
+	DefinedInitialDataOptions,
+	DefinedUseQueryResult,
+	MutationFunction,
+	QueryClient,
+	QueryFunction,
+	QueryKey,
+	UndefinedInitialDataOptions,
+	UseMutationOptions,
+	UseMutationResult,
+	UseQueryOptions,
+	UseQueryResult,
+} from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
-import { customInstance } from '../../mutator/custom-instance';
+import type {
+	DtoErrorResponse,
+	DtoLoginRequest,
+	DtoSuccessResponse,
+	GetV1AuthMe200,
+	PostV1AuthLogin200,
+} from "../../model";
 
+import { customInstance } from "../../mutator/custom-instance";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
-
-
 export type postV1AuthLoginResponse200 = {
-  data: PostV1AuthLogin200
-  status: 200
-}
+	data: PostV1AuthLogin200;
+	status: 200;
+};
 
 export type postV1AuthLoginResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type postV1AuthLoginResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
-
-export type postV1AuthLoginResponseSuccess = (postV1AuthLoginResponse200) & {
-  headers: Headers;
-};
-export type postV1AuthLoginResponseError = (postV1AuthLoginResponse400 | postV1AuthLoginResponse401) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 401;
 };
 
-export type postV1AuthLoginResponse = (postV1AuthLoginResponseSuccess | postV1AuthLoginResponseError)
+export type postV1AuthLoginResponseSuccess = postV1AuthLoginResponse200 & {
+	headers: Headers;
+};
+export type postV1AuthLoginResponseError = (
+	| postV1AuthLoginResponse400
+	| postV1AuthLoginResponse401
+) & {
+	headers: Headers;
+};
+
+export type postV1AuthLoginResponse =
+	| postV1AuthLoginResponseSuccess
+	| postV1AuthLoginResponseError;
 
 export const getPostV1AuthLoginUrl = () => {
-
-
-
-
-  return `/v1/auth/login`
-}
+	return `/v1/auth/login`;
+};
 
 /**
  * Authenticate user with email and password, returns JWT token
  * @summary Login user
  */
-export const postV1AuthLogin = async (dtoLoginRequest: DtoLoginRequest, options?: RequestInit): Promise<postV1AuthLoginResponse> => {
+export const postV1AuthLogin = async (
+	dtoLoginRequest: DtoLoginRequest,
+	options?: RequestInit,
+): Promise<postV1AuthLoginResponse> => {
+	return customInstance<postV1AuthLoginResponse>(getPostV1AuthLoginUrl(), {
+		...options,
+		method: "POST",
+		headers: { "Content-Type": "application/json", ...options?.headers },
+		body: JSON.stringify(dtoLoginRequest),
+	});
+};
 
-  return customInstance<postV1AuthLoginResponse>(getPostV1AuthLoginUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      dtoLoginRequest,)
-  }
-);}
+export const getPostV1AuthLoginMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1AuthLogin>>,
+		TError,
+		{ data: DtoLoginRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1AuthLogin>>,
+	TError,
+	{ data: DtoLoginRequest },
+	TContext
+> => {
+	const mutationKey = ["postV1AuthLogin"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1AuthLogin>>,
+		{ data: DtoLoginRequest }
+	> = (props) => {
+		const { data } = props ?? {};
 
+		return postV1AuthLogin(data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-export const getPostV1AuthLoginMutationOptions = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AuthLogin>>, TError,{data: DtoLoginRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1AuthLogin>>, TError,{data: DtoLoginRequest}, TContext> => {
+export type PostV1AuthLoginMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1AuthLogin>>
+>;
+export type PostV1AuthLoginMutationBody = DtoLoginRequest;
+export type PostV1AuthLoginMutationError = DtoErrorResponse;
 
-const mutationKey = ['postV1AuthLogin'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1AuthLogin>>, {data: DtoLoginRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  postV1AuthLogin(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1AuthLoginMutationResult = NonNullable<Awaited<ReturnType<typeof postV1AuthLogin>>>
-    export type PostV1AuthLoginMutationBody = DtoLoginRequest
-    export type PostV1AuthLoginMutationError = DtoErrorResponse
-
-    /**
+/**
  * @summary Login user
  */
-export const usePostV1AuthLogin = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AuthLogin>>, TError,{data: DtoLoginRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postV1AuthLogin>>,
-        TError,
-        {data: DtoLoginRequest},
-        TContext
-      > => {
-      return useMutation(getPostV1AuthLoginMutationOptions(options), queryClient);
-    }
-    export type postV1AuthLogoutResponse200 = {
-  data: DtoSuccessResponse
-  status: 200
-}
+export const usePostV1AuthLogin = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1AuthLogin>>,
+			TError,
+			{ data: DtoLoginRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1AuthLogin>>,
+	TError,
+	{ data: DtoLoginRequest },
+	TContext
+> => {
+	return useMutation(getPostV1AuthLoginMutationOptions(options), queryClient);
+};
+export type postV1AuthLogoutResponse200 = {
+	data: DtoSuccessResponse;
+	status: 200;
+};
 
 export type postV1AuthLogoutResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
-
-export type postV1AuthLogoutResponseSuccess = (postV1AuthLogoutResponse200) & {
-  headers: Headers;
-};
-export type postV1AuthLogoutResponseError = (postV1AuthLogoutResponse401) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 401;
 };
 
-export type postV1AuthLogoutResponse = (postV1AuthLogoutResponseSuccess | postV1AuthLogoutResponseError)
+export type postV1AuthLogoutResponseSuccess = postV1AuthLogoutResponse200 & {
+	headers: Headers;
+};
+export type postV1AuthLogoutResponseError = postV1AuthLogoutResponse401 & {
+	headers: Headers;
+};
+
+export type postV1AuthLogoutResponse =
+	| postV1AuthLogoutResponseSuccess
+	| postV1AuthLogoutResponseError;
 
 export const getPostV1AuthLogoutUrl = () => {
-
-
-
-
-  return `/v1/auth/logout`
-}
+	return `/v1/auth/logout`;
+};
 
 /**
  * Logout current user (client should discard the token)
  * @summary Logout user
  */
-export const postV1AuthLogout = async ( options?: RequestInit): Promise<postV1AuthLogoutResponse> => {
+export const postV1AuthLogout = async (
+	options?: RequestInit,
+): Promise<postV1AuthLogoutResponse> => {
+	return customInstance<postV1AuthLogoutResponse>(getPostV1AuthLogoutUrl(), {
+		...options,
+		method: "POST",
+	});
+};
 
-  return customInstance<postV1AuthLogoutResponse>(getPostV1AuthLogoutUrl(),
-  {
-    ...options,
-    method: 'POST'
+export const getPostV1AuthLogoutMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1AuthLogout>>,
+		TError,
+		void,
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1AuthLogout>>,
+	TError,
+	void,
+	TContext
+> => {
+	const mutationKey = ["postV1AuthLogout"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1AuthLogout>>,
+		void
+	> = () => {
+		return postV1AuthLogout(requestOptions);
+	};
 
-  }
-);}
+	return { mutationFn, ...mutationOptions };
+};
 
+export type PostV1AuthLogoutMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1AuthLogout>>
+>;
 
+export type PostV1AuthLogoutMutationError = DtoErrorResponse;
 
-
-export const getPostV1AuthLogoutMutationOptions = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AuthLogout>>, TError,void, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1AuthLogout>>, TError,void, TContext> => {
-
-const mutationKey = ['postV1AuthLogout'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1AuthLogout>>, void> = () => {
-
-
-          return  postV1AuthLogout(requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1AuthLogoutMutationResult = NonNullable<Awaited<ReturnType<typeof postV1AuthLogout>>>
-
-    export type PostV1AuthLogoutMutationError = DtoErrorResponse
-
-    /**
+/**
  * @summary Logout user
  */
-export const usePostV1AuthLogout = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AuthLogout>>, TError,void, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postV1AuthLogout>>,
-        TError,
-        void,
-        TContext
-      > => {
-      return useMutation(getPostV1AuthLogoutMutationOptions(options), queryClient);
-    }
-    export type getV1AuthMeResponse200 = {
-  data: GetV1AuthMe200
-  status: 200
-}
+export const usePostV1AuthLogout = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1AuthLogout>>,
+			TError,
+			void,
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1AuthLogout>>,
+	TError,
+	void,
+	TContext
+> => {
+	return useMutation(getPostV1AuthLogoutMutationOptions(options), queryClient);
+};
+export type getV1AuthMeResponse200 = {
+	data: GetV1AuthMe200;
+	status: 200;
+};
 
 export type getV1AuthMeResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type getV1AuthMeResponse404 = {
-  data: DtoErrorResponse
-  status: 404
-}
-
-export type getV1AuthMeResponseSuccess = (getV1AuthMeResponse200) & {
-  headers: Headers;
-};
-export type getV1AuthMeResponseError = (getV1AuthMeResponse401 | getV1AuthMeResponse404) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 404;
 };
 
-export type getV1AuthMeResponse = (getV1AuthMeResponseSuccess | getV1AuthMeResponseError)
+export type getV1AuthMeResponseSuccess = getV1AuthMeResponse200 & {
+	headers: Headers;
+};
+export type getV1AuthMeResponseError = (
+	| getV1AuthMeResponse401
+	| getV1AuthMeResponse404
+) & {
+	headers: Headers;
+};
+
+export type getV1AuthMeResponse =
+	| getV1AuthMeResponseSuccess
+	| getV1AuthMeResponseError;
 
 export const getGetV1AuthMeUrl = () => {
-
-
-
-
-  return `/v1/auth/me`
-}
+	return `/v1/auth/me`;
+};
 
 /**
  * Get the profile of the currently authenticated user
  * @summary Get current user
  */
-export const getV1AuthMe = async ( options?: RequestInit): Promise<getV1AuthMeResponse> => {
-
-  return customInstance<getV1AuthMeResponse>(getGetV1AuthMeUrl(),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
+export const getV1AuthMe = async (
+	options?: RequestInit,
+): Promise<getV1AuthMeResponse> => {
+	return customInstance<getV1AuthMeResponse>(getGetV1AuthMeUrl(), {
+		...options,
+		method: "GET",
+	});
+};
 
 export const getGetV1AuthMeQueryKey = () => {
-    return [
-    `/v1/auth/me`
-    ] as const;
-    }
+	return [`/v1/auth/me`] as const;
+};
 
+export const getGetV1AuthMeQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1AuthMe>>,
+	TError = DtoErrorResponse,
+>(options?: {
+	query?: Partial<
+		UseQueryOptions<Awaited<ReturnType<typeof getV1AuthMe>>, TError, TData>
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
-export const getGetV1AuthMeQueryOptions = <TData = Awaited<ReturnType<typeof getV1AuthMe>>, TError = DtoErrorResponse>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1AuthMe>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
-) => {
+	const queryKey = queryOptions?.queryKey ?? getGetV1AuthMeQueryKey();
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+	const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1AuthMe>>> = ({
+		signal,
+	}) => getV1AuthMe({ signal, ...requestOptions });
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1AuthMeQueryKey();
+	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1AuthMe>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
+export type GetV1AuthMeQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1AuthMe>>
+>;
+export type GetV1AuthMeQueryError = DtoErrorResponse;
 
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1AuthMe>>> = ({ signal }) => getV1AuthMe({ signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1AuthMe>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetV1AuthMeQueryResult = NonNullable<Awaited<ReturnType<typeof getV1AuthMe>>>
-export type GetV1AuthMeQueryError = DtoErrorResponse
-
-
-export function useGetV1AuthMe<TData = Awaited<ReturnType<typeof getV1AuthMe>>, TError = DtoErrorResponse>(
-  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1AuthMe>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1AuthMe>>,
-          TError,
-          Awaited<ReturnType<typeof getV1AuthMe>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1AuthMe<TData = Awaited<ReturnType<typeof getV1AuthMe>>, TError = DtoErrorResponse>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1AuthMe>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1AuthMe>>,
-          TError,
-          Awaited<ReturnType<typeof getV1AuthMe>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1AuthMe<TData = Awaited<ReturnType<typeof getV1AuthMe>>, TError = DtoErrorResponse>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1AuthMe>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1AuthMe<
+	TData = Awaited<ReturnType<typeof getV1AuthMe>>,
+	TError = DtoErrorResponse,
+>(
+	options: {
+		query: Partial<
+			UseQueryOptions<Awaited<ReturnType<typeof getV1AuthMe>>, TError, TData>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1AuthMe>>,
+					TError,
+					Awaited<ReturnType<typeof getV1AuthMe>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1AuthMe<
+	TData = Awaited<ReturnType<typeof getV1AuthMe>>,
+	TError = DtoErrorResponse,
+>(
+	options?: {
+		query?: Partial<
+			UseQueryOptions<Awaited<ReturnType<typeof getV1AuthMe>>, TError, TData>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1AuthMe>>,
+					TError,
+					Awaited<ReturnType<typeof getV1AuthMe>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1AuthMe<
+	TData = Awaited<ReturnType<typeof getV1AuthMe>>,
+	TError = DtoErrorResponse,
+>(
+	options?: {
+		query?: Partial<
+			UseQueryOptions<Awaited<ReturnType<typeof getV1AuthMe>>, TError, TData>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary Get current user
  */
 
-export function useGetV1AuthMe<TData = Awaited<ReturnType<typeof getV1AuthMe>>, TError = DtoErrorResponse>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1AuthMe>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1AuthMe<
+	TData = Awaited<ReturnType<typeof getV1AuthMe>>,
+	TError = DtoErrorResponse,
+>(
+	options?: {
+		query?: Partial<
+			UseQueryOptions<Awaited<ReturnType<typeof getV1AuthMe>>, TError, TData>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1AuthMeQueryOptions(options);
 
-  const queryOptions = getGetV1AuthMeQueryOptions(options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
-

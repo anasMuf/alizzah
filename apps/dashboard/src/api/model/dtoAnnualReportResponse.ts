@@ -5,16 +5,16 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoAnnualExpenseSummary } from './dtoAnnualExpenseSummary';
-import type { DtoAnnualIncomeSummary } from './dtoAnnualIncomeSummary';
-import type { DtoMonthlyBreakdown } from './dtoMonthlyBreakdown';
+import type { DtoAnnualExpenseSummary } from "./dtoAnnualExpenseSummary";
+import type { DtoAnnualIncomeSummary } from "./dtoAnnualIncomeSummary";
+import type { DtoMonthlyBreakdown } from "./dtoMonthlyBreakdown";
 
 export interface DtoAnnualReportResponse {
-  academic_year?: string;
-  by_month?: DtoMonthlyBreakdown[];
-  cash_balance?: number;
-  expense_summary?: DtoAnnualExpenseSummary;
-  income_summary?: DtoAnnualIncomeSummary;
-  net?: number;
-  vault_balance?: number;
+	academic_year?: string;
+	by_month?: DtoMonthlyBreakdown[];
+	cash_balance?: number;
+	expense_summary?: DtoAnnualExpenseSummary;
+	income_summary?: DtoAnnualIncomeSummary;
+	net?: number;
+	vault_balance?: number;
 }

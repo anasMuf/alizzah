@@ -7,7 +7,7 @@
  */
 
 export interface DtoPaymentItemReq {
-  /** @minimum 1 */
-  amount: number;
-  invoice_item_id: number;
+	/** @minimum 1 */
+	amount: number;
+	invoice_item_id: number;
 }

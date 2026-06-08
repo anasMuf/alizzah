@@ -7,40 +7,40 @@
  */
 
 export type GetV1InvoicesParams = {
-/**
- * Page number
- */
-page?: number;
-/**
- * Items per page
- */
-limit?: number;
-/**
- * Filter by student ID
- */
-student_id?: number;
-/**
- * Filter by academic year ID
- */
-academic_year_id?: number;
-/**
- * Filter by month (1-12)
- */
-month?: number;
-/**
- * Filter by year
- */
-year?: number;
-/**
- * Filter by class group ID
- */
-class_group_id?: number;
-/**
- * Filter by type
- */
-type?: string;
-/**
- * Filter by status
- */
-status?: string;
+	/**
+	 * Page number
+	 */
+	page?: number;
+	/**
+	 * Items per page
+	 */
+	limit?: number;
+	/**
+	 * Filter by student ID
+	 */
+	student_id?: number;
+	/**
+	 * Filter by academic year ID
+	 */
+	academic_year_id?: number;
+	/**
+	 * Filter by month (1-12)
+	 */
+	month?: number;
+	/**
+	 * Filter by year
+	 */
+	year?: number;
+	/**
+	 * Filter by class group ID
+	 */
+	class_group_id?: number;
+	/**
+	 * Filter by type
+	 */
+	type?: string;
+	/**
+	 * Filter by status
+	 */
+	status?: string;
 };

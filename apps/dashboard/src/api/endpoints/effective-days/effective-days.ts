@@ -5,407 +5,569 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import {
-  useMutation,
-  useQuery
-} from '@tanstack/react-query';
-import type {
-  DataTag,
-  DefinedInitialDataOptions,
-  DefinedUseQueryResult,
-  MutationFunction,
-  QueryClient,
-  QueryFunction,
-  QueryKey,
-  UndefinedInitialDataOptions,
-  UseMutationOptions,
-  UseMutationResult,
-  UseQueryOptions,
-  UseQueryResult
-} from '@tanstack/react-query';
 
 import type {
-  DtoErrorResponse,
-  DtoUpsertEffectiveDayRequest,
-  GetV1ClassGroupsIdEffectiveDays200,
-  GetV1ClassGroupsIdEffectiveDaysParams,
-  PostV1ClassGroupsIdEffectiveDays200,
-  PutV1ClassGroupsIdEffectiveDaysEdId200
-} from '../../model';
+	DataTag,
+	DefinedInitialDataOptions,
+	DefinedUseQueryResult,
+	MutationFunction,
+	QueryClient,
+	QueryFunction,
+	QueryKey,
+	UndefinedInitialDataOptions,
+	UseMutationOptions,
+	UseMutationResult,
+	UseQueryOptions,
+	UseQueryResult,
+} from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
-import { customInstance } from '../../mutator/custom-instance';
+import type {
+	DtoErrorResponse,
+	DtoUpsertEffectiveDayRequest,
+	GetV1ClassGroupsIdEffectiveDays200,
+	GetV1ClassGroupsIdEffectiveDaysParams,
+	PostV1ClassGroupsIdEffectiveDays200,
+	PutV1ClassGroupsIdEffectiveDaysEdId200,
+} from "../../model";
 
+import { customInstance } from "../../mutator/custom-instance";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
-
-
 export type getV1ClassGroupsIdEffectiveDaysResponse200 = {
-  data: GetV1ClassGroupsIdEffectiveDays200
-  status: 200
-}
+	data: GetV1ClassGroupsIdEffectiveDays200;
+	status: 200;
+};
 
 export type getV1ClassGroupsIdEffectiveDaysResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type getV1ClassGroupsIdEffectiveDaysResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type getV1ClassGroupsIdEffectiveDaysResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type getV1ClassGroupsIdEffectiveDaysResponse500 = {
-  data: DtoErrorResponse
-  status: 500
-}
-
-export type getV1ClassGroupsIdEffectiveDaysResponseSuccess = (getV1ClassGroupsIdEffectiveDaysResponse200) & {
-  headers: Headers;
-};
-export type getV1ClassGroupsIdEffectiveDaysResponseError = (getV1ClassGroupsIdEffectiveDaysResponse400 | getV1ClassGroupsIdEffectiveDaysResponse401 | getV1ClassGroupsIdEffectiveDaysResponse403 | getV1ClassGroupsIdEffectiveDaysResponse500) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 500;
 };
 
-export type getV1ClassGroupsIdEffectiveDaysResponse = (getV1ClassGroupsIdEffectiveDaysResponseSuccess | getV1ClassGroupsIdEffectiveDaysResponseError)
+export type getV1ClassGroupsIdEffectiveDaysResponseSuccess =
+	getV1ClassGroupsIdEffectiveDaysResponse200 & {
+		headers: Headers;
+	};
+export type getV1ClassGroupsIdEffectiveDaysResponseError = (
+	| getV1ClassGroupsIdEffectiveDaysResponse400
+	| getV1ClassGroupsIdEffectiveDaysResponse401
+	| getV1ClassGroupsIdEffectiveDaysResponse403
+	| getV1ClassGroupsIdEffectiveDaysResponse500
+) & {
+	headers: Headers;
+};
 
-export const getGetV1ClassGroupsIdEffectiveDaysUrl = (id: number,
-    params?: GetV1ClassGroupsIdEffectiveDaysParams,) => {
-  const normalizedParams = new URLSearchParams();
+export type getV1ClassGroupsIdEffectiveDaysResponse =
+	| getV1ClassGroupsIdEffectiveDaysResponseSuccess
+	| getV1ClassGroupsIdEffectiveDaysResponseError;
 
-  Object.entries(params || {}).forEach(([key, value]) => {
+export const getGetV1ClassGroupsIdEffectiveDaysUrl = (
+	id: number,
+	params?: GetV1ClassGroupsIdEffectiveDaysParams,
+) => {
+	const normalizedParams = new URLSearchParams();
 
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(key, value === null ? "null" : value.toString());
+		}
+	});
 
-  const stringifiedParams = normalizedParams.toString();
+	const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/v1/class-groups/${id}/effective-days?${stringifiedParams}` : `/v1/class-groups/${id}/effective-days`
-}
+	return stringifiedParams.length > 0
+		? `/v1/class-groups/${id}/effective-days?${stringifiedParams}`
+		: `/v1/class-groups/${id}/effective-days`;
+};
 
 /**
  * Get a list of effective days for a specific class group
  * @summary List effective days
  */
-export const getV1ClassGroupsIdEffectiveDays = async (id: number,
-    params?: GetV1ClassGroupsIdEffectiveDaysParams, options?: RequestInit): Promise<getV1ClassGroupsIdEffectiveDaysResponse> => {
+export const getV1ClassGroupsIdEffectiveDays = async (
+	id: number,
+	params?: GetV1ClassGroupsIdEffectiveDaysParams,
+	options?: RequestInit,
+): Promise<getV1ClassGroupsIdEffectiveDaysResponse> => {
+	return customInstance<getV1ClassGroupsIdEffectiveDaysResponse>(
+		getGetV1ClassGroupsIdEffectiveDaysUrl(id, params),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
 
-  return customInstance<getV1ClassGroupsIdEffectiveDaysResponse>(getGetV1ClassGroupsIdEffectiveDaysUrl(id,params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetV1ClassGroupsIdEffectiveDaysQueryKey = (id: number,
-    params?: GetV1ClassGroupsIdEffectiveDaysParams,) => {
-    return [
-    `/v1/class-groups/${id}/effective-days`, ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getGetV1ClassGroupsIdEffectiveDaysQueryOptions = <TData = Awaited<ReturnType<typeof getV1ClassGroupsIdEffectiveDays>>, TError = DtoErrorResponse>(id: number,
-    params?: GetV1ClassGroupsIdEffectiveDaysParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ClassGroupsIdEffectiveDays>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getGetV1ClassGroupsIdEffectiveDaysQueryKey = (
+	id: number,
+	params?: GetV1ClassGroupsIdEffectiveDaysParams,
 ) => {
+	return [
+		`/v1/class-groups/${id}/effective-days`,
+		...(params ? [params] : []),
+	] as const;
+};
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+export const getGetV1ClassGroupsIdEffectiveDaysQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1ClassGroupsIdEffectiveDays>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	params?: GetV1ClassGroupsIdEffectiveDaysParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1ClassGroupsIdEffectiveDays>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1ClassGroupsIdEffectiveDaysQueryKey(id,params);
+	const queryKey =
+		queryOptions?.queryKey ??
+		getGetV1ClassGroupsIdEffectiveDaysQueryKey(id, params);
 
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1ClassGroupsIdEffectiveDays>>
+	> = ({ signal }) =>
+		getV1ClassGroupsIdEffectiveDays(id, params, { signal, ...requestOptions });
 
+	return {
+		queryKey,
+		queryFn,
+		enabled: !!id,
+		...queryOptions,
+	} as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1ClassGroupsIdEffectiveDays>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1ClassGroupsIdEffectiveDays>>> = ({ signal }) => getV1ClassGroupsIdEffectiveDays(id,params, { signal, ...requestOptions });
+export type GetV1ClassGroupsIdEffectiveDaysQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1ClassGroupsIdEffectiveDays>>
+>;
+export type GetV1ClassGroupsIdEffectiveDaysQueryError = DtoErrorResponse;
 
-
-
-
-
-   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1ClassGroupsIdEffectiveDays>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetV1ClassGroupsIdEffectiveDaysQueryResult = NonNullable<Awaited<ReturnType<typeof getV1ClassGroupsIdEffectiveDays>>>
-export type GetV1ClassGroupsIdEffectiveDaysQueryError = DtoErrorResponse
-
-
-export function useGetV1ClassGroupsIdEffectiveDays<TData = Awaited<ReturnType<typeof getV1ClassGroupsIdEffectiveDays>>, TError = DtoErrorResponse>(
- id: number,
-    params: undefined |  GetV1ClassGroupsIdEffectiveDaysParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ClassGroupsIdEffectiveDays>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1ClassGroupsIdEffectiveDays>>,
-          TError,
-          Awaited<ReturnType<typeof getV1ClassGroupsIdEffectiveDays>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1ClassGroupsIdEffectiveDays<TData = Awaited<ReturnType<typeof getV1ClassGroupsIdEffectiveDays>>, TError = DtoErrorResponse>(
- id: number,
-    params?: GetV1ClassGroupsIdEffectiveDaysParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ClassGroupsIdEffectiveDays>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1ClassGroupsIdEffectiveDays>>,
-          TError,
-          Awaited<ReturnType<typeof getV1ClassGroupsIdEffectiveDays>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1ClassGroupsIdEffectiveDays<TData = Awaited<ReturnType<typeof getV1ClassGroupsIdEffectiveDays>>, TError = DtoErrorResponse>(
- id: number,
-    params?: GetV1ClassGroupsIdEffectiveDaysParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ClassGroupsIdEffectiveDays>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1ClassGroupsIdEffectiveDays<
+	TData = Awaited<ReturnType<typeof getV1ClassGroupsIdEffectiveDays>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	params: undefined | GetV1ClassGroupsIdEffectiveDaysParams,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1ClassGroupsIdEffectiveDays>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1ClassGroupsIdEffectiveDays>>,
+					TError,
+					Awaited<ReturnType<typeof getV1ClassGroupsIdEffectiveDays>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1ClassGroupsIdEffectiveDays<
+	TData = Awaited<ReturnType<typeof getV1ClassGroupsIdEffectiveDays>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	params?: GetV1ClassGroupsIdEffectiveDaysParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1ClassGroupsIdEffectiveDays>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1ClassGroupsIdEffectiveDays>>,
+					TError,
+					Awaited<ReturnType<typeof getV1ClassGroupsIdEffectiveDays>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1ClassGroupsIdEffectiveDays<
+	TData = Awaited<ReturnType<typeof getV1ClassGroupsIdEffectiveDays>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	params?: GetV1ClassGroupsIdEffectiveDaysParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1ClassGroupsIdEffectiveDays>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary List effective days
  */
 
-export function useGetV1ClassGroupsIdEffectiveDays<TData = Awaited<ReturnType<typeof getV1ClassGroupsIdEffectiveDays>>, TError = DtoErrorResponse>(
- id: number,
-    params?: GetV1ClassGroupsIdEffectiveDaysParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ClassGroupsIdEffectiveDays>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1ClassGroupsIdEffectiveDays<
+	TData = Awaited<ReturnType<typeof getV1ClassGroupsIdEffectiveDays>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	params?: GetV1ClassGroupsIdEffectiveDaysParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1ClassGroupsIdEffectiveDays>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1ClassGroupsIdEffectiveDaysQueryOptions(
+		id,
+		params,
+		options,
+	);
 
-  const queryOptions = getGetV1ClassGroupsIdEffectiveDaysQueryOptions(id,params,options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
 
 export type postV1ClassGroupsIdEffectiveDaysResponse200 = {
-  data: PostV1ClassGroupsIdEffectiveDays200
-  status: 200
-}
+	data: PostV1ClassGroupsIdEffectiveDays200;
+	status: 200;
+};
 
 export type postV1ClassGroupsIdEffectiveDaysResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type postV1ClassGroupsIdEffectiveDaysResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type postV1ClassGroupsIdEffectiveDaysResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type postV1ClassGroupsIdEffectiveDaysResponse500 = {
-  data: DtoErrorResponse
-  status: 500
-}
-
-export type postV1ClassGroupsIdEffectiveDaysResponseSuccess = (postV1ClassGroupsIdEffectiveDaysResponse200) & {
-  headers: Headers;
-};
-export type postV1ClassGroupsIdEffectiveDaysResponseError = (postV1ClassGroupsIdEffectiveDaysResponse400 | postV1ClassGroupsIdEffectiveDaysResponse401 | postV1ClassGroupsIdEffectiveDaysResponse403 | postV1ClassGroupsIdEffectiveDaysResponse500) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 500;
 };
 
-export type postV1ClassGroupsIdEffectiveDaysResponse = (postV1ClassGroupsIdEffectiveDaysResponseSuccess | postV1ClassGroupsIdEffectiveDaysResponseError)
+export type postV1ClassGroupsIdEffectiveDaysResponseSuccess =
+	postV1ClassGroupsIdEffectiveDaysResponse200 & {
+		headers: Headers;
+	};
+export type postV1ClassGroupsIdEffectiveDaysResponseError = (
+	| postV1ClassGroupsIdEffectiveDaysResponse400
+	| postV1ClassGroupsIdEffectiveDaysResponse401
+	| postV1ClassGroupsIdEffectiveDaysResponse403
+	| postV1ClassGroupsIdEffectiveDaysResponse500
+) & {
+	headers: Headers;
+};
 
-export const getPostV1ClassGroupsIdEffectiveDaysUrl = (id: number,) => {
+export type postV1ClassGroupsIdEffectiveDaysResponse =
+	| postV1ClassGroupsIdEffectiveDaysResponseSuccess
+	| postV1ClassGroupsIdEffectiveDaysResponseError;
 
-
-
-
-  return `/v1/class-groups/${id}/effective-days`
-}
+export const getPostV1ClassGroupsIdEffectiveDaysUrl = (id: number) => {
+	return `/v1/class-groups/${id}/effective-days`;
+};
 
 /**
  * Create a new effective day or update if it already exists for the month/year
  * @summary Create or Update effective day
  */
-export const postV1ClassGroupsIdEffectiveDays = async (id: number,
-    dtoUpsertEffectiveDayRequest: DtoUpsertEffectiveDayRequest, options?: RequestInit): Promise<postV1ClassGroupsIdEffectiveDaysResponse> => {
+export const postV1ClassGroupsIdEffectiveDays = async (
+	id: number,
+	dtoUpsertEffectiveDayRequest: DtoUpsertEffectiveDayRequest,
+	options?: RequestInit,
+): Promise<postV1ClassGroupsIdEffectiveDaysResponse> => {
+	return customInstance<postV1ClassGroupsIdEffectiveDaysResponse>(
+		getPostV1ClassGroupsIdEffectiveDaysUrl(id),
+		{
+			...options,
+			method: "POST",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(dtoUpsertEffectiveDayRequest),
+		},
+	);
+};
 
-  return customInstance<postV1ClassGroupsIdEffectiveDaysResponse>(getPostV1ClassGroupsIdEffectiveDaysUrl(id),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      dtoUpsertEffectiveDayRequest,)
-  }
-);}
+export const getPostV1ClassGroupsIdEffectiveDaysMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1ClassGroupsIdEffectiveDays>>,
+		TError,
+		{ id: number; data: DtoUpsertEffectiveDayRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1ClassGroupsIdEffectiveDays>>,
+	TError,
+	{ id: number; data: DtoUpsertEffectiveDayRequest },
+	TContext
+> => {
+	const mutationKey = ["postV1ClassGroupsIdEffectiveDays"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1ClassGroupsIdEffectiveDays>>,
+		{ id: number; data: DtoUpsertEffectiveDayRequest }
+	> = (props) => {
+		const { id, data } = props ?? {};
 
+		return postV1ClassGroupsIdEffectiveDays(id, data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-export const getPostV1ClassGroupsIdEffectiveDaysMutationOptions = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ClassGroupsIdEffectiveDays>>, TError,{id: number;data: DtoUpsertEffectiveDayRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1ClassGroupsIdEffectiveDays>>, TError,{id: number;data: DtoUpsertEffectiveDayRequest}, TContext> => {
+export type PostV1ClassGroupsIdEffectiveDaysMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1ClassGroupsIdEffectiveDays>>
+>;
+export type PostV1ClassGroupsIdEffectiveDaysMutationBody =
+	DtoUpsertEffectiveDayRequest;
+export type PostV1ClassGroupsIdEffectiveDaysMutationError = DtoErrorResponse;
 
-const mutationKey = ['postV1ClassGroupsIdEffectiveDays'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1ClassGroupsIdEffectiveDays>>, {id: number;data: DtoUpsertEffectiveDayRequest}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  postV1ClassGroupsIdEffectiveDays(id,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1ClassGroupsIdEffectiveDaysMutationResult = NonNullable<Awaited<ReturnType<typeof postV1ClassGroupsIdEffectiveDays>>>
-    export type PostV1ClassGroupsIdEffectiveDaysMutationBody = DtoUpsertEffectiveDayRequest
-    export type PostV1ClassGroupsIdEffectiveDaysMutationError = DtoErrorResponse
-
-    /**
+/**
  * @summary Create or Update effective day
  */
-export const usePostV1ClassGroupsIdEffectiveDays = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ClassGroupsIdEffectiveDays>>, TError,{id: number;data: DtoUpsertEffectiveDayRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postV1ClassGroupsIdEffectiveDays>>,
-        TError,
-        {id: number;data: DtoUpsertEffectiveDayRequest},
-        TContext
-      > => {
-      return useMutation(getPostV1ClassGroupsIdEffectiveDaysMutationOptions(options), queryClient);
-    }
-    export type putV1ClassGroupsIdEffectiveDaysEdIdResponse200 = {
-  data: PutV1ClassGroupsIdEffectiveDaysEdId200
-  status: 200
-}
+export const usePostV1ClassGroupsIdEffectiveDays = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1ClassGroupsIdEffectiveDays>>,
+			TError,
+			{ id: number; data: DtoUpsertEffectiveDayRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1ClassGroupsIdEffectiveDays>>,
+	TError,
+	{ id: number; data: DtoUpsertEffectiveDayRequest },
+	TContext
+> => {
+	return useMutation(
+		getPostV1ClassGroupsIdEffectiveDaysMutationOptions(options),
+		queryClient,
+	);
+};
+export type putV1ClassGroupsIdEffectiveDaysEdIdResponse200 = {
+	data: PutV1ClassGroupsIdEffectiveDaysEdId200;
+	status: 200;
+};
 
 export type putV1ClassGroupsIdEffectiveDaysEdIdResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type putV1ClassGroupsIdEffectiveDaysEdIdResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type putV1ClassGroupsIdEffectiveDaysEdIdResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type putV1ClassGroupsIdEffectiveDaysEdIdResponse404 = {
-  data: DtoErrorResponse
-  status: 404
-}
+	data: DtoErrorResponse;
+	status: 404;
+};
 
 export type putV1ClassGroupsIdEffectiveDaysEdIdResponse500 = {
-  data: DtoErrorResponse
-  status: 500
-}
-
-export type putV1ClassGroupsIdEffectiveDaysEdIdResponseSuccess = (putV1ClassGroupsIdEffectiveDaysEdIdResponse200) & {
-  headers: Headers;
-};
-export type putV1ClassGroupsIdEffectiveDaysEdIdResponseError = (putV1ClassGroupsIdEffectiveDaysEdIdResponse400 | putV1ClassGroupsIdEffectiveDaysEdIdResponse401 | putV1ClassGroupsIdEffectiveDaysEdIdResponse403 | putV1ClassGroupsIdEffectiveDaysEdIdResponse404 | putV1ClassGroupsIdEffectiveDaysEdIdResponse500) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 500;
 };
 
-export type putV1ClassGroupsIdEffectiveDaysEdIdResponse = (putV1ClassGroupsIdEffectiveDaysEdIdResponseSuccess | putV1ClassGroupsIdEffectiveDaysEdIdResponseError)
+export type putV1ClassGroupsIdEffectiveDaysEdIdResponseSuccess =
+	putV1ClassGroupsIdEffectiveDaysEdIdResponse200 & {
+		headers: Headers;
+	};
+export type putV1ClassGroupsIdEffectiveDaysEdIdResponseError = (
+	| putV1ClassGroupsIdEffectiveDaysEdIdResponse400
+	| putV1ClassGroupsIdEffectiveDaysEdIdResponse401
+	| putV1ClassGroupsIdEffectiveDaysEdIdResponse403
+	| putV1ClassGroupsIdEffectiveDaysEdIdResponse404
+	| putV1ClassGroupsIdEffectiveDaysEdIdResponse500
+) & {
+	headers: Headers;
+};
 
-export const getPutV1ClassGroupsIdEffectiveDaysEdIdUrl = (id: number,
-    edId: number,) => {
+export type putV1ClassGroupsIdEffectiveDaysEdIdResponse =
+	| putV1ClassGroupsIdEffectiveDaysEdIdResponseSuccess
+	| putV1ClassGroupsIdEffectiveDaysEdIdResponseError;
 
-
-
-
-  return `/v1/class-groups/${id}/effective-days/${edId}`
-}
+export const getPutV1ClassGroupsIdEffectiveDaysEdIdUrl = (
+	id: number,
+	edId: number,
+) => {
+	return `/v1/class-groups/${id}/effective-days/${edId}`;
+};
 
 /**
  * Update a specific effective day record
  * @summary Update effective day
  */
-export const putV1ClassGroupsIdEffectiveDaysEdId = async (id: number,
-    edId: number,
-    dtoUpsertEffectiveDayRequest: DtoUpsertEffectiveDayRequest, options?: RequestInit): Promise<putV1ClassGroupsIdEffectiveDaysEdIdResponse> => {
+export const putV1ClassGroupsIdEffectiveDaysEdId = async (
+	id: number,
+	edId: number,
+	dtoUpsertEffectiveDayRequest: DtoUpsertEffectiveDayRequest,
+	options?: RequestInit,
+): Promise<putV1ClassGroupsIdEffectiveDaysEdIdResponse> => {
+	return customInstance<putV1ClassGroupsIdEffectiveDaysEdIdResponse>(
+		getPutV1ClassGroupsIdEffectiveDaysEdIdUrl(id, edId),
+		{
+			...options,
+			method: "PUT",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(dtoUpsertEffectiveDayRequest),
+		},
+	);
+};
 
-  return customInstance<putV1ClassGroupsIdEffectiveDaysEdIdResponse>(getPutV1ClassGroupsIdEffectiveDaysEdIdUrl(id,edId),
-  {
-    ...options,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      dtoUpsertEffectiveDayRequest,)
-  }
-);}
+export const getPutV1ClassGroupsIdEffectiveDaysEdIdMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof putV1ClassGroupsIdEffectiveDaysEdId>>,
+		TError,
+		{ id: number; edId: number; data: DtoUpsertEffectiveDayRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof putV1ClassGroupsIdEffectiveDaysEdId>>,
+	TError,
+	{ id: number; edId: number; data: DtoUpsertEffectiveDayRequest },
+	TContext
+> => {
+	const mutationKey = ["putV1ClassGroupsIdEffectiveDaysEdId"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof putV1ClassGroupsIdEffectiveDaysEdId>>,
+		{ id: number; edId: number; data: DtoUpsertEffectiveDayRequest }
+	> = (props) => {
+		const { id, edId, data } = props ?? {};
 
+		return putV1ClassGroupsIdEffectiveDaysEdId(id, edId, data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-export const getPutV1ClassGroupsIdEffectiveDaysEdIdMutationOptions = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1ClassGroupsIdEffectiveDaysEdId>>, TError,{id: number;edId: number;data: DtoUpsertEffectiveDayRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof putV1ClassGroupsIdEffectiveDaysEdId>>, TError,{id: number;edId: number;data: DtoUpsertEffectiveDayRequest}, TContext> => {
+export type PutV1ClassGroupsIdEffectiveDaysEdIdMutationResult = NonNullable<
+	Awaited<ReturnType<typeof putV1ClassGroupsIdEffectiveDaysEdId>>
+>;
+export type PutV1ClassGroupsIdEffectiveDaysEdIdMutationBody =
+	DtoUpsertEffectiveDayRequest;
+export type PutV1ClassGroupsIdEffectiveDaysEdIdMutationError = DtoErrorResponse;
 
-const mutationKey = ['putV1ClassGroupsIdEffectiveDaysEdId'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1ClassGroupsIdEffectiveDaysEdId>>, {id: number;edId: number;data: DtoUpsertEffectiveDayRequest}> = (props) => {
-          const {id,edId,data} = props ?? {};
-
-          return  putV1ClassGroupsIdEffectiveDaysEdId(id,edId,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PutV1ClassGroupsIdEffectiveDaysEdIdMutationResult = NonNullable<Awaited<ReturnType<typeof putV1ClassGroupsIdEffectiveDaysEdId>>>
-    export type PutV1ClassGroupsIdEffectiveDaysEdIdMutationBody = DtoUpsertEffectiveDayRequest
-    export type PutV1ClassGroupsIdEffectiveDaysEdIdMutationError = DtoErrorResponse
-
-    /**
+/**
  * @summary Update effective day
  */
-export const usePutV1ClassGroupsIdEffectiveDaysEdId = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1ClassGroupsIdEffectiveDaysEdId>>, TError,{id: number;edId: number;data: DtoUpsertEffectiveDayRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof putV1ClassGroupsIdEffectiveDaysEdId>>,
-        TError,
-        {id: number;edId: number;data: DtoUpsertEffectiveDayRequest},
-        TContext
-      > => {
-      return useMutation(getPutV1ClassGroupsIdEffectiveDaysEdIdMutationOptions(options), queryClient);
-    }
+export const usePutV1ClassGroupsIdEffectiveDaysEdId = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof putV1ClassGroupsIdEffectiveDaysEdId>>,
+			TError,
+			{ id: number; edId: number; data: DtoUpsertEffectiveDayRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof putV1ClassGroupsIdEffectiveDaysEdId>>,
+	TError,
+	{ id: number; edId: number; data: DtoUpsertEffectiveDayRequest },
+	TContext
+> => {
+	return useMutation(
+		getPutV1ClassGroupsIdEffectiveDaysEdIdMutationOptions(options),
+		queryClient,
+	);
+};

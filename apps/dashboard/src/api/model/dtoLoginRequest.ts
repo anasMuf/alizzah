@@ -7,7 +7,7 @@
  */
 
 export interface DtoLoginRequest {
-  email: string;
-  /** @minLength 6 */
-  password: string;
+	email: string;
+	/** @minLength 6 */
+	password: string;
 }

@@ -6,10 +6,10 @@
  * OpenAPI spec version: 1.0
  */
 
-export type DtoWithdrawalRequestEventType = typeof DtoWithdrawalRequestEventType[keyof typeof DtoWithdrawalRequestEventType];
-
+export type DtoWithdrawalRequestEventType =
+	(typeof DtoWithdrawalRequestEventType)[keyof typeof DtoWithdrawalRequestEventType];
 
 export const DtoWithdrawalRequestEventType = {
-  transfer_out: 'transfer_out',
-  dropout: 'dropout',
+	transfer_out: "transfer_out",
+	dropout: "dropout",
 } as const;

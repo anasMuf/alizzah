@@ -7,9 +7,9 @@
  */
 
 export interface DtoDailyClosingInReport {
-  difference?: number;
-  is_confirmed?: boolean;
-  notes?: string;
-  physical_cash_amount?: number;
-  system_cash_amount?: number;
+	difference?: number;
+	is_confirmed?: boolean;
+	notes?: string;
+	physical_cash_amount?: number;
+	system_cash_amount?: number;
 }

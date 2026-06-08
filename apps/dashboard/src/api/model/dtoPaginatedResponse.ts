@@ -5,10 +5,10 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoMeta } from './dtoMeta';
+import type { DtoMeta } from "./dtoMeta";
 
 export interface DtoPaginatedResponse {
-  data?: unknown;
-  message?: string;
-  meta?: DtoMeta;
+	data?: unknown;
+	message?: string;
+	meta?: DtoMeta;
 }

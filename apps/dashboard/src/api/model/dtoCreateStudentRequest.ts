@@ -5,22 +5,22 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoCreateGuardianInline } from './dtoCreateGuardianInline';
-import type { DtoCreateStudentRequestGender } from './dtoCreateStudentRequestGender';
+import type { DtoCreateGuardianInline } from "./dtoCreateGuardianInline";
+import type { DtoCreateStudentRequestGender } from "./dtoCreateStudentRequestGender";
 
 export interface DtoCreateStudentRequest {
-  /** Changed validation datetime format to custom */
-  birth_date: string;
-  /** @maxLength 100 */
-  birth_place: string;
-  /**
-     * @minLength 3
-     * @maxLength 100
-     */
-  full_name: string;
-  gender: DtoCreateStudentRequestGender;
-  guardians?: DtoCreateGuardianInline[];
-  is_daycare_only?: boolean;
-  /** @maxLength 30 */
-  religion?: string;
+	/** Changed validation datetime format to custom */
+	birth_date: string;
+	/** @maxLength 100 */
+	birth_place: string;
+	/**
+	 * @minLength 3
+	 * @maxLength 100
+	 */
+	full_name: string;
+	gender: DtoCreateStudentRequestGender;
+	guardians?: DtoCreateGuardianInline[];
+	is_daycare_only?: boolean;
+	/** @maxLength 30 */
+	religion?: string;
 }

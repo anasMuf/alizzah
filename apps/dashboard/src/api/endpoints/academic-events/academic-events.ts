@@ -5,717 +5,959 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import {
-  useMutation,
-  useQuery
-} from '@tanstack/react-query';
-import type {
-  DataTag,
-  DefinedInitialDataOptions,
-  DefinedUseQueryResult,
-  MutationFunction,
-  QueryClient,
-  QueryFunction,
-  QueryKey,
-  UndefinedInitialDataOptions,
-  UseMutationOptions,
-  UseMutationResult,
-  UseQueryOptions,
-  UseQueryResult
-} from '@tanstack/react-query';
 
 import type {
-  DtoClassChangeRequest,
-  DtoErrorResponse,
-  DtoGraduationRequest,
-  DtoPromotionRequest,
-  DtoSuccessResponse,
-  DtoTransferInRequest,
-  DtoWithdrawalRequest,
-  GetV1StudentsIdAcademicEvents200,
-  PostV1AcademicEventsGraduations200,
-  PostV1AcademicEventsPromotions200
-} from '../../model';
+	DataTag,
+	DefinedInitialDataOptions,
+	DefinedUseQueryResult,
+	MutationFunction,
+	QueryClient,
+	QueryFunction,
+	QueryKey,
+	UndefinedInitialDataOptions,
+	UseMutationOptions,
+	UseMutationResult,
+	UseQueryOptions,
+	UseQueryResult,
+} from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
-import { customInstance } from '../../mutator/custom-instance';
+import type {
+	DtoClassChangeRequest,
+	DtoErrorResponse,
+	DtoGraduationRequest,
+	DtoPromotionRequest,
+	DtoSuccessResponse,
+	DtoTransferInRequest,
+	DtoWithdrawalRequest,
+	GetV1StudentsIdAcademicEvents200,
+	PostV1AcademicEventsGraduations200,
+	PostV1AcademicEventsPromotions200,
+} from "../../model";
 
+import { customInstance } from "../../mutator/custom-instance";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
-
-
 export type postV1AcademicEventsClassChangesResponse200 = {
-  data: DtoSuccessResponse
-  status: 200
-}
+	data: DtoSuccessResponse;
+	status: 200;
+};
 
 export type postV1AcademicEventsClassChangesResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type postV1AcademicEventsClassChangesResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type postV1AcademicEventsClassChangesResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type postV1AcademicEventsClassChangesResponse500 = {
-  data: DtoErrorResponse
-  status: 500
-}
-
-export type postV1AcademicEventsClassChangesResponseSuccess = (postV1AcademicEventsClassChangesResponse200) & {
-  headers: Headers;
-};
-export type postV1AcademicEventsClassChangesResponseError = (postV1AcademicEventsClassChangesResponse400 | postV1AcademicEventsClassChangesResponse401 | postV1AcademicEventsClassChangesResponse403 | postV1AcademicEventsClassChangesResponse500) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 500;
 };
 
-export type postV1AcademicEventsClassChangesResponse = (postV1AcademicEventsClassChangesResponseSuccess | postV1AcademicEventsClassChangesResponseError)
+export type postV1AcademicEventsClassChangesResponseSuccess =
+	postV1AcademicEventsClassChangesResponse200 & {
+		headers: Headers;
+	};
+export type postV1AcademicEventsClassChangesResponseError = (
+	| postV1AcademicEventsClassChangesResponse400
+	| postV1AcademicEventsClassChangesResponse401
+	| postV1AcademicEventsClassChangesResponse403
+	| postV1AcademicEventsClassChangesResponse500
+) & {
+	headers: Headers;
+};
+
+export type postV1AcademicEventsClassChangesResponse =
+	| postV1AcademicEventsClassChangesResponseSuccess
+	| postV1AcademicEventsClassChangesResponseError;
 
 export const getPostV1AcademicEventsClassChangesUrl = () => {
-
-
-
-
-  return `/v1/academic-events/class-changes`
-}
+	return `/v1/academic-events/class-changes`;
+};
 
 /**
  * Process class change (pindah rombel) for a student within the same level
  * @summary Process class change
  */
-export const postV1AcademicEventsClassChanges = async (dtoClassChangeRequest: DtoClassChangeRequest, options?: RequestInit): Promise<postV1AcademicEventsClassChangesResponse> => {
+export const postV1AcademicEventsClassChanges = async (
+	dtoClassChangeRequest: DtoClassChangeRequest,
+	options?: RequestInit,
+): Promise<postV1AcademicEventsClassChangesResponse> => {
+	return customInstance<postV1AcademicEventsClassChangesResponse>(
+		getPostV1AcademicEventsClassChangesUrl(),
+		{
+			...options,
+			method: "POST",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(dtoClassChangeRequest),
+		},
+	);
+};
 
-  return customInstance<postV1AcademicEventsClassChangesResponse>(getPostV1AcademicEventsClassChangesUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      dtoClassChangeRequest,)
-  }
-);}
+export const getPostV1AcademicEventsClassChangesMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1AcademicEventsClassChanges>>,
+		TError,
+		{ data: DtoClassChangeRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1AcademicEventsClassChanges>>,
+	TError,
+	{ data: DtoClassChangeRequest },
+	TContext
+> => {
+	const mutationKey = ["postV1AcademicEventsClassChanges"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1AcademicEventsClassChanges>>,
+		{ data: DtoClassChangeRequest }
+	> = (props) => {
+		const { data } = props ?? {};
 
+		return postV1AcademicEventsClassChanges(data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-export const getPostV1AcademicEventsClassChangesMutationOptions = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AcademicEventsClassChanges>>, TError,{data: DtoClassChangeRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1AcademicEventsClassChanges>>, TError,{data: DtoClassChangeRequest}, TContext> => {
+export type PostV1AcademicEventsClassChangesMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1AcademicEventsClassChanges>>
+>;
+export type PostV1AcademicEventsClassChangesMutationBody =
+	DtoClassChangeRequest;
+export type PostV1AcademicEventsClassChangesMutationError = DtoErrorResponse;
 
-const mutationKey = ['postV1AcademicEventsClassChanges'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1AcademicEventsClassChanges>>, {data: DtoClassChangeRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  postV1AcademicEventsClassChanges(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1AcademicEventsClassChangesMutationResult = NonNullable<Awaited<ReturnType<typeof postV1AcademicEventsClassChanges>>>
-    export type PostV1AcademicEventsClassChangesMutationBody = DtoClassChangeRequest
-    export type PostV1AcademicEventsClassChangesMutationError = DtoErrorResponse
-
-    /**
+/**
  * @summary Process class change
  */
-export const usePostV1AcademicEventsClassChanges = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AcademicEventsClassChanges>>, TError,{data: DtoClassChangeRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postV1AcademicEventsClassChanges>>,
-        TError,
-        {data: DtoClassChangeRequest},
-        TContext
-      > => {
-      return useMutation(getPostV1AcademicEventsClassChangesMutationOptions(options), queryClient);
-    }
-    export type postV1AcademicEventsGraduationsResponse200 = {
-  data: PostV1AcademicEventsGraduations200
-  status: 200
-}
+export const usePostV1AcademicEventsClassChanges = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1AcademicEventsClassChanges>>,
+			TError,
+			{ data: DtoClassChangeRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1AcademicEventsClassChanges>>,
+	TError,
+	{ data: DtoClassChangeRequest },
+	TContext
+> => {
+	return useMutation(
+		getPostV1AcademicEventsClassChangesMutationOptions(options),
+		queryClient,
+	);
+};
+export type postV1AcademicEventsGraduationsResponse200 = {
+	data: PostV1AcademicEventsGraduations200;
+	status: 200;
+};
 
 export type postV1AcademicEventsGraduationsResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type postV1AcademicEventsGraduationsResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type postV1AcademicEventsGraduationsResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type postV1AcademicEventsGraduationsResponse500 = {
-  data: DtoErrorResponse
-  status: 500
-}
+	data: DtoErrorResponse;
+	status: 500;
+};
 
 export type postV1AcademicEventsGraduationsResponse501 = {
-  data: DtoErrorResponse
-  status: 501
-}
-
-export type postV1AcademicEventsGraduationsResponseSuccess = (postV1AcademicEventsGraduationsResponse200) & {
-  headers: Headers;
-};
-export type postV1AcademicEventsGraduationsResponseError = (postV1AcademicEventsGraduationsResponse400 | postV1AcademicEventsGraduationsResponse401 | postV1AcademicEventsGraduationsResponse403 | postV1AcademicEventsGraduationsResponse500 | postV1AcademicEventsGraduationsResponse501) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 501;
 };
 
-export type postV1AcademicEventsGraduationsResponse = (postV1AcademicEventsGraduationsResponseSuccess | postV1AcademicEventsGraduationsResponseError)
+export type postV1AcademicEventsGraduationsResponseSuccess =
+	postV1AcademicEventsGraduationsResponse200 & {
+		headers: Headers;
+	};
+export type postV1AcademicEventsGraduationsResponseError = (
+	| postV1AcademicEventsGraduationsResponse400
+	| postV1AcademicEventsGraduationsResponse401
+	| postV1AcademicEventsGraduationsResponse403
+	| postV1AcademicEventsGraduationsResponse500
+	| postV1AcademicEventsGraduationsResponse501
+) & {
+	headers: Headers;
+};
+
+export type postV1AcademicEventsGraduationsResponse =
+	| postV1AcademicEventsGraduationsResponseSuccess
+	| postV1AcademicEventsGraduationsResponseError;
 
 export const getPostV1AcademicEventsGraduationsUrl = () => {
-
-
-
-
-  return `/v1/academic-events/graduations`
-}
+	return `/v1/academic-events/graduations`;
+};
 
 /**
  * Process graduation of students from the highest class group
  * @summary Process student graduation
  */
-export const postV1AcademicEventsGraduations = async (dtoGraduationRequest: DtoGraduationRequest, options?: RequestInit): Promise<postV1AcademicEventsGraduationsResponse> => {
+export const postV1AcademicEventsGraduations = async (
+	dtoGraduationRequest: DtoGraduationRequest,
+	options?: RequestInit,
+): Promise<postV1AcademicEventsGraduationsResponse> => {
+	return customInstance<postV1AcademicEventsGraduationsResponse>(
+		getPostV1AcademicEventsGraduationsUrl(),
+		{
+			...options,
+			method: "POST",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(dtoGraduationRequest),
+		},
+	);
+};
 
-  return customInstance<postV1AcademicEventsGraduationsResponse>(getPostV1AcademicEventsGraduationsUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      dtoGraduationRequest,)
-  }
-);}
+export const getPostV1AcademicEventsGraduationsMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1AcademicEventsGraduations>>,
+		TError,
+		{ data: DtoGraduationRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1AcademicEventsGraduations>>,
+	TError,
+	{ data: DtoGraduationRequest },
+	TContext
+> => {
+	const mutationKey = ["postV1AcademicEventsGraduations"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1AcademicEventsGraduations>>,
+		{ data: DtoGraduationRequest }
+	> = (props) => {
+		const { data } = props ?? {};
 
+		return postV1AcademicEventsGraduations(data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-export const getPostV1AcademicEventsGraduationsMutationOptions = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AcademicEventsGraduations>>, TError,{data: DtoGraduationRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1AcademicEventsGraduations>>, TError,{data: DtoGraduationRequest}, TContext> => {
+export type PostV1AcademicEventsGraduationsMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1AcademicEventsGraduations>>
+>;
+export type PostV1AcademicEventsGraduationsMutationBody = DtoGraduationRequest;
+export type PostV1AcademicEventsGraduationsMutationError = DtoErrorResponse;
 
-const mutationKey = ['postV1AcademicEventsGraduations'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1AcademicEventsGraduations>>, {data: DtoGraduationRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  postV1AcademicEventsGraduations(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1AcademicEventsGraduationsMutationResult = NonNullable<Awaited<ReturnType<typeof postV1AcademicEventsGraduations>>>
-    export type PostV1AcademicEventsGraduationsMutationBody = DtoGraduationRequest
-    export type PostV1AcademicEventsGraduationsMutationError = DtoErrorResponse
-
-    /**
+/**
  * @summary Process student graduation
  */
-export const usePostV1AcademicEventsGraduations = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AcademicEventsGraduations>>, TError,{data: DtoGraduationRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postV1AcademicEventsGraduations>>,
-        TError,
-        {data: DtoGraduationRequest},
-        TContext
-      > => {
-      return useMutation(getPostV1AcademicEventsGraduationsMutationOptions(options), queryClient);
-    }
-    export type postV1AcademicEventsPromotionsResponse200 = {
-  data: PostV1AcademicEventsPromotions200
-  status: 200
-}
+export const usePostV1AcademicEventsGraduations = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1AcademicEventsGraduations>>,
+			TError,
+			{ data: DtoGraduationRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1AcademicEventsGraduations>>,
+	TError,
+	{ data: DtoGraduationRequest },
+	TContext
+> => {
+	return useMutation(
+		getPostV1AcademicEventsGraduationsMutationOptions(options),
+		queryClient,
+	);
+};
+export type postV1AcademicEventsPromotionsResponse200 = {
+	data: PostV1AcademicEventsPromotions200;
+	status: 200;
+};
 
 export type postV1AcademicEventsPromotionsResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type postV1AcademicEventsPromotionsResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type postV1AcademicEventsPromotionsResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type postV1AcademicEventsPromotionsResponse500 = {
-  data: DtoErrorResponse
-  status: 500
-}
-
-export type postV1AcademicEventsPromotionsResponseSuccess = (postV1AcademicEventsPromotionsResponse200) & {
-  headers: Headers;
-};
-export type postV1AcademicEventsPromotionsResponseError = (postV1AcademicEventsPromotionsResponse400 | postV1AcademicEventsPromotionsResponse401 | postV1AcademicEventsPromotionsResponse403 | postV1AcademicEventsPromotionsResponse500) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 500;
 };
 
-export type postV1AcademicEventsPromotionsResponse = (postV1AcademicEventsPromotionsResponseSuccess | postV1AcademicEventsPromotionsResponseError)
+export type postV1AcademicEventsPromotionsResponseSuccess =
+	postV1AcademicEventsPromotionsResponse200 & {
+		headers: Headers;
+	};
+export type postV1AcademicEventsPromotionsResponseError = (
+	| postV1AcademicEventsPromotionsResponse400
+	| postV1AcademicEventsPromotionsResponse401
+	| postV1AcademicEventsPromotionsResponse403
+	| postV1AcademicEventsPromotionsResponse500
+) & {
+	headers: Headers;
+};
+
+export type postV1AcademicEventsPromotionsResponse =
+	| postV1AcademicEventsPromotionsResponseSuccess
+	| postV1AcademicEventsPromotionsResponseError;
 
 export const getPostV1AcademicEventsPromotionsUrl = () => {
-
-
-
-
-  return `/v1/academic-events/promotions`
-}
+	return `/v1/academic-events/promotions`;
+};
 
 /**
  * Process promotion of students to the next class group
  * @summary Process student promotion
  */
-export const postV1AcademicEventsPromotions = async (dtoPromotionRequest: DtoPromotionRequest, options?: RequestInit): Promise<postV1AcademicEventsPromotionsResponse> => {
+export const postV1AcademicEventsPromotions = async (
+	dtoPromotionRequest: DtoPromotionRequest,
+	options?: RequestInit,
+): Promise<postV1AcademicEventsPromotionsResponse> => {
+	return customInstance<postV1AcademicEventsPromotionsResponse>(
+		getPostV1AcademicEventsPromotionsUrl(),
+		{
+			...options,
+			method: "POST",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(dtoPromotionRequest),
+		},
+	);
+};
 
-  return customInstance<postV1AcademicEventsPromotionsResponse>(getPostV1AcademicEventsPromotionsUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      dtoPromotionRequest,)
-  }
-);}
+export const getPostV1AcademicEventsPromotionsMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1AcademicEventsPromotions>>,
+		TError,
+		{ data: DtoPromotionRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1AcademicEventsPromotions>>,
+	TError,
+	{ data: DtoPromotionRequest },
+	TContext
+> => {
+	const mutationKey = ["postV1AcademicEventsPromotions"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1AcademicEventsPromotions>>,
+		{ data: DtoPromotionRequest }
+	> = (props) => {
+		const { data } = props ?? {};
 
+		return postV1AcademicEventsPromotions(data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-export const getPostV1AcademicEventsPromotionsMutationOptions = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AcademicEventsPromotions>>, TError,{data: DtoPromotionRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1AcademicEventsPromotions>>, TError,{data: DtoPromotionRequest}, TContext> => {
+export type PostV1AcademicEventsPromotionsMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1AcademicEventsPromotions>>
+>;
+export type PostV1AcademicEventsPromotionsMutationBody = DtoPromotionRequest;
+export type PostV1AcademicEventsPromotionsMutationError = DtoErrorResponse;
 
-const mutationKey = ['postV1AcademicEventsPromotions'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1AcademicEventsPromotions>>, {data: DtoPromotionRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  postV1AcademicEventsPromotions(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1AcademicEventsPromotionsMutationResult = NonNullable<Awaited<ReturnType<typeof postV1AcademicEventsPromotions>>>
-    export type PostV1AcademicEventsPromotionsMutationBody = DtoPromotionRequest
-    export type PostV1AcademicEventsPromotionsMutationError = DtoErrorResponse
-
-    /**
+/**
  * @summary Process student promotion
  */
-export const usePostV1AcademicEventsPromotions = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AcademicEventsPromotions>>, TError,{data: DtoPromotionRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postV1AcademicEventsPromotions>>,
-        TError,
-        {data: DtoPromotionRequest},
-        TContext
-      > => {
-      return useMutation(getPostV1AcademicEventsPromotionsMutationOptions(options), queryClient);
-    }
-    export type postV1AcademicEventsTransfersResponse200 = {
-  data: DtoSuccessResponse
-  status: 200
-}
+export const usePostV1AcademicEventsPromotions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1AcademicEventsPromotions>>,
+			TError,
+			{ data: DtoPromotionRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1AcademicEventsPromotions>>,
+	TError,
+	{ data: DtoPromotionRequest },
+	TContext
+> => {
+	return useMutation(
+		getPostV1AcademicEventsPromotionsMutationOptions(options),
+		queryClient,
+	);
+};
+export type postV1AcademicEventsTransfersResponse200 = {
+	data: DtoSuccessResponse;
+	status: 200;
+};
 
 export type postV1AcademicEventsTransfersResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type postV1AcademicEventsTransfersResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type postV1AcademicEventsTransfersResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type postV1AcademicEventsTransfersResponse422 = {
-  data: DtoErrorResponse
-  status: 422
-}
+	data: DtoErrorResponse;
+	status: 422;
+};
 
 export type postV1AcademicEventsTransfersResponse500 = {
-  data: DtoErrorResponse
-  status: 500
-}
-
-export type postV1AcademicEventsTransfersResponseSuccess = (postV1AcademicEventsTransfersResponse200) & {
-  headers: Headers;
-};
-export type postV1AcademicEventsTransfersResponseError = (postV1AcademicEventsTransfersResponse400 | postV1AcademicEventsTransfersResponse401 | postV1AcademicEventsTransfersResponse403 | postV1AcademicEventsTransfersResponse422 | postV1AcademicEventsTransfersResponse500) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 500;
 };
 
-export type postV1AcademicEventsTransfersResponse = (postV1AcademicEventsTransfersResponseSuccess | postV1AcademicEventsTransfersResponseError)
+export type postV1AcademicEventsTransfersResponseSuccess =
+	postV1AcademicEventsTransfersResponse200 & {
+		headers: Headers;
+	};
+export type postV1AcademicEventsTransfersResponseError = (
+	| postV1AcademicEventsTransfersResponse400
+	| postV1AcademicEventsTransfersResponse401
+	| postV1AcademicEventsTransfersResponse403
+	| postV1AcademicEventsTransfersResponse422
+	| postV1AcademicEventsTransfersResponse500
+) & {
+	headers: Headers;
+};
+
+export type postV1AcademicEventsTransfersResponse =
+	| postV1AcademicEventsTransfersResponseSuccess
+	| postV1AcademicEventsTransfersResponseError;
 
 export const getPostV1AcademicEventsTransfersUrl = () => {
-
-
-
-
-  return `/v1/academic-events/transfers`
-}
+	return `/v1/academic-events/transfers`;
+};
 
 /**
  * Process transfer in (mutasi masuk) for a student
  * @summary Process transfer in
  */
-export const postV1AcademicEventsTransfers = async (dtoTransferInRequest: DtoTransferInRequest, options?: RequestInit): Promise<postV1AcademicEventsTransfersResponse> => {
+export const postV1AcademicEventsTransfers = async (
+	dtoTransferInRequest: DtoTransferInRequest,
+	options?: RequestInit,
+): Promise<postV1AcademicEventsTransfersResponse> => {
+	return customInstance<postV1AcademicEventsTransfersResponse>(
+		getPostV1AcademicEventsTransfersUrl(),
+		{
+			...options,
+			method: "POST",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(dtoTransferInRequest),
+		},
+	);
+};
 
-  return customInstance<postV1AcademicEventsTransfersResponse>(getPostV1AcademicEventsTransfersUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      dtoTransferInRequest,)
-  }
-);}
+export const getPostV1AcademicEventsTransfersMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1AcademicEventsTransfers>>,
+		TError,
+		{ data: DtoTransferInRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1AcademicEventsTransfers>>,
+	TError,
+	{ data: DtoTransferInRequest },
+	TContext
+> => {
+	const mutationKey = ["postV1AcademicEventsTransfers"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1AcademicEventsTransfers>>,
+		{ data: DtoTransferInRequest }
+	> = (props) => {
+		const { data } = props ?? {};
 
+		return postV1AcademicEventsTransfers(data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-export const getPostV1AcademicEventsTransfersMutationOptions = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AcademicEventsTransfers>>, TError,{data: DtoTransferInRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1AcademicEventsTransfers>>, TError,{data: DtoTransferInRequest}, TContext> => {
+export type PostV1AcademicEventsTransfersMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1AcademicEventsTransfers>>
+>;
+export type PostV1AcademicEventsTransfersMutationBody = DtoTransferInRequest;
+export type PostV1AcademicEventsTransfersMutationError = DtoErrorResponse;
 
-const mutationKey = ['postV1AcademicEventsTransfers'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1AcademicEventsTransfers>>, {data: DtoTransferInRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  postV1AcademicEventsTransfers(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1AcademicEventsTransfersMutationResult = NonNullable<Awaited<ReturnType<typeof postV1AcademicEventsTransfers>>>
-    export type PostV1AcademicEventsTransfersMutationBody = DtoTransferInRequest
-    export type PostV1AcademicEventsTransfersMutationError = DtoErrorResponse
-
-    /**
+/**
  * @summary Process transfer in
  */
-export const usePostV1AcademicEventsTransfers = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AcademicEventsTransfers>>, TError,{data: DtoTransferInRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postV1AcademicEventsTransfers>>,
-        TError,
-        {data: DtoTransferInRequest},
-        TContext
-      > => {
-      return useMutation(getPostV1AcademicEventsTransfersMutationOptions(options), queryClient);
-    }
-    export type postV1AcademicEventsWithdrawalsResponse200 = {
-  data: DtoSuccessResponse
-  status: 200
-}
+export const usePostV1AcademicEventsTransfers = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1AcademicEventsTransfers>>,
+			TError,
+			{ data: DtoTransferInRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1AcademicEventsTransfers>>,
+	TError,
+	{ data: DtoTransferInRequest },
+	TContext
+> => {
+	return useMutation(
+		getPostV1AcademicEventsTransfersMutationOptions(options),
+		queryClient,
+	);
+};
+export type postV1AcademicEventsWithdrawalsResponse200 = {
+	data: DtoSuccessResponse;
+	status: 200;
+};
 
 export type postV1AcademicEventsWithdrawalsResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type postV1AcademicEventsWithdrawalsResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type postV1AcademicEventsWithdrawalsResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type postV1AcademicEventsWithdrawalsResponse500 = {
-  data: DtoErrorResponse
-  status: 500
-}
-
-export type postV1AcademicEventsWithdrawalsResponseSuccess = (postV1AcademicEventsWithdrawalsResponse200) & {
-  headers: Headers;
-};
-export type postV1AcademicEventsWithdrawalsResponseError = (postV1AcademicEventsWithdrawalsResponse400 | postV1AcademicEventsWithdrawalsResponse401 | postV1AcademicEventsWithdrawalsResponse403 | postV1AcademicEventsWithdrawalsResponse500) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 500;
 };
 
-export type postV1AcademicEventsWithdrawalsResponse = (postV1AcademicEventsWithdrawalsResponseSuccess | postV1AcademicEventsWithdrawalsResponseError)
+export type postV1AcademicEventsWithdrawalsResponseSuccess =
+	postV1AcademicEventsWithdrawalsResponse200 & {
+		headers: Headers;
+	};
+export type postV1AcademicEventsWithdrawalsResponseError = (
+	| postV1AcademicEventsWithdrawalsResponse400
+	| postV1AcademicEventsWithdrawalsResponse401
+	| postV1AcademicEventsWithdrawalsResponse403
+	| postV1AcademicEventsWithdrawalsResponse500
+) & {
+	headers: Headers;
+};
+
+export type postV1AcademicEventsWithdrawalsResponse =
+	| postV1AcademicEventsWithdrawalsResponseSuccess
+	| postV1AcademicEventsWithdrawalsResponseError;
 
 export const getPostV1AcademicEventsWithdrawalsUrl = () => {
-
-
-
-
-  return `/v1/academic-events/withdrawals`
-}
+	return `/v1/academic-events/withdrawals`;
+};
 
 /**
  * Process withdrawal (pindah/keluar sekolah) for a student
  * @summary Process withdrawal
  */
-export const postV1AcademicEventsWithdrawals = async (dtoWithdrawalRequest: DtoWithdrawalRequest, options?: RequestInit): Promise<postV1AcademicEventsWithdrawalsResponse> => {
+export const postV1AcademicEventsWithdrawals = async (
+	dtoWithdrawalRequest: DtoWithdrawalRequest,
+	options?: RequestInit,
+): Promise<postV1AcademicEventsWithdrawalsResponse> => {
+	return customInstance<postV1AcademicEventsWithdrawalsResponse>(
+		getPostV1AcademicEventsWithdrawalsUrl(),
+		{
+			...options,
+			method: "POST",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(dtoWithdrawalRequest),
+		},
+	);
+};
 
-  return customInstance<postV1AcademicEventsWithdrawalsResponse>(getPostV1AcademicEventsWithdrawalsUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      dtoWithdrawalRequest,)
-  }
-);}
+export const getPostV1AcademicEventsWithdrawalsMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1AcademicEventsWithdrawals>>,
+		TError,
+		{ data: DtoWithdrawalRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1AcademicEventsWithdrawals>>,
+	TError,
+	{ data: DtoWithdrawalRequest },
+	TContext
+> => {
+	const mutationKey = ["postV1AcademicEventsWithdrawals"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1AcademicEventsWithdrawals>>,
+		{ data: DtoWithdrawalRequest }
+	> = (props) => {
+		const { data } = props ?? {};
 
+		return postV1AcademicEventsWithdrawals(data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-export const getPostV1AcademicEventsWithdrawalsMutationOptions = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AcademicEventsWithdrawals>>, TError,{data: DtoWithdrawalRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1AcademicEventsWithdrawals>>, TError,{data: DtoWithdrawalRequest}, TContext> => {
+export type PostV1AcademicEventsWithdrawalsMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1AcademicEventsWithdrawals>>
+>;
+export type PostV1AcademicEventsWithdrawalsMutationBody = DtoWithdrawalRequest;
+export type PostV1AcademicEventsWithdrawalsMutationError = DtoErrorResponse;
 
-const mutationKey = ['postV1AcademicEventsWithdrawals'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1AcademicEventsWithdrawals>>, {data: DtoWithdrawalRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  postV1AcademicEventsWithdrawals(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1AcademicEventsWithdrawalsMutationResult = NonNullable<Awaited<ReturnType<typeof postV1AcademicEventsWithdrawals>>>
-    export type PostV1AcademicEventsWithdrawalsMutationBody = DtoWithdrawalRequest
-    export type PostV1AcademicEventsWithdrawalsMutationError = DtoErrorResponse
-
-    /**
+/**
  * @summary Process withdrawal
  */
-export const usePostV1AcademicEventsWithdrawals = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AcademicEventsWithdrawals>>, TError,{data: DtoWithdrawalRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postV1AcademicEventsWithdrawals>>,
-        TError,
-        {data: DtoWithdrawalRequest},
-        TContext
-      > => {
-      return useMutation(getPostV1AcademicEventsWithdrawalsMutationOptions(options), queryClient);
-    }
-    export type getV1StudentsIdAcademicEventsResponse200 = {
-  data: GetV1StudentsIdAcademicEvents200
-  status: 200
-}
+export const usePostV1AcademicEventsWithdrawals = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1AcademicEventsWithdrawals>>,
+			TError,
+			{ data: DtoWithdrawalRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1AcademicEventsWithdrawals>>,
+	TError,
+	{ data: DtoWithdrawalRequest },
+	TContext
+> => {
+	return useMutation(
+		getPostV1AcademicEventsWithdrawalsMutationOptions(options),
+		queryClient,
+	);
+};
+export type getV1StudentsIdAcademicEventsResponse200 = {
+	data: GetV1StudentsIdAcademicEvents200;
+	status: 200;
+};
 
 export type getV1StudentsIdAcademicEventsResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type getV1StudentsIdAcademicEventsResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type getV1StudentsIdAcademicEventsResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type getV1StudentsIdAcademicEventsResponse404 = {
-  data: DtoErrorResponse
-  status: 404
-}
+	data: DtoErrorResponse;
+	status: 404;
+};
 
 export type getV1StudentsIdAcademicEventsResponse500 = {
-  data: DtoErrorResponse
-  status: 500
-}
-
-export type getV1StudentsIdAcademicEventsResponseSuccess = (getV1StudentsIdAcademicEventsResponse200) & {
-  headers: Headers;
-};
-export type getV1StudentsIdAcademicEventsResponseError = (getV1StudentsIdAcademicEventsResponse400 | getV1StudentsIdAcademicEventsResponse401 | getV1StudentsIdAcademicEventsResponse403 | getV1StudentsIdAcademicEventsResponse404 | getV1StudentsIdAcademicEventsResponse500) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 500;
 };
 
-export type getV1StudentsIdAcademicEventsResponse = (getV1StudentsIdAcademicEventsResponseSuccess | getV1StudentsIdAcademicEventsResponseError)
+export type getV1StudentsIdAcademicEventsResponseSuccess =
+	getV1StudentsIdAcademicEventsResponse200 & {
+		headers: Headers;
+	};
+export type getV1StudentsIdAcademicEventsResponseError = (
+	| getV1StudentsIdAcademicEventsResponse400
+	| getV1StudentsIdAcademicEventsResponse401
+	| getV1StudentsIdAcademicEventsResponse403
+	| getV1StudentsIdAcademicEventsResponse404
+	| getV1StudentsIdAcademicEventsResponse500
+) & {
+	headers: Headers;
+};
 
-export const getGetV1StudentsIdAcademicEventsUrl = (id: number,) => {
+export type getV1StudentsIdAcademicEventsResponse =
+	| getV1StudentsIdAcademicEventsResponseSuccess
+	| getV1StudentsIdAcademicEventsResponseError;
 
-
-
-
-  return `/v1/students/${id}/academic-events`
-}
+export const getGetV1StudentsIdAcademicEventsUrl = (id: number) => {
+	return `/v1/students/${id}/academic-events`;
+};
 
 /**
  * Get a list of academic events (promotion, graduation, etc) for a specific student
  * @summary Get academic events by student
  */
-export const getV1StudentsIdAcademicEvents = async (id: number, options?: RequestInit): Promise<getV1StudentsIdAcademicEventsResponse> => {
+export const getV1StudentsIdAcademicEvents = async (
+	id: number,
+	options?: RequestInit,
+): Promise<getV1StudentsIdAcademicEventsResponse> => {
+	return customInstance<getV1StudentsIdAcademicEventsResponse>(
+		getGetV1StudentsIdAcademicEventsUrl(id),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
 
-  return customInstance<getV1StudentsIdAcademicEventsResponse>(getGetV1StudentsIdAcademicEventsUrl(id),
-  {
-    ...options,
-    method: 'GET'
+export const getGetV1StudentsIdAcademicEventsQueryKey = (id: number) => {
+	return [`/v1/students/${id}/academic-events`] as const;
+};
 
-
-  }
-);}
-
-
-
-
-
-export const getGetV1StudentsIdAcademicEventsQueryKey = (id: number,) => {
-    return [
-    `/v1/students/${id}/academic-events`
-    ] as const;
-    }
-
-
-export const getGetV1StudentsIdAcademicEventsQueryOptions = <TData = Awaited<ReturnType<typeof getV1StudentsIdAcademicEvents>>, TError = DtoErrorResponse>(id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdAcademicEvents>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getGetV1StudentsIdAcademicEventsQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1StudentsIdAcademicEvents>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1StudentsIdAcademicEvents>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
 ) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+	const queryKey =
+		queryOptions?.queryKey ?? getGetV1StudentsIdAcademicEventsQueryKey(id);
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1StudentsIdAcademicEventsQueryKey(id);
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1StudentsIdAcademicEvents>>
+	> = ({ signal }) =>
+		getV1StudentsIdAcademicEvents(id, { signal, ...requestOptions });
 
+	return {
+		queryKey,
+		queryFn,
+		enabled: !!id,
+		...queryOptions,
+	} as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1StudentsIdAcademicEvents>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
+export type GetV1StudentsIdAcademicEventsQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1StudentsIdAcademicEvents>>
+>;
+export type GetV1StudentsIdAcademicEventsQueryError = DtoErrorResponse;
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1StudentsIdAcademicEvents>>> = ({ signal }) => getV1StudentsIdAcademicEvents(id, { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdAcademicEvents>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetV1StudentsIdAcademicEventsQueryResult = NonNullable<Awaited<ReturnType<typeof getV1StudentsIdAcademicEvents>>>
-export type GetV1StudentsIdAcademicEventsQueryError = DtoErrorResponse
-
-
-export function useGetV1StudentsIdAcademicEvents<TData = Awaited<ReturnType<typeof getV1StudentsIdAcademicEvents>>, TError = DtoErrorResponse>(
- id: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdAcademicEvents>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1StudentsIdAcademicEvents>>,
-          TError,
-          Awaited<ReturnType<typeof getV1StudentsIdAcademicEvents>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1StudentsIdAcademicEvents<TData = Awaited<ReturnType<typeof getV1StudentsIdAcademicEvents>>, TError = DtoErrorResponse>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdAcademicEvents>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1StudentsIdAcademicEvents>>,
-          TError,
-          Awaited<ReturnType<typeof getV1StudentsIdAcademicEvents>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1StudentsIdAcademicEvents<TData = Awaited<ReturnType<typeof getV1StudentsIdAcademicEvents>>, TError = DtoErrorResponse>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdAcademicEvents>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1StudentsIdAcademicEvents<
+	TData = Awaited<ReturnType<typeof getV1StudentsIdAcademicEvents>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1StudentsIdAcademicEvents>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1StudentsIdAcademicEvents>>,
+					TError,
+					Awaited<ReturnType<typeof getV1StudentsIdAcademicEvents>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1StudentsIdAcademicEvents<
+	TData = Awaited<ReturnType<typeof getV1StudentsIdAcademicEvents>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1StudentsIdAcademicEvents>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1StudentsIdAcademicEvents>>,
+					TError,
+					Awaited<ReturnType<typeof getV1StudentsIdAcademicEvents>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1StudentsIdAcademicEvents<
+	TData = Awaited<ReturnType<typeof getV1StudentsIdAcademicEvents>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1StudentsIdAcademicEvents>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary Get academic events by student
  */
 
-export function useGetV1StudentsIdAcademicEvents<TData = Awaited<ReturnType<typeof getV1StudentsIdAcademicEvents>>, TError = DtoErrorResponse>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdAcademicEvents>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1StudentsIdAcademicEvents<
+	TData = Awaited<ReturnType<typeof getV1StudentsIdAcademicEvents>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1StudentsIdAcademicEvents>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1StudentsIdAcademicEventsQueryOptions(
+		id,
+		options,
+	);
 
-  const queryOptions = getGetV1StudentsIdAcademicEventsQueryOptions(id,options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
-

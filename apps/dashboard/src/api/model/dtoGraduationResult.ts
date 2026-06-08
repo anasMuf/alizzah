@@ -5,9 +5,9 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoGraduationStudentResult } from './dtoGraduationStudentResult';
+import type { DtoGraduationStudentResult } from "./dtoGraduationStudentResult";
 
 export interface DtoGraduationResult {
-  results?: DtoGraduationStudentResult[];
-  total?: number;
+	results?: DtoGraduationStudentResult[];
+	total?: number;
 }

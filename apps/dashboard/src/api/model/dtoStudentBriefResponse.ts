@@ -7,8 +7,8 @@
  */
 
 export interface DtoStudentBriefResponse {
-  full_name?: string;
-  gender?: string;
-  id?: number;
-  status?: string;
+	full_name?: string;
+	gender?: string;
+	id?: number;
+	status?: string;
 }

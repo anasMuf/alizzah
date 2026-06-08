@@ -7,8 +7,8 @@
  */
 
 export interface DtoUpdateInvoiceItemRequest {
-  /** @minimum 1 */
-  amount: number;
-  /** @maxLength 100 */
-  name: string;
+	/** @minimum 1 */
+	amount: number;
+	/** @maxLength 100 */
+	name: string;
 }

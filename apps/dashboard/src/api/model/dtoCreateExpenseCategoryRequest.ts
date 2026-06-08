@@ -7,7 +7,7 @@
  */
 
 export interface DtoCreateExpenseCategoryRequest {
-  /** @maxLength 100 */
-  name: string;
-  parent_id?: number;
+	/** @maxLength 100 */
+	name: string;
+	parent_id?: number;
 }

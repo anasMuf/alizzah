@@ -5,9 +5,9 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoSavingsBalanceResponse } from './dtoSavingsBalanceResponse';
+import type { DtoSavingsBalanceResponse } from "./dtoSavingsBalanceResponse";
 
 export interface DtoStudentSavingsResponse {
-  general?: DtoSavingsBalanceResponse;
-  mandatory?: DtoSavingsBalanceResponse;
+	general?: DtoSavingsBalanceResponse;
+	mandatory?: DtoSavingsBalanceResponse;
 }

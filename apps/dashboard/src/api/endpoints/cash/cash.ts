@@ -5,432 +5,631 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import {
-  useMutation,
-  useQuery
-} from '@tanstack/react-query';
-import type {
-  DataTag,
-  DefinedInitialDataOptions,
-  DefinedUseQueryResult,
-  MutationFunction,
-  QueryClient,
-  QueryFunction,
-  QueryKey,
-  UndefinedInitialDataOptions,
-  UseMutationOptions,
-  UseMutationResult,
-  UseQueryOptions,
-  UseQueryResult
-} from '@tanstack/react-query';
 
 import type {
-  DtoErrorResponse,
-  DtoSuccessResponse,
-  DtoTransferToCashRequest,
-  GetV1CashBalance200,
-  GetV1CashBalanceParams,
-  GetV1CashTransactions200,
-  GetV1CashTransactionsParams,
-  PostV1CashTransfersParams
-} from '../../model';
+	DataTag,
+	DefinedInitialDataOptions,
+	DefinedUseQueryResult,
+	MutationFunction,
+	QueryClient,
+	QueryFunction,
+	QueryKey,
+	UndefinedInitialDataOptions,
+	UseMutationOptions,
+	UseMutationResult,
+	UseQueryOptions,
+	UseQueryResult,
+} from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
-import { customInstance } from '../../mutator/custom-instance';
+import type {
+	DtoErrorResponse,
+	DtoSuccessResponse,
+	DtoTransferToCashRequest,
+	GetV1CashBalance200,
+	GetV1CashBalanceParams,
+	GetV1CashTransactions200,
+	GetV1CashTransactionsParams,
+	PostV1CashTransfersParams,
+} from "../../model";
 
+import { customInstance } from "../../mutator/custom-instance";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
-
-
 export type getV1CashBalanceResponse200 = {
-  data: GetV1CashBalance200
-  status: 200
-}
+	data: GetV1CashBalance200;
+	status: 200;
+};
 
 export type getV1CashBalanceResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type getV1CashBalanceResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type getV1CashBalanceResponse500 = {
-  data: DtoErrorResponse
-  status: 500
-}
-
-export type getV1CashBalanceResponseSuccess = (getV1CashBalanceResponse200) & {
-  headers: Headers;
-};
-export type getV1CashBalanceResponseError = (getV1CashBalanceResponse401 | getV1CashBalanceResponse403 | getV1CashBalanceResponse500) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 500;
 };
 
-export type getV1CashBalanceResponse = (getV1CashBalanceResponseSuccess | getV1CashBalanceResponseError)
+export type getV1CashBalanceResponseSuccess = getV1CashBalanceResponse200 & {
+	headers: Headers;
+};
+export type getV1CashBalanceResponseError = (
+	| getV1CashBalanceResponse401
+	| getV1CashBalanceResponse403
+	| getV1CashBalanceResponse500
+) & {
+	headers: Headers;
+};
 
-export const getGetV1CashBalanceUrl = (params?: GetV1CashBalanceParams,) => {
-  const normalizedParams = new URLSearchParams();
+export type getV1CashBalanceResponse =
+	| getV1CashBalanceResponseSuccess
+	| getV1CashBalanceResponseError;
 
-  Object.entries(params || {}).forEach(([key, value]) => {
+export const getGetV1CashBalanceUrl = (params?: GetV1CashBalanceParams) => {
+	const normalizedParams = new URLSearchParams();
 
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(key, value === null ? "null" : value.toString());
+		}
+	});
 
-  const stringifiedParams = normalizedParams.toString();
+	const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/v1/cash/balance?${stringifiedParams}` : `/v1/cash/balance`
-}
+	return stringifiedParams.length > 0
+		? `/v1/cash/balance?${stringifiedParams}`
+		: `/v1/cash/balance`;
+};
 
 /**
  * Get current cash balance and today's summary
  * @summary Get cash balance
  */
-export const getV1CashBalance = async (params?: GetV1CashBalanceParams, options?: RequestInit): Promise<getV1CashBalanceResponse> => {
+export const getV1CashBalance = async (
+	params?: GetV1CashBalanceParams,
+	options?: RequestInit,
+): Promise<getV1CashBalanceResponse> => {
+	return customInstance<getV1CashBalanceResponse>(
+		getGetV1CashBalanceUrl(params),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
 
-  return customInstance<getV1CashBalanceResponse>(getGetV1CashBalanceUrl(params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetV1CashBalanceQueryKey = (params?: GetV1CashBalanceParams,) => {
-    return [
-    `/v1/cash/balance`, ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getGetV1CashBalanceQueryOptions = <TData = Awaited<ReturnType<typeof getV1CashBalance>>, TError = DtoErrorResponse>(params?: GetV1CashBalanceParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1CashBalance>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getGetV1CashBalanceQueryKey = (
+	params?: GetV1CashBalanceParams,
 ) => {
+	return [`/v1/cash/balance`, ...(params ? [params] : [])] as const;
+};
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+export const getGetV1CashBalanceQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1CashBalance>>,
+	TError = DtoErrorResponse,
+>(
+	params?: GetV1CashBalanceParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1CashBalance>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1CashBalanceQueryKey(params);
+	const queryKey =
+		queryOptions?.queryKey ?? getGetV1CashBalanceQueryKey(params);
 
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1CashBalance>>
+	> = ({ signal }) => getV1CashBalance(params, { signal, ...requestOptions });
 
+	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1CashBalance>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1CashBalance>>> = ({ signal }) => getV1CashBalance(params, { signal, ...requestOptions });
+export type GetV1CashBalanceQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1CashBalance>>
+>;
+export type GetV1CashBalanceQueryError = DtoErrorResponse;
 
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1CashBalance>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetV1CashBalanceQueryResult = NonNullable<Awaited<ReturnType<typeof getV1CashBalance>>>
-export type GetV1CashBalanceQueryError = DtoErrorResponse
-
-
-export function useGetV1CashBalance<TData = Awaited<ReturnType<typeof getV1CashBalance>>, TError = DtoErrorResponse>(
- params: undefined |  GetV1CashBalanceParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1CashBalance>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1CashBalance>>,
-          TError,
-          Awaited<ReturnType<typeof getV1CashBalance>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1CashBalance<TData = Awaited<ReturnType<typeof getV1CashBalance>>, TError = DtoErrorResponse>(
- params?: GetV1CashBalanceParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1CashBalance>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1CashBalance>>,
-          TError,
-          Awaited<ReturnType<typeof getV1CashBalance>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1CashBalance<TData = Awaited<ReturnType<typeof getV1CashBalance>>, TError = DtoErrorResponse>(
- params?: GetV1CashBalanceParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1CashBalance>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1CashBalance<
+	TData = Awaited<ReturnType<typeof getV1CashBalance>>,
+	TError = DtoErrorResponse,
+>(
+	params: undefined | GetV1CashBalanceParams,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1CashBalance>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1CashBalance>>,
+					TError,
+					Awaited<ReturnType<typeof getV1CashBalance>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1CashBalance<
+	TData = Awaited<ReturnType<typeof getV1CashBalance>>,
+	TError = DtoErrorResponse,
+>(
+	params?: GetV1CashBalanceParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1CashBalance>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1CashBalance>>,
+					TError,
+					Awaited<ReturnType<typeof getV1CashBalance>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1CashBalance<
+	TData = Awaited<ReturnType<typeof getV1CashBalance>>,
+	TError = DtoErrorResponse,
+>(
+	params?: GetV1CashBalanceParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1CashBalance>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary Get cash balance
  */
 
-export function useGetV1CashBalance<TData = Awaited<ReturnType<typeof getV1CashBalance>>, TError = DtoErrorResponse>(
- params?: GetV1CashBalanceParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1CashBalance>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1CashBalance<
+	TData = Awaited<ReturnType<typeof getV1CashBalance>>,
+	TError = DtoErrorResponse,
+>(
+	params?: GetV1CashBalanceParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1CashBalance>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1CashBalanceQueryOptions(params, options);
 
-  const queryOptions = getGetV1CashBalanceQueryOptions(params,options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
 
 export type getV1CashTransactionsResponse200 = {
-  data: GetV1CashTransactions200
-  status: 200
-}
+	data: GetV1CashTransactions200;
+	status: 200;
+};
 
 export type getV1CashTransactionsResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type getV1CashTransactionsResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type getV1CashTransactionsResponse500 = {
-  data: DtoErrorResponse
-  status: 500
-}
-
-export type getV1CashTransactionsResponseSuccess = (getV1CashTransactionsResponse200) & {
-  headers: Headers;
-};
-export type getV1CashTransactionsResponseError = (getV1CashTransactionsResponse401 | getV1CashTransactionsResponse403 | getV1CashTransactionsResponse500) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 500;
 };
 
-export type getV1CashTransactionsResponse = (getV1CashTransactionsResponseSuccess | getV1CashTransactionsResponseError)
+export type getV1CashTransactionsResponseSuccess =
+	getV1CashTransactionsResponse200 & {
+		headers: Headers;
+	};
+export type getV1CashTransactionsResponseError = (
+	| getV1CashTransactionsResponse401
+	| getV1CashTransactionsResponse403
+	| getV1CashTransactionsResponse500
+) & {
+	headers: Headers;
+};
 
-export const getGetV1CashTransactionsUrl = (params?: GetV1CashTransactionsParams,) => {
-  const normalizedParams = new URLSearchParams();
+export type getV1CashTransactionsResponse =
+	| getV1CashTransactionsResponseSuccess
+	| getV1CashTransactionsResponseError;
 
-  Object.entries(params || {}).forEach(([key, value]) => {
+export const getGetV1CashTransactionsUrl = (
+	params?: GetV1CashTransactionsParams,
+) => {
+	const normalizedParams = new URLSearchParams();
 
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(key, value === null ? "null" : value.toString());
+		}
+	});
 
-  const stringifiedParams = normalizedParams.toString();
+	const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/v1/cash/transactions?${stringifiedParams}` : `/v1/cash/transactions`
-}
+	return stringifiedParams.length > 0
+		? `/v1/cash/transactions?${stringifiedParams}`
+		: `/v1/cash/transactions`;
+};
 
 /**
  * Get a paginated list of cash transactions
  * @summary Get cash transactions
  */
-export const getV1CashTransactions = async (params?: GetV1CashTransactionsParams, options?: RequestInit): Promise<getV1CashTransactionsResponse> => {
+export const getV1CashTransactions = async (
+	params?: GetV1CashTransactionsParams,
+	options?: RequestInit,
+): Promise<getV1CashTransactionsResponse> => {
+	return customInstance<getV1CashTransactionsResponse>(
+		getGetV1CashTransactionsUrl(params),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
 
-  return customInstance<getV1CashTransactionsResponse>(getGetV1CashTransactionsUrl(params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetV1CashTransactionsQueryKey = (params?: GetV1CashTransactionsParams,) => {
-    return [
-    `/v1/cash/transactions`, ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getGetV1CashTransactionsQueryOptions = <TData = Awaited<ReturnType<typeof getV1CashTransactions>>, TError = DtoErrorResponse>(params?: GetV1CashTransactionsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1CashTransactions>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getGetV1CashTransactionsQueryKey = (
+	params?: GetV1CashTransactionsParams,
 ) => {
+	return [`/v1/cash/transactions`, ...(params ? [params] : [])] as const;
+};
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+export const getGetV1CashTransactionsQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1CashTransactions>>,
+	TError = DtoErrorResponse,
+>(
+	params?: GetV1CashTransactionsParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1CashTransactions>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1CashTransactionsQueryKey(params);
+	const queryKey =
+		queryOptions?.queryKey ?? getGetV1CashTransactionsQueryKey(params);
 
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1CashTransactions>>
+	> = ({ signal }) =>
+		getV1CashTransactions(params, { signal, ...requestOptions });
 
+	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1CashTransactions>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1CashTransactions>>> = ({ signal }) => getV1CashTransactions(params, { signal, ...requestOptions });
+export type GetV1CashTransactionsQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1CashTransactions>>
+>;
+export type GetV1CashTransactionsQueryError = DtoErrorResponse;
 
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1CashTransactions>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetV1CashTransactionsQueryResult = NonNullable<Awaited<ReturnType<typeof getV1CashTransactions>>>
-export type GetV1CashTransactionsQueryError = DtoErrorResponse
-
-
-export function useGetV1CashTransactions<TData = Awaited<ReturnType<typeof getV1CashTransactions>>, TError = DtoErrorResponse>(
- params: undefined |  GetV1CashTransactionsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1CashTransactions>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1CashTransactions>>,
-          TError,
-          Awaited<ReturnType<typeof getV1CashTransactions>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1CashTransactions<TData = Awaited<ReturnType<typeof getV1CashTransactions>>, TError = DtoErrorResponse>(
- params?: GetV1CashTransactionsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1CashTransactions>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1CashTransactions>>,
-          TError,
-          Awaited<ReturnType<typeof getV1CashTransactions>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1CashTransactions<TData = Awaited<ReturnType<typeof getV1CashTransactions>>, TError = DtoErrorResponse>(
- params?: GetV1CashTransactionsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1CashTransactions>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1CashTransactions<
+	TData = Awaited<ReturnType<typeof getV1CashTransactions>>,
+	TError = DtoErrorResponse,
+>(
+	params: undefined | GetV1CashTransactionsParams,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1CashTransactions>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1CashTransactions>>,
+					TError,
+					Awaited<ReturnType<typeof getV1CashTransactions>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1CashTransactions<
+	TData = Awaited<ReturnType<typeof getV1CashTransactions>>,
+	TError = DtoErrorResponse,
+>(
+	params?: GetV1CashTransactionsParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1CashTransactions>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1CashTransactions>>,
+					TError,
+					Awaited<ReturnType<typeof getV1CashTransactions>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1CashTransactions<
+	TData = Awaited<ReturnType<typeof getV1CashTransactions>>,
+	TError = DtoErrorResponse,
+>(
+	params?: GetV1CashTransactionsParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1CashTransactions>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary Get cash transactions
  */
 
-export function useGetV1CashTransactions<TData = Awaited<ReturnType<typeof getV1CashTransactions>>, TError = DtoErrorResponse>(
- params?: GetV1CashTransactionsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1CashTransactions>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1CashTransactions<
+	TData = Awaited<ReturnType<typeof getV1CashTransactions>>,
+	TError = DtoErrorResponse,
+>(
+	params?: GetV1CashTransactionsParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1CashTransactions>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1CashTransactionsQueryOptions(params, options);
 
-  const queryOptions = getGetV1CashTransactionsQueryOptions(params,options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
 
 export type postV1CashTransfersResponse200 = {
-  data: DtoSuccessResponse
-  status: 200
-}
+	data: DtoSuccessResponse;
+	status: 200;
+};
 
 export type postV1CashTransfersResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type postV1CashTransfersResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type postV1CashTransfersResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type postV1CashTransfersResponse422 = {
-  data: DtoErrorResponse
-  status: 422
-}
+	data: DtoErrorResponse;
+	status: 422;
+};
 
 export type postV1CashTransfersResponse500 = {
-  data: DtoErrorResponse
-  status: 500
-}
-
-export type postV1CashTransfersResponseSuccess = (postV1CashTransfersResponse200) & {
-  headers: Headers;
-};
-export type postV1CashTransfersResponseError = (postV1CashTransfersResponse400 | postV1CashTransfersResponse401 | postV1CashTransfersResponse403 | postV1CashTransfersResponse422 | postV1CashTransfersResponse500) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 500;
 };
 
-export type postV1CashTransfersResponse = (postV1CashTransfersResponseSuccess | postV1CashTransfersResponseError)
+export type postV1CashTransfersResponseSuccess =
+	postV1CashTransfersResponse200 & {
+		headers: Headers;
+	};
+export type postV1CashTransfersResponseError = (
+	| postV1CashTransfersResponse400
+	| postV1CashTransfersResponse401
+	| postV1CashTransfersResponse403
+	| postV1CashTransfersResponse422
+	| postV1CashTransfersResponse500
+) & {
+	headers: Headers;
+};
 
-export const getPostV1CashTransfersUrl = (params?: PostV1CashTransfersParams,) => {
-  const normalizedParams = new URLSearchParams();
+export type postV1CashTransfersResponse =
+	| postV1CashTransfersResponseSuccess
+	| postV1CashTransfersResponseError;
 
-  Object.entries(params || {}).forEach(([key, value]) => {
+export const getPostV1CashTransfersUrl = (
+	params?: PostV1CashTransfersParams,
+) => {
+	const normalizedParams = new URLSearchParams();
 
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(key, value === null ? "null" : value.toString());
+		}
+	});
 
-  const stringifiedParams = normalizedParams.toString();
+	const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/v1/cash/transfers?${stringifiedParams}` : `/v1/cash/transfers`
-}
+	return stringifiedParams.length > 0
+		? `/v1/cash/transfers?${stringifiedParams}`
+		: `/v1/cash/transfers`;
+};
 
 /**
  * Record a transfer from cash to vault
  * @summary Transfer cash to vault
  */
-export const postV1CashTransfers = async (dtoTransferToCashRequest: DtoTransferToCashRequest,
-    params?: PostV1CashTransfersParams, options?: RequestInit): Promise<postV1CashTransfersResponse> => {
+export const postV1CashTransfers = async (
+	dtoTransferToCashRequest: DtoTransferToCashRequest,
+	params?: PostV1CashTransfersParams,
+	options?: RequestInit,
+): Promise<postV1CashTransfersResponse> => {
+	return customInstance<postV1CashTransfersResponse>(
+		getPostV1CashTransfersUrl(params),
+		{
+			...options,
+			method: "POST",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(dtoTransferToCashRequest),
+		},
+	);
+};
 
-  return customInstance<postV1CashTransfersResponse>(getPostV1CashTransfersUrl(params),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      dtoTransferToCashRequest,)
-  }
-);}
+export const getPostV1CashTransfersMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1CashTransfers>>,
+		TError,
+		{ data: DtoTransferToCashRequest; params?: PostV1CashTransfersParams },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1CashTransfers>>,
+	TError,
+	{ data: DtoTransferToCashRequest; params?: PostV1CashTransfersParams },
+	TContext
+> => {
+	const mutationKey = ["postV1CashTransfers"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1CashTransfers>>,
+		{ data: DtoTransferToCashRequest; params?: PostV1CashTransfersParams }
+	> = (props) => {
+		const { data, params } = props ?? {};
 
+		return postV1CashTransfers(data, params, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-export const getPostV1CashTransfersMutationOptions = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1CashTransfers>>, TError,{data: DtoTransferToCashRequest;params?: PostV1CashTransfersParams}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1CashTransfers>>, TError,{data: DtoTransferToCashRequest;params?: PostV1CashTransfersParams}, TContext> => {
+export type PostV1CashTransfersMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1CashTransfers>>
+>;
+export type PostV1CashTransfersMutationBody = DtoTransferToCashRequest;
+export type PostV1CashTransfersMutationError = DtoErrorResponse;
 
-const mutationKey = ['postV1CashTransfers'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1CashTransfers>>, {data: DtoTransferToCashRequest;params?: PostV1CashTransfersParams}> = (props) => {
-          const {data,params} = props ?? {};
-
-          return  postV1CashTransfers(data,params,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1CashTransfersMutationResult = NonNullable<Awaited<ReturnType<typeof postV1CashTransfers>>>
-    export type PostV1CashTransfersMutationBody = DtoTransferToCashRequest
-    export type PostV1CashTransfersMutationError = DtoErrorResponse
-
-    /**
+/**
  * @summary Transfer cash to vault
  */
-export const usePostV1CashTransfers = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1CashTransfers>>, TError,{data: DtoTransferToCashRequest;params?: PostV1CashTransfersParams}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postV1CashTransfers>>,
-        TError,
-        {data: DtoTransferToCashRequest;params?: PostV1CashTransfersParams},
-        TContext
-      > => {
-      return useMutation(getPostV1CashTransfersMutationOptions(options), queryClient);
-    }
+export const usePostV1CashTransfers = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1CashTransfers>>,
+			TError,
+			{ data: DtoTransferToCashRequest; params?: PostV1CashTransfersParams },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1CashTransfers>>,
+	TError,
+	{ data: DtoTransferToCashRequest; params?: PostV1CashTransfersParams },
+	TContext
+> => {
+	return useMutation(
+		getPostV1CashTransfersMutationOptions(options),
+		queryClient,
+	);
+};

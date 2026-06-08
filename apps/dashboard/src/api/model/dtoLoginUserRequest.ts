@@ -7,6 +7,6 @@
  */
 
 export interface DtoLoginUserRequest {
-  email: string;
-  password: string;
+	email: string;
+	password: string;
 }

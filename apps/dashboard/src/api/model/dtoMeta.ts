@@ -7,7 +7,7 @@
  */
 
 export interface DtoMeta {
-  limit?: number;
-  page?: number;
-  total?: number;
+	limit?: number;
+	page?: number;
+	total?: number;
 }

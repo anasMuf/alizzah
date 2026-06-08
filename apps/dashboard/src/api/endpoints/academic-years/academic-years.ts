@@ -5,619 +5,854 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import {
-  useMutation,
-  useQuery
-} from '@tanstack/react-query';
-import type {
-  DataTag,
-  DefinedInitialDataOptions,
-  DefinedUseQueryResult,
-  MutationFunction,
-  QueryClient,
-  QueryFunction,
-  QueryKey,
-  UndefinedInitialDataOptions,
-  UseMutationOptions,
-  UseMutationResult,
-  UseQueryOptions,
-  UseQueryResult
-} from '@tanstack/react-query';
 
 import type {
-  DtoCreateAcademicYearRequest,
-  DtoErrorResponse,
-  DtoSuccessResponse,
-  GetV1AcademicYears200,
-  GetV1AcademicYearsId200,
-  PostV1AcademicYears201,
-  PutV1AcademicYearsId200
-} from '../../model';
+	DataTag,
+	DefinedInitialDataOptions,
+	DefinedUseQueryResult,
+	MutationFunction,
+	QueryClient,
+	QueryFunction,
+	QueryKey,
+	UndefinedInitialDataOptions,
+	UseMutationOptions,
+	UseMutationResult,
+	UseQueryOptions,
+	UseQueryResult,
+} from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
-import { customInstance } from '../../mutator/custom-instance';
+import type {
+	DtoCreateAcademicYearRequest,
+	DtoErrorResponse,
+	DtoSuccessResponse,
+	GetV1AcademicYears200,
+	GetV1AcademicYearsId200,
+	PostV1AcademicYears201,
+	PutV1AcademicYearsId200,
+} from "../../model";
 
+import { customInstance } from "../../mutator/custom-instance";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
-
-
 export type getV1AcademicYearsResponse200 = {
-  data: GetV1AcademicYears200
-  status: 200
-}
+	data: GetV1AcademicYears200;
+	status: 200;
+};
 
 export type getV1AcademicYearsResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type getV1AcademicYearsResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
-
-export type getV1AcademicYearsResponseSuccess = (getV1AcademicYearsResponse200) & {
-  headers: Headers;
-};
-export type getV1AcademicYearsResponseError = (getV1AcademicYearsResponse401 | getV1AcademicYearsResponse403) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 403;
 };
 
-export type getV1AcademicYearsResponse = (getV1AcademicYearsResponseSuccess | getV1AcademicYearsResponseError)
+export type getV1AcademicYearsResponseSuccess =
+	getV1AcademicYearsResponse200 & {
+		headers: Headers;
+	};
+export type getV1AcademicYearsResponseError = (
+	| getV1AcademicYearsResponse401
+	| getV1AcademicYearsResponse403
+) & {
+	headers: Headers;
+};
+
+export type getV1AcademicYearsResponse =
+	| getV1AcademicYearsResponseSuccess
+	| getV1AcademicYearsResponseError;
 
 export const getGetV1AcademicYearsUrl = () => {
-
-
-
-
-  return `/v1/academic-years`
-}
+	return `/v1/academic-years`;
+};
 
 /**
  * Get all academic years ordered by start_date descending
  * @summary List all academic years
  */
-export const getV1AcademicYears = async ( options?: RequestInit): Promise<getV1AcademicYearsResponse> => {
-
-  return customInstance<getV1AcademicYearsResponse>(getGetV1AcademicYearsUrl(),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
+export const getV1AcademicYears = async (
+	options?: RequestInit,
+): Promise<getV1AcademicYearsResponse> => {
+	return customInstance<getV1AcademicYearsResponse>(
+		getGetV1AcademicYearsUrl(),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
 
 export const getGetV1AcademicYearsQueryKey = () => {
-    return [
-    `/v1/academic-years`
-    ] as const;
-    }
+	return [`/v1/academic-years`] as const;
+};
 
+export const getGetV1AcademicYearsQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1AcademicYears>>,
+	TError = DtoErrorResponse,
+>(options?: {
+	query?: Partial<
+		UseQueryOptions<
+			Awaited<ReturnType<typeof getV1AcademicYears>>,
+			TError,
+			TData
+		>
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
-export const getGetV1AcademicYearsQueryOptions = <TData = Awaited<ReturnType<typeof getV1AcademicYears>>, TError = DtoErrorResponse>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1AcademicYears>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
-) => {
+	const queryKey = queryOptions?.queryKey ?? getGetV1AcademicYearsQueryKey();
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1AcademicYears>>
+	> = ({ signal }) => getV1AcademicYears({ signal, ...requestOptions });
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1AcademicYearsQueryKey();
+	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1AcademicYears>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
+export type GetV1AcademicYearsQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1AcademicYears>>
+>;
+export type GetV1AcademicYearsQueryError = DtoErrorResponse;
 
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1AcademicYears>>> = ({ signal }) => getV1AcademicYears({ signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1AcademicYears>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetV1AcademicYearsQueryResult = NonNullable<Awaited<ReturnType<typeof getV1AcademicYears>>>
-export type GetV1AcademicYearsQueryError = DtoErrorResponse
-
-
-export function useGetV1AcademicYears<TData = Awaited<ReturnType<typeof getV1AcademicYears>>, TError = DtoErrorResponse>(
-  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1AcademicYears>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1AcademicYears>>,
-          TError,
-          Awaited<ReturnType<typeof getV1AcademicYears>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1AcademicYears<TData = Awaited<ReturnType<typeof getV1AcademicYears>>, TError = DtoErrorResponse>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1AcademicYears>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1AcademicYears>>,
-          TError,
-          Awaited<ReturnType<typeof getV1AcademicYears>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1AcademicYears<TData = Awaited<ReturnType<typeof getV1AcademicYears>>, TError = DtoErrorResponse>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1AcademicYears>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1AcademicYears<
+	TData = Awaited<ReturnType<typeof getV1AcademicYears>>,
+	TError = DtoErrorResponse,
+>(
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1AcademicYears>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1AcademicYears>>,
+					TError,
+					Awaited<ReturnType<typeof getV1AcademicYears>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1AcademicYears<
+	TData = Awaited<ReturnType<typeof getV1AcademicYears>>,
+	TError = DtoErrorResponse,
+>(
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1AcademicYears>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1AcademicYears>>,
+					TError,
+					Awaited<ReturnType<typeof getV1AcademicYears>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1AcademicYears<
+	TData = Awaited<ReturnType<typeof getV1AcademicYears>>,
+	TError = DtoErrorResponse,
+>(
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1AcademicYears>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary List all academic years
  */
 
-export function useGetV1AcademicYears<TData = Awaited<ReturnType<typeof getV1AcademicYears>>, TError = DtoErrorResponse>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1AcademicYears>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1AcademicYears<
+	TData = Awaited<ReturnType<typeof getV1AcademicYears>>,
+	TError = DtoErrorResponse,
+>(
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1AcademicYears>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1AcademicYearsQueryOptions(options);
 
-  const queryOptions = getGetV1AcademicYearsQueryOptions(options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
 
 export type postV1AcademicYearsResponse201 = {
-  data: PostV1AcademicYears201
-  status: 201
-}
+	data: PostV1AcademicYears201;
+	status: 201;
+};
 
 export type postV1AcademicYearsResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type postV1AcademicYearsResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type postV1AcademicYearsResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type postV1AcademicYearsResponse409 = {
-  data: DtoErrorResponse
-  status: 409
-}
-
-export type postV1AcademicYearsResponseSuccess = (postV1AcademicYearsResponse201) & {
-  headers: Headers;
-};
-export type postV1AcademicYearsResponseError = (postV1AcademicYearsResponse400 | postV1AcademicYearsResponse401 | postV1AcademicYearsResponse403 | postV1AcademicYearsResponse409) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 409;
 };
 
-export type postV1AcademicYearsResponse = (postV1AcademicYearsResponseSuccess | postV1AcademicYearsResponseError)
+export type postV1AcademicYearsResponseSuccess =
+	postV1AcademicYearsResponse201 & {
+		headers: Headers;
+	};
+export type postV1AcademicYearsResponseError = (
+	| postV1AcademicYearsResponse400
+	| postV1AcademicYearsResponse401
+	| postV1AcademicYearsResponse403
+	| postV1AcademicYearsResponse409
+) & {
+	headers: Headers;
+};
+
+export type postV1AcademicYearsResponse =
+	| postV1AcademicYearsResponseSuccess
+	| postV1AcademicYearsResponseError;
 
 export const getPostV1AcademicYearsUrl = () => {
-
-
-
-
-  return `/v1/academic-years`
-}
+	return `/v1/academic-years`;
+};
 
 /**
  * Create a new academic year (superadmin, admin_administrasi)
  * @summary Create a new academic year
  */
-export const postV1AcademicYears = async (dtoCreateAcademicYearRequest: DtoCreateAcademicYearRequest, options?: RequestInit): Promise<postV1AcademicYearsResponse> => {
+export const postV1AcademicYears = async (
+	dtoCreateAcademicYearRequest: DtoCreateAcademicYearRequest,
+	options?: RequestInit,
+): Promise<postV1AcademicYearsResponse> => {
+	return customInstance<postV1AcademicYearsResponse>(
+		getPostV1AcademicYearsUrl(),
+		{
+			...options,
+			method: "POST",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(dtoCreateAcademicYearRequest),
+		},
+	);
+};
 
-  return customInstance<postV1AcademicYearsResponse>(getPostV1AcademicYearsUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      dtoCreateAcademicYearRequest,)
-  }
-);}
+export const getPostV1AcademicYearsMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1AcademicYears>>,
+		TError,
+		{ data: DtoCreateAcademicYearRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1AcademicYears>>,
+	TError,
+	{ data: DtoCreateAcademicYearRequest },
+	TContext
+> => {
+	const mutationKey = ["postV1AcademicYears"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1AcademicYears>>,
+		{ data: DtoCreateAcademicYearRequest }
+	> = (props) => {
+		const { data } = props ?? {};
 
+		return postV1AcademicYears(data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-export const getPostV1AcademicYearsMutationOptions = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AcademicYears>>, TError,{data: DtoCreateAcademicYearRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1AcademicYears>>, TError,{data: DtoCreateAcademicYearRequest}, TContext> => {
+export type PostV1AcademicYearsMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1AcademicYears>>
+>;
+export type PostV1AcademicYearsMutationBody = DtoCreateAcademicYearRequest;
+export type PostV1AcademicYearsMutationError = DtoErrorResponse;
 
-const mutationKey = ['postV1AcademicYears'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1AcademicYears>>, {data: DtoCreateAcademicYearRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  postV1AcademicYears(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1AcademicYearsMutationResult = NonNullable<Awaited<ReturnType<typeof postV1AcademicYears>>>
-    export type PostV1AcademicYearsMutationBody = DtoCreateAcademicYearRequest
-    export type PostV1AcademicYearsMutationError = DtoErrorResponse
-
-    /**
+/**
  * @summary Create a new academic year
  */
-export const usePostV1AcademicYears = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AcademicYears>>, TError,{data: DtoCreateAcademicYearRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postV1AcademicYears>>,
-        TError,
-        {data: DtoCreateAcademicYearRequest},
-        TContext
-      > => {
-      return useMutation(getPostV1AcademicYearsMutationOptions(options), queryClient);
-    }
-    export type getV1AcademicYearsIdResponse200 = {
-  data: GetV1AcademicYearsId200
-  status: 200
-}
+export const usePostV1AcademicYears = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1AcademicYears>>,
+			TError,
+			{ data: DtoCreateAcademicYearRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1AcademicYears>>,
+	TError,
+	{ data: DtoCreateAcademicYearRequest },
+	TContext
+> => {
+	return useMutation(
+		getPostV1AcademicYearsMutationOptions(options),
+		queryClient,
+	);
+};
+export type getV1AcademicYearsIdResponse200 = {
+	data: GetV1AcademicYearsId200;
+	status: 200;
+};
 
 export type getV1AcademicYearsIdResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type getV1AcademicYearsIdResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type getV1AcademicYearsIdResponse404 = {
-  data: DtoErrorResponse
-  status: 404
-}
-
-export type getV1AcademicYearsIdResponseSuccess = (getV1AcademicYearsIdResponse200) & {
-  headers: Headers;
-};
-export type getV1AcademicYearsIdResponseError = (getV1AcademicYearsIdResponse401 | getV1AcademicYearsIdResponse403 | getV1AcademicYearsIdResponse404) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 404;
 };
 
-export type getV1AcademicYearsIdResponse = (getV1AcademicYearsIdResponseSuccess | getV1AcademicYearsIdResponseError)
+export type getV1AcademicYearsIdResponseSuccess =
+	getV1AcademicYearsIdResponse200 & {
+		headers: Headers;
+	};
+export type getV1AcademicYearsIdResponseError = (
+	| getV1AcademicYearsIdResponse401
+	| getV1AcademicYearsIdResponse403
+	| getV1AcademicYearsIdResponse404
+) & {
+	headers: Headers;
+};
 
-export const getGetV1AcademicYearsIdUrl = (id: number,) => {
+export type getV1AcademicYearsIdResponse =
+	| getV1AcademicYearsIdResponseSuccess
+	| getV1AcademicYearsIdResponseError;
 
-
-
-
-  return `/v1/academic-years/${id}`
-}
+export const getGetV1AcademicYearsIdUrl = (id: number) => {
+	return `/v1/academic-years/${id}`;
+};
 
 /**
  * Get a single academic year's detail
  * @summary Get academic year by ID
  */
-export const getV1AcademicYearsId = async (id: number, options?: RequestInit): Promise<getV1AcademicYearsIdResponse> => {
+export const getV1AcademicYearsId = async (
+	id: number,
+	options?: RequestInit,
+): Promise<getV1AcademicYearsIdResponse> => {
+	return customInstance<getV1AcademicYearsIdResponse>(
+		getGetV1AcademicYearsIdUrl(id),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
 
-  return customInstance<getV1AcademicYearsIdResponse>(getGetV1AcademicYearsIdUrl(id),
-  {
-    ...options,
-    method: 'GET'
+export const getGetV1AcademicYearsIdQueryKey = (id: number) => {
+	return [`/v1/academic-years/${id}`] as const;
+};
 
-
-  }
-);}
-
-
-
-
-
-export const getGetV1AcademicYearsIdQueryKey = (id: number,) => {
-    return [
-    `/v1/academic-years/${id}`
-    ] as const;
-    }
-
-
-export const getGetV1AcademicYearsIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1AcademicYearsId>>, TError = DtoErrorResponse>(id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1AcademicYearsId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getGetV1AcademicYearsIdQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1AcademicYearsId>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1AcademicYearsId>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
 ) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+	const queryKey =
+		queryOptions?.queryKey ?? getGetV1AcademicYearsIdQueryKey(id);
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1AcademicYearsIdQueryKey(id);
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1AcademicYearsId>>
+	> = ({ signal }) => getV1AcademicYearsId(id, { signal, ...requestOptions });
 
+	return {
+		queryKey,
+		queryFn,
+		enabled: !!id,
+		...queryOptions,
+	} as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1AcademicYearsId>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
+export type GetV1AcademicYearsIdQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1AcademicYearsId>>
+>;
+export type GetV1AcademicYearsIdQueryError = DtoErrorResponse;
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1AcademicYearsId>>> = ({ signal }) => getV1AcademicYearsId(id, { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1AcademicYearsId>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetV1AcademicYearsIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1AcademicYearsId>>>
-export type GetV1AcademicYearsIdQueryError = DtoErrorResponse
-
-
-export function useGetV1AcademicYearsId<TData = Awaited<ReturnType<typeof getV1AcademicYearsId>>, TError = DtoErrorResponse>(
- id: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1AcademicYearsId>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1AcademicYearsId>>,
-          TError,
-          Awaited<ReturnType<typeof getV1AcademicYearsId>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1AcademicYearsId<TData = Awaited<ReturnType<typeof getV1AcademicYearsId>>, TError = DtoErrorResponse>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1AcademicYearsId>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1AcademicYearsId>>,
-          TError,
-          Awaited<ReturnType<typeof getV1AcademicYearsId>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1AcademicYearsId<TData = Awaited<ReturnType<typeof getV1AcademicYearsId>>, TError = DtoErrorResponse>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1AcademicYearsId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1AcademicYearsId<
+	TData = Awaited<ReturnType<typeof getV1AcademicYearsId>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1AcademicYearsId>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1AcademicYearsId>>,
+					TError,
+					Awaited<ReturnType<typeof getV1AcademicYearsId>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1AcademicYearsId<
+	TData = Awaited<ReturnType<typeof getV1AcademicYearsId>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1AcademicYearsId>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1AcademicYearsId>>,
+					TError,
+					Awaited<ReturnType<typeof getV1AcademicYearsId>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1AcademicYearsId<
+	TData = Awaited<ReturnType<typeof getV1AcademicYearsId>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1AcademicYearsId>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary Get academic year by ID
  */
 
-export function useGetV1AcademicYearsId<TData = Awaited<ReturnType<typeof getV1AcademicYearsId>>, TError = DtoErrorResponse>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1AcademicYearsId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1AcademicYearsId<
+	TData = Awaited<ReturnType<typeof getV1AcademicYearsId>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1AcademicYearsId>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1AcademicYearsIdQueryOptions(id, options);
 
-  const queryOptions = getGetV1AcademicYearsIdQueryOptions(id,options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
 
 export type putV1AcademicYearsIdResponse200 = {
-  data: PutV1AcademicYearsId200
-  status: 200
-}
+	data: PutV1AcademicYearsId200;
+	status: 200;
+};
 
 export type putV1AcademicYearsIdResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type putV1AcademicYearsIdResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type putV1AcademicYearsIdResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type putV1AcademicYearsIdResponse404 = {
-  data: DtoErrorResponse
-  status: 404
-}
+	data: DtoErrorResponse;
+	status: 404;
+};
 
 export type putV1AcademicYearsIdResponse409 = {
-  data: DtoErrorResponse
-  status: 409
-}
-
-export type putV1AcademicYearsIdResponseSuccess = (putV1AcademicYearsIdResponse200) & {
-  headers: Headers;
-};
-export type putV1AcademicYearsIdResponseError = (putV1AcademicYearsIdResponse400 | putV1AcademicYearsIdResponse401 | putV1AcademicYearsIdResponse403 | putV1AcademicYearsIdResponse404 | putV1AcademicYearsIdResponse409) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 409;
 };
 
-export type putV1AcademicYearsIdResponse = (putV1AcademicYearsIdResponseSuccess | putV1AcademicYearsIdResponseError)
+export type putV1AcademicYearsIdResponseSuccess =
+	putV1AcademicYearsIdResponse200 & {
+		headers: Headers;
+	};
+export type putV1AcademicYearsIdResponseError = (
+	| putV1AcademicYearsIdResponse400
+	| putV1AcademicYearsIdResponse401
+	| putV1AcademicYearsIdResponse403
+	| putV1AcademicYearsIdResponse404
+	| putV1AcademicYearsIdResponse409
+) & {
+	headers: Headers;
+};
 
-export const getPutV1AcademicYearsIdUrl = (id: number,) => {
+export type putV1AcademicYearsIdResponse =
+	| putV1AcademicYearsIdResponseSuccess
+	| putV1AcademicYearsIdResponseError;
 
-
-
-
-  return `/v1/academic-years/${id}`
-}
+export const getPutV1AcademicYearsIdUrl = (id: number) => {
+	return `/v1/academic-years/${id}`;
+};
 
 /**
  * Update academic year data
  * @summary Update an academic year
  */
-export const putV1AcademicYearsId = async (id: number,
-    dtoCreateAcademicYearRequest: DtoCreateAcademicYearRequest, options?: RequestInit): Promise<putV1AcademicYearsIdResponse> => {
+export const putV1AcademicYearsId = async (
+	id: number,
+	dtoCreateAcademicYearRequest: DtoCreateAcademicYearRequest,
+	options?: RequestInit,
+): Promise<putV1AcademicYearsIdResponse> => {
+	return customInstance<putV1AcademicYearsIdResponse>(
+		getPutV1AcademicYearsIdUrl(id),
+		{
+			...options,
+			method: "PUT",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(dtoCreateAcademicYearRequest),
+		},
+	);
+};
 
-  return customInstance<putV1AcademicYearsIdResponse>(getPutV1AcademicYearsIdUrl(id),
-  {
-    ...options,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      dtoCreateAcademicYearRequest,)
-  }
-);}
+export const getPutV1AcademicYearsIdMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof putV1AcademicYearsId>>,
+		TError,
+		{ id: number; data: DtoCreateAcademicYearRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof putV1AcademicYearsId>>,
+	TError,
+	{ id: number; data: DtoCreateAcademicYearRequest },
+	TContext
+> => {
+	const mutationKey = ["putV1AcademicYearsId"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof putV1AcademicYearsId>>,
+		{ id: number; data: DtoCreateAcademicYearRequest }
+	> = (props) => {
+		const { id, data } = props ?? {};
 
+		return putV1AcademicYearsId(id, data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-export const getPutV1AcademicYearsIdMutationOptions = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1AcademicYearsId>>, TError,{id: number;data: DtoCreateAcademicYearRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof putV1AcademicYearsId>>, TError,{id: number;data: DtoCreateAcademicYearRequest}, TContext> => {
+export type PutV1AcademicYearsIdMutationResult = NonNullable<
+	Awaited<ReturnType<typeof putV1AcademicYearsId>>
+>;
+export type PutV1AcademicYearsIdMutationBody = DtoCreateAcademicYearRequest;
+export type PutV1AcademicYearsIdMutationError = DtoErrorResponse;
 
-const mutationKey = ['putV1AcademicYearsId'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1AcademicYearsId>>, {id: number;data: DtoCreateAcademicYearRequest}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  putV1AcademicYearsId(id,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PutV1AcademicYearsIdMutationResult = NonNullable<Awaited<ReturnType<typeof putV1AcademicYearsId>>>
-    export type PutV1AcademicYearsIdMutationBody = DtoCreateAcademicYearRequest
-    export type PutV1AcademicYearsIdMutationError = DtoErrorResponse
-
-    /**
+/**
  * @summary Update an academic year
  */
-export const usePutV1AcademicYearsId = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1AcademicYearsId>>, TError,{id: number;data: DtoCreateAcademicYearRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof putV1AcademicYearsId>>,
-        TError,
-        {id: number;data: DtoCreateAcademicYearRequest},
-        TContext
-      > => {
-      return useMutation(getPutV1AcademicYearsIdMutationOptions(options), queryClient);
-    }
-    export type patchV1AcademicYearsIdActivateResponse200 = {
-  data: DtoSuccessResponse
-  status: 200
-}
+export const usePutV1AcademicYearsId = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof putV1AcademicYearsId>>,
+			TError,
+			{ id: number; data: DtoCreateAcademicYearRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof putV1AcademicYearsId>>,
+	TError,
+	{ id: number; data: DtoCreateAcademicYearRequest },
+	TContext
+> => {
+	return useMutation(
+		getPutV1AcademicYearsIdMutationOptions(options),
+		queryClient,
+	);
+};
+export type patchV1AcademicYearsIdActivateResponse200 = {
+	data: DtoSuccessResponse;
+	status: 200;
+};
 
 export type patchV1AcademicYearsIdActivateResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type patchV1AcademicYearsIdActivateResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type patchV1AcademicYearsIdActivateResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type patchV1AcademicYearsIdActivateResponse404 = {
-  data: DtoErrorResponse
-  status: 404
-}
+	data: DtoErrorResponse;
+	status: 404;
+};
 
 export type patchV1AcademicYearsIdActivateResponse422 = {
-  data: DtoErrorResponse
-  status: 422
-}
-
-export type patchV1AcademicYearsIdActivateResponseSuccess = (patchV1AcademicYearsIdActivateResponse200) & {
-  headers: Headers;
-};
-export type patchV1AcademicYearsIdActivateResponseError = (patchV1AcademicYearsIdActivateResponse400 | patchV1AcademicYearsIdActivateResponse401 | patchV1AcademicYearsIdActivateResponse403 | patchV1AcademicYearsIdActivateResponse404 | patchV1AcademicYearsIdActivateResponse422) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 422;
 };
 
-export type patchV1AcademicYearsIdActivateResponse = (patchV1AcademicYearsIdActivateResponseSuccess | patchV1AcademicYearsIdActivateResponseError)
+export type patchV1AcademicYearsIdActivateResponseSuccess =
+	patchV1AcademicYearsIdActivateResponse200 & {
+		headers: Headers;
+	};
+export type patchV1AcademicYearsIdActivateResponseError = (
+	| patchV1AcademicYearsIdActivateResponse400
+	| patchV1AcademicYearsIdActivateResponse401
+	| patchV1AcademicYearsIdActivateResponse403
+	| patchV1AcademicYearsIdActivateResponse404
+	| patchV1AcademicYearsIdActivateResponse422
+) & {
+	headers: Headers;
+};
 
-export const getPatchV1AcademicYearsIdActivateUrl = (id: number,) => {
+export type patchV1AcademicYearsIdActivateResponse =
+	| patchV1AcademicYearsIdActivateResponseSuccess
+	| patchV1AcademicYearsIdActivateResponseError;
 
-
-
-
-  return `/v1/academic-years/${id}/activate`
-}
+export const getPatchV1AcademicYearsIdActivateUrl = (id: number) => {
+	return `/v1/academic-years/${id}/activate`;
+};
 
 /**
  * Set an academic year as active (deactivates all others)
  * @summary Activate an academic year
  */
-export const patchV1AcademicYearsIdActivate = async (id: number, options?: RequestInit): Promise<patchV1AcademicYearsIdActivateResponse> => {
+export const patchV1AcademicYearsIdActivate = async (
+	id: number,
+	options?: RequestInit,
+): Promise<patchV1AcademicYearsIdActivateResponse> => {
+	return customInstance<patchV1AcademicYearsIdActivateResponse>(
+		getPatchV1AcademicYearsIdActivateUrl(id),
+		{
+			...options,
+			method: "PATCH",
+		},
+	);
+};
 
-  return customInstance<patchV1AcademicYearsIdActivateResponse>(getPatchV1AcademicYearsIdActivateUrl(id),
-  {
-    ...options,
-    method: 'PATCH'
+export const getPatchV1AcademicYearsIdActivateMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof patchV1AcademicYearsIdActivate>>,
+		TError,
+		{ id: number },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof patchV1AcademicYearsIdActivate>>,
+	TError,
+	{ id: number },
+	TContext
+> => {
+	const mutationKey = ["patchV1AcademicYearsIdActivate"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof patchV1AcademicYearsIdActivate>>,
+		{ id: number }
+	> = (props) => {
+		const { id } = props ?? {};
 
-  }
-);}
+		return patchV1AcademicYearsIdActivate(id, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
+export type PatchV1AcademicYearsIdActivateMutationResult = NonNullable<
+	Awaited<ReturnType<typeof patchV1AcademicYearsIdActivate>>
+>;
 
+export type PatchV1AcademicYearsIdActivateMutationError = DtoErrorResponse;
 
-export const getPatchV1AcademicYearsIdActivateMutationOptions = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchV1AcademicYearsIdActivate>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof patchV1AcademicYearsIdActivate>>, TError,{id: number}, TContext> => {
-
-const mutationKey = ['patchV1AcademicYearsIdActivate'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof patchV1AcademicYearsIdActivate>>, {id: number}> = (props) => {
-          const {id} = props ?? {};
-
-          return  patchV1AcademicYearsIdActivate(id,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PatchV1AcademicYearsIdActivateMutationResult = NonNullable<Awaited<ReturnType<typeof patchV1AcademicYearsIdActivate>>>
-
-    export type PatchV1AcademicYearsIdActivateMutationError = DtoErrorResponse
-
-    /**
+/**
  * @summary Activate an academic year
  */
-export const usePatchV1AcademicYearsIdActivate = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchV1AcademicYearsIdActivate>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof patchV1AcademicYearsIdActivate>>,
-        TError,
-        {id: number},
-        TContext
-      > => {
-      return useMutation(getPatchV1AcademicYearsIdActivateMutationOptions(options), queryClient);
-    }
+export const usePatchV1AcademicYearsIdActivate = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof patchV1AcademicYearsIdActivate>>,
+			TError,
+			{ id: number },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof patchV1AcademicYearsIdActivate>>,
+	TError,
+	{ id: number },
+	TContext
+> => {
+	return useMutation(
+		getPatchV1AcademicYearsIdActivateMutationOptions(options),
+		queryClient,
+	);
+};

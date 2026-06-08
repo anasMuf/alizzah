@@ -5,18 +5,18 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoPaymentItemResponse } from './dtoPaymentItemResponse';
-import type { DtoStudentBriefResponse } from './dtoStudentBriefResponse';
-import type { DtoUserBriefResponse } from './dtoUserBriefResponse';
+import type { DtoPaymentItemResponse } from "./dtoPaymentItemResponse";
+import type { DtoStudentBriefResponse } from "./dtoStudentBriefResponse";
+import type { DtoUserBriefResponse } from "./dtoUserBriefResponse";
 
 export interface DtoPaymentDetailResponse {
-  created_at?: string;
-  created_by?: DtoUserBriefResponse;
-  id?: number;
-  items?: DtoPaymentItemResponse[];
-  notes?: string;
-  payment_date?: string;
-  source?: string;
-  student?: DtoStudentBriefResponse;
-  total_amount?: number;
+	created_at?: string;
+	created_by?: DtoUserBriefResponse;
+	id?: number;
+	items?: DtoPaymentItemResponse[];
+	notes?: string;
+	payment_date?: string;
+	source?: string;
+	student?: DtoStudentBriefResponse;
+	total_amount?: number;
 }

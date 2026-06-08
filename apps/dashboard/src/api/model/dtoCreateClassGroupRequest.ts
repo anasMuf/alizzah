@@ -5,13 +5,13 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoClassGroupSchedule } from './dtoClassGroupSchedule';
-import type { DtoCreateClassGroupRequestLevel } from './dtoCreateClassGroupRequestLevel';
+import type { DtoClassGroupSchedule } from "./dtoClassGroupSchedule";
+import type { DtoCreateClassGroupRequestLevel } from "./dtoCreateClassGroupRequestLevel";
 
 export interface DtoCreateClassGroupRequest {
-  academic_year_id: number;
-  level: DtoCreateClassGroupRequestLevel;
-  /** @maxLength 50 */
-  name: string;
-  schedule: DtoClassGroupSchedule;
+	academic_year_id: number;
+	level: DtoCreateClassGroupRequestLevel;
+	/** @maxLength 50 */
+	name: string;
+	schedule: DtoClassGroupSchedule;
 }

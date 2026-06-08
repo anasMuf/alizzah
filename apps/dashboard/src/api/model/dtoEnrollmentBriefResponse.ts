@@ -7,12 +7,12 @@
  */
 
 export interface DtoEnrollmentBriefResponse {
-  academic_year_id?: number;
-  academic_year_name?: string;
-  class_group_id?: number;
-  class_group_name?: string;
-  id?: number;
-  level?: string;
-  start_date?: string;
-  status?: string;
+	academic_year_id?: number;
+	academic_year_name?: string;
+	class_group_id?: number;
+	class_group_name?: string;
+	id?: number;
+	level?: string;
+	start_date?: string;
+	status?: string;
 }

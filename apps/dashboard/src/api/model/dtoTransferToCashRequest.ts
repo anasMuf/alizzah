@@ -7,7 +7,7 @@
  */
 
 export interface DtoTransferToCashRequest {
-  /** @minimum 1 */
-  amount: number;
-  description: string;
+	/** @minimum 1 */
+	amount: number;
+	description: string;
 }

@@ -5,13 +5,13 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoClassGroupBriefResponse } from './dtoClassGroupBriefResponse';
-import type { DtoClassGroupReportSummary } from './dtoClassGroupReportSummary';
-import type { DtoStudentPaymentStatusInReport } from './dtoStudentPaymentStatusInReport';
+import type { DtoClassGroupBriefResponse } from "./dtoClassGroupBriefResponse";
+import type { DtoClassGroupReportSummary } from "./dtoClassGroupReportSummary";
+import type { DtoStudentPaymentStatusInReport } from "./dtoStudentPaymentStatusInReport";
 
 export interface DtoClassGroupReportResponse {
-  class_group?: DtoClassGroupBriefResponse;
-  period?: string;
-  students?: DtoStudentPaymentStatusInReport[];
-  summary?: DtoClassGroupReportSummary;
+	class_group?: DtoClassGroupBriefResponse;
+	period?: string;
+	students?: DtoStudentPaymentStatusInReport[];
+	summary?: DtoClassGroupReportSummary;
 }

@@ -7,12 +7,12 @@
  */
 
 export interface DtoFeeConfigItemResponse {
-  amount?: number;
-  category?: string;
-  gender?: string;
-  id?: number;
-  item_key?: string;
-  level?: string;
-  name?: string;
-  unit?: string;
+	amount?: number;
+	category?: string;
+	gender?: string;
+	id?: number;
+	item_key?: string;
+	level?: string;
+	name?: string;
+	unit?: string;
 }

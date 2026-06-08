@@ -7,7 +7,7 @@
  */
 
 export interface DtoEnrollExtracurricularRequest {
-  academic_year_id: number;
-  extracurricular_id: number;
-  start_date: string;
+	academic_year_id: number;
+	extracurricular_id: number;
+	start_date: string;
 }

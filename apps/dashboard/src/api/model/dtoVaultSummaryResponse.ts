@@ -7,5 +7,5 @@
  */
 
 export interface DtoVaultSummaryResponse {
-  balance?: number;
+	balance?: number;
 }

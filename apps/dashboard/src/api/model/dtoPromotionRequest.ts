@@ -7,9 +7,9 @@
  */
 
 export interface DtoPromotionRequest {
-  event_date: string;
-  from_academic_year_id: number;
-  notes?: string;
-  retained_student_ids?: number[];
-  to_academic_year_id: number;
+	event_date: string;
+	from_academic_year_id: number;
+	notes?: string;
+	retained_student_ids?: number[];
+	to_academic_year_id: number;
 }

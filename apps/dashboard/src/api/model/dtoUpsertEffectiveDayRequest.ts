@@ -7,22 +7,22 @@
  */
 
 export interface DtoUpsertEffectiveDayRequest {
-  academic_year_id: number;
-  /**
-     * @minimum 1
-     * @maximum 12
-     */
-  month: number;
-  /**
-     * @minimum 0
-     * @maximum 31
-     */
-  total_days: number;
-  /**
-     * @minimum 0
-     * @maximum 5
-     */
-  total_mondays: number;
-  /** @minimum 2020 */
-  year: number;
+	academic_year_id: number;
+	/**
+	 * @minimum 1
+	 * @maximum 12
+	 */
+	month: number;
+	/**
+	 * @minimum 0
+	 * @maximum 31
+	 */
+	total_days: number;
+	/**
+	 * @minimum 0
+	 * @maximum 5
+	 */
+	total_mondays: number;
+	/** @minimum 2020 */
+	year: number;
 }

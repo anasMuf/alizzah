@@ -6,13 +6,13 @@
  * OpenAPI spec version: 1.0
  */
 
-export type DtoCreateUserRequestRole = typeof DtoCreateUserRequestRole[keyof typeof DtoCreateUserRequestRole];
-
+export type DtoCreateUserRequestRole =
+	(typeof DtoCreateUserRequestRole)[keyof typeof DtoCreateUserRequestRole];
 
 export const DtoCreateUserRequestRole = {
-  superadmin: 'superadmin',
-  admin_administrasi: 'admin_administrasi',
-  admin_keuangan: 'admin_keuangan',
-  kepala_sekolah: 'kepala_sekolah',
-  yayasan: 'yayasan',
+	superadmin: "superadmin",
+	admin_administrasi: "admin_administrasi",
+	admin_keuangan: "admin_keuangan",
+	kepala_sekolah: "kepala_sekolah",
+	yayasan: "yayasan",
 } as const;

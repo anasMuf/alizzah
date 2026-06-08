@@ -7,7 +7,7 @@
  */
 
 export interface DtoVaultBalanceResponse {
-  balance?: number;
-  total_savings_general?: number;
-  total_savings_mandatory?: number;
+	balance?: number;
+	total_savings_general?: number;
+	total_savings_mandatory?: number;
 }

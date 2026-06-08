@@ -7,5 +7,5 @@
  */
 
 export interface DtoLoginUserResponse {
-  token?: string;
+	token?: string;
 }

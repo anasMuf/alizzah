@@ -7,8 +7,8 @@
  */
 
 export interface DtoMonthlyBreakdown {
-  expense?: number;
-  income?: number;
-  month?: number;
-  year?: number;
+	expense?: number;
+	income?: number;
+	month?: number;
+	year?: number;
 }

@@ -8,6 +8,8 @@ package seeders
 //
 //   - Penerimaan dana bantuan (IncomeTransaction + cash credit)    -> SeedIncomeTransactions
 //
+//   - Dispensasi/keringanan tagihan contoh                         -> SeedDispensations
+//
 //     false = HANYA siswa, enrollment, akun tabungan, enroll ekskul, dan TAGIHAN
 //     (biaya awal, registrasi, bulanan) — semua berstatus unpaid; saldo kas mulai 0.
 //     true  = ikut menyemai pembayaran, pengeluaran, dan dana bantuan (data demo penuh).

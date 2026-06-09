@@ -7,7 +7,8 @@ type PaginatedResponse struct {
 }
 
 type Meta struct {
-	Page  int   `json:"page"`
-	Limit int   `json:"limit"`
-	Total int64 `json:"total"`
+	Page             int      `json:"page"`
+	Limit            int      `json:"limit"`
+	Total            int64    `json:"total"`
+	TotalOutstanding *float64 `json:"total_outstanding,omitempty"` // sum sisa tagihan terfilter; diisi pada daftar invoice
 }

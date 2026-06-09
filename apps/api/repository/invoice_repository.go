@@ -8,7 +8,7 @@ import (
 )
 
 type InvoiceRepository interface {
-	FindAll(params dto.InvoiceQueryParams) ([]model.Invoice, int64, error)
+	FindAll(params dto.InvoiceQueryParams) ([]model.Invoice, int64, float64, error)
 	FindByID(id uint) (*model.Invoice, error)
 	FindByIDs(ids []uint) ([]model.Invoice, error)
 	FindByStudentID(studentID uint, invoiceType, status string, academicYearID uint) ([]model.Invoice, error)
@@ -39,55 +39,58 @@ func (r *invoiceRepository) WithTx(tx *gorm.DB) InvoiceRepository {
 	return &invoiceRepository{db: tx}
 }
 
-func (r *invoiceRepository) FindAll(params dto.InvoiceQueryParams) ([]model.Invoice, int64, error) {
-	var invoices []model.Invoice
+func (r *invoiceRepository) FindAll(params dto.InvoiceQueryParams) ([]model.Invoice, int64, float64, error) {
+	// applyFilters memasang semua kondisi WHERE (termasuk filter visibility bulanan)
+	// ke sebuah query. Dipakai ulang untuk count, sum, dan find agar identik & konsisten.
+	applyFilters := func(q *gorm.DB) *gorm.DB {
+		if params.StudentID != 0 {
+			q = q.Where("student_id = ?", params.StudentID)
+		}
+		if params.AcademicYearID != 0 {
+			q = q.Where("academic_year_id = ?", params.AcademicYearID)
+		}
+		if params.Type != "" {
+			q = q.Where("type = ?", params.Type)
+		}
+		if params.Status != "" {
+			q = q.Where("status = ?", params.Status)
+		}
+		if params.Month != 0 {
+			q = q.Where("month = ?", params.Month)
+		}
+		if params.Year != 0 {
+			q = q.Where("year = ?", params.Year)
+		}
+		if params.ClassGroupID != 0 {
+			q = q.Where("student_id IN (?)",
+				r.db.Model(&model.StudentEnrollment{}).
+					Select("student_id").
+					Where("class_group_id = ? AND status = ?", params.ClassGroupID, "active"),
+			)
+		}
+		if params.Search != "" {
+			q = q.Where("student_id IN (?)",
+				r.db.Model(&model.Student{}).
+					Select("id").
+					Where("full_name ILIKE ?", "%"+params.Search+"%"),
+			)
+		}
+		// Sembunyikan tagihan bulanan untuk bulan yang belum "berjalan" (clamp ke TA).
+		return q.Where(monthlyVisibilityCond("invoices"))
+	}
+
+	// Jumlah total baris (untuk pagination)
 	var total int64
-
-	query := r.db.Model(&model.Invoice{}).
-		Preload("Student").
-		Preload("Student.Enrollments", "status = ?", "active").
-		Preload("Student.Enrollments.ClassGroup").
-		Preload("AcademicYear")
-
-	if params.StudentID != 0 {
-		query = query.Where("student_id = ?", params.StudentID)
-	}
-	if params.AcademicYearID != 0 {
-		query = query.Where("academic_year_id = ?", params.AcademicYearID)
-	}
-	if params.Type != "" {
-		query = query.Where("type = ?", params.Type)
-	}
-	if params.Status != "" {
-		query = query.Where("status = ?", params.Status)
-	}
-	if params.Month != 0 {
-		query = query.Where("month = ?", params.Month)
-	}
-	if params.Year != 0 {
-		query = query.Where("year = ?", params.Year)
-	}
-	if params.ClassGroupID != 0 {
-		query = query.Where("student_id IN (?)",
-			r.db.Model(&model.StudentEnrollment{}).
-				Select("student_id").
-				Where("class_group_id = ? AND status = ?", params.ClassGroupID, "active"),
-		)
-	}
-	if params.Search != "" {
-		searchPattern := "%" + params.Search + "%"
-		query = query.Where("student_id IN (?)",
-			r.db.Model(&model.Student{}).
-				Select("id").
-				Where("full_name ILIKE ?", searchPattern),
-		)
+	if err := applyFilters(r.db.Model(&model.Invoice{})).Count(&total).Error; err != nil {
+		return nil, 0, 0, err
 	}
 
-	// Sembunyikan tagihan bulanan untuk bulan yang belum "berjalan" (clamp ke TA).
-	query = query.Where(monthlyVisibilityCond("invoices"))
-
-	if err := query.Count(&total).Error; err != nil {
-		return nil, 0, err
+	// Total sisa tagihan untuk SELURUH hasil terfilter (abaikan pagination)
+	var outstanding float64
+	if err := applyFilters(r.db.Model(&model.Invoice{})).
+		Select("COALESCE(SUM(total_amount - paid_amount), 0)").
+		Scan(&outstanding).Error; err != nil {
+		return nil, 0, 0, err
 	}
 
 	page := params.Page
@@ -100,11 +103,17 @@ func (r *invoiceRepository) FindAll(params dto.InvoiceQueryParams) ([]model.Invo
 	}
 	offset := (page - 1) * limit
 
-	if err := query.Order("created_at DESC").Offset(offset).Limit(limit).Find(&invoices).Error; err != nil {
-		return nil, 0, err
+	var invoices []model.Invoice
+	q := applyFilters(r.db.Model(&model.Invoice{}).
+		Preload("Student").
+		Preload("Student.Enrollments", "status = ?", "active").
+		Preload("Student.Enrollments.ClassGroup").
+		Preload("AcademicYear"))
+	if err := q.Order("created_at DESC").Offset(offset).Limit(limit).Find(&invoices).Error; err != nil {
+		return nil, 0, 0, err
 	}
 
-	return invoices, total, nil
+	return invoices, total, outstanding, nil
 }
 
 func (r *invoiceRepository) FindByID(id uint) (*model.Invoice, error) {

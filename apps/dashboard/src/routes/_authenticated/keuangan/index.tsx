@@ -54,10 +54,9 @@ function KeuanganOverviewPage() {
 	const saldoBerangkas = Number(vault?.balance || 0);
 	const pemasukanHariIni = Number(report?.income_summary?.total || 0);
 	const pengeluaranHariIni = Number(report?.expense_summary?.total || 0);
-	const totalTunggakan = unpaidInvoices.reduce(
-		(sum: number, inv: any) =>
-			sum + Number(inv.total_amount || 0) - Number(inv.paid_amount || 0),
-		0,
+	// Total seluruh tunggakan (sum terfilter dari backend), bukan jumlah preview 5 baris.
+	const totalTunggakan = Number(
+		(unpaidData?.data as any)?.meta?.total_outstanding ?? 0,
 	);
 
 	const isLoading =

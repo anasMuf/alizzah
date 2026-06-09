@@ -55,7 +55,7 @@ func NewInvoiceService(
 }
 
 func (s *invoiceService) GetAll(params dto.InvoiceQueryParams) ([]dto.InvoiceListResponse, *dto.Meta, error) {
-	invoices, total, err := s.invoiceRepo.FindAll(params)
+	invoices, total, outstanding, err := s.invoiceRepo.FindAll(params)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -68,9 +68,10 @@ func (s *invoiceService) GetAll(params dto.InvoiceQueryParams) ([]dto.InvoiceLis
 	page, limit := utility.NormalizePagination(params.Page, params.Limit)
 
 	meta := &dto.Meta{
-		Page:  page,
-		Limit: limit,
-		Total: total,
+		Page:             page,
+		Limit:            limit,
+		Total:            total,
+		TotalOutstanding: &outstanding,
 	}
 
 	return responses, meta, nil

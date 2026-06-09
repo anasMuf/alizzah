@@ -113,4 +113,3 @@ func (r *studentEnrollmentRepository) BulkCreate(enrollments []model.StudentEnro
 	}
 	return r.db.Create(&enrollments).Error
 }
-

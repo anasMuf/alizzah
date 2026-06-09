@@ -83,6 +83,9 @@ func (r *invoiceRepository) FindAll(params dto.InvoiceQueryParams) ([]model.Invo
 		)
 	}
 
+	// Sembunyikan tagihan bulanan untuk bulan yang belum "berjalan" (clamp ke TA).
+	query = query.Where(monthlyVisibilityCond("invoices"))
+
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
@@ -144,6 +147,9 @@ func (r *invoiceRepository) FindByStudentID(studentID uint, invoiceType, status 
 	if academicYearID != 0 {
 		query = query.Where("academic_year_id = ?", academicYearID)
 	}
+
+	// Sembunyikan tagihan bulanan untuk bulan yang belum "berjalan" (clamp ke TA).
+	query = query.Where(monthlyVisibilityCond("invoices"))
 
 	err := query.Order("created_at DESC").Find(&invoices).Error
 	return invoices, err

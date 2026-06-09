@@ -58,6 +58,11 @@ func (r *reportRepository) SumInvoiceByCategory(academicYearID uint, month, year
 	if year != 0 {
 		query = query.Where("i.year = ?", year)
 	}
+	// Saat agregat lintas-bulan (tanpa filter bulan), kecualikan tagihan bulanan
+	// bulan depan (clamp ke TA). Untuk laporan bulan spesifik, tidak diubah.
+	if month == 0 && year == 0 {
+		query = query.Where(monthlyVisibilityCond("i"))
+	}
 
 	err := query.Group("ii.category").Scan(&results).Error
 	return results, err
@@ -158,6 +163,9 @@ func (r *reportRepository) GetInvoiceSummaryByStudent(studentID uint, academicYe
 	if academicYearID != 0 {
 		query = query.Where("academic_year_id = ?", academicYearID)
 	}
+
+	// Kecualikan tagihan bulanan bulan depan (clamp ke TA) dari total.
+	query = query.Where(monthlyVisibilityCond("invoices"))
 
 	err := query.Scan(&summary).Error
 	summary.TotalUnpaid = summary.TotalBilled - summary.TotalPaid

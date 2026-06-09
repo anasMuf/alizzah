@@ -63,7 +63,6 @@ func (r *classGroupRepository) WithTx(tx *gorm.DB) ClassGroupRepository {
 	return &classGroupRepository{db: tx}
 }
 
-
 func (r *classGroupRepository) HasActiveStudents(id uint) (bool, error) {
 	var count int64
 	err := r.db.Model(&model.StudentEnrollment{}).

@@ -34,4 +34,3 @@ func (r *studentAcademicEventRepository) Create(event *model.StudentAcademicEven
 func (r *studentAcademicEventRepository) WithTx(tx *gorm.DB) StudentAcademicEventRepository {
 	return &studentAcademicEventRepository{db: tx}
 }
-

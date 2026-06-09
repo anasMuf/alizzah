@@ -152,4 +152,3 @@ func (r *studentRepository) FindByIDs(ids []uint) ([]model.Student, error) {
 	err := r.db.Where("id IN ?", ids).Find(&students).Error
 	return students, err
 }
-

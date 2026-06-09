@@ -175,7 +175,7 @@ export function EffectiveDayForm({
 					id="total_mondays"
 					name="total_mondays"
 					type="number"
-					label="Total Hari Senin (Untuk Ekskul)"
+					label="Total Hari Senin"
 					placeholder="e.g. 4"
 					min={0}
 					max={5}

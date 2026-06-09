@@ -209,6 +209,7 @@ func (r *invoiceRepository) SumUnpaidByStudent(studentID uint) (float64, error) 
 	err := r.db.Model(&model.Invoice{}).
 		Select("COALESCE(SUM(total_amount - paid_amount), 0) as total").
 		Where("student_id = ? AND status != ?", studentID, "paid").
+		Where(monthlyVisibilityCond("invoices")). // kecualikan tagihan bulanan bulan depan
 		Scan(&result).Error
 	return result.Total, err
 }

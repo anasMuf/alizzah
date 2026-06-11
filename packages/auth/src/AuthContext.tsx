@@ -8,10 +8,11 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { setTokenGetter } from "@alizzah/api-client/mutator/custom-instance";
 import {
 	getGetV1AuthMeQueryKey,
 	useGetV1AuthMe,
-} from "../../api/endpoints/auth/auth";
+} from "@alizzah/api-client/endpoints/auth/auth";
 
 export interface User {
 	id: number;
@@ -48,6 +49,9 @@ let _token: string | null =
 export function getToken(): string | null {
 	return _token;
 }
+
+// Daftarkan sumber token ke api-client (memutus siklus auth <-> api-client).
+setTokenGetter(getToken);
 
 export function setTokenValue(token: string | null) {
 	_token = token;

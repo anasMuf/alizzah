@@ -9,7 +9,7 @@ import {
 	useGetFacilities,
 	useGetStudentFacilities,
 	useUnenrollFacility,
-} from "../../../../../api/endpoints/facilities/facilities";
+} from "@alizzah/api-client/endpoints/facilities/facilities";
 import { Badge } from "@alizzah/ui";
 import { Button } from "@alizzah/ui";
 import { ConfirmDialog } from "@alizzah/ui";

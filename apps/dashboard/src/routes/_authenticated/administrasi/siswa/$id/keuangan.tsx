@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, CreditCard, PiggyBank, Wallet } from "lucide-react";
-import { useGetV1StudentsId } from "../../../../../api/endpoints/students/students";
+import { useGetV1StudentsId } from "@alizzah/api-client/endpoints/students/students";
 import { Button } from "@alizzah/ui";
 
 export const Route = createFileRoute(

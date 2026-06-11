@@ -11,12 +11,12 @@ import {
 	Lock,
 } from "lucide-react";
 import { useState } from "react";
-import { useGetV1CashBalance } from "../../../../../api/endpoints/cash/cash";
+import { useGetV1CashBalance } from "@alizzah/api-client/endpoints/cash/cash";
 import {
 	useGetV1DailyClosings,
 	usePatchV1DailyClosingsIdConfirm,
 	usePostV1DailyClosings,
-} from "../../../../../api/endpoints/daily-closings/daily-closings";
+} from "@alizzah/api-client/endpoints/daily-closings/daily-closings";
 import { Alert } from "@alizzah/ui";
 import { Badge } from "@alizzah/ui";
 import { Button } from "@alizzah/ui";

@@ -7,7 +7,7 @@ import { createRouter, RouterProvider } from "@tanstack/react-router";
 import ReactDOM from "react-dom/client";
 import { ErrorBoundary } from "@alizzah/ui";
 import { ToastProvider } from "@alizzah/ui";
-import { AuthProvider, useAuth } from "./features/auth/AuthContext";
+import { AuthProvider, useAuth } from "@alizzah/auth";
 import { routeTree } from "./routeTree.gen";
 
 const queryClient = new QueryClient({

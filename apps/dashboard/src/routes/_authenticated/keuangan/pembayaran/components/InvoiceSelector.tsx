@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
-import { useGetV1InvoicesBatch } from "../../../../../api/endpoints/invoices/invoice-batch";
-import { useGetV1StudentsIdInvoices } from "../../../../../api/endpoints/invoices/invoices";
+import { useGetV1InvoicesBatch } from "@alizzah/api-client/endpoints/invoices/invoice-batch";
+import { useGetV1StudentsIdInvoices } from "@alizzah/api-client/endpoints/invoices/invoices";
 import { formatCurrency } from "../../../../../utils/format";
 
 interface InvoiceSelectorProps {

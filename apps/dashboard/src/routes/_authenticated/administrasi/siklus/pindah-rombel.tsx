@@ -8,10 +8,10 @@ import {
 	UserCircle,
 } from "lucide-react";
 import { useState } from "react";
-import { usePostV1AcademicEventsClassChanges } from "../../../../api/endpoints/academic-events/academic-events";
-import { useGetV1ClassGroups } from "../../../../api/endpoints/class-groups/class-groups";
-import { useGetV1Students } from "../../../../api/endpoints/students/students";
-import { ApiError } from "../../../../api/mutator/custom-instance";
+import { usePostV1AcademicEventsClassChanges } from "@alizzah/api-client/endpoints/academic-events/academic-events";
+import { useGetV1ClassGroups } from "@alizzah/api-client/endpoints/class-groups/class-groups";
+import { useGetV1Students } from "@alizzah/api-client/endpoints/students/students";
+import { ApiError } from "@alizzah/api-client/mutator/custom-instance";
 import { Button } from "@alizzah/ui";
 import { FormField } from "@alizzah/ui";
 import { useToast } from "@alizzah/ui";

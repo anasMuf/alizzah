@@ -8,9 +8,9 @@ import {
 	useGetV1ExpenseCategories,
 	usePostV1ExpenseCategories,
 	usePutV1ExpenseCategoriesId,
-} from "../../../../api/endpoints/expense-categories/expense-categories";
-import type { DtoExpenseCategoryResponse } from "../../../../api/model";
-import { ApiError } from "../../../../api/mutator/custom-instance";
+} from "@alizzah/api-client/endpoints/expense-categories/expense-categories";
+import type { DtoExpenseCategoryResponse } from "@alizzah/api-client/model";
+import { ApiError } from "@alizzah/api-client/mutator/custom-instance";
 import { Button } from "@alizzah/ui";
 import { ConfirmDialog } from "@alizzah/ui";
 import { EmptyState } from "@alizzah/ui";

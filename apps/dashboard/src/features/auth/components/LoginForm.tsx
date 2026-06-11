@@ -3,13 +3,13 @@ import { useForm } from "react-hook-form";
 import {
 	type postV1AuthLoginResponse,
 	usePostV1AuthLogin,
-} from "../../../api/endpoints/auth/auth";
-import { ApiError } from "../../../api/mutator/custom-instance";
+} from "@alizzah/api-client/endpoints/auth/auth";
+import { ApiError } from "@alizzah/api-client/mutator/custom-instance";
 import { Button } from "@alizzah/ui";
 import { FormField } from "@alizzah/ui";
 import { useToast } from "@alizzah/ui";
 import { type LoginFormData, loginSchema } from "../../../utils/validation";
-import { useAuth } from "../AuthContext";
+import { useAuth } from "@alizzah/auth";
 
 export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
 	const { login } = useAuth();

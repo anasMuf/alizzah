@@ -3,13 +3,13 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { ArrowLeft, Edit, ExternalLink, Save, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useGetV1ExpenseCategories } from "../../../../api/endpoints/expense-categories/expense-categories";
+import { useGetV1ExpenseCategories } from "@alizzah/api-client/endpoints/expense-categories/expense-categories";
 import {
 	useDeleteV1ExpensesId,
 	useGetV1ExpensesId,
 	usePutV1ExpensesId,
-} from "../../../../api/endpoints/expenses/expenses";
-import { ApiError } from "../../../../api/mutator/custom-instance";
+} from "@alizzah/api-client/endpoints/expenses/expenses";
+import { ApiError } from "@alizzah/api-client/mutator/custom-instance";
 import { Alert } from "@alizzah/ui";
 import { Badge } from "@alizzah/ui";
 import { Button } from "@alizzah/ui";

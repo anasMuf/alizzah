@@ -6,8 +6,8 @@ import {
 	getGetV1ExtracurricularsQueryKey,
 	useDeleteV1ExtracurricularsId,
 	useGetV1Extracurriculars,
-} from "../../../api/endpoints/extracurriculars/extracurriculars";
-import type { DtoExtracurricularResponse } from "../../../api/model";
+} from "@alizzah/api-client/endpoints/extracurriculars/extracurriculars";
+import type { DtoExtracurricularResponse } from "@alizzah/api-client/model";
 import { Badge } from "@alizzah/ui";
 import { Button } from "@alizzah/ui";
 import { ConfirmDialog } from "@alizzah/ui";

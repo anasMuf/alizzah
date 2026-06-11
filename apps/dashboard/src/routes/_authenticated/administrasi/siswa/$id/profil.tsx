@@ -8,8 +8,8 @@ import {
 	useGetV1StudentsId,
 	useGetV1StudentsIdGuardians,
 	usePatchV1StudentsIdGuardiansGuardianIdPrimary,
-} from "../../../../../api/endpoints/students/students";
-import { ApiError } from "../../../../../api/mutator/custom-instance";
+} from "@alizzah/api-client/endpoints/students/students";
+import { ApiError } from "@alizzah/api-client/mutator/custom-instance";
 import { Button } from "@alizzah/ui";
 import { ConfirmDialog } from "@alizzah/ui";
 import { useToast } from "@alizzah/ui";

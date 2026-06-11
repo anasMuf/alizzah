@@ -1,6 +1,13 @@
-import { getToken } from "../../features/auth/AuthContext";
-
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+
+// Token getter di-inject oleh layer auth (mis. @alizzah/auth) via setTokenGetter,
+// sehingga api-client tidak bergantung pada implementasi auth (memutus siklus).
+let tokenGetter: () => string | null = () => null;
+
+/** Daftarkan sumber token. Dipanggil sekali oleh layer auth saat bootstrap. */
+export function setTokenGetter(getter: () => string | null) {
+	tokenGetter = getter;
+}
 
 export class ApiError extends Error {
 	status: number;
@@ -35,7 +42,7 @@ export const customInstance = async <T>(
 		});
 	}
 
-	const token = getToken();
+	const token = tokenGetter();
 
 	const response = await fetch(url.toString(), {
 		...options,

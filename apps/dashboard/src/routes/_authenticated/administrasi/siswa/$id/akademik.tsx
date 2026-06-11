@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { GraduationCap } from "lucide-react";
-import { useGetV1StudentsIdEnrollments } from "../../../../../api/endpoints/student-enrollments/student-enrollments";
+import { useGetV1StudentsIdEnrollments } from "@alizzah/api-client/endpoints/student-enrollments/student-enrollments";
 import { Badge } from "@alizzah/ui";
 
 export const Route = createFileRoute(

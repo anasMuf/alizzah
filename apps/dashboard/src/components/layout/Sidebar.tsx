@@ -21,7 +21,7 @@ import {
 	Vault,
 } from "lucide-react";
 import { twMerge } from "tailwind-merge";
-import { useAuth } from "../../features/auth/AuthContext";
+import { useAuth } from "@alizzah/auth";
 import { AcademicYearSelector } from "./AcademicYearSelector";
 
 interface SidebarProps {

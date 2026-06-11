@@ -4,12 +4,12 @@ import {
 	getGetV1ExtracurricularsQueryKey,
 	usePostV1Extracurriculars,
 	usePutV1ExtracurricularsId,
-} from "../../../api/endpoints/extracurriculars/extracurriculars";
+} from "@alizzah/api-client/endpoints/extracurriculars/extracurriculars";
 import type {
 	DtoCreateExtracurricularRequest,
 	DtoExtracurricularResponse,
-} from "../../../api/model";
-import { ApiError } from "../../../api/mutator/custom-instance";
+} from "@alizzah/api-client/model";
+import { ApiError } from "@alizzah/api-client/mutator/custom-instance";
 import { Button } from "@alizzah/ui";
 import { FormField } from "@alizzah/ui";
 import { SlideOver } from "@alizzah/ui";

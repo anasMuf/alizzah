@@ -9,7 +9,7 @@ import {
 	useDeleteFacility,
 	useGetFacilities,
 	useUpdateFacility,
-} from "../../../../api/endpoints/facilities/facilities";
+} from "@alizzah/api-client/endpoints/facilities/facilities";
 import { Button } from "@alizzah/ui";
 import { ConfirmDialog } from "@alizzah/ui";
 import { EmptyState } from "@alizzah/ui";

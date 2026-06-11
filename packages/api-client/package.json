@@ -1,0 +1,23 @@
+{
+  "name": "@alizzah/api-client",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./model": "./src/model/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "generate:api": "orval"
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.0.0",
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@alizzah/config": "workspace:*",
+    "orval": "^8.9.1",
+    "typescript": "^6.0.2"
+  }
+}

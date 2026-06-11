@@ -5,12 +5,12 @@ import {
 	getGetV1ClassGroupsQueryKey,
 	usePostV1ClassGroups,
 	usePutV1ClassGroupsId,
-} from "../../../api/endpoints/class-groups/class-groups";
+} from "@alizzah/api-client/endpoints/class-groups/class-groups";
 import type {
 	DtoClassGroupResponse,
 	DtoCreateClassGroupRequest,
-} from "../../../api/model";
-import { ApiError } from "../../../api/mutator/custom-instance";
+} from "@alizzah/api-client/model";
+import { ApiError } from "@alizzah/api-client/mutator/custom-instance";
 import { Button } from "@alizzah/ui";
 import { FormField } from "@alizzah/ui";
 import { useToast } from "@alizzah/ui";

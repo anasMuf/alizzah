@@ -6,7 +6,7 @@ import { useState } from "react";
 import {
 	incomeTransactionKeys,
 	useCreateIncomeTransaction,
-} from "../../../../api/endpoints/income-transactions/income-transactions";
+} from "@alizzah/api-client/endpoints/income-transactions/income-transactions";
 import { Button } from "@alizzah/ui";
 import { FormField } from "@alizzah/ui";
 import { useToast } from "@alizzah/ui";

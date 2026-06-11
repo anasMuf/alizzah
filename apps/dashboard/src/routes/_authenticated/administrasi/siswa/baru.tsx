@@ -5,12 +5,12 @@ import { useState } from "react";
 import {
 	getGetV1StudentsQueryKey,
 	usePostV1Students,
-} from "../../../../api/endpoints/students/students";
+} from "@alizzah/api-client/endpoints/students/students";
 import type {
 	DtoCreateGuardianInline,
 	DtoCreateStudentRequest,
-} from "../../../../api/model";
-import { ApiError } from "../../../../api/mutator/custom-instance";
+} from "@alizzah/api-client/model";
+import { ApiError } from "@alizzah/api-client/mutator/custom-instance";
 import { Button } from "@alizzah/ui";
 import { FormField } from "@alizzah/ui";
 import { useToast } from "@alizzah/ui";

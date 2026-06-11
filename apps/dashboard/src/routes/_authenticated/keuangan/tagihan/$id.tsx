@@ -13,8 +13,8 @@ import { useMemo, useState } from "react";
 import {
 	useGetV1FeeConfigs,
 	useGetV1FeeConfigsIdItems,
-} from "../../../../api/endpoints/fee-configs/fee-configs";
-import { usePutV1InvoicesIdItemsItemIdQuantity } from "../../../../api/endpoints/invoices/invoice-quantity";
+} from "@alizzah/api-client/endpoints/fee-configs/fee-configs";
+import { usePutV1InvoicesIdItemsItemIdQuantity } from "@alizzah/api-client/endpoints/invoices/invoice-quantity";
 import {
 	useDeleteV1InvoicesIdItemsItemId,
 	useGetV1InvoicesId,
@@ -22,7 +22,7 @@ import {
 	usePostV1InvoicesIdInstallments,
 	usePostV1InvoicesIdItems,
 	usePutV1InvoicesIdItemsItemId,
-} from "../../../../api/endpoints/invoices/invoices";
+} from "@alizzah/api-client/endpoints/invoices/invoices";
 import { Badge } from "@alizzah/ui";
 import { Button } from "@alizzah/ui";
 import { ConfirmDialog } from "@alizzah/ui";

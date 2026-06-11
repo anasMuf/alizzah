@@ -1,7 +1,7 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { DashboardLayout } from "../components/layout/DashboardLayout";
-import { hasToken, useAuth } from "../features/auth/AuthContext";
+import { hasToken, useAuth } from "@alizzah/auth";
 
 export const Route = createFileRoute("/_authenticated")({
 	beforeLoad: () => {

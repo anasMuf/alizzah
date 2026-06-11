@@ -2,15 +2,15 @@ import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Palette, Plus, ShieldCheck, Trophy } from "lucide-react";
 import { useState } from "react";
-import { useGetV1AcademicYears } from "../../../../../api/endpoints/academic-years/academic-years";
-import { useGetV1Extracurriculars } from "../../../../../api/endpoints/extracurriculars/extracurriculars";
+import { useGetV1AcademicYears } from "@alizzah/api-client/endpoints/academic-years/academic-years";
+import { useGetV1Extracurriculars } from "@alizzah/api-client/endpoints/extracurriculars/extracurriculars";
 import {
 	getGetV1StudentsIdExtracurricularsQueryKey,
 	useDeleteV1StudentsIdExtracurricularsSeId,
 	useGetV1StudentsIdExtracurriculars,
 	usePostV1StudentsIdExtracurriculars,
-} from "../../../../../api/endpoints/student-extracurriculars/student-extracurriculars";
-import { ApiError } from "../../../../../api/mutator/custom-instance";
+} from "@alizzah/api-client/endpoints/student-extracurriculars/student-extracurriculars";
+import { ApiError } from "@alizzah/api-client/mutator/custom-instance";
 import { Badge } from "@alizzah/ui";
 import { Button } from "@alizzah/ui";
 import { ConfirmDialog } from "@alizzah/ui";

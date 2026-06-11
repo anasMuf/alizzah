@@ -6,7 +6,7 @@ import {
 	incomeTransactionKeys,
 	useDeleteIncomeTransaction,
 	useGetIncomeTransaction,
-} from "../../../../api/endpoints/income-transactions/income-transactions";
+} from "@alizzah/api-client/endpoints/income-transactions/income-transactions";
 import { Badge } from "@alizzah/ui";
 import { Button } from "@alizzah/ui";
 import { ConfirmDialog } from "@alizzah/ui";

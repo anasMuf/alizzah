@@ -10,7 +10,7 @@ import {
 	Printer,
 } from "lucide-react";
 import { useState } from "react";
-import { useGetV1ReportsDaily } from "../../../../api/endpoints/reports/reports";
+import { useGetV1ReportsDaily } from "@alizzah/api-client/endpoints/reports/reports";
 import { Alert } from "@alizzah/ui";
 import { Badge } from "@alizzah/ui";
 import { Button } from "@alizzah/ui";

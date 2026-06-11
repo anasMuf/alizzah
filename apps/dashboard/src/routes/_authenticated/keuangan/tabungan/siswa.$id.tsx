@@ -11,13 +11,13 @@ import { useState } from "react";
 import {
 	type TabunganSiswaRow,
 	useGetReportsTabunganSiswa,
-} from "../../../../api/endpoints/reports/tabungan";
+} from "@alizzah/api-client/endpoints/reports/tabungan";
 import {
 	useGetV1StudentsIdSavings,
 	useGetV1StudentsIdSavingsTransactions,
 	usePostV1StudentsIdSavingsWithdrawals,
-} from "../../../../api/endpoints/savings/savings";
-import { useGetV1StudentsId } from "../../../../api/endpoints/students/students";
+} from "@alizzah/api-client/endpoints/savings/savings";
+import { useGetV1StudentsId } from "@alizzah/api-client/endpoints/students/students";
 import { Button } from "@alizzah/ui";
 import { FormField } from "@alizzah/ui";
 import { SlideOver } from "@alizzah/ui";

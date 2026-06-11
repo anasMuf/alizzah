@@ -6,7 +6,7 @@ import {
 	Printer,
 	Receipt,
 } from "lucide-react";
-import { useGetV1PaymentsId } from "../../../../api/endpoints/payments/payments";
+import { useGetV1PaymentsId } from "@alizzah/api-client/endpoints/payments/payments";
 import { Button } from "@alizzah/ui";
 import {
 	formatCurrency,

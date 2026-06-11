@@ -8,14 +8,14 @@ import {
 	useGetV1Users,
 	usePostV1Users,
 	usePutV1UsersId,
-} from "../../../api/endpoints/users/users";
+} from "@alizzah/api-client/endpoints/users/users";
 import type {
 	DtoCreateUserRequest,
 	DtoUpdateUserRequest,
 	DtoUserResponse,
-} from "../../../api/model";
-import { DtoCreateUserRequestRole } from "../../../api/model";
-import { ApiError } from "../../../api/mutator/custom-instance";
+} from "@alizzah/api-client/model";
+import { DtoCreateUserRequestRole } from "@alizzah/api-client/model";
+import { ApiError } from "@alizzah/api-client/mutator/custom-instance";
 import { Badge } from "@alizzah/ui";
 import { Button } from "@alizzah/ui";
 import { ConfirmDialog } from "@alizzah/ui";

@@ -11,18 +11,18 @@ import {
 	usePostV1FeeConfigsIdItems,
 	usePutV1FeeConfigsId,
 	usePutV1FeeConfigsIdItemsItemId,
-} from "../../../../api/endpoints/fee-configs/fee-configs";
+} from "@alizzah/api-client/endpoints/fee-configs/fee-configs";
 import type {
 	DtoCreateFeeConfigItemRequest,
 	DtoFeeConfigItemResponse,
-} from "../../../../api/model";
+} from "@alizzah/api-client/model";
 import {
 	DtoCreateFeeConfigItemRequestCategory,
 	DtoCreateFeeConfigItemRequestGender,
 	DtoCreateFeeConfigItemRequestLevel,
 	DtoCreateFeeConfigItemRequestUnit,
-} from "../../../../api/model";
-import { ApiError } from "../../../../api/mutator/custom-instance";
+} from "@alizzah/api-client/model";
+import { ApiError } from "@alizzah/api-client/mutator/custom-instance";
 import { Badge } from "@alizzah/ui";
 import { Button } from "@alizzah/ui";
 import { ConfirmDialog } from "@alizzah/ui";

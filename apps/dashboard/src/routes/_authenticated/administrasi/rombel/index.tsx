@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { Clock, Plus, Users } from "lucide-react";
-import { useGetV1ClassGroups } from "../../../../api/endpoints/class-groups/class-groups";
-import type { DtoClassGroupResponse } from "../../../../api/model";
+import { useGetV1ClassGroups } from "@alizzah/api-client/endpoints/class-groups/class-groups";
+import type { DtoClassGroupResponse } from "@alizzah/api-client/model";
 import { Button } from "@alizzah/ui";
 import { EmptyState } from "@alizzah/ui";
 import { academicYearAtom } from "../../../../store/global";

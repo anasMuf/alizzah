@@ -2,8 +2,8 @@ import { useState } from "react";
 import {
 	type postV1UsersResponse,
 	usePostV1Users,
-} from "../../../api/endpoints/users/users";
-import { ApiError } from "../../../api/mutator/custom-instance";
+} from "@alizzah/api-client/endpoints/users/users";
+import { ApiError } from "@alizzah/api-client/mutator/custom-instance";
 import { Button } from "@alizzah/ui";
 import { FormField } from "@alizzah/ui";
 import { useToast } from "@alizzah/ui";

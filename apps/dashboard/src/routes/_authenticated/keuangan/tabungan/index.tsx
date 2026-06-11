@@ -3,8 +3,8 @@ import { useAtom } from "jotai";
 import { ChevronRight, Search, Wallet } from "lucide-react";
 import { useState } from "react";
 import { useDebounce } from "use-debounce";
-import { useGetV1ClassGroups } from "../../../../api/endpoints/class-groups/class-groups";
-import { useGetV1Students } from "../../../../api/endpoints/students/students";
+import { useGetV1ClassGroups } from "@alizzah/api-client/endpoints/class-groups/class-groups";
+import { useGetV1Students } from "@alizzah/api-client/endpoints/students/students";
 import { Pagination } from "@alizzah/ui";
 import { academicYearAtom } from "../../../../store/global";
 

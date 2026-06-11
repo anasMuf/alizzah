@@ -20,11 +20,11 @@ import {
 	useGetV1CashBalance,
 	useGetV1CashTransactions,
 	usePostV1CashTransfers,
-} from "../../../../api/endpoints/cash/cash";
+} from "@alizzah/api-client/endpoints/cash/cash";
 import {
 	getGetV1VaultBalanceQueryKey,
 	useGetV1VaultBalance,
-} from "../../../../api/endpoints/vault/vault";
+} from "@alizzah/api-client/endpoints/vault/vault";
 import { Button } from "@alizzah/ui";
 import { SlideOver } from "@alizzah/ui";
 import { useToast } from "@alizzah/ui";

@@ -12,8 +12,8 @@ import {
 	XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useGetV1ReportsStudentsId } from "../../../../api/endpoints/reports/reports";
-import { useGetV1Students } from "../../../../api/endpoints/students/students";
+import { useGetV1ReportsStudentsId } from "@alizzah/api-client/endpoints/reports/reports";
+import { useGetV1Students } from "@alizzah/api-client/endpoints/students/students";
 import { Alert } from "@alizzah/ui";
 import { Badge } from "@alizzah/ui";
 import { Button } from "@alizzah/ui";

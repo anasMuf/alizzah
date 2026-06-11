@@ -6,9 +6,9 @@ import {
 	getGetV1ClassGroupsQueryKey,
 	useDeleteV1ClassGroupsId,
 	useGetV1ClassGroupsId,
-} from "../../../../../api/endpoints/class-groups/class-groups";
-import { useGetV1ClassGroupsIdStudents } from "../../../../../api/endpoints/student-enrollments/student-enrollments";
-import { ApiError } from "../../../../../api/mutator/custom-instance";
+} from "@alizzah/api-client/endpoints/class-groups/class-groups";
+import { useGetV1ClassGroupsIdStudents } from "@alizzah/api-client/endpoints/student-enrollments/student-enrollments";
+import { ApiError } from "@alizzah/api-client/mutator/custom-instance";
 import { Button } from "@alizzah/ui";
 import { ConfirmDialog } from "@alizzah/ui";
 import { SlideOver } from "@alizzah/ui";

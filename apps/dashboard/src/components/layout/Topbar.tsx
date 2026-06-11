@@ -1,8 +1,8 @@
 import { useRouterState } from "@tanstack/react-router";
 import { Menu } from "lucide-react";
 import { useState } from "react";
-import { usePostV1AuthLogout } from "../../api/endpoints/auth/auth";
-import { useAuth } from "../../features/auth/AuthContext";
+import { usePostV1AuthLogout } from "@alizzah/api-client/endpoints/auth/auth";
+import { useAuth } from "@alizzah/auth";
 import { Button } from "@alizzah/ui";
 import { ConfirmDialog } from "@alizzah/ui";
 

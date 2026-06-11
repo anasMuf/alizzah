@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { ChevronRight, Printer } from "lucide-react";
-import { useGetV1ReportsAnnual } from "../../../../api/endpoints/reports/reports";
+import { useGetV1ReportsAnnual } from "@alizzah/api-client/endpoints/reports/reports";
 import { Alert } from "@alizzah/ui";
 import { Button } from "@alizzah/ui";
 import { academicYearAtom } from "../../../../store/global";

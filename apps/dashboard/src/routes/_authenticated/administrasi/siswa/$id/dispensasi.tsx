@@ -20,7 +20,7 @@ import {
 	useGetStudentDispensations,
 	useToggleDispensation,
 	useUpdateDispensation,
-} from "../../../../../api/endpoints/dispensations/dispensations";
+} from "@alizzah/api-client/endpoints/dispensations/dispensations";
 import { Badge } from "@alizzah/ui";
 import { Button } from "@alizzah/ui";
 import { ConfirmDialog } from "@alizzah/ui";

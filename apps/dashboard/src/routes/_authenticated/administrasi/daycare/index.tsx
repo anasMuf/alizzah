@@ -7,7 +7,7 @@ import {
 	getGetV1DaycareEnrollmentsQueryKey,
 	useGetV1DaycareEnrollments,
 	usePatchV1DaycareEnrollmentsIdStatus,
-} from "../../../../api/endpoints/daycare-enrollments/daycare-enrollments";
+} from "@alizzah/api-client/endpoints/daycare-enrollments/daycare-enrollments";
 import { Badge } from "@alizzah/ui";
 import { Button } from "@alizzah/ui";
 import { ConfirmDialog } from "@alizzah/ui";

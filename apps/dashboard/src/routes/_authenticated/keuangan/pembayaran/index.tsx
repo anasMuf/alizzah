@@ -1,12 +1,10 @@
+import { useGetV1Payments } from "@alizzah/api-client/endpoints/payments/payments";
+import type { DtoPaymentListResponse } from "@alizzah/api-client/model/dtoPaymentListResponse";
+import { Badge, Button, Pagination } from "@alizzah/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { ChevronRight, Filter, Plus, Receipt } from "lucide-react";
 import { useState } from "react";
-import { useGetV1Payments } from "../../../../api/endpoints/payments/payments";
-import type { DtoPaymentListResponse } from "../../../../api/model/dtoPaymentListResponse";
-import { Badge } from "../../../../components/atoms/Badge";
-import { Button } from "../../../../components/atoms/Button";
-import { Pagination } from "../../../../components/molecules/Pagination";
 import { academicYearAtom } from "../../../../store/global";
 import { extractListData, extractMeta } from "../../../../utils/api-helpers";
 import { formatCurrency, formatDate } from "../../../../utils/format";

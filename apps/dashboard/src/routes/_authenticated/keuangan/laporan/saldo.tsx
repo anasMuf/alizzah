@@ -1,11 +1,10 @@
+import type { SaldoRow } from "@alizzah/api-client/endpoints/reports/saldo";
+import { useGetReportsSaldo } from "@alizzah/api-client/endpoints/reports/saldo";
+import { Alert, Button } from "@alizzah/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { ChevronRight, Printer } from "lucide-react";
 import { useState } from "react";
-import type { SaldoRow } from "../../../../api/endpoints/reports/saldo";
-import { useGetReportsSaldo } from "../../../../api/endpoints/reports/saldo";
-import { Alert } from "../../../../components/atoms/Alert";
-import { Button } from "../../../../components/atoms/Button";
 import { academicYearAtom } from "../../../../store/global";
 
 export const Route = createFileRoute("/_authenticated/keuangan/laporan/saldo")({

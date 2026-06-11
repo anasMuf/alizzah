@@ -12,10 +12,12 @@
     "test": "vitest run",
     "format": "biome format",
     "lint": "biome lint",
-    "check": "biome check",
-    "generate:api": "orval"
+    "check": "biome check"
   },
   "dependencies": {
+    "@alizzah/api-client": "workspace:*",
+    "@alizzah/auth": "workspace:*",
+    "@alizzah/ui": "workspace:*",
     "@hookform/resolvers": "^5.4.0",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-devtools": "latest",
@@ -47,7 +49,6 @@
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^6.0.1",
     "jsdom": "^28.1.0",
-    "orval": "^8.9.1",
     "react-grab": "^0.1.44",
     "typescript": "^6.0.2",
     "vite": "^8.0.0",

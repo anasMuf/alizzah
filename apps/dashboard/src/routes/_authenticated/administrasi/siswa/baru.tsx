@@ -1,19 +1,17 @@
+import {
+	getGetV1StudentsQueryKey,
+	usePostV1Students,
+} from "@alizzah/api-client/endpoints/students/students";
+import type {
+	DtoCreateGuardianInline,
+	DtoCreateStudentRequest,
+} from "@alizzah/api-client/model";
+import { ApiError } from "@alizzah/api-client/mutator/custom-instance";
+import { Button, FormField, useToast } from "@alizzah/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ChevronRight, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
-import {
-	getGetV1StudentsQueryKey,
-	usePostV1Students,
-} from "../../../../api/endpoints/students/students";
-import type {
-	DtoCreateGuardianInline,
-	DtoCreateStudentRequest,
-} from "../../../../api/model";
-import { ApiError } from "../../../../api/mutator/custom-instance";
-import { Button } from "../../../../components/atoms/Button";
-import { FormField } from "../../../../components/molecules/FormField";
-import { useToast } from "../../../../components/molecules/Toast";
 
 export const Route = createFileRoute("/_authenticated/administrasi/siswa/baru")(
 	{

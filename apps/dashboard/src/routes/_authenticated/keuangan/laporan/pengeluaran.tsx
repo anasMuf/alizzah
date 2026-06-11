@@ -1,11 +1,10 @@
+import type { TransaksiPengeluaranBlock } from "@alizzah/api-client/endpoints/reports/transaksi-pengeluaran";
+import { useGetReportsTransaksiPengeluaran } from "@alizzah/api-client/endpoints/reports/transaksi-pengeluaran";
+import { Alert, Button } from "@alizzah/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { ChevronRight, Printer } from "lucide-react";
 import { useState } from "react";
-import type { TransaksiPengeluaranBlock } from "../../../../api/endpoints/reports/transaksi-pengeluaran";
-import { useGetReportsTransaksiPengeluaran } from "../../../../api/endpoints/reports/transaksi-pengeluaran";
-import { Alert } from "../../../../components/atoms/Alert";
-import { Button } from "../../../../components/atoms/Button";
 import { academicYearAtom } from "../../../../store/global";
 
 export const Route = createFileRoute(

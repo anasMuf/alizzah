@@ -1,15 +1,13 @@
+import {
+	incomeTransactionKeys,
+	useCreateIncomeTransaction,
+} from "@alizzah/api-client/endpoints/income-transactions/income-transactions";
+import { Button, FormField, useToast } from "@alizzah/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { ChevronRight } from "lucide-react";
 import { useState } from "react";
-import {
-	incomeTransactionKeys,
-	useCreateIncomeTransaction,
-} from "../../../../api/endpoints/income-transactions/income-transactions";
-import { Button } from "../../../../components/atoms/Button";
-import { FormField } from "../../../../components/molecules/FormField";
-import { useToast } from "../../../../components/molecules/Toast";
 import { academicYearAtom } from "../../../../store/global";
 
 export const Route = createFileRoute(

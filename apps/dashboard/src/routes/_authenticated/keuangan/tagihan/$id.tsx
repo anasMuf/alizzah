@@ -1,3 +1,24 @@
+import {
+	useGetV1FeeConfigs,
+	useGetV1FeeConfigsIdItems,
+} from "@alizzah/api-client/endpoints/fee-configs/fee-configs";
+import { usePutV1InvoicesIdItemsItemIdQuantity } from "@alizzah/api-client/endpoints/invoices/invoice-quantity";
+import {
+	useDeleteV1InvoicesIdItemsItemId,
+	useGetV1InvoicesId,
+	useGetV1InvoicesIdInstallments,
+	usePostV1InvoicesIdInstallments,
+	usePostV1InvoicesIdItems,
+	usePutV1InvoicesIdItemsItemId,
+} from "@alizzah/api-client/endpoints/invoices/invoices";
+import {
+	Badge,
+	Button,
+	ConfirmDialog,
+	FormField,
+	SlideOver,
+	useToast,
+} from "@alizzah/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
@@ -10,25 +31,6 @@ import {
 	Trash2,
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import {
-	useGetV1FeeConfigs,
-	useGetV1FeeConfigsIdItems,
-} from "../../../../api/endpoints/fee-configs/fee-configs";
-import { usePutV1InvoicesIdItemsItemIdQuantity } from "../../../../api/endpoints/invoices/invoice-quantity";
-import {
-	useDeleteV1InvoicesIdItemsItemId,
-	useGetV1InvoicesId,
-	useGetV1InvoicesIdInstallments,
-	usePostV1InvoicesIdInstallments,
-	usePostV1InvoicesIdItems,
-	usePutV1InvoicesIdItemsItemId,
-} from "../../../../api/endpoints/invoices/invoices";
-import { Badge } from "../../../../components/atoms/Badge";
-import { Button } from "../../../../components/atoms/Button";
-import { ConfirmDialog } from "../../../../components/molecules/ConfirmDialog";
-import { FormField } from "../../../../components/molecules/FormField";
-import { SlideOver } from "../../../../components/molecules/SlideOver";
-import { useToast } from "../../../../components/molecules/Toast";
 import { academicYearAtom } from "../../../../store/global";
 import { formatCurrency, formatDate } from "../../../../utils/format";
 

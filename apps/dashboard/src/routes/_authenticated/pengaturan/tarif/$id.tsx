@@ -1,7 +1,3 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Edit, Plus, Save, Trash2, X } from "lucide-react";
-import { useEffect, useState } from "react";
 import {
 	getGetV1FeeConfigsIdItemsQueryKey,
 	getGetV1FeeConfigsIdQueryKey,
@@ -11,25 +7,31 @@ import {
 	usePostV1FeeConfigsIdItems,
 	usePutV1FeeConfigsId,
 	usePutV1FeeConfigsIdItemsItemId,
-} from "../../../../api/endpoints/fee-configs/fee-configs";
+} from "@alizzah/api-client/endpoints/fee-configs/fee-configs";
 import type {
 	DtoCreateFeeConfigItemRequest,
 	DtoFeeConfigItemResponse,
-} from "../../../../api/model";
+} from "@alizzah/api-client/model";
 import {
 	DtoCreateFeeConfigItemRequestCategory,
 	DtoCreateFeeConfigItemRequestGender,
 	DtoCreateFeeConfigItemRequestLevel,
 	DtoCreateFeeConfigItemRequestUnit,
-} from "../../../../api/model";
-import { ApiError } from "../../../../api/mutator/custom-instance";
-import { Badge } from "../../../../components/atoms/Badge";
-import { Button } from "../../../../components/atoms/Button";
-import { ConfirmDialog } from "../../../../components/molecules/ConfirmDialog";
-import { EmptyState } from "../../../../components/molecules/EmptyState";
-import { FormField } from "../../../../components/molecules/FormField";
-import { SlideOver } from "../../../../components/molecules/SlideOver";
-import { useToast } from "../../../../components/molecules/Toast";
+} from "@alizzah/api-client/model";
+import { ApiError } from "@alizzah/api-client/mutator/custom-instance";
+import {
+	Badge,
+	Button,
+	ConfirmDialog,
+	EmptyState,
+	FormField,
+	SlideOver,
+	useToast,
+} from "@alizzah/ui";
+import { useQueryClient } from "@tanstack/react-query";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { ArrowLeft, Edit, Plus, Save, Trash2, X } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/pengaturan/tarif/$id")({
 	beforeLoad: () => {

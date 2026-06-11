@@ -1,18 +1,16 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-import { MapPin, Phone, Star, Trash2 } from "lucide-react";
-import { useState } from "react";
 import {
 	getGetV1StudentsIdGuardiansQueryKey,
 	useDeleteV1StudentsIdGuardiansGuardianId,
 	useGetV1StudentsId,
 	useGetV1StudentsIdGuardians,
 	usePatchV1StudentsIdGuardiansGuardianIdPrimary,
-} from "../../../../../api/endpoints/students/students";
-import { ApiError } from "../../../../../api/mutator/custom-instance";
-import { Button } from "../../../../../components/atoms/Button";
-import { ConfirmDialog } from "../../../../../components/molecules/ConfirmDialog";
-import { useToast } from "../../../../../components/molecules/Toast";
+} from "@alizzah/api-client/endpoints/students/students";
+import { ApiError } from "@alizzah/api-client/mutator/custom-instance";
+import { Button, ConfirmDialog, useToast } from "@alizzah/ui";
+import { useQueryClient } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { MapPin, Phone, Star, Trash2 } from "lucide-react";
+import { useState } from "react";
 
 export const Route = createFileRoute(
 	"/_authenticated/administrasi/siswa/$id/profil",

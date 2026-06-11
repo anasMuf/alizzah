@@ -1,18 +1,15 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowRight, ChevronRight, UserCircle, Users } from "lucide-react";
-import { useState } from "react";
 import {
 	getGetV1ClassGroupsQueryKey,
 	useDeleteV1ClassGroupsId,
 	useGetV1ClassGroupsId,
-} from "../../../../../api/endpoints/class-groups/class-groups";
-import { useGetV1ClassGroupsIdStudents } from "../../../../../api/endpoints/student-enrollments/student-enrollments";
-import { ApiError } from "../../../../../api/mutator/custom-instance";
-import { Button } from "../../../../../components/atoms/Button";
-import { ConfirmDialog } from "../../../../../components/molecules/ConfirmDialog";
-import { SlideOver } from "../../../../../components/molecules/SlideOver";
-import { useToast } from "../../../../../components/molecules/Toast";
+} from "@alizzah/api-client/endpoints/class-groups/class-groups";
+import { useGetV1ClassGroupsIdStudents } from "@alizzah/api-client/endpoints/student-enrollments/student-enrollments";
+import { ApiError } from "@alizzah/api-client/mutator/custom-instance";
+import { Button, ConfirmDialog, SlideOver, useToast } from "@alizzah/ui";
+import { useQueryClient } from "@tanstack/react-query";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { ArrowRight, ChevronRight, UserCircle, Users } from "lucide-react";
+import { useState } from "react";
 import { RombelForm } from "../../../../../features/administrasi/components/RombelForm";
 
 export const Route = createFileRoute(

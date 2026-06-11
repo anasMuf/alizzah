@@ -1,18 +1,20 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-import { Edit, Plus, Search, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
 import {
 	getGetV1ExtracurricularsQueryKey,
 	useDeleteV1ExtracurricularsId,
 	useGetV1Extracurriculars,
-} from "../../../api/endpoints/extracurriculars/extracurriculars";
-import type { DtoExtracurricularResponse } from "../../../api/model";
-import { Badge } from "../../../components/atoms/Badge";
-import { Button } from "../../../components/atoms/Button";
-import { ConfirmDialog } from "../../../components/molecules/ConfirmDialog";
-import { EmptyState } from "../../../components/molecules/EmptyState";
-import { useToast } from "../../../components/molecules/Toast";
+} from "@alizzah/api-client/endpoints/extracurriculars/extracurriculars";
+import type { DtoExtracurricularResponse } from "@alizzah/api-client/model";
+import {
+	Badge,
+	Button,
+	ConfirmDialog,
+	EmptyState,
+	useToast,
+} from "@alizzah/ui";
+import { useQueryClient } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { Edit, Plus, Search, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
 import { EkskulForm } from "../../../features/administrasi/components/EkskulForm";
 
 export const Route = createFileRoute("/_authenticated/administrasi/ekskul")({

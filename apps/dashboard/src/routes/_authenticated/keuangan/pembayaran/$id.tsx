@@ -1,3 +1,5 @@
+import { useGetV1PaymentsId } from "@alizzah/api-client/endpoints/payments/payments";
+import { Button } from "@alizzah/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
 	ArrowLeft,
@@ -6,8 +8,6 @@ import {
 	Printer,
 	Receipt,
 } from "lucide-react";
-import { useGetV1PaymentsId } from "../../../../api/endpoints/payments/payments";
-import { Button } from "../../../../components/atoms/Button";
 import {
 	formatCurrency,
 	formatDate,

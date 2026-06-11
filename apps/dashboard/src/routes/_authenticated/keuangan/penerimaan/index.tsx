@@ -1,20 +1,22 @@
+import {
+	incomeTransactionKeys,
+	useDeleteIncomeTransaction,
+	useGetIncomeTransactions,
+} from "@alizzah/api-client/endpoints/income-transactions/income-transactions";
+import {
+	Alert,
+	Badge,
+	Button,
+	ConfirmDialog,
+	EmptyState,
+	Pagination,
+	useToast,
+} from "@alizzah/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
-import {
-	incomeTransactionKeys,
-	useDeleteIncomeTransaction,
-	useGetIncomeTransactions,
-} from "../../../../api/endpoints/income-transactions/income-transactions";
-import { Alert } from "../../../../components/atoms/Alert";
-import { Badge } from "../../../../components/atoms/Badge";
-import { Button } from "../../../../components/atoms/Button";
-import { ConfirmDialog } from "../../../../components/molecules/ConfirmDialog";
-import { EmptyState } from "../../../../components/molecules/EmptyState";
-import { Pagination } from "../../../../components/molecules/Pagination";
-import { useToast } from "../../../../components/molecules/Toast";
 import { academicYearAtom } from "../../../../store/global";
 import { formatCurrency, formatDate } from "../../../../utils/format";
 

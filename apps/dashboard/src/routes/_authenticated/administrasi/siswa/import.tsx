@@ -1,3 +1,9 @@
+import {
+	getGetV1StudentsQueryKey,
+	usePostV1StudentsImport,
+} from "@alizzah/api-client/endpoints/students/students";
+import { ApiError } from "@alizzah/api-client/mutator/custom-instance";
+import { Button, useToast } from "@alizzah/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
@@ -8,13 +14,6 @@ import {
 	Upload,
 } from "lucide-react";
 import { useRef, useState } from "react";
-import {
-	getGetV1StudentsQueryKey,
-	usePostV1StudentsImport,
-} from "../../../../api/endpoints/students/students";
-import { ApiError } from "../../../../api/mutator/custom-instance";
-import { Button } from "../../../../components/atoms/Button";
-import { useToast } from "../../../../components/molecules/Toast";
 
 export const Route = createFileRoute(
 	"/_authenticated/administrasi/siswa/import",

@@ -1,21 +1,17 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-import { Palette, Plus, ShieldCheck, Trophy } from "lucide-react";
-import { useState } from "react";
-import { useGetV1AcademicYears } from "../../../../../api/endpoints/academic-years/academic-years";
-import { useGetV1Extracurriculars } from "../../../../../api/endpoints/extracurriculars/extracurriculars";
+import { useGetV1AcademicYears } from "@alizzah/api-client/endpoints/academic-years/academic-years";
+import { useGetV1Extracurriculars } from "@alizzah/api-client/endpoints/extracurriculars/extracurriculars";
 import {
 	getGetV1StudentsIdExtracurricularsQueryKey,
 	useDeleteV1StudentsIdExtracurricularsSeId,
 	useGetV1StudentsIdExtracurriculars,
 	usePostV1StudentsIdExtracurriculars,
-} from "../../../../../api/endpoints/student-extracurriculars/student-extracurriculars";
-import { ApiError } from "../../../../../api/mutator/custom-instance";
-import { Badge } from "../../../../../components/atoms/Badge";
-import { Button } from "../../../../../components/atoms/Button";
-import { ConfirmDialog } from "../../../../../components/molecules/ConfirmDialog";
-import { SlideOver } from "../../../../../components/molecules/SlideOver";
-import { useToast } from "../../../../../components/molecules/Toast";
+} from "@alizzah/api-client/endpoints/student-extracurriculars/student-extracurriculars";
+import { ApiError } from "@alizzah/api-client/mutator/custom-instance";
+import { Badge, Button, ConfirmDialog, SlideOver, useToast } from "@alizzah/ui";
+import { useQueryClient } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { Palette, Plus, ShieldCheck, Trophy } from "lucide-react";
+import { useState } from "react";
 
 export const Route = createFileRoute(
 	"/_authenticated/administrasi/siswa/$id/ekskul",

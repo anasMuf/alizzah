@@ -1,7 +1,3 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-import { Bus, Edit2, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
 import {
 	type CreateFacilityRequest,
 	facilityKeys,
@@ -9,13 +5,19 @@ import {
 	useDeleteFacility,
 	useGetFacilities,
 	useUpdateFacility,
-} from "../../../../api/endpoints/facilities/facilities";
-import { Button } from "../../../../components/atoms/Button";
-import { ConfirmDialog } from "../../../../components/molecules/ConfirmDialog";
-import { EmptyState } from "../../../../components/molecules/EmptyState";
-import { FormField } from "../../../../components/molecules/FormField";
-import { SlideOver } from "../../../../components/molecules/SlideOver";
-import { useToast } from "../../../../components/molecules/Toast";
+} from "@alizzah/api-client/endpoints/facilities/facilities";
+import {
+	Button,
+	ConfirmDialog,
+	EmptyState,
+	FormField,
+	SlideOver,
+	useToast,
+} from "@alizzah/ui";
+import { useQueryClient } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { Bus, Edit2, Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/administrasi/fasilitas/")(
 	{

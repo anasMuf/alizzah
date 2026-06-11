@@ -1,0 +1,21 @@
+{
+  "name": "@alizzah/auth",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.0.0",
+    "react": "^19.0.0"
+  },
+  "dependencies": {
+    "@alizzah/api-client": "workspace:*"
+  },
+  "devDependencies": {
+    "@alizzah/config": "workspace:*",
+    "@types/react": "^19.2.0",
+    "typescript": "^6.0.2"
+  }
+}

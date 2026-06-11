@@ -1,20 +1,16 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { ChevronRight, Plus } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useGetV1AcademicYears } from "../../../../api/endpoints/academic-years/academic-years";
+import { useGetV1AcademicYears } from "@alizzah/api-client/endpoints/academic-years/academic-years";
 import {
 	getGetV1FeeConfigsQueryKey,
 	useGetV1FeeConfigs,
 	usePostV1FeeConfigs,
-} from "../../../../api/endpoints/fee-configs/fee-configs";
-import type { DtoFeeConfigResponse } from "../../../../api/model";
-import { ApiError } from "../../../../api/mutator/custom-instance";
-import { Badge } from "../../../../components/atoms/Badge";
-import { Button } from "../../../../components/atoms/Button";
-import { EmptyState } from "../../../../components/molecules/EmptyState";
-import { SlideOver } from "../../../../components/molecules/SlideOver";
-import { useToast } from "../../../../components/molecules/Toast";
+} from "@alizzah/api-client/endpoints/fee-configs/fee-configs";
+import type { DtoFeeConfigResponse } from "@alizzah/api-client/model";
+import { ApiError } from "@alizzah/api-client/mutator/custom-instance";
+import { Badge, Button, EmptyState, SlideOver, useToast } from "@alizzah/ui";
+import { useQueryClient } from "@tanstack/react-query";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { ChevronRight, Plus } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/pengaturan/tarif/")({
 	beforeLoad: () => {

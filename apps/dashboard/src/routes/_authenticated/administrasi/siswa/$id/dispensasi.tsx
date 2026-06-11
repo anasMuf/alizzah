@@ -1,3 +1,21 @@
+import {
+	type CreateDispensationRequest,
+	dispensationKeys,
+	type UpdateDispensationRequest,
+	useCreateDispensation,
+	useDeleteDispensation,
+	useGetStudentDispensations,
+	useToggleDispensation,
+	useUpdateDispensation,
+} from "@alizzah/api-client/endpoints/dispensations/dispensations";
+import {
+	Badge,
+	Button,
+	ConfirmDialog,
+	FormField,
+	SlideOver,
+	useToast,
+} from "@alizzah/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useAtom } from "jotai";
@@ -11,22 +29,6 @@ import {
 	Trash2,
 } from "lucide-react";
 import { useState } from "react";
-import {
-	type CreateDispensationRequest,
-	dispensationKeys,
-	type UpdateDispensationRequest,
-	useCreateDispensation,
-	useDeleteDispensation,
-	useGetStudentDispensations,
-	useToggleDispensation,
-	useUpdateDispensation,
-} from "../../../../../api/endpoints/dispensations/dispensations";
-import { Badge } from "../../../../../components/atoms/Badge";
-import { Button } from "../../../../../components/atoms/Button";
-import { ConfirmDialog } from "../../../../../components/molecules/ConfirmDialog";
-import { FormField } from "../../../../../components/molecules/FormField";
-import { SlideOver } from "../../../../../components/molecules/SlideOver";
-import { useToast } from "../../../../../components/molecules/Toast";
 import { academicYearAtom } from "../../../../../store/global";
 import { formatCurrency } from "../../../../../utils/format";
 

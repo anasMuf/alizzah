@@ -1,31 +1,18 @@
 package main
 
 import (
+	"flag"
+	"log"
+	"time"
+
 	"api/config"
 	"api/handler"
-	"api/internal/modules/koperasi"
-	"api/internal/shared"
+	"api/internal/bootstrap"
 	"api/middleware"
 	"api/model"
 	"api/repository"
 	"api/seeders"
 	"api/service"
-	"api/utility"
-	"context"
-	"flag"
-	"log"
-	"net/http"
-	"os"
-	"os/signal"
-	"strings"
-	"syscall"
-	"time"
-
-	"github.com/labstack/echo/v4"
-	echoMiddleware "github.com/labstack/echo/v4/middleware"
-	echoSwagger "github.com/swaggo/echo-swagger"
-
-	_ "api/docs"
 )
 
 // @title          Alizzah Manajemen API
@@ -133,38 +120,16 @@ func main() {
 	seeders.SeedFacilities(db)         // 6b. Fasilitas (Antar Jemput, dll)
 	seeders.SeedStudentsFromLegacy(db) // 7. Siswa + Enrollment + Savings (depends on #1,2,3)
 	seeders.SeedEffectiveDays(db)      // 8. Hari Efektif (depends on #3)
-	seeders.SeedDispensations(db)       // 8b. Dispensasi sample (depends on #2,7)
-	seeders.SeedSampleTransactions(db)  // 9. Sample Tagihan/Bayar/Pengeluaran (depends on #5,7,8)
-	seeders.SeedIncomeTransactions(db)  // 10. Sample Penerimaan Dana Bantuan (depends on #2)
+	seeders.SeedDispensations(db)      // 8b. Dispensasi sample (depends on #2,7)
+	seeders.SeedSampleTransactions(db) // 9. Sample Tagihan/Bayar/Pengeluaran (depends on #5,7,8)
+	seeders.SeedIncomeTransactions(db) // 10. Sample Penerimaan Dana Bantuan (depends on #2)
 
 	// Data migrations / fixes
 	seeders.FixClassGroupSchedules(db) // Fix schedule JSON format from old "groups" to "weekdays/weekend"
 
-	// Initialize Echo
-	e := echo.New()
-	e.HTTPErrorHandler = handler.CustomHTTPErrorHandler
-	e.Validator = &utility.CustomValidator{Validator: utility.NewValidator()}
-
-	// Global middleware
-	corsOrigins := strings.Split(os.Getenv("CORS_ALLOWED_ORIGINS"), ",")
-	if len(corsOrigins) == 1 && corsOrigins[0] == "" {
-		corsOrigins = []string{"http://localhost:3000", "http://localhost:5173"}
-	}
-	e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
-		AllowOrigins: corsOrigins,
-		AllowMethods: []string{echo.GET, echo.POST, echo.PUT, echo.PATCH, echo.DELETE},
-		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
-	}))
-	e.Use(echoMiddleware.Recover())
-	e.Use(middleware.MiddlewareLogging)
-
-	// Swagger
-	e.GET("/swagger/*", echoSwagger.WrapHandler)
-
-	// Health check (untuk Docker healthcheck & reverse proxy)
-	e.GET("/health", func(c echo.Context) error {
-		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
-	})
+	// Inisialisasi Echo + middleware global (error handler, validator, CORS,
+	// recover, logging, swagger, health) — lihat internal/bootstrap.
+	e := bootstrap.NewEcho()
 
 	// =====================
 	// Dependency Injection
@@ -177,7 +142,7 @@ func main() {
 	studentRepo := repository.NewStudentRepository(db)
 	guardianRepo := repository.NewGuardianRepository(db)
 	classGroupRepo := repository.NewClassGroupRepository(db)
-	
+
 	// Batch 3
 	enrollmentRepo := repository.NewStudentEnrollmentRepository(db)
 	effectiveDayRepo := repository.NewEffectiveDayRepository(db)
@@ -310,7 +275,7 @@ func main() {
 	// =====================
 	// Routes — /api/v1
 	// =====================
-	api := e.Group("/api/v1", middleware.RateLimiter(20, 40))
+	api := bootstrap.APIGroup(e)
 
 	// Rate limiting: 1 req/detik untuk login (anti brute-force)
 	auth := api.Group("/auth")
@@ -525,15 +490,8 @@ func main() {
 	reports.GET("/students/:id", reportHandler.ByStudent, middleware.RequireRoles("superadmin", "admin_keuangan"))
 	reports.GET("/class-groups/:id", reportHandler.ByClassGroup, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah"))
 
-	// =====================
-	// Batch 8: Koperasi (modular monolith — lihat docs/architecture/adr-001)
-	// =====================
-	sharedDeps := shared.New(db)
-	koperasiModule := koperasi.New(sharedDeps)
-	if err := db.AutoMigrate(koperasiModule.Models()...); err != nil {
-		log.Fatal("Gagal AutoMigrate koperasi:", err)
-	}
-	koperasiModule.RegisterRoutes(api)
+	// Catatan: modul Koperasi dilayani oleh binary terpisah (cmd/koperasi) demi
+	// deploy/restart & isolasi fault yang independen. Lihat docs/architecture/adr-002.
 
 	// Background: hapus token blacklist expired tiap 10 menit
 	go func() {
@@ -545,28 +503,6 @@ func main() {
 		}
 	}()
 
-	// Start server with graceful shutdown
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
-	go func() {
-		if err := e.Start(":" + port); err != nil && err != http.ErrServerClosed {
-			e.Logger.Fatal("shutting down the server")
-		}
-	}()
-
-	// Wait for interrupt signal
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
-	<-quit
-
-	log.Println("Menerima sinyal shutdown, menunggu request selesai...")
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	if err := e.Shutdown(ctx); err != nil {
-		e.Logger.Fatal(err)
-	}
-	log.Println("Server berhenti")
+	// Start server + graceful shutdown (lihat internal/bootstrap).
+	bootstrap.Run(e, "8080")
 }

@@ -1,7 +1,3 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-import { MapPin, Phone, Star, Trash2 } from "lucide-react";
-import { useState } from "react";
 import {
 	getGetV1StudentsIdGuardiansQueryKey,
 	useDeleteV1StudentsIdGuardiansGuardianId,
@@ -10,9 +6,11 @@ import {
 	usePatchV1StudentsIdGuardiansGuardianIdPrimary,
 } from "@alizzah/api-client/endpoints/students/students";
 import { ApiError } from "@alizzah/api-client/mutator/custom-instance";
-import { Button } from "@alizzah/ui";
-import { ConfirmDialog } from "@alizzah/ui";
-import { useToast } from "@alizzah/ui";
+import { Button, ConfirmDialog, useToast } from "@alizzah/ui";
+import { useQueryClient } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { MapPin, Phone, Star, Trash2 } from "lucide-react";
+import { useState } from "react";
 
 export const Route = createFileRoute(
 	"/_authenticated/administrasi/siswa/$id/profil",

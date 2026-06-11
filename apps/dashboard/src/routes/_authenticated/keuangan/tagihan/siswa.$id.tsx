@@ -1,10 +1,9 @@
+import { useGetV1StudentsIdInvoices } from "@alizzah/api-client/endpoints/invoices/invoices";
+import { useGetV1StudentsId } from "@alizzah/api-client/endpoints/students/students";
+import { Badge, Button } from "@alizzah/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { ChevronRight } from "lucide-react";
-import { useGetV1StudentsIdInvoices } from "@alizzah/api-client/endpoints/invoices/invoices";
-import { useGetV1StudentsId } from "@alizzah/api-client/endpoints/students/students";
-import { Badge } from "@alizzah/ui";
-import { Button } from "@alizzah/ui";
 import { academicYearAtom } from "../../../../store/global";
 import { formatCurrency } from "../../../../utils/format";
 

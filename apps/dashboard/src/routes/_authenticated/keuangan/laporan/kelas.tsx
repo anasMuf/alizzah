@@ -1,12 +1,10 @@
+import { useGetV1ClassGroups } from "@alizzah/api-client/endpoints/class-groups/class-groups";
+import { useGetV1ReportsClassGroupsId } from "@alizzah/api-client/endpoints/reports/reports";
+import { Alert, Badge, Button } from "@alizzah/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { ChevronRight, Printer } from "lucide-react";
 import { useMemo, useState } from "react";
-import { useGetV1ClassGroups } from "@alizzah/api-client/endpoints/class-groups/class-groups";
-import { useGetV1ReportsClassGroupsId } from "@alizzah/api-client/endpoints/reports/reports";
-import { Alert } from "@alizzah/ui";
-import { Badge } from "@alizzah/ui";
-import { Button } from "@alizzah/ui";
 import { academicYearAtom } from "../../../../store/global";
 import { formatCurrency } from "../../../../utils/format";
 

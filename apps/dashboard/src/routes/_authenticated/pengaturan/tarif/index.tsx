@@ -1,7 +1,3 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { ChevronRight, Plus } from "lucide-react";
-import { useEffect, useState } from "react";
 import { useGetV1AcademicYears } from "@alizzah/api-client/endpoints/academic-years/academic-years";
 import {
 	getGetV1FeeConfigsQueryKey,
@@ -10,11 +6,11 @@ import {
 } from "@alizzah/api-client/endpoints/fee-configs/fee-configs";
 import type { DtoFeeConfigResponse } from "@alizzah/api-client/model";
 import { ApiError } from "@alizzah/api-client/mutator/custom-instance";
-import { Badge } from "@alizzah/ui";
-import { Button } from "@alizzah/ui";
-import { EmptyState } from "@alizzah/ui";
-import { SlideOver } from "@alizzah/ui";
-import { useToast } from "@alizzah/ui";
+import { Badge, Button, EmptyState, SlideOver, useToast } from "@alizzah/ui";
+import { useQueryClient } from "@tanstack/react-query";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { ChevronRight, Plus } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/pengaturan/tarif/")({
 	beforeLoad: () => {

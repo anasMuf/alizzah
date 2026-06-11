@@ -1,7 +1,3 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-import { Palette, Plus, ShieldCheck, Trophy } from "lucide-react";
-import { useState } from "react";
 import { useGetV1AcademicYears } from "@alizzah/api-client/endpoints/academic-years/academic-years";
 import { useGetV1Extracurriculars } from "@alizzah/api-client/endpoints/extracurriculars/extracurriculars";
 import {
@@ -11,11 +7,11 @@ import {
 	usePostV1StudentsIdExtracurriculars,
 } from "@alizzah/api-client/endpoints/student-extracurriculars/student-extracurriculars";
 import { ApiError } from "@alizzah/api-client/mutator/custom-instance";
-import { Badge } from "@alizzah/ui";
-import { Button } from "@alizzah/ui";
-import { ConfirmDialog } from "@alizzah/ui";
-import { SlideOver } from "@alizzah/ui";
-import { useToast } from "@alizzah/ui";
+import { Badge, Button, ConfirmDialog, SlideOver, useToast } from "@alizzah/ui";
+import { useQueryClient } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { Palette, Plus, ShieldCheck, Trophy } from "lucide-react";
+import { useState } from "react";
 
 export const Route = createFileRoute(
 	"/_authenticated/administrasi/siswa/$id/ekskul",

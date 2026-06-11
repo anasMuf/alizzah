@@ -1,12 +1,10 @@
-import { useState } from "react";
 import {
 	type postV1UsersResponse,
 	usePostV1Users,
 } from "@alizzah/api-client/endpoints/users/users";
 import { ApiError } from "@alizzah/api-client/mutator/custom-instance";
-import { Button } from "@alizzah/ui";
-import { FormField } from "@alizzah/ui";
-import { useToast } from "@alizzah/ui";
+import { Button, FormField, useToast } from "@alizzah/ui";
+import { useState } from "react";
 
 export function RegisterForm({ onSuccess }: { onSuccess: () => void }) {
 	const { addToast } = useToast();

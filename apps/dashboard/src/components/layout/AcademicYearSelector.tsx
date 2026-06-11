@@ -1,6 +1,6 @@
+import { useGetV1AcademicYears } from "@alizzah/api-client/endpoints/academic-years/academic-years";
 import { useAtom } from "jotai";
 import { useEffect } from "react";
-import { useGetV1AcademicYears } from "@alizzah/api-client/endpoints/academic-years/academic-years";
 import { academicYearAtom } from "../../store/global";
 
 export function AcademicYearSelector() {

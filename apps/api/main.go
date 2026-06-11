@@ -3,6 +3,8 @@ package main
 import (
 	"api/config"
 	"api/handler"
+	"api/internal/modules/koperasi"
+	"api/internal/shared"
 	"api/middleware"
 	"api/model"
 	"api/repository"
@@ -522,6 +524,16 @@ func main() {
 	reports.GET("/savings/students/:id", reportHandler.TabunganSiswaReport, middleware.RequireRoles("superadmin", "admin_keuangan"))
 	reports.GET("/students/:id", reportHandler.ByStudent, middleware.RequireRoles("superadmin", "admin_keuangan"))
 	reports.GET("/class-groups/:id", reportHandler.ByClassGroup, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah"))
+
+	// =====================
+	// Batch 8: Koperasi (modular monolith — lihat docs/architecture/adr-001)
+	// =====================
+	sharedDeps := shared.New(db)
+	koperasiModule := koperasi.New(sharedDeps)
+	if err := db.AutoMigrate(koperasiModule.Models()...); err != nil {
+		log.Fatal("Gagal AutoMigrate koperasi:", err)
+	}
+	koperasiModule.RegisterRoutes(api)
 
 	// Background: hapus token blacklist expired tiap 10 menit
 	go func() {

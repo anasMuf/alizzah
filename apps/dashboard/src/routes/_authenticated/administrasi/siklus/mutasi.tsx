@@ -6,9 +6,9 @@ import { usePostV1AcademicEventsTransfers } from "../../../../api/endpoints/acad
 import { useGetV1ClassGroups } from "../../../../api/endpoints/class-groups/class-groups";
 import { useGetV1Students } from "../../../../api/endpoints/students/students";
 import { ApiError } from "../../../../api/mutator/custom-instance";
-import { Button } from "../../../../components/atoms/Button";
-import { FormField } from "../../../../components/molecules/FormField";
-import { useToast } from "../../../../components/molecules/Toast";
+import { Button } from "@alizzah/ui";
+import { FormField } from "@alizzah/ui";
+import { useToast } from "@alizzah/ui";
 import { academicYearAtom } from "../../../../store/global";
 
 export const Route = createFileRoute(

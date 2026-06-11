@@ -9,10 +9,10 @@ import {
 } from "../../../../../api/endpoints/class-groups/class-groups";
 import { useGetV1ClassGroupsIdStudents } from "../../../../../api/endpoints/student-enrollments/student-enrollments";
 import { ApiError } from "../../../../../api/mutator/custom-instance";
-import { Button } from "../../../../../components/atoms/Button";
-import { ConfirmDialog } from "../../../../../components/molecules/ConfirmDialog";
-import { SlideOver } from "../../../../../components/molecules/SlideOver";
-import { useToast } from "../../../../../components/molecules/Toast";
+import { Button } from "@alizzah/ui";
+import { ConfirmDialog } from "@alizzah/ui";
+import { SlideOver } from "@alizzah/ui";
+import { useToast } from "@alizzah/ui";
 import { RombelForm } from "../../../../../features/administrasi/components/RombelForm";
 
 export const Route = createFileRoute(

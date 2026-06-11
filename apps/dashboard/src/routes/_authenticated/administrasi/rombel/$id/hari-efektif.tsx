@@ -5,8 +5,8 @@ import { useMemo, useState } from "react";
 import { useGetV1ClassGroupsId } from "../../../../../api/endpoints/class-groups/class-groups";
 import { useGetV1ClassGroupsIdEffectiveDays } from "../../../../../api/endpoints/effective-days/effective-days";
 import type { DtoEffectiveDayResponse } from "../../../../../api/model";
-import { Button } from "../../../../../components/atoms/Button";
-import { EmptyState } from "../../../../../components/molecules/EmptyState";
+import { Button } from "@alizzah/ui";
+import { EmptyState } from "@alizzah/ui";
 import { EffectiveDayForm } from "../../../../../features/administrasi/components/EffectiveDayForm";
 import { academicYearAtom } from "../../../../../store/global";
 

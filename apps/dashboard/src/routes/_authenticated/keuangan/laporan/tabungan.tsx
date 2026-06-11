@@ -3,8 +3,8 @@ import { ChevronRight, Printer } from "lucide-react";
 import { useState } from "react";
 import type { TabunganReportRow } from "../../../../api/endpoints/reports/tabungan";
 import { useGetReportsTabungan } from "../../../../api/endpoints/reports/tabungan";
-import { Alert } from "../../../../components/atoms/Alert";
-import { Button } from "../../../../components/atoms/Button";
+import { Alert } from "@alizzah/ui";
+import { Button } from "@alizzah/ui";
 
 export const Route = createFileRoute(
 	"/_authenticated/keuangan/laporan/tabungan",

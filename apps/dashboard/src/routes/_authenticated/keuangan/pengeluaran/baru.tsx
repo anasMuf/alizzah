@@ -4,9 +4,9 @@ import { ChevronRight, Save } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useGetV1ExpenseCategories } from "../../../../api/endpoints/expense-categories/expense-categories";
 import { usePostV1Expenses } from "../../../../api/endpoints/expenses/expenses";
-import { Alert } from "../../../../components/atoms/Alert";
-import { Button } from "../../../../components/atoms/Button";
-import { useToast } from "../../../../components/molecules/Toast";
+import { Alert } from "@alizzah/ui";
+import { Button } from "@alizzah/ui";
+import { useToast } from "@alizzah/ui";
 import { academicYearAtom } from "../../../../store/global";
 
 export const Route = createFileRoute(

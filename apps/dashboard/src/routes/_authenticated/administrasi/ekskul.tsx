@@ -8,11 +8,11 @@ import {
 	useGetV1Extracurriculars,
 } from "../../../api/endpoints/extracurriculars/extracurriculars";
 import type { DtoExtracurricularResponse } from "../../../api/model";
-import { Badge } from "../../../components/atoms/Badge";
-import { Button } from "../../../components/atoms/Button";
-import { ConfirmDialog } from "../../../components/molecules/ConfirmDialog";
-import { EmptyState } from "../../../components/molecules/EmptyState";
-import { useToast } from "../../../components/molecules/Toast";
+import { Badge } from "@alizzah/ui";
+import { Button } from "@alizzah/ui";
+import { ConfirmDialog } from "@alizzah/ui";
+import { EmptyState } from "@alizzah/ui";
+import { useToast } from "@alizzah/ui";
 import { EkskulForm } from "../../../features/administrasi/components/EkskulForm";
 
 export const Route = createFileRoute("/_authenticated/administrasi/ekskul")({

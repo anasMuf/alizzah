@@ -13,8 +13,8 @@ import {
 	usePostV1StudentsImport,
 } from "../../../../api/endpoints/students/students";
 import { ApiError } from "../../../../api/mutator/custom-instance";
-import { Button } from "../../../../components/atoms/Button";
-import { useToast } from "../../../../components/molecules/Toast";
+import { Button } from "@alizzah/ui";
+import { useToast } from "@alizzah/ui";
 
 export const Route = createFileRoute(
 	"/_authenticated/administrasi/siswa/import",

@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useGetV1CashTransactions } from "../../../../api/endpoints/cash/cash";
-import { Button } from "../../../../components/atoms/Button";
+import { Button } from "@alizzah/ui";
 import { academicYearAtom } from "../../../../store/global";
 import { formatCurrency, formatDate } from "../../../../utils/format";
 

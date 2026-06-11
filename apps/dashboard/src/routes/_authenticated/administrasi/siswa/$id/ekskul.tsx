@@ -11,11 +11,11 @@ import {
 	usePostV1StudentsIdExtracurriculars,
 } from "../../../../../api/endpoints/student-extracurriculars/student-extracurriculars";
 import { ApiError } from "../../../../../api/mutator/custom-instance";
-import { Badge } from "../../../../../components/atoms/Badge";
-import { Button } from "../../../../../components/atoms/Button";
-import { ConfirmDialog } from "../../../../../components/molecules/ConfirmDialog";
-import { SlideOver } from "../../../../../components/molecules/SlideOver";
-import { useToast } from "../../../../../components/molecules/Toast";
+import { Badge } from "@alizzah/ui";
+import { Button } from "@alizzah/ui";
+import { ConfirmDialog } from "@alizzah/ui";
+import { SlideOver } from "@alizzah/ui";
+import { useToast } from "@alizzah/ui";
 
 export const Route = createFileRoute(
 	"/_authenticated/administrasi/siswa/$id/ekskul",

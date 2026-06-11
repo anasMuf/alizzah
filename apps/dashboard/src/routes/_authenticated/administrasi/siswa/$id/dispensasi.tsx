@@ -21,12 +21,12 @@ import {
 	useToggleDispensation,
 	useUpdateDispensation,
 } from "../../../../../api/endpoints/dispensations/dispensations";
-import { Badge } from "../../../../../components/atoms/Badge";
-import { Button } from "../../../../../components/atoms/Button";
-import { ConfirmDialog } from "../../../../../components/molecules/ConfirmDialog";
-import { FormField } from "../../../../../components/molecules/FormField";
-import { SlideOver } from "../../../../../components/molecules/SlideOver";
-import { useToast } from "../../../../../components/molecules/Toast";
+import { Badge } from "@alizzah/ui";
+import { Button } from "@alizzah/ui";
+import { ConfirmDialog } from "@alizzah/ui";
+import { FormField } from "@alizzah/ui";
+import { SlideOver } from "@alizzah/ui";
+import { useToast } from "@alizzah/ui";
 import { academicYearAtom } from "../../../../../store/global";
 import { formatCurrency } from "../../../../../utils/format";
 

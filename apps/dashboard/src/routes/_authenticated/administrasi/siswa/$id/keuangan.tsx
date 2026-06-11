@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, CreditCard, PiggyBank, Wallet } from "lucide-react";
 import { useGetV1StudentsId } from "../../../../../api/endpoints/students/students";
-import { Button } from "../../../../../components/atoms/Button";
+import { Button } from "@alizzah/ui";
 
 export const Route = createFileRoute(
 	"/_authenticated/administrasi/siswa/$id/keuangan",

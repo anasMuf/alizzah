@@ -14,12 +14,12 @@ import { useGetV1ClassGroups } from "../../../../api/endpoints/class-groups/clas
 import { usePostV1StudentsIdEnrollments } from "../../../../api/endpoints/student-enrollments/enroll";
 import { useGetV1Students } from "../../../../api/endpoints/students/students";
 import { customInstance } from "../../../../api/mutator/custom-instance";
-import { Badge } from "../../../../components/atoms/Badge";
-import { Button } from "../../../../components/atoms/Button";
-import { EmptyState } from "../../../../components/molecules/EmptyState";
-import { Pagination } from "../../../../components/molecules/Pagination";
-import { SlideOver } from "../../../../components/molecules/SlideOver";
-import { useToast } from "../../../../components/molecules/Toast";
+import { Badge } from "@alizzah/ui";
+import { Button } from "@alizzah/ui";
+import { EmptyState } from "@alizzah/ui";
+import { Pagination } from "@alizzah/ui";
+import { SlideOver } from "@alizzah/ui";
+import { useToast } from "@alizzah/ui";
 import { academicYearAtom } from "../../../../store/global";
 
 export const Route = createFileRoute("/_authenticated/administrasi/siswa/")({

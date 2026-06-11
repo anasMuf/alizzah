@@ -14,9 +14,9 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useGetV1ReportsStudentsId } from "../../../../api/endpoints/reports/reports";
 import { useGetV1Students } from "../../../../api/endpoints/students/students";
-import { Alert } from "../../../../components/atoms/Alert";
-import { Badge } from "../../../../components/atoms/Badge";
-import { Button } from "../../../../components/atoms/Button";
+import { Alert } from "@alizzah/ui";
+import { Badge } from "@alizzah/ui";
+import { Button } from "@alizzah/ui";
 import { academicYearAtom } from "../../../../store/global";
 import { formatCurrency, formatDate } from "../../../../utils/format";
 

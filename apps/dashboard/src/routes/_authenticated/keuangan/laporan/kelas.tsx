@@ -4,9 +4,9 @@ import { ChevronRight, Printer } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useGetV1ClassGroups } from "../../../../api/endpoints/class-groups/class-groups";
 import { useGetV1ReportsClassGroupsId } from "../../../../api/endpoints/reports/reports";
-import { Alert } from "../../../../components/atoms/Alert";
-import { Badge } from "../../../../components/atoms/Badge";
-import { Button } from "../../../../components/atoms/Button";
+import { Alert } from "@alizzah/ui";
+import { Badge } from "@alizzah/ui";
+import { Button } from "@alizzah/ui";
 import { academicYearAtom } from "../../../../store/global";
 import { formatCurrency } from "../../../../utils/format";
 

@@ -4,8 +4,8 @@ import { ChevronRight, Printer } from "lucide-react";
 import { useState } from "react";
 import type { TransaksiPengeluaranBlock } from "../../../../api/endpoints/reports/transaksi-pengeluaran";
 import { useGetReportsTransaksiPengeluaran } from "../../../../api/endpoints/reports/transaksi-pengeluaran";
-import { Alert } from "../../../../components/atoms/Alert";
-import { Button } from "../../../../components/atoms/Button";
+import { Alert } from "@alizzah/ui";
+import { Button } from "@alizzah/ui";
 import { academicYearAtom } from "../../../../store/global";
 
 export const Route = createFileRoute(

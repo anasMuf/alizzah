@@ -11,8 +11,8 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useGetV1DailyClosings } from "../../../../../api/endpoints/daily-closings/daily-closings";
-import { Badge } from "../../../../../components/atoms/Badge";
-import { Button } from "../../../../../components/atoms/Button";
+import { Badge } from "@alizzah/ui";
+import { Button } from "@alizzah/ui";
 import { academicYearAtom } from "../../../../../store/global";
 import { formatCurrency, formatDate } from "../../../../../utils/format";
 

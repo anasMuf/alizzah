@@ -7,7 +7,7 @@ import {
 	Receipt,
 } from "lucide-react";
 import { useGetV1PaymentsId } from "../../../../api/endpoints/payments/payments";
-import { Button } from "../../../../components/atoms/Button";
+import { Button } from "@alizzah/ui";
 import {
 	formatCurrency,
 	formatDate,

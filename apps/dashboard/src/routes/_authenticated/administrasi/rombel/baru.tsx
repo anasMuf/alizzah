@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { ChevronRight } from "lucide-react";
-import { EmptyState } from "../../../../components/molecules/EmptyState";
+import { EmptyState } from "@alizzah/ui";
 import { RombelForm } from "../../../../features/administrasi/components/RombelForm";
 import { academicYearAtom } from "../../../../store/global";
 

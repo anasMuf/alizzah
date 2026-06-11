@@ -8,11 +8,11 @@ import {
 	useGetV1DaycareEnrollments,
 	usePatchV1DaycareEnrollmentsIdStatus,
 } from "../../../../api/endpoints/daycare-enrollments/daycare-enrollments";
-import { Badge } from "../../../../components/atoms/Badge";
-import { Button } from "../../../../components/atoms/Button";
-import { ConfirmDialog } from "../../../../components/molecules/ConfirmDialog";
-import { EmptyState } from "../../../../components/molecules/EmptyState";
-import { useToast } from "../../../../components/molecules/Toast";
+import { Badge } from "@alizzah/ui";
+import { Button } from "@alizzah/ui";
+import { ConfirmDialog } from "@alizzah/ui";
+import { EmptyState } from "@alizzah/ui";
+import { useToast } from "@alizzah/ui";
 import { academicYearAtom } from "../../../../store/global";
 
 export const Route = createFileRoute("/_authenticated/administrasi/daycare/")({

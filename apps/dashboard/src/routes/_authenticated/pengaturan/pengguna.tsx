@@ -16,14 +16,14 @@ import type {
 } from "../../../api/model";
 import { DtoCreateUserRequestRole } from "../../../api/model";
 import { ApiError } from "../../../api/mutator/custom-instance";
-import { Badge } from "../../../components/atoms/Badge";
-import { Button } from "../../../components/atoms/Button";
-import { ConfirmDialog } from "../../../components/molecules/ConfirmDialog";
-import { EmptyState } from "../../../components/molecules/EmptyState";
-import { FormField } from "../../../components/molecules/FormField";
-import { Pagination } from "../../../components/molecules/Pagination";
-import { SlideOver } from "../../../components/molecules/SlideOver";
-import { useToast } from "../../../components/molecules/Toast";
+import { Badge } from "@alizzah/ui";
+import { Button } from "@alizzah/ui";
+import { ConfirmDialog } from "@alizzah/ui";
+import { EmptyState } from "@alizzah/ui";
+import { FormField } from "@alizzah/ui";
+import { Pagination } from "@alizzah/ui";
+import { SlideOver } from "@alizzah/ui";
+import { useToast } from "@alizzah/ui";
 
 export const Route = createFileRoute("/_authenticated/pengaturan/pengguna")({
 	beforeLoad: () => {

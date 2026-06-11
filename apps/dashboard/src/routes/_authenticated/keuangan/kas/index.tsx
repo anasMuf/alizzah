@@ -25,9 +25,9 @@ import {
 	getGetV1VaultBalanceQueryKey,
 	useGetV1VaultBalance,
 } from "../../../../api/endpoints/vault/vault";
-import { Button } from "../../../../components/atoms/Button";
-import { SlideOver } from "../../../../components/molecules/SlideOver";
-import { useToast } from "../../../../components/molecules/Toast";
+import { Button } from "@alizzah/ui";
+import { SlideOver } from "@alizzah/ui";
+import { useToast } from "@alizzah/ui";
 import { academicYearAtom } from "../../../../store/global";
 import { formatCurrency, formatDate } from "../../../../utils/format";
 

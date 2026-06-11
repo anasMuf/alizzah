@@ -11,12 +11,12 @@ import {
 } from "../../../../api/endpoints/expense-categories/expense-categories";
 import type { DtoExpenseCategoryResponse } from "../../../../api/model";
 import { ApiError } from "../../../../api/mutator/custom-instance";
-import { Button } from "../../../../components/atoms/Button";
-import { ConfirmDialog } from "../../../../components/molecules/ConfirmDialog";
-import { EmptyState } from "../../../../components/molecules/EmptyState";
-import { FormField } from "../../../../components/molecules/FormField";
-import { SlideOver } from "../../../../components/molecules/SlideOver";
-import { useToast } from "../../../../components/molecules/Toast";
+import { Button } from "@alizzah/ui";
+import { ConfirmDialog } from "@alizzah/ui";
+import { EmptyState } from "@alizzah/ui";
+import { FormField } from "@alizzah/ui";
+import { SlideOver } from "@alizzah/ui";
+import { useToast } from "@alizzah/ui";
 
 export const Route = createFileRoute(
 	"/_authenticated/keuangan/pengeluaran/kategori",

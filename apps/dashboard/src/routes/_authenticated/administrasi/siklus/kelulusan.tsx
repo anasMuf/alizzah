@@ -12,10 +12,10 @@ import { usePostV1AcademicEventsGraduations } from "../../../../api/endpoints/ac
 import { useGetV1AcademicYears } from "../../../../api/endpoints/academic-years/academic-years";
 import { useGetV1Students } from "../../../../api/endpoints/students/students";
 import { ApiError } from "../../../../api/mutator/custom-instance";
-import { Button } from "../../../../components/atoms/Button";
-import { ConfirmDialog } from "../../../../components/molecules/ConfirmDialog";
-import { FormField } from "../../../../components/molecules/FormField";
-import { useToast } from "../../../../components/molecules/Toast";
+import { Button } from "@alizzah/ui";
+import { ConfirmDialog } from "@alizzah/ui";
+import { FormField } from "@alizzah/ui";
+import { useToast } from "@alizzah/ui";
 import { academicYearAtom } from "../../../../store/global";
 
 export const Route = createFileRoute(

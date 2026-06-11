@@ -8,13 +8,13 @@ import {
 	useDeleteIncomeTransaction,
 	useGetIncomeTransactions,
 } from "../../../../api/endpoints/income-transactions/income-transactions";
-import { Alert } from "../../../../components/atoms/Alert";
-import { Badge } from "../../../../components/atoms/Badge";
-import { Button } from "../../../../components/atoms/Button";
-import { ConfirmDialog } from "../../../../components/molecules/ConfirmDialog";
-import { EmptyState } from "../../../../components/molecules/EmptyState";
-import { Pagination } from "../../../../components/molecules/Pagination";
-import { useToast } from "../../../../components/molecules/Toast";
+import { Alert } from "@alizzah/ui";
+import { Badge } from "@alizzah/ui";
+import { Button } from "@alizzah/ui";
+import { ConfirmDialog } from "@alizzah/ui";
+import { EmptyState } from "@alizzah/ui";
+import { Pagination } from "@alizzah/ui";
+import { useToast } from "@alizzah/ui";
 import { academicYearAtom } from "../../../../store/global";
 import { formatCurrency, formatDate } from "../../../../utils/format";
 

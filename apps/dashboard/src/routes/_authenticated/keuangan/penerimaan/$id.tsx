@@ -7,10 +7,10 @@ import {
 	useDeleteIncomeTransaction,
 	useGetIncomeTransaction,
 } from "../../../../api/endpoints/income-transactions/income-transactions";
-import { Badge } from "../../../../components/atoms/Badge";
-import { Button } from "../../../../components/atoms/Button";
-import { ConfirmDialog } from "../../../../components/molecules/ConfirmDialog";
-import { useToast } from "../../../../components/molecules/Toast";
+import { Badge } from "@alizzah/ui";
+import { Button } from "@alizzah/ui";
+import { ConfirmDialog } from "@alizzah/ui";
+import { useToast } from "@alizzah/ui";
 import { formatCurrency, formatDate } from "../../../../utils/format";
 
 export const Route = createFileRoute("/_authenticated/keuangan/penerimaan/$id")(

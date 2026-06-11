@@ -4,9 +4,9 @@ import { ChevronRight, Filter, Plus, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useGetV1ExpenseCategories } from "../../../../api/endpoints/expense-categories/expense-categories";
 import { useGetV1Expenses } from "../../../../api/endpoints/expenses/expenses";
-import { Alert } from "../../../../components/atoms/Alert";
-import { Button } from "../../../../components/atoms/Button";
-import { EmptyState } from "../../../../components/molecules/EmptyState";
+import { Alert } from "@alizzah/ui";
+import { Button } from "@alizzah/ui";
+import { EmptyState } from "@alizzah/ui";
 import { academicYearAtom } from "../../../../store/global";
 import { formatCurrency, formatDate } from "../../../../utils/format";
 

@@ -7,9 +7,9 @@ import {
 	incomeTransactionKeys,
 	useCreateIncomeTransaction,
 } from "../../../../api/endpoints/income-transactions/income-transactions";
-import { Button } from "../../../../components/atoms/Button";
-import { FormField } from "../../../../components/molecules/FormField";
-import { useToast } from "../../../../components/molecules/Toast";
+import { Button } from "@alizzah/ui";
+import { FormField } from "@alizzah/ui";
+import { useToast } from "@alizzah/ui";
 import { academicYearAtom } from "../../../../store/global";
 
 export const Route = createFileRoute(

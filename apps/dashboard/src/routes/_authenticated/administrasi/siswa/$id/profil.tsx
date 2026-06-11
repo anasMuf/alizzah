@@ -10,9 +10,9 @@ import {
 	usePatchV1StudentsIdGuardiansGuardianIdPrimary,
 } from "../../../../../api/endpoints/students/students";
 import { ApiError } from "../../../../../api/mutator/custom-instance";
-import { Button } from "../../../../../components/atoms/Button";
-import { ConfirmDialog } from "../../../../../components/molecules/ConfirmDialog";
-import { useToast } from "../../../../../components/molecules/Toast";
+import { Button } from "@alizzah/ui";
+import { ConfirmDialog } from "@alizzah/ui";
+import { useToast } from "@alizzah/ui";
 
 export const Route = createFileRoute(
 	"/_authenticated/administrasi/siswa/$id/profil",

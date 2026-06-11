@@ -17,10 +17,10 @@ import {
 	usePatchV1DailyClosingsIdConfirm,
 	usePostV1DailyClosings,
 } from "../../../../../api/endpoints/daily-closings/daily-closings";
-import { Alert } from "../../../../../components/atoms/Alert";
-import { Badge } from "../../../../../components/atoms/Badge";
-import { Button } from "../../../../../components/atoms/Button";
-import { ConfirmDialog } from "../../../../../components/molecules/ConfirmDialog";
+import { Alert } from "@alizzah/ui";
+import { Badge } from "@alizzah/ui";
+import { Button } from "@alizzah/ui";
+import { ConfirmDialog } from "@alizzah/ui";
 import { academicYearAtom } from "../../../../../store/global";
 import { formatCurrency, formatDate } from "../../../../../utils/format";
 

@@ -10,8 +10,8 @@ import { useGetV1InvoicesBatch } from "../../../../api/endpoints/invoices/invoic
 import { usePostV1Payments } from "../../../../api/endpoints/payments/payments";
 import { useGetV1StudentsIdSavings } from "../../../../api/endpoints/savings/savings";
 import { useGetV1StudentsId } from "../../../../api/endpoints/students/students";
-import { Button } from "../../../../components/atoms/Button";
-import { useToast } from "../../../../components/molecules/Toast";
+import { Button } from "@alizzah/ui";
+import { useToast } from "@alizzah/ui";
 import { academicYearAtom } from "../../../../store/global";
 import { formatCurrency } from "../../../../utils/format";
 import { IncidentalItems } from "./components/IncidentalItems";

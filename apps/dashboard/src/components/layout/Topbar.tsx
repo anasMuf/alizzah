@@ -3,8 +3,8 @@ import { Menu } from "lucide-react";
 import { useState } from "react";
 import { usePostV1AuthLogout } from "../../api/endpoints/auth/auth";
 import { useAuth } from "../../features/auth/AuthContext";
-import { Button } from "../atoms/Button";
-import { ConfirmDialog } from "../molecules/ConfirmDialog";
+import { Button } from "@alizzah/ui";
+import { ConfirmDialog } from "@alizzah/ui";
 
 interface TopbarProps {
 	onMenuClick: () => void;

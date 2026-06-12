@@ -19,6 +19,7 @@ var defaultUsers = []struct {
 	{"Admin Keuangan", "admin_keuangan@alizzah.sch.id", "admin_keuangan"},
 	{"Kepala Sekolah", "kepala_sekolah@alizzah.sch.id", "kepala_sekolah"},
 	{"Yayasan", "yayasan@alizzah.sch.id", "yayasan"},
+	{"Admin Koperasi", "admin_koperasi@alizzah.sch.id", "admin_koperasi"},
 }
 
 func SeedUsers(db *gorm.DB) {
@@ -52,5 +53,5 @@ func SeedUsers(db *gorm.DB) {
 			continue
 		}
 	}
-	log.Println("User seeder berhasil (5 role)")
+	log.Println("User seeder berhasil (6 role)")
 }

@@ -5,7 +5,7 @@
 
 > ⚠️ **Struktur mengikuti [ADR-001](../architecture/adr-001-modular-structure.md).** Koperasi dibangun sebagai **modul greenfield di struktur modular baru**, bukan ditumpuk ke folder flat lama:
 > - **Backend:** `internal/modules/koperasi/<feature>/` (tiap fitur = package berisi `handler.go`/`service.go`/`repository.go`/`model.go`/`dto.go`).
-> - **Frontend:** **app terpisah** `apps/koperasi`, mengonsumsi `packages/{ui,api-client,auth,config}`.
+> - **Frontend:** **modul di dalam `apps/dashboard`** (bukan app terpisah — koreksi, lihat ADR-002), memakai `packages/{ui,api-client,auth,config}`.
 > - Tanggung jawab tiap lapisan & logika di bawah ini tetap berlaku — hanya **lokasinya** yang mengikuti ADR. Bagian §1 & §4 sudah disesuaikan; selebihnya (seam modal, urutan sub-batch, DoD, aturan stok/HPP) tetap valid.
 
 Modul ini menjadi **Batch 8** (penomoran batch melanjutkan konvensi existing). Ia **menambah**, bukan mengubah, sehingga risiko regresi pada modul existing minimal. Tiga titik sentuh ke modul lain: (1) seam penyaluran modal ke ledger kas sekolah (`shared/ledger`), (2) FK nullable `student_id` ke `students`, (3) role baru di RBAC.
@@ -160,37 +160,31 @@ func (s *svc) Create(req dto.CreateCapitalInjection, by uint) (*model.KoperasiCa
 
 ---
 
-## 4. Frontend — app baru `apps/koperasi`
+## 4. Frontend — modul di `apps/dashboard`
 
-Per [ADR-001](../architecture/adr-001-modular-structure.md), koperasi adalah **app terpisah** yang mengonsumsi `packages/{ui,api-client,auth,config}`. Pola **feature-first**: `routes/` tipis, isi di `features/koperasi/`.
+Koperasi adalah **modul di dalam `apps/dashboard`** (seperti administrasi & keuangan), **bukan** app terpisah — karena bagian dari suite Manajemen yang sama (audiens & login sama). Pola **feature-first**: route tipis di `routes/_authenticated/koperasi/`, isi di `features/koperasi/`.
 
-### 4.0 Prasyarat fondasi (Fase 0)
-- `pnpm-workspace.yaml` + `packages/*`; ekstrak `@alizzah/{ui,api-client,auth,config}`; scaffold `apps/koperasi` (Vite + TanStack Router + tema dari `@alizzah/ui`).
+> **Dashboard memanggil DUA backend** (karena backend tetap 2 binary, ADR-002). Path `/koperasi/*` → koperasi-api, sisanya → school-api. Diatur via path-routing di `@alizzah/api-client` (`customInstance` membaca `VITE_KOPERASI_API_URL`) untuk dev; di produksi nginx host memisah by-path dalam satu domain.
 
 ### 4.1 API hooks (Orval) via `@alizzah/api-client`
-Regen Swagger (`swag`) → Orval generate ke **`packages/api-client`** (satu sumber, dipakai dashboard & koperasi). **Tidak perlu** fetch manual.
+Regen Swagger (`swag` di `apps/api`, anotasi handler koperasi sudah ada) → Orval generate ke `packages/api-client` (satu sumber, dipakai dashboard). `customInstance` otomatis mengarahkan path `/koperasi/*` ke koperasi-api.
 
-### 4.2 Routes — file-based (`apps/koperasi/src/routes/`)
-Cangkang tipis; komponen halaman diimpor dari `features/koperasi/pages/`:
+### 4.2 Routes — `apps/dashboard/src/routes/_authenticated/koperasi/`
+Cangkang tipis; komponen halaman dari `features/koperasi/`:
 ```
-koperasi/index.tsx                  → Overview (saldo kas, ringkasan)
-koperasi/barang/{index,baru,$id}.tsx
-koperasi/anggota/{index,baru,$id}.tsx
-koperasi/pemasok/{index}.tsx
-koperasi/penjualan/{index,baru,$id}.tsx
-koperasi/pembelian/{index,baru,$id}.tsx
-koperasi/pinjaman/{index,baru,$id}.tsx
-koperasi/kas/transaksi.tsx          → jurnal arus kas
-koperasi/modal/index.tsx            → penyaluran modal (atau letakkan di menu Keuangan)
-koperasi/laporan/{index,bulanan,laba-rugi,piutang,hutang,pinjaman,stok}.tsx
+koperasi/index.tsx        → Overview (saldo kas, ringkasan)
+koperasi/anggota/  barang/  pemasok/
+koperasi/penjualan/  pembelian/  pinjaman/
+koperasi/kas/transaksi.tsx → jurnal arus kas
+koperasi/laporan/{bulanan,laba-rugi,piutang,hutang,stok}.tsx
 ```
-`routeTree.gen.ts` ter-generate otomatis oleh plugin TanStack Router.
+**Penyaluran modal** diletakkan di menu **Keuangan** (dipicu `admin_keuangan`), memanggil endpoint koperasi-api.
 
-### 4.3 Navigasi — Sidebar app koperasi
-Sidebar/Topbar app koperasi memakai **layout primitif dari `@alizzah/ui`**, dengan menu sendiri (Anggota, Barang, Penjualan, Pembelian, Pinjaman, Kas, Laporan). Gate per role: operasional untuk `admin_koperasi`/`superadmin`, Laporan juga untuk `kepala_sekolah`/`yayasan`. Auth dari `@alizzah/auth` (JWT yang sama).
+### 4.3 Navigasi — Sidebar dashboard
+Tambah section "Koperasi" di `apps/dashboard/src/components/layout/Sidebar.tsx` (pola sama dengan section "Keuangan"): operasional untuk `admin_koperasi`/`superadmin`; Laporan juga untuk `kepala_sekolah`/`yayasan`.
 
 ### 4.4 Komponen
-Pakai atoms/molecules dari **`@alizzah/ui`** (`Button`, `Input`, `FormField`, `ConfirmDialog`, `Toast`, `Alert`, dll) — satu sumber agar konsisten dengan dashboard. Hooks data dari `@alizzah/api-client`. Tidak ada dependensi UI baru.
+Pakai `@alizzah/ui` (sudah dipakai dashboard) + hooks dari `@alizzah/api-client`. Tanpa dependensi UI baru.
 
 ---
 
@@ -198,7 +192,7 @@ Pakai atoms/molecules dari **`@alizzah/ui`** (`Button`, `Input`, `FormField`, `C
 
 | Sub-batch | Lingkup | Hasil bisa diuji |
 |---|---|---|
-| **0 — Fondasi** | Backend: skeleton `internal/{platform,shared,modules}` + main.go pola Register/Models. Frontend: `packages/{ui,api-client,auth,config}` + scaffold `apps/koperasi`. (Lihat [ADR-001 §7](../architecture/adr-001-modular-structure.md).) | `apps/koperasi` jalan kosong + 1 modul contoh ter-register |
+| **0 — Fondasi** (selesai) | Backend: skeleton `internal/{platform,shared,modules}` + main.go pola Register/Models. Frontend: ekstrak `packages/{ui,api-client,auth,config}` (dashboard mengonsumsinya). (Lihat [ADR-001 §7](../architecture/adr-001-modular-structure.md).) | dashboard build hijau memakai packages |
 | **8a — Master** | Fitur `anggota`, `barang`, `pembelian`(supplier) — model+repo+service+handler per package. Role `admin_koperasi`. Seeder master. | CRUD master jalan end-to-end |
 | **8b — Kas & Modal** | `koperasi_cash_*` + `KoperasiCashWriter` + seam penyaluran modal. Endpoint saldo & jurnal. | Modal masuk; saldo & jurnal tampil; kas sekolah ter-debit |
 | **8c — Barang dagang** | Penjualan & pembelian (multi-item, parsial, stok, HPP snapshot) + pembayaran piutang/hutang. | Jual/beli + cicilan; stok & kas akurat |

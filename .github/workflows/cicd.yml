@@ -51,10 +51,6 @@ jobs:
       - run: pnpm --filter dashboard build
         env:
           VITE_API_URL: ${{ vars.VITE_API_URL || 'http://localhost:8080/api' }}
-      # App koperasi: pastikan ikut build (konsumsi @alizzah/*)
-      - run: pnpm --filter koperasi build
-        env:
-          VITE_API_URL: ${{ vars.KOPERASI_VITE_API_URL || vars.VITE_API_URL || 'http://localhost:8081/api' }}
 
   # ---------------------------------------------------------------
   # BUILD & PUSH IMAGE — hanya saat push ke main, setelah checks hijau
@@ -83,6 +79,7 @@ jobs:
             image: alizzah-dashboard
             build_args: |
               VITE_API_URL=${{ vars.VITE_API_URL }}
+              VITE_KOPERASI_API_URL=${{ vars.VITE_KOPERASI_API_URL }}
     steps:
       - uses: actions/checkout@v4
       - name: Owner huruf kecil (syarat GHCR)

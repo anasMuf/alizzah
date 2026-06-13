@@ -1,8 +1,10 @@
 # ADR-002: Topologi Deployment — Multi-Binary Modular Monolith
 
-- **Status:** Diterima — 2026-06-11
+- **Status:** Diterima — 2026-06-11 · **Ditegaskan 2026-06-12** (dua binary dipertahankan)
 - **Pemicu:** Kebutuhan modul **Koperasi** bisa **deploy/restart terpisah** + **isolasi fault** (satu modul error tak menjatuhkan yang lain)
 - **Lanjutan dari:** [ADR-001](./adr-001-modular-structure.md) (struktur modular)
+
+> **Revisi 2026-06-12:** Keputusan **dua binary backend tetap berlaku** (school-api + koperasi-api). Yang dikoreksi hanya sisi **frontend**: koperasi kini **satu modul di `apps/dashboard`**, BUKAN app terpisah. Konsekuensinya, **satu frontend (dashboard) memanggil dua backend** — request `/koperasi/*` diarahkan ke koperasi-api, sisanya ke school-api, lewat path-routing di `@alizzah/api-client` (env `VITE_KOPERASI_API_URL`) untuk dev dan nginx host (satu domain, split by-path) untuk produksi.
 
 ---
 
@@ -54,7 +56,7 @@ Karena tabel terpisah, keduanya bisa migrasi saat deploy masing-masing → **ben
 - **Image**: `Dockerfile` build `./cmd/api` **dan** `./cmd/koperasi`, menyalin keduanya. ENTRYPOINT default `/app/api`.
 - **Compose**: service `koperasi-api` (image sama, `entrypoint: ["/app/koperasi"]`, `PORT=8081`, hanya `depends_on: postgres`).
 - **Env baru**: `KOPERASI_API_PORT` (default 8092 di host), `KOPERASI_CORS_ALLOWED_ORIGINS` (fallback ke `CORS_ALLOWED_ORIGINS`).
-- **Routing**: reverse proxy host arahkan `/api/v1/koperasi/*` → `koperasi-api`, sisanya → `school-api`. Alternatif: app frontend koperasi pakai `VITE_API_URL` langsung ke `koperasi-api`.
+- **Routing**: frontend = **satu dashboard** memanggil dua backend. Prod: nginx host arahkan `/api/v1/koperasi/*` → `koperasi-api`, sisanya → `school-api` (satu domain). Dev: path-routing di `@alizzah/api-client` lewat `VITE_KOPERASI_API_URL` (request `/koperasi/*` → koperasi-api).
 
 ## 5. Pengerasan dalam-proses (komplementer)
 Lepas dari split: pasang `recover()` di goroutine background, hindari `log.Fatal` di jalur request, set `ReadTimeout`/`WriteTimeout` Echo, batasi pool DB. Menutup celah fatal-proses yang tersisa.

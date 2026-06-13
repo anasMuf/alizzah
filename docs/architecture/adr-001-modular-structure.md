@@ -20,7 +20,7 @@ Struktur saat ini **layer-first & datar**, dirancang saat hanya ada 2 modul (Adm
 | `features/` | hanya `administrasi`, `auth`, `home` | Tidak konsisten |
 | `routes/_authenticated/keuangan/` | semua logika + komponen bisnis di sini | Tidak ada `features/keuangan`; route gemuk |
 
-**Visi produk** ([project-vision](../../.claude/projects/-Users-anasmufti-Projects-Web-alizzah-app/memory/project_vision.md)) menargetkan **5 aplikasi**: dashboard manajemen, app koperasi, mobile guru, mobile wali murid, web publik. Struktur sekarang nyaman untuk 2 modul tetapi **tidak skalabel** untuk arah tersebut. Koperasi adalah modul greenfield pertama sejak keputusan ini — momen termurah untuk menetapkan pola target.
+**Visi produk** ([project-vision](../../.claude/projects/-Users-anasmufti-Projects-Web-alizzah-app/memory/project_vision.md)) menargetkan beberapa **aplikasi** untuk audiens berbeda: web publik, PPDB, **dashboard manajemen** (internal — mencakup administrasi, keuangan, **koperasi**, dst), mobile guru, mobile wali murid. Struktur lama nyaman untuk 2 modul tetapi **tidak skalabel** untuk arah tersebut. Koperasi adalah modul greenfield pertama sejak keputusan ini — momen termurah untuk menetapkan pola target.
 
 ---
 
@@ -86,12 +86,14 @@ func main() {
 
 ### 2.2 Frontend — Multi-App + Library Bersama
 
+> **Revisi 2026-06-12:** Pola multi-app **tetap** untuk audiens yang benar-benar berbeda (mobile guru/wali, web publik). Namun **koperasi BUKAN app terpisah** — ia modul di `apps/dashboard` (Alternatif B di §5 dipilih khusus untuk koperasi), karena koperasi bagian dari suite Manajemen dengan audiens & login yang sama. `packages/*` tetap dibagi.
+
 Aplikasi terpisah per audiens, UI & infra dibagi lewat `packages/`.
 
 ```
 apps/
-├── dashboard/        # existing (akademik + keuangan + laporan)
-└── koperasi/         # APP BARU — operasional koperasi (admin_koperasi; view: kepsek/yayasan)
+└── dashboard/        # suite Manajemen: akademik, keuangan, KOPERASI, laporan
+                      # (app terpisah HANYA untuk audiens beda: mobile guru/wali, web publik)
 packages/
 ├── ui/               # @alizzah/ui   — atoms, molecules, layout primitif, tema Tailwind v4 (@theme)
 ├── api-client/       # @alizzah/api-client — Orval mutator + generated hooks & types (1 sumber)
@@ -114,7 +116,7 @@ Kode existing sedang fase stabilisasi (`docs/issue/audit-01`, `audit-02`). Maka:
 
 | Fase | Lingkup | Committed |
 |---|---|---|
-| **0 — Fondasi** | Backend: skeleton `internal/{platform,shared,modules}` + main.go Register. Frontend: ekstrak `packages/{ui,api-client,auth,config}` + scaffold `apps/koperasi`. | ✅ sekarang (~3–4 hari) |
+| **0 — Fondasi** | Backend: skeleton `internal/{platform,shared,modules}` + main.go Register. Frontend: ekstrak `packages/{ui,api-client,auth,config}` (dashboard mengonsumsinya). | ✅ selesai |
 | **1 — Koperasi** | Bangun modul koperasi (sub-batch 8a–8f, lihat [`../koperasi/integration-plan.md`](../koperasi/integration-plan.md)) di struktur baru. | ✅ sekarang |
 | **2 — Migrasi legacy** | `akademik` & `keuangan` → `internal/modules/`; `dashboard` → konsumsi `@alizzah/ui`. Per modul, PR mekanis & ber-test. | ⏳ menyusul, oportunistik |
 
@@ -133,7 +135,7 @@ Kode existing sedang fase stabilisasi (`docs/issue/audit-01`, `audit-02`). Maka:
 **Negatif / biaya**
 - Investasi fondasi **~3–4 hari** sebelum fitur koperasi pertama.
 - Sementara waktu ada **dua pola** (flat lama + modular baru) sampai Fase 2 selesai.
-- Multi-app menambah: shell auth/route per app, dua pipeline build/deploy, dan pertimbangan akses laporan lintas-app (lihat §6).
+- Multi-app (untuk app yang memang terpisah, mis. mobile) menambah shell & pipeline tersendiri. **Koperasi sendiri TIDAK menambah app** — ia modul di dashboard (revisi §2.2).
 - Refactor import dashboard ke `@alizzah/ui` menyentuh ~64 file (mekanis, ditunda ke Fase 2).
 
 ---
@@ -143,24 +145,25 @@ Kode existing sedang fase stabilisasi (`docs/issue/audit-01`, `audit-02`). Maka:
 | Alternatif | Kenapa tidak dipilih (sekarang) |
 |---|---|
 | **A. Tetap flat + prefix `koperasi_`** | Termurah, tapi folder tetap menumpuk & `main.go` tetap membengkak; tidak menyiapkan multi-app. |
-| **B. Koperasi sebagai modul di dalam `apps/dashboard`** (tanpa app terpisah) | Lebih cepat & laporan kepsek/yayasan menyatu, tapi tidak sesuai arah multi-app dan tidak memaksa ekstraksi `packages/ui`. **Disimpan sebagai fallback** bila biaya fondasi terlalu berat — koperasi bisa dipisah jadi app saat `packages/*` siap. |
+| **B. Koperasi sebagai modul di dalam `apps/dashboard`** (tanpa app terpisah) | **→ AKHIRNYA DIPILIH untuk koperasi (revisi 2026-06-12).** Koperasi bagian suite Manajemen (audiens & login sama), jadi lebih tepat sebagai modul dashboard yang menyatu dengan laporan keuangan. Backend tetap 2 binary. |
 | **C. Restrukturisasi penuh (migrasi akademik+keuangan dulu)** | Konsisten 100% segera, tapi menyentuh 149 file existing saat stabilisasi — risiko & review besar tanpa nilai fitur langsung. |
 
-Pilihan **modular + multi-app dengan koperasi sebagai pilot** menyeimbangkan target jangka panjang dan risiko jangka pendek.
+Keputusan awal: modular + koperasi sebagai *pilot app terpisah*. **Revisi 2026-06-12:** koperasi → **modul `apps/dashboard`** (Alternatif B); pola multi-app tetap untuk audiens lain (mobile/web publik). Struktur modular backend & `packages/*` tetap dipertahankan.
 
 ---
 
 ## 6. Catatan khusus lintas-modul/app (Koperasi)
 - **Penyaluran modal** (D1) dipicu `admin_keuangan` dari **dashboard**, menulis dua sisi (debit kas sekolah + credit kas koperasi) via API bersama. Lintas-app aman karena backend & `@alizzah/api-client` dibagi.
-- **Akses laporan koperasi** untuk `kepala_sekolah`/`yayasan`: via **app koperasi** dengan role view. Opsi mirror ringkas ke dashboard = PTH.
+- **Akses laporan koperasi** untuk `kepala_sekolah`/`yayasan`: via **dashboard** (modul koperasi) dengan role view — menyatu dengan laporan keuangan.
 - **Role `admin_koperasi`** (disetujui) cukup nilai string `role` baru — tanpa perubahan skema `users`.
 
 ---
 
 ## 7. Tindak Lanjut
-- [ ] Update `pnpm-workspace.yaml` → tambah `packages/*`.
-- [ ] Skeleton `internal/{platform,shared,modules}` + helper `shared.New` + pola `RegisterRoutes`/`Models`.
-- [ ] Ekstrak `@alizzah/{ui,api-client,auth,config}`; scaffold `apps/koperasi`.
-- [ ] Bangun koperasi sub-batch 8a–8f di struktur baru.
-- [ ] (Fase 2) Migrasikan `akademik`, `keuangan`, dan dashboard→`@alizzah/ui`.
-- [ ] Selaraskan [`../koperasi/integration-plan.md`](../koperasi/integration-plan.md) dengan ADR ini.
+- [x] `pnpm-workspace.yaml` → tambah `packages/*`.
+- [x] Skeleton `internal/{platform,shared,modules}` + helper `shared.New` + pola `RegisterRoutes`/`Models`.
+- [x] Ekstrak `@alizzah/{ui,api-client,auth,config}` (dashboard mengonsumsinya).
+- [x] Bangun **backend** koperasi (8a–8e) di struktur modular.
+- [x] **(Revisi 2026-06-12)** Koperasi = **modul `apps/dashboard`**, bukan app terpisah; `apps/koperasi` dihapus. Lihat [ADR-002](./adr-002-deployment-multi-binary.md) catatan revisi.
+- [ ] **Frontend koperasi di `apps/dashboard`** (regen Swagger+Orval → `packages/api-client`; `features/koperasi/` + `routes/_authenticated/koperasi/` + section Sidebar).
+- [ ] (Fase 2) Migrasikan `akademik`, `keuangan` → `internal/modules`, dan dashboard→`@alizzah/ui`.

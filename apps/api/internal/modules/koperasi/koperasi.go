@@ -1,8 +1,9 @@
 // Package koperasi adalah modul Koperasi (Batch 8) dalam layout modular monolith.
 //
 // Struktur: module -> feature -> layer. Tiap fitur (anggota, barang, pemasok, kas,
-// modal, ...) adalah sub-package berisi model/dto/repository/service/handler. File ini
-// merangkai antar-fitur, menyuntik middleware auth, dan mendaftarkan route.
+// modal, pembelian, penjualan, ...) adalah sub-package berisi model/dto/repository/
+// service/handler. File ini merangkai antar-fitur, menyuntik middleware auth & dependency
+// bersama, lalu mendaftarkan route.
 //
 // Lihat docs/architecture/adr-001-modular-structure.md dan
 // docs/koperasi/integration-plan.md.
@@ -16,6 +17,9 @@ import (
 	"api/internal/modules/koperasi/kas"
 	"api/internal/modules/koperasi/modal"
 	"api/internal/modules/koperasi/pemasok"
+	"api/internal/modules/koperasi/pembayaran"
+	"api/internal/modules/koperasi/pembelian"
+	"api/internal/modules/koperasi/penjualan"
 	"api/internal/shared"
 	"api/middleware"
 	"api/repository"
@@ -25,24 +29,37 @@ import (
 
 // Module adalah entry point modul Koperasi.
 type Module struct {
-	anggota *anggota.Handler
-	barang  *barang.Handler
-	pemasok *pemasok.Handler
-	kas     *kas.Handler
-	modal   *modal.Handler
-	jwt     echo.MiddlewareFunc
+	anggota   *anggota.Handler
+	barang    *barang.Handler
+	pemasok   *pemasok.Handler
+	kas       *kas.Handler
+	modal     *modal.Handler
+	pembelian *pembelian.Handler
+	penjualan *penjualan.Handler
+	jwt       echo.MiddlewareFunc
 }
 
 // New membangun modul dengan dependency bersama yang diinjeksikan.
 func New(deps *shared.Deps) *Module {
 	db := deps.DB
+
+	// Dependency bersama antar-fitur transaksional.
+	cashWriter := kas.NewWriter()
+	paymentSvc := pembayaran.NewService(pembayaran.NewRepository(db), cashWriter)
+	barangRepo := barang.NewRepository(db)
+	supplierRepo := pemasok.NewRepository(db)
+	studentRepo := repository.NewStudentRepository(db)
+	ayRepo := repository.NewAcademicYearRepository(db)
+
 	return &Module{
-		anggota: anggota.New(db),
-		barang:  barang.New(db),
-		pemasok: pemasok.New(db),
-		kas:     kas.New(db),
-		modal:   modal.New(db, kas.NewWriter()),
-		jwt:     middleware.JWTAuth(repository.NewTokenBlacklistRepository(db)),
+		anggota:   anggota.New(db),
+		barang:    barang.New(db),
+		pemasok:   pemasok.New(db),
+		kas:       kas.New(db),
+		modal:     modal.New(db, cashWriter),
+		pembelian: pembelian.New(db, paymentSvc, barangRepo, supplierRepo, ayRepo),
+		penjualan: penjualan.New(db, paymentSvc, barangRepo, studentRepo, ayRepo),
+		jwt:       middleware.JWTAuth(repository.NewTokenBlacklistRepository(db)),
 	}
 }
 
@@ -54,6 +71,9 @@ func (m *Module) Models() []any {
 		&pemasok.Supplier{},
 		&kas.CashTransaction{},
 		&modal.CapitalInjection{},
+		&pembelian.Purchase{}, &pembelian.PurchaseItem{},
+		&penjualan.Sale{}, &penjualan.SaleItem{},
+		&pembayaran.Payment{},
 	}
 }
 
@@ -65,11 +85,13 @@ func (m *Module) RegisterRoutes(api *echo.Group) {
 	// Semua route koperasi wajib JWT.
 	g := api.Group("/koperasi", m.jwt)
 
-	// Master data: kelola hanya superadmin & admin_koperasi.
+	// Master data & transaksi: kelola hanya superadmin & admin_koperasi.
 	manage := middleware.RequireRoles("superadmin", "admin_koperasi")
 	m.anggota.RegisterRoutes(g, manage)
 	m.barang.RegisterRoutes(g, manage)
 	m.pemasok.RegisterRoutes(g, manage)
+	m.pembelian.RegisterRoutes(g, manage)
+	m.penjualan.RegisterRoutes(g, manage)
 
 	// Kas (saldo & jurnal): view luas untuk pemangku kepentingan.
 	view := middleware.RequireRoles("superadmin", "admin_koperasi", "admin_keuangan", "kepala_sekolah", "yayasan")

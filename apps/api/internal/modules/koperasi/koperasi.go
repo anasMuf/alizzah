@@ -20,6 +20,7 @@ import (
 	"api/internal/modules/koperasi/pembayaran"
 	"api/internal/modules/koperasi/pembelian"
 	"api/internal/modules/koperasi/penjualan"
+	"api/internal/modules/koperasi/pinjaman"
 	"api/internal/shared"
 	"api/middleware"
 	"api/repository"
@@ -36,6 +37,7 @@ type Module struct {
 	modal     *modal.Handler
 	pembelian *pembelian.Handler
 	penjualan *penjualan.Handler
+	pinjaman  *pinjaman.Handler
 	jwt       echo.MiddlewareFunc
 }
 
@@ -59,6 +61,7 @@ func New(deps *shared.Deps) *Module {
 		modal:     modal.New(db, cashWriter),
 		pembelian: pembelian.New(db, paymentSvc, barangRepo, supplierRepo, ayRepo),
 		penjualan: penjualan.New(db, paymentSvc, barangRepo, studentRepo, ayRepo),
+		pinjaman:  pinjaman.New(db, paymentSvc, cashWriter, ayRepo),
 		jwt:       middleware.JWTAuth(repository.NewTokenBlacklistRepository(db)),
 	}
 }
@@ -73,6 +76,7 @@ func (m *Module) Models() []any {
 		&modal.CapitalInjection{},
 		&pembelian.Purchase{}, &pembelian.PurchaseItem{},
 		&penjualan.Sale{}, &penjualan.SaleItem{},
+		&pinjaman.Loan{}, &pinjaman.LoanInstallment{},
 		&pembayaran.Payment{},
 	}
 }
@@ -92,6 +96,7 @@ func (m *Module) RegisterRoutes(api *echo.Group) {
 	m.pemasok.RegisterRoutes(g, manage)
 	m.pembelian.RegisterRoutes(g, manage)
 	m.penjualan.RegisterRoutes(g, manage)
+	m.pinjaman.RegisterRoutes(g, manage)
 
 	// Kas (saldo & jurnal): view luas untuk pemangku kepentingan.
 	view := middleware.RequireRoles("superadmin", "admin_koperasi", "admin_keuangan", "kepala_sekolah", "yayasan")

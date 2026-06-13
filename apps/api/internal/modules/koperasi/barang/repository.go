@@ -8,6 +8,9 @@ type Repository interface {
 	Create(p *Product) error
 	Update(p *Product) error
 	Delete(id uint) error
+	// Dipakai fitur transaksi (penjualan/pembelian) di dalam satu transaksi DB.
+	FindByIDWithTx(tx *gorm.DB, id uint) (*Product, error)
+	AdjustStockWithTx(tx *gorm.DB, id uint, delta int) error
 }
 
 type repository struct{ db *gorm.DB }
@@ -38,3 +41,14 @@ func (r *repository) Create(p *Product) error { return r.db.Create(p).Error }
 func (r *repository) Update(p *Product) error { return r.db.Save(p).Error }
 
 func (r *repository) Delete(id uint) error { return r.db.Delete(&Product{}, id).Error }
+
+func (r *repository) FindByIDWithTx(tx *gorm.DB, id uint) (*Product, error) {
+	var p Product
+	err := tx.First(&p, id).Error
+	return &p, err
+}
+
+func (r *repository) AdjustStockWithTx(tx *gorm.DB, id uint, delta int) error {
+	return tx.Model(&Product{}).Where("id = ?", id).
+		UpdateColumn("stock", gorm.Expr("stock + ?", delta)).Error
+}

@@ -1,8 +1,10 @@
 # ADR-002: Topologi Deployment — Multi-Binary Modular Monolith
 
-- **Status:** Diterima — 2026-06-11
+- **Status:** Diterima — 2026-06-11 · **Ditegaskan 2026-06-12** (dua binary dipertahankan)
 - **Pemicu:** Kebutuhan modul **Koperasi** bisa **deploy/restart terpisah** + **isolasi fault** (satu modul error tak menjatuhkan yang lain)
 - **Lanjutan dari:** [ADR-001](./adr-001-modular-structure.md) (struktur modular)
+
+> **Revisi 2026-06-12:** Keputusan **dua binary backend tetap berlaku** (school-api + koperasi-api). Yang dikoreksi hanya sisi **frontend**: koperasi kini **satu modul di `apps/dashboard`**, BUKAN app terpisah. Konsekuensinya, **satu frontend (dashboard) memanggil dua backend** — request `/koperasi/*` diarahkan ke koperasi-api, sisanya ke school-api, lewat path-routing di `@alizzah/api-client` (env `VITE_KOPERASI_API_URL`) untuk dev dan nginx host (satu domain, split by-path) untuk produksi.
 
 ---
 

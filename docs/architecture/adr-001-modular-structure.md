@@ -86,6 +86,8 @@ func main() {
 
 ### 2.2 Frontend — Multi-App + Library Bersama
 
+> **Revisi 2026-06-12:** Pola multi-app **tetap** untuk audiens yang benar-benar berbeda (mobile guru/wali, web publik). Namun **koperasi BUKAN app terpisah** — ia modul di `apps/dashboard` (Alternatif B di §5 dipilih khusus untuk koperasi), karena koperasi bagian dari suite Manajemen dengan audiens & login yang sama. `packages/*` tetap dibagi.
+
 Aplikasi terpisah per audiens, UI & infra dibagi lewat `packages/`.
 
 ```

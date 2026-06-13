@@ -14,7 +14,6 @@ RUN npm install -g pnpm@10
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/api/package.json apps/api/package.json
 COPY apps/dashboard/package.json apps/dashboard/package.json
-COPY apps/koperasi/package.json apps/koperasi/package.json
 COPY packages/ui/package.json packages/ui/package.json
 COPY packages/api-client/package.json packages/api-client/package.json
 COPY packages/auth/package.json packages/auth/package.json
@@ -25,7 +24,9 @@ RUN pnpm install --frozen-lockfile
 COPY packages packages
 COPY apps/dashboard apps/dashboard
 ARG VITE_API_URL
+ARG VITE_KOPERASI_API_URL
 ENV VITE_API_URL=${VITE_API_URL}
+ENV VITE_KOPERASI_API_URL=${VITE_KOPERASI_API_URL}
 RUN pnpm --filter dashboard build
 
 # ---- runtime ----

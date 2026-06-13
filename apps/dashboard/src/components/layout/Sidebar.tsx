@@ -14,6 +14,7 @@ import {
 	LayoutDashboard,
 	PiggyBank,
 	RefreshCw,
+	Store,
 	Tags,
 	TrendingDown,
 	TrendingUp,
@@ -35,6 +36,7 @@ export function Sidebar({ isOpen }: SidebarProps) {
 	const isSuperAdmin = role === "superadmin";
 	const isAdminAdministrasi = role === "admin_administrasi" || isSuperAdmin;
 	const isAdminKeuangan = role === "admin_keuangan" || isSuperAdmin;
+	const isAdminKoperasi = role === "admin_koperasi" || isSuperAdmin;
 	const isKepsekOrYayasan = role === "kepala_sekolah" || role === "yayasan";
 
 	return (
@@ -127,6 +129,17 @@ export function Sidebar({ isOpen }: SidebarProps) {
 
 							<NavLink to="/keuangan/laporan" icon={BarChart3}>
 								Laporan
+							</NavLink>
+						</div>
+					)}
+
+					{isAdminKoperasi && (
+						<div className="pt-4">
+							<p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+								Koperasi
+							</p>
+							<NavLink to="/koperasi/anggota" icon={Store}>
+								Anggota
 							</NavLink>
 						</div>
 					)}

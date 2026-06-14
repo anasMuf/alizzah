@@ -16,6 +16,7 @@ import {
 	PiggyBank,
 	ReceiptText,
 	RefreshCw,
+	ShoppingCart,
 	Store,
 	Tags,
 	TrendingDown,
@@ -156,6 +157,9 @@ export function Sidebar({ isOpen }: SidebarProps) {
 							</NavLink>
 							<NavLink to="/koperasi/pemasok" icon={Truck}>
 								Pemasok
+							</NavLink>
+							<NavLink to="/koperasi/penjualan" icon={ShoppingCart}>
+								Penjualan
 							</NavLink>
 							<NavLink to="/koperasi/kas" icon={ReceiptText}>
 								Kas

@@ -11,12 +11,14 @@ import {
 	FolderTree,
 	Layers,
 	LayoutDashboard,
+	Package,
 	PiggyBank,
 	RefreshCw,
 	Store,
 	Tags,
 	TrendingDown,
 	TrendingUp,
+	Truck,
 	UserCog,
 	Users,
 	Vault,
@@ -140,6 +142,12 @@ export function Sidebar({ isOpen }: SidebarProps) {
 							</p>
 							<NavLink to="/koperasi/anggota" icon={Store}>
 								Anggota
+							</NavLink>
+							<NavLink to="/koperasi/barang" icon={Package}>
+								Barang
+							</NavLink>
+							<NavLink to="/koperasi/pemasok" icon={Truck}>
+								Pemasok
 							</NavLink>
 						</div>
 					)}

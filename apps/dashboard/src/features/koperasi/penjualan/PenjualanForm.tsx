@@ -7,6 +7,7 @@ import { academicYearAtom } from "#/store/global";
 import { formatCurrency } from "#/utils/format";
 import { useProducts } from "../barang/api";
 import { type PaymentMethod, type SaleInput, useCreateSale } from "./api";
+import { type PickedStudent, StudentPicker } from "./StudentPicker";
 
 interface PenjualanFormProps {
 	isOpen: boolean;
@@ -33,6 +34,7 @@ export function PenjualanForm({ isOpen, onClose }: PenjualanFormProps) {
 	const [rows, setRows] = useState<ItemRow[]>([emptyRow()]);
 	const [initialPayment, setInitialPayment] = useState(0);
 	const [method, setMethod] = useState<PaymentMethod>("cash");
+	const [student, setStudent] = useState<PickedStudent | null>(null);
 
 	useEffect(() => {
 		if (isOpen) {
@@ -42,6 +44,7 @@ export function PenjualanForm({ isOpen, onClose }: PenjualanFormProps) {
 			setRows([emptyRow()]);
 			setInitialPayment(0);
 			setMethod("cash");
+			setStudent(null);
 		}
 	}, [isOpen]);
 
@@ -92,6 +95,7 @@ export function PenjualanForm({ isOpen, onClose }: PenjualanFormProps) {
 		}
 		const payload: SaleInput = {
 			academic_year_id: activeAy.id,
+			student_id: student?.id,
 			buyer_name: buyerName || undefined,
 			sale_date: saleDate,
 			notes: notes || undefined,
@@ -146,11 +150,21 @@ export function PenjualanForm({ isOpen, onClose }: PenjualanFormProps) {
 			}
 		>
 			<form onSubmit={handleSubmit} className="space-y-6">
+				<div>
+					<span className="block text-sm font-medium leading-6 text-gray-900 mb-2">
+						Siswa (opsional)
+					</span>
+					<StudentPicker
+						selected={student}
+						onSelect={setStudent}
+						onClear={() => setStudent(null)}
+					/>
+				</div>
 				<FormField
 					id="buyer_name"
 					name="buyer_name"
-					label="Pembeli"
-					placeholder="Nama pembeli (mis. wali / umum)"
+					label="Nama Pembeli (jika bukan siswa)"
+					placeholder="mis. wali / umum"
 					value={buyerName}
 					onChange={(e) => setBuyerName(e.target.value)}
 				/>

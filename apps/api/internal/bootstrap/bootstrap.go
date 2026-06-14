@@ -58,14 +58,20 @@ func APIGroup(e *echo.Echo) *echo.Group {
 	return e.Group("/api/v1", middleware.RateLimiter(20, 40))
 }
 
-// Run menjalankan server pada PORT (env) atau defaultPort, dengan graceful
-// shutdown saat menerima SIGINT/SIGTERM.
-func Run(e *echo.Echo, defaultPort string) {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = defaultPort
+// Port mengembalikan nilai env envKey, atau defaultPort bila kosong. Tiap binary
+// me-resolve port-nya sendiri (cmd/api → PORT, cmd/koperasi → KOPERASI_PORT)
+// agar dua binary di satu host (dev, berbagi satu .env) tidak berebut variabel
+// PORT yang sama. Lihat docs/architecture/adr-002-deployment-multi-binary.md.
+func Port(envKey, defaultPort string) string {
+	if p := os.Getenv(envKey); p != "" {
+		return p
 	}
+	return defaultPort
+}
 
+// Run menjalankan server pada port yang sudah di-resolve caller (lihat Port),
+// dengan graceful shutdown saat menerima SIGINT/SIGTERM.
+func Run(e *echo.Echo, port string) {
 	go func() {
 		if err := e.Start(":" + port); err != nil && err != http.ErrServerClosed {
 			e.Logger.Fatal("shutting down the server")

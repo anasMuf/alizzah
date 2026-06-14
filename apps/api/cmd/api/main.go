@@ -503,6 +503,6 @@ func main() {
 		}
 	}()
 
-	// Start server + graceful shutdown (lihat internal/bootstrap).
-	bootstrap.Run(e, "8080")
+	// Start server + graceful shutdown. Port dari env PORT (default 8080).
+	bootstrap.Run(e, bootstrap.Port("PORT", "8080"))
 }

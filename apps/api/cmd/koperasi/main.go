@@ -29,6 +29,8 @@ func main() {
 	e := bootstrap.NewEcho()
 	mod.RegisterRoutes(bootstrap.APIGroup(e))
 
+	// Port dari env KOPERASI_PORT (default 8081) — terpisah dari PORT milik
+	// school-api agar keduanya bisa jalan bersama di satu host saat dev.
 	log.Println("koperasi-api starting...")
-	bootstrap.Run(e, "8081")
+	bootstrap.Run(e, bootstrap.Port("KOPERASI_PORT", "8081"))
 }

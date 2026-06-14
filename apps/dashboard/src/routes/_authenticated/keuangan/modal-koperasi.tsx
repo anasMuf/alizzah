@@ -97,8 +97,8 @@ function ModalKoperasiPage() {
 									<td className="px-4 py-3 text-sm text-gray-600">
 										{it.created_by || "-"}
 									</td>
-									<td className="px-4 py-3 text-sm text-right font-medium text-emerald-600 whitespace-nowrap">
-										+{formatCurrency(it.amount)}
+									<td className="px-4 py-3 text-sm text-right font-medium text-rose-600 whitespace-nowrap">
+										−{formatCurrency(it.amount)}
 									</td>
 								</tr>
 							))}

@@ -162,12 +162,14 @@ func (s *svc) Create(req dto.CreateCapitalInjection, by uint) (*model.KoperasiCa
 
 ## 4. Frontend — modul di `apps/dashboard`
 
+> **Breakdown fase & pola terkini: [`frontend-implementation-plan.md`](./frontend-implementation-plan.md).** Detail §4.1/§4.4 di bawah sudah **disesuaikan** pasca fold-back `packages/` (PR #19) & pivot ke hooks manual.
+
 Koperasi adalah **modul di dalam `apps/dashboard`** (seperti administrasi & keuangan), **bukan** app terpisah — karena bagian dari suite Manajemen yang sama (audiens & login sama). Pola **feature-first**: route tipis di `routes/_authenticated/koperasi/`, isi di `features/koperasi/`.
 
-> **Dashboard memanggil DUA backend** (karena backend tetap 2 binary, ADR-002). Path `/koperasi/*` → koperasi-api, sisanya → school-api. Diatur via path-routing di `@alizzah/api-client` (`customInstance` membaca `VITE_KOPERASI_API_URL`) untuk dev; di produksi nginx host memisah by-path dalam satu domain.
+> **Dashboard memanggil DUA backend** (karena backend tetap 2 binary, ADR-002). Path `/koperasi/*` → koperasi-api, sisanya → school-api. Diatur via path-routing di `customInstance` (`src/api/mutator/custom-instance.ts`, membaca `VITE_KOPERASI_API_URL`) untuk dev; di produksi nginx host memisah by-path dalam satu domain.
 
-### 4.1 API hooks (Orval) via `@alizzah/api-client`
-Regen Swagger (`swag` di `apps/api`, anotasi handler koperasi sudah ada) → Orval generate ke `packages/api-client` (satu sumber, dipakai dashboard). `customInstance` otomatis mengarahkan path `/koperasi/*` ke koperasi-api.
+### 4.1 API hooks — **manual** (bukan Orval, sementara)
+Koperasi memakai helper `kopGet`/`kopSend` di `src/features/koperasi/lib/client.ts` + hooks React Query tulisan-tangan per fitur (`features/koperasi/<fitur>/api.ts`). Orval **ditunda**: client sekolah yang ter-commit masih stale; regen penuh = tugas pipeline terpisah. `customInstance` otomatis mengarahkan path `/koperasi/*` ke koperasi-api.
 
 ### 4.2 Routes — `apps/dashboard/src/routes/_authenticated/koperasi/`
 Cangkang tipis; komponen halaman dari `features/koperasi/`:
@@ -184,7 +186,7 @@ koperasi/laporan/{bulanan,laba-rugi,piutang,hutang,stok}.tsx
 Tambah section "Koperasi" di `apps/dashboard/src/components/layout/Sidebar.tsx` (pola sama dengan section "Keuangan"): operasional untuk `admin_koperasi`/`superadmin`; Laporan juga untuk `kepala_sekolah`/`yayasan`.
 
 ### 4.4 Komponen
-Pakai `@alizzah/ui` (sudah dipakai dashboard) + hooks dari `@alizzah/api-client`. Tanpa dependensi UI baru.
+Pakai `#/components/ui` (Tailwind v4) + hooks manual dari `features/koperasi/<fitur>/api.ts`. Tanpa dependensi UI baru.
 
 ---
 
@@ -198,9 +200,9 @@ Pakai `@alizzah/ui` (sudah dipakai dashboard) + hooks dari `@alizzah/api-client`
 | **8c — Barang dagang** | Penjualan & pembelian (multi-item, parsial, stok, HPP snapshot) + pembayaran piutang/hutang. | Jual/beli + cicilan; stok & kas akurat |
 | **8d — Simpan-pinjam** | Pinjaman + jadwal angsuran + pembayaran fleksibel + rekap per anggota. | Pinjam, angsur, rekap hutang anggota |
 | **8e — Lain-lain & Laporan** | Transaksi lain-lain + laporan (bulanan, laba-rugi, piutang/hutang, pinjaman, stok). | Semua laporan tampil & cocok dengan jurnal |
-| **8f — Frontend** | Routes + Sidebar + halaman per sub-fitur (paralel mengikuti 8a–8e setelah Orval). | UI lengkap |
+| **8f — Frontend** | Routes + Sidebar + halaman per sub-fitur. Breakdown fase FE-0..FE-5: [`frontend-implementation-plan.md`](./frontend-implementation-plan.md). | UI lengkap |
 
-Setiap sub-batch: backend dulu (model→handler) → regen Swagger/Orval → frontend. Tambah unit test service untuk 8b–8d.
+Setiap sub-batch: backend dulu (model→handler) → frontend (hooks manual). Tambah unit test service untuk 8b–8d. (Backend 8a–8e **sudah selesai**; sisa kerja = frontend, lihat dokumen FE.)
 
 ---
 

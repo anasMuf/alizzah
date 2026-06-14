@@ -1,16 +1,22 @@
+import { useQueryClient } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { useAtom } from "jotai";
+import { Bus, Plus, X } from "lucide-react";
+import { useState } from "react";
 import {
 	facilityKeys,
 	useEnrollFacility,
 	useGetFacilities,
 	useGetStudentFacilities,
 	useUnenrollFacility,
-} from "@alizzah/api-client/endpoints/facilities/facilities";
-import { Badge, Button, ConfirmDialog, SlideOver, useToast } from "@alizzah/ui";
-import { useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-import { useAtom } from "jotai";
-import { Bus, Plus, X } from "lucide-react";
-import { useState } from "react";
+} from "#/api/endpoints/facilities/facilities";
+import {
+	Badge,
+	Button,
+	ConfirmDialog,
+	SlideOver,
+	useToast,
+} from "#/components/ui";
 import { academicYearAtom } from "../../../../../store/global";
 import { formatDate } from "../../../../../utils/format";
 

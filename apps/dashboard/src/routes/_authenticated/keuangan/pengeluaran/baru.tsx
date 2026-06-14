@@ -1,10 +1,10 @@
-import { useGetV1ExpenseCategories } from "@alizzah/api-client/endpoints/expense-categories/expense-categories";
-import { usePostV1Expenses } from "@alizzah/api-client/endpoints/expenses/expenses";
-import { Alert, Button, useToast } from "@alizzah/ui";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { ChevronRight, Save } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useGetV1ExpenseCategories } from "#/api/endpoints/expense-categories/expense-categories";
+import { usePostV1Expenses } from "#/api/endpoints/expenses/expenses";
+import { Alert, Button, useToast } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
 
 export const Route = createFileRoute(

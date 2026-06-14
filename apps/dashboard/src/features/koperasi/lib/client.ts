@@ -1,4 +1,4 @@
-import { customInstance } from "@alizzah/api-client/mutator/custom-instance";
+import { customInstance } from "#/api/mutator/custom-instance";
 
 // Data layer koperasi (manual). Koperasi dilayani binary backend terpisah
 // (koperasi-api); customInstance otomatis mengarahkan path "/koperasi/*" ke sana

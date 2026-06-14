@@ -1,3 +1,7 @@
+import { useQueryClient } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { Bus, Edit2, Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
 import {
 	type CreateFacilityRequest,
 	facilityKeys,
@@ -5,7 +9,7 @@ import {
 	useDeleteFacility,
 	useGetFacilities,
 	useUpdateFacility,
-} from "@alizzah/api-client/endpoints/facilities/facilities";
+} from "#/api/endpoints/facilities/facilities";
 import {
 	Button,
 	ConfirmDialog,
@@ -13,11 +17,7 @@ import {
 	FormField,
 	SlideOver,
 	useToast,
-} from "@alizzah/ui";
-import { useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-import { Bus, Edit2, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+} from "#/components/ui";
 
 export const Route = createFileRoute("/_authenticated/administrasi/fasilitas/")(
 	{

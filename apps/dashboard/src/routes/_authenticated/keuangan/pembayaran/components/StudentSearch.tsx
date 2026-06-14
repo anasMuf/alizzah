@@ -1,7 +1,7 @@
-import { useGetV1Students } from "@alizzah/api-client/endpoints/students/students";
 import { Search, User, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { useDebounce } from "use-debounce";
+import { useGetV1Students } from "#/api/endpoints/students/students";
 
 interface StudentSearchProps {
 	selectedStudent: any;

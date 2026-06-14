@@ -1,6 +1,6 @@
-import { useAuth } from "@alizzah/auth";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { useAuth } from "#/features/auth/AuthContext";
 import { LoginForm } from "../features/auth/components/LoginForm";
 
 export const Route = createFileRoute("/login")({ component: Login });

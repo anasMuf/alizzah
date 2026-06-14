@@ -8,11 +8,11 @@ import {
 	useRef,
 	useState,
 } from "react";
-import { setTokenGetter } from "@alizzah/api-client/mutator/custom-instance";
 import {
 	getGetV1AuthMeQueryKey,
 	useGetV1AuthMe,
-} from "@alizzah/api-client/endpoints/auth/auth";
+} from "#/api/endpoints/auth/auth";
+import { setTokenGetter } from "#/api/mutator/custom-instance";
 
 export interface User {
 	id: number;

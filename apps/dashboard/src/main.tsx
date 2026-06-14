@@ -2,11 +2,11 @@ if (import.meta.env.DEV) {
 	import("react-grab");
 }
 
-import { AuthProvider, useAuth } from "@alizzah/auth";
-import { ErrorBoundary, ToastProvider } from "@alizzah/ui";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import ReactDOM from "react-dom/client";
+import { ErrorBoundary, ToastProvider } from "#/components/ui";
+import { AuthProvider, useAuth } from "#/features/auth/AuthContext";
 import { routeTree } from "./routeTree.gen";
 
 const queryClient = new QueryClient({

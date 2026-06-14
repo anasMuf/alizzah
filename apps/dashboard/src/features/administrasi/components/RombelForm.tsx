@@ -1,17 +1,17 @@
+import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import {
 	getGetV1ClassGroupsQueryKey,
 	usePostV1ClassGroups,
 	usePutV1ClassGroupsId,
-} from "@alizzah/api-client/endpoints/class-groups/class-groups";
+} from "#/api/endpoints/class-groups/class-groups";
 import type {
 	DtoClassGroupResponse,
 	DtoCreateClassGroupRequest,
-} from "@alizzah/api-client/model";
-import { ApiError } from "@alizzah/api-client/mutator/custom-instance";
-import { Button, FormField, useToast } from "@alizzah/ui";
-import { useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+} from "#/api/model";
+import { ApiError } from "#/api/mutator/custom-instance";
+import { Button, FormField, useToast } from "#/components/ui";
 
 interface RombelFormProps {
 	initialData?: DtoClassGroupResponse | null;

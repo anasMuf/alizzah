@@ -1,8 +1,3 @@
-import { useGetV1CashBalance } from "@alizzah/api-client/endpoints/cash/cash";
-import { useGetV1Invoices } from "@alizzah/api-client/endpoints/invoices/invoices";
-import { useGetV1ReportsAnnual } from "@alizzah/api-client/endpoints/reports/reports";
-import { useGetV1Students } from "@alizzah/api-client/endpoints/students/students";
-import { useAuth } from "@alizzah/auth";
 import { Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import {
@@ -18,6 +13,11 @@ import {
 	Users,
 	Wallet,
 } from "lucide-react";
+import { useGetV1CashBalance } from "#/api/endpoints/cash/cash";
+import { useGetV1Invoices } from "#/api/endpoints/invoices/invoices";
+import { useGetV1ReportsAnnual } from "#/api/endpoints/reports/reports";
+import { useGetV1Students } from "#/api/endpoints/students/students";
+import { useAuth } from "#/features/auth/AuthContext";
 import { academicYearAtom } from "../../../store/global";
 import { formatCurrency } from "../../../utils/format";
 

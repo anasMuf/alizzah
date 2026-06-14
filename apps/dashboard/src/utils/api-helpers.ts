@@ -7,7 +7,7 @@
  * These helpers safely extract the success payload without `as any` casting.
  */
 
-import type { DtoMeta } from "@alizzah/api-client/model/dtoMeta";
+import type { DtoMeta } from "#/api/model/dtoMeta";
 
 /** Generic success response shape: { data: { data: T, meta?: DtoMeta } } */
 interface PaginatedWrapper<T> {

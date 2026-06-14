@@ -1,21 +1,21 @@
+import { useQueryClient } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { Calendar, CheckCircle2, Plus } from "lucide-react";
+import { useState } from "react";
 import {
 	getGetV1AcademicYearsQueryKey,
 	useGetV1AcademicYears,
 	usePatchV1AcademicYearsIdActivate,
-} from "@alizzah/api-client/endpoints/academic-years/academic-years";
-import type { DtoAcademicYearResponse } from "@alizzah/api-client/model";
-import { ApiError } from "@alizzah/api-client/mutator/custom-instance";
+} from "#/api/endpoints/academic-years/academic-years";
+import type { DtoAcademicYearResponse } from "#/api/model";
+import { ApiError } from "#/api/mutator/custom-instance";
 import {
 	Badge,
 	Button,
 	ConfirmDialog,
 	EmptyState,
 	useToast,
-} from "@alizzah/ui";
-import { useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-import { Calendar, CheckCircle2, Plus } from "lucide-react";
-import { useState } from "react";
+} from "#/components/ui";
 import { AcademicYearForm } from "../../../features/administrasi/components/AcademicYearForm";
 
 export const Route = createFileRoute(

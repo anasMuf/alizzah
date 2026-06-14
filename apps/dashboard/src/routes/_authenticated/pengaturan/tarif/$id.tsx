@@ -1,3 +1,7 @@
+import { useQueryClient } from "@tanstack/react-query";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { ArrowLeft, Edit, Plus, Save, Trash2, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import {
 	getGetV1FeeConfigsIdItemsQueryKey,
 	getGetV1FeeConfigsIdQueryKey,
@@ -7,18 +11,18 @@ import {
 	usePostV1FeeConfigsIdItems,
 	usePutV1FeeConfigsId,
 	usePutV1FeeConfigsIdItemsItemId,
-} from "@alizzah/api-client/endpoints/fee-configs/fee-configs";
+} from "#/api/endpoints/fee-configs/fee-configs";
 import type {
 	DtoCreateFeeConfigItemRequest,
 	DtoFeeConfigItemResponse,
-} from "@alizzah/api-client/model";
+} from "#/api/model";
 import {
 	DtoCreateFeeConfigItemRequestCategory,
 	DtoCreateFeeConfigItemRequestGender,
 	DtoCreateFeeConfigItemRequestLevel,
 	DtoCreateFeeConfigItemRequestUnit,
-} from "@alizzah/api-client/model";
-import { ApiError } from "@alizzah/api-client/mutator/custom-instance";
+} from "#/api/model";
+import { ApiError } from "#/api/mutator/custom-instance";
 import {
 	Badge,
 	Button,
@@ -27,11 +31,7 @@ import {
 	FormField,
 	SlideOver,
 	useToast,
-} from "@alizzah/ui";
-import { useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Edit, Plus, Save, Trash2, X } from "lucide-react";
-import { useEffect, useState } from "react";
+} from "#/components/ui";
 
 export const Route = createFileRoute("/_authenticated/pengaturan/tarif/$id")({
 	beforeLoad: () => {

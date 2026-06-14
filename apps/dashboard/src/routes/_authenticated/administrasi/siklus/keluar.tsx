@@ -1,13 +1,13 @@
-import { usePostV1AcademicEventsWithdrawals } from "@alizzah/api-client/endpoints/academic-events/academic-events";
-import {
-	useGetV1Students,
-	useGetV1StudentsId,
-} from "@alizzah/api-client/endpoints/students/students";
-import { ApiError } from "@alizzah/api-client/mutator/custom-instance";
-import { Button, ConfirmDialog, FormField, useToast } from "@alizzah/ui";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AlertTriangle, ChevronRight, Search, UserCircle } from "lucide-react";
 import { useState } from "react";
+import { usePostV1AcademicEventsWithdrawals } from "#/api/endpoints/academic-events/academic-events";
+import {
+	useGetV1Students,
+	useGetV1StudentsId,
+} from "#/api/endpoints/students/students";
+import { ApiError } from "#/api/mutator/custom-instance";
+import { Button, ConfirmDialog, FormField, useToast } from "#/components/ui";
 
 export const Route = createFileRoute(
 	"/_authenticated/administrasi/siklus/keluar",

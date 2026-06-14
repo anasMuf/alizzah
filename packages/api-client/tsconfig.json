@@ -1,7 +1,0 @@
-{
-  "extends": "@alizzah/config/tsconfig.base.json",
-  "include": ["src/**/*.ts", "src/**/*.tsx", "orval.config.ts"],
-  "compilerOptions": {
-    "types": ["react", "vite/client"]
-  }
-}

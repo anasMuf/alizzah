@@ -296,9 +296,13 @@ func main() {
 
 	// Academic Years
 	ay := api.Group("/academic-years", middleware.JWTAuth(tokenBlacklistRepo))
-	ay.GET("", ayHandler.List, middleware.RequireRoles("superadmin", "admin_administrasi"))
+	// Baca daftar TA = data referensi untuk AcademicYearSelector di sidebar;
+	// semua role dashboard butuh (tiap dashboard ter-scope per TA). Tulis tetap
+	// dibatasi admin_administrasi/superadmin.
+	ayRead := []string{"superadmin", "admin_administrasi", "admin_keuangan", "admin_koperasi", "kepala_sekolah", "yayasan"}
+	ay.GET("", ayHandler.List, middleware.RequireRoles(ayRead...))
 	ay.POST("", ayHandler.Create, middleware.RequireRoles("superadmin", "admin_administrasi"))
-	ay.GET("/:id", ayHandler.Get, middleware.RequireRoles("superadmin", "admin_administrasi"))
+	ay.GET("/:id", ayHandler.Get, middleware.RequireRoles(ayRead...))
 	ay.PUT("/:id", ayHandler.Update, middleware.RequireRoles("superadmin", "admin_administrasi"))
 	ay.PATCH("/:id/activate", ayHandler.Activate, middleware.RequireRoles("superadmin"))
 

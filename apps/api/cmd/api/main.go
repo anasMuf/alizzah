@@ -308,7 +308,7 @@ func main() {
 
 	// Students
 	students := api.Group("/students", middleware.JWTAuth(tokenBlacklistRepo))
-	students.GET("", studentHandler.List, middleware.RequireRoles("superadmin", "admin_administrasi", "admin_keuangan"))
+	students.GET("", studentHandler.List, middleware.RequireRoles("superadmin", "admin_administrasi", "admin_keuangan", "admin_koperasi"))
 	students.POST("", studentHandler.Create, middleware.RequireRoles("superadmin", "admin_administrasi"))
 	students.POST("/import", studentHandler.Import, middleware.RequireRoles("superadmin", "admin_administrasi"))
 	students.GET("/:id", studentHandler.Get, middleware.RequireRoles("superadmin", "admin_administrasi", "admin_keuangan"))

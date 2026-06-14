@@ -9,10 +9,12 @@ import {
 	CreditCard,
 	FileText,
 	FolderTree,
+	Landmark,
 	Layers,
 	LayoutDashboard,
 	Package,
 	PiggyBank,
+	ReceiptText,
 	RefreshCw,
 	Store,
 	Tags,
@@ -126,6 +128,9 @@ export function Sidebar({ isOpen }: SidebarProps) {
 									<NavLink to="/keuangan/kas" icon={Vault}>
 										Kas & Berangkas
 									</NavLink>
+									<NavLink to="/keuangan/modal-koperasi" icon={Landmark}>
+										Modal Koperasi
+									</NavLink>
 								</>
 							)}
 
@@ -140,7 +145,10 @@ export function Sidebar({ isOpen }: SidebarProps) {
 							<p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
 								Koperasi
 							</p>
-							<NavLink to="/koperasi/anggota" icon={Store}>
+							<NavLink to="/koperasi" icon={Store} exact>
+								Ringkasan
+							</NavLink>
+							<NavLink to="/koperasi/anggota" icon={Users}>
 								Anggota
 							</NavLink>
 							<NavLink to="/koperasi/barang" icon={Package}>
@@ -148,6 +156,12 @@ export function Sidebar({ isOpen }: SidebarProps) {
 							</NavLink>
 							<NavLink to="/koperasi/pemasok" icon={Truck}>
 								Pemasok
+							</NavLink>
+							<NavLink to="/koperasi/kas" icon={ReceiptText}>
+								Kas
+							</NavLink>
+							<NavLink to="/koperasi/modal" icon={Landmark}>
+								Modal
 							</NavLink>
 						</div>
 					)}

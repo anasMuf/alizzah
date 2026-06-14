@@ -24,6 +24,26 @@ export async function kopGet<T>(
 	return res.data.data;
 }
 
+export interface PageMeta {
+	page: number;
+	limit: number;
+	total: number;
+}
+
+type PagedEnvelope<T> = { message: string; data: T; meta: PageMeta };
+
+// Varian kopGet untuk endpoint paginated ({ message, data, meta }) — mis. jurnal kas.
+export async function kopGetPaged<T>(
+	path: string,
+	params?: Record<string, unknown>,
+): Promise<{ data: T; meta: PageMeta }> {
+	const res = await customInstance<{ data: PagedEnvelope<T> }>(
+		`${BASE}${path}`,
+		params ? { params } : undefined,
+	);
+	return { data: res.data.data, meta: res.data.meta };
+}
+
 export async function kopSend<T>(
 	method: "POST" | "PUT" | "DELETE",
 	path: string,

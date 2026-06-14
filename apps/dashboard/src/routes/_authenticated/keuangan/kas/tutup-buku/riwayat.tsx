@@ -1,5 +1,3 @@
-import { useGetV1DailyClosings } from "@alizzah/api-client/endpoints/daily-closings/daily-closings";
-import { Badge, Button } from "@alizzah/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import {
@@ -12,6 +10,8 @@ import {
 	Lock,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useGetV1DailyClosings } from "#/api/endpoints/daily-closings/daily-closings";
+import { Badge, Button } from "#/components/ui";
 import { academicYearAtom } from "../../../../../store/global";
 import { formatCurrency, formatDate } from "../../../../../utils/format";
 

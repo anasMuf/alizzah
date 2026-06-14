@@ -1,5 +1,3 @@
-import { useGetV1VaultTransactions } from "@alizzah/api-client/endpoints/vault/vault";
-import { Button } from "@alizzah/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import {
@@ -10,6 +8,8 @@ import {
 	Filter,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useGetV1VaultTransactions } from "#/api/endpoints/vault/vault";
+import { Button } from "#/components/ui";
 import { academicYearAtom } from "../../../../../store/global";
 import { formatCurrency, formatDate } from "../../../../../utils/format";
 

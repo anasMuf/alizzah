@@ -1,9 +1,9 @@
-import { useGetV1ReportsMonthly } from "@alizzah/api-client/endpoints/reports/reports";
-import { Alert, Button } from "@alizzah/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { ChevronRight, Printer } from "lucide-react";
 import { useState } from "react";
+import { useGetV1ReportsMonthly } from "#/api/endpoints/reports/reports";
+import { Alert, Button } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
 import { formatCurrency } from "../../../../utils/format";
 

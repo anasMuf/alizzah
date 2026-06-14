@@ -2,9 +2,10 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
 // Koperasi dilayani binary backend terpisah (koperasi-api). Request dengan path
 // /koperasi/* diarahkan ke base ini. Di produksi, set VITE_KOPERASI_API_URL = VITE_API_URL
 // bila nginx host yang memisah berdasarkan path (satu domain API).
-const KOPERASI_API_URL = import.meta.env.VITE_KOPERASI_API_URL || "http://localhost:8081/api";
+const KOPERASI_API_URL =
+	import.meta.env.VITE_KOPERASI_API_URL || "http://localhost:8081/api";
 
-// Token getter di-inject oleh layer auth (mis. @alizzah/auth) via setTokenGetter,
+// Token getter di-inject oleh layer auth (mis. #/features/auth/AuthContext) via setTokenGetter,
 // sehingga api-client tidak bergantung pada implementasi auth (memutus siklus).
 let tokenGetter: () => string | null = () => null;
 

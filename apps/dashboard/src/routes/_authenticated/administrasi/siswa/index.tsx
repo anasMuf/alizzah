@@ -1,15 +1,3 @@
-import { useGetV1ClassGroups } from "@alizzah/api-client/endpoints/class-groups/class-groups";
-import { usePostV1StudentsIdEnrollments } from "@alizzah/api-client/endpoints/student-enrollments/enroll";
-import { useGetV1Students } from "@alizzah/api-client/endpoints/students/students";
-import { customInstance } from "@alizzah/api-client/mutator/custom-instance";
-import {
-	Badge,
-	Button,
-	EmptyState,
-	Pagination,
-	SlideOver,
-	useToast,
-} from "@alizzah/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
@@ -22,6 +10,18 @@ import {
 	X,
 } from "lucide-react";
 import { type FormEvent, useState } from "react";
+import { useGetV1ClassGroups } from "#/api/endpoints/class-groups/class-groups";
+import { usePostV1StudentsIdEnrollments } from "#/api/endpoints/student-enrollments/enroll";
+import { useGetV1Students } from "#/api/endpoints/students/students";
+import { customInstance } from "#/api/mutator/custom-instance";
+import {
+	Badge,
+	Button,
+	EmptyState,
+	Pagination,
+	SlideOver,
+	useToast,
+} from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
 
 export const Route = createFileRoute("/_authenticated/administrasi/siswa/")({

@@ -1,8 +1,13 @@
+import { useQueryClient } from "@tanstack/react-query";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useAtom } from "jotai";
+import { Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
 import {
 	incomeTransactionKeys,
 	useDeleteIncomeTransaction,
 	useGetIncomeTransactions,
-} from "@alizzah/api-client/endpoints/income-transactions/income-transactions";
+} from "#/api/endpoints/income-transactions/income-transactions";
 import {
 	Alert,
 	Badge,
@@ -11,12 +16,7 @@ import {
 	EmptyState,
 	Pagination,
 	useToast,
-} from "@alizzah/ui";
-import { useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useAtom } from "jotai";
-import { Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+} from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
 import { formatCurrency, formatDate } from "../../../../utils/format";
 

@@ -1,9 +1,9 @@
-import { useGetV1ClassGroups } from "@alizzah/api-client/endpoints/class-groups/class-groups";
-import type { DtoClassGroupResponse } from "@alizzah/api-client/model";
-import { Button, EmptyState } from "@alizzah/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { Clock, Plus, Users } from "lucide-react";
+import { useGetV1ClassGroups } from "#/api/endpoints/class-groups/class-groups";
+import type { DtoClassGroupResponse } from "#/api/model";
+import { Button, EmptyState } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
 
 export const Route = createFileRoute("/_authenticated/administrasi/rombel/")({

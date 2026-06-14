@@ -1,7 +1,0 @@
-{
-  "extends": "@alizzah/config/tsconfig.base.json",
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "compilerOptions": {
-    "types": ["react"]
-  }
-}

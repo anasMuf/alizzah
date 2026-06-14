@@ -1,6 +1,3 @@
-import { useGetV1ReportsStudentsId } from "@alizzah/api-client/endpoints/reports/reports";
-import { useGetV1Students } from "@alizzah/api-client/endpoints/students/students";
-import { Alert, Badge, Button } from "@alizzah/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import {
@@ -15,6 +12,9 @@ import {
 	XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useGetV1ReportsStudentsId } from "#/api/endpoints/reports/reports";
+import { useGetV1Students } from "#/api/endpoints/students/students";
+import { Alert, Badge, Button } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
 import { formatCurrency, formatDate } from "../../../../utils/format";
 

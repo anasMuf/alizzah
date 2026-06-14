@@ -1,16 +1,16 @@
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import {
 	getGetV1ClassGroupsIdEffectiveDaysQueryKey,
 	usePostV1ClassGroupsIdEffectiveDays,
 	usePutV1ClassGroupsIdEffectiveDaysEdId,
-} from "@alizzah/api-client/endpoints/effective-days/effective-days";
+} from "#/api/endpoints/effective-days/effective-days";
 import type {
 	DtoEffectiveDayResponse,
 	DtoUpsertEffectiveDayRequest,
-} from "@alizzah/api-client/model";
-import { ApiError } from "@alizzah/api-client/mutator/custom-instance";
-import { Button, FormField, SlideOver, useToast } from "@alizzah/ui";
-import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+} from "#/api/model";
+import { ApiError } from "#/api/mutator/custom-instance";
+import { Button, FormField, SlideOver, useToast } from "#/components/ui";
 
 interface EffectiveDayFormProps {
 	isOpen: boolean;

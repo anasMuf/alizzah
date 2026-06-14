@@ -1,16 +1,16 @@
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import {
 	getGetV1AcademicYearsQueryKey,
 	usePostV1AcademicYears,
 	usePutV1AcademicYearsId,
-} from "@alizzah/api-client/endpoints/academic-years/academic-years";
+} from "#/api/endpoints/academic-years/academic-years";
 import type {
 	DtoAcademicYearResponse,
 	DtoCreateAcademicYearRequest,
-} from "@alizzah/api-client/model";
-import { ApiError } from "@alizzah/api-client/mutator/custom-instance";
-import { Button, FormField, SlideOver, useToast } from "@alizzah/ui";
-import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+} from "#/api/model";
+import { ApiError } from "#/api/mutator/custom-instance";
+import { Button, FormField, SlideOver, useToast } from "#/components/ui";
 
 interface AcademicYearFormProps {
 	isOpen: boolean;

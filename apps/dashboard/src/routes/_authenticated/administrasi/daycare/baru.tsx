@@ -1,15 +1,15 @@
-import {
-	getGetV1DaycareEnrollmentsQueryKey,
-	usePostV1DaycareEnrollments,
-} from "@alizzah/api-client/endpoints/daycare-enrollments/daycare-enrollments";
-import { useGetV1Students } from "@alizzah/api-client/endpoints/students/students";
-import { ApiError } from "@alizzah/api-client/mutator/custom-instance";
-import { Button, FormField, useToast } from "@alizzah/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { ChevronRight, Search, UserCircle } from "lucide-react";
 import { useState } from "react";
+import {
+	getGetV1DaycareEnrollmentsQueryKey,
+	usePostV1DaycareEnrollments,
+} from "#/api/endpoints/daycare-enrollments/daycare-enrollments";
+import { useGetV1Students } from "#/api/endpoints/students/students";
+import { ApiError } from "#/api/mutator/custom-instance";
+import { Button, FormField, useToast } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
 
 export const Route = createFileRoute(

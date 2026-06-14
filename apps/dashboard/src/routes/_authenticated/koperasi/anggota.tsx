@@ -1,13 +1,13 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { Edit, Plus, Search, Trash2, Users } from "lucide-react";
+import { useMemo, useState } from "react";
 import {
 	Badge,
 	Button,
 	ConfirmDialog,
 	EmptyState,
 	useToast,
-} from "@alizzah/ui";
-import { createFileRoute } from "@tanstack/react-router";
-import { Edit, Plus, Search, Trash2, Users } from "lucide-react";
-import { useMemo, useState } from "react";
+} from "#/components/ui";
 import { AnggotaForm } from "../../../features/koperasi/anggota/AnggotaForm";
 import {
 	type Member,

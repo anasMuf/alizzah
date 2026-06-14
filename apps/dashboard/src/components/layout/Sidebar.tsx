@@ -1,4 +1,3 @@
-import { useAuth } from "@alizzah/auth";
 import { Link } from "@tanstack/react-router";
 import {
 	Baby,
@@ -23,6 +22,7 @@ import {
 	Vault,
 } from "lucide-react";
 import { twMerge } from "tailwind-merge";
+import { useAuth } from "#/features/auth/AuthContext";
 import { AcademicYearSelector } from "./AcademicYearSelector";
 
 interface SidebarProps {

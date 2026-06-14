@@ -1,15 +1,3 @@
-import {
-	getGetV1CashBalanceQueryKey,
-	getGetV1CashTransactionsQueryKey,
-	useGetV1CashBalance,
-	useGetV1CashTransactions,
-	usePostV1CashTransfers,
-} from "@alizzah/api-client/endpoints/cash/cash";
-import {
-	getGetV1VaultBalanceQueryKey,
-	useGetV1VaultBalance,
-} from "@alizzah/api-client/endpoints/vault/vault";
-import { Button, SlideOver, useToast } from "@alizzah/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
@@ -26,6 +14,18 @@ import {
 	Wallet,
 } from "lucide-react";
 import { useState } from "react";
+import {
+	getGetV1CashBalanceQueryKey,
+	getGetV1CashTransactionsQueryKey,
+	useGetV1CashBalance,
+	useGetV1CashTransactions,
+	usePostV1CashTransfers,
+} from "#/api/endpoints/cash/cash";
+import {
+	getGetV1VaultBalanceQueryKey,
+	useGetV1VaultBalance,
+} from "#/api/endpoints/vault/vault";
+import { Button, SlideOver, useToast } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
 import { formatCurrency, formatDate } from "../../../../utils/format";
 

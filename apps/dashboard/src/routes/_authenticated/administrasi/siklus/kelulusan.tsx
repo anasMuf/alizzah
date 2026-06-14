@@ -1,8 +1,3 @@
-import { usePostV1AcademicEventsGraduations } from "@alizzah/api-client/endpoints/academic-events/academic-events";
-import { useGetV1AcademicYears } from "@alizzah/api-client/endpoints/academic-years/academic-years";
-import { useGetV1Students } from "@alizzah/api-client/endpoints/students/students";
-import { ApiError } from "@alizzah/api-client/mutator/custom-instance";
-import { Button, ConfirmDialog, FormField, useToast } from "@alizzah/ui";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import {
@@ -13,6 +8,11 @@ import {
 	Square,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { usePostV1AcademicEventsGraduations } from "#/api/endpoints/academic-events/academic-events";
+import { useGetV1AcademicYears } from "#/api/endpoints/academic-years/academic-years";
+import { useGetV1Students } from "#/api/endpoints/students/students";
+import { ApiError } from "#/api/mutator/custom-instance";
+import { Button, ConfirmDialog, FormField, useToast } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
 
 export const Route = createFileRoute(

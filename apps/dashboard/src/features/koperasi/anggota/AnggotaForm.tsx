@@ -1,6 +1,6 @@
-import { ApiError } from "@alizzah/api-client/mutator/custom-instance";
-import { Button, FormField, SlideOver, useToast } from "@alizzah/ui";
 import { useEffect, useState } from "react";
+import { ApiError } from "#/api/mutator/custom-instance";
+import { Button, FormField, SlideOver, useToast } from "#/components/ui";
 import {
 	type Member,
 	type MemberInput,

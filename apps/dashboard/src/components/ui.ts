@@ -1,4 +1,4 @@
-// @alizzah/ui — pustaka komponen bersama (Atomic Design).
+// #/components/ui — pustaka komponen bersama (Atomic Design).
 // Satu sumber kebenaran komponen UI untuk seluruh app Alizzah (dashboard, koperasi, dst).
 // Lihat docs/architecture/adr-001-modular-structure.md.
 

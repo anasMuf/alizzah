@@ -1,12 +1,16 @@
+import { useQueryClient } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { ChevronRight, Edit, FolderTree, Plus, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import {
 	getGetV1ExpenseCategoriesQueryKey,
 	useDeleteV1ExpenseCategoriesId,
 	useGetV1ExpenseCategories,
 	usePostV1ExpenseCategories,
 	usePutV1ExpenseCategoriesId,
-} from "@alizzah/api-client/endpoints/expense-categories/expense-categories";
-import type { DtoExpenseCategoryResponse } from "@alizzah/api-client/model";
-import { ApiError } from "@alizzah/api-client/mutator/custom-instance";
+} from "#/api/endpoints/expense-categories/expense-categories";
+import type { DtoExpenseCategoryResponse } from "#/api/model";
+import { ApiError } from "#/api/mutator/custom-instance";
 import {
 	Button,
 	ConfirmDialog,
@@ -14,11 +18,7 @@ import {
 	FormField,
 	SlideOver,
 	useToast,
-} from "@alizzah/ui";
-import { useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-import { ChevronRight, Edit, FolderTree, Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+} from "#/components/ui";
 
 export const Route = createFileRoute(
 	"/_authenticated/keuangan/pengeluaran/kategori",

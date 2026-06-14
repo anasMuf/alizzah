@@ -1,6 +1,6 @@
-import { hasToken, useAuth } from "@alizzah/auth";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { hasToken, useAuth } from "#/features/auth/AuthContext";
 import { DashboardLayout } from "../components/layout/DashboardLayout";
 
 export const Route = createFileRoute("/_authenticated")({

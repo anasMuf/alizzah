@@ -9,6 +9,7 @@ import {
 	CreditCard,
 	FileText,
 	FolderTree,
+	HandCoins,
 	Landmark,
 	Layers,
 	LayoutDashboard,
@@ -164,6 +165,9 @@ export function Sidebar({ isOpen }: SidebarProps) {
 							</NavLink>
 							<NavLink to="/koperasi/pembelian" icon={ShoppingBag}>
 								Pembelian
+							</NavLink>
+							<NavLink to="/koperasi/pinjaman" icon={HandCoins}>
+								Pinjaman
 							</NavLink>
 							<NavLink to="/koperasi/kas" icon={ReceiptText}>
 								Kas

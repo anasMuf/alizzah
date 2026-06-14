@@ -15,6 +15,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedKeuanganIndexRouteImport } from './routes/_authenticated/keuangan/index'
 import { Route as AuthenticatedPengaturanPenggunaRouteImport } from './routes/_authenticated/pengaturan/pengguna'
+import { Route as AuthenticatedKoperasiAnggotaRouteImport } from './routes/_authenticated/koperasi/anggota'
 import { Route as AuthenticatedAdministrasiTahunAjaranRouteImport } from './routes/_authenticated/administrasi/tahun-ajaran'
 import { Route as AuthenticatedAdministrasiEkskulRouteImport } from './routes/_authenticated/administrasi/ekskul'
 import { Route as AuthenticatedPengaturanTarifIndexRouteImport } from './routes/_authenticated/pengaturan/tarif/index'
@@ -103,6 +104,12 @@ const AuthenticatedPengaturanPenggunaRoute =
   AuthenticatedPengaturanPenggunaRouteImport.update({
     id: '/pengaturan/pengguna',
     path: '/pengaturan/pengguna',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedKoperasiAnggotaRoute =
+  AuthenticatedKoperasiAnggotaRouteImport.update({
+    id: '/koperasi/anggota',
+    path: '/koperasi/anggota',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedAdministrasiTahunAjaranRoute =
@@ -460,6 +467,7 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/administrasi/ekskul': typeof AuthenticatedAdministrasiEkskulRoute
   '/administrasi/tahun-ajaran': typeof AuthenticatedAdministrasiTahunAjaranRoute
+  '/koperasi/anggota': typeof AuthenticatedKoperasiAnggotaRoute
   '/pengaturan/pengguna': typeof AuthenticatedPengaturanPenggunaRoute
   '/keuangan/': typeof AuthenticatedKeuanganIndexRoute
   '/administrasi/daycare/baru': typeof AuthenticatedAdministrasiDaycareBaruRoute
@@ -525,6 +533,7 @@ export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
   '/administrasi/ekskul': typeof AuthenticatedAdministrasiEkskulRoute
   '/administrasi/tahun-ajaran': typeof AuthenticatedAdministrasiTahunAjaranRoute
+  '/koperasi/anggota': typeof AuthenticatedKoperasiAnggotaRoute
   '/pengaturan/pengguna': typeof AuthenticatedPengaturanPenggunaRoute
   '/keuangan': typeof AuthenticatedKeuanganIndexRoute
   '/administrasi/daycare/baru': typeof AuthenticatedAdministrasiDaycareBaruRoute
@@ -591,6 +600,7 @@ export interface FileRoutesById {
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/administrasi/ekskul': typeof AuthenticatedAdministrasiEkskulRoute
   '/_authenticated/administrasi/tahun-ajaran': typeof AuthenticatedAdministrasiTahunAjaranRoute
+  '/_authenticated/koperasi/anggota': typeof AuthenticatedKoperasiAnggotaRoute
   '/_authenticated/pengaturan/pengguna': typeof AuthenticatedPengaturanPenggunaRoute
   '/_authenticated/keuangan/': typeof AuthenticatedKeuanganIndexRoute
   '/_authenticated/administrasi/daycare/baru': typeof AuthenticatedAdministrasiDaycareBaruRoute
@@ -658,6 +668,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/administrasi/ekskul'
     | '/administrasi/tahun-ajaran'
+    | '/koperasi/anggota'
     | '/pengaturan/pengguna'
     | '/keuangan/'
     | '/administrasi/daycare/baru'
@@ -723,6 +734,7 @@ export interface FileRouteTypes {
     | '/'
     | '/administrasi/ekskul'
     | '/administrasi/tahun-ajaran'
+    | '/koperasi/anggota'
     | '/pengaturan/pengguna'
     | '/keuangan'
     | '/administrasi/daycare/baru'
@@ -788,6 +800,7 @@ export interface FileRouteTypes {
     | '/_authenticated/'
     | '/_authenticated/administrasi/ekskul'
     | '/_authenticated/administrasi/tahun-ajaran'
+    | '/_authenticated/koperasi/anggota'
     | '/_authenticated/pengaturan/pengguna'
     | '/_authenticated/keuangan/'
     | '/_authenticated/administrasi/daycare/baru'
@@ -896,6 +909,13 @@ declare module '@tanstack/react-router' {
       path: '/pengaturan/pengguna'
       fullPath: '/pengaturan/pengguna'
       preLoaderRoute: typeof AuthenticatedPengaturanPenggunaRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/koperasi/anggota': {
+      id: '/_authenticated/koperasi/anggota'
+      path: '/koperasi/anggota'
+      fullPath: '/koperasi/anggota'
+      preLoaderRoute: typeof AuthenticatedKoperasiAnggotaRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/administrasi/tahun-ajaran': {
@@ -1344,6 +1364,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedAdministrasiEkskulRoute: typeof AuthenticatedAdministrasiEkskulRoute
   AuthenticatedAdministrasiTahunAjaranRoute: typeof AuthenticatedAdministrasiTahunAjaranRoute
+  AuthenticatedKoperasiAnggotaRoute: typeof AuthenticatedKoperasiAnggotaRoute
   AuthenticatedPengaturanPenggunaRoute: typeof AuthenticatedPengaturanPenggunaRoute
   AuthenticatedKeuanganIndexRoute: typeof AuthenticatedKeuanganIndexRoute
   AuthenticatedAdministrasiDaycareBaruRoute: typeof AuthenticatedAdministrasiDaycareBaruRoute
@@ -1402,6 +1423,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdministrasiEkskulRoute: AuthenticatedAdministrasiEkskulRoute,
   AuthenticatedAdministrasiTahunAjaranRoute:
     AuthenticatedAdministrasiTahunAjaranRoute,
+  AuthenticatedKoperasiAnggotaRoute: AuthenticatedKoperasiAnggotaRoute,
   AuthenticatedPengaturanPenggunaRoute: AuthenticatedPengaturanPenggunaRoute,
   AuthenticatedKeuanganIndexRoute: AuthenticatedKeuanganIndexRoute,
   AuthenticatedAdministrasiDaycareBaruRoute:

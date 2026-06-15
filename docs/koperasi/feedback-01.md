@@ -23,7 +23,7 @@
 | PB2 | `potong_gaji` di pembelian | **Hapus** | Backend + FE kecil | Rendah |
 | PB3 | Validasi input nominal | **Ya** | FE | Rendah |
 | L1 | Penjelasan kolom "Netto" bulanan | **Bukan bug** — netto = masuk − keluar per kategori | — | — |
-| L2 | Laporan sesuai contoh user | **Menunggu contoh** sebelum putuskan ganti/tambah | TBD | Tinggi |
+| L2 | "Contoh laporan" = **Control Bulanan sekolah** (lintas modul) | **Bukan laporan koperasi** → inisiatif laporan tingkat **sistem/keuangan**; koperasi hanya 1 baris kontribusi | Sistem (besar, dok terpisah) | Tinggi |
 
 ---
 
@@ -118,10 +118,19 @@ Ganti SlideOver "Catat Penjualan" menjadi **halaman kasir penuh**:
 
 Yang user harapkan (debit/kredit + **saldo berjalan** ala jurnal) adalah **format berbeda** → kemungkinan tercakup oleh L2.
 
-### L2 — Laporan sesuai contoh user (KEPUTUSAN: menunggu contoh)
-User punya contoh laporan koperasi yang dibutuhkan. **Keputusan:** kirim contohnya dulu (format/kolom/contoh angka). Setelah dilihat, tentukan apakah **mengganti**, **menyempurnakan**, atau **menambah** terhadap 5 laporan sekarang (bulanan, laba-rugi, piutang, hutang, stok).
+### L2 — Laporan yang dibutuhkan = "Control Bulanan" sekolah (lintas modul)
+Contoh dari user (`docs/Control Bulanan AL IZZAH WALI PAPAT - Google Spreadsheet.pdf`) ternyata **bukan laporan koperasi**, melainkan **laporan kontrol keuangan bulanan SEKOLAH** — matriks **12 bulan (Juli–Juni) × kategori**:
+- **Pemasukan**: Biaya Masuk KB/TK, Semester/DU, Tabungan Berlian, SPP, Infaq Harian, Jasa Antar Jemput, BOP, Pendapatan lain-lain, LBB, Kelulusan, PASTA, **Koperasi** → Total Pemasukan
+- **Pengeluaran**: Beban Operasional (jasa antar-jemput, kegiatan, bekal, **gaji pegawai**, **gaji guru ekstrakurikuler**, kelulusan…) + Beban Administrasi (ATK/perbaikan komputer-printer, listrik & air, telpon & internet, honorarium, THR) → TOTAL BEBAN
+- **Tabungan** (saldo + kas tabungan dipegang), **Kas** (saldo berjalan), **Total Piutang** (PPDB, semester, tabungan, SPP, infaq, kelulusan…), **Hutang Sekolah**
 
-> **Open item — perlu dari user:** lampirkan contoh laporan (gambar/PDF/Excel/teks). Sertakan: judul laporan, kolom, sumber data, periode, dan siapa pembacanya (admin/kepsek/yayasan).
+**Implikasi (keputusan):**
+- Ini **inisiatif laporan tingkat sistem/keuangan**, jauh lebih luas dari koperasi → **DI LUAR lingkup modul koperasi**.
+- Koperasi hanya menyumbang **satu baris "Pemasukan: Koperasi"** (kontribusi/laba bersih) — konsisten **D1** (kas koperasi terpisah; yang masuk kontrol sekolah hanya kontribusinya, bukan seluruh kas koperasi).
+- **5 laporan koperasi** yang sudah ada **tetap** untuk operasional koperasi (tidak diganti).
+- Akan dibuat **dokumen perencanaan terpisah** di level sistem/keuangan untuk "Laporan Kontrol Bulanan", termasuk **analisis sumber data** (mana yang sudah ada di modul keuangan vs gap, mis. beban gaji/honorarium yang mungkin belum tercatat).
+
+> **Open item:** konfirmasi penempatan & semantik baris koperasi (lihat pertanyaan di PR/chat) sebelum dokumen perencanaan sistem ditulis.
 
 ---
 

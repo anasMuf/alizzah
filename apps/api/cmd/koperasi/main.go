@@ -26,6 +26,9 @@ func main() {
 		log.Fatal("Gagal AutoMigrate koperasi:", err)
 	}
 
+	// Seed data master (anggota, pemasok, barang) bila masih kosong.
+	koperasi.Seed(db)
+
 	e := bootstrap.NewEcho()
 	mod.RegisterRoutes(bootstrap.APIGroup(e))
 

@@ -22,6 +22,7 @@
 | PB1 | Layout Catat Pembelian | **POS-style halaman penuh** (mengikuti P1) | FE besar | Tinggi |
 | PB2 | `potong_gaji` di pembelian | **Hapus** | Backend + FE kecil | Rendah |
 | PB3 | Validasi input nominal | **Ya** | FE | Rendah |
+| M1 | **Modal koperasi (KOREKSI)** | **Hapus penyaluran manual**; dana koperasi = item Biaya Awal/Registrasi tertentu (configurable) yg dibayar siswa → auto kas koperasi + penjualan ke siswa | Backend besar + FE (hapus Modal) | Tinggi |
 | L1 | Penjelasan kolom "Netto" bulanan | **Bukan bug** — netto = masuk − keluar per kategori | — | — |
 | L2 | "Contoh laporan" = **Control Bulanan sekolah** (lintas modul) | **Bukan laporan koperasi** → inisiatif laporan tingkat **sistem/keuangan**; koperasi hanya 1 baris kontribusi | Sistem (besar, dok terpisah) | Tinggi |
 
@@ -108,6 +109,25 @@ Ganti SlideOver "Catat Penjualan" menjadi **halaman kasir penuh**:
 
 ---
 
+## Modal Koperasi (KOREKSI ALUR — penting)
+
+**Koreksi pemahaman:** "modal" koperasi **bukan** penyaluran dana manual dari keuangan (seperti fitur **Modal** yang sudah terlanjur dibangun di FE-2). Alur sebenarnya: pada **Biaya Awal & Registrasi** tiap tahun ajaran terdapat **item-item tertentu yang menjadi milik koperasi** (mis. barang perlengkapan: 4 Stel Seragam, Rompi, Tas, Kaos Kaki, Lunch Box, Baju Ganti). Saat siswa **membayar**, porsi item-koperasi itu menjadi pemasukan/dana koperasi.
+
+**Keputusan:**
+- **M1a — Konfigurasi item koperasi:** tambah **setting** agar admin menandai **fee item mana** (Biaya Awal & Registrasi) yang dialokasikan ke koperasi. Daftar lengkap ditentukan **user**, tidak hardcode. Teknis: flag/penanda `koperasi` pada `fee_config_item`.
+- **M1b — Aliran otomatis saat dibayar:** ketika pembayaran invoice memuat item-koperasi, sistem **otomatis**: (1) **kredit kas koperasi** sebesar porsi item tsb, dan (2) mencatatnya sebagai **penjualan koperasi ke siswa** (tertaut `student_id`). Ini **seam keuangan → koperasi** yang dipicu **pembayaran siswa** (bukan penyaluran manual).
+- **M1c — Hapus & ganti fitur Modal:** **hapus** penyaluran modal manual yang sudah ada — backend `capital-injections` + halaman **Modal** (menu Koperasi) + **Modal Koperasi** (menu Keuangan) + seam/kartu terkait. Digantikan aliran registrasi di atas.
+
+**Dampak teknis:**
+- **Keuangan:** penanda item-koperasi di fee config; pada `payment_service`, saat item-koperasi dibayar → picu seam ke koperasi.
+- **Koperasi:** terima seam → buat **penjualan** (sumber = "registrasi", tertaut siswa) + kredit kas. Hapus modul/halaman Modal. **Penjualan koperasi kini punya 2 sumber:** POS manual + auto dari registrasi (perlu penanda `source`).
+- **Pemetaan item ↔ barang:** fee item (mis. "4 Stel Seragam") perlu dipetakan ke **barang/varian koperasi** agar stok & HPP/laba terhitung — atau diputuskan penjualan-registrasi **tidak** memotong stok bila barang registrasi dikelola di luar stok koperasi. **Detail desain menyusul.**
+- **Migrasi:** data `capital-injections` lama (mis. modal 5jt di dev) ditarik/dihapus saat fitur Modal dibuang.
+
+> **Reconcile:** baris "Koperasi" di [Laporan Kontrol Bulanan](../core/plans/laporan-kontrol-bulanan.md) perlu disesuaikan dengan alur ini (bukan lagi "setoran manual").
+
+---
+
 ## Laporan
 
 ### L1 — Penjelasan kolom "Netto" (laporan bulanan)
@@ -139,9 +159,10 @@ Contoh dari user (`docs/Control Bulanan AL IZZAH WALI PAPAT - Google Spreadsheet
 Karena banyak butir saling bergantung, urutan yang masuk akal:
 
 1. **Backend varian (B1)** + master kategori/satuan (B2) + hapus `potong_gaji` (P4/PB2) + migrasi data → satu fondasi backend.
-2. **FE master**: form Barang dengan varian + dropdown kategori/satuan.
-3. **POS Penjualan (P1–P3, P5)** lalu **POS Pembelian (PB1, PB3)** — pakai picker varian.
-4. **Anggota**: bulk register + detail + shortcut (A2).
-5. **Laporan (L2)** — setelah contoh diterima.
+2. **Modal (M1)**: hapus fitur penyaluran manual; tambah penanda item-koperasi di fee config + seam pembayaran-registrasi → penjualan koperasi + kas. (Sebaiknya bareng/menyusul fondasi backend karena menyentuh penjualan & kas.)
+3. **FE master**: form Barang dengan varian + dropdown kategori/satuan.
+4. **POS Penjualan (P1–P3, P5)** lalu **POS Pembelian (PB1, PB3)** — pakai picker varian.
+5. **Anggota**: bulk register + detail + shortcut (A2).
+6. **Laporan (L2 / Kontrol Bulanan)** — dokumen perencanaan terpisah; setelah open items dikonfirmasi.
 
-> Integrasi SDM (A1) di luar lingkup ini (fase terpisah saat modul SDM ada).
+> Integrasi SDM/payroll (A1 + baris gaji di Kontrol Bulanan) di luar lingkup ini (fase terpisah saat modul SDM ada).

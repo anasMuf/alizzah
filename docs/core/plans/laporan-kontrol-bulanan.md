@@ -15,7 +15,7 @@
 |---|---|
 | K1 | **Penempatan:** ringkasan di **Dashboard** (panel/halaman untuk role `kepala_sekolah`, `yayasan`, `admin_keuangan`, `superadmin`). |
 | K2 | **Pengisian:** target **otomatis penuh** — tampilkan **semua** kategori yang dibutuhkan; yang modulnya **sudah ada** diisi & terintegrasi otomatis sekarang, kategori yang **belum** ada sumber datanya ditandai (mis. "—"/"belum") dan **menyusul** saat modulnya dibangun. |
-| K3 | **Baris Koperasi:** **setoran manual** koperasi → sekolah (entri oleh admin keuangan), **bukan** tarik-otomatis dari kas koperasi — konsisten **D1** (kas koperasi terpisah). |
+| K3 | **Baris Koperasi (REVISI):** = **alokasi item Biaya Awal/Registrasi koperasi** yang dibayar siswa, terkumpul per bulan (otomatis) — lihat [feedback-01 §Modal (M1)](../../koperasi/feedback-01.md). **Bukan** setoran/entri manual (keputusan awal diganti oleh M1). |
 
 ## 3. Struktur laporan (mengikuti contoh)
 Matriks: **baris = kategori**, **kolom = 12 bulan** (Jul…Jun) + (opsional) kolom Total. Per tahun ajaran aktif.
@@ -45,7 +45,7 @@ Status: ✅ = bisa otomatis dari data yang ada · 🟡 = perlu entri manual (sem
 | Kelulusan | Fee "Biaya Wisuda"/event kelulusan | 🟡 (cek) |
 | PASTA | Ekstrakurikuler "Pasta" (fee ekskul) | 🟡 (cek) |
 | Pemasukan LBB | — (belum ada modul LBB/bimbel) | ⬜ |
-| **Koperasi** | **Entri setoran manual** (K3) | 🟡 |
+| **Koperasi** | **Alokasi item registrasi koperasi** (M1), otomatis saat siswa bayar | ✅ (ikut M1) |
 
 ### Pengeluaran
 | Baris | Sumber data | Status |
@@ -67,7 +67,7 @@ Status: ✅ = bisa otomatis dari data yang ada · 🟡 = perlu entri manual (sem
 
 ## 5. Pendekatan teknis (ringkas)
 - **Backend (modul keuangan):** endpoint `GET /v1/reports/control-bulanan?academic_year_id=` → struktur seksi×bulan. Agregasi per bulan dari sumber yang ada (payments per fee-type, expenses per kategori, savings, cash, unpaid invoices, income_transactions). Baris tanpa sumber → 0/null + flag `pending: true`.
-- **Setoran koperasi (manual):** tabel kecil baru `school_koperasi_contributions` (atau reuse `income_transactions` kategori `koperasi`) yang diisi admin keuangan per bulan; ditampilkan di baris Koperasi.
+- **Baris koperasi (M1):** dihitung dari **alokasi item Biaya Awal/Registrasi** yang ditandai "koperasi" & sudah dibayar siswa (otomatis), diakumulasi per bulan — bukan entri manual. Bergantung implementasi M1 di modul koperasi.
 - **Frontend (Dashboard):** panel/halaman "Kontrol Bulanan" untuk `kepala_sekolah`/`yayasan`/`admin_keuangan`/`superadmin` — tabel matriks (sticky header bulan), kategori yang `pending` ditandai abu-abu/"belum tercatat". Bisa pilih tahun ajaran.
 - **RBAC:** read untuk kepsek/yayasan/keuangan/superadmin (pola sama laporan annual yang sudah mengizinkan kepsek/yayasan).
 
@@ -79,11 +79,11 @@ Status: ✅ = bisa otomatis dari data yang ada · 🟡 = perlu entri manual (sem
 - **Hutang Sekolah** — belum ada pencatatan; perlu definisi (hutang ke siapa: tabungan? koperasi? pihak luar?).
 - **LBB** dan sumber pemasukan lain yang belum bermodul.
 
-## 7. Open items — perlu konfirmasi user
-1. **Verifikasi pemetaan §4** — terutama: apakah "Semester/DU", "Kelulusan", "PASTA", "Pendapatan lain-lain" sudah ada sebagai fee/income yang benar? Mana yang belum?
-2. **Gaji/Beban**: apakah saat ini gaji dicatat di modul Pengeluaran (kategori), atau belum dicatat sama sekali (perlu modul payroll)? Ini menentukan status ✅/🟡/⬜ banyak baris beban.
-3. **Hutang Sekolah**: definisi & sumbernya apa? (Agar tidak salah menafsirkan baris ini.)
-4. **Periode**: kolom mengikuti tahun ajaran Jul–Jun (sesuai contoh) — konfirmasi.
-5. **Setoran koperasi**: cukup entri manual bulanan (nominal + catatan), atau perlu kaitkan ke transaksi koperasi tertentu?
+## 7. Jawaban open items (terkonfirmasi user)
+1. **Pemetaan pemasukan §4 — terverifikasi:** sudah ada sbg fee/income → SPP (`monthly_spp`), Biaya Awal (`initial`), Registrasi (`registration` per jenjang), Infaq (Sarpras/APE/Harian/Awal Tabungan), **PASTA** (`pasta_*` + ekskul), **Kelulusan** (Biaya Wisuda/`graduation`), Antar-Jemput (fasilitas), BOP (`income_transactions` `bos`), Tabungan (savings). **Belum ada (⬜):** "Pemasukan LBB" & "Pendapatan lain-lain" generik.
+2. **Gaji/Beban — ⬜ belum dicatat sama sekali.** Butuh **modul SDM/payroll** (fase terpisah). Semua baris gaji/honorarium/THR = gap sampai modul itu ada.
+3. **Hutang Sekolah — ⬜ belum ada pencatatan.** Definisi: utang sekolah ke **pihak luar** (pemasok, tukang, dsb). Perlu fitur pencatatan hutang vendor (fase terpisah).
+4. **Periode:** tahun ajaran **Jul–Jun** (sesuai contoh). ✅
+5. **Baris Koperasi — DIREVISI (lihat di bawah).** Bukan "setoran manual" — koperasi kini didanai dari **item Biaya Awal/Registrasi tertentu** yang dibayar siswa (lihat [feedback-01 §Modal (M1)](../../koperasi/feedback-01.md)). Maka baris "Koperasi" di kontrol = **alokasi item-registrasi koperasi** yang terkumpul per bulan (otomatis saat pembayaran), bukan entri manual. **K3 di §2 perlu disesuaikan** mengikuti keputusan M1.
 
-> Setelah §7 dikonfirmasi, dokumen ini difinalkan jadi spesifikasi implementasi (endpoint + skema + komponen) dan masuk antrean pengerjaan modul keuangan.
+> **Langkah berikut:** finalkan jadi spesifikasi implementasi (endpoint `reports/control-bulanan` + komponen Dashboard), dengan ketentuan: baris ber-modul diisi otomatis (Fase 1), baris **gaji** & **hutang vendor** = placeholder "belum tercatat" sampai modul SDM/hutang dibangun, baris **Koperasi** ikut alur M1 (alokasi item registrasi).

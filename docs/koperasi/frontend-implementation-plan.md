@@ -2,7 +2,7 @@
 
 > Breakdown fase **frontend** modul Koperasi di `apps/dashboard`. Backend (sub-batch 8a–8e) **sudah selesai & ter-merge**; dokumen ini hanya soal UI. Untuk konteks penuh lihat [`integration-plan.md`](./integration-plan.md), [`api-contract.md`](./api-contract.md), [`prd.md`](./prd.md).
 
-**Status:** 🟡 berjalan — **FE-0 (fondasi + Anggota) selesai**; sisanya belum.
+**Status:** 🟢 **SELESAI** — seluruh fase FE-0…FE-5 terimplementasi & terverifikasi (PR #18, #23, #24, #25, #26, #27, #28).
 
 ---
 
@@ -54,12 +54,13 @@ Tiap fase = 1 PR ke `develop`. Backend semua sudah ada, jadi tiap fase murni FE 
 
 | Fase | Fitur | Endpoint koperasi-api | Kompleksitas | Status |
 |---|---|---|---|---|
-| **FE-0** Fondasi | `lib/client.ts`, path-routing, sidebar, **Anggota** (CRUD) | `/members*` | — (referensi) | ✅ selesai |
-| **FE-1** Master | **Barang**, **Pemasok** (CRUD) | `/products*`, `/suppliers*` | rendah (sama Anggota) | ⬜ berikutnya |
-| **FE-2** Kas, Modal, Overview | Kas (read), riwayat Modal, halaman Overview koperasi | `/cash/balance`, `/cash/transactions`, `/capital-injections*` | sedang | ⬜ |
-| **FE-3** Barang dagang | **Penjualan**, **Pembelian** (+ bayar piutang/hutang) | `/sales*`, `/purchases*`, `…/:id/payments` | tinggi (multi-item, parsial, stok) | ⬜ |
-| **FE-4** Simpan-pinjam | **Pinjaman** (+ angsuran, rekap) | `/loans*`, `…/installments`, `…/payments`, `/loans/summary` | tinggi (jadwal, alokasi) | ⬜ |
-| **FE-5** Lain-lain & Laporan | **Lain-lain**, **5 Laporan** | `/misc-transactions*`, `/reports/{monthly,profit-loss,receivables,payables,stock}` | sedang | ⬜ |
+| **FE-0** Fondasi | `lib/client.ts`, path-routing, sidebar, **Anggota** (CRUD) | `/members*` | referensi | ✅ #18 |
+| **FE-1** Master | **Barang**, **Pemasok** (CRUD) | `/products*`, `/suppliers*` | rendah | ✅ #23 |
+| **FE-2** Kas, Modal, Overview | Kas (read), riwayat Modal, Overview koperasi | `/cash/*`, `/capital-injections*` | sedang | ✅ #24 |
+| **FE-3a** Penjualan | **Penjualan** multi-item + bayar piutang + **tautan siswa** (D6) | `/sales*`, `…/payments`, `GET /students` | tinggi | ✅ #25 |
+| **FE-3b** Pembelian | **Pembelian** multi-item + bayar hutang | `/purchases*`, `…/payments` | tinggi | ✅ #26 |
+| **FE-4** Simpan-pinjam | **Pinjaman** + jadwal angsuran + rekap per anggota | `/loans*`, `…/installments`, `…/payments`, `/loans/summary` | tinggi | ✅ #27 |
+| **FE-5** Lain-lain & Laporan | **Lain-lain** + **5 Laporan** (bulanan, laba-rugi, piutang, hutang, stok) | `/misc-transactions*`, `/reports/*` | sedang | ✅ #28 |
 
 ### FE-1 — Master (Barang, Pemasok)
 CRUD murni, salin pola Anggota persis. **Barang** punya field stok & harga/HPP (read-only stok di list; HPP manual saat input). **Pemasok** = master kontak. DoD: dua halaman CRUD end-to-end + 2 NavLink.

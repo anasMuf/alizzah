@@ -23,4 +23,4 @@ Unit usaha koperasi sekolah sebagai **entitas keuangan mandiri** di dashboard Al
 - **A1** Usul role baru `admin_koperasi` (perlu konfirmasi akhir).
 
 ## Status
-🟢 **Backend selesai** (sub-batch 8a–8e ter-merge ke develop). **Frontend berjalan**: FE-0 (fondasi + Anggota) selesai; FE-1..FE-5 menyusul — lihat [`frontend-implementation-plan.md`](./frontend-implementation-plan.md).
+🟢 **Selesai** — Backend (sub-batch 8a–8e) & Frontend (FE-0…FE-5) seluruhnya ter-merge ke develop. Lihat [`frontend-implementation-plan.md`](./frontend-implementation-plan.md) untuk rincian fase.

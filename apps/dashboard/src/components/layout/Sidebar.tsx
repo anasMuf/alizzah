@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import {
+	ArrowLeftRight,
 	Baby,
 	BarChart3,
 	BookOpen,
@@ -174,6 +175,12 @@ export function Sidebar({ isOpen }: SidebarProps) {
 							</NavLink>
 							<NavLink to="/koperasi/modal" icon={Landmark}>
 								Modal
+							</NavLink>
+							<NavLink to="/koperasi/lain-lain" icon={ArrowLeftRight}>
+								Lain-lain
+							</NavLink>
+							<NavLink to="/koperasi/laporan" icon={BarChart3}>
+								Laporan
 							</NavLink>
 						</div>
 					)}

@@ -18,6 +18,8 @@ import { Route as AuthenticatedKeuanganIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedPengaturanPenggunaRouteImport } from './routes/_authenticated/pengaturan/pengguna'
 import { Route as AuthenticatedKoperasiPemasokRouteImport } from './routes/_authenticated/koperasi/pemasok'
 import { Route as AuthenticatedKoperasiModalRouteImport } from './routes/_authenticated/koperasi/modal'
+import { Route as AuthenticatedKoperasiLaporanRouteImport } from './routes/_authenticated/koperasi/laporan'
+import { Route as AuthenticatedKoperasiLainLainRouteImport } from './routes/_authenticated/koperasi/lain-lain'
 import { Route as AuthenticatedKoperasiKasRouteImport } from './routes/_authenticated/koperasi/kas'
 import { Route as AuthenticatedKoperasiBarangRouteImport } from './routes/_authenticated/koperasi/barang'
 import { Route as AuthenticatedKoperasiAnggotaRouteImport } from './routes/_authenticated/koperasi/anggota'
@@ -134,6 +136,18 @@ const AuthenticatedKoperasiModalRoute =
   AuthenticatedKoperasiModalRouteImport.update({
     id: '/koperasi/modal',
     path: '/koperasi/modal',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedKoperasiLaporanRoute =
+  AuthenticatedKoperasiLaporanRouteImport.update({
+    id: '/koperasi/laporan',
+    path: '/koperasi/laporan',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedKoperasiLainLainRoute =
+  AuthenticatedKoperasiLainLainRouteImport.update({
+    id: '/koperasi/lain-lain',
+    path: '/koperasi/lain-lain',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedKoperasiKasRoute =
@@ -555,6 +569,8 @@ export interface FileRoutesByFullPath {
   '/koperasi/anggota': typeof AuthenticatedKoperasiAnggotaRoute
   '/koperasi/barang': typeof AuthenticatedKoperasiBarangRoute
   '/koperasi/kas': typeof AuthenticatedKoperasiKasRoute
+  '/koperasi/lain-lain': typeof AuthenticatedKoperasiLainLainRoute
+  '/koperasi/laporan': typeof AuthenticatedKoperasiLaporanRoute
   '/koperasi/modal': typeof AuthenticatedKoperasiModalRoute
   '/koperasi/pemasok': typeof AuthenticatedKoperasiPemasokRoute
   '/pengaturan/pengguna': typeof AuthenticatedPengaturanPenggunaRoute
@@ -633,6 +649,8 @@ export interface FileRoutesByTo {
   '/koperasi/anggota': typeof AuthenticatedKoperasiAnggotaRoute
   '/koperasi/barang': typeof AuthenticatedKoperasiBarangRoute
   '/koperasi/kas': typeof AuthenticatedKoperasiKasRoute
+  '/koperasi/lain-lain': typeof AuthenticatedKoperasiLainLainRoute
+  '/koperasi/laporan': typeof AuthenticatedKoperasiLaporanRoute
   '/koperasi/modal': typeof AuthenticatedKoperasiModalRoute
   '/koperasi/pemasok': typeof AuthenticatedKoperasiPemasokRoute
   '/pengaturan/pengguna': typeof AuthenticatedPengaturanPenggunaRoute
@@ -712,6 +730,8 @@ export interface FileRoutesById {
   '/_authenticated/koperasi/anggota': typeof AuthenticatedKoperasiAnggotaRoute
   '/_authenticated/koperasi/barang': typeof AuthenticatedKoperasiBarangRoute
   '/_authenticated/koperasi/kas': typeof AuthenticatedKoperasiKasRoute
+  '/_authenticated/koperasi/lain-lain': typeof AuthenticatedKoperasiLainLainRoute
+  '/_authenticated/koperasi/laporan': typeof AuthenticatedKoperasiLaporanRoute
   '/_authenticated/koperasi/modal': typeof AuthenticatedKoperasiModalRoute
   '/_authenticated/koperasi/pemasok': typeof AuthenticatedKoperasiPemasokRoute
   '/_authenticated/pengaturan/pengguna': typeof AuthenticatedPengaturanPenggunaRoute
@@ -792,6 +812,8 @@ export interface FileRouteTypes {
     | '/koperasi/anggota'
     | '/koperasi/barang'
     | '/koperasi/kas'
+    | '/koperasi/lain-lain'
+    | '/koperasi/laporan'
     | '/koperasi/modal'
     | '/koperasi/pemasok'
     | '/pengaturan/pengguna'
@@ -870,6 +892,8 @@ export interface FileRouteTypes {
     | '/koperasi/anggota'
     | '/koperasi/barang'
     | '/koperasi/kas'
+    | '/koperasi/lain-lain'
+    | '/koperasi/laporan'
     | '/koperasi/modal'
     | '/koperasi/pemasok'
     | '/pengaturan/pengguna'
@@ -948,6 +972,8 @@ export interface FileRouteTypes {
     | '/_authenticated/koperasi/anggota'
     | '/_authenticated/koperasi/barang'
     | '/_authenticated/koperasi/kas'
+    | '/_authenticated/koperasi/lain-lain'
+    | '/_authenticated/koperasi/laporan'
     | '/_authenticated/koperasi/modal'
     | '/_authenticated/koperasi/pemasok'
     | '/_authenticated/pengaturan/pengguna'
@@ -1086,6 +1112,20 @@ declare module '@tanstack/react-router' {
       path: '/koperasi/modal'
       fullPath: '/koperasi/modal'
       preLoaderRoute: typeof AuthenticatedKoperasiModalRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/koperasi/laporan': {
+      id: '/_authenticated/koperasi/laporan'
+      path: '/koperasi/laporan'
+      fullPath: '/koperasi/laporan'
+      preLoaderRoute: typeof AuthenticatedKoperasiLaporanRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/koperasi/lain-lain': {
+      id: '/_authenticated/koperasi/lain-lain'
+      path: '/koperasi/lain-lain'
+      fullPath: '/koperasi/lain-lain'
+      preLoaderRoute: typeof AuthenticatedKoperasiLainLainRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/koperasi/kas': {
@@ -1608,6 +1648,8 @@ interface AuthenticatedRouteChildren {
   AuthenticatedKoperasiAnggotaRoute: typeof AuthenticatedKoperasiAnggotaRoute
   AuthenticatedKoperasiBarangRoute: typeof AuthenticatedKoperasiBarangRoute
   AuthenticatedKoperasiKasRoute: typeof AuthenticatedKoperasiKasRoute
+  AuthenticatedKoperasiLainLainRoute: typeof AuthenticatedKoperasiLainLainRoute
+  AuthenticatedKoperasiLaporanRoute: typeof AuthenticatedKoperasiLaporanRoute
   AuthenticatedKoperasiModalRoute: typeof AuthenticatedKoperasiModalRoute
   AuthenticatedKoperasiPemasokRoute: typeof AuthenticatedKoperasiPemasokRoute
   AuthenticatedPengaturanPenggunaRoute: typeof AuthenticatedPengaturanPenggunaRoute
@@ -1680,6 +1722,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedKoperasiAnggotaRoute: AuthenticatedKoperasiAnggotaRoute,
   AuthenticatedKoperasiBarangRoute: AuthenticatedKoperasiBarangRoute,
   AuthenticatedKoperasiKasRoute: AuthenticatedKoperasiKasRoute,
+  AuthenticatedKoperasiLainLainRoute: AuthenticatedKoperasiLainLainRoute,
+  AuthenticatedKoperasiLaporanRoute: AuthenticatedKoperasiLaporanRoute,
   AuthenticatedKoperasiModalRoute: AuthenticatedKoperasiModalRoute,
   AuthenticatedKoperasiPemasokRoute: AuthenticatedKoperasiPemasokRoute,
   AuthenticatedPengaturanPenggunaRoute: AuthenticatedPengaturanPenggunaRoute,

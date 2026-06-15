@@ -10,7 +10,8 @@ Unit usaha koperasi sekolah sebagai **entitas keuangan mandiri** di dashboard Al
 | 3 | [`api-contract.md`](./api-contract.md) | Endpoint REST `/api/v1/koperasi/*`, role akses, validasi |
 | 4 | [`integration-plan.md`](./integration-plan.md) | Cara masuk ke codebase (Batch 8): backend, role baru, seam modal, frontend, urutan implementasi, DoD |
 | 5 | [`frontend-implementation-plan.md`](./frontend-implementation-plan.md) | **Breakdown fase frontend (FE-0..FE-5)**: pola referensi, RBAC, urutan per-halaman, DoD |
-| 6 | [`feedback-01.md`](./feedback-01.md) | **Feedback putaran 1** (pasca FE selesai): keputusan varian barang, POS, master kategori/satuan, bulk anggota, laporan (menunggu contoh) |
+| 6 | [`feedback-01.md`](./feedback-01.md) | **Feedback putaran 1** (operasional, pasca FE): varian barang, POS, master kategori/satuan, bulk anggota, validasi |
+| 7 | [`penyaluran-dana-koperasi.md`](./penyaluran-dana-koperasi.md) | **Koreksi alur dana (M1):** modal manual diganti — dana koperasi dari item Biaya Awal/Registrasi yg dibayar siswa → penjualan koperasi + kas (lintas modul) |
 
 > Belum dibuat (opsional): `ux-flow.md`, `ui-spec.md`.
 

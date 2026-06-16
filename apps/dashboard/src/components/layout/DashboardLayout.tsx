@@ -4,7 +4,10 @@ import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 
 // Routes that use full-bleed layout (no padding on main)
-const FULL_BLEED_ROUTES = ["/keuangan/pembayaran/baru"];
+const FULL_BLEED_ROUTES = [
+	"/keuangan/pembayaran/baru",
+	"/koperasi/penjualan/pos",
+];
 
 export function DashboardLayout() {
 	const [isSidebarOpen, setIsSidebarOpen] = useState(false);

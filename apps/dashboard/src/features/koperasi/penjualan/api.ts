@@ -7,6 +7,8 @@ export type PaymentMethod = "cash";
 export interface SaleItem {
 	product_id: number;
 	product_name: string;
+	variant_id: number;
+	variant_name?: string;
 	quantity: number;
 	unit_price: number;
 	unit_cost: number;
@@ -33,6 +35,7 @@ export interface Sale {
 
 export interface SaleItemInput {
 	product_id: number;
+	variant_id?: number;
 	quantity: number;
 	unit_price?: number;
 }

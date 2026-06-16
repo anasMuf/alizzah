@@ -44,6 +44,7 @@ import { Route as AuthenticatedAdministrasiFasilitasIndexRouteImport } from './r
 import { Route as AuthenticatedAdministrasiDaycareIndexRouteImport } from './routes/_authenticated/administrasi/daycare/index'
 import { Route as AuthenticatedPengaturanTarifIdRouteImport } from './routes/_authenticated/pengaturan/tarif/$id'
 import { Route as AuthenticatedKoperasiPinjamanIdRouteImport } from './routes/_authenticated/koperasi/pinjaman/$id'
+import { Route as AuthenticatedKoperasiPenjualanPosRouteImport } from './routes/_authenticated/koperasi/penjualan/pos'
 import { Route as AuthenticatedKoperasiPenjualanIdRouteImport } from './routes/_authenticated/koperasi/penjualan/$id'
 import { Route as AuthenticatedKoperasiPembelianIdRouteImport } from './routes/_authenticated/koperasi/pembelian/$id'
 import { Route as AuthenticatedKeuanganTagihanIdRouteImport } from './routes/_authenticated/keuangan/tagihan/$id'
@@ -292,6 +293,12 @@ const AuthenticatedKoperasiPinjamanIdRoute =
   AuthenticatedKoperasiPinjamanIdRouteImport.update({
     id: '/koperasi/pinjaman/$id',
     path: '/koperasi/pinjaman/$id',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedKoperasiPenjualanPosRoute =
+  AuthenticatedKoperasiPenjualanPosRouteImport.update({
+    id: '/koperasi/penjualan/pos',
+    path: '/koperasi/penjualan/pos',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedKoperasiPenjualanIdRoute =
@@ -606,6 +613,7 @@ export interface FileRoutesByFullPath {
   '/keuangan/tagihan/$id': typeof AuthenticatedKeuanganTagihanIdRoute
   '/koperasi/pembelian/$id': typeof AuthenticatedKoperasiPembelianIdRoute
   '/koperasi/penjualan/$id': typeof AuthenticatedKoperasiPenjualanIdRoute
+  '/koperasi/penjualan/pos': typeof AuthenticatedKoperasiPenjualanPosRoute
   '/koperasi/pinjaman/$id': typeof AuthenticatedKoperasiPinjamanIdRoute
   '/pengaturan/tarif/$id': typeof AuthenticatedPengaturanTarifIdRoute
   '/administrasi/daycare/': typeof AuthenticatedAdministrasiDaycareIndexRoute
@@ -685,6 +693,7 @@ export interface FileRoutesByTo {
   '/keuangan/tagihan/$id': typeof AuthenticatedKeuanganTagihanIdRoute
   '/koperasi/pembelian/$id': typeof AuthenticatedKoperasiPembelianIdRoute
   '/koperasi/penjualan/$id': typeof AuthenticatedKoperasiPenjualanIdRoute
+  '/koperasi/penjualan/pos': typeof AuthenticatedKoperasiPenjualanPosRoute
   '/koperasi/pinjaman/$id': typeof AuthenticatedKoperasiPinjamanIdRoute
   '/pengaturan/tarif/$id': typeof AuthenticatedPengaturanTarifIdRoute
   '/administrasi/daycare': typeof AuthenticatedAdministrasiDaycareIndexRoute
@@ -767,6 +776,7 @@ export interface FileRoutesById {
   '/_authenticated/keuangan/tagihan/$id': typeof AuthenticatedKeuanganTagihanIdRoute
   '/_authenticated/koperasi/pembelian/$id': typeof AuthenticatedKoperasiPembelianIdRoute
   '/_authenticated/koperasi/penjualan/$id': typeof AuthenticatedKoperasiPenjualanIdRoute
+  '/_authenticated/koperasi/penjualan/pos': typeof AuthenticatedKoperasiPenjualanPosRoute
   '/_authenticated/koperasi/pinjaman/$id': typeof AuthenticatedKoperasiPinjamanIdRoute
   '/_authenticated/pengaturan/tarif/$id': typeof AuthenticatedPengaturanTarifIdRoute
   '/_authenticated/administrasi/daycare/': typeof AuthenticatedAdministrasiDaycareIndexRoute
@@ -849,6 +859,7 @@ export interface FileRouteTypes {
     | '/keuangan/tagihan/$id'
     | '/koperasi/pembelian/$id'
     | '/koperasi/penjualan/$id'
+    | '/koperasi/penjualan/pos'
     | '/koperasi/pinjaman/$id'
     | '/pengaturan/tarif/$id'
     | '/administrasi/daycare/'
@@ -928,6 +939,7 @@ export interface FileRouteTypes {
     | '/keuangan/tagihan/$id'
     | '/koperasi/pembelian/$id'
     | '/koperasi/penjualan/$id'
+    | '/koperasi/penjualan/pos'
     | '/koperasi/pinjaman/$id'
     | '/pengaturan/tarif/$id'
     | '/administrasi/daycare'
@@ -1009,6 +1021,7 @@ export interface FileRouteTypes {
     | '/_authenticated/keuangan/tagihan/$id'
     | '/_authenticated/koperasi/pembelian/$id'
     | '/_authenticated/koperasi/penjualan/$id'
+    | '/_authenticated/koperasi/penjualan/pos'
     | '/_authenticated/koperasi/pinjaman/$id'
     | '/_authenticated/pengaturan/tarif/$id'
     | '/_authenticated/administrasi/daycare/'
@@ -1294,6 +1307,13 @@ declare module '@tanstack/react-router' {
       path: '/koperasi/pinjaman/$id'
       fullPath: '/koperasi/pinjaman/$id'
       preLoaderRoute: typeof AuthenticatedKoperasiPinjamanIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/koperasi/penjualan/pos': {
+      id: '/_authenticated/koperasi/penjualan/pos'
+      path: '/koperasi/penjualan/pos'
+      fullPath: '/koperasi/penjualan/pos'
+      preLoaderRoute: typeof AuthenticatedKoperasiPenjualanPosRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/koperasi/penjualan/$id': {
@@ -1685,6 +1705,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedKeuanganTagihanIdRoute: typeof AuthenticatedKeuanganTagihanIdRoute
   AuthenticatedKoperasiPembelianIdRoute: typeof AuthenticatedKoperasiPembelianIdRoute
   AuthenticatedKoperasiPenjualanIdRoute: typeof AuthenticatedKoperasiPenjualanIdRoute
+  AuthenticatedKoperasiPenjualanPosRoute: typeof AuthenticatedKoperasiPenjualanPosRoute
   AuthenticatedKoperasiPinjamanIdRoute: typeof AuthenticatedKoperasiPinjamanIdRoute
   AuthenticatedPengaturanTarifIdRoute: typeof AuthenticatedPengaturanTarifIdRoute
   AuthenticatedAdministrasiDaycareIndexRoute: typeof AuthenticatedAdministrasiDaycareIndexRoute
@@ -1786,6 +1807,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedKeuanganTagihanIdRoute: AuthenticatedKeuanganTagihanIdRoute,
   AuthenticatedKoperasiPembelianIdRoute: AuthenticatedKoperasiPembelianIdRoute,
   AuthenticatedKoperasiPenjualanIdRoute: AuthenticatedKoperasiPenjualanIdRoute,
+  AuthenticatedKoperasiPenjualanPosRoute:
+    AuthenticatedKoperasiPenjualanPosRoute,
   AuthenticatedKoperasiPinjamanIdRoute: AuthenticatedKoperasiPinjamanIdRoute,
   AuthenticatedPengaturanTarifIdRoute: AuthenticatedPengaturanTarifIdRoute,
   AuthenticatedAdministrasiDaycareIndexRoute:

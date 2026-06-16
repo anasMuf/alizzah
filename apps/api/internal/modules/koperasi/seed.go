@@ -2,9 +2,11 @@ package koperasi
 
 import (
 	"log"
+	"strings"
 
 	"api/internal/modules/koperasi/anggota"
 	"api/internal/modules/koperasi/barang"
+	"api/internal/modules/koperasi/master"
 	"api/internal/modules/koperasi/pemasok"
 
 	"gorm.io/gorm"
@@ -18,6 +20,42 @@ func Seed(db *gorm.DB) {
 	seedMembers(db)
 	seedSuppliers(db)
 	seedProducts(db)
+	seedMasterData(db)
+}
+
+// seedMasterData mengisi master kategori & satuan barang (sumber dropdown form
+// barang, feedback-01 B2). Idempotent per nilai (FirstOrCreate). Selain default,
+// juga backfill nilai kategori/satuan yang sudah terpakai di barang yang ada agar
+// dropdown lengkap setelah migrasi.
+func seedMasterData(db *gorm.DB) {
+	categories := map[string]bool{"Seragam": true, "Perlengkapan": true, "Alat Tulis": true, "Buku": true}
+	units := map[string]bool{"pcs": true, "set": true, "lusin": true, "pack": true, "box": true}
+
+	var products []barang.Product
+	if err := db.Find(&products).Error; err == nil {
+		for _, p := range products {
+			if v := strings.TrimSpace(p.Category); v != "" {
+				categories[v] = true
+			}
+			if v := strings.TrimSpace(p.Unit); v != "" {
+				units[v] = true
+			}
+		}
+	}
+
+	upsert := func(kind, name string) {
+		m := master.MasterData{Kind: kind, Name: name}
+		if err := db.Where(m).FirstOrCreate(&m).Error; err != nil {
+			log.Printf("Seed koperasi master %s %q gagal: %v", kind, name, err)
+		}
+	}
+	for name := range categories {
+		upsert(master.KindCategory, name)
+	}
+	for name := range units {
+		upsert(master.KindUnit, name)
+	}
+	log.Printf("Seed koperasi: master %d kategori, %d satuan (idempotent)", len(categories), len(units))
 }
 
 func seedMembers(db *gorm.DB) {

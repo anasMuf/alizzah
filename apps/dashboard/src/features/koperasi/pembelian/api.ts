@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { kopGet, kopGetPaged, kopSend } from "../lib/client";
 
 export type PurchaseStatus = "unpaid" | "partial" | "paid";
-export type PaymentMethod = "cash" | "potong_gaji";
+export type PaymentMethod = "cash";
 
 export interface PurchaseItem {
 	product_id: number;

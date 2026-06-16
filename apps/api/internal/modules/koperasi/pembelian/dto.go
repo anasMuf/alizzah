@@ -14,13 +14,13 @@ type CreateRequest struct {
 	Notes           string              `json:"notes" validate:"omitempty"`
 	Items           []CreateItemRequest `json:"items" validate:"required,min=1,dive"`
 	InitialPayment  float64             `json:"initial_payment" validate:"omitempty,gte=0"`
-	PaymentMethod   string              `json:"payment_method" validate:"omitempty,oneof=cash potong_gaji"`
+	PaymentMethod   string              `json:"payment_method" validate:"omitempty,oneof=cash"`
 }
 
 type PaymentRequest struct {
 	Amount      float64 `json:"amount" validate:"required,gt=0"`
 	PaymentDate string  `json:"payment_date" validate:"required,dateonly"`
-	Method      string  `json:"method" validate:"omitempty,oneof=cash potong_gaji"`
+	Method      string  `json:"method" validate:"omitempty,oneof=cash"`
 	Notes       string  `json:"notes" validate:"omitempty"`
 }
 

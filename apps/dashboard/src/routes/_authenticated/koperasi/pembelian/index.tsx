@@ -2,14 +2,13 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { AlertCircle, ChevronRight, Plus, ShoppingBag } from "lucide-react";
 import { useState } from "react";
-import { Badge, Button, EmptyState } from "#/components/ui";
+import { Badge, EmptyState } from "#/components/ui";
 import { academicYearAtom } from "#/store/global";
 import { formatCurrency, formatDate } from "#/utils/format";
 import {
 	type PurchaseStatus,
 	usePurchases,
 } from "../../../../features/koperasi/pembelian/api";
-import { PembelianForm } from "../../../../features/koperasi/pembelian/PembelianForm";
 
 export const Route = createFileRoute("/_authenticated/koperasi/pembelian/")({
 	component: PembelianListPage,
@@ -30,7 +29,6 @@ function PembelianListPage() {
 	const [activeAy] = useAtom(academicYearAtom);
 	const [page, setPage] = useState(1);
 	const [status, setStatus] = useState("");
-	const [isFormOpen, setIsFormOpen] = useState(false);
 
 	const { data, isLoading, isError } = usePurchases(activeAy?.id, page, status);
 	const rows = data?.data ?? [];
@@ -60,9 +58,12 @@ function PembelianListPage() {
 						Pembelian barang dari pemasok — Tahun Ajaran {activeAy.name}.
 					</p>
 				</div>
-				<Button variant="primary" onClick={() => setIsFormOpen(true)}>
-					<Plus className="h-4 w-4 mr-1.5" /> Catat Pembelian
-				</Button>
+				<Link
+					to="/koperasi/pembelian/pos"
+					className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-colors"
+				>
+					<Plus className="h-4 w-4 mr-1.5" /> Restok Barang
+				</Link>
 			</div>
 
 			<div className="flex gap-2">
@@ -191,8 +192,6 @@ function PembelianListPage() {
 					)}
 				</>
 			)}
-
-			<PembelianForm isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} />
 		</div>
 	);
 }

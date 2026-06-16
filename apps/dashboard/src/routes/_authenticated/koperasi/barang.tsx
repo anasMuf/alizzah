@@ -137,6 +137,13 @@ function BarangPage() {
 										{p.unit ? (
 											<span className="text-gray-400"> / {p.unit}</span>
 										) : null}
+										{p.variant_count > 1 ? (
+											<span className="ml-2 align-middle">
+												<Badge variant="secondary">
+													{p.variant_count} varian
+												</Badge>
+											</span>
+										) : null}
 									</td>
 									<td className="px-4 py-3 text-sm text-gray-600">
 										{p.category || "-"}

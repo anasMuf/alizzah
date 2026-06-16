@@ -11,6 +11,7 @@ import (
 	"api/config"
 	"api/internal/bootstrap"
 	"api/internal/modules/koperasi"
+	"api/internal/modules/koperasi/barang"
 	"api/internal/shared"
 )
 
@@ -25,6 +26,9 @@ func main() {
 	if err := db.AutoMigrate(mod.Models()...); err != nil {
 		log.Fatal("Gagal AutoMigrate koperasi:", err)
 	}
+
+	// Migrasi data ke model varian (B1): barang lama → varian Default, item lama → variant_id.
+	barang.MigrateVariants(db)
 
 	// Seed data master (anggota, pemasok, barang) bila masih kosong.
 	koperasi.Seed(db)

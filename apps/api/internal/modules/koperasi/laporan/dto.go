@@ -44,14 +44,16 @@ type OutstandingReport struct {
 	TotalRemaining float64           `json:"total_remaining"`
 }
 
-// Stok & nilai persediaan.
+// Stok & nilai persediaan — satu baris per varian barang (B1).
 type StockItem struct {
-	ProductID  uint    `json:"product_id"`
-	Name       string  `json:"name"`
-	Stock      int     `json:"stock"`
-	CostPrice  float64 `json:"cost_price"`
-	SalePrice  float64 `json:"sale_price"`
-	StockValue float64 `json:"stock_value"`
+	ProductID   uint    `json:"product_id"`
+	Name        string  `json:"name"`
+	VariantID   uint    `json:"variant_id"`
+	VariantName string  `json:"variant_name,omitempty"`
+	Stock       int     `json:"stock"`
+	CostPrice   float64 `json:"cost_price"`
+	SalePrice   float64 `json:"sale_price"`
+	StockValue  float64 `json:"stock_value"`
 }
 
 type StockReport struct {

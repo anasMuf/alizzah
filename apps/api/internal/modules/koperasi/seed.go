@@ -102,12 +102,25 @@ func seedProducts(db *gorm.DB) {
 	if count > 0 {
 		return
 	}
+	// Contoh: "Seragam Batik" ber-varian ukuran; lainnya satu varian "Default".
 	products := []barang.Product{
-		{Name: "Seragam Batik", Category: "Seragam", Unit: "pcs", CostPrice: 50000, SalePrice: 75000, Stock: 40, IsActive: true},
-		{Name: "Seragam Olahraga", Category: "Seragam", Unit: "set", CostPrice: 60000, SalePrice: 90000, Stock: 30, IsActive: true},
-		{Name: "Tas Sekolah", Category: "Perlengkapan", Unit: "pcs", CostPrice: 70000, SalePrice: 100000, Stock: 25, IsActive: true},
-		{Name: "Buku Tulis (lusin)", Category: "Alat Tulis", Unit: "lusin", CostPrice: 30000, SalePrice: 42000, Stock: 50, IsActive: true},
-		{Name: "Lunchbox", Category: "Perlengkapan", Unit: "pcs", CostPrice: 25000, SalePrice: 40000, Stock: 35, IsActive: true},
+		{Name: "Seragam Batik", Category: "Seragam", Unit: "pcs", IsActive: true, Variants: []barang.Variant{
+			{Name: "S", CostPrice: 50000, SalePrice: 75000, Stock: 15, IsActive: true},
+			{Name: "M", CostPrice: 50000, SalePrice: 75000, Stock: 15, IsActive: true},
+			{Name: "L", CostPrice: 55000, SalePrice: 80000, Stock: 10, IsActive: true},
+		}},
+		{Name: "Seragam Olahraga", Category: "Seragam", Unit: "set", IsActive: true, Variants: []barang.Variant{
+			{Name: barang.DefaultVariantName, CostPrice: 60000, SalePrice: 90000, Stock: 30, IsActive: true},
+		}},
+		{Name: "Tas Sekolah", Category: "Perlengkapan", Unit: "pcs", IsActive: true, Variants: []barang.Variant{
+			{Name: barang.DefaultVariantName, CostPrice: 70000, SalePrice: 100000, Stock: 25, IsActive: true},
+		}},
+		{Name: "Buku Tulis (lusin)", Category: "Alat Tulis", Unit: "lusin", IsActive: true, Variants: []barang.Variant{
+			{Name: barang.DefaultVariantName, CostPrice: 30000, SalePrice: 42000, Stock: 50, IsActive: true},
+		}},
+		{Name: "Lunchbox", Category: "Perlengkapan", Unit: "pcs", IsActive: true, Variants: []barang.Variant{
+			{Name: barang.DefaultVariantName, CostPrice: 25000, SalePrice: 40000, Stock: 35, IsActive: true},
+		}},
 	}
 	if err := db.Create(&products).Error; err != nil {
 		log.Printf("Seed koperasi products gagal: %v", err)

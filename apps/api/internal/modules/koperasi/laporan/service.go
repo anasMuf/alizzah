@@ -127,12 +127,14 @@ func (s *svc) Stock() (*StockReport, error) {
 	for _, r := range rows {
 		val := float64(r.Stock) * r.CostPrice
 		rep.Items = append(rep.Items, StockItem{
-			ProductID:  r.ProductID,
-			Name:       r.Name,
-			Stock:      r.Stock,
-			CostPrice:  r.CostPrice,
-			SalePrice:  r.SalePrice,
-			StockValue: val,
+			ProductID:   r.ProductID,
+			Name:        r.Name,
+			VariantID:   r.VariantID,
+			VariantName: r.VariantName,
+			Stock:       r.Stock,
+			CostPrice:   r.CostPrice,
+			SalePrice:   r.SalePrice,
+			StockValue:  val,
 		})
 		rep.TotalStockValue += val
 	}

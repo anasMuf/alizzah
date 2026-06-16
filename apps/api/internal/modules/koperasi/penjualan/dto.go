@@ -1,9 +1,12 @@
 package penjualan
 
 type CreateItemRequest struct {
-	ProductID uint     `json:"product_id" validate:"required"`
+	// Kirim variant_id (disarankan). product_id masih diterima demi kompatibilitas
+	// picker lama → di-resolve ke varian "Default" barang. Minimal salah satu wajib.
+	ProductID uint     `json:"product_id" validate:"omitempty"`
+	VariantID *uint    `json:"variant_id" validate:"omitempty"`
 	Quantity  int      `json:"quantity" validate:"required,gt=0"`
-	UnitPrice *float64 `json:"unit_price" validate:"omitempty,gte=0"` // kosong → pakai harga jual barang
+	UnitPrice *float64 `json:"unit_price" validate:"omitempty,gte=0"` // kosong → pakai harga jual varian
 }
 
 type CreateRequest struct {
@@ -27,6 +30,8 @@ type PaymentRequest struct {
 type ItemResponse struct {
 	ProductID   uint    `json:"product_id"`
 	ProductName string  `json:"product_name"`
+	VariantID   uint    `json:"variant_id"`
+	VariantName string  `json:"variant_name,omitempty"`
 	Quantity    int     `json:"quantity"`
 	UnitPrice   float64 `json:"unit_price"`
 	UnitCost    float64 `json:"unit_cost"`
@@ -66,6 +71,8 @@ func toResponse(s Sale) Response {
 		items = append(items, ItemResponse{
 			ProductID:   it.ProductID,
 			ProductName: it.ProductName,
+			VariantID:   it.VariantID,
+			VariantName: it.VariantName,
 			Quantity:    it.Quantity,
 			UnitPrice:   it.UnitPrice,
 			UnitCost:    it.UnitCost,

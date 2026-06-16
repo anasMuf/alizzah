@@ -79,7 +79,7 @@ func New(deps *shared.Deps) *Module {
 func (m *Module) Models() []any {
 	return []any{
 		&anggota.Member{},
-		&barang.Product{},
+		&barang.Product{}, &barang.Variant{},
 		&master.MasterData{},
 		&pemasok.Supplier{},
 		&kas.CashTransaction{},

@@ -35,6 +35,8 @@ type PurchaseItem struct {
 	PurchaseID  uint    `gorm:"not null;index" json:"purchase_id"`
 	ProductID   uint    `gorm:"not null;index" json:"product_id"`
 	ProductName string  `gorm:"size:100;not null" json:"product_name"`
+	VariantID   uint    `gorm:"index" json:"variant_id"`
+	VariantName string  `gorm:"size:50" json:"variant_name"`
 	Quantity    int     `gorm:"not null" json:"quantity"`
 	UnitPrice   float64 `gorm:"type:decimal(15,2);not null" json:"unit_price"`
 	Subtotal    float64 `gorm:"type:decimal(15,2);not null" json:"subtotal"`

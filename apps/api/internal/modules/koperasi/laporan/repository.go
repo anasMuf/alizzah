@@ -26,11 +26,13 @@ type outRow struct {
 }
 
 type stockRow struct {
-	ProductID uint
-	Name      string
-	Stock     int
-	CostPrice float64
-	SalePrice float64
+	ProductID   uint
+	Name        string
+	VariantID   uint
+	VariantName string
+	Stock       int
+	CostPrice   float64
+	SalePrice   float64
 }
 
 type repo struct{ db *gorm.DB }
@@ -106,9 +108,10 @@ func (r *repo) Payables(ayID uint) ([]outRow, error) {
 
 func (r *repo) Stock() ([]stockRow, error) {
 	var rows []stockRow
-	err := r.db.Table("koperasi_products").
-		Select("id as product_id, name, stock, cost_price, sale_price").
-		Where("deleted_at IS NULL").
-		Order("name ASC").Scan(&rows).Error
+	err := r.db.Table("koperasi_product_variants AS v").
+		Select("v.product_id, p.name AS name, v.id AS variant_id, v.name AS variant_name, v.stock, v.cost_price, v.sale_price").
+		Joins("JOIN koperasi_products p ON p.id = v.product_id").
+		Where("v.deleted_at IS NULL AND p.deleted_at IS NULL").
+		Order("p.name ASC, v.id ASC").Scan(&rows).Error
 	return rows, err
 }

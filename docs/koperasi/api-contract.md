@@ -47,6 +47,13 @@
 
 ## Detail Endpoint Kunci
 
+### Varian barang (B1)
+Harga modal, harga jual, dan stok berada di **level varian** (`koperasi_product_variants`). Setiap barang punya ≥1 varian; barang "tanpa varian" = satu varian `Default`.
+- `POST/PUT /koperasi/products` menerima `variants: [{id?, name, cost_price, sale_price, stock?, is_active?}]`. Bila `variants` kosong, field legacy `cost_price/sale_price/stock` membuat/memperbarui satu varian `Default` (kompatibilitas form lama).
+- `GET /koperasi/products` mengembalikan `variants[]` + `variant_count`, plus agregat kompatibilitas (`cost_price`/`sale_price` varian default, `stock` = total stok semua varian).
+- Item **penjualan & pembelian** menerima `variant_id` (disarankan). `product_id` masih diterima dan di-resolve ke varian `Default`. Item menyimpan snapshot `variant_id` + `variant_name`.
+- `GET /koperasi/reports/stock` kini **satu baris per varian** (`variant_id`, `variant_name`).
+
 ### Penyaluran Modal — seam lintas modul (D1)
 ```
 POST /koperasi/capital-injections      (superadmin | admin_keuangan)

@@ -38,6 +38,26 @@ func NewService(
 	return &svc{db: db, repo: repo, barangRepo: barangRepo, studentRepo: studentRepo, paymentSvc: paymentSvc, ayRepo: ayRepo}
 }
 
+// resolveVariant menentukan varian sebuah item: pakai variant_id bila dikirim,
+// kalau tidak resolve product_id → varian "Default" barang (kompatibilitas picker lama).
+func (s *svc) resolveVariant(tx *gorm.DB, it CreateItemRequest) (*barang.Variant, error) {
+	if it.VariantID != nil && *it.VariantID > 0 {
+		v, err := s.barangRepo.FindVariantByIDWithTx(tx, *it.VariantID)
+		if err != nil {
+			return nil, errors.New("Varian barang tidak ditemukan")
+		}
+		return v, nil
+	}
+	if it.ProductID > 0 {
+		v, err := s.barangRepo.DefaultVariantWithTx(tx, it.ProductID)
+		if err != nil {
+			return nil, errors.New("Barang tidak ditemukan")
+		}
+		return v, nil
+	}
+	return nil, errors.New("Item penjualan tidak valid: product_id atau variant_id wajib diisi")
+}
+
 func statusFor(paid, total float64) string {
 	if paid <= 0 {
 		return "unpaid"
@@ -67,14 +87,18 @@ func (s *svc) Create(req CreateRequest, createdBy uint) (*Response, error) {
 		var total float64
 		items := make([]SaleItem, 0, len(req.Items))
 		for _, it := range req.Items {
-			prod, err := s.barangRepo.FindByIDWithTx(tx, it.ProductID)
+			variant, err := s.resolveVariant(tx, it)
+			if err != nil {
+				return err
+			}
+			prod, err := s.barangRepo.FindByIDWithTx(tx, variant.ProductID)
 			if err != nil {
 				return errors.New("Barang tidak ditemukan")
 			}
-			if prod.Stock < it.Quantity {
+			if variant.Stock < it.Quantity {
 				return errors.New("Tidak bisa menjual, stok barang tidak mencukupi")
 			}
-			price := prod.SalePrice
+			price := variant.SalePrice
 			if it.UnitPrice != nil {
 				price = *it.UnitPrice
 			}
@@ -82,8 +106,9 @@ func (s *svc) Create(req CreateRequest, createdBy uint) (*Response, error) {
 			total += sub
 			items = append(items, SaleItem{
 				ProductID: prod.ID, ProductName: prod.Name,
+				VariantID: variant.ID, VariantName: variant.Name,
 				Quantity: it.Quantity, UnitPrice: price,
-				UnitCost: prod.CostPrice, // snapshot HPP (D5)
+				UnitCost: variant.CostPrice, // snapshot HPP varian (D5)
 				Subtotal: sub,
 			})
 		}
@@ -107,9 +132,9 @@ func (s *svc) Create(req CreateRequest, createdBy uint) (*Response, error) {
 		if err := s.repo.CreateWithTx(sale, tx); err != nil {
 			return err
 		}
-		// Stok berkurang (stok-out).
+		// Stok berkurang (stok-out) di level varian.
 		for _, it := range sale.Items {
-			if err := s.barangRepo.AdjustStockWithTx(tx, it.ProductID, -it.Quantity); err != nil {
+			if err := s.barangRepo.AdjustVariantStockWithTx(tx, it.VariantID, -it.Quantity); err != nil {
 				return err
 			}
 		}

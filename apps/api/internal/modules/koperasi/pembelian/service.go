@@ -39,6 +39,26 @@ func NewService(
 	return &svc{db: db, repo: repo, barangRepo: barangRepo, supplierRepo: supplierRepo, paymentSvc: paymentSvc, ayRepo: ayRepo}
 }
 
+// resolveVariant menentukan varian sebuah item: pakai variant_id bila dikirim,
+// kalau tidak resolve product_id → varian "Default" barang (kompatibilitas picker lama).
+func (s *svc) resolveVariant(tx *gorm.DB, it CreateItemRequest) (*barang.Variant, error) {
+	if it.VariantID != nil && *it.VariantID > 0 {
+		v, err := s.barangRepo.FindVariantByIDWithTx(tx, *it.VariantID)
+		if err != nil {
+			return nil, errors.New("Varian barang tidak ditemukan")
+		}
+		return v, nil
+	}
+	if it.ProductID > 0 {
+		v, err := s.barangRepo.DefaultVariantWithTx(tx, it.ProductID)
+		if err != nil {
+			return nil, errors.New("Barang tidak ditemukan")
+		}
+		return v, nil
+	}
+	return nil, errors.New("Item pembelian tidak valid: product_id atau variant_id wajib diisi")
+}
+
 func statusFor(paid, total float64) string {
 	if paid <= 0 {
 		return "unpaid"
@@ -66,7 +86,11 @@ func (s *svc) Create(req CreateRequest, createdBy uint) (*Response, error) {
 		var total float64
 		items := make([]PurchaseItem, 0, len(req.Items))
 		for _, it := range req.Items {
-			prod, err := s.barangRepo.FindByIDWithTx(tx, it.ProductID)
+			variant, err := s.resolveVariant(tx, it)
+			if err != nil {
+				return err
+			}
+			prod, err := s.barangRepo.FindByIDWithTx(tx, variant.ProductID)
 			if err != nil {
 				return errors.New("Barang tidak ditemukan")
 			}
@@ -74,6 +98,7 @@ func (s *svc) Create(req CreateRequest, createdBy uint) (*Response, error) {
 			total += sub
 			items = append(items, PurchaseItem{
 				ProductID: prod.ID, ProductName: prod.Name,
+				VariantID: variant.ID, VariantName: variant.Name,
 				Quantity: it.Quantity, UnitPrice: it.UnitPrice, Subtotal: sub,
 			})
 		}
@@ -97,9 +122,9 @@ func (s *svc) Create(req CreateRequest, createdBy uint) (*Response, error) {
 		if err := s.repo.CreateWithTx(p, tx); err != nil {
 			return err
 		}
-		// Stok bertambah (restock). Harga modal TIDAK auto-update (D5).
+		// Stok bertambah (restock) di level varian. Harga modal TIDAK auto-update (D5).
 		for _, it := range p.Items {
-			if err := s.barangRepo.AdjustStockWithTx(tx, it.ProductID, it.Quantity); err != nil {
+			if err := s.barangRepo.AdjustVariantStockWithTx(tx, it.VariantID, it.Quantity); err != nil {
 				return err
 			}
 		}

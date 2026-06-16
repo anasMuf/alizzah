@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ApiError } from "#/api/mutator/custom-instance";
 import { Button, FormField, SlideOver, useToast } from "#/components/ui";
+import { MasterSelect } from "../master/MasterSelect";
 import {
 	type Product,
 	type ProductInput,
@@ -102,21 +103,21 @@ export function BarangForm({ isOpen, onClose, initialData }: BarangFormProps) {
 				/>
 
 				<div className="grid grid-cols-2 gap-4">
-					<FormField
+					<MasterSelect
 						id="category"
-						name="category"
 						label="Kategori"
-						placeholder="e.g. Seragam"
+						kind="categories"
 						value={form.category ?? ""}
-						onChange={(e) => setForm({ ...form, category: e.target.value })}
+						onChange={(v) => setForm({ ...form, category: v })}
+						placeholder="— pilih kategori —"
 					/>
-					<FormField
+					<MasterSelect
 						id="unit"
-						name="unit"
 						label="Satuan"
-						placeholder="e.g. pcs"
+						kind="units"
 						value={form.unit ?? ""}
-						onChange={(e) => setForm({ ...form, unit: e.target.value })}
+						onChange={(v) => setForm({ ...form, unit: v })}
+						placeholder="— pilih satuan —"
 					/>
 				</div>
 

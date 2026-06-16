@@ -17,6 +17,7 @@ import (
 	"api/internal/modules/koperasi/kas"
 	"api/internal/modules/koperasi/lainlain"
 	"api/internal/modules/koperasi/laporan"
+	"api/internal/modules/koperasi/master"
 	"api/internal/modules/koperasi/modal"
 	"api/internal/modules/koperasi/pemasok"
 	"api/internal/modules/koperasi/pembayaran"
@@ -34,6 +35,7 @@ import (
 type Module struct {
 	anggota   *anggota.Handler
 	barang    *barang.Handler
+	master    *master.Handler
 	pemasok   *pemasok.Handler
 	kas       *kas.Handler
 	modal     *modal.Handler
@@ -60,6 +62,7 @@ func New(deps *shared.Deps) *Module {
 	return &Module{
 		anggota:   anggota.New(db),
 		barang:    barang.New(db),
+		master:    master.New(db),
 		pemasok:   pemasok.New(db),
 		kas:       kas.New(db),
 		modal:     modal.New(db, cashWriter),
@@ -77,6 +80,7 @@ func (m *Module) Models() []any {
 	return []any{
 		&anggota.Member{},
 		&barang.Product{},
+		&master.MasterData{},
 		&pemasok.Supplier{},
 		&kas.CashTransaction{},
 		&modal.CapitalInjection{},
@@ -100,6 +104,7 @@ func (m *Module) RegisterRoutes(api *echo.Group) {
 	manage := middleware.RequireRoles("superadmin", "admin_koperasi")
 	m.anggota.RegisterRoutes(g, manage)
 	m.barang.RegisterRoutes(g, manage)
+	m.master.RegisterRoutes(g, manage)
 	m.pemasok.RegisterRoutes(g, manage)
 	m.pembelian.RegisterRoutes(g, manage)
 	m.penjualan.RegisterRoutes(g, manage)

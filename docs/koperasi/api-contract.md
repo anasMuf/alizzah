@@ -32,6 +32,8 @@
 | Anggota | `GET/POST /koperasi/members`, `GET/PUT/DELETE /koperasi/members/:id` |
 | Pemasok | `GET/POST /koperasi/suppliers`, `GET/PUT/DELETE /koperasi/suppliers/:id` |
 | Barang | `GET/POST /koperasi/products`, `GET/PUT/DELETE /koperasi/products/:id` |
+| Master Kategori | `GET/POST /koperasi/categories`, `PUT/DELETE /koperasi/categories/:id` (sumber dropdown barang, B2) |
+| Master Satuan | `GET/POST /koperasi/units`, `PUT/DELETE /koperasi/units/:id` (sumber dropdown barang, B2) |
 | Modal | `GET/POST /koperasi/capital-injections`, `GET /koperasi/capital-injections/:id` |
 | Penjualan | `GET/POST /koperasi/sales`, `GET/DELETE /koperasi/sales/:id` |
 | Pembelian | `GET/POST /koperasi/purchases`, `GET/DELETE /koperasi/purchases/:id` |

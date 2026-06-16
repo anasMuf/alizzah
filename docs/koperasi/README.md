@@ -12,6 +12,7 @@ Unit usaha koperasi sekolah sebagai **entitas keuangan mandiri** di dashboard Al
 | 5 | [`frontend-implementation-plan.md`](./frontend-implementation-plan.md) | **Breakdown fase frontend (FE-0..FE-5)**: pola referensi, RBAC, urutan per-halaman, DoD |
 | 6 | [`feedback-01.md`](./feedback-01.md) | **Feedback putaran 1** (operasional, pasca FE): varian barang, POS, master kategori/satuan, bulk anggota, validasi |
 | 7 | [`penyaluran-dana-koperasi.md`](./penyaluran-dana-koperasi.md) | **Koreksi alur dana (M1):** modal manual diganti — dana koperasi dari item Biaya Awal/Registrasi yg dibayar siswa → penjualan koperasi + kas (lintas modul) |
+| 8 | [`status-dan-lanjutan.md`](./status-dan-lanjutan.md) | **Handoff:** status pengerjaan feedback (Step 1 selesai), cara run+verify lokal, konvensi FE koperasi, rencana berikutnya (POS dst) dengan pointer file |
 
 > Belum dibuat (opsional): `ux-flow.md`, `ui-spec.md`.
 
@@ -25,4 +26,4 @@ Unit usaha koperasi sekolah sebagai **entitas keuangan mandiri** di dashboard Al
 - **A1** Usul role baru `admin_koperasi` (perlu konfirmasi akhir).
 
 ## Status
-🟢 **Selesai** — Backend (sub-batch 8a–8e) & Frontend (FE-0…FE-5) seluruhnya ter-merge ke develop. Lihat [`frontend-implementation-plan.md`](./frontend-implementation-plan.md) untuk rincian fase.
+🟢 Modul dasar (Backend 8a–8e + Frontend FE-0…FE-5) ter-merge ke develop. **Feedback putaran 1 — Step 1 (hapus potong_gaji, master kategori/satuan, varian barang) SELESAI & ter-merge.** Berikutnya: POS penjualan/pembelian. Rincian status & cara melanjutkan: [`status-dan-lanjutan.md`](./status-dan-lanjutan.md).

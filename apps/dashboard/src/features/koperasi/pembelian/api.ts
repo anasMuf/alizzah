@@ -7,6 +7,8 @@ export type PaymentMethod = "cash";
 export interface PurchaseItem {
 	product_id: number;
 	product_name: string;
+	variant_id: number;
+	variant_name?: string;
 	quantity: number;
 	unit_price: number;
 	subtotal: number;
@@ -31,6 +33,7 @@ export interface Purchase {
 
 export interface PurchaseItemInput {
 	product_id: number;
+	variant_id: number;
 	quantity: number;
 	unit_price: number;
 }

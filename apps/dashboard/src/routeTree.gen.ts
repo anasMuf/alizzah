@@ -46,6 +46,7 @@ import { Route as AuthenticatedPengaturanTarifIdRouteImport } from './routes/_au
 import { Route as AuthenticatedKoperasiPinjamanIdRouteImport } from './routes/_authenticated/koperasi/pinjaman/$id'
 import { Route as AuthenticatedKoperasiPenjualanPosRouteImport } from './routes/_authenticated/koperasi/penjualan/pos'
 import { Route as AuthenticatedKoperasiPenjualanIdRouteImport } from './routes/_authenticated/koperasi/penjualan/$id'
+import { Route as AuthenticatedKoperasiPembelianPosRouteImport } from './routes/_authenticated/koperasi/pembelian/pos'
 import { Route as AuthenticatedKoperasiPembelianIdRouteImport } from './routes/_authenticated/koperasi/pembelian/$id'
 import { Route as AuthenticatedKeuanganTagihanIdRouteImport } from './routes/_authenticated/keuangan/tagihan/$id'
 import { Route as AuthenticatedKeuanganPengeluaranKategoriRouteImport } from './routes/_authenticated/keuangan/pengeluaran/kategori'
@@ -305,6 +306,12 @@ const AuthenticatedKoperasiPenjualanIdRoute =
   AuthenticatedKoperasiPenjualanIdRouteImport.update({
     id: '/koperasi/penjualan/$id',
     path: '/koperasi/penjualan/$id',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedKoperasiPembelianPosRoute =
+  AuthenticatedKoperasiPembelianPosRouteImport.update({
+    id: '/koperasi/pembelian/pos',
+    path: '/koperasi/pembelian/pos',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedKoperasiPembelianIdRoute =
@@ -612,6 +619,7 @@ export interface FileRoutesByFullPath {
   '/keuangan/pengeluaran/kategori': typeof AuthenticatedKeuanganPengeluaranKategoriRoute
   '/keuangan/tagihan/$id': typeof AuthenticatedKeuanganTagihanIdRoute
   '/koperasi/pembelian/$id': typeof AuthenticatedKoperasiPembelianIdRoute
+  '/koperasi/pembelian/pos': typeof AuthenticatedKoperasiPembelianPosRoute
   '/koperasi/penjualan/$id': typeof AuthenticatedKoperasiPenjualanIdRoute
   '/koperasi/penjualan/pos': typeof AuthenticatedKoperasiPenjualanPosRoute
   '/koperasi/pinjaman/$id': typeof AuthenticatedKoperasiPinjamanIdRoute
@@ -692,6 +700,7 @@ export interface FileRoutesByTo {
   '/keuangan/pengeluaran/kategori': typeof AuthenticatedKeuanganPengeluaranKategoriRoute
   '/keuangan/tagihan/$id': typeof AuthenticatedKeuanganTagihanIdRoute
   '/koperasi/pembelian/$id': typeof AuthenticatedKoperasiPembelianIdRoute
+  '/koperasi/pembelian/pos': typeof AuthenticatedKoperasiPembelianPosRoute
   '/koperasi/penjualan/$id': typeof AuthenticatedKoperasiPenjualanIdRoute
   '/koperasi/penjualan/pos': typeof AuthenticatedKoperasiPenjualanPosRoute
   '/koperasi/pinjaman/$id': typeof AuthenticatedKoperasiPinjamanIdRoute
@@ -775,6 +784,7 @@ export interface FileRoutesById {
   '/_authenticated/keuangan/pengeluaran/kategori': typeof AuthenticatedKeuanganPengeluaranKategoriRoute
   '/_authenticated/keuangan/tagihan/$id': typeof AuthenticatedKeuanganTagihanIdRoute
   '/_authenticated/koperasi/pembelian/$id': typeof AuthenticatedKoperasiPembelianIdRoute
+  '/_authenticated/koperasi/pembelian/pos': typeof AuthenticatedKoperasiPembelianPosRoute
   '/_authenticated/koperasi/penjualan/$id': typeof AuthenticatedKoperasiPenjualanIdRoute
   '/_authenticated/koperasi/penjualan/pos': typeof AuthenticatedKoperasiPenjualanPosRoute
   '/_authenticated/koperasi/pinjaman/$id': typeof AuthenticatedKoperasiPinjamanIdRoute
@@ -858,6 +868,7 @@ export interface FileRouteTypes {
     | '/keuangan/pengeluaran/kategori'
     | '/keuangan/tagihan/$id'
     | '/koperasi/pembelian/$id'
+    | '/koperasi/pembelian/pos'
     | '/koperasi/penjualan/$id'
     | '/koperasi/penjualan/pos'
     | '/koperasi/pinjaman/$id'
@@ -938,6 +949,7 @@ export interface FileRouteTypes {
     | '/keuangan/pengeluaran/kategori'
     | '/keuangan/tagihan/$id'
     | '/koperasi/pembelian/$id'
+    | '/koperasi/pembelian/pos'
     | '/koperasi/penjualan/$id'
     | '/koperasi/penjualan/pos'
     | '/koperasi/pinjaman/$id'
@@ -1020,6 +1032,7 @@ export interface FileRouteTypes {
     | '/_authenticated/keuangan/pengeluaran/kategori'
     | '/_authenticated/keuangan/tagihan/$id'
     | '/_authenticated/koperasi/pembelian/$id'
+    | '/_authenticated/koperasi/pembelian/pos'
     | '/_authenticated/koperasi/penjualan/$id'
     | '/_authenticated/koperasi/penjualan/pos'
     | '/_authenticated/koperasi/pinjaman/$id'
@@ -1321,6 +1334,13 @@ declare module '@tanstack/react-router' {
       path: '/koperasi/penjualan/$id'
       fullPath: '/koperasi/penjualan/$id'
       preLoaderRoute: typeof AuthenticatedKoperasiPenjualanIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/koperasi/pembelian/pos': {
+      id: '/_authenticated/koperasi/pembelian/pos'
+      path: '/koperasi/pembelian/pos'
+      fullPath: '/koperasi/pembelian/pos'
+      preLoaderRoute: typeof AuthenticatedKoperasiPembelianPosRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/koperasi/pembelian/$id': {
@@ -1704,6 +1724,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedKeuanganPengeluaranKategoriRoute: typeof AuthenticatedKeuanganPengeluaranKategoriRoute
   AuthenticatedKeuanganTagihanIdRoute: typeof AuthenticatedKeuanganTagihanIdRoute
   AuthenticatedKoperasiPembelianIdRoute: typeof AuthenticatedKoperasiPembelianIdRoute
+  AuthenticatedKoperasiPembelianPosRoute: typeof AuthenticatedKoperasiPembelianPosRoute
   AuthenticatedKoperasiPenjualanIdRoute: typeof AuthenticatedKoperasiPenjualanIdRoute
   AuthenticatedKoperasiPenjualanPosRoute: typeof AuthenticatedKoperasiPenjualanPosRoute
   AuthenticatedKoperasiPinjamanIdRoute: typeof AuthenticatedKoperasiPinjamanIdRoute
@@ -1806,6 +1827,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedKeuanganPengeluaranKategoriRoute,
   AuthenticatedKeuanganTagihanIdRoute: AuthenticatedKeuanganTagihanIdRoute,
   AuthenticatedKoperasiPembelianIdRoute: AuthenticatedKoperasiPembelianIdRoute,
+  AuthenticatedKoperasiPembelianPosRoute:
+    AuthenticatedKoperasiPembelianPosRoute,
   AuthenticatedKoperasiPenjualanIdRoute: AuthenticatedKoperasiPenjualanIdRoute,
   AuthenticatedKoperasiPenjualanPosRoute:
     AuthenticatedKoperasiPenjualanPosRoute,

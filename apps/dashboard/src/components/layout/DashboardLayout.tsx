@@ -7,6 +7,7 @@ import { Topbar } from "./Topbar";
 const FULL_BLEED_ROUTES = [
 	"/keuangan/pembayaran/baru",
 	"/koperasi/penjualan/pos",
+	"/koperasi/pembelian/pos",
 ];
 
 export function DashboardLayout() {

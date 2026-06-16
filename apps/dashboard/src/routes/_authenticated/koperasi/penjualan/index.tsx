@@ -2,14 +2,13 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { AlertCircle, ChevronRight, Plus, ShoppingCart } from "lucide-react";
 import { useState } from "react";
-import { Badge, Button, EmptyState } from "#/components/ui";
+import { Badge, Button } from "#/components/ui";
 import { academicYearAtom } from "#/store/global";
 import { formatCurrency, formatDate } from "#/utils/format";
 import {
 	type SaleStatus,
 	useSales,
 } from "../../../../features/koperasi/penjualan/api";
-import { PenjualanForm } from "../../../../features/koperasi/penjualan/PenjualanForm";
 
 export const Route = createFileRoute("/_authenticated/koperasi/penjualan/")({
 	component: PenjualanListPage,
@@ -30,7 +29,6 @@ function PenjualanListPage() {
 	const [activeAy] = useAtom(academicYearAtom);
 	const [page, setPage] = useState(1);
 	const [status, setStatus] = useState("");
-	const [isFormOpen, setIsFormOpen] = useState(false);
 
 	const { data, isLoading, isError } = useSales(activeAy?.id, page, status);
 	const rows = data?.data ?? [];
@@ -60,9 +58,11 @@ function PenjualanListPage() {
 						Penjualan barang koperasi — Tahun Ajaran {activeAy.name}.
 					</p>
 				</div>
-				<Button variant="primary" onClick={() => setIsFormOpen(true)}>
-					<Plus className="h-4 w-4 mr-1.5" /> Catat Penjualan
-				</Button>
+				<Link to="/koperasi/penjualan/pos">
+					<Button variant="primary">
+						<Plus className="h-4 w-4 mr-1.5" /> Catat Penjualan
+					</Button>
+				</Link>
 			</div>
 
 			<div className="flex gap-2">
@@ -90,11 +90,15 @@ function PenjualanListPage() {
 			) : isError ? (
 				<p className="text-sm text-red-600">Gagal memuat penjualan.</p>
 			) : rows.length === 0 ? (
-				<EmptyState
-					icon={<ShoppingCart className="h-10 w-10 text-gray-400" />}
-					title="Belum ada penjualan"
-					description="Catat penjualan barang koperasi untuk mulai mencatat transaksi."
-				/>
+				<div className="rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
+					<ShoppingCart className="mx-auto h-10 w-10 text-gray-400" />
+					<h3 className="mt-4 text-sm font-semibold text-gray-900">
+						Belum ada penjualan
+					</h3>
+					<p className="mt-1 text-sm text-gray-500">
+						Catat penjualan barang koperasi untuk mulai mencatat transaksi.
+					</p>
+				</div>
 			) : (
 				<>
 					<div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
@@ -191,8 +195,6 @@ function PenjualanListPage() {
 					)}
 				</>
 			)}
-
-			<PenjualanForm isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} />
 		</div>
 	);
 }

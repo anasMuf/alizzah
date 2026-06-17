@@ -78,7 +78,7 @@ func New(deps *shared.Deps) *Module {
 // Models mengembalikan seluruh model GORM milik modul untuk dipakai AutoMigrate.
 func (m *Module) Models() []any {
 	return []any{
-		&anggota.Member{},
+		&anggota.Employee{}, &anggota.Member{},
 		&barang.Product{}, &barang.Variant{},
 		&master.MasterData{},
 		&pemasok.Supplier{},

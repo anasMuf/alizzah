@@ -3,6 +3,7 @@ package koperasi
 import (
 	"log"
 	"strings"
+	"time"
 
 	"api/internal/modules/koperasi/anggota"
 	"api/internal/modules/koperasi/barang"
@@ -17,6 +18,7 @@ import (
 // tiap bagian dilewati bila sudah ada datanya. Hanya master (tanpa transaksi)
 // agar tidak bergantung pada tahun ajaran / seam kas.
 func Seed(db *gorm.DB) {
+	seedEmployees(db)
 	seedMembers(db)
 	seedSuppliers(db)
 	seedProducts(db)
@@ -56,6 +58,63 @@ func seedMasterData(db *gorm.DB) {
 		upsert(master.KindUnit, name)
 	}
 	log.Printf("Seed koperasi: master %d kategori, %d satuan (idempotent)", len(categories), len(units))
+}
+
+func parseDate(s string) *time.Time {
+	if s == "" {
+		return nil
+	}
+	t, err := time.Parse("2006-01-02", s)
+	if err != nil {
+		return nil
+	}
+	return &t
+}
+
+func seedEmployees(db *gorm.DB) {
+	var count int64
+	db.Model(&anggota.Employee{}).Count(&count)
+	if count > 0 {
+		return
+	}
+	employees := []anggota.Employee{
+		{LegacyID: 1, FullName: "Abdul Rohim, S.PdI", JoinDate: parseDate("2005-11-15"), IsActive: true},
+		{LegacyID: 2, FullName: "Khoirul  Izzah, S.Pd AUD", JoinDate: parseDate("2005-11-15"), IsActive: true},
+		{LegacyID: 3, FullName: "Miftahul Jannah, S.Pd", JoinDate: parseDate("2005-11-15"), IsActive: true},
+		{LegacyID: 4, FullName: "Fatimah Zahroh, S.Pd", JoinDate: parseDate("2005-11-15"), IsActive: true},
+		{LegacyID: 5, FullName: "Umami Faizah, SE, S.Pd", JoinDate: parseDate("2005-11-15"), IsActive: true},
+		{LegacyID: 7, FullName: "Iin Mayasari, S.Pd", JoinDate: parseDate("2007-03-01"), IsActive: true},
+		{LegacyID: 8, FullName: "Indah Susanti, S.Pd", JoinDate: parseDate("2008-06-02"), IsActive: true},
+		{LegacyID: 9, FullName: "Sri Wahyudati, S.Pd", JoinDate: parseDate("2011-07-01"), IsActive: true},
+		{LegacyID: 10, FullName: "Maratul Mufidah, S.Pd", JoinDate: parseDate("2012-07-01"), IsActive: true},
+		{LegacyID: 11, FullName: "Siti Zulaikhah, S.Pd", JoinDate: parseDate("2013-06-01"), IsActive: true},
+		{LegacyID: 12, FullName: "Khafidhotul Mushonnifah", JoinDate: parseDate("2013-07-01"), IsActive: true},
+		{LegacyID: 13, FullName: "Heni Khumaaidah, S.Pd", JoinDate: parseDate("2014-09-01"), IsActive: true},
+		{LegacyID: 15, FullName: "Choirul Ummah", JoinDate: parseDate("2015-02-01"), IsActive: true},
+		{LegacyID: 16, FullName: "Elis Masrikhah, S.Pd", JoinDate: parseDate("2015-07-01"), IsActive: true},
+		{LegacyID: 17, FullName: "Fitriyah Hanim, S.Pd", JoinDate: parseDate("2015-11-01"), IsActive: true},
+		{LegacyID: 19, FullName: "Nur Fadilah, s.Pd", JoinDate: parseDate("2016-06-01"), IsActive: true},
+		{LegacyID: 20, FullName: "Dini Mayasusanti, S.Pd", JoinDate: parseDate("2016-07-07"), IsActive: true},
+		{LegacyID: 22, FullName: "Husnul Khotimah", JoinDate: parseDate("2017-03-27"), IsActive: true},
+		{LegacyID: 23, FullName: "Triana Septi Anifah", JoinDate: parseDate("2017-03-27"), IsActive: true},
+		{LegacyID: 24, FullName: "Ifatin Nikmah, S.Pd", JoinDate: parseDate("2018-03-12"), IsActive: true},
+		{LegacyID: 25, FullName: "Mei Nur Firdaus, S.S", JoinDate: parseDate("2019-06-01"), IsActive: true},
+		{LegacyID: 27, FullName: "Nur Sa'diyah", JoinDate: parseDate(""), IsActive: true},
+		{LegacyID: 28, FullName: "Faizatur Rohmah", JoinDate: parseDate("2021-11-22"), IsActive: true},
+		{LegacyID: 30, FullName: "Anita Khoirina, S.Pd", JoinDate: parseDate("2021-10-22"), IsActive: true},
+		{LegacyID: 31, FullName: "Dhiayu  Choirun Nisak, S.Pd", JoinDate: parseDate("2022-06-06"), IsActive: true},
+		{LegacyID: 32, FullName: "Qurrotul Azizah", JoinDate: parseDate("2022-08-26"), IsActive: true},
+		{LegacyID: 33, FullName: "Ika Nur Istiqomah", JoinDate: parseDate("2022-10-25"), IsActive: true},
+		{LegacyID: 36, FullName: "Rizky Nurus Shobah", JoinDate: parseDate("2023-09-04"), IsActive: true},
+		{LegacyID: 38, FullName: "Nadlifatul Faniyah", JoinDate: parseDate("2023-08-15"), IsActive: true},
+		{LegacyID: 39, FullName: "Khiqma Liatul Khoirina", JoinDate: parseDate("2025-09-15"), IsActive: true},
+		{LegacyID: 40, FullName: "Anindya Margaretha Setya  Winara", JoinDate: parseDate("2025-09-15"), IsActive: true},
+	}
+	if err := db.Create(&employees).Error; err != nil {
+		log.Printf("Seed koperasi employees gagal: %v", err)
+		return
+	}
+	log.Printf("Seed koperasi: %d pegawai (referensi)", len(employees))
 }
 
 func seedMembers(db *gorm.DB) {

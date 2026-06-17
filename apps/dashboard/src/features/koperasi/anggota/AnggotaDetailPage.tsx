@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Edit, HandCoins, ShoppingCart } from "lucide-react";
+import { ArrowLeft, Edit, HandCoins } from "lucide-react";
 import { useState } from "react";
 import { Badge, Button } from "#/components/ui";
 import { formatCurrency } from "#/utils/format";
@@ -118,11 +118,11 @@ export function AnggotaDetailPage({ id }: AnggotaDetailPageProps) {
 				<h2 className="text-lg font-semibold text-gray-900 mb-4">
 					Aksi Cepat
 				</h2>
-				<div className="max-w-md">
+				<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
 					<Link
 						to="/koperasi/pinjaman"
 						search={{ action: "new", member_id: detail.id }}
-						className="relative rounded-lg border border-gray-300 bg-white p-5 shadow-sm hover:border-indigo-500 focus:outline-none transition-colors block"
+						className="relative rounded-lg border border-gray-300 bg-white p-5 shadow-sm hover:border-indigo-500 focus:outline-none transition-colors"
 					>
 						<div className="flex items-center gap-4">
 							<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">

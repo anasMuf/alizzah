@@ -14,6 +14,12 @@ import { PinjamanForm } from "../../../../features/koperasi/pinjaman/PinjamanFor
 
 export const Route = createFileRoute("/_authenticated/koperasi/pinjaman/")({
 	component: PinjamanListPage,
+	validateSearch: (search: Record<string, unknown>): { action?: string; member_id?: number } => {
+		return {
+			action: search.action as string | undefined,
+			member_id: search.member_id as number | undefined,
+		};
+	},
 });
 
 const LIMIT = 20;
@@ -29,10 +35,11 @@ const STATUS: Record<
 
 function PinjamanListPage() {
 	const [activeAy] = useAtom(academicYearAtom);
+	const search = Route.useSearch();
 	const [view, setView] = useState<"list" | "summary">("list");
 	const [page, setPage] = useState(1);
 	const [status, setStatus] = useState("");
-	const [isFormOpen, setIsFormOpen] = useState(false);
+	const [isFormOpen, setIsFormOpen] = useState(search.action === "new");
 
 	if (!activeAy) {
 		return (
@@ -91,7 +98,11 @@ function PinjamanListPage() {
 				<LoanSummary ayId={activeAy.id} />
 			)}
 
-			<PinjamanForm isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} />
+			<PinjamanForm
+				isOpen={isFormOpen}
+				onClose={() => setIsFormOpen(false)}
+				initialMemberId={search.member_id}
+			/>
 		</div>
 	);
 }

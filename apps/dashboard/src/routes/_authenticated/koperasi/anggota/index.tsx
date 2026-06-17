@@ -8,15 +8,15 @@ import {
 	EmptyState,
 	useToast,
 } from "#/components/ui";
-import { AnggotaForm } from "../../../features/koperasi/anggota/AnggotaForm";
-import { BulkRegisterDialog } from "../../../features/koperasi/anggota/BulkRegisterDialog";
+import { AnggotaForm } from "../../../../features/koperasi/anggota/AnggotaForm";
+import { BulkRegisterDialog } from "../../../../features/koperasi/anggota/BulkRegisterDialog";
 import {
 	type Member,
 	useDeleteMember,
 	useMembers,
-} from "../../../features/koperasi/anggota/api";
+} from "../../../../features/koperasi/anggota/api";
 
-export const Route = createFileRoute("/_authenticated/koperasi/anggota")({
+export const Route = createFileRoute("/_authenticated/koperasi/anggota/")({
 	component: AnggotaPage,
 });
 

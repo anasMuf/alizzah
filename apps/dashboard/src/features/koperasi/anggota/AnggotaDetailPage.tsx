@@ -118,11 +118,11 @@ export function AnggotaDetailPage({ id }: AnggotaDetailPageProps) {
 				<h2 className="text-lg font-semibold text-gray-900 mb-4">
 					Aksi Cepat
 				</h2>
-				<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
+				<div className="max-w-md">
 					<Link
 						to="/koperasi/pinjaman"
 						search={{ action: "new", member_id: detail.id }}
-						className="relative rounded-lg border border-gray-300 bg-white p-5 shadow-sm hover:border-indigo-500 focus:outline-none transition-colors"
+						className="relative rounded-lg border border-gray-300 bg-white p-5 shadow-sm hover:border-indigo-500 focus:outline-none transition-colors block"
 					>
 						<div className="flex items-center gap-4">
 							<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
@@ -134,26 +134,6 @@ export function AnggotaDetailPage({ id }: AnggotaDetailPageProps) {
 								</span>
 								<span className="mt-1 block text-sm text-gray-500">
 									Catat pinjaman baru untuk anggota ini.
-								</span>
-							</div>
-						</div>
-					</Link>
-
-					<Link
-						to="/koperasi/penjualan"
-						search={{ action: "new", buyer_name: detail.full_name }}
-						className="relative rounded-lg border border-gray-300 bg-white p-5 shadow-sm hover:emerald-500 focus:outline-none transition-colors"
-					>
-						<div className="flex items-center gap-4">
-							<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600">
-								<ShoppingCart className="h-6 w-6" />
-							</div>
-							<div>
-								<span className="text-base font-semibold text-gray-900">
-									Catat Penjualan
-								</span>
-								<span className="mt-1 block text-sm text-gray-500">
-									Buka POS Penjualan dengan nama anggota.
 								</span>
 							</div>
 						</div>

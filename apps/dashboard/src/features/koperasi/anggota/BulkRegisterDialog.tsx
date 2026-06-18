@@ -1,19 +1,21 @@
 import { Search, Users } from "lucide-react";
 import { useMemo, useState } from "react";
+import { Button, EmptyState, SlideOver, useToast } from "#/components/ui";
 import {
-	Button,
-	SlideOver,
-	EmptyState,
-	useToast,
-} from "#/components/ui";
-import { useAvailableEmployees, useBulkCreateMembers, type MemberInput } from "./api";
+	type MemberInput,
+	useAvailableEmployees,
+	useBulkCreateMembers,
+} from "./api";
 
 interface BulkRegisterDialogProps {
 	isOpen: boolean;
 	onClose: () => void;
 }
 
-export function BulkRegisterDialog({ isOpen, onClose }: BulkRegisterDialogProps) {
+export function BulkRegisterDialog({
+	isOpen,
+	onClose,
+}: BulkRegisterDialogProps) {
 	const { addToast } = useToast();
 	const [search, setSearch] = useState("");
 	const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -92,7 +94,8 @@ export function BulkRegisterDialog({ isOpen, onClose }: BulkRegisterDialogProps)
 		>
 			<form onSubmit={handleSubmit} className="space-y-6">
 				<p className="text-sm text-gray-500">
-					Pilih pegawai yang belum terdaftar untuk ditambahkan sebagai anggota koperasi (tipe Pegawai).
+					Pilih pegawai yang belum terdaftar untuk ditambahkan sebagai anggota
+					koperasi (tipe Pegawai).
 				</p>
 
 				<div className="relative max-w-sm">

@@ -14,7 +14,9 @@ import { PinjamanForm } from "../../../../features/koperasi/pinjaman/PinjamanFor
 
 export const Route = createFileRoute("/_authenticated/koperasi/pinjaman/")({
 	component: PinjamanListPage,
-	validateSearch: (search: Record<string, unknown>): { action?: string; member_id?: number } => {
+	validateSearch: (
+		search: Record<string, unknown>,
+	): { action?: string; member_id?: number } => {
 		return {
 			action: search.action as string | undefined,
 			member_id: search.member_id as number | undefined,

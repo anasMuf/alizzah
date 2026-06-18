@@ -15,7 +15,11 @@ interface PinjamanFormProps {
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-export function PinjamanForm({ isOpen, onClose, initialMemberId }: PinjamanFormProps) {
+export function PinjamanForm({
+	isOpen,
+	onClose,
+	initialMemberId,
+}: PinjamanFormProps) {
 	const { addToast } = useToast();
 	const [activeAy] = useAtom(academicYearAtom);
 	const { data: members = [] } = useMembers();

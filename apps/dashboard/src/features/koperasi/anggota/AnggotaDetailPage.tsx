@@ -3,8 +3,8 @@ import { ArrowLeft, Edit, HandCoins } from "lucide-react";
 import { useState } from "react";
 import { Badge, Button } from "#/components/ui";
 import { formatCurrency } from "#/utils/format";
-import { useMemberDetail } from "./api";
 import { AnggotaForm } from "./AnggotaForm";
+import { useMemberDetail } from "./api";
 
 interface AnggotaDetailPageProps {
 	id: number;
@@ -115,9 +115,7 @@ export function AnggotaDetailPage({ id }: AnggotaDetailPageProps) {
 
 			{/* Action Shortcuts */}
 			<div>
-				<h2 className="text-lg font-semibold text-gray-900 mb-4">
-					Aksi Cepat
-				</h2>
+				<h2 className="text-lg font-semibold text-gray-900 mb-4">Aksi Cepat</h2>
 				<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
 					<Link
 						to="/koperasi/pinjaman"

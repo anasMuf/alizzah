@@ -120,6 +120,9 @@ export function useAvailableEmployees(search = "") {
 	return useQuery({
 		queryKey: [...employeeKeys.available, { search }],
 		queryFn: () =>
-			kopGet<Employee[]>("/employees/available", search ? { search } : undefined),
+			kopGet<Employee[]>(
+				"/employees/available",
+				search ? { search } : undefined,
+			),
 	});
 }

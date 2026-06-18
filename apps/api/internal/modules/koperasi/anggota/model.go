@@ -9,9 +9,12 @@ type Member struct {
 	FullName   string `gorm:"size:100;not null" json:"full_name"`
 	MemberType string `gorm:"size:20;not null" json:"member_type"`
 	Phone      string `gorm:"size:20" json:"phone"`
-	Address    string `gorm:"type:text" json:"address"`
-	IsActive   bool   `gorm:"not null;default:true" json:"is_active"`
+	Address    string    `gorm:"type:text" json:"address"`
+	IsActive   bool      `gorm:"not null;default:true" json:"is_active"`
+	EmployeeID *uint     `gorm:"index" json:"employee_id"`
 	model.BaseModelTimeAt
+
+	Employee *Employee `gorm:"foreignKey:EmployeeID" json:"-"`
 }
 
 func (Member) TableName() string { return "koperasi_members" }

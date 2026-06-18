@@ -39,6 +39,7 @@ tmp/
 
 # Docs source (reference images, etc.)
 docs/core/src/
+docs/sdm/src
 
 # OS
 .DS_Store

@@ -10,11 +10,16 @@ import { type LoanInput, type RepaymentMethod, useCreateLoan } from "./api";
 interface PinjamanFormProps {
 	isOpen: boolean;
 	onClose: () => void;
+	initialMemberId?: number;
 }
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-export function PinjamanForm({ isOpen, onClose }: PinjamanFormProps) {
+export function PinjamanForm({
+	isOpen,
+	onClose,
+	initialMemberId,
+}: PinjamanFormProps) {
 	const { addToast } = useToast();
 	const [activeAy] = useAtom(academicYearAtom);
 	const { data: members = [] } = useMembers();
@@ -29,7 +34,7 @@ export function PinjamanForm({ isOpen, onClose }: PinjamanFormProps) {
 
 	useEffect(() => {
 		if (isOpen) {
-			setMemberId(0);
+			setMemberId(initialMemberId || 0);
 			setPurpose("");
 			setPrincipal(0);
 			setTenor(1);
@@ -37,7 +42,7 @@ export function PinjamanForm({ isOpen, onClose }: PinjamanFormProps) {
 			setLoanDate(today());
 			setNotes("");
 		}
-	}, [isOpen]);
+	}, [isOpen, initialMemberId]);
 
 	const createL = useCreateLoan();
 	const perInstallment = tenor > 0 ? principal / tenor : 0;

@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Edit, Plus, Search, Trash2, Users } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Edit, FileDown, Plus, Search, Trash2, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
 	Badge,
@@ -8,14 +8,15 @@ import {
 	EmptyState,
 	useToast,
 } from "#/components/ui";
-import { AnggotaForm } from "../../../features/koperasi/anggota/AnggotaForm";
+import { AnggotaForm } from "../../../../features/koperasi/anggota/AnggotaForm";
 import {
 	type Member,
 	useDeleteMember,
 	useMembers,
-} from "../../../features/koperasi/anggota/api";
+} from "../../../../features/koperasi/anggota/api";
+import { BulkRegisterDialog } from "../../../../features/koperasi/anggota/BulkRegisterDialog";
 
-export const Route = createFileRoute("/_authenticated/koperasi/anggota")({
+export const Route = createFileRoute("/_authenticated/koperasi/anggota/")({
 	component: AnggotaPage,
 });
 
@@ -29,6 +30,7 @@ function AnggotaPage() {
 	const { addToast } = useToast();
 	const [search, setSearch] = useState("");
 	const [isFormOpen, setIsFormOpen] = useState(false);
+	const [isBulkOpen, setIsBulkOpen] = useState(false);
 	const [selected, setSelected] = useState<Member | null>(null);
 	const [toDelete, setToDelete] = useState<Member | null>(null);
 
@@ -79,9 +81,14 @@ function AnggotaPage() {
 						Staf sekolah, pengurus yayasan, & pihak lain peserta simpan-pinjam.
 					</p>
 				</div>
-				<Button variant="primary" onClick={openCreate}>
-					<Plus className="h-4 w-4 mr-1.5" /> Tambah Anggota
-				</Button>
+				<div className="flex gap-2">
+					<Button variant="secondary" onClick={() => setIsBulkOpen(true)}>
+						<FileDown className="h-4 w-4 mr-1.5" /> Bulk Register
+					</Button>
+					<Button variant="primary" onClick={openCreate}>
+						<Plus className="h-4 w-4 mr-1.5" /> Tambah Anggota
+					</Button>
+				</div>
 			</div>
 
 			<div className="relative max-w-sm">
@@ -131,10 +138,21 @@ function AnggotaPage() {
 							{filtered.map((m) => (
 								<tr key={m.id} className="hover:bg-gray-50">
 									<td className="px-4 py-3 text-sm font-medium text-gray-900">
-										{m.full_name}
+										<Link
+											to="/koperasi/anggota/$id"
+											params={{ id: m.id.toString() }}
+											className="text-indigo-600 hover:text-indigo-900 hover:underline"
+										>
+											{m.full_name}
+										</Link>
 									</td>
 									<td className="px-4 py-3 text-sm text-gray-600">
 										{TYPE_LABEL[m.member_type] ?? m.member_type}
+										{m.employee_name && (
+											<span className="block text-xs text-gray-400 mt-0.5">
+												Pegawai: {m.employee_name}
+											</span>
+										)}
 									</td>
 									<td className="px-4 py-3 text-sm text-gray-600">
 										{m.phone || "-"}
@@ -175,6 +193,11 @@ function AnggotaPage() {
 				isOpen={isFormOpen}
 				onClose={() => setIsFormOpen(false)}
 				initialData={selected}
+			/>
+
+			<BulkRegisterDialog
+				isOpen={isBulkOpen}
+				onClose={() => setIsBulkOpen(false)}
 			/>
 
 			<ConfirmDialog

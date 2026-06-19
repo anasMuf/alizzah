@@ -23,7 +23,6 @@ import {
 	DtoCreateFeeConfigItemRequestUnit,
 } from "#/api/model";
 import { ApiError } from "#/api/mutator/custom-instance";
-import { useProducts } from "#/features/koperasi/barang/api";
 import {
 	Badge,
 	Button,
@@ -33,6 +32,7 @@ import {
 	SlideOver,
 	useToast,
 } from "#/components/ui";
+import { useProducts } from "#/features/koperasi/barang/api";
 
 export const Route = createFileRoute("/_authenticated/pengaturan/tarif/$id")({
 	beforeLoad: () => {
@@ -466,9 +466,7 @@ function ItemTable({
 										{item.name}
 									</div>
 									{item.is_koperasi && (
-										<Badge variant="success">
-											🏪 Koperasi
-										</Badge>
+										<Badge variant="success">🏪 Koperasi</Badge>
 									)}
 								</div>
 								<div className="text-xs text-gray-400">

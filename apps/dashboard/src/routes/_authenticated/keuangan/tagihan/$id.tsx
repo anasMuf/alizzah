@@ -31,6 +31,7 @@ import {
 	SlideOver,
 	useToast,
 } from "#/components/ui";
+import { useProducts } from "#/features/koperasi/barang/api";
 import { academicYearAtom } from "../../../../store/global";
 import { formatCurrency, formatDate } from "../../../../utils/format";
 
@@ -78,6 +79,10 @@ function DetailTagihanPage() {
 	const [selectedFeeItemId, setSelectedFeeItemId] = useState<string>("");
 	const [selectedFeeItem, setSelectedFeeItem] = useState<any>(null);
 	const [unitQuantity, setUnitQuantity] = useState("");
+	const [selectedVariantId, setSelectedVariantId] = useState<
+		number | undefined
+	>(undefined);
+	const { data: products } = useProducts();
 
 	// Fetch fee config and items for dropdown
 	const { data: feeConfigsResp } = useGetV1FeeConfigs();
@@ -351,6 +356,7 @@ function DetailTagihanPage() {
 		setItemName(item.name);
 		setItemAmount(item.amount.toString());
 		setItemCategory(item.category || "incidental");
+		setSelectedVariantId(item.koperasi_variant_id);
 		// Pre-fill quantity for per_day/per_monday items
 		if (item.quantity != null) {
 			setUnitQuantity(item.quantity.toString());
@@ -377,6 +383,7 @@ function DetailTagihanPage() {
 					data: {
 						name: itemName,
 						amount: Number(itemAmount),
+						koperasi_variant_id: selectedVariantId,
 					},
 				});
 			}
@@ -1054,6 +1061,47 @@ function DetailTagihanPage() {
 										onChange={(e: any) => setItemName(e.target.value)}
 										required
 									/>
+									{editingItem.is_koperasi &&
+									editingItem.koperasi_product_id ? (
+										<div className="mb-4">
+											<label className="block text-sm font-medium leading-6 text-gray-900 mb-2">
+												Pilih Varian Barang Koperasi
+											</label>
+											<select
+												value={selectedVariantId || ""}
+												onChange={(e) => {
+													const variantId = e.target.value
+														? Number(e.target.value)
+														: undefined;
+													setSelectedVariantId(variantId);
+													// Find product and variant price to auto-update amount
+													const product = products?.find(
+														(p) => p.id === editingItem.koperasi_product_id,
+													);
+													const variant = product?.variants?.find(
+														(v) => v.id === variantId,
+													);
+													if (variant) {
+														setItemAmount(variant.sale_price.toString());
+													}
+												}}
+												className="block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
+												required
+											>
+												<option value="">-- Pilih Varian --</option>
+												{products
+													?.find(
+														(p) => p.id === editingItem.koperasi_product_id,
+													)
+													?.variants?.map((v) => (
+														<option key={v.id} value={v.id}>
+															{v.name} — {formatCurrency(v.sale_price)} (Stok:{" "}
+															{v.stock})
+														</option>
+													))}
+											</select>
+										</div>
+									) : null}
 									<FormField
 										id="itemAmount"
 										type="number"
@@ -1062,6 +1110,12 @@ function DetailTagihanPage() {
 										onChange={(e: any) => setItemAmount(e.target.value)}
 										required
 										min="1"
+										disabled={
+											!!(
+												editingItem.is_koperasi &&
+												editingItem.koperasi_product_id
+											)
+										}
 									/>
 								</>
 							)}

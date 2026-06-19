@@ -120,6 +120,9 @@ function PenjualanListPage() {
 									<th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
 										Status
 									</th>
+									<th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
+										Sumber
+									</th>
 									<th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
 										Detail
 									</th>
@@ -151,6 +154,15 @@ function PenjualanListPage() {
 										<td className="px-4 py-3">
 											<Badge variant={STATUS[s.status].variant}>
 												{STATUS[s.status].label}
+											</Badge>
+										</td>
+										<td className="px-4 py-3">
+											<Badge
+												variant={
+													s.source === "registrasi" ? "info" : "secondary"
+												}
+											>
+												{s.source === "registrasi" ? "Registrasi" : "POS"}
 											</Badge>
 										</td>
 										<td className="px-4 py-3 text-right">

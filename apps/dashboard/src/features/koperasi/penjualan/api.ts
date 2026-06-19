@@ -28,6 +28,7 @@ export interface Sale {
 	status: SaleStatus;
 	profit: number;
 	notes?: string;
+	source: "pos" | "registrasi";
 	items: SaleItem[];
 	created_by?: string;
 	created_at: string;

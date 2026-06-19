@@ -51,6 +51,7 @@ type Response struct {
 	Status         string         `json:"status"`
 	Profit         float64        `json:"profit"` // Σ (unit_price - unit_cost) × qty
 	Notes          string         `json:"notes,omitempty"`
+	Source         string         `json:"source"`
 	Items          []ItemResponse `json:"items"`
 	CreatedBy      string         `json:"created_by,omitempty"`
 	CreatedAt      string         `json:"created_at"`
@@ -97,6 +98,7 @@ func toResponse(s Sale) Response {
 		Status:         s.Status,
 		Profit:         profit,
 		Notes:          s.Notes,
+		Source:         s.Source,
 		Items:          items,
 		CreatedBy:      s.Creator.FullName,
 		CreatedAt:      s.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),

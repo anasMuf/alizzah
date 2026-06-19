@@ -18,7 +18,6 @@ import (
 	"api/internal/modules/koperasi/lainlain"
 	"api/internal/modules/koperasi/laporan"
 	"api/internal/modules/koperasi/master"
-	"api/internal/modules/koperasi/modal"
 	"api/internal/modules/koperasi/pemasok"
 	"api/internal/modules/koperasi/pembayaran"
 	"api/internal/modules/koperasi/pembelian"
@@ -38,7 +37,6 @@ type Module struct {
 	master    *master.Handler
 	pemasok   *pemasok.Handler
 	kas       *kas.Handler
-	modal     *modal.Handler
 	pembelian *pembelian.Handler
 	penjualan *penjualan.Handler
 	pinjaman  *pinjaman.Handler
@@ -65,7 +63,6 @@ func New(deps *shared.Deps) *Module {
 		master:    master.New(db),
 		pemasok:   pemasok.New(db),
 		kas:       kas.New(db),
-		modal:     modal.New(db, cashWriter),
 		pembelian: pembelian.New(db, paymentSvc, barangRepo, supplierRepo, ayRepo),
 		penjualan: penjualan.New(db, paymentSvc, barangRepo, studentRepo, ayRepo),
 		pinjaman:  pinjaman.New(db, paymentSvc, cashWriter, ayRepo),
@@ -83,7 +80,6 @@ func (m *Module) Models() []any {
 		&master.MasterData{},
 		&pemasok.Supplier{},
 		&kas.CashTransaction{},
-		&modal.CapitalInjection{},
 		&pembelian.Purchase{}, &pembelian.PurchaseItem{},
 		&penjualan.Sale{}, &penjualan.SaleItem{},
 		&pinjaman.Loan{}, &pinjaman.LoanInstallment{},
@@ -115,11 +111,6 @@ func (m *Module) RegisterRoutes(api *echo.Group) {
 	view := middleware.RequireRoles("superadmin", "admin_koperasi", "admin_keuangan", "kepala_sekolah", "yayasan")
 	m.kas.RegisterRoutes(g, view)
 	m.laporan.RegisterRoutes(g, view)
-
-	// Modal: penyaluran (disburse) oleh keuangan sekolah; lihat oleh koperasi & keuangan.
-	disburse := middleware.RequireRoles("superadmin", "admin_keuangan")
-	modalView := middleware.RequireRoles("superadmin", "admin_keuangan", "admin_koperasi")
-	m.modal.RegisterRoutes(g, disburse, modalView)
 }
 
 func (m *Module) health(c echo.Context) error {

@@ -132,9 +132,6 @@ export function Sidebar({ isOpen }: SidebarProps) {
 									<NavLink to="/keuangan/kas" icon={Vault}>
 										Kas & Berangkas
 									</NavLink>
-									<NavLink to="/keuangan/modal-koperasi" icon={Landmark}>
-										Modal Koperasi
-									</NavLink>
 								</>
 							)}
 
@@ -172,9 +169,6 @@ export function Sidebar({ isOpen }: SidebarProps) {
 							</NavLink>
 							<NavLink to="/koperasi/kas" icon={ReceiptText}>
 								Kas
-							</NavLink>
-							<NavLink to="/koperasi/modal" icon={Landmark}>
-								Modal
 							</NavLink>
 							<NavLink to="/koperasi/lain-lain" icon={ArrowLeftRight}>
 								Lain-lain

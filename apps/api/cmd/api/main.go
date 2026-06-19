@@ -13,6 +13,9 @@ import (
 	"api/repository"
 	"api/seeders"
 	"api/service"
+
+	"api/internal/modules/koperasi/barang"
+	"api/internal/modules/koperasi/kas"
 )
 
 // @title          Alizzah Manajemen API
@@ -195,7 +198,13 @@ func main() {
 	// Batch 6: create transaction infrastructure first
 	txnWriterService := service.NewTransactionWriterService(cashTxnRepo, vaultTxnRepo)
 	savingsService := service.NewSavingsService(db, savingsRepo, savingsTxnRepo, fcRepo, ayRepo, txnWriterService)
-	paymentService := service.NewPaymentService(db, paymentRepo, paymentItemRepo, invoiceItemRepo, invoiceService, savingsRepo, savingsTxnRepo, studentRepo, txnWriterService)
+
+	// Seam koperasi
+	kopKasWriter := kas.NewWriter()
+	kopBarangRepo := barang.NewRepository(db)
+	koperasiSeam := service.NewKoperasiSeamService(db, kopKasWriter, kopBarangRepo)
+
+	paymentService := service.NewPaymentService(db, paymentRepo, paymentItemRepo, invoiceItemRepo, invoiceService, savingsRepo, savingsTxnRepo, studentRepo, txnWriterService, koperasiSeam)
 	expCatService := service.NewExpenseCategoryService(expCatRepo)
 	expenseService := service.NewExpenseService(db, expenseRepo, expCatRepo, ayRepo, txnWriterService)
 

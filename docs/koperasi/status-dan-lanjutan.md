@@ -13,6 +13,7 @@ Modul koperasi (backend 8a–8e + FE-0…FE-5 + seeder) sudah selesai sebelumnya
 | #33 | Hapus opsi `potong_gaji` dari penjualan & pembelian (P4/PB2) — hanya pinjaman yang punya potong gaji | ✅ merged |
 | #34 | Master kategori & satuan (B2) — tabel generik `koperasi_master_data(kind,name)`, endpoint `/categories` & `/units`, FE `MasterSelect` (dropdown + tambah-baru inline) | ✅ merged |
 | #35 | Varian barang (B1) — backend + migrasi + FE | ✅ merged |
+| #40 | M1 — Penyaluran Dana Koperasi (Koreksi Alur Modal) — Hapus fitur modal manual, otomatisasi pembayaran tagihan sekolah → penjualan/stok/kas koperasi, pemetaan seeder, dan penyeimbangan kas sekolah | 🚀 PR #40 |
 
 ### Detail B1 (varian) yang sudah jadi
 - Tabel **`koperasi_product_variants`** (`product_id, name, cost_price, sale_price, stock, is_active`). **Harga & stok pindah ke level varian.** Setiap barang punya ≥1 varian; barang "tanpa varian" = satu varian bernama **`Default`**.
@@ -66,7 +67,7 @@ curl -s localhost:8081/api/v1/koperasi/products -H "Authorization: Bearer $T" | 
    - File acuan: [`features/koperasi/penjualan/PenjualanForm.tsx`](../../apps/dashboard/src/features/koperasi/penjualan/PenjualanForm.tsx), [`penjualan/api.ts`](../../apps/dashboard/src/features/koperasi/penjualan/api.ts), barang `useProducts` (punya `variants[]`).
 2. **POS Pembelian (PB1, PB3)** — pola POS sama untuk restock dari pemasok (pilih pemasok → tambah barang+varian dengan harga beli → bayar parsial → hutang).
 3. **Anggota (A2)** — bulk register + halaman detail + shortcut (import pegawai menunggu modul SDM, lihat A1).
-4. **M1 — penyaluran dana** ([penyaluran-dana-koperasi.md](./penyaluran-dana-koperasi.md)): **TERBLOKIR** sampai keputusan **§6** (pemetaan item fee ↔ barang/varian & dampak stok) dibuat user. Hapus fitur Modal lama + seam pembayaran-registrasi → penjualan koperasi.
+4. **M1 — penyaluran dana** ([penyaluran-dana-koperasi.md](./penyaluran-dana-koperasi.md)): ✅ **SELESAI (PR #40)** — Modul modal manual dihapus, seam otomatis mencatat penjualan/stok/kas koperasi saat pembayaran tagihan sekolah dilakukan, serta mencatat uang keluar (debit) otomatis di kas sekolah untuk penyeimbangan kas.
 5. **Laporan Kontrol Bulanan** ([../core/plans/laporan-kontrol-bulanan.md](../core/plans/laporan-kontrol-bulanan.md)) — laporan keuangan **sekolah** lintas modul (bukan koperasi), dikerjakan setelah open item.
 
 ## 5. Catatan kerja

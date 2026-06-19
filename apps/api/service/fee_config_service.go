@@ -46,7 +46,9 @@ func (s *feeConfigService) GetAll() ([]dto.FeeConfigResponse, error) {
 
 	var responses []dto.FeeConfigResponse
 	for _, fc := range fcs {
-		responses = append(responses, *mapFeeConfigToResponse(fc))
+		res := mapFeeConfigToResponse(fc)
+		s.populateProductNames(res.Items)
+		responses = append(responses, *res)
 	}
 	return responses, nil
 }
@@ -59,7 +61,9 @@ func (s *feeConfigService) GetByID(id uint) (*dto.FeeConfigResponse, error) {
 		}
 		return nil, err
 	}
-	return mapFeeConfigToResponse(*fc), nil
+	res := mapFeeConfigToResponse(*fc)
+	s.populateProductNames(res.Items)
+	return res, nil
 }
 
 func (s *feeConfigService) GetByAcademicYear(academicYearID uint) (*dto.FeeConfigResponse, error) {
@@ -70,7 +74,9 @@ func (s *feeConfigService) GetByAcademicYear(academicYearID uint) (*dto.FeeConfi
 		}
 		return nil, err
 	}
-	return mapFeeConfigToResponse(*fc), nil
+	res := mapFeeConfigToResponse(*fc)
+	s.populateProductNames(res.Items)
+	return res, nil
 }
 
 func (s *feeConfigService) Create(req dto.CreateFeeConfigRequest) (*dto.FeeConfigResponse, error) {
@@ -128,6 +134,7 @@ func (s *feeConfigService) GetItems(feeConfigID uint, params dto.FeeConfigItemQu
 	for _, item := range items {
 		responses = append(responses, *mapFeeConfigItemToResponse(item))
 	}
+	s.populateProductNames(responses)
 	return responses, nil
 }
 
@@ -143,22 +150,31 @@ func (s *feeConfigService) CreateItem(feeConfigID uint, req dto.CreateFeeConfigI
 	}
 
 	item := &model.FeeConfigItem{
-		FeeConfigID: feeConfigID,
-		Category:    req.Category,
-		ItemKey:     req.ItemKey,
-		Name:        req.Name,
-		Level:       req.Level,
-		Gender:      req.Gender,
-		Amount:      req.Amount,
-		Unit:        req.Unit,
-		IsMandatory: req.IsMandatory,
+		FeeConfigID:       feeConfigID,
+		Category:          req.Category,
+		ItemKey:           req.ItemKey,
+		Name:              req.Name,
+		Level:             req.Level,
+		Gender:            req.Gender,
+		Amount:            req.Amount,
+		Unit:              req.Unit,
+		IsMandatory:       req.IsMandatory,
+		IsKoperasi:        req.IsKoperasi,
+		KoperasiProductID: req.KoperasiProductID,
 	}
 
 	if err := s.itemRepo.Create(item); err != nil {
 		return nil, err
 	}
 
-	return mapFeeConfigItemToResponse(*item), nil
+	res := mapFeeConfigItemToResponse(*item)
+	if res.KoperasiProductID != nil {
+		names, _ := s.itemRepo.GetProductNames([]uint{*res.KoperasiProductID})
+		if names != nil {
+			res.KoperasiProductName = names[*res.KoperasiProductID]
+		}
+	}
+	return res, nil
 }
 
 func (s *feeConfigService) UpdateItem(feeConfigID, itemID uint, req dto.CreateFeeConfigItemRequest) (*dto.FeeConfigItemResponse, error) {
@@ -180,12 +196,21 @@ func (s *feeConfigService) UpdateItem(feeConfigID, itemID uint, req dto.CreateFe
 	item.Amount = req.Amount
 	item.Unit = req.Unit
 	item.IsMandatory = req.IsMandatory
+	item.IsKoperasi = req.IsKoperasi
+	item.KoperasiProductID = req.KoperasiProductID
 
 	if err := s.itemRepo.Update(item); err != nil {
 		return nil, err
 	}
 
-	return mapFeeConfigItemToResponse(*item), nil
+	res := mapFeeConfigItemToResponse(*item)
+	if res.KoperasiProductID != nil {
+		names, _ := s.itemRepo.GetProductNames([]uint{*res.KoperasiProductID})
+		if names != nil {
+			res.KoperasiProductName = names[*res.KoperasiProductID]
+		}
+	}
+	return res, nil
 }
 
 func (s *feeConfigService) DeleteItem(feeConfigID, itemID uint) error {
@@ -203,6 +228,27 @@ func (s *feeConfigService) DeleteItem(feeConfigID, itemID uint) error {
 	}
 
 	return s.itemRepo.Delete(itemID)
+}
+
+func (s *feeConfigService) populateProductNames(responses []dto.FeeConfigItemResponse) {
+	var ids []uint
+	for _, item := range responses {
+		if item.KoperasiProductID != nil {
+			ids = append(ids, *item.KoperasiProductID)
+		}
+	}
+	if len(ids) == 0 {
+		return
+	}
+	names, err := s.itemRepo.GetProductNames(ids)
+	if err != nil || names == nil {
+		return
+	}
+	for i := range responses {
+		if responses[i].KoperasiProductID != nil {
+			responses[i].KoperasiProductName = names[*responses[i].KoperasiProductID]
+		}
+	}
 }
 
 func mapFeeConfigToResponse(fc model.FeeConfig) *dto.FeeConfigResponse {
@@ -229,14 +275,16 @@ func mapFeeConfigToResponse(fc model.FeeConfig) *dto.FeeConfigResponse {
 
 func mapFeeConfigItemToResponse(item model.FeeConfigItem) *dto.FeeConfigItemResponse {
 	return &dto.FeeConfigItemResponse{
-		ID:          item.ID,
-		Category:    item.Category,
-		ItemKey:     item.ItemKey,
-		Name:        item.Name,
-		Level:       item.Level,
-		Gender:      item.Gender,
-		Amount:      item.Amount,
-		Unit:        item.Unit,
-		IsMandatory: item.IsMandatory,
+		ID:                item.ID,
+		Category:          item.Category,
+		ItemKey:           item.ItemKey,
+		Name:              item.Name,
+		Level:             item.Level,
+		Gender:            item.Gender,
+		Amount:            item.Amount,
+		Unit:              item.Unit,
+		IsMandatory:       item.IsMandatory,
+		IsKoperasi:        item.IsKoperasi,
+		KoperasiProductID: item.KoperasiProductID,
 	}
 }

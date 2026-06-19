@@ -28,6 +28,7 @@ type paymentService struct {
 	savingsTxnRepo  repository.SavingsTransactionRepository
 	studentRepo     repository.StudentRepository
 	txnWriter       TransactionWriterService
+	koperasiSeam    KoperasiSeamService
 }
 
 func NewPaymentService(
@@ -40,6 +41,7 @@ func NewPaymentService(
 	savingsTxnRepo repository.SavingsTransactionRepository,
 	studentRepo repository.StudentRepository,
 	txnWriter TransactionWriterService,
+	koperasiSeam KoperasiSeamService,
 ) PaymentService {
 	return &paymentService{
 		db:              db,
@@ -51,6 +53,7 @@ func NewPaymentService(
 		savingsTxnRepo:  savingsTxnRepo,
 		studentRepo:     studentRepo,
 		txnWriter:       txnWriter,
+		koperasiSeam:    koperasiSeam,
 	}
 }
 
@@ -285,6 +288,51 @@ func (s *paymentService) Create(createdBy uint, req dto.CreatePaymentRequest) (*
 			}
 			if err := s.txnWriter.WriteVaultCredit(req.AcademicYearID, paymentDate, req.SavingsDeposit, "savings_deposit", &result.ID, fmt.Sprintf("Setoran tabungan %s", student.FullName), createdBy, tx); err != nil {
 				return err
+			}
+		}
+
+		// [G-Koperasi] Seam: deteksi item koperasi yang terbayar → catat penjualan + kas koperasi
+		if s.koperasiSeam != nil {
+			var koperasiItems []KoperasiPaymentItem
+			txInvoiceItemRepo := s.invoiceItemRepo.WithTx(tx)
+			for _, item := range req.Items {
+				invoiceItem, _ := txInvoiceItemRepo.FindByID(item.InvoiceItemID)
+				if invoiceItem != nil && invoiceItem.IsKoperasi {
+					koperasiItems = append(koperasiItems, KoperasiPaymentItem{
+						InvoiceItemID:     item.InvoiceItemID,
+						Amount:            item.Amount,
+						IsKoperasi:        true,
+						KoperasiProductID: invoiceItem.KoperasiProductID,
+						KoperasiVariantID: invoiceItem.KoperasiVariantID,
+						ItemName:          invoiceItem.Name,
+					})
+				}
+			}
+			if len(koperasiItems) > 0 {
+				if err := s.koperasiSeam.ProcessPaymentItems(
+					tx, result.ID, req.StudentID, req.AcademicYearID,
+					paymentDate, koperasiItems, createdBy,
+				); err != nil {
+					return err
+				}
+
+				// Catat pengeluaran (transfer) uang keluar dari kas sekolah
+				koperasiTotal := float64(0)
+				for _, ki := range koperasiItems {
+					koperasiTotal += ki.Amount
+				}
+
+				if koperasiTotal > 0 {
+					if req.Source == "cash" {
+						if err := s.txnWriter.WriteCashDebit(req.AcademicYearID, paymentDate, koperasiTotal, "koperasi_transfer", &result.ID, fmt.Sprintf("Transfer porsi Koperasi via Pembayaran %s", student.FullName), createdBy, tx); err != nil {
+							return err
+						}
+					} else if req.Source == "savings" {
+						if err := s.txnWriter.WriteVaultDebit(req.AcademicYearID, paymentDate, koperasiTotal, "koperasi_transfer", &result.ID, fmt.Sprintf("Transfer porsi Koperasi via Pembayaran %s", student.FullName), createdBy, tx); err != nil {
+							return err
+						}
+					}
+				}
 			}
 		}
 

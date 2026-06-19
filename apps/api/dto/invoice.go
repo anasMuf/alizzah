@@ -58,15 +58,18 @@ type InvoicePaymentBrief struct {
 
 // Response — Item
 type InvoiceItemResponse struct {
-	ID          uint     `json:"id"`
-	Name        string   `json:"name"`
-	Category    string   `json:"category"`
-	Amount      float64  `json:"amount"`
-	PaidAmount  float64  `json:"paid_amount"`
-	Status      string   `json:"status"`
-	IsMandatory bool     `json:"is_mandatory"`
-	Quantity    *uint    `json:"quantity,omitempty"`
-	UnitPrice   *float64 `json:"unit_price,omitempty"`
+	ID                uint     `json:"id"`
+	Name              string   `json:"name"`
+	Category          string   `json:"category"`
+	Amount            float64  `json:"amount"`
+	PaidAmount        float64  `json:"paid_amount"`
+	Status            string   `json:"status"`
+	IsMandatory       bool     `json:"is_mandatory"`
+	Quantity          *uint    `json:"quantity,omitempty"`
+	UnitPrice         *float64 `json:"unit_price,omitempty"`
+	IsKoperasi        bool     `json:"is_koperasi"`
+	KoperasiProductID *uint    `json:"koperasi_product_id,omitempty"`
+	KoperasiVariantID *uint    `json:"koperasi_variant_id,omitempty"`
 }
 
 // Request — Add Item
@@ -78,8 +81,9 @@ type AddInvoiceItemRequest struct {
 
 // Request — Update Item
 type UpdateInvoiceItemRequest struct {
-	Name   string  `json:"name" validate:"required,max=100"`
-	Amount float64 `json:"amount" validate:"required,min=1"`
+	Name              string  `json:"name" validate:"required,max=100"`
+	Amount            float64 `json:"amount" validate:"required,min=1"`
+	KoperasiVariantID *uint   `json:"koperasi_variant_id,omitempty"`
 }
 
 // Request — Update Item Quantity (override hari efektif per item)

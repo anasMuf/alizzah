@@ -17,6 +17,7 @@ type Sale struct {
 	TotalAmount    float64   `gorm:"type:decimal(15,2);not null" json:"total_amount"`
 	PaidAmount     float64   `gorm:"type:decimal(15,2);not null;default:0" json:"paid_amount"`
 	Status         string    `gorm:"size:20;not null;default:unpaid" json:"status"` // unpaid | partial | paid
+	Source         string    `gorm:"size:20;not null;default:pos" json:"source"`    // pos | registrasi
 	Notes          string    `gorm:"type:text" json:"notes"`
 	CreatedBy      uint      `gorm:"not null" json:"created_by"`
 	model.BaseModelTimeAt

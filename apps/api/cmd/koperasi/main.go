@@ -6,6 +6,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 
 	"api/config"
@@ -18,6 +19,7 @@ import (
 func main() {
 	config.LoadEnv()
 	db := config.DBInit()
+	flag.Parse()
 
 	deps := shared.New(db)
 	mod := koperasi.New(deps)
@@ -26,6 +28,12 @@ func main() {
 	if err := db.AutoMigrate(mod.Models()...); err != nil {
 		log.Fatal("Gagal AutoMigrate koperasi:", err)
 	}
+
+	// Hapus tabel modal lama (M1c)
+	if db.Migrator().HasTable("koperasi_capital_injections") {
+		db.Migrator().DropTable("koperasi_capital_injections")
+	}
+	db.Exec(`DELETE FROM koperasi_cash_transactions WHERE source_type = ?`, "capital_injection")
 
 	// Migrasi data ke model varian (B1): barang lama → varian Default, item lama → variant_id.
 	barang.MigrateVariants(db)

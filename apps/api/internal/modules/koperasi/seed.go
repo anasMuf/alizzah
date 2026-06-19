@@ -1,6 +1,7 @@
 package koperasi
 
 import (
+	"flag"
 	"log"
 	"strings"
 	"time"
@@ -13,14 +14,23 @@ import (
 	"gorm.io/gorm"
 )
 
+var (
+	seedMembersFlag   = flag.Bool("seed-koperasi-members", false, "Seed data anggota koperasi")
+	seedSuppliersFlag = flag.Bool("seed-koperasi-suppliers", false, "Seed data pemasok koperasi")
+)
+
 // Seed mengisi data master koperasi (anggota, pemasok, barang) bila tabel terkait
 // masih kosong — supaya modul tidak kosong saat deploy/instalasi baru. Idempotent:
 // tiap bagian dilewati bila sudah ada datanya. Hanya master (tanpa transaksi)
 // agar tidak bergantung pada tahun ajaran / seam kas.
 func Seed(db *gorm.DB) {
 	seedEmployees(db)
-	seedMembers(db)
-	seedSuppliers(db)
+	if *seedMembersFlag {
+		seedMembers(db)
+	}
+	if *seedSuppliersFlag {
+		seedSuppliers(db)
+	}
 	seedProducts(db)
 	seedMasterData(db)
 }
@@ -161,24 +171,58 @@ func seedProducts(db *gorm.DB) {
 	if count > 0 {
 		return
 	}
-	// Contoh: "Seragam Batik" ber-varian ukuran; lainnya satu varian "Default".
+	// Hanya seed produk koperasi yang berelasi dengan fee items dengan stok default 500
 	products := []barang.Product{
-		{Name: "Seragam Batik", Category: "Seragam", Unit: "pcs", IsActive: true, Variants: []barang.Variant{
-			{Name: "S", CostPrice: 50000, SalePrice: 75000, Stock: 15, IsActive: true},
-			{Name: "M", CostPrice: 50000, SalePrice: 75000, Stock: 15, IsActive: true},
-			{Name: "L", CostPrice: 55000, SalePrice: 80000, Stock: 10, IsActive: true},
+		{Name: "4 Stel Seragam", Category: "Seragam", Unit: "set", IsActive: true, Variants: []barang.Variant{
+			{Name: barang.DefaultVariantName, CostPrice: 500000, SalePrice: 750000, Stock: 500, IsActive: true},
 		}},
-		{Name: "Seragam Olahraga", Category: "Seragam", Unit: "set", IsActive: true, Variants: []barang.Variant{
-			{Name: barang.DefaultVariantName, CostPrice: 60000, SalePrice: 90000, Stock: 30, IsActive: true},
+		{Name: "Rompi & Atribut Prasiaga", Category: "Seragam", Unit: "set", IsActive: true, Variants: []barang.Variant{
+			{Name: barang.DefaultVariantName, CostPrice: 80000, SalePrice: 110000, Stock: 500, IsActive: true},
 		}},
 		{Name: "Tas Sekolah", Category: "Perlengkapan", Unit: "pcs", IsActive: true, Variants: []barang.Variant{
-			{Name: barang.DefaultVariantName, CostPrice: 70000, SalePrice: 100000, Stock: 25, IsActive: true},
+			{Name: barang.DefaultVariantName, CostPrice: 60000, SalePrice: 85000, Stock: 500, IsActive: true},
 		}},
-		{Name: "Buku Tulis (lusin)", Category: "Alat Tulis", Unit: "lusin", IsActive: true, Variants: []barang.Variant{
-			{Name: barang.DefaultVariantName, CostPrice: 30000, SalePrice: 42000, Stock: 50, IsActive: true},
+		{Name: "Kaos Kaki", Category: "Perlengkapan", Unit: "pcs", IsActive: true, Variants: []barang.Variant{
+			{Name: barang.DefaultVariantName, CostPrice: 15000, SalePrice: 25000, Stock: 500, IsActive: true},
 		}},
-		{Name: "Lunchbox", Category: "Perlengkapan", Unit: "pcs", IsActive: true, Variants: []barang.Variant{
-			{Name: barang.DefaultVariantName, CostPrice: 25000, SalePrice: 40000, Stock: 35, IsActive: true},
+		{Name: "1 Set Lunch Box", Category: "Perlengkapan", Unit: "pcs", IsActive: true, Variants: []barang.Variant{
+			{Name: barang.DefaultVariantName, CostPrice: 70000, SalePrice: 100000, Stock: 500, IsActive: true},
+		}},
+		{Name: "Baju Ganti", Category: "Seragam", Unit: "set", IsActive: true, Variants: []barang.Variant{
+			{Name: barang.DefaultVariantName, CostPrice: 50000, SalePrice: 70000, Stock: 500, IsActive: true},
+		}},
+		{Name: "Buku DDTK", Category: "Buku", Unit: "pcs", IsActive: true, Variants: []barang.Variant{
+			{Name: barang.DefaultVariantName, CostPrice: 12000, SalePrice: 20000, Stock: 500, IsActive: true},
+		}},
+		{Name: "Buku PK Karakter", Category: "Buku", Unit: "pcs", IsActive: true, Variants: []barang.Variant{
+			{Name: barang.DefaultVariantName, CostPrice: 10000, SalePrice: 15000, Stock: 500, IsActive: true},
+		}},
+		{Name: "Kaos Field Trip", Category: "Seragam", Unit: "pcs", IsActive: true, Variants: []barang.Variant{
+			{Name: barang.DefaultVariantName, CostPrice: 45000, SalePrice: 65000, Stock: 500, IsActive: true},
+		}},
+		{Name: "Map Hasil Karya", Category: "Perlengkapan", Unit: "pcs", IsActive: true, Variants: []barang.Variant{
+			{Name: barang.DefaultVariantName, CostPrice: 18000, SalePrice: 25000, Stock: 500, IsActive: true},
+		}},
+		{Name: "Map Raport dan Foto Raport", Category: "Perlengkapan", Unit: "pcs", IsActive: true, Variants: []barang.Variant{
+			{Name: barang.DefaultVariantName, CostPrice: 40000, SalePrice: 60000, Stock: 500, IsActive: true},
+		}},
+		{Name: "1 Seri Buku Asik Membaca", Category: "Buku", Unit: "pcs", IsActive: true, Variants: []barang.Variant{
+			{Name: barang.DefaultVariantName, CostPrice: 25000, SalePrice: 40000, Stock: 500, IsActive: true},
+		}},
+		{Name: "Buku Kreatifitas", Category: "Buku", Unit: "pcs", IsActive: true, Variants: []barang.Variant{
+			{Name: barang.DefaultVariantName, CostPrice: 70000, SalePrice: 100000, Stock: 500, IsActive: true},
+		}},
+		{Name: "2 Pcs Buku Jurnal", Category: "Buku", Unit: "pcs", IsActive: true, Variants: []barang.Variant{
+			{Name: barang.DefaultVariantName, CostPrice: 20000, SalePrice: 30000, Stock: 500, IsActive: true},
+		}},
+		{Name: "Kalender", Category: "Perlengkapan", Unit: "pcs", IsActive: true, Variants: []barang.Variant{
+			{Name: barang.DefaultVariantName, CostPrice: 20000, SalePrice: 30000, Stock: 500, IsActive: true},
+		}},
+		{Name: "Buku Kotak", Category: "Buku", Unit: "pcs", IsActive: true, Variants: []barang.Variant{
+			{Name: barang.DefaultVariantName, CostPrice: 15000, SalePrice: 25000, Stock: 500, IsActive: true},
+		}},
+		{Name: "Jilbab Field Trip", Category: "Seragam", Unit: "pcs", IsActive: true, Variants: []barang.Variant{
+			{Name: barang.DefaultVariantName, CostPrice: 25000, SalePrice: 35000, Stock: 500, IsActive: true},
 		}},
 	}
 	if err := db.Create(&products).Error; err != nil {

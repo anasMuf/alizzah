@@ -10,11 +10,13 @@ func MapFeeItemsToInvoiceItems(invoiceID uint, items []model.FeeConfigItem) []mo
 	result := make([]model.InvoiceItem, len(items))
 	for i, item := range items {
 		result[i] = model.InvoiceItem{
-			InvoiceID:   invoiceID,
-			Name:        item.Name,
-			Category:    item.Category,
-			Amount:      item.Amount,
-			IsMandatory: true,
+			InvoiceID:         invoiceID,
+			Name:              item.Name,
+			Category:          item.Category,
+			Amount:            item.Amount,
+			IsMandatory:       true,
+			IsKoperasi:        item.IsKoperasi,
+			KoperasiProductID: item.KoperasiProductID,
 		}
 	}
 	return result

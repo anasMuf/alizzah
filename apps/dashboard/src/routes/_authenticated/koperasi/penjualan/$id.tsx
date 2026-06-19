@@ -52,13 +52,18 @@ function PenjualanDetailPage() {
 						<Badge variant={STATUS[sale.status].variant}>
 							{STATUS[sale.status].label}
 						</Badge>
+						<Badge
+							variant={sale.source === "registrasi" ? "info" : "secondary"}
+						>
+							{sale.source === "registrasi" ? "Registrasi" : "POS"}
+						</Badge>
 					</div>
 					<p className="text-sm text-gray-500">
 						{sale.buyer_name || sale.student_name || "Umum"} ·{" "}
 						{formatDate(sale.sale_date)}
 					</p>
 				</div>
-				{sale.status !== "paid" && (
+				{sale.status !== "paid" && sale.source !== "registrasi" && (
 					<Button variant="primary" onClick={() => setIsPayOpen(true)}>
 						<CreditCard className="h-4 w-4 mr-1.5" /> Catat Pembayaran
 					</Button>

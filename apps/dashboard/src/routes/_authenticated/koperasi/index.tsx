@@ -42,12 +42,6 @@ const LINKS = [
 		label: "Kas",
 		desc: "Saldo & jurnal arus kas",
 	},
-	{
-		to: "/koperasi/modal",
-		icon: Landmark,
-		label: "Modal",
-		desc: "Riwayat penyaluran modal",
-	},
 ] as const;
 
 function KoperasiOverview() {

@@ -183,6 +183,7 @@ func (s *invoiceService) UpdateItem(invoiceID, itemID uint, req dto.UpdateInvoic
 
 	item.Name = req.Name
 	item.Amount = req.Amount
+	item.KoperasiVariantID = req.KoperasiVariantID
 	if err := s.itemRepo.Update(item); err != nil {
 		return nil, err
 	}
@@ -472,15 +473,18 @@ func mapInvoiceToDetailResponse(inv model.Invoice) dto.InvoiceDetailResponse {
 
 func mapInvoiceItemToResponse(item model.InvoiceItem) dto.InvoiceItemResponse {
 	resp := dto.InvoiceItemResponse{
-		ID:          item.ID,
-		Name:        item.Name,
-		Category:    item.Category,
-		Amount:      item.Amount,
-		PaidAmount:  item.PaidAmount,
-		Status:      item.Status,
-		IsMandatory: item.IsMandatory,
-		Quantity:    item.Quantity,
-		UnitPrice:   item.UnitPrice,
+		ID:                item.ID,
+		Name:              item.Name,
+		Category:          item.Category,
+		Amount:            item.Amount,
+		PaidAmount:        item.PaidAmount,
+		Status:            item.Status,
+		IsMandatory:       item.IsMandatory,
+		Quantity:          item.Quantity,
+		UnitPrice:         item.UnitPrice,
+		IsKoperasi:        item.IsKoperasi,
+		KoperasiProductID: item.KoperasiProductID,
+		KoperasiVariantID: item.KoperasiVariantID,
 	}
 	return resp
 }

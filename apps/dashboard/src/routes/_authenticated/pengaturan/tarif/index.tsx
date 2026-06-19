@@ -154,12 +154,14 @@ function CreateFeeConfigSlideOver({
 		(ay: any) => !existingYearIds.includes(ay.id),
 	);
 
+	const defaultYearId = availableYears[0]?.id;
+
 	useEffect(() => {
 		if (isOpen) {
-			setAcademicYearId(availableYears[0]?.id || 0);
+			setAcademicYearId(defaultYearId || 0);
 			setSavingsAdminRate(0);
 		}
-	}, [isOpen]);
+	}, [isOpen, defaultYearId]);
 
 	const createMutation = usePostV1FeeConfigs({
 		mutation: {

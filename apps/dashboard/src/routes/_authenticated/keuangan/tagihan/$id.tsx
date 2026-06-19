@@ -994,7 +994,7 @@ function DetailTagihanPage() {
 										id="itemName"
 										label="Nama Item"
 										value={itemName}
-										onChange={() => { }}
+										onChange={() => {}}
 										disabled
 									/>
 									<div className="bg-gray-50 rounded-md p-3 border border-gray-200">
@@ -1062,7 +1062,7 @@ function DetailTagihanPage() {
 										required
 									/>
 									{editingItem.is_koperasi &&
-										editingItem.koperasi_product_id ? (
+									editingItem.koperasi_product_id ? (
 										<div className="mb-4">
 											<label className="block text-sm font-medium leading-6 text-gray-900 mb-2">
 												Pilih Varian Barang Koperasi
@@ -1127,7 +1127,7 @@ function DetailTagihanPage() {
 									id="itemName"
 									label="Nama Item"
 									value={itemName}
-									onChange={() => { }}
+									onChange={() => {}}
 									disabled
 								/>
 								<FormField
@@ -1135,7 +1135,7 @@ function DetailTagihanPage() {
 									type="number"
 									label="Nominal (Rp)"
 									value={itemAmount}
-									onChange={() => { }}
+									onChange={() => {}}
 									disabled
 								/>
 							</>
@@ -1148,7 +1148,7 @@ function DetailTagihanPage() {
 									id="itemName"
 									label="Nama Item"
 									value={itemName}
-									onChange={() => { }}
+									onChange={() => {}}
 									disabled
 								/>
 								<div className="bg-gray-50 rounded-md p-3 border border-gray-200">
@@ -1191,7 +1191,7 @@ function DetailTagihanPage() {
 									id="itemName"
 									label="Nama Item"
 									value={itemName}
-									onChange={() => { }}
+									onChange={() => {}}
 									disabled
 								/>
 								<div className="bg-gray-50 rounded-md p-3 border border-gray-200">

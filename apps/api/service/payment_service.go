@@ -315,6 +315,24 @@ func (s *paymentService) Create(createdBy uint, req dto.CreatePaymentRequest) (*
 				); err != nil {
 					return err
 				}
+
+				// Catat pengeluaran (transfer) uang keluar dari kas sekolah
+				koperasiTotal := float64(0)
+				for _, ki := range koperasiItems {
+					koperasiTotal += ki.Amount
+				}
+
+				if koperasiTotal > 0 {
+					if req.Source == "cash" {
+						if err := s.txnWriter.WriteCashDebit(req.AcademicYearID, paymentDate, koperasiTotal, "koperasi_transfer", &result.ID, fmt.Sprintf("Transfer porsi Koperasi via Pembayaran %s", student.FullName), createdBy, tx); err != nil {
+							return err
+						}
+					} else if req.Source == "savings" {
+						if err := s.txnWriter.WriteVaultDebit(req.AcademicYearID, paymentDate, koperasiTotal, "koperasi_transfer", &result.ID, fmt.Sprintf("Transfer porsi Koperasi via Pembayaran %s", student.FullName), createdBy, tx); err != nil {
+							return err
+						}
+					}
+				}
 			}
 		}
 

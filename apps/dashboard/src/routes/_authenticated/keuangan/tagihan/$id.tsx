@@ -561,7 +561,7 @@ function DetailTagihanPage() {
 				</div>
 
 				{/* Summary Box */}
-				<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+				<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 mb-6">
 					<div>
 						<div className="text-sm text-gray-500 mb-1">Status Pembayaran</div>
 						<div className="text-xl">{getStatusText(invoice.status)}</div>
@@ -994,7 +994,7 @@ function DetailTagihanPage() {
 										id="itemName"
 										label="Nama Item"
 										value={itemName}
-										onChange={() => {}}
+										onChange={() => { }}
 										disabled
 									/>
 									<div className="bg-gray-50 rounded-md p-3 border border-gray-200">
@@ -1062,7 +1062,7 @@ function DetailTagihanPage() {
 										required
 									/>
 									{editingItem.is_koperasi &&
-									editingItem.koperasi_product_id ? (
+										editingItem.koperasi_product_id ? (
 										<div className="mb-4">
 											<label className="block text-sm font-medium leading-6 text-gray-900 mb-2">
 												Pilih Varian Barang Koperasi
@@ -1127,7 +1127,7 @@ function DetailTagihanPage() {
 									id="itemName"
 									label="Nama Item"
 									value={itemName}
-									onChange={() => {}}
+									onChange={() => { }}
 									disabled
 								/>
 								<FormField
@@ -1135,7 +1135,7 @@ function DetailTagihanPage() {
 									type="number"
 									label="Nominal (Rp)"
 									value={itemAmount}
-									onChange={() => {}}
+									onChange={() => { }}
 									disabled
 								/>
 							</>
@@ -1148,7 +1148,7 @@ function DetailTagihanPage() {
 									id="itemName"
 									label="Nama Item"
 									value={itemName}
-									onChange={() => {}}
+									onChange={() => { }}
 									disabled
 								/>
 								<div className="bg-gray-50 rounded-md p-3 border border-gray-200">
@@ -1191,7 +1191,7 @@ function DetailTagihanPage() {
 									id="itemName"
 									label="Nama Item"
 									value={itemName}
-									onChange={() => {}}
+									onChange={() => { }}
 									disabled
 								/>
 								<div className="bg-gray-50 rounded-md p-3 border border-gray-200">

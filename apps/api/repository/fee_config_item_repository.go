@@ -24,6 +24,7 @@ type FeeConfigItemRepository interface {
 	FindByExtracurricular(feeConfigID uint, exType, exName string) ([]model.FeeConfigItem, error)
 	FindByItemKeys(feeConfigID uint, itemKeys []string) ([]model.FeeConfigItem, error)
 	FindMandatoryByStudent(feeConfigID uint, level, gender string) ([]model.FeeConfigItem, error)
+	GetProductNames(ids []uint) (map[uint]string, error)
 }
 
 type feeConfigItemRepository struct {
@@ -136,4 +137,23 @@ func (r *feeConfigItemRepository) FindMandatoryByStudent(feeConfigID uint, level
 		feeConfigID, true, level, gender,
 	).Find(&items).Error
 	return items, err
+}
+
+func (r *feeConfigItemRepository) GetProductNames(ids []uint) (map[uint]string, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	var results []struct {
+		ID   uint
+		Name string
+	}
+	err := r.db.Table("koperasi_products").Select("id, name").Where("id IN ?", ids).Find(&results).Error
+	if err != nil {
+		return nil, err
+	}
+	m := make(map[uint]string)
+	for _, res := range results {
+		m[res.ID] = res.Name
+	}
+	return m, nil
 }

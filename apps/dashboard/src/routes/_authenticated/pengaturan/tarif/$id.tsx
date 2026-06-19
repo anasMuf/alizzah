@@ -23,6 +23,7 @@ import {
 	DtoCreateFeeConfigItemRequestUnit,
 } from "#/api/model";
 import { ApiError } from "#/api/mutator/custom-instance";
+import { useProducts } from "#/features/koperasi/barang/api";
 import {
 	Badge,
 	Button,
@@ -460,10 +461,24 @@ function ItemTable({
 					{items.map((item) => (
 						<tr key={item.id} className="hover:bg-gray-50">
 							<td className="px-6 py-4 whitespace-nowrap">
-								<div className="text-sm font-medium text-gray-900">
-									{item.name}
+								<div className="flex items-center gap-2">
+									<div className="text-sm font-medium text-gray-900">
+										{item.name}
+									</div>
+									{item.is_koperasi && (
+										<Badge variant="success">
+											🏪 Koperasi
+										</Badge>
+									)}
 								</div>
-								<div className="text-xs text-gray-400">{item.item_key}</div>
+								<div className="text-xs text-gray-400">
+									{item.item_key}
+									{item.koperasi_product_name && (
+										<span className="ml-2 font-medium text-indigo-600">
+											({item.koperasi_product_name})
+										</span>
+									)}
+								</div>
 							</td>
 							<td className="px-6 py-4 whitespace-nowrap">
 								<Badge variant="secondary">
@@ -532,6 +547,8 @@ function ItemFormSlideOver({
 		level: "all",
 		gender: "all",
 		unit: "fixed",
+		is_koperasi: false,
+		koperasi_product_id: undefined,
 	});
 
 	useEffect(() => {
@@ -545,6 +562,8 @@ function ItemFormSlideOver({
 					level: (initialData.level as any) || "all",
 					gender: (initialData.gender as any) || "all",
 					unit: (initialData.unit as any) || "fixed",
+					is_koperasi: initialData.is_koperasi || false,
+					koperasi_product_id: initialData.koperasi_product_id,
 				});
 			} else {
 				setFormData({
@@ -555,6 +574,8 @@ function ItemFormSlideOver({
 					level: "all",
 					gender: "all",
 					unit: "fixed",
+					is_koperasi: false,
+					koperasi_product_id: undefined,
 				});
 			}
 		}
@@ -620,6 +641,8 @@ function ItemFormSlideOver({
 	const update = (field: keyof DtoCreateFeeConfigItemRequest, value: any) => {
 		setFormData((prev) => ({ ...prev, [field]: value }));
 	};
+
+	const { data: products } = useProducts();
 
 	return (
 		<SlideOver
@@ -775,6 +798,63 @@ function ItemFormSlideOver({
 							)}
 						</select>
 					</div>
+				</div>
+
+				<div className="space-y-4 pt-4 border-t border-gray-100">
+					<div className="flex items-center">
+						<input
+							id="is_koperasi"
+							name="is_koperasi"
+							type="checkbox"
+							checked={formData.is_koperasi}
+							onChange={(e) => {
+								const checked = e.target.checked;
+								update("is_koperasi", checked);
+								if (!checked) {
+									update("koperasi_product_id", undefined);
+								}
+							}}
+							className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+						/>
+						<label
+							htmlFor="is_koperasi"
+							className="ml-2 block text-sm font-medium leading-6 text-gray-900"
+						>
+							Milik Koperasi (Pendapatan masuk kas koperasi)
+						</label>
+					</div>
+
+					{formData.is_koperasi && (
+						<div>
+							<label
+								htmlFor="koperasi_product_id"
+								className="block text-sm font-medium leading-6 text-gray-900 mb-2"
+							>
+								Hubungkan ke Barang Koperasi (Opsional)
+							</label>
+							<select
+								id="koperasi_product_id"
+								value={formData.koperasi_product_id || ""}
+								onChange={(e) =>
+									update(
+										"koperasi_product_id",
+										e.target.value ? Number(e.target.value) : undefined,
+									)
+								}
+								className="block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
+							>
+								<option value="">-- Pilih Barang (Tanpa Stok) --</option>
+								{products?.map((p) => (
+									<option key={p.id} value={p.id}>
+										{p.name}
+									</option>
+								))}
+							</select>
+							<p className="mt-1 text-xs text-gray-500">
+								Pilih barang jika item ini memotong stok (seperti seragam, dll).
+							</p>
+						</div>
+					)}
 				</div>
 			</form>
 		</SlideOver>

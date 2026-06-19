@@ -1,6 +1,7 @@
 package koperasi
 
 import (
+	"flag"
 	"log"
 	"strings"
 	"time"
@@ -13,14 +14,23 @@ import (
 	"gorm.io/gorm"
 )
 
+var (
+	seedMembersFlag   = flag.Bool("seed-koperasi-members", false, "Seed data anggota koperasi")
+	seedSuppliersFlag = flag.Bool("seed-koperasi-suppliers", false, "Seed data pemasok koperasi")
+)
+
 // Seed mengisi data master koperasi (anggota, pemasok, barang) bila tabel terkait
 // masih kosong — supaya modul tidak kosong saat deploy/instalasi baru. Idempotent:
 // tiap bagian dilewati bila sudah ada datanya. Hanya master (tanpa transaksi)
 // agar tidak bergantung pada tahun ajaran / seam kas.
 func Seed(db *gorm.DB) {
 	seedEmployees(db)
-	// seedMembers(db)
-	// seedSuppliers(db)
+	if *seedMembersFlag {
+		seedMembers(db)
+	}
+	if *seedSuppliersFlag {
+		seedSuppliers(db)
+	}
 	seedProducts(db)
 	seedMasterData(db)
 }

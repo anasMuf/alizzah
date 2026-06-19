@@ -6,6 +6,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 
 	"api/config"
@@ -18,6 +19,7 @@ import (
 func main() {
 	config.LoadEnv()
 	db := config.DBInit()
+	flag.Parse()
 
 	deps := shared.New(db)
 	mod := koperasi.New(deps)

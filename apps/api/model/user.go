@@ -1,7 +1,8 @@
 package model
 
 // User represents the users table.
-// Roles: superadmin, admin_administrasi, admin_keuangan, kepala_sekolah, yayasan
+// Roles: superadmin (bypass semua modul) | admin (akses dibatasi per modul
+// via tabel user_modules — lihat model.UserModule).
 type User struct {
 	PrimaryKey
 	FullName string `gorm:"size:100;not null" json:"full_name"`

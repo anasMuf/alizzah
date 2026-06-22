@@ -18,7 +18,7 @@ type SeederGroup struct {
 // Key = nama grup yang dipakai di CLI flag.
 var AvailableGroups = map[string]SeederGroup{
 	"users": {
-		Tables: []string{"users"},
+		Tables: []string{"user_modules", "users"},
 		Seed:   SeedUsers,
 	},
 	"academic_years": {
@@ -128,6 +128,7 @@ var allTablesOrdered = []string{
 	"class_groups",
 	// Batch 1
 	"academic_years",
+	"user_modules",
 	"users",
 }
 

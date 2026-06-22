@@ -22,6 +22,7 @@ export interface User {
 	phone: string;
 	address: string;
 	role: string;
+	modules: string[];
 	deposit: number;
 }
 
@@ -92,6 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		setTokenValue(null);
 		setToken(null);
 		localStorage.removeItem("alizzah_role");
+		localStorage.removeItem("alizzah_modules");
 		queryClient.removeQueries({ queryKey: getGetV1AuthMeQueryKey() });
 	};
 
@@ -122,6 +124,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			const u = userResponse.data.data as User;
 			if (u && u.role) {
 				localStorage.setItem("alizzah_role", u.role);
+				localStorage.setItem(
+					"alizzah_modules",
+					JSON.stringify(u.modules ?? []),
+				);
 			}
 			return u;
 		}

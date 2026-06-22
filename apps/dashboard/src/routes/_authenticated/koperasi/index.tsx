@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import {
 	ChevronRight,
-	Landmark,
 	Package,
 	ReceiptText,
 	Truck,

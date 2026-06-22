@@ -32,12 +32,12 @@ import {
 	SlideOver,
 	useToast,
 } from "#/components/ui";
+import { hasModule } from "#/features/auth/access";
 import { useProducts } from "#/features/koperasi/barang/api";
 
 export const Route = createFileRoute("/_authenticated/pengaturan/tarif/$id")({
 	beforeLoad: () => {
-		const role = localStorage.getItem("alizzah_role");
-		if (role !== "superadmin") {
+		if (!hasModule("keuangan")) {
 			throw redirect({ to: "/" });
 		}
 	},

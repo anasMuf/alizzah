@@ -14,6 +14,8 @@ export interface DtoUpdateUserRequest {
 	 * @maxLength 100
 	 */
 	full_name: string;
+	/** Modul yang di-grant (hanya untuk role `admin`; diabaikan untuk superadmin). */
+	modules?: string[];
 	/** @minLength 8 */
 	password?: string;
 	role: DtoUpdateUserRequestRole;

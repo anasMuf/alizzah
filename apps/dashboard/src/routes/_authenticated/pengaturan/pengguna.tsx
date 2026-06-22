@@ -26,6 +26,7 @@ import {
 	SlideOver,
 	useToast,
 } from "#/components/ui";
+import { MODULE_LABELS, MODULES } from "#/features/auth/access";
 
 export const Route = createFileRoute("/_authenticated/pengaturan/pengguna")({
 	beforeLoad: () => {
@@ -41,10 +42,7 @@ const ROLES = Object.values(DtoCreateUserRequestRole);
 
 const ROLE_LABELS: Record<string, string> = {
 	superadmin: "Super Admin",
-	admin_administrasi: "Admin Administrasi",
-	admin_keuangan: "Admin Keuangan",
-	kepala_sekolah: "Kepala Sekolah",
-	yayasan: "Yayasan",
+	admin: "Admin",
 };
 
 const ROLE_BADGE_VARIANT: Record<
@@ -52,10 +50,7 @@ const ROLE_BADGE_VARIANT: Record<
 	"primary" | "secondary" | "success" | "warning" | "danger" | "info"
 > = {
 	superadmin: "danger",
-	admin_administrasi: "primary",
-	admin_keuangan: "success",
-	kepala_sekolah: "warning",
-	yayasan: "info",
+	admin: "primary",
 };
 
 function PengaturanPenggunaComponent() {
@@ -138,8 +133,8 @@ function PengaturanPenggunaComponent() {
 						Manajemen Pengguna
 					</h1>
 					<p className="mt-1 text-sm text-gray-500">
-						Kelola akun pengguna sistem termasuk admin, kepala sekolah, dan
-						yayasan.
+						Kelola akun pengguna (Super Admin &amp; Admin) beserta akses
+						modulnya.
 					</p>
 				</div>
 				<div className="mt-4 sm:ml-4 sm:mt-0">
@@ -213,6 +208,9 @@ function PengaturanPenggunaComponent() {
 								<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
 									Role
 								</th>
+								<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+									Modul
+								</th>
 								<th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
 									Aksi
 								</th>
@@ -235,6 +233,21 @@ function PengaturanPenggunaComponent() {
 										>
 											{ROLE_LABELS[user.role || ""] || user.role}
 										</Badge>
+									</td>
+									<td className="px-6 py-4">
+										<div className="flex flex-wrap gap-1">
+											{user.role === "superadmin" ? (
+												<Badge variant="secondary">Semua modul</Badge>
+											) : user.modules && user.modules.length > 0 ? (
+												user.modules.map((m) => (
+													<Badge key={m} variant="info">
+														{MODULE_LABELS[m] || m}
+													</Badge>
+												))
+											) : (
+												<span className="text-xs text-gray-400">—</span>
+											)}
+										</div>
 									</td>
 									<td className="px-6 py-4 whitespace-nowrap text-right">
 										<div className="flex justify-end gap-2">
@@ -310,7 +323,8 @@ function UserFormSlideOver({
 	const [fullName, setFullName] = useState("");
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
-	const [role, setRole] = useState<string>("admin_administrasi");
+	const [role, setRole] = useState<string>("admin");
+	const [modules, setModules] = useState<string[]>([]);
 
 	useEffect(() => {
 		if (isOpen) {
@@ -318,15 +332,22 @@ function UserFormSlideOver({
 				setFullName(initialData.full_name || "");
 				setEmail(initialData.email || "");
 				setPassword("");
-				setRole(initialData.role || "admin_administrasi");
+				setRole(initialData.role || "admin");
+				setModules(initialData.modules || []);
 			} else {
 				setFullName("");
 				setEmail("");
 				setPassword("");
-				setRole("admin_administrasi");
+				setRole("admin");
+				setModules([]);
 			}
 		}
 	}, [isOpen, initialData]);
+
+	const toggleModule = (m: string) =>
+		setModules((prev) =>
+			prev.includes(m) ? prev.filter((x) => x !== m) : [...prev, m],
+		);
 
 	const createMutation = usePostV1Users({
 		mutation: {
@@ -374,11 +395,13 @@ function UserFormSlideOver({
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
+		const moduleGrant = role === "admin" ? modules : [];
 		if (isEditing && initialData) {
 			const data: DtoUpdateUserRequest = {
 				full_name: fullName,
 				email,
 				role: role as any,
+				modules: moduleGrant,
 				...(password ? { password } : {}),
 			};
 			updateMutation.mutate({ id: initialData.id as number, data });
@@ -388,6 +411,7 @@ function UserFormSlideOver({
 				email,
 				password,
 				role: role as any,
+				modules: moduleGrant,
 			};
 			createMutation.mutate({ data });
 		}
@@ -468,6 +492,37 @@ function UserFormSlideOver({
 						))}
 					</select>
 				</div>
+
+				{role === "admin" ? (
+					<div>
+						<span className="block text-sm font-medium leading-6 text-gray-900 mb-2">
+							Akses Modul
+						</span>
+						<div className="space-y-2">
+							{Object.values(MODULES).map((m) => (
+								<label
+									key={m}
+									className="flex items-center gap-2 text-sm text-gray-700"
+								>
+									<input
+										type="checkbox"
+										checked={modules.includes(m)}
+										onChange={() => toggleModule(m)}
+										className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+									/>
+									{MODULE_LABELS[m] || m}
+								</label>
+							))}
+						</div>
+						<p className="mt-2 text-xs text-gray-500">
+							Pilih modul yang boleh diakses admin ini.
+						</p>
+					</div>
+				) : (
+					<p className="text-xs text-gray-500">
+						Super Admin otomatis mengakses seluruh modul.
+					</p>
+				)}
 			</form>
 		</SlideOver>
 	);

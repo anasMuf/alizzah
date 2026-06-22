@@ -17,11 +17,11 @@ import {
 	SlideOver,
 	useToast,
 } from "#/components/ui";
+import { hasModule } from "#/features/auth/access";
 
 export const Route = createFileRoute("/_authenticated/pengaturan/tarif/")({
 	beforeLoad: () => {
-		const role = localStorage.getItem("alizzah_role");
-		if (role !== "superadmin") {
+		if (!hasModule("keuangan")) {
 			throw redirect({ to: "/" });
 		}
 	},

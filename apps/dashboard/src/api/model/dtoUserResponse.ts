@@ -11,5 +11,6 @@ export interface DtoUserResponse {
 	email?: string;
 	full_name?: string;
 	id?: number;
+	modules?: string[];
 	role?: string;
 }

@@ -11,8 +11,5 @@ export type DtoUpdateUserRequestRole =
 
 export const DtoUpdateUserRequestRole = {
 	superadmin: "superadmin",
-	admin_administrasi: "admin_administrasi",
-	admin_keuangan: "admin_keuangan",
-	kepala_sekolah: "kepala_sekolah",
-	yayasan: "yayasan",
+	admin: "admin",
 } as const;

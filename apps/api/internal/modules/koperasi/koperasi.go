@@ -43,6 +43,7 @@ type Module struct {
 	lainlain  *lainlain.Handler
 	laporan   *laporan.Handler
 	jwt       echo.MiddlewareFunc
+	guard     *middleware.ModuleGuard
 }
 
 // New membangun modul dengan dependency bersama yang diinjeksikan.
@@ -69,6 +70,7 @@ func New(deps *shared.Deps) *Module {
 		lainlain:  lainlain.New(db, cashWriter, ayRepo),
 		laporan:   laporan.New(db),
 		jwt:       middleware.JWTAuth(repository.NewTokenBlacklistRepository(db)),
+		guard:     middleware.NewModuleGuard(repository.NewUserModuleRepository(db)),
 	}
 }
 
@@ -96,8 +98,8 @@ func (m *Module) RegisterRoutes(api *echo.Group) {
 	// Semua route koperasi wajib JWT.
 	g := api.Group("/koperasi", m.jwt)
 
-	// Master data & transaksi: kelola hanya superadmin & admin_koperasi.
-	manage := middleware.RequireRoles("superadmin", "admin_koperasi")
+	// Master data & transaksi: kelola = modul koperasi (superadmin bypass).
+	manage := m.guard.RequireModule(middleware.ModuleKoperasi)
 	m.anggota.RegisterRoutes(g, manage)
 	m.barang.RegisterRoutes(g, manage)
 	m.master.RegisterRoutes(g, manage)
@@ -107,8 +109,8 @@ func (m *Module) RegisterRoutes(api *echo.Group) {
 	m.pinjaman.RegisterRoutes(g, manage)
 	m.lainlain.RegisterRoutes(g, manage)
 
-	// Kas (saldo & jurnal): view luas untuk pemangku kepentingan.
-	view := middleware.RequireRoles("superadmin", "admin_koperasi", "admin_keuangan", "kepala_sekolah", "yayasan")
+	// Kas (saldo & jurnal): view luas — koperasi, keuangan, atau laporan.
+	view := m.guard.RequireModule(middleware.ModuleKoperasi, middleware.ModuleKeuangan, middleware.ModuleLaporan)
 	m.kas.RegisterRoutes(g, view)
 	m.laporan.RegisterRoutes(g, view)
 }

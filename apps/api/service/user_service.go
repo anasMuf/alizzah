@@ -2,6 +2,7 @@ package service
 
 import (
 	"api/dto"
+	"api/middleware"
 	"api/model"
 	"api/repository"
 	"errors"
@@ -20,11 +21,21 @@ type UserService interface {
 }
 
 type userService struct {
-	userRepo repository.UserRepository
+	userRepo       repository.UserRepository
+	userModuleRepo repository.UserModuleRepository
 }
 
-func NewUserService(userRepo repository.UserRepository) UserService {
-	return &userService{userRepo: userRepo}
+func NewUserService(userRepo repository.UserRepository, userModuleRepo repository.UserModuleRepository) UserService {
+	return &userService{userRepo: userRepo, userModuleRepo: userModuleRepo}
+}
+
+// modulesForRole mengembalikan set modul yang akan disimpan: kosong untuk
+// superadmin (bypass semua modul), apa adanya untuk admin.
+func modulesForRole(role string, modules []string) []string {
+	if role == middleware.RoleSuperadmin {
+		return nil
+	}
+	return modules
 }
 
 func (s *userService) GetAll(params dto.UserQueryParams) ([]dto.UserResponse, *dto.Meta, error) {
@@ -35,7 +46,11 @@ func (s *userService) GetAll(params dto.UserQueryParams) ([]dto.UserResponse, *d
 
 	responses := make([]dto.UserResponse, len(users))
 	for i, user := range users {
-		responses[i] = mapUserToResponse(user)
+		mods, err := s.userModuleRepo.ListByUser(user.ID)
+		if err != nil {
+			return nil, nil, err
+		}
+		responses[i] = mapUserToResponse(user, mods)
 	}
 
 	meta := &dto.Meta{
@@ -56,7 +71,11 @@ func (s *userService) GetByID(id uint) (*dto.UserResponse, error) {
 		return nil, err
 	}
 
-	response := mapUserToResponse(*user)
+	mods, err := s.userModuleRepo.ListByUser(user.ID)
+	if err != nil {
+		return nil, err
+	}
+	response := mapUserToResponse(*user, mods)
 	return &response, nil
 }
 
@@ -84,7 +103,12 @@ func (s *userService) Create(req dto.CreateUserRequest) (*dto.UserResponse, erro
 		return nil, err
 	}
 
-	response := mapUserToResponse(*user)
+	modules := modulesForRole(user.Role, req.Modules)
+	if err := s.userModuleRepo.ReplaceForUser(user.ID, modules); err != nil {
+		return nil, err
+	}
+
+	response := mapUserToResponse(*user, modules)
 	return &response, nil
 }
 
@@ -122,7 +146,12 @@ func (s *userService) Update(id uint, req dto.UpdateUserRequest) (*dto.UserRespo
 		return nil, err
 	}
 
-	response := mapUserToResponse(*user)
+	modules := modulesForRole(user.Role, req.Modules)
+	if err := s.userModuleRepo.ReplaceForUser(user.ID, modules); err != nil {
+		return nil, err
+	}
+
+	response := mapUserToResponse(*user, modules)
 	return &response, nil
 }
 
@@ -140,15 +169,24 @@ func (s *userService) Delete(id, currentUserID uint) error {
 		return err
 	}
 
+	// Bersihkan grant modul agar tidak ada baris yatim.
+	if err := s.userModuleRepo.ReplaceForUser(id, nil); err != nil {
+		return err
+	}
+
 	return s.userRepo.Delete(id)
 }
 
-func mapUserToResponse(user model.User) dto.UserResponse {
+func mapUserToResponse(user model.User, modules []string) dto.UserResponse {
+	if modules == nil {
+		modules = []string{}
+	}
 	return dto.UserResponse{
 		ID:        user.ID,
 		FullName:  user.FullName,
 		Email:     user.Email,
 		Role:      user.Role,
+		Modules:   modules,
 		CreatedAt: user.CreatedAt.Format(time.RFC3339),
 	}
 }

@@ -3,6 +3,7 @@ package service
 import (
 	"api/dto"
 	"api/middleware"
+	"api/model"
 	"api/repository"
 	"errors"
 	"os"
@@ -18,11 +19,24 @@ type AuthService interface {
 }
 
 type authService struct {
-	userRepo repository.UserRepository
+	userRepo       repository.UserRepository
+	userModuleRepo repository.UserModuleRepository
 }
 
-func NewAuthService(userRepo repository.UserRepository) AuthService {
-	return &authService{userRepo: userRepo}
+func NewAuthService(userRepo repository.UserRepository, userModuleRepo repository.UserModuleRepository) AuthService {
+	return &authService{userRepo: userRepo, userModuleRepo: userModuleRepo}
+}
+
+// userModules mengembalikan grant modul user (kosong untuk superadmin/bypass).
+func (s *authService) userModules(user *model.User) []string {
+	if user.Role == middleware.RoleSuperadmin {
+		return []string{}
+	}
+	mods, err := s.userModuleRepo.ListByUser(user.ID)
+	if err != nil || mods == nil {
+		return []string{}
+	}
+	return mods
 }
 
 func (s *authService) Login(req dto.LoginRequest) (*dto.LoginResponse, error) {
@@ -58,6 +72,7 @@ func (s *authService) Login(req dto.LoginRequest) (*dto.LoginResponse, error) {
 			FullName:  user.FullName,
 			Email:     user.Email,
 			Role:      user.Role,
+			Modules:   s.userModules(user),
 			CreatedAt: user.CreatedAt.Format(time.RFC3339),
 		},
 	}, nil
@@ -74,6 +89,7 @@ func (s *authService) GetMe(userID uint) (*dto.UserResponse, error) {
 		FullName:  user.FullName,
 		Email:     user.Email,
 		Role:      user.Role,
+		Modules:   s.userModules(user),
 		CreatedAt: user.CreatedAt.Format(time.RFC3339),
 	}, nil
 }

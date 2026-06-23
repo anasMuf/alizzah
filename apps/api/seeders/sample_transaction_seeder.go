@@ -156,10 +156,12 @@ func SeedSampleTransactions(db *gorm.DB) {
 				for _, fi := range initialItems {
 					totalAmount += fi.Amount
 					invoiceItems = append(invoiceItems, model.InvoiceItem{
-						Name:        fi.Name,
-						Category:    "initial",
-						Amount:      fi.Amount,
-						IsMandatory: true,
+						Name:              fi.Name,
+						Category:          "initial",
+						Amount:            fi.Amount,
+						IsMandatory:       true,
+						IsKoperasi:        fi.IsKoperasi,
+						KoperasiProductID: fi.KoperasiProductID,
 					})
 				}
 
@@ -188,10 +190,12 @@ func SeedSampleTransactions(db *gorm.DB) {
 			for _, fi := range regItems {
 				totalAmount += fi.Amount
 				invoiceItems = append(invoiceItems, model.InvoiceItem{
-					Name:        fi.Name,
-					Category:    "registration",
-					Amount:      fi.Amount,
-					IsMandatory: true,
+					Name:              fi.Name,
+					Category:          "registration",
+					Amount:            fi.Amount,
+					IsMandatory:       true,
+					IsKoperasi:        fi.IsKoperasi,
+					KoperasiProductID: fi.KoperasiProductID,
 				})
 			}
 

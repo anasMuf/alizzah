@@ -6,6 +6,7 @@ interface PaymentSummaryProps {
 	invoiceItems: any[];
 	incidentalItems: any[];
 	payAmounts: Record<number, number>;
+	excludedItems: number[];
 	savingsBalance: number;
 	totalPay: number;
 	source: "cash" | "savings";
@@ -22,6 +23,7 @@ export function PaymentSummary({
 	invoiceItems,
 	incidentalItems,
 	payAmounts,
+	excludedItems,
 	savingsBalance,
 	totalPay,
 	source,
@@ -47,7 +49,9 @@ export function PaymentSummary({
 			{/* Item summary */}
 			<div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
 				{invoiceItems
-					.filter((i: any) => payAmounts[i.id] !== 0)
+					.filter(
+						(i: any) => payAmounts[i.id] !== 0 && !excludedItems.includes(i.id),
+					)
 					.map((item: any) => (
 						<div
 							key={item.id}
@@ -155,6 +159,16 @@ export function PaymentSummary({
 							placeholder="0"
 						/>
 					</div>
+					{cashReceived !== "" && Number(cashReceived) < totalPay && (
+						<div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg p-3">
+							<AlertCircle className="h-4 w-4 text-amber-400 flex-shrink-0 mt-0.5" />
+							<p className="text-xs text-amber-700">
+								Uang diterima kurang{" "}
+								{formatCurrency(totalPay - Number(cashReceived))} dari total.
+								Kurangi item atau tambah uang.
+							</p>
+						</div>
+					)}
 					{Number(cashReceived) >= totalPay && (
 						<div className="bg-white rounded-lg border border-gray-200 p-3 space-y-2">
 							<div className="flex justify-between text-sm">

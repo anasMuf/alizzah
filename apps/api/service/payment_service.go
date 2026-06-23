@@ -399,7 +399,7 @@ func mapPaymentToDetailResponse(p model.Payment) dto.PaymentDetailResponse {
 	var items []dto.PaymentItemResponse
 	for _, item := range p.Items {
 		items = append(items, dto.PaymentItemResponse{
-			ID: item.ID, InvoiceItemID: item.InvoiceItemID, InvoiceItemName: item.InvoiceItem.Name, Amount: item.Amount,
+			ID: item.ID, InvoiceItemID: item.InvoiceItemID, InvoiceItemName: item.InvoiceItem.Name, Category: item.InvoiceItem.Category, Amount: item.Amount,
 		})
 	}
 	resp.Items = items

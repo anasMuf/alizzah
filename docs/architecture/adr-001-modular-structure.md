@@ -116,11 +116,12 @@ Kode existing sedang fase stabilisasi (`docs/issue/audit-01`, `audit-02`). Maka:
 
 | Fase | Lingkup | Committed |
 |---|---|---|
-| **0 — Fondasi** | Backend: skeleton `internal/{platform,shared,modules}` + main.go Register. Frontend: ekstrak `packages/{ui,api-client,auth,config}` (dashboard mengonsumsinya). | ✅ selesai |
+| **0 — Fondasi** | Backend: skeleton `internal/{platform,shared,modules}` + main.go Register. | ✅ selesai |
 | **1 — Koperasi** | Bangun modul koperasi (sub-batch 8a–8f, lihat [`../koperasi/integration-plan.md`](../koperasi/integration-plan.md)) di struktur baru. | ✅ sekarang |
-| **2 — Migrasi legacy** | `akademik` & `keuangan` → `internal/modules/`; `dashboard` → konsumsi `@alizzah/ui`. Per modul, PR mekanis & ber-test. | ⏳ menyusul, oportunistik |
+| **2a — Migrasi backend legacy** | `akademik` & `keuangan` → `internal/modules/`. Per modul, PR mekanis & ber-test. | ⏳ menyusul, oportunistik |
+| **2b — Ekstraksi `packages/*`** | `@alizzah/{ui,api-client,auth,config}`. Ditunda sampai ada **konsumen kedua** (mis. mobile app) — saat ini hanya `apps/dashboard` yang mengonsumsi, sehingga ekstraksi prematur hanya menambah lapisan indireksi tanpa manfaat. | 🔵 deferred |
 
-> Fase 2 **tidak** wajib selesai sebelum koperasi. Selama transisi, struktur lama (flat) & baru (modular) boleh hidup berdampingan — koperasi & dua modul lama tetap kompilasi & jalan.
+> Fase 2a & 2b **tidak** wajib selesai sebelum koperasi. Selama transisi, struktur lama (flat) & baru (modular) boleh hidup berdampingan — koperasi & dua modul lama tetap kompilasi & jalan.
 
 ---
 
@@ -136,7 +137,7 @@ Kode existing sedang fase stabilisasi (`docs/issue/audit-01`, `audit-02`). Maka:
 - Investasi fondasi **~3–4 hari** sebelum fitur koperasi pertama.
 - Sementara waktu ada **dua pola** (flat lama + modular baru) sampai Fase 2 selesai.
 - Multi-app (untuk app yang memang terpisah, mis. mobile) menambah shell & pipeline tersendiri. **Koperasi sendiri TIDAK menambah app** — ia modul di dashboard (revisi §2.2).
-- Refactor import dashboard ke `@alizzah/ui` menyentuh ~64 file (mekanis, ditunda ke Fase 2).
+- Refactor import dashboard ke `@alizzah/ui` menyentuh ~64 file (mekanis, ditunda ke Fase 2b — saat ada konsumen kedua).
 
 ---
 
@@ -160,10 +161,9 @@ Keputusan awal: modular + koperasi sebagai *pilot app terpisah*. **Revisi 2026-0
 ---
 
 ## 7. Tindak Lanjut
-- [x] `pnpm-workspace.yaml` → tambah `packages/*`.
 - [x] Skeleton `internal/{platform,shared,modules}` + helper `shared.New` + pola `RegisterRoutes`/`Models`.
-- [x] Ekstrak `@alizzah/{ui,api-client,auth,config}` (dashboard mengonsumsinya).
 - [x] Bangun **backend** koperasi (8a–8e) di struktur modular.
 - [x] **(Revisi 2026-06-12)** Koperasi = **modul `apps/dashboard`**, bukan app terpisah; `apps/koperasi` dihapus. Lihat [ADR-002](./adr-002-deployment-multi-binary.md) catatan revisi.
-- [ ] **Frontend koperasi di `apps/dashboard`** (regen Swagger+Orval → `packages/api-client`; `features/koperasi/` + `routes/_authenticated/koperasi/` + section Sidebar).
-- [ ] (Fase 2) Migrasikan `akademik`, `keuangan` → `internal/modules`, dan dashboard→`@alizzah/ui`.
+- [ ] **Frontend koperasi di `apps/dashboard`** (regen Swagger+Orval; `features/koperasi/` + `routes/_authenticated/koperasi/` + section Sidebar).
+- [ ] (Fase 2a) Migrasikan `akademik`, `keuangan` → `internal/modules/`.
+- [ ] (Fase 2b — deferred) Ekstrak `@alizzah/{ui,api-client,auth,config}` — ditunda sampai ada konsumen kedua selain `apps/dashboard`.

@@ -488,7 +488,8 @@ function DetailTagihanPage() {
 	const groupedInvoiceItems = ((invoice.items as any[]) || []).reduce(
 		(acc: Record<string, any[]>, it: any) => {
 			const c = it.category || "other";
-			(acc[c] ||= []).push(it);
+			if (!acc[c]) acc[c] = [];
+			acc[c].push(it);
 			return acc;
 		},
 		{} as Record<string, any[]>,

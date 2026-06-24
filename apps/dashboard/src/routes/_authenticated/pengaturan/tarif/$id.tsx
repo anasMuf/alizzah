@@ -386,8 +386,7 @@ function PengaturanTarifIdComponent() {
 			) : (
 				Object.entries(groupedItems).map(([category, catItems]) => {
 					const groupTotal = catItems.reduce(
-						(sum, it) =>
-							sum + (it.unit === "percent" ? 0 : (it.amount ?? 0)),
+						(sum, it) => sum + (it.unit === "percent" ? 0 : (it.amount ?? 0)),
 						0,
 					);
 					const isExpanded = expandedCategories[category] ?? false;

@@ -84,6 +84,7 @@ function PengaturanTarifComponent() {
 				<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 					{feeConfigs.map((fc) => (
 						<button
+							type="button"
 							key={fc.id}
 							onClick={() =>
 								navigate({

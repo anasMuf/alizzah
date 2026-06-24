@@ -143,7 +143,11 @@ export function InvoiceSelector({
 							<span className="ml-2.5 flex-1 font-medium text-gray-900">
 								{inv.type === "monthly"
 									? `Bulanan ${inv.month}/${inv.year}`
-									: "Registrasi / Lainnya"}
+									: inv.type === "registration"
+										? "Registrasi"
+										: inv.type === "initial"
+											? "Biaya Awal"
+											: "Lainnya"}
 							</span>
 							<span className="font-semibold text-rose-600 tabular-nums">
 								{formatCurrency(sisa)}

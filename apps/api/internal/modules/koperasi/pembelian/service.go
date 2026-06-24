@@ -2,11 +2,13 @@ package pembelian
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"api/internal/modules/koperasi/barang"
 	"api/internal/modules/koperasi/pemasok"
 	"api/internal/modules/koperasi/pembayaran"
+	"api/model"
 	"api/repository"
 
 	"gorm.io/gorm"
@@ -141,6 +143,13 @@ func (s *svc) Create(req CreateRequest, createdBy uint) (*Response, error) {
 			}); err != nil {
 				return err
 			}
+
+			// Bridge: catat pengeluaran di tabel sekolah (expenses + cash_transactions)
+			if err := s.recordSchoolExpense(tx, req.AcademicYearID, date, paid,
+				fmt.Sprintf("Pembelian koperasi #%d: %s", p.ID, req.ReferenceNumber),
+				createdBy); err != nil {
+				return err
+			}
 		}
 		purchaseID = p.ID
 		return nil
@@ -174,11 +183,18 @@ func (s *svc) Pay(id uint, req PaymentRequest, createdBy uint) (*Response, error
 		if method == "" {
 			method = "cash"
 		}
-		return s.paymentSvc.Record(tx, pembayaran.RecordInput{
+		if err := s.paymentSvc.Record(tx, pembayaran.RecordInput{
 			AcademicYearID: p.AcademicYearID, RefType: "purchase", RefID: p.ID, Direction: "out",
 			Amount: req.Amount, Date: date, Method: method, Category: "pembelian",
 			Description: "Pembayaran pembelian", Notes: req.Notes, CreatedBy: createdBy,
-		})
+		}); err != nil {
+			return err
+		}
+
+		// Bridge: catat pengeluaran di tabel sekolah
+		return s.recordSchoolExpense(tx, p.AcademicYearID, date, req.Amount,
+			fmt.Sprintf("Pembayaran pembelian koperasi #%d", p.ID),
+			createdBy)
 	})
 	if err != nil {
 		return nil, err
@@ -208,4 +224,44 @@ func (s *svc) Get(id uint) (*Response, error) {
 	}
 	resp := toResponse(*p)
 	return &resp, nil
+}
+
+// recordSchoolExpense mencatat pengeluaran di tabel sekolah (expenses + cash_transactions)
+// sebagai jembatan agar transaksi koperasi muncul di laporan keuangan sekolah.
+func (s *svc) recordSchoolExpense(tx *gorm.DB, academicYearID uint, date time.Time, amount float64, description string, createdBy uint) error {
+	// Cari sub-kategori "Koperasi" yang sudah ada
+	var kopCategory model.ExpenseCategory
+	if err := tx.Where("name = ? AND parent_id IS NOT NULL", "Koperasi").First(&kopCategory).Error; err != nil {
+		return fmt.Errorf("Sub-kategori 'Koperasi' tidak ditemukan: %w", err)
+	}
+
+	// Buat record expenses
+	expense := model.Expense{
+		AcademicYearID:    academicYearID,
+		ExpenseCategoryID: kopCategory.ID,
+		ExpenseDate:       date,
+		Amount:            amount,
+		Description:       description,
+		CreatedBy:         createdBy,
+	}
+	if err := tx.Create(&expense).Error; err != nil {
+		return fmt.Errorf("Gagal mencatat pengeluaran koperasi: %w", err)
+	}
+
+	// Buat cash_transactions debit (source_type = "expense" agar sinkron)
+	cashTxn := model.CashTransaction{
+		AcademicYearID:  academicYearID,
+		TransactionDate: date,
+		TransactionType: "debit",
+		Amount:          amount,
+		SourceType:      "expense",
+		SourceID:        &expense.ID,
+		Description:     description,
+		CreatedBy:       createdBy,
+	}
+	if err := tx.Create(&cashTxn).Error; err != nil {
+		return fmt.Errorf("Gagal mencatat transaksi kas koperasi: %w", err)
+	}
+
+	return nil
 }

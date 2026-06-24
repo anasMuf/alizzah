@@ -316,19 +316,41 @@ func (s *paymentService) Create(createdBy uint, req dto.CreatePaymentRequest) (*
 					return err
 				}
 
-				// Catat pengeluaran (transfer) uang keluar dari kas sekolah
+				// Hitung total porsi koperasi
 				koperasiTotal := float64(0)
 				for _, ki := range koperasiItems {
 					koperasiTotal += ki.Amount
 				}
 
 				if koperasiTotal > 0 {
+					// Cari sub-kategori "Koperasi" yang sudah ada untuk dicatat di tabel expenses
+					var kopCategory model.ExpenseCategory
+					if err := tx.Where("name = ? AND parent_id IS NOT NULL", "Koperasi").First(&kopCategory).Error; err != nil {
+						return fmt.Errorf("Sub-kategori 'Koperasi' tidak ditemukan: %w", err)
+					}
+
+					// Buat record expenses agar muncul di laporan pengeluaran sekolah
+					expense := model.Expense{
+						AcademicYearID:    req.AcademicYearID,
+						ExpenseCategoryID: kopCategory.ID,
+						ExpenseDate:       paymentDate,
+						Amount:            koperasiTotal,
+						Description:       fmt.Sprintf("Transfer porsi Koperasi via Pembayaran %s", student.FullName),
+						CreatedBy:         createdBy,
+					}
+					if err := tx.Create(&expense).Error; err != nil {
+						return fmt.Errorf("Gagal mencatat pengeluaran koperasi: %w", err)
+					}
+
+					// Catat pengeluaran di cash_transactions dengan source_type "expense"
+					// agar sinkron dengan record expenses di atas
+					desc := fmt.Sprintf("Transfer porsi Koperasi via Pembayaran %s", student.FullName)
 					if req.Source == "cash" {
-						if err := s.txnWriter.WriteCashDebit(req.AcademicYearID, paymentDate, koperasiTotal, "koperasi_transfer", &result.ID, fmt.Sprintf("Transfer porsi Koperasi via Pembayaran %s", student.FullName), createdBy, tx); err != nil {
+						if err := s.txnWriter.WriteCashDebit(req.AcademicYearID, paymentDate, koperasiTotal, "expense", &expense.ID, desc, createdBy, tx); err != nil {
 							return err
 						}
 					} else if req.Source == "savings" {
-						if err := s.txnWriter.WriteVaultDebit(req.AcademicYearID, paymentDate, koperasiTotal, "koperasi_transfer", &result.ID, fmt.Sprintf("Transfer porsi Koperasi via Pembayaran %s", student.FullName), createdBy, tx); err != nil {
+						if err := s.txnWriter.WriteVaultDebit(req.AcademicYearID, paymentDate, koperasiTotal, "expense", &expense.ID, desc, createdBy, tx); err != nil {
 							return err
 						}
 					}

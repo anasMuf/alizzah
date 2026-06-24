@@ -92,47 +92,46 @@ func (s *koperasiSeamService) ProcessPaymentItems(tx *gorm.DB, paymentID uint, s
 		if item.KoperasiProductID != nil {
 			saleItem.ProductID = *item.KoperasiProductID
 
-			// If variant ID is nil, resolve to the first variant of this product.
+			// Resolve variant: pakai KoperasiVariantID bila dikirim, kalau tidak
+			// resolve otomatis via DefaultVariantWithTx (varian aktif pertama).
 			var variantID uint
 			var variantName string
 			var costPrice float64
 
-			if item.KoperasiVariantID == nil {
-				// Resolve variant automatically
-				var activeVariant barang.Variant
-				err := tx.Where("product_id = ? AND is_active = ?", *item.KoperasiProductID, true).
-					Order("id ASC").
-					First(&activeVariant).Error
+			if item.KoperasiVariantID != nil && *item.KoperasiVariantID > 0 {
+				v, err := s.barangRepo.FindVariantByIDWithTx(tx, *item.KoperasiVariantID)
 				if err != nil {
-					// Fallback to any variant if no active one found
-					err = tx.Where("product_id = ?", *item.KoperasiProductID).
-						Order("id ASC").
-						First(&activeVariant).Error
+					return fmt.Errorf("varian koperasi (id=%d) tidak ditemukan: %w", *item.KoperasiVariantID, err)
 				}
-				if err == nil {
-					variantID = activeVariant.ID
-					variantName = activeVariant.Name
-					costPrice = activeVariant.CostPrice
-				}
+				variantID = v.ID
+				variantName = v.Name
+				costPrice = v.CostPrice
 			} else {
-				// Fetch the specific variant
-				var specificVariant barang.Variant
-				if err := tx.First(&specificVariant, *item.KoperasiVariantID).Error; err == nil {
-					variantID = specificVariant.ID
-					variantName = specificVariant.Name
-					costPrice = specificVariant.CostPrice
+				v, err := s.barangRepo.DefaultVariantWithTx(tx, *item.KoperasiProductID)
+				if err != nil {
+					// Fallback: cari varian non-aktif sekalipun
+					var fallback barang.Variant
+					if err2 := tx.Where("product_id = ?", *item.KoperasiProductID).
+						Order("id ASC").First(&fallback).Error; err2 != nil {
+						return fmt.Errorf("barang koperasi (product_id=%d) tidak memiliki varian: %w", *item.KoperasiProductID, err)
+					}
+					variantID = fallback.ID
+					variantName = fallback.Name
+					costPrice = fallback.CostPrice
+				} else {
+					variantID = v.ID
+					variantName = v.Name
+					costPrice = v.CostPrice
 				}
 			}
 
-			if variantID > 0 {
-				saleItem.VariantID = variantID
-				saleItem.VariantName = variantName
-				saleItem.UnitCost = costPrice
+			saleItem.VariantID = variantID
+			saleItem.VariantName = variantName
+			saleItem.UnitCost = costPrice
 
-				// Decrease stock by 1
-				if err := s.barangRepo.AdjustVariantStockWithTx(tx, variantID, -1); err != nil {
-					return fmt.Errorf("gagal memotong stok varian: %w", err)
-				}
+			// Kurangi stok
+			if err := s.barangRepo.AdjustVariantStockWithTx(tx, variantID, -1); err != nil {
+				return fmt.Errorf("gagal memotong stok varian: %w", err)
 			}
 		}
 

@@ -2,9 +2,11 @@ package lainlain
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"api/internal/modules/koperasi/kas"
+	"api/model"
 	"api/repository"
 
 	"gorm.io/gorm"
@@ -64,6 +66,18 @@ func (s *svc) Create(req CreateRequest, createdBy uint) (*Response, error) {
 		if werr != nil {
 			return werr
 		}
+
+		// Bridge: catat di tabel sekolah (expenses + cash_transactions)
+		if req.Flow == "expense" {
+			if err := s.recordSchoolExpense(tx, req.AcademicYearID, date, req.Amount, desc, createdBy); err != nil {
+				return err
+			}
+		} else if req.Flow == "income" {
+			if err := s.recordSchoolIncome(tx, req.AcademicYearID, date, req.Amount, desc, createdBy); err != nil {
+				return err
+			}
+		}
+
 		return tx.Model(&rec).Update("cash_txn_id", cashID).Error
 	})
 	if err != nil {
@@ -94,4 +108,60 @@ func (s *svc) Get(id uint) (*Response, error) {
 	}
 	resp := toResponse(*m)
 	return &resp, nil
+}
+
+// recordSchoolExpense mencatat pengeluaran di tabel sekolah (expenses + cash_transactions)
+// sebagai jembatan agar transaksi koperasi muncul di laporan keuangan sekolah.
+func (s *svc) recordSchoolExpense(tx *gorm.DB, academicYearID uint, date time.Time, amount float64, description string, createdBy uint) error {
+	var kopCategory model.ExpenseCategory
+	if err := tx.Where("name = ? AND parent_id IS NOT NULL", "Koperasi").First(&kopCategory).Error; err != nil {
+		return fmt.Errorf("Sub-kategori 'Koperasi' tidak ditemukan: %w", err)
+	}
+
+	expense := model.Expense{
+		AcademicYearID:    academicYearID,
+		ExpenseCategoryID: kopCategory.ID,
+		ExpenseDate:       date,
+		Amount:            amount,
+		Description:       description,
+		CreatedBy:         createdBy,
+	}
+	if err := tx.Create(&expense).Error; err != nil {
+		return fmt.Errorf("Gagal mencatat pengeluaran koperasi: %w", err)
+	}
+
+	cashTxn := model.CashTransaction{
+		AcademicYearID:  academicYearID,
+		TransactionDate: date,
+		TransactionType: "debit",
+		Amount:          amount,
+		SourceType:      "expense",
+		SourceID:        &expense.ID,
+		Description:     description,
+		CreatedBy:       createdBy,
+	}
+	if err := tx.Create(&cashTxn).Error; err != nil {
+		return fmt.Errorf("Gagal mencatat transaksi kas koperasi: %w", err)
+	}
+
+	return nil
+}
+
+// recordSchoolIncome mencatat pemasukan di tabel sekolah (cash_transactions credit)
+// sebagai jembatan agar pemasukan koperasi muncul di laporan keuangan sekolah.
+func (s *svc) recordSchoolIncome(tx *gorm.DB, academicYearID uint, date time.Time, amount float64, description string, createdBy uint) error {
+	cashTxn := model.CashTransaction{
+		AcademicYearID:  academicYearID,
+		TransactionDate: date,
+		TransactionType: "credit",
+		Amount:          amount,
+		SourceType:      "koperasi_income",
+		Description:     description,
+		CreatedBy:       createdBy,
+	}
+	if err := tx.Create(&cashTxn).Error; err != nil {
+		return fmt.Errorf("Gagal mencatat pemasukan kas koperasi: %w", err)
+	}
+
+	return nil
 }

@@ -1,6 +1,15 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Edit, Plus, Save, Trash2, X } from "lucide-react";
+import {
+	ArrowLeft,
+	ChevronDown,
+	ChevronRight,
+	Edit,
+	Plus,
+	Save,
+	Trash2,
+	X,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import {
 	getGetV1FeeConfigsIdItemsQueryKey,
@@ -104,6 +113,13 @@ function PengaturanTarifIdComponent() {
 		useState<DtoFeeConfigItemResponse | null>(null);
 
 	const [filterCategory, setFilterCategory] = useState("");
+	// F08-3: rincian item per kategori disembunyikan secara default; header
+	// menampilkan total keseluruhan, klik untuk membuka rincian.
+	const [expandedCategories, setExpandedCategories] = useState<
+		Record<string, boolean>
+	>({});
+	const toggleCategory = (cat: string) =>
+		setExpandedCategories((prev) => ({ ...prev, [cat]: !prev[cat] }));
 
 	const { data: configResponse, isLoading: configLoading } =
 		useGetV1FeeConfigsId(configId);
@@ -368,24 +384,52 @@ function PengaturanTarifIdComponent() {
 					}}
 				/>
 			) : (
-				Object.entries(groupedItems).map(([category, catItems]) => (
-					<div key={category} className="space-y-2">
-						<h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
-							{CATEGORY_LABELS[category] || category}
-						</h3>
-						<ItemTable
-							items={catItems}
-							onEdit={(item) => {
-								setEditingItem(item);
-								setIsItemFormOpen(true);
-							}}
-							onDelete={(item) => {
-								setItemToDelete(item);
-								setIsDeleteOpen(true);
-							}}
-						/>
-					</div>
-				))
+				Object.entries(groupedItems).map(([category, catItems]) => {
+					const groupTotal = catItems.reduce(
+						(sum, it) => sum + (it.unit === "percent" ? 0 : (it.amount ?? 0)),
+						0,
+					);
+					const isExpanded = expandedCategories[category] ?? false;
+					return (
+						<div key={category} className="space-y-2">
+							<button
+								type="button"
+								onClick={() => toggleCategory(category)}
+								className="w-full flex items-center justify-between gap-3 bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 px-5 py-4 text-left hover:bg-gray-50 transition-colors"
+							>
+								<div className="flex items-center gap-2">
+									{isExpanded ? (
+										<ChevronDown className="h-4 w-4 text-gray-400" />
+									) : (
+										<ChevronRight className="h-4 w-4 text-gray-400" />
+									)}
+									<h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
+										{CATEGORY_LABELS[category] || category}
+									</h3>
+									<span className="text-xs font-normal normal-case text-gray-400">
+										{catItems.length} item
+									</span>
+								</div>
+								<span className="text-base font-bold text-gray-900 tabular-nums">
+									{formatCurrency(groupTotal)}
+								</span>
+							</button>
+							{isExpanded && (
+								<ItemTable
+									items={catItems}
+									onEdit={(item) => {
+										setEditingItem(item);
+										setIsItemFormOpen(true);
+									}}
+									onDelete={(item) => {
+										setItemToDelete(item);
+										setIsDeleteOpen(true);
+									}}
+								/>
+							)}
+						</div>
+					);
+				})
 			)}
 
 			<ItemFormSlideOver

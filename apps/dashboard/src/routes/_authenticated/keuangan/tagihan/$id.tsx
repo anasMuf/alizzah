@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import {
 	CalendarDays,
+	ChevronDown,
 	ChevronRight,
 	Edit2,
 	Plus,
@@ -76,6 +77,13 @@ function DetailTagihanPage() {
 	const [itemName, setItemName] = useState("");
 	const [itemAmount, setItemAmount] = useState("");
 	const [itemCategory, setItemCategory] = useState("incidental");
+	// F08-3: rincian item dikelompokkan per kategori; default tertutup,
+	// header menampilkan subtotal kategori, klik untuk membuka rincian.
+	const [expandedInvoiceCats, setExpandedInvoiceCats] = useState<
+		Record<string, boolean>
+	>({});
+	const toggleInvoiceCat = (cat: string) =>
+		setExpandedInvoiceCats((prev) => ({ ...prev, [cat]: !prev[cat] }));
 	const [selectedFeeItemId, setSelectedFeeItemId] = useState<string>("");
 	const [selectedFeeItem, setSelectedFeeItem] = useState<any>(null);
 	const [unitQuantity, setUnitQuantity] = useState("");
@@ -476,6 +484,108 @@ function DetailTagihanPage() {
 	const paidAmount = Number(invoice.paid_amount);
 	const sisa = totalAmount - paidAmount;
 
+	// F08-3: kelompokkan item tagihan per kategori untuk tampilan collapse.
+	const groupedInvoiceItems = ((invoice.items as any[]) || []).reduce(
+		(acc: Record<string, any[]>, it: any) => {
+			const c = it.category || "other";
+			if (!acc[c]) acc[c] = [];
+			acc[c].push(it);
+			return acc;
+		},
+		{} as Record<string, any[]>,
+	);
+
+	// F08-3: collapse rincian hanya untuk tagihan "bundel" (biaya awal,
+	// registrasi, wisuda) yang berisi banyak item satu jenis. Tagihan bulanan
+	// & insidental ditampilkan datar — tiap item sudah berdiri sendiri.
+	const collapseRincian = ["initial", "registration", "graduation"].includes(
+		invoice.type,
+	);
+
+	const renderItemRow = (item: any) => {
+		const itemTotal = Number(item.amount);
+		const itemPaid = Number(item.paid_amount);
+		const itemSisa = itemTotal - itemPaid;
+		const isPaid = itemPaid >= itemTotal;
+		const isPartial = itemPaid > 0 && !isPaid;
+		const hasQuantity = item.quantity != null && item.unit_price != null;
+		const unitLabel = item.category === "savings_mandatory" ? "Senin" : "hari";
+
+		return (
+			<li key={item.id} className="p-4 sm:px-6 hover:bg-gray-50">
+				<div className="flex justify-between items-start">
+					<div className="flex-1">
+						<div className="flex items-center gap-2">
+							<h4 className="text-sm font-medium text-gray-900">{item.name}</h4>
+							{isPaid ? (
+								<Badge variant="success">Lunas</Badge>
+							) : isPartial ? (
+								<Badge variant="warning">
+									Sisa: {formatCurrency(itemSisa)}
+								</Badge>
+							) : (
+								<Badge variant="danger">Belum Lunas</Badge>
+							)}
+						</div>
+						{item.category === "incidental" && (
+							<p className="text-xs text-gray-500 mt-1">
+								Tagihan Tambahan/Insidental
+							</p>
+						)}
+						{hasQuantity && (
+							<div className="mt-1.5">
+								<span className="text-xs text-gray-500">
+									{item.quantity} {unitLabel} &times;{" "}
+									{formatCurrency(item.unit_price)}
+								</span>
+							</div>
+						)}
+					</div>
+					<div className="text-right ml-4">
+						<div className="text-sm font-semibold text-gray-900">
+							{formatCurrency(itemTotal)}
+						</div>
+						{!isPaid && (
+							<div className="mt-2 flex gap-2 justify-end">
+								<button
+									type="button"
+									className={`text-xs flex items-center font-medium ${itemPaid > 0 ? "text-gray-400 cursor-not-allowed" : "text-indigo-600 hover:text-indigo-800"}`}
+									onClick={() => handleOpenEditItem(item)}
+									disabled={itemPaid > 0}
+									title={
+										itemPaid > 0
+											? "Item sudah sebagian dibayar, tidak dapat diedit"
+											: ""
+									}
+								>
+									<Edit2 className="w-3 h-3 mr-1" /> Edit
+								</button>
+								<button
+									type="button"
+									className={`text-xs flex items-center font-medium ${itemPaid > 0 || item.is_mandatory ? "text-gray-400 cursor-not-allowed" : "text-rose-600 hover:text-rose-800"}`}
+									onClick={() => {
+										if (itemPaid === 0 && !item.is_mandatory)
+											setDeletingItem(item);
+									}}
+									disabled={itemPaid > 0 || item.is_mandatory}
+									title={
+										item.is_mandatory
+											? "Item wajib tidak dapat dihapus"
+											: itemPaid > 0
+												? "Item sudah sebagian dibayar"
+												: ""
+									}
+								>
+									<Trash2 className="w-3 h-3 mr-1" /> Hapus
+								</button>
+							</div>
+						)}
+					</div>
+				</div>
+			</li>
+		);
+	};
+
 	const translateType = (type: string) => {
 		const map: Record<string, string> = {
 			monthly: "Bulanan",
@@ -630,95 +740,52 @@ function DetailTagihanPage() {
 								)}
 							</div>
 							<ul className="divide-y divide-gray-200">
-								{invoice.items?.map((item: any) => {
-									const itemTotal = Number(item.amount);
-									const itemPaid = Number(item.paid_amount);
-									const itemSisa = itemTotal - itemPaid;
-									const isPaid = itemPaid >= itemTotal;
-									const isPartial = itemPaid > 0 && !isPaid;
-									const hasQuantity =
-										item.quantity != null && item.unit_price != null;
-									const unitLabel =
-										item.category === "savings_mandatory" ? "Senin" : "hari";
-
-									return (
-										<li key={item.id} className="p-4 sm:px-6 hover:bg-gray-50">
-											<div className="flex justify-between items-start">
-												<div className="flex-1">
-													<div className="flex items-center gap-2">
-														<h4 className="text-sm font-medium text-gray-900">
-															{item.name}
-														</h4>
-														{isPaid ? (
-															<Badge variant="success">Lunas</Badge>
-														) : isPartial ? (
-															<Badge variant="warning">
-																Sisa: {formatCurrency(itemSisa)}
-															</Badge>
-														) : (
-															<Badge variant="danger">Belum Lunas</Badge>
-														)}
-													</div>
-													{item.category === "incidental" && (
-														<p className="text-xs text-gray-500 mt-1">
-															Tagihan Tambahan/Insidental
-														</p>
-													)}
-
-													{/* Quantity breakdown info */}
-													{hasQuantity && (
-														<div className="mt-1.5">
-															<span className="text-xs text-gray-500">
-																{item.quantity} {unitLabel} &times;{" "}
-																{formatCurrency(item.unit_price)}
+								{collapseRincian
+									? Object.entries(groupedInvoiceItems).map(
+											([cat, catItems]) => {
+												const subtotal = catItems.reduce(
+													(s: number, it: any) => s + Number(it.amount),
+													0,
+												);
+												const isCatOpen = expandedInvoiceCats[cat] ?? false;
+												return (
+													<li key={cat}>
+														<button
+															type="button"
+															onClick={() => toggleInvoiceCat(cat)}
+															className="w-full flex items-center justify-between gap-3 p-4 sm:px-6 text-left hover:bg-gray-50"
+														>
+															<div className="flex items-center gap-2">
+																{isCatOpen ? (
+																	<ChevronDown className="h-4 w-4 text-gray-400" />
+																) : (
+																	<ChevronRight className="h-4 w-4 text-gray-400" />
+																)}
+																<span className="text-sm font-semibold text-gray-900">
+																	{categoryLabels[cat] || cat}
+																</span>
+																<span className="text-xs text-gray-400">
+																	{catItems.length} item
+																</span>
+															</div>
+															<span className="text-sm font-bold text-gray-900 tabular-nums">
+																{formatCurrency(subtotal)}
 															</span>
-														</div>
-													)}
-												</div>
-												<div className="text-right ml-4">
-													<div className="text-sm font-semibold text-gray-900">
-														{formatCurrency(itemTotal)}
-													</div>
-													{!isPaid && (
-														<div className="mt-2 flex gap-2 justify-end">
-															<button
-																type="button"
-																className={`text-xs flex items-center font-medium ${itemPaid > 0 ? "text-gray-400 cursor-not-allowed" : "text-indigo-600 hover:text-indigo-800"}`}
-																onClick={() => handleOpenEditItem(item)}
-																disabled={itemPaid > 0}
-																title={
-																	itemPaid > 0
-																		? "Item sudah sebagian dibayar, tidak dapat diedit"
-																		: ""
-																}
-															>
-																<Edit2 className="w-3 h-3 mr-1" /> Edit
-															</button>
-															<button
-																type="button"
-																className={`text-xs flex items-center font-medium ${itemPaid > 0 || item.is_mandatory ? "text-gray-400 cursor-not-allowed" : "text-rose-600 hover:text-rose-800"}`}
-																onClick={() => {
-																	if (itemPaid === 0 && !item.is_mandatory)
-																		setDeletingItem(item);
-																}}
-																disabled={itemPaid > 0 || item.is_mandatory}
-																title={
-																	item.is_mandatory
-																		? "Item wajib tidak dapat dihapus"
-																		: itemPaid > 0
-																			? "Item sudah sebagian dibayar"
-																			: ""
-																}
-															>
-																<Trash2 className="w-3 h-3 mr-1" /> Hapus
-															</button>
-														</div>
-													)}
-												</div>
-											</div>
-										</li>
-									);
-								})}
+														</button>
+														{isCatOpen && (
+															<ul className="divide-y divide-gray-100">
+																{catItems.map((item: any) =>
+																	renderItemRow(item),
+																)}
+															</ul>
+														)}
+													</li>
+												);
+											},
+										)
+									: (invoice.items as any[])?.map((item: any) =>
+											renderItemRow(item),
+										)}
 							</ul>
 						</div>
 					</div>

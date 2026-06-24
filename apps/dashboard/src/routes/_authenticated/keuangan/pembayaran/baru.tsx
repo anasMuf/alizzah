@@ -65,6 +65,15 @@ function KasirPembayaranPage() {
 	// Invoices
 	const [selectedInvoices, setSelectedInvoices] = useState<number[]>([]);
 	const [payAmounts, setPayAmounts] = useState<Record<number, number>>({});
+	// F08-1: item yang di-uncheck (dikecualikan dari pembayaran). Nominalnya
+	// tetap tersimpan di payAmounts agar muncul lagi saat item dicentang ulang.
+	const [excludedItems, setExcludedItems] = useState<number[]>([]);
+	const toggleItem = (itemId: number) =>
+		setExcludedItems((prev) =>
+			prev.includes(itemId)
+				? prev.filter((x) => x !== itemId)
+				: [...prev, itemId],
+		);
 
 	// Incidental items
 	const [incidentalItems, setIncidentalItems] = useState<IncidentalItem[]>([]);
@@ -110,13 +119,42 @@ function KasirPembayaranPage() {
 		return items;
 	}, [invoiceDetails]);
 
+	// Buang entri payAmounts milik item yang sudah tidak ada di tagihan terpilih
+	// (mis. saat invoice di-uncheck) agar total bayar & payload submit tetap akurat.
+	useEffect(() => {
+		setPayAmounts((prev) => {
+			const validIds = new Set(invoiceItems.map((i) => i.id));
+			const next: Record<number, number> = {};
+			let changed = false;
+			for (const key of Object.keys(prev)) {
+				const id = Number(key);
+				if (validIds.has(id)) {
+					next[id] = prev[id];
+				} else {
+					changed = true;
+				}
+			}
+			return changed ? next : prev;
+		});
+	}, [invoiceItems]);
+
+	// Pangkas excludedItems mengikuti item aktif (mis. saat invoice di-uncheck).
+	useEffect(() => {
+		const validIds = new Set(invoiceItems.map((i) => i.id));
+		setExcludedItems((prev) => {
+			const next = prev.filter((id) => validIds.has(id));
+			return next.length === prev.length ? prev : next;
+		});
+	}, [invoiceItems]);
+
 	// Derived
 	const tabunganUmumTotal = incidentalItems
 		.filter((i) => i.isSavings)
 		.reduce((sum, i) => sum + i.amount, 0);
 	const totalPay = useMemo(() => {
-		const invoiceTotal = Object.values(payAmounts).reduce(
-			(sum, amt) => sum + amt,
+		const invoiceTotal = Object.entries(payAmounts).reduce(
+			(sum, [id, amt]) =>
+				excludedItems.includes(Number(id)) ? sum : sum + amt,
 			0,
 		);
 		const incidentalTotal = incidentalItems.reduce(
@@ -124,7 +162,7 @@ function KasirPembayaranPage() {
 			0,
 		);
 		return invoiceTotal + incidentalTotal;
-	}, [payAmounts, incidentalItems]);
+	}, [payAmounts, incidentalItems, excludedItems]);
 
 	const canSubmit =
 		selectedStudent &&
@@ -190,7 +228,7 @@ function KasirPembayaranPage() {
 				source: paymentSource,
 				payment_date: new Date().toISOString().split("T")[0],
 				items: Object.entries(payAmounts)
-					.filter(([_, amt]) => amt > 0)
+					.filter(([id, amt]) => amt > 0 && !excludedItems.includes(Number(id)))
 					.map(([itemId, amt]) => ({
 						invoice_item_id: Number(itemId),
 						amount: amt,
@@ -220,6 +258,7 @@ function KasirPembayaranPage() {
 								setSelectedStudent(null);
 								setSelectedInvoices([]);
 								setPayAmounts({});
+								setExcludedItems([]);
 								setIncidentalItems([]);
 								setCashReceived("");
 								setDepositChange(false);
@@ -254,6 +293,8 @@ function KasirPembayaranPage() {
 								academicYearId={activeAy?.id}
 								selectedInvoices={selectedInvoices}
 								payAmounts={payAmounts}
+								excludedItems={excludedItems}
+								onToggleItem={toggleItem}
 								initialInvoiceId={initialInvoiceId}
 								onToggleInvoice={(id) =>
 									setSelectedInvoices((prev) =>
@@ -281,6 +322,7 @@ function KasirPembayaranPage() {
 							invoiceItems={invoiceItems}
 							incidentalItems={incidentalItems}
 							payAmounts={payAmounts}
+							excludedItems={excludedItems}
 							savingsBalance={savingsBalance}
 							totalPay={totalPay}
 							source={paymentSource}

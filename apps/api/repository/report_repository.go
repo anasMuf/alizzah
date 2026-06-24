@@ -72,8 +72,8 @@ func (r *reportRepository) SumExpenseByCategory(academicYearID uint, startDate, 
 	var results []dto.CategoryAmount
 
 	err := r.db.Table("expenses e").
-		Select("ec_parent.name as category, ec.name as sub_category, SUM(e.amount) as amount").
-		Joins("JOIN expense_categories ec ON ec.id = e.expense_category_id").
+		Select("COALESCE(ec_parent.name, 'Tanpa Kategori') as category, COALESCE(ec.name, 'Tanpa Sub-Kategori') as sub_category, SUM(e.amount) as amount").
+		Joins("LEFT JOIN expense_categories ec ON ec.id = e.expense_category_id").
 		Joins("LEFT JOIN expense_categories ec_parent ON ec_parent.id = ec.parent_id").
 		Where("e.academic_year_id = ? AND e.expense_date BETWEEN ? AND ?", academicYearID, startDate, endDate).
 		Group("ec_parent.name, ec.name").
@@ -218,8 +218,8 @@ func (r *reportRepository) SumPengeluaranByInvoiceCategory(academicYearID uint, 
 	var rows []row
 
 	err := r.db.Table("expenses e").
-		Select("pec.invoice_category, ec.name as child_name, SUM(e.amount) as total").
-		Joins("JOIN expense_categories ec ON ec.id = e.expense_category_id").
+		Select("pec.invoice_category, COALESCE(ec.name, 'Tanpa Sub-Kategori') as child_name, SUM(e.amount) as total").
+		Joins("LEFT JOIN expense_categories ec ON ec.id = e.expense_category_id").
 		Joins("LEFT JOIN expense_categories pec ON pec.id = ec.parent_id").
 		Where("e.academic_year_id = ? AND e.expense_date BETWEEN ? AND ?", academicYearID, startDate, endDate).
 		Where("pec.invoice_category IS NOT NULL AND pec.invoice_category != ''").
@@ -276,7 +276,7 @@ func (r *reportRepository) DailyPengeluaran(academicYearID uint, startDate, endD
 
 	if category != "" {
 		query = query.
-			Joins("JOIN expense_categories ec ON ec.id = e.expense_category_id").
+			Joins("LEFT JOIN expense_categories ec ON ec.id = e.expense_category_id").
 			Joins("LEFT JOIN expense_categories pec ON pec.id = ec.parent_id").
 			Where("e.academic_year_id = ? AND e.expense_date BETWEEN ? AND ?", academicYearID, startDate, endDate).
 			Where("pec.invoice_category = ?", category)
@@ -321,7 +321,7 @@ func (r *reportRepository) SumPengeluaran(academicYearID uint, startDate, endDat
 
 	if category != "" {
 		query = query.
-			Joins("JOIN expense_categories ec ON ec.id = e.expense_category_id").
+			Joins("LEFT JOIN expense_categories ec ON ec.id = e.expense_category_id").
 			Joins("LEFT JOIN expense_categories pec ON pec.id = ec.parent_id").
 			Where("e.academic_year_id = ? AND e.expense_date BETWEEN ? AND ?", academicYearID, startDate, endDate).
 			Where("pec.invoice_category = ?", category)

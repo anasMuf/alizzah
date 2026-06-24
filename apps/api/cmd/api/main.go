@@ -130,8 +130,9 @@ func main() {
 	seeders.SeedIncomeTransactions(db) // 10. Sample Penerimaan Dana Bantuan (depends on #2)
 
 	// Data migrations / fixes
-	seeders.FixClassGroupSchedules(db) // Fix schedule JSON format from old "groups" to "weekdays/weekend"
-	seeders.MigrateRolesToModules(db)  // RBAC by-modul: role-bundle lama -> admin + grant modul
+	seeders.FixClassGroupSchedules(db)       // Fix schedule JSON format from old "groups" to "weekdays/weekend"
+	seeders.MigrateRolesToModules(db)        // RBAC by-modul: role-bundle lama -> admin + grant modul
+	seeders.BackfillInvoiceKoperasiFlags(db) // Backfill flag is_koperasi pada invoice_item lama yang belum lunas
 
 	// Inisialisasi Echo + middleware global (error handler, validator, CORS,
 	// recover, logging, swagger, health) — lihat internal/bootstrap.

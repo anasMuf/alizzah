@@ -12,6 +12,13 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "dashboard", "dev"],
       "port": 3000
+    },
+    {
+      "name": "dashboard-verify",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "dashboard", "exec", "vite", "--port", "5173"],
+      "port": 5173,
+      "autoPort": false
     }
   ]
 }

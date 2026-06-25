@@ -30,7 +30,10 @@ export function ExpenseFilter({
 		<div className="bg-white p-4 rounded-xl shadow-sm ring-1 ring-gray-900/5 space-y-4">
 			<div className="flex flex-wrap gap-4 items-end">
 				<div className="w-full sm:w-auto flex-1 min-w-[200px]">
-					<label className="block text-sm font-medium leading-6 text-gray-900 mb-1">
+					<label
+						htmlFor="expense-search"
+						className="block text-sm font-medium leading-6 text-gray-900 mb-1"
+					>
 						Pencarian (Keterangan)
 					</label>
 					<div className="relative rounded-md shadow-sm">
@@ -38,6 +41,7 @@ export function ExpenseFilter({
 							<Search className="h-5 w-5 text-gray-400" />
 						</div>
 						<input
+							id="expense-search"
 							type="text"
 							className="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
 							placeholder="Cari keterangan..."
@@ -48,10 +52,14 @@ export function ExpenseFilter({
 				</div>
 
 				<div className="w-full sm:w-auto">
-					<label className="block text-sm font-medium leading-6 text-gray-900 mb-1">
+					<label
+						htmlFor="expense-category"
+						className="block text-sm font-medium leading-6 text-gray-900 mb-1"
+					>
 						Kategori
 					</label>
 					<select
+						id="expense-category"
 						value={selectedCategory}
 						onChange={(e) => onCategoryChange(e.target.value)}
 						className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
@@ -70,10 +78,14 @@ export function ExpenseFilter({
 				</div>
 
 				<div className="w-full sm:w-auto">
-					<label className="block text-sm font-medium leading-6 text-gray-900 mb-1">
+					<label
+						htmlFor="expense-date-from"
+						className="block text-sm font-medium leading-6 text-gray-900 mb-1"
+					>
 						Dari Tanggal
 					</label>
 					<input
+						id="expense-date-from"
 						type="date"
 						value={dateFrom}
 						onChange={(e) => onDateFromChange(e.target.value)}
@@ -82,10 +94,14 @@ export function ExpenseFilter({
 				</div>
 
 				<div className="w-full sm:w-auto">
-					<label className="block text-sm font-medium leading-6 text-gray-900 mb-1">
+					<label
+						htmlFor="expense-date-to"
+						className="block text-sm font-medium leading-6 text-gray-900 mb-1"
+					>
 						Sampai Tanggal
 					</label>
 					<input
+						id="expense-date-to"
 						type="date"
 						value={dateTo}
 						onChange={(e) => onDateToChange(e.target.value)}

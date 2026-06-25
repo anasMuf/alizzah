@@ -15,6 +15,7 @@ import (
 	"api/internal/shared"
 	"api/middleware"
 	"api/repository"
+	"api/service"
 
 	"github.com/labstack/echo/v4"
 )
@@ -35,36 +36,47 @@ type Module struct {
 }
 
 func New(deps *shared.Deps,
-	ayHandler *handler.AcademicYearHandler,
-	extracurricularHandler *handler.ExtracurricularHandler,
 	classGroupHandler *handler.ClassGroupHandler,
 	enrollmentHandler *handler.StudentEnrollmentHandler,
 	effectiveDayHandler *handler.EffectiveDayHandler,
-	guardianHandler *handler.GuardianHandler,
-	facilityHandler *handler.FacilityHandler,
 	seHandler *handler.StudentExtracurricularHandler,
 	daycareHandler *handler.DaycareEnrollmentHandler,
 	studentHandler *handler.StudentHandler,
 	eventHandler *handler.AcademicEventHandler,
+	sfService service.StudentFacilityService,
 ) *Module {
 	db := deps.DB
+	ayRepo := repository.NewAcademicYearRepository(db)
+	guardianRepo := repository.NewGuardianRepository(db)
+	studentRepo := repository.NewStudentRepository(db)
+	facilityRepo := repository.NewFacilityRepository(db)
+	tokenBlacklistRepo := repository.NewTokenBlacklistRepository(db)
+	userModuleRepo := repository.NewUserModuleRepository(db)
+
 	return &Module{
 		Daycare:          daycare.New(daycareHandler),
-		Ekskul:           ekskul.New(extracurricularHandler),
+		Ekskul:           ekskul.New(db),
 		EkskulStudent:    ekskulstudent.New(seHandler),
 		EventAkademik:    eventakademik.New(eventHandler),
-		Fasilitas:        fasilitas.New(facilityHandler),
+		Fasilitas:        fasilitas.New(facilityRepo, sfService),
 		Pendaftaran:      pendaftaran.New(enrollmentHandler),
 		RombonganBelajar: rombonganbelajar.New(classGroupHandler, enrollmentHandler, effectiveDayHandler),
 		Siswa:            siswa.New(studentHandler),
-		TahunAjaran:      tahunajaran.New(ayHandler),
-		Wali:             wali.New(guardianHandler),
-		jwt:              middleware.JWTAuth(repository.NewTokenBlacklistRepository(db)),
-		guard:            middleware.NewModuleGuard(repository.NewUserModuleRepository(db)),
+		TahunAjaran:      tahunajaran.New(ayRepo),
+		Wali:             wali.New(guardianRepo, studentRepo),
+		jwt:              middleware.JWTAuth(tokenBlacklistRepo),
+		guard:            middleware.NewModuleGuard(userModuleRepo),
 	}
 }
 
-func (m *Module) Models() []any { return nil }
+func (m *Module) Models() []any {
+	var models []any
+	models = append(models, m.Ekskul.Models()...)
+	models = append(models, m.Fasilitas.Models()...)
+	models = append(models, m.TahunAjaran.Models()...)
+	models = append(models, m.Wali.Models()...)
+	return models
+}
 
 func (m *Module) RegisterRoutes(api *echo.Group) {
 	m.Daycare.RegisterRoutes(api, m.jwt, m.guard)

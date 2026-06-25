@@ -151,7 +151,6 @@ func main() {
 	tokenBlacklistRepo := repository.NewTokenBlacklistRepository(db)
 	ayRepo := repository.NewAcademicYearRepository(db)
 	studentRepo := repository.NewStudentRepository(db)
-	guardianRepo := repository.NewGuardianRepository(db)
 	classGroupRepo := repository.NewClassGroupRepository(db)
 
 	// Batch 3
@@ -190,8 +189,6 @@ func main() {
 	// Services
 	authService := service.NewAuthService(userRepo, userModuleRepo)
 	userService := service.NewUserService(userRepo, userModuleRepo)
-	ayService := service.NewAcademicYearService(ayRepo)
-	guardianService := service.NewGuardianService(guardianRepo, studentRepo)
 	classGroupService := service.NewClassGroupService(classGroupRepo)
 
 	// Batch 5: create generate service first (other services depend on it)
@@ -227,7 +224,6 @@ func main() {
 	studentService := service.NewStudentService(db, studentRepo, enrollmentRepo, classGroupRepo, invoiceRepo, extracurricularRepo, seRepo, fcRepo, fcItemRepo, savingsService, invoiceGenService)
 	enrollmentService := service.NewStudentEnrollmentService(db, enrollmentRepo, studentRepo, classGroupRepo, extracurricularRepo, seRepo, fcRepo, fcItemRepo, invoiceGenService, savingsService)
 	effectiveDayService := service.NewEffectiveDayService(effectiveDayRepo, classGroupRepo, invoiceGenService)
-	extracurricularService := service.NewExtracurricularService(extracurricularRepo)
 	seService := service.NewStudentExtracurricularService(seRepo, studentRepo, extracurricularRepo, ayRepo, invoiceGenService)
 	eventService := service.NewStudentAcademicEventService(eventRepo, studentRepo)
 	daycareService := service.NewDaycareEnrollmentService(db, daycareRepo, studentRepo, ayRepo, invoiceGenService)
@@ -243,15 +239,12 @@ func main() {
 	// Handlers
 	authHandler := handler.NewAuthHandler(authService, tokenBlacklistRepo)
 	userHandler := handler.NewUserHandler(userService)
-	ayHandler := handler.NewAcademicYearHandler(ayService)
 	studentHandler := handler.NewStudentHandler(studentService)
-	guardianHandler := handler.NewGuardianHandler(guardianService)
 	classGroupHandler := handler.NewClassGroupHandler(classGroupService)
 
 	// Batch 3
 	enrollmentHandler := handler.NewStudentEnrollmentHandler(enrollmentService)
 	effectiveDayHandler := handler.NewEffectiveDayHandler(effectiveDayService)
-	extracurricularHandler := handler.NewExtracurricularHandler(extracurricularService)
 	seHandler := handler.NewStudentExtracurricularHandler(seService, invoiceGenService)
 	eventHandler := handler.NewAcademicEventHandler(eventService, academicService)
 	daycareHandler := handler.NewDaycareEnrollmentHandler(daycareService, invoiceGenService)
@@ -270,9 +263,7 @@ func main() {
 	dispensationHandler := handler.NewDispensationHandler(dispensationService)
 
 	// Facilities
-	facilityService := service.NewFacilityService(facilityRepo)
 	sfService := service.NewStudentFacilityService(sfRepo, studentRepo, facilityRepo, ayRepo, invoiceGenService)
-	facilityHandler := handler.NewFacilityHandler(facilityService, sfService)
 
 	// Batch 7
 	reportHandler := handler.NewReportHandler(reportService)
@@ -281,7 +272,7 @@ func main() {
 	modKeuangan := keuangan.New(sharedDeps, reportHandler, savingsHandler, invoiceHandler, paymentHandler, feeConfigHandler, dispensationHandler)
 
 	// Modul akademik (modular)
-	modAkademik := akademik.New(sharedDeps, ayHandler, extracurricularHandler, classGroupHandler, enrollmentHandler, effectiveDayHandler, guardianHandler, facilityHandler, seHandler, daycareHandler, studentHandler, eventHandler)
+	modAkademik := akademik.New(sharedDeps, classGroupHandler, enrollmentHandler, effectiveDayHandler, seHandler, daycareHandler, studentHandler, eventHandler, sfService)
 
 	// =====================
 	// Routes — /api/v1

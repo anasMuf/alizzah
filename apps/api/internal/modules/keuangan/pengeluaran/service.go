@@ -1,8 +1,8 @@
-package service
+package pengeluaran
 
 import (
 	"api/dto"
-	"api/model"
+	"api/internal/shared"
 	"api/repository"
 	"api/utility"
 	"errors"
@@ -12,56 +12,51 @@ import (
 	"gorm.io/gorm"
 )
 
+// --- Expense Service ---
+
 type ExpenseService interface {
-	GetAll(params dto.ExpenseQueryParams) ([]dto.ExpenseResponse, *dto.Meta, error)
-	GetByID(id uint) (*dto.ExpenseResponse, error)
-	Create(createdBy uint, req dto.CreateExpenseRequest) (*dto.ExpenseResponse, error)
-	Update(id uint, req dto.CreateExpenseRequest) (*dto.ExpenseResponse, error)
+	GetAll(params ExpenseQueryParams) ([]ExpenseResponse, *dto.Meta, error)
+	GetByID(id uint) (*ExpenseResponse, error)
+	Create(createdBy uint, req CreateExpenseRequest) (*ExpenseResponse, error)
+	Update(id uint, req CreateExpenseRequest) (*ExpenseResponse, error)
 	Delete(id uint) error
 }
 
-type expenseService struct {
-	db             *gorm.DB
-	expenseRepo    repository.ExpenseRepository
-	categoryRepo   repository.ExpenseCategoryRepository
-	ayRepo         repository.AcademicYearRepository
-	txnWriter      TransactionWriterService
-}
-
-func NewExpenseService(
-	db *gorm.DB,
-	expenseRepo repository.ExpenseRepository,
-	categoryRepo repository.ExpenseCategoryRepository,
-	ayRepo repository.AcademicYearRepository,
-	txnWriter TransactionWriterService,
-) ExpenseService {
-	return &expenseService{
+func NewExpenseService(db *gorm.DB, expenseRepo ExpenseRepository, categoryRepo CategoryRepository, ayRepo repository.AcademicYearRepository) ExpenseService {
+	return &expenseSvc{
 		db:           db,
 		expenseRepo:  expenseRepo,
 		categoryRepo: categoryRepo,
 		ayRepo:       ayRepo,
-		txnWriter:    txnWriter,
+		writer:       shared.NewWriter(),
 	}
 }
 
-func (s *expenseService) GetAll(params dto.ExpenseQueryParams) ([]dto.ExpenseResponse, *dto.Meta, error) {
+type expenseSvc struct {
+	db           *gorm.DB
+	expenseRepo  ExpenseRepository
+	categoryRepo CategoryRepository
+	ayRepo       repository.AcademicYearRepository
+	writer       *shared.Writer
+}
+
+func (s *expenseSvc) GetAll(params ExpenseQueryParams) ([]ExpenseResponse, *dto.Meta, error) {
 	expenses, total, err := s.expenseRepo.FindAll(params)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	var responses []dto.ExpenseResponse
+	var responses []ExpenseResponse
 	for _, exp := range expenses {
 		responses = append(responses, mapExpenseToResponse(exp))
 	}
 
 	page, limit := utility.NormalizePagination(params.Page, params.Limit)
-
 	meta := &dto.Meta{Page: page, Limit: limit, Total: total}
 	return responses, meta, nil
 }
 
-func (s *expenseService) GetByID(id uint) (*dto.ExpenseResponse, error) {
+func (s *expenseSvc) GetByID(id uint) (*ExpenseResponse, error) {
 	expense, err := s.expenseRepo.FindByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -73,15 +68,12 @@ func (s *expenseService) GetByID(id uint) (*dto.ExpenseResponse, error) {
 	return &resp, nil
 }
 
-func (s *expenseService) Create(createdBy uint, req dto.CreateExpenseRequest) (*dto.ExpenseResponse, error) {
-	// Validate category is leaf node
+func (s *expenseSvc) Create(createdBy uint, req CreateExpenseRequest) (*ExpenseResponse, error) {
 	isLeaf, err := s.categoryRepo.IsLeafNode(req.ExpenseCategoryID)
 	if err != nil {
 		return nil, errors.New("Kategori pengeluaran tidak ditemukan")
 	}
-	// If it's not a leaf node, it's a root category
 	if !isLeaf {
-		// Check if it's actually a root (has no parent)
 		cat, err := s.categoryRepo.FindByID(req.ExpenseCategoryID)
 		if err == nil && cat.ParentID == nil {
 			return nil, errors.New("Tidak bisa menggunakan kategori root, pilih sub-kategori")
@@ -101,9 +93,9 @@ func (s *expenseService) Create(createdBy uint, req dto.CreateExpenseRequest) (*
 		return nil, errors.New("Tanggal sudah dikunci oleh tutup buku")
 	}
 
-	var expense model.Expense
+	var expense Expense
 	err = s.db.Transaction(func(tx *gorm.DB) error {
-		expense = model.Expense{
+		expense = Expense{
 			AcademicYearID:    req.AcademicYearID,
 			ExpenseCategoryID: req.ExpenseCategoryID,
 			ExpenseDate:       expenseDate,
@@ -116,9 +108,8 @@ func (s *expenseService) Create(createdBy uint, req dto.CreateExpenseRequest) (*
 			return err
 		}
 
-		return s.txnWriter.WriteCashDebit(req.AcademicYearID, expenseDate, req.Amount, "expense", &expense.ID, fmt.Sprintf("Pengeluaran: %s", req.Description), createdBy, tx)
+		return s.writer.WriteCashDebit(tx, req.AcademicYearID, expenseDate, req.Amount, "expense", &expense.ID, fmt.Sprintf("Pengeluaran: %s", req.Description), createdBy)
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -131,13 +122,12 @@ func (s *expenseService) Create(createdBy uint, req dto.CreateExpenseRequest) (*
 	return &resp, nil
 }
 
-func (s *expenseService) Update(id uint, req dto.CreateExpenseRequest) (*dto.ExpenseResponse, error) {
+func (s *expenseSvc) Update(id uint, req CreateExpenseRequest) (*ExpenseResponse, error) {
 	expense, err := s.expenseRepo.FindByID(id)
 	if err != nil {
 		return nil, errors.New("Pengeluaran tidak ditemukan")
 	}
 
-	// Check if date is locked
 	locked, err := s.expenseRepo.IsDateLocked(expense.ExpenseDate)
 	if err != nil {
 		return nil, fmt.Errorf("Gagal memeriksa status kunci tanggal: %w", err)
@@ -160,23 +150,17 @@ func (s *expenseService) Update(id uint, req dto.CreateExpenseRequest) (*dto.Exp
 	expense.ReceiptURL = req.ReceiptURL
 
 	err = s.db.Transaction(func(tx *gorm.DB) error {
-		// 1. Hapus CashTransaction lama
-		if err := s.txnWriter.DeleteCashBySource(tx, "expense", expense.ID); err != nil {
+		if err := s.writer.DeleteCashBySource(tx, "expense", expense.ID); err != nil {
 			return fmt.Errorf("gagal menghapus transaksi kas lama: %w", err)
 		}
-
-		// 2. Update expense
 		if err := s.expenseRepo.WithTx(tx).Update(expense); err != nil {
 			return err
 		}
-
-		// 3. Tulis CashTransaction baru dengan nominal yang sudah diupdate
 		desc := req.Description
 		if oldCategoryID != req.ExpenseCategoryID {
 			desc = fmt.Sprintf("[Kategori diperbarui] %s", desc)
 		}
-		return s.txnWriter.WriteCashDebit(req.AcademicYearID, expenseDate, req.Amount,
-			"expense", &expense.ID, fmt.Sprintf("Pengeluaran: %s", desc), expense.CreatedBy, tx)
+		return s.writer.WriteCashDebit(tx, req.AcademicYearID, expenseDate, req.Amount, "expense", &expense.ID, fmt.Sprintf("Pengeluaran: %s", desc), expense.CreatedBy)
 	})
 	if err != nil {
 		return nil, err
@@ -190,7 +174,7 @@ func (s *expenseService) Update(id uint, req dto.CreateExpenseRequest) (*dto.Exp
 	return &resp, nil
 }
 
-func (s *expenseService) Delete(id uint) error {
+func (s *expenseSvc) Delete(id uint) error {
 	expense, err := s.expenseRepo.FindByID(id)
 	if err != nil {
 		return errors.New("Pengeluaran tidak ditemukan")
@@ -205,17 +189,103 @@ func (s *expenseService) Delete(id uint) error {
 	}
 
 	return s.db.Transaction(func(tx *gorm.DB) error {
-		// 1. Hapus CashTransaction terkait
-		if err := s.txnWriter.DeleteCashBySource(tx, "expense", expense.ID); err != nil {
+		if err := s.writer.DeleteCashBySource(tx, "expense", expense.ID); err != nil {
 			return fmt.Errorf("gagal menghapus transaksi kas: %w", err)
 		}
-		// 2. Hapus Expense
 		return s.expenseRepo.WithTx(tx).Delete(id)
 	})
 }
 
-func mapExpenseToResponse(exp model.Expense) dto.ExpenseResponse {
-	resp := dto.ExpenseResponse{
+// --- Expense Category Service ---
+
+type CategoryService interface {
+	GetAll() ([]CategoryResponse, error)
+	Create(req CreateCategoryRequest) (*CategoryResponse, error)
+	Update(id uint, req CreateCategoryRequest) (*CategoryResponse, error)
+	Delete(id uint) error
+}
+
+func NewCategoryService(repo CategoryRepository) CategoryService {
+	return &categorySvc{repo: repo}
+}
+
+type categorySvc struct{ repo CategoryRepository }
+
+func (s *categorySvc) GetAll() ([]CategoryResponse, error) {
+	cats, err := s.repo.FindAll()
+	if err != nil {
+		return nil, err
+	}
+	var responses []CategoryResponse
+	for _, cat := range cats {
+		responses = append(responses, mapCategoryToResponse(cat))
+	}
+	return responses, nil
+}
+
+func (s *categorySvc) Create(req CreateCategoryRequest) (*CategoryResponse, error) {
+	if req.ParentID != nil {
+		parent, err := s.repo.FindByID(*req.ParentID)
+		if err != nil {
+			return nil, errors.New("Kategori induk tidak ditemukan")
+		}
+		if parent.ParentID != nil {
+			return nil, errors.New("Kategori hanya diizinkan 2 level")
+		}
+	}
+
+	cat := &ExpenseCategory{
+		Name:            req.Name,
+		ParentID:        req.ParentID,
+		InvoiceCategory: req.InvoiceCategory,
+	}
+	if err := s.repo.Create(cat); err != nil {
+		return nil, err
+	}
+
+	resp := mapCategoryToResponse(*cat)
+	return &resp, nil
+}
+
+func (s *categorySvc) Update(id uint, req CreateCategoryRequest) (*CategoryResponse, error) {
+	cat, err := s.repo.FindByID(id)
+	if err != nil {
+		return nil, errors.New("Kategori tidak ditemukan")
+	}
+
+	cat.Name = req.Name
+	cat.InvoiceCategory = req.InvoiceCategory
+	if err := s.repo.Update(cat); err != nil {
+		return nil, err
+	}
+
+	resp := mapCategoryToResponse(*cat)
+	return &resp, nil
+}
+
+func (s *categorySvc) Delete(id uint) error {
+	_, err := s.repo.FindByID(id)
+	if err != nil {
+		return errors.New("Kategori tidak ditemukan")
+	}
+
+	hasChildren, _ := s.repo.HasChildren(id)
+	if hasChildren {
+		return errors.New("Tidak bisa menghapus kategori yang memiliki sub-kategori")
+	}
+
+	hasExpenses, _ := s.repo.HasExpenses(id)
+	if hasExpenses {
+		return errors.New("Tidak bisa menghapus kategori yang sudah digunakan oleh pengeluaran")
+	}
+
+	return s.repo.Delete(id)
+}
+
+// --- Mappers ---
+
+func mapExpenseToResponse(exp Expense) ExpenseResponse {
+	resp := ExpenseResponse{
 		ID:          exp.ID,
 		ExpenseDate: exp.ExpenseDate.Format("2006-01-02"),
 		Amount:      exp.Amount,
@@ -223,7 +293,7 @@ func mapExpenseToResponse(exp model.Expense) dto.ExpenseResponse {
 		CreatedBy:   dto.UserBriefResponse{ID: exp.Creator.ID, FullName: exp.Creator.FullName},
 		CreatedAt:   exp.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 	}
-	resp.Category = dto.ExpenseCategoryBrief{
+	resp.Category = CategoryBrief{
 		ID:   exp.ExpenseCategory.ID,
 		Name: exp.ExpenseCategory.Name,
 	}
@@ -235,3 +305,18 @@ func mapExpenseToResponse(exp model.Expense) dto.ExpenseResponse {
 	}
 	return resp
 }
+
+func mapCategoryToResponse(cat ExpenseCategory) CategoryResponse {
+	resp := CategoryResponse{
+		ID:              cat.ID,
+		Name:            cat.Name,
+		ParentID:        cat.ParentID,
+		InvoiceCategory: cat.InvoiceCategory,
+	}
+	for _, child := range cat.Children {
+		resp.Children = append(resp.Children, mapCategoryToResponse(child))
+	}
+	return resp
+}
+
+

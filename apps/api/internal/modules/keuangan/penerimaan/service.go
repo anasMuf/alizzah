@@ -1,8 +1,8 @@
-package service
+package penerimaan
 
 import (
 	"api/dto"
-	"api/model"
+	"api/internal/shared"
 	"api/repository"
 	"api/utility"
 	"errors"
@@ -12,53 +12,48 @@ import (
 	"gorm.io/gorm"
 )
 
-type IncomeTransactionService interface {
-	GetAll(params dto.IncomeTransactionQueryParams) ([]dto.IncomeTransactionResponse, *dto.Meta, error)
-	GetByID(id uint) (*dto.IncomeTransactionResponse, error)
-	Create(createdBy uint, req dto.CreateIncomeTransactionRequest) (*dto.IncomeTransactionResponse, error)
-	Update(id uint, req dto.CreateIncomeTransactionRequest) (*dto.IncomeTransactionResponse, error)
+// --- Service ---
+
+type Service interface {
+	GetAll(params QueryParams) ([]Response, *dto.Meta, error)
+	GetByID(id uint) (*Response, error)
+	Create(createdBy uint, req CreateRequest) (*Response, error)
+	Update(id uint, req CreateRequest) (*Response, error)
 	Delete(id uint) error
 }
 
-type incomeTransactionService struct {
-	db        *gorm.DB
-	repo      repository.IncomeTransactionRepository
-	ayRepo    repository.AcademicYearRepository
-	txnWriter TransactionWriterService
+func NewService(db *gorm.DB, repo Repository, ayRepo repository.AcademicYearRepository) Service {
+	return &svc{db: db, repo: repo, ayRepo: ayRepo, writer: shared.NewWriter()}
 }
 
-func NewIncomeTransactionService(
-	db *gorm.DB,
-	repo repository.IncomeTransactionRepository,
-	ayRepo repository.AcademicYearRepository,
-	txnWriter TransactionWriterService,
-) IncomeTransactionService {
-	return &incomeTransactionService{
-		db:        db,
-		repo:      repo,
-		ayRepo:    ayRepo,
-		txnWriter: txnWriter,
-	}
+type svc struct {
+	db     *gorm.DB
+	repo   Repository
+	ayRepo repository.AcademicYearRepository
+	writer *shared.Writer
 }
 
-func (s *incomeTransactionService) GetAll(params dto.IncomeTransactionQueryParams) ([]dto.IncomeTransactionResponse, *dto.Meta, error) {
+var categoryLabels = map[string]string{
+	"bos":     "Dana BOS",
+	"donasi":  "Donasi",
+	"hibah":   "Hibah",
+	"lainnya": "Penerimaan Lainnya",
+}
+
+func (s *svc) GetAll(params QueryParams) ([]Response, *dto.Meta, error) {
 	txns, total, err := s.repo.FindAll(params)
 	if err != nil {
 		return nil, nil, err
 	}
-
-	var responses []dto.IncomeTransactionResponse
+	responses := make([]Response, 0, len(txns))
 	for _, t := range txns {
-		responses = append(responses, mapIncomeTransactionToResponse(t))
+		responses = append(responses, mapToResponse(t))
 	}
-
 	page, limit := utility.NormalizePagination(params.Page, params.Limit)
-
-	meta := &dto.Meta{Page: page, Limit: limit, Total: total}
-	return responses, meta, nil
+	return responses, &dto.Meta{Page: page, Limit: limit, Total: total}, nil
 }
 
-func (s *incomeTransactionService) GetByID(id uint) (*dto.IncomeTransactionResponse, error) {
+func (s *svc) GetByID(id uint) (*Response, error) {
 	it, err := s.repo.FindByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -66,16 +61,15 @@ func (s *incomeTransactionService) GetByID(id uint) (*dto.IncomeTransactionRespo
 		}
 		return nil, err
 	}
-	resp := mapIncomeTransactionToResponse(*it)
-	return &resp, nil
+	r := mapToResponse(*it)
+	return &r, nil
 }
 
-func (s *incomeTransactionService) Create(createdBy uint, req dto.CreateIncomeTransactionRequest) (*dto.IncomeTransactionResponse, error) {
+func (s *svc) Create(createdBy uint, req CreateRequest) (*Response, error) {
 	txnDate, err := time.Parse("2006-01-02", req.TransactionDate)
 	if err != nil {
 		return nil, fmt.Errorf("Format transaction_date tidak valid (YYYY-MM-DD): %w", err)
 	}
-
 	locked, err := s.repo.IsDateLocked(txnDate)
 	if err != nil {
 		return nil, fmt.Errorf("Gagal memeriksa status kunci tanggal: %w", err)
@@ -84,16 +78,9 @@ func (s *incomeTransactionService) Create(createdBy uint, req dto.CreateIncomeTr
 		return nil, errors.New("Tanggal sudah dikunci oleh tutup buku")
 	}
 
-	categoryLabels := map[string]string{
-		"bos":     "Dana BOS",
-		"donasi":  "Donasi",
-		"hibah":   "Hibah",
-		"lainnya": "Penerimaan Lainnya",
-	}
-
-	var income model.IncomeTransaction
+	var income IncomeTransaction
 	err = s.db.Transaction(func(tx *gorm.DB) error {
-		income = model.IncomeTransaction{
+		income = IncomeTransaction{
 			AcademicYearID:  req.AcademicYearID,
 			Category:        req.Category,
 			SourceName:      req.SourceName,
@@ -106,13 +93,8 @@ func (s *incomeTransactionService) Create(createdBy uint, req dto.CreateIncomeTr
 		if err := s.repo.CreateWithTx(&income, tx); err != nil {
 			return err
 		}
-
 		label := categoryLabels[req.Category]
-		desc := fmt.Sprintf("%s: %s", label, req.SourceName)
-		return s.txnWriter.WriteCashCredit(
-			req.AcademicYearID, txnDate, req.Amount,
-			"income", &income.ID, desc, createdBy, tx,
-		)
+		return s.writer.WriteCashCredit(tx, req.AcademicYearID, txnDate, req.Amount, "income", &income.ID, fmt.Sprintf("%s: %s", label, req.SourceName), createdBy)
 	})
 	if err != nil {
 		return nil, err
@@ -122,16 +104,15 @@ func (s *incomeTransactionService) Create(createdBy uint, req dto.CreateIncomeTr
 	if err != nil {
 		return nil, fmt.Errorf("Gagal mengambil data transaksi: %w", err)
 	}
-	resp := mapIncomeTransactionToResponse(*saved)
-	return &resp, nil
+	r := mapToResponse(*saved)
+	return &r, nil
 }
 
-func (s *incomeTransactionService) Update(id uint, req dto.CreateIncomeTransactionRequest) (*dto.IncomeTransactionResponse, error) {
+func (s *svc) Update(id uint, req CreateRequest) (*Response, error) {
 	it, err := s.repo.FindByID(id)
 	if err != nil {
 		return nil, errors.New("Transaksi penerimaan tidak ditemukan")
 	}
-
 	locked, err := s.repo.IsDateLocked(it.TransactionDate)
 	if err != nil {
 		return nil, fmt.Errorf("Gagal memeriksa status kunci tanggal: %w", err)
@@ -139,7 +120,6 @@ func (s *incomeTransactionService) Update(id uint, req dto.CreateIncomeTransacti
 	if locked {
 		return nil, errors.New("Tanggal sudah dikunci oleh tutup buku")
 	}
-
 	txnDate, err := time.Parse("2006-01-02", req.TransactionDate)
 	if err != nil {
 		return nil, fmt.Errorf("Format transaction_date tidak valid (YYYY-MM-DD): %w", err)
@@ -153,31 +133,15 @@ func (s *incomeTransactionService) Update(id uint, req dto.CreateIncomeTransacti
 	it.ReferenceNumber = req.ReferenceNumber
 	it.Notes = req.Notes
 
-	categoryLabels := map[string]string{
-		"bos":     "Dana BOS",
-		"donasi":  "Donasi",
-		"hibah":   "Hibah",
-		"lainnya": "Penerimaan Lainnya",
-	}
-
 	err = s.db.Transaction(func(tx *gorm.DB) error {
-		// 1. Hapus CashTransaction lama
-		if err := s.txnWriter.DeleteCashBySource(tx, "income", it.ID); err != nil {
+		if err := s.writer.DeleteCashBySource(tx, "income", it.ID); err != nil {
 			return fmt.Errorf("gagal menghapus transaksi kas lama: %w", err)
 		}
-
-		// 2. Update income transaction
 		if err := s.repo.WithTx(tx).Update(it); err != nil {
 			return err
 		}
-
-		// 3. Tulis CashTransaction baru
 		label := categoryLabels[req.Category]
-		desc := fmt.Sprintf("%s: %s", label, req.SourceName)
-		return s.txnWriter.WriteCashCredit(
-			req.AcademicYearID, txnDate, req.Amount,
-			"income", &it.ID, desc, it.CreatedBy, tx,
-		)
+		return s.writer.WriteCashCredit(tx, req.AcademicYearID, txnDate, req.Amount, "income", &it.ID, fmt.Sprintf("%s: %s", label, req.SourceName), it.CreatedBy)
 	})
 	if err != nil {
 		return nil, err
@@ -187,16 +151,15 @@ func (s *incomeTransactionService) Update(id uint, req dto.CreateIncomeTransacti
 	if err != nil {
 		return nil, fmt.Errorf("Gagal mengambil data transaksi: %w", err)
 	}
-	resp := mapIncomeTransactionToResponse(*saved)
-	return &resp, nil
+	r := mapToResponse(*saved)
+	return &r, nil
 }
 
-func (s *incomeTransactionService) Delete(id uint) error {
+func (s *svc) Delete(id uint) error {
 	it, err := s.repo.FindByID(id)
 	if err != nil {
 		return errors.New("Transaksi penerimaan tidak ditemukan")
 	}
-
 	locked, err := s.repo.IsDateLocked(it.TransactionDate)
 	if err != nil {
 		return fmt.Errorf("Gagal memeriksa status kunci tanggal: %w", err)
@@ -204,19 +167,18 @@ func (s *incomeTransactionService) Delete(id uint) error {
 	if locked {
 		return errors.New("Tanggal sudah dikunci oleh tutup buku")
 	}
-
 	return s.db.Transaction(func(tx *gorm.DB) error {
-		// 1. Hapus CashTransaction terkait
-		if err := s.txnWriter.DeleteCashBySource(tx, "income", it.ID); err != nil {
+		if err := s.writer.DeleteCashBySource(tx, "income", it.ID); err != nil {
 			return fmt.Errorf("gagal menghapus transaksi kas: %w", err)
 		}
-		// 2. Hapus IncomeTransaction
 		return s.repo.WithTx(tx).Delete(id)
 	})
 }
 
-func mapIncomeTransactionToResponse(it model.IncomeTransaction) dto.IncomeTransactionResponse {
-	resp := dto.IncomeTransactionResponse{
+// --- Mapper ---
+
+func mapToResponse(it IncomeTransaction) Response {
+	r := Response{
 		ID: it.ID,
 		AcademicYear: dto.AcademicYearBriefResponse{
 			ID:   it.AcademicYear.ID,
@@ -233,10 +195,12 @@ func mapIncomeTransactionToResponse(it model.IncomeTransaction) dto.IncomeTransa
 		CreatedAt: it.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 	}
 	if it.ReferenceNumber != "" {
-		resp.ReferenceNumber = &it.ReferenceNumber
+		r.ReferenceNumber = &it.ReferenceNumber
 	}
 	if it.Notes != "" {
-		resp.Notes = &it.Notes
+		r.Notes = &it.Notes
 	}
-	return resp
+	return r
 }
+
+

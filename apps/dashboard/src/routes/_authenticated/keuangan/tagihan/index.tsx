@@ -1,63 +1,35 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useAtom } from "jotai";
 import { ChevronRight, Filter, Search } from "lucide-react";
-import { useState } from "react";
-import { useDebounce } from "use-debounce";
-import { useGetV1ClassGroups } from "#/api/endpoints/class-groups/class-groups";
-import { useGetV1Invoices } from "#/api/endpoints/invoices/invoices";
 import { Badge, Button, Pagination } from "#/components/ui";
-import { academicYearAtom } from "../../../../store/global";
-import { formatCurrency } from "../../../../utils/format";
+import { useTagihanList } from "#/features/keuangan/tagihan/hooks/useTagihanList";
+import { formatCurrency } from "@/utils/format";
 
 export const Route = createFileRoute("/_authenticated/keuangan/tagihan/")({
 	component: TagihanListPage,
 });
 
 function TagihanListPage() {
-	const [activeAy] = useAtom(academicYearAtom);
-
-	// Filters
-	const [search, setSearch] = useState("");
-	const [debouncedSearch] = useDebounce(search, 500);
-	const [selectedType, setSelectedType] = useState("");
-	const [selectedStatus, setSelectedStatus] = useState("");
-	const [selectedClassGroup, setSelectedClassGroup] = useState("");
-	const [selectedMonth, setSelectedMonth] = useState("");
-	const [page, setPage] = useState(1);
-
-	// Fetch data
-	const { data: invoicesData, isLoading } = useGetV1Invoices(
-		{
-			page,
-			limit: 20,
-			academic_year_id: activeAy?.id,
-			...(debouncedSearch ? { search: debouncedSearch } : {}),
-			...(selectedType ? { type: selectedType } : {}),
-			...(selectedStatus ? { status: selectedStatus } : {}),
-			...(selectedClassGroup
-				? { class_group_id: Number(selectedClassGroup) }
-				: {}),
-			...(selectedMonth ? { month: Number(selectedMonth) } : {}),
-		},
-		{ query: { enabled: !!activeAy?.id } },
-	);
-
-	const { data: classGroupsData } = useGetV1ClassGroups({
-		academic_year_id: activeAy?.id,
-	});
-	const classGroups = (classGroupsData?.data as any)?.data || [];
-
-	const invoices = (invoicesData?.data as any)?.data || [];
-	const meta = (invoicesData?.data as any)?.meta;
-
-	const handleReset = () => {
-		setSearch("");
-		setSelectedType("");
-		setSelectedStatus("");
-		setSelectedClassGroup("");
-		setSelectedMonth("");
-		setPage(1);
-	};
+	const {
+		activeAy,
+		search,
+		setSearch,
+		selectedType,
+		setSelectedType,
+		selectedStatus,
+		setSelectedStatus,
+		selectedClassGroup,
+		setSelectedClassGroup,
+		selectedMonth,
+		setSelectedMonth,
+		page,
+		setPage,
+		invoices,
+		meta,
+		classGroups,
+		isLoading,
+		handleReset,
+		translateType,
+	} = useTagihanList();
 
 	const getStatusBadge = (status: string, sisa: number) => {
 		if (status === "paid") return <Badge variant="success">● Lunas</Badge>;
@@ -69,16 +41,6 @@ function TagihanListPage() {
 				</Badge>
 			);
 		return <Badge variant="danger">✗ Belum</Badge>;
-	};
-
-	const translateType = (type: string) => {
-		const map: Record<string, string> = {
-			monthly: "Bulanan",
-			registration: "Registrasi Tahunan",
-			initial: "Biaya Awal",
-			incidental: "Insidental",
-		};
-		return map[type] || type;
 	};
 
 	return (

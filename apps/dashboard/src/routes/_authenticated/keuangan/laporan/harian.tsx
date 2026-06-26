@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useAtom } from "jotai";
 import {
 	AlertTriangle,
 	ArrowUpRight,
@@ -9,41 +8,24 @@ import {
 	Lock,
 	Printer,
 } from "lucide-react";
-import { useState } from "react";
-import { useGetV1ReportsDaily } from "#/api/endpoints/reports/reports";
 import { Alert, Badge, Button } from "#/components/ui";
-import { academicYearAtom } from "../../../../store/global";
-import { formatCurrency, formatDate } from "../../../../utils/format";
+import { useLaporanHarian } from "#/features/keuangan/laporan/hooks/useLaporanHarian";
+import { formatCurrency, formatDate } from "@/utils/format";
 
 export const Route = createFileRoute("/_authenticated/keuangan/laporan/harian")(
-	{
-		component: LaporanHarianPage,
-	},
+	{ component: LaporanHarianPage },
 );
 
-function getTodayString() {
-	const now = new Date();
-	return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-}
-
 function LaporanHarianPage() {
-	const [activeAy] = useAtom(academicYearAtom);
-	const [date, setDate] = useState(getTodayString());
-
 	const {
-		data: reportData,
+		activeAy,
+		date,
+		setDate,
+		report,
 		isLoading,
 		isError,
-	} = useGetV1ReportsDaily(
-		{
-			date,
-			academic_year_id: activeAy?.id,
-		},
-		{ query: { enabled: !!date && !!activeAy?.id } },
-	);
-
-	const report = (reportData?.data as any)?.data || null;
-
+		getTodayString,
+	} = useLaporanHarian();
 	const income = report?.income_summary;
 	const expense = report?.expense_summary;
 	const cash = report?.cash;
@@ -52,7 +34,6 @@ function LaporanHarianPage() {
 
 	return (
 		<div className="space-y-6">
-			{/* Header */}
 			<div className="flex items-start justify-between print:hidden">
 				<div>
 					<nav className="flex items-center text-sm text-gray-500 mb-2">
@@ -65,7 +46,7 @@ function LaporanHarianPage() {
 						<ChevronRight className="w-4 h-4 mx-1" />
 						<span className="text-gray-900 font-medium">Laporan Harian</span>
 					</nav>
-					<h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:tracking-tight">
+					<h2 className="text-2xl font-bold leading-7 text-gray-900">
 						Laporan Harian
 					</h2>
 					<p className="mt-1 text-sm text-gray-500">
@@ -83,8 +64,6 @@ function LaporanHarianPage() {
 					</Button>
 				)}
 			</div>
-
-			{/* Print Header */}
 			<div className="hidden print:block border-b border-gray-300 pb-4 mb-6">
 				<h1 className="text-lg font-bold">ALIZZAH MANAJEMEN</h1>
 				<p className="text-sm text-gray-600">Laporan Keuangan</p>
@@ -94,15 +73,17 @@ function LaporanHarianPage() {
 					<p>TA: {activeAy?.name || "-"}</p>
 				</div>
 			</div>
-
-			{/* Filter — always visible */}
 			<div className="bg-white p-4 rounded-xl shadow-sm ring-1 ring-gray-900/5 print:hidden">
 				<div className="flex flex-wrap gap-4 items-end">
 					<div>
-						<label className="block text-sm font-medium leading-6 text-gray-900 mb-1">
+						<label
+							htmlFor="lap-date"
+							className="block text-sm font-medium leading-6 text-gray-900 mb-1"
+						>
 							Tanggal
 						</label>
 						<input
+							id="lap-date"
 							type="date"
 							value={date}
 							onChange={(e) => setDate(e.target.value)}
@@ -120,8 +101,6 @@ function LaporanHarianPage() {
 					)}
 				</div>
 			</div>
-
-			{/* Loading */}
 			{isLoading && (
 				<div className="animate-pulse space-y-4">
 					<div className="grid grid-cols-2 gap-4">
@@ -132,20 +111,14 @@ function LaporanHarianPage() {
 					<div className="h-48 bg-gray-200 rounded-xl" />
 				</div>
 			)}
-
-			{/* Error */}
 			{isError && (
 				<Alert variant="error" title="Gagal Memuat">
-					Terjadi kesalahan saat memuat laporan. Silakan coba lagi.
+					Terjadi kesalahan saat memuat laporan.
 				</Alert>
 			)}
-
-			{/* Report Content */}
 			{report && !isLoading && (
 				<>
-					{/* Income & Expense side-by-side */}
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-						{/* Income */}
 						<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-6">
 							<div className="flex items-center justify-between mb-4">
 								<h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -155,7 +128,7 @@ function LaporanHarianPage() {
 									{formatCurrency(Number(income?.total || 0))}
 								</span>
 							</div>
-							{income?.by_category && income.by_category.length > 0 ? (
+							{income?.by_category?.length > 0 ? (
 								<div className="space-y-2">
 									<p className="text-xs text-gray-500 font-medium">
 										Per Kategori:
@@ -179,8 +152,6 @@ function LaporanHarianPage() {
 								</p>
 							)}
 						</div>
-
-						{/* Expense */}
 						<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-6">
 							<div className="flex items-center justify-between mb-4">
 								<h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -190,7 +161,7 @@ function LaporanHarianPage() {
 									{formatCurrency(Number(expense?.total || 0))}
 								</span>
 							</div>
-							{expense?.by_category && expense.by_category.length > 0 ? (
+							{expense?.by_category?.length > 0 ? (
 								<div className="space-y-2">
 									<p className="text-xs text-gray-500 font-medium">
 										Per Kategori:
@@ -215,8 +186,6 @@ function LaporanHarianPage() {
 							)}
 						</div>
 					</div>
-
-					{/* Cash Summary */}
 					<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-6">
 						<h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">
 							Ringkasan Kas
@@ -262,8 +231,6 @@ function LaporanHarianPage() {
 							</div>
 						</div>
 					</div>
-
-					{/* Daily Closing */}
 					<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-6">
 						<h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">
 							Tutup Buku Harian
@@ -347,8 +314,6 @@ function LaporanHarianPage() {
 					</div>
 				</>
 			)}
-
-			{/* Empty state — report fetched but no data */}
 			{!!date && !isLoading && !isError && !report && (
 				<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-12 text-center">
 					<p className="text-sm text-gray-500">

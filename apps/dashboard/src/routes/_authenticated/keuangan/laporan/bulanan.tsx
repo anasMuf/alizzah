@@ -1,11 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useAtom } from "jotai";
 import { ChevronRight, Printer } from "lucide-react";
-import { useState } from "react";
-import { useGetV1ReportsMonthly } from "#/api/endpoints/reports/reports";
 import { Alert, Button } from "#/components/ui";
-import { academicYearAtom } from "../../../../store/global";
-import { formatCurrency } from "../../../../utils/format";
+import { useLaporanBulanan } from "#/features/keuangan/laporan/hooks/useLaporanBulanan";
+import { formatCurrency } from "@/utils/format";
 
 export const Route = createFileRoute(
 	"/_authenticated/keuangan/laporan/bulanan",
@@ -29,22 +26,17 @@ const MONTH_NAMES = [
 ];
 
 function LaporanBulananPage() {
-	const [activeAy] = useAtom(academicYearAtom);
-	const now = new Date();
-
-	const [month, setMonth] = useState(now.getMonth() + 1);
-	const [year, setYear] = useState(now.getFullYear());
-
 	const {
-		data: reportData,
+		activeAy,
+		month,
+		setMonth,
+		year,
+		setYear,
+		report,
 		isLoading,
 		isError,
-	} = useGetV1ReportsMonthly(
-		{ month, year, academic_year_id: activeAy?.id },
-		{ query: { enabled: !!activeAy?.id } },
-	);
-
-	const report = (reportData?.data as any)?.data || null;
+	} = useLaporanBulanan();
+	const now = new Date();
 
 	const currentYear = now.getFullYear();
 	const yearOptions = Array.from({ length: 3 }, (_, i) => currentYear - i);

@@ -1,10 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useAtom } from "jotai";
 import { ChevronRight, Printer } from "lucide-react";
-import { useGetV1ReportsAnnual } from "#/api/endpoints/reports/reports";
 import { Alert, Button } from "#/components/ui";
-import { academicYearAtom } from "../../../../store/global";
-import { formatCurrency } from "../../../../utils/format";
+import { useLaporanTahunan } from "#/features/keuangan/laporan/hooks/useLaporanTahunan";
+import { formatCurrency } from "@/utils/format";
 
 export const Route = createFileRoute(
 	"/_authenticated/keuangan/laporan/tahunan",
@@ -29,18 +27,7 @@ const MONTH_NAMES_SHORT = [
 ];
 
 function LaporanTahunanPage() {
-	const [activeAy] = useAtom(academicYearAtom);
-
-	const {
-		data: reportData,
-		isLoading,
-		isError,
-	} = useGetV1ReportsAnnual(
-		{ academic_year_id: activeAy?.id! },
-		{ query: { enabled: !!activeAy?.id } },
-	);
-
-	const report = (reportData?.data as any)?.data || null;
+	const { activeAy, report, isLoading, isError } = useLaporanTahunan();
 
 	const income = report?.income_summary;
 	const expense = report?.expense_summary;

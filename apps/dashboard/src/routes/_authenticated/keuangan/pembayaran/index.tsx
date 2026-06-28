@@ -1,42 +1,27 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useAtom } from "jotai";
 import { ChevronRight, Filter, Plus, Receipt } from "lucide-react";
-import { useState } from "react";
-import { useGetV1Payments } from "#/api/endpoints/payments/payments";
-import type { DtoPaymentListResponse } from "#/api/model/dtoPaymentListResponse";
 import { Badge, Button, Pagination } from "#/components/ui";
-import { academicYearAtom } from "../../../../store/global";
-import { extractListData, extractMeta } from "../../../../utils/api-helpers";
-import { formatCurrency, formatDate } from "../../../../utils/format";
+import { usePembayaranList } from "#/features/keuangan/pembayaran/hooks/usePembayaranList";
+import { formatCurrency, formatDate } from "@/utils/format";
 
 export const Route = createFileRoute("/_authenticated/keuangan/pembayaran/")({
 	component: PembayaranListPage,
 });
 
 function PembayaranListPage() {
-	const [activeAy] = useAtom(academicYearAtom);
-
-	// Filters
-	const [selectedSource, setSelectedSource] = useState("");
-	const [startDate, setStartDate] = useState("");
-	const [endDate, setEndDate] = useState("");
-	const [page, setPage] = useState(1);
-
-	// Fetch data
-	const { data: paymentsData, isLoading } = useGetV1Payments(
-		{
-			page,
-			limit: 20,
-			academic_year_id: activeAy?.id,
-			...(selectedSource ? { source: selectedSource } : {}),
-			...(startDate ? { start_date: startDate } : {}),
-			...(endDate ? { end_date: endDate } : {}),
-		},
-		{ query: { enabled: !!activeAy?.id } },
-	);
-
-	const payments = extractListData<DtoPaymentListResponse>(paymentsData);
-	const meta = extractMeta(paymentsData);
+	const {
+		payments,
+		meta,
+		isLoading,
+		selectedSource,
+		setSelectedSource,
+		startDate,
+		setStartDate,
+		endDate,
+		setEndDate,
+		page,
+		setPage,
+	} = usePembayaranList();
 
 	const handleReset = () => {
 		setSelectedSource("");

@@ -1,13 +1,13 @@
 import { useAtom } from "jotai";
 import { useState } from "react";
+import { useGetReportsPosisiKas } from "#/api/endpoints/reports/posisi-kas";
 import {
 	useGetV1ReportsByClassGroup,
 	useGetV1ReportsByStudent,
-	useGetV1ReportsPosisiKas,
-	useGetV1ReportsSaldo,
-	useGetV1ReportsTabungan,
-	useGetV1ReportsTransaksiPengeluaran,
 } from "#/api/endpoints/reports/reports";
+import { useGetReportsSaldo } from "#/api/endpoints/reports/saldo";
+import { useGetReportsTabungan } from "#/api/endpoints/reports/tabungan";
+import { useGetReportsTransaksiPengeluaran } from "#/api/endpoints/reports/transaksi-pengeluaran";
 import { academicYearAtom } from "@/store/global";
 
 export function usePosisiKas() {
@@ -15,7 +15,7 @@ export function usePosisiKas() {
 	const now = new Date();
 	const [month, setMonth] = useState(now.getMonth() + 1);
 	const [year, setYear] = useState(now.getFullYear());
-	const { data, isLoading, isError } = useGetV1ReportsPosisiKas(
+	const { data, isLoading, isError } = useGetReportsPosisiKas(
 		{ month, year, academic_year_id: activeAy?.id },
 		{ query: { enabled: !!activeAy?.id } },
 	);
@@ -36,7 +36,7 @@ export function useSaldo() {
 	const [month, setMonth] = useState(now.getMonth() + 1);
 	const [year, setYear] = useState(now.getFullYear());
 	const [category, setCategory] = useState("");
-	const { data, isLoading, isError } = useGetV1ReportsSaldo(
+	const { data, isLoading, isError } = useGetReportsSaldo(
 		{
 			month,
 			year,
@@ -63,7 +63,7 @@ export function useTransaksiPengeluaran() {
 	const now = new Date();
 	const [month, setMonth] = useState(now.getMonth() + 1);
 	const [year, setYear] = useState(now.getFullYear());
-	const { data, isLoading, isError } = useGetV1ReportsTransaksiPengeluaran(
+	const { data, isLoading, isError } = useGetReportsTransaksiPengeluaran(
 		{ month, year, academic_year_id: activeAy?.id },
 		{ query: { enabled: !!activeAy?.id } },
 	);
@@ -83,7 +83,7 @@ export function useTabunganReport() {
 	const [month, setMonth] = useState(now.getMonth() + 1);
 	const [year, setYear] = useState(now.getFullYear());
 	const [type, setType] = useState("");
-	const { data, isLoading, isError } = useGetV1ReportsTabungan(
+	const { data, isLoading, isError } = useGetReportsTabungan(
 		{ month, year, type: type || undefined },
 		{ query: { enabled: true } },
 	);

@@ -44,29 +44,19 @@ function formatRupiah(amount: number): string {
 }
 
 function LaporanPosisiKasPage() {
-	const [activeAy] = useAtom(academicYearAtom);
-	const now = new Date();
-
-	const [month, setMonth] = useState(now.getMonth() + 1);
-	const [year, setYear] = useState(now.getFullYear());
-
 	const {
-		data: reportData,
+		activeAy,
+		month,
+		setMonth,
+		year,
+		setYear,
+		report,
 		isLoading,
 		isError,
-	} = useGetReportsPosisiKas(
-		{
-			month,
-			year,
-			academic_year_id: activeAy?.id,
-		},
-		{ query: { enabled: !!activeAy?.id } },
-	);
-
-	const report = (reportData?.data as any)?.data || null;
+	} = usePosisiKas();
+	const now = new Date();
 	const posts: PosisiKasPost[] = report?.posts || [];
 	const grandTotal = report?.grand_total;
-
 	const currentYear = now.getFullYear();
 	const yearOptions = Array.from({ length: 3 }, (_, i) => currentYear - i);
 

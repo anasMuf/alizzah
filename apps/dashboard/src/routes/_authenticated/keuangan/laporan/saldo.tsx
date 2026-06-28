@@ -62,30 +62,20 @@ function formatDateID(dateStr: string): string {
 }
 
 function LaporanSaldoPage() {
-	const [activeAy] = useAtom(academicYearAtom);
-	const now = new Date();
-
-	const [month, setMonth] = useState(now.getMonth() + 1);
-	const [year, setYear] = useState(now.getFullYear());
-	const [category, setCategory] = useState("");
-
 	const {
-		data: reportData,
+		activeAy,
+		month,
+		setMonth,
+		year,
+		setYear,
+		category,
+		setCategory,
+		report,
 		isLoading,
 		isError,
-	} = useGetReportsSaldo(
-		{
-			month,
-			year,
-			category: category || undefined,
-			academic_year_id: activeAy?.id,
-		},
-		{ query: { enabled: !!activeAy?.id } },
-	);
-
-	const report = (reportData?.data as any)?.data || null;
+	} = useSaldo();
+	const now = new Date();
 	const rows: SaldoRow[] = report?.rows || [];
-
 	const currentYear = now.getFullYear();
 	const yearOptions = Array.from({ length: 3 }, (_, i) => currentYear - i);
 

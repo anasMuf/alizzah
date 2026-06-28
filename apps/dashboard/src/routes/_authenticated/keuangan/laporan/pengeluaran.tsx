@@ -61,28 +61,18 @@ function formatDateTimeID(dateStr: string): string {
 }
 
 function LaporanPengeluaranPage() {
-	const [activeAy] = useAtom(academicYearAtom);
-	const now = new Date();
-
-	const [month, setMonth] = useState(now.getMonth() + 1);
-	const [year, setYear] = useState(now.getFullYear());
-
 	const {
-		data: reportData,
+		activeAy,
+		month,
+		setMonth,
+		year,
+		setYear,
+		report,
 		isLoading,
 		isError,
-	} = useGetReportsTransaksiPengeluaran(
-		{
-			month,
-			year,
-			academic_year_id: activeAy?.id,
-		},
-		{ query: { enabled: !!activeAy?.id } },
-	);
-
-	const report = (reportData?.data as any)?.data || null;
+	} = useTransaksiPengeluaran();
+	const now = new Date();
 	const transactions: TransaksiPengeluaranBlock[] = report?.transactions || [];
-
 	const currentYear = now.getFullYear();
 	const yearOptions = Array.from({ length: 3 }, (_, i) => currentYear - i);
 

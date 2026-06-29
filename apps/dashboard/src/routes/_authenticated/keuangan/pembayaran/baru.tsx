@@ -75,25 +75,20 @@ function KasirPembayaranPage() {
 					</div>
 					<div className="lg:col-span-1">
 						<PaymentSummary
-							selectedStudent={k.selectedStudent}
-							selectedInvoices={k.selectedInvoices}
+							invoiceItems={k.invoiceItems}
+							incidentalItems={k.incidentalItems}
 							payAmounts={k.payAmounts}
 							excludedItems={k.excludedItems}
-							incidentalItems={k.incidentalItems}
-							paymentSource={k.paymentSource}
-							onPaymentSourceChange={k.setPaymentSource}
-							cashReceived={k.cashReceived}
-							onCashReceivedChange={k.setCashReceived}
-							depositChange={k.depositChange}
-							onDepositChangeChange={k.setDepositChange}
-							notes={k.notes}
-							onNotesChange={k.setNotes}
 							savingsBalance={k.savingsBalance}
-							invoiceDetails={k.invoiceDetails}
 							totalPay={k.totalPay}
-							canSubmit={k.canSubmit}
-							isPending={k.isPending}
-							onPay={k.handlePay}
+							source={k.paymentSource}
+							cashReceived={k.cashReceived}
+							depositChange={k.depositChange}
+							notes={k.notes}
+							onSourceChange={k.setPaymentSource}
+							onCashReceivedChange={k.setCashReceived}
+							onDepositChangeChange={k.setDepositChange}
+							onNotesChange={k.setNotes}
 						/>
 					</div>
 				</div>

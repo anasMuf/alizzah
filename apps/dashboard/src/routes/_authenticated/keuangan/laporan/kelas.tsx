@@ -3,10 +3,10 @@ import { useAtom } from "jotai";
 import { ChevronRight, Printer } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useGetV1ClassGroups } from "#/api/endpoints/class-groups/class-groups";
-import { useGetV1ReportsClassGroupsId } from "#/api/endpoints/reports/reports";
 import { Alert, Badge, Button } from "#/components/ui";
-import { academicYearAtom } from "../../../../store/global";
-import { formatCurrency } from "../../../../utils/format";
+import { useLaporanKelas } from "#/features/keuangan/laporan/hooks/useLaporanLainnya";
+import { academicYearAtom } from "@/store/global";
+import { formatCurrency } from "@/utils/format";
 
 export const Route = createFileRoute("/_authenticated/keuangan/laporan/kelas")({
 	component: RekapKelasPage,
@@ -46,20 +46,12 @@ function RekapKelasPage() {
 	const shouldFetch = classIdNum > 0 && !!activeAy?.id;
 
 	const {
-		data: reportData,
+		report: reportData,
 		isLoading,
 		isError,
-	} = useGetV1ReportsClassGroupsId(
-		classIdNum,
-		{
-			month,
-			year,
-			academic_year_id: activeAy?.id,
-		},
-		{ query: { enabled: shouldFetch } },
-	);
+	} = useLaporanKelas(classIdNum);
 
-	const report = shouldFetch ? (reportData?.data as any)?.data : null;
+	const report = shouldFetch ? reportData : null;
 	const summary = report?.summary;
 	const students: any[] = report?.students || [];
 	const classGroup = report?.class_group;

@@ -99,11 +99,14 @@ export function useTabunganReport() {
 		isError,
 	};
 }
-export function useLaporanSiswa(studentId: number) {
+export function useLaporanSiswa(studentId: number, allTA?: boolean) {
 	const [activeAy] = useAtom(academicYearAtom);
 	const { data, isLoading, isError } = useGetV1ReportsByStudent(
 		studentId,
-		{ academic_year_id: activeAy?.id },
+		{
+			academic_year_id: allTA ? undefined : activeAy?.id,
+			all: allTA || undefined,
+		},
 		{ query: { enabled: !!studentId } },
 	);
 	return {

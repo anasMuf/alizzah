@@ -12,11 +12,11 @@ import {
 	XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useGetV1ReportsStudentsId } from "#/api/endpoints/reports/reports";
 import { useGetV1Students } from "#/api/endpoints/students/students";
 import { Alert, Badge, Button } from "#/components/ui";
-import { academicYearAtom } from "../../../../store/global";
-import { formatCurrency, formatDate } from "../../../../utils/format";
+import { useLaporanSiswa } from "#/features/keuangan/laporan/hooks/useLaporanLainnya";
+import { academicYearAtom } from "@/store/global";
+import { formatCurrency, formatDate } from "@/utils/format";
 
 export const Route = createFileRoute("/_authenticated/keuangan/laporan/siswa")({
 	component: RekapSiswaPage,
@@ -73,21 +73,10 @@ function RekapSiswaPage() {
 	const studentResults: any[] = (studentsData?.data as any)?.data || [];
 
 	const {
-		data: reportData,
+		report,
 		isLoading: reportLoading,
 		isError,
-	} = useGetV1ReportsStudentsId(
-		selectedStudentId,
-		{
-			academic_year_id: allTA ? undefined : activeAy?.id,
-			all: allTA || undefined,
-		},
-		{
-			query: { enabled: selectedStudentId > 0 },
-		},
-	);
-
-	const report = selectedStudentId > 0 ? (reportData?.data as any)?.data : null;
+	} = useLaporanSiswa(selectedStudentId, allTA);
 
 	const student = report?.student;
 	const invoiceSummary = report?.invoice_summary;

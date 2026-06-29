@@ -1,29 +1,11 @@
-import {
-	createFileRoute,
-	useNavigate,
-	useSearch,
-} from "@tanstack/react-router";
-import { useAtom } from "jotai";
+import { createFileRoute } from "@tanstack/react-router";
 import { User } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { useGetV1InvoicesBatch } from "#/api/endpoints/invoices/invoice-batch";
-import { usePostV1Payments } from "#/api/endpoints/payments/payments";
-import { useGetV1StudentsIdSavings } from "#/api/endpoints/savings/savings";
-import { useGetV1StudentsId } from "#/api/endpoints/students/students";
-import { Button, useToast } from "#/components/ui";
-import { academicYearAtom } from "../../../../store/global";
-import { formatCurrency } from "../../../../utils/format";
+import { Button } from "#/components/ui";
+import { useKasirPembayaran } from "#/features/keuangan/pembayaran/hooks/useKasirPembayaran";
 import { IncidentalItems } from "./components/IncidentalItems";
 import { InvoiceSelector } from "./components/InvoiceSelector";
 import { PaymentSummary } from "./components/PaymentSummary";
 import { StudentSearch } from "./components/StudentSearch";
-
-type IncidentalItem = {
-	id: number;
-	name: string;
-	amount: number;
-	isSavings: boolean;
-};
 
 export const Route = createFileRoute(
 	"/_authenticated/keuangan/pembayaran/baru",
@@ -36,215 +18,10 @@ export const Route = createFileRoute(
 });
 
 function KasirPembayaranPage() {
-	const navigate = useNavigate();
-	const searchParams = useSearch({
-		from: "/_authenticated/keuangan/pembayaran/baru",
-	});
-	const initialStudentId = (searchParams as any).student_id
-		? Number((searchParams as any).student_id)
-		: null;
-	const initialInvoiceId = (searchParams as any).invoice_id
-		? Number((searchParams as any).invoice_id)
-		: null;
-
-	const [activeAy] = useAtom(academicYearAtom);
-	const { addToast } = useToast();
-
-	// Student
-	const [selectedStudent, setSelectedStudent] = useState<any>(null);
-	const { data: initialStudentResp } = useGetV1StudentsId(
-		initialStudentId || 0,
-		{ query: { enabled: !!initialStudentId } },
-	);
-	useEffect(() => {
-		if (initialStudentResp && !selectedStudent) {
-			setSelectedStudent((initialStudentResp.data as any)?.data);
-		}
-	}, [initialStudentResp]);
-
-	// Invoices
-	const [selectedInvoices, setSelectedInvoices] = useState<number[]>([]);
-	const [payAmounts, setPayAmounts] = useState<Record<number, number>>({});
-	// F08-1: item yang di-uncheck (dikecualikan dari pembayaran). Nominalnya
-	// tetap tersimpan di payAmounts agar muncul lagi saat item dicentang ulang.
-	const [excludedItems, setExcludedItems] = useState<number[]>([]);
-	const toggleItem = (itemId: number) =>
-		setExcludedItems((prev) =>
-			prev.includes(itemId)
-				? prev.filter((x) => x !== itemId)
-				: [...prev, itemId],
-		);
-
-	// Incidental items
-	const [incidentalItems, setIncidentalItems] = useState<IncidentalItem[]>([]);
-
-	// Payment form
-	const [paymentSource, setPaymentSource] = useState<"cash" | "savings">(
-		"cash",
-	);
-	const [cashReceived, setCashReceived] = useState("");
-	const [depositChange, setDepositChange] = useState(false);
-	const [notes, setNotes] = useState("");
-
-	// Savings
-	const { data: savingsResp } = useGetV1StudentsIdSavings(
-		selectedStudent?.id || 0,
-		{ query: { enabled: !!selectedStudent?.id } },
-	);
-	const savings = (savingsResp?.data as any)?.data;
-	const savingsBalance = savings?.general_balance || 0;
-
-	// Batch fetch invoice details for selected invoices (needed for PaymentSummary)
-	const { data: invoiceDetails = [] } = useGetV1InvoicesBatch(
-		selectedInvoices,
-		{ enabled: selectedInvoices.length > 0 },
-	);
-	const invoiceItems = useMemo(() => {
-		const items: any[] = [];
-		invoiceDetails.forEach((detail: any) => {
-			detail?.items?.forEach((item: any) => {
-				const sisa = Number(item.amount || 0) - Number(item.paid_amount || 0);
-				if (sisa > 0 || item.category === "dispensation") {
-					items.push({
-						id: item.id,
-						invoice_id: detail.id,
-						name: item.name,
-						category: item.category,
-						sisa_tagihan: sisa,
-						is_dispensation: item.category === "dispensation",
-					});
-				}
-			});
-		});
-		return items;
-	}, [invoiceDetails]);
-
-	// Buang entri payAmounts milik item yang sudah tidak ada di tagihan terpilih
-	// (mis. saat invoice di-uncheck) agar total bayar & payload submit tetap akurat.
-	useEffect(() => {
-		setPayAmounts((prev) => {
-			const validIds = new Set(invoiceItems.map((i) => i.id));
-			const next: Record<number, number> = {};
-			let changed = false;
-			for (const key of Object.keys(prev)) {
-				const id = Number(key);
-				if (validIds.has(id)) {
-					next[id] = prev[id];
-				} else {
-					changed = true;
-				}
-			}
-			return changed ? next : prev;
-		});
-	}, [invoiceItems]);
-
-	// Pangkas excludedItems mengikuti item aktif (mis. saat invoice di-uncheck).
-	useEffect(() => {
-		const validIds = new Set(invoiceItems.map((i) => i.id));
-		setExcludedItems((prev) => {
-			const next = prev.filter((id) => validIds.has(id));
-			return next.length === prev.length ? prev : next;
-		});
-	}, [invoiceItems]);
-
-	// Derived
-	const tabunganUmumTotal = incidentalItems
-		.filter((i) => i.isSavings)
-		.reduce((sum, i) => sum + i.amount, 0);
-	const totalPay = useMemo(() => {
-		const invoiceTotal = Object.entries(payAmounts).reduce(
-			(sum, [id, amt]) =>
-				excludedItems.includes(Number(id)) ? sum : sum + amt,
-			0,
-		);
-		const incidentalTotal = incidentalItems.reduce(
-			(sum, item) => sum + item.amount,
-			0,
-		);
-		return invoiceTotal + incidentalTotal;
-	}, [payAmounts, incidentalItems, excludedItems]);
-
-	const canSubmit =
-		selectedStudent &&
-		totalPay > 0 &&
-		((paymentSource === "cash" && Number(cashReceived) >= totalPay) ||
-			(paymentSource === "savings" && savingsBalance >= totalPay));
-
-	// Mutation
-	const paymentMutation = usePostV1Payments({
-		mutation: {
-			onSuccess: (res: any) => {
-				addToast({
-					variant: "success",
-					title: "Berhasil",
-					message: "Pembayaran berhasil dicatat.",
-				});
-				navigate({
-					to: "/keuangan/pembayaran/$id",
-					params: { id: String(res.data?.data?.id) },
-				});
-			},
-			onError: (err: any) => {
-				addToast({
-					variant: "error",
-					title: "Gagal",
-					message: err.message || "Gagal menyimpan pembayaran.",
-				});
-			},
-		},
-	});
-
-	const handleSubmit = () => {
-		if (paymentSource === "savings" && totalPay > savingsBalance) {
-			addToast({
-				variant: "error",
-				title: "Validasi",
-				message: "Saldo tabungan tidak mencukupi.",
-			});
-			return;
-		}
-		if (paymentSource === "cash" && Number(cashReceived) < totalPay) {
-			addToast({
-				variant: "error",
-				title: "Validasi",
-				message: "Uang diterima kurang dari total pembayaran.",
-			});
-			return;
-		}
-
-		const totalSavingsDeposit =
-			tabunganUmumTotal +
-			(depositChange && Number(cashReceived) > totalPay
-				? Number(cashReceived) - totalPay
-				: 0);
-		const customIncidentals = incidentalItems
-			.filter((i) => !i.isSavings)
-			.map((i) => ({ name: i.name, amount: i.amount }));
-
-		paymentMutation.mutate({
-			data: {
-				academic_year_id: activeAy?.id || 1,
-				student_id: selectedStudent.id,
-				source: paymentSource,
-				payment_date: new Date().toISOString().split("T")[0],
-				items: Object.entries(payAmounts)
-					.filter(([id, amt]) => amt > 0 && !excludedItems.includes(Number(id)))
-					.map(([itemId, amt]) => ({
-						invoice_item_id: Number(itemId),
-						amount: amt,
-					})),
-				incidental_items:
-					customIncidentals.length > 0 ? customIncidentals : undefined,
-				notes: notes || undefined,
-				savings_deposit:
-					totalSavingsDeposit > 0 ? totalSavingsDeposit : undefined,
-			},
-		} as any);
-	};
+	const k = useKasirPembayaran();
 
 	return (
 		<div className="h-full flex flex-col">
-			{/* Top bar: Student Search */}
 			<div className="flex-shrink-0 bg-white border-b border-gray-200 px-6 py-3">
 				<div className="flex items-center gap-4">
 					<h2 className="text-lg font-bold text-gray-900 whitespace-nowrap">
@@ -252,26 +29,15 @@ function KasirPembayaranPage() {
 					</h2>
 					<div className="flex-1 max-w-xl relative">
 						<StudentSearch
-							selectedStudent={selectedStudent}
-							onSelect={setSelectedStudent}
-							onClear={() => {
-								setSelectedStudent(null);
-								setSelectedInvoices([]);
-								setPayAmounts({});
-								setExcludedItems([]);
-								setIncidentalItems([]);
-								setCashReceived("");
-								setDepositChange(false);
-								setNotes("");
-								setPaymentSource("cash");
-							}}
+							selectedStudent={k.selectedStudent}
+							onSelect={k.setSelectedStudent}
+							onClear={k.handleClear}
 						/>
 					</div>
 				</div>
 			</div>
 
-			{/* Body */}
-			{!selectedStudent ? (
+			{!k.selectedStudent ? (
 				<div className="flex-1 flex items-center justify-center bg-gray-50">
 					<div className="text-center">
 						<User className="w-16 h-16 text-gray-300 mx-auto mb-3" />
@@ -281,71 +47,54 @@ function KasirPembayaranPage() {
 					</div>
 				</div>
 			) : (
-				<div className="flex-1 flex min-h-0">
-					{/* Left panel */}
-					<div className="w-1/2 border-r border-gray-200 flex flex-col bg-white">
-						<div className="flex-1 overflow-y-auto p-4 space-y-3">
-							<p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-								Tagihan Belum Lunas
-							</p>
-							<InvoiceSelector
-								studentId={selectedStudent.id}
-								academicYearId={activeAy?.id}
-								selectedInvoices={selectedInvoices}
-								payAmounts={payAmounts}
-								excludedItems={excludedItems}
-								onToggleItem={toggleItem}
-								initialInvoiceId={initialInvoiceId}
-								onToggleInvoice={(id) =>
-									setSelectedInvoices((prev) =>
-										prev.includes(id)
-											? prev.filter((x) => x !== id)
-											: [...prev, id],
-									)
-								}
-								onAmountChange={(itemId, val) =>
-									setPayAmounts((prev) => ({ ...prev, [itemId]: Number(val) }))
-								}
-							/>
-						</div>
-						<div className="flex-shrink-0 border-t border-gray-200 p-4 bg-gray-50">
-							<IncidentalItems
-								items={incidentalItems}
-								onChange={setIncidentalItems}
-							/>
-						</div>
-					</div>
-
-					{/* Right panel */}
-					<div className="w-1/2 flex flex-col bg-gray-50">
-						<PaymentSummary
-							invoiceItems={invoiceItems}
-							incidentalItems={incidentalItems}
-							payAmounts={payAmounts}
-							excludedItems={excludedItems}
-							savingsBalance={savingsBalance}
-							totalPay={totalPay}
-							source={paymentSource}
-							cashReceived={cashReceived}
-							depositChange={depositChange}
-							notes={notes}
-							onSourceChange={setPaymentSource}
-							onCashReceivedChange={setCashReceived}
-							onDepositChangeChange={setDepositChange}
-							onNotesChange={setNotes}
+				<div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6 overflow-auto">
+					<div className="lg:col-span-2 space-y-6">
+						<InvoiceSelector
+							studentId={k.selectedStudent.id}
+							academicYearId={k.activeAy?.id}
+							selectedInvoices={k.selectedInvoices}
+							payAmounts={k.payAmounts}
+							excludedItems={k.excludedItems}
+							initialInvoiceId={k.initialInvoiceId}
+							onToggleInvoice={(id) =>
+								k.setSelectedInvoices((prev) =>
+									prev.includes(id)
+										? prev.filter((x) => x !== id)
+										: [...prev, id],
+								)
+							}
+							onToggleItem={k.toggleItem}
+							onAmountChange={(itemId, val) =>
+								k.setPayAmounts((prev) => ({ ...prev, [itemId]: Number(val) }))
+							}
 						/>
-						<div className="flex-shrink-0 border-t border-gray-200 p-4 bg-white">
-							<Button
-								variant="primary"
-								className="w-full justify-center py-3 text-base"
-								onClick={handleSubmit}
-								disabled={!canSubmit || paymentMutation.isPending}
-							>
-								{paymentMutation.isPending
-									? "Memproses..."
-									: `Proses & Cetak Struk — ${formatCurrency(totalPay)}`}
-							</Button>
-						</div>
+						<IncidentalItems
+							items={k.incidentalItems}
+							onChange={k.setIncidentalItems}
+						/>
+					</div>
+					<div className="lg:col-span-1">
+						<PaymentSummary
+							selectedStudent={k.selectedStudent}
+							selectedInvoices={k.selectedInvoices}
+							payAmounts={k.payAmounts}
+							excludedItems={k.excludedItems}
+							incidentalItems={k.incidentalItems}
+							paymentSource={k.paymentSource}
+							onPaymentSourceChange={k.setPaymentSource}
+							cashReceived={k.cashReceived}
+							onCashReceivedChange={k.setCashReceived}
+							depositChange={k.depositChange}
+							onDepositChangeChange={k.setDepositChange}
+							notes={k.notes}
+							onNotesChange={k.setNotes}
+							savingsBalance={k.savingsBalance}
+							invoiceDetails={k.invoiceDetails}
+							totalPay={k.totalPay}
+							canSubmit={k.canSubmit}
+							isPending={k.isPending}
+							onPay={k.handlePay}
+						/>
 					</div>
 				</div>
 			)}

@@ -2,8 +2,8 @@ import { useAtom } from "jotai";
 import { useState } from "react";
 import { useGetReportsPosisiKas } from "#/api/endpoints/reports/posisi-kas";
 import {
-	useGetV1ReportsByClassGroup,
-	useGetV1ReportsByStudent,
+	useGetV1ReportsClassGroupsId,
+	useGetV1ReportsStudentsId,
 } from "#/api/endpoints/reports/reports";
 import { useGetReportsSaldo } from "#/api/endpoints/reports/saldo";
 import { useGetReportsTabungan } from "#/api/endpoints/reports/tabungan";
@@ -101,7 +101,7 @@ export function useTabunganReport() {
 }
 export function useLaporanSiswa(studentId: number, allTA?: boolean) {
 	const [activeAy] = useAtom(academicYearAtom);
-	const { data, isLoading, isError } = useGetV1ReportsByStudent(
+	const { data, isLoading, isError } = useGetV1ReportsStudentsId(
 		studentId,
 		{
 			academic_year_id: allTA ? undefined : activeAy?.id,
@@ -121,7 +121,7 @@ export function useLaporanKelas(classGroupId: number) {
 	const now = new Date();
 	const [month, setMonth] = useState(now.getMonth() + 1);
 	const [year, setYear] = useState(now.getFullYear());
-	const { data, isLoading, isError } = useGetV1ReportsByClassGroup(
+	const { data, isLoading, isError } = useGetV1ReportsClassGroupsId(
 		classGroupId,
 		{ month, year, academic_year_id: activeAy?.id },
 		{ query: { enabled: !!classGroupId && !!activeAy?.id } },

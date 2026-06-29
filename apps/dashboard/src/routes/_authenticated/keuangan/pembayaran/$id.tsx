@@ -7,14 +7,9 @@ import {
 	Printer,
 	Receipt,
 } from "lucide-react";
-import { useState } from "react";
-import { useGetV1PaymentsId } from "#/api/endpoints/payments/payments";
 import { Button } from "#/components/ui";
-import {
-	formatCurrency,
-	formatDate,
-	formatDateTime,
-} from "../../../../utils/format";
+import { usePembayaranDetail } from "#/features/keuangan/pembayaran/hooks/usePembayaranDetail";
+import { formatCurrency, formatDate, formatDateTime } from "@/utils/format";
 
 // Label ramah per kategori item, agar ringkasan kwitansi menjelaskan
 // jenis pembayaran (mis. "Registrasi Tahunan") alih-alih label generik.
@@ -41,13 +36,8 @@ export const Route = createFileRoute("/_authenticated/keuangan/pembayaran/$id")(
 
 function DetailPembayaranPage() {
 	const { id } = Route.useParams();
-
-	const { data: paymentResp, isLoading } = useGetV1PaymentsId(Number(id));
-	const payment = (paymentResp?.data as any)?.data;
-
-	// F08-3: rincian item disembunyikan secara default; tampilkan total saja.
-	// Saat dicetak, rincian selalu tampil penuh (struk resmi).
-	const [showDetail, setShowDetail] = useState(false);
+	const { payment, isLoading, isError, showDetail, setShowDetail } =
+		usePembayaranDetail(Number(id));
 
 	if (isLoading)
 		return (

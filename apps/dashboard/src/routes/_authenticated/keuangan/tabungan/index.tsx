@@ -1,44 +1,26 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useAtom } from "jotai";
 import { ChevronRight, Search, Wallet } from "lucide-react";
-import { useState } from "react";
-import { useDebounce } from "use-debounce";
-import { useGetV1ClassGroups } from "#/api/endpoints/class-groups/class-groups";
-import { useGetV1Students } from "#/api/endpoints/students/students";
 import { Pagination } from "#/components/ui";
-import { academicYearAtom } from "../../../../store/global";
+import { useTabunganList } from "#/features/keuangan/tabungan/hooks/useTabunganList";
 
 export const Route = createFileRoute("/_authenticated/keuangan/tabungan/")({
 	component: TabunganListPage,
 });
 
 function TabunganListPage() {
-	const [activeAy] = useAtom(academicYearAtom);
-
-	const [search, setSearch] = useState("");
-	const [debouncedSearch] = useDebounce(search, 500);
-	const [selectedClassGroup, setSelectedClassGroup] = useState("");
-	const [page, setPage] = useState(1);
-
-	const { data: studentsResp, isLoading } = useGetV1Students(
-		{
-			page,
-			limit: 20,
-			search: debouncedSearch,
-			class_group_id: selectedClassGroup
-				? Number(selectedClassGroup)
-				: undefined,
-		},
-		{ query: { enabled: true } },
-	);
-
-	const { data: classGroupsData } = useGetV1ClassGroups({
-		academic_year_id: activeAy?.id,
-	});
-	const classGroups = (classGroupsData?.data as any)?.data || [];
-
-	const students = (studentsResp?.data as any)?.data || [];
-	const meta = (studentsResp?.data as any)?.meta;
+	const {
+		activeAy,
+		search,
+		setSearch,
+		selectedClassGroup,
+		setSelectedClassGroup,
+		page,
+		setPage,
+		students,
+		meta,
+		classGroups,
+		isLoading,
+	} = useTabunganList();
 
 	return (
 		<div className="space-y-6">

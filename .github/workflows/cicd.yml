@@ -79,7 +79,7 @@ jobs:
             image: alizzah-dashboard
             build_args: |
               VITE_API_URL=${{ vars.VITE_API_URL }}
-              VITE_KOPERASI_API_URL=${{ vars.VITE_KOPERASI_API_URL }}
+              VITE_KOPERASI_API_URL=${{ vars.VITE_KOPERASI_API_URL || vars.VITE_API_URL }}
     steps:
       - uses: actions/checkout@v4
       - name: Owner huruf kecil (syarat GHCR)

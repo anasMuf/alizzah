@@ -20,14 +20,12 @@ import {
 	useGetV1CashBalance,
 	useGetV1CashTransactions,
 	usePostV1CashTransfers,
-} from "../../../../api/endpoints/cash/cash";
+} from "#/api/endpoints/cash/cash";
 import {
 	getGetV1VaultBalanceQueryKey,
 	useGetV1VaultBalance,
-} from "../../../../api/endpoints/vault/vault";
-import { Button } from "../../../../components/atoms/Button";
-import { SlideOver } from "../../../../components/molecules/SlideOver";
-import { useToast } from "../../../../components/molecules/Toast";
+} from "#/api/endpoints/vault/vault";
+import { Button, SlideOver, useToast } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
 import { formatCurrency, formatDate } from "../../../../utils/format";
 

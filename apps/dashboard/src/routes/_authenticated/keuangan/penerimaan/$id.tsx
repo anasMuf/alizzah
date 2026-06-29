@@ -6,11 +6,8 @@ import {
 	incomeTransactionKeys,
 	useDeleteIncomeTransaction,
 	useGetIncomeTransaction,
-} from "../../../../api/endpoints/income-transactions/income-transactions";
-import { Badge } from "../../../../components/atoms/Badge";
-import { Button } from "../../../../components/atoms/Button";
-import { ConfirmDialog } from "../../../../components/molecules/ConfirmDialog";
-import { useToast } from "../../../../components/molecules/Toast";
+} from "#/api/endpoints/income-transactions/income-transactions";
+import { Badge, Button, ConfirmDialog, useToast } from "#/components/ui";
 import { formatCurrency, formatDate } from "../../../../utils/format";
 
 export const Route = createFileRoute("/_authenticated/keuangan/penerimaan/$id")(

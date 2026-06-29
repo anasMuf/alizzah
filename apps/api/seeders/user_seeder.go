@@ -9,16 +9,14 @@ import (
 	"gorm.io/gorm"
 )
 
+// defaultUsers hanya berisi 1 akun superadmin. Akun admin lain dibuat lewat
+// halaman kelola pengguna (superadmin-only) dengan grant modul per-user.
 var defaultUsers = []struct {
 	FullName string
 	Email    string
 	Role     string
 }{
 	{"Super Admin", "superadmin@alizzah.sch.id", "superadmin"},
-	{"Admin Administrasi", "admin_administrasi@alizzah.sch.id", "admin_administrasi"},
-	{"Admin Keuangan", "admin_keuangan@alizzah.sch.id", "admin_keuangan"},
-	{"Kepala Sekolah", "kepala_sekolah@alizzah.sch.id", "kepala_sekolah"},
-	{"Yayasan", "yayasan@alizzah.sch.id", "yayasan"},
 }
 
 func SeedUsers(db *gorm.DB) {
@@ -52,5 +50,5 @@ func SeedUsers(db *gorm.DB) {
 			continue
 		}
 	}
-	log.Println("User seeder berhasil (5 role)")
+	log.Println("User seeder berhasil (superadmin)")
 }

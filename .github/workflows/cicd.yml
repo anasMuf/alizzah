@@ -2,9 +2,9 @@ name: CI/CD
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
 
 # Batalkan run lama pada ref yang sama bila ada push baru
 concurrency:
@@ -32,25 +32,23 @@ jobs:
       - run: go test ./... -count=1
 
   web-check:
-    name: Dashboard (Vite) — lint · test · build
+    name: Web (pnpm monorepo) — lint · test · build
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: apps/dashboard
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
-          cache-dependency-path: apps/dashboard/pnpm-lock.yaml
+          cache-dependency-path: pnpm-lock.yaml
+      # Install seluruh workspace sekali (apps + packages bersama)
       - run: pnpm install --frozen-lockfile
-      - run: pnpm check
-      - run: pnpm exec vitest run --passWithNoTests
-      - run: pnpm build
+      - run: pnpm --filter dashboard check
+      - run: pnpm --filter dashboard exec vitest run --passWithNoTests
+      - run: pnpm --filter dashboard build
         env:
           VITE_API_URL: ${{ vars.VITE_API_URL || 'http://localhost:8080/api' }}
 
@@ -81,6 +79,7 @@ jobs:
             image: alizzah-dashboard
             build_args: |
               VITE_API_URL=${{ vars.VITE_API_URL }}
+              VITE_KOPERASI_API_URL=${{ vars.VITE_KOPERASI_API_URL || vars.VITE_API_URL }}
     steps:
       - uses: actions/checkout@v4
       - name: Owner huruf kecil (syarat GHCR)

@@ -1,6 +1,15 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Edit, Plus, Save, Trash2, X } from "lucide-react";
+import {
+	ArrowLeft,
+	ChevronDown,
+	ChevronRight,
+	Edit,
+	Plus,
+	Save,
+	Trash2,
+	X,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import {
 	getGetV1FeeConfigsIdItemsQueryKey,
@@ -11,30 +20,33 @@ import {
 	usePostV1FeeConfigsIdItems,
 	usePutV1FeeConfigsId,
 	usePutV1FeeConfigsIdItemsItemId,
-} from "../../../../api/endpoints/fee-configs/fee-configs";
+} from "#/api/endpoints/fee-configs/fee-configs";
 import type {
 	DtoCreateFeeConfigItemRequest,
 	DtoFeeConfigItemResponse,
-} from "../../../../api/model";
+} from "#/api/model";
 import {
 	DtoCreateFeeConfigItemRequestCategory,
 	DtoCreateFeeConfigItemRequestGender,
 	DtoCreateFeeConfigItemRequestLevel,
 	DtoCreateFeeConfigItemRequestUnit,
-} from "../../../../api/model";
-import { ApiError } from "../../../../api/mutator/custom-instance";
-import { Badge } from "../../../../components/atoms/Badge";
-import { Button } from "../../../../components/atoms/Button";
-import { ConfirmDialog } from "../../../../components/molecules/ConfirmDialog";
-import { EmptyState } from "../../../../components/molecules/EmptyState";
-import { FormField } from "../../../../components/molecules/FormField";
-import { SlideOver } from "../../../../components/molecules/SlideOver";
-import { useToast } from "../../../../components/molecules/Toast";
+} from "#/api/model";
+import { ApiError } from "#/api/mutator/custom-instance";
+import {
+	Badge,
+	Button,
+	ConfirmDialog,
+	EmptyState,
+	FormField,
+	SlideOver,
+	useToast,
+} from "#/components/ui";
+import { hasModule } from "#/features/auth/access";
+import { useProducts } from "#/features/koperasi/barang/api";
 
 export const Route = createFileRoute("/_authenticated/pengaturan/tarif/$id")({
 	beforeLoad: () => {
-		const role = localStorage.getItem("alizzah_role");
-		if (role !== "superadmin") {
+		if (!hasModule("keuangan")) {
 			throw redirect({ to: "/" });
 		}
 	},
@@ -101,6 +113,13 @@ function PengaturanTarifIdComponent() {
 		useState<DtoFeeConfigItemResponse | null>(null);
 
 	const [filterCategory, setFilterCategory] = useState("");
+	// F08-3: rincian item per kategori disembunyikan secara default; header
+	// menampilkan total keseluruhan, klik untuk membuka rincian.
+	const [expandedCategories, setExpandedCategories] = useState<
+		Record<string, boolean>
+	>({});
+	const toggleCategory = (cat: string) =>
+		setExpandedCategories((prev) => ({ ...prev, [cat]: !prev[cat] }));
 
 	const { data: configResponse, isLoading: configLoading } =
 		useGetV1FeeConfigsId(configId);
@@ -365,24 +384,52 @@ function PengaturanTarifIdComponent() {
 					}}
 				/>
 			) : (
-				Object.entries(groupedItems).map(([category, catItems]) => (
-					<div key={category} className="space-y-2">
-						<h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
-							{CATEGORY_LABELS[category] || category}
-						</h3>
-						<ItemTable
-							items={catItems}
-							onEdit={(item) => {
-								setEditingItem(item);
-								setIsItemFormOpen(true);
-							}}
-							onDelete={(item) => {
-								setItemToDelete(item);
-								setIsDeleteOpen(true);
-							}}
-						/>
-					</div>
-				))
+				Object.entries(groupedItems).map(([category, catItems]) => {
+					const groupTotal = catItems.reduce(
+						(sum, it) => sum + (it.unit === "percent" ? 0 : (it.amount ?? 0)),
+						0,
+					);
+					const isExpanded = expandedCategories[category] ?? false;
+					return (
+						<div key={category} className="space-y-2">
+							<button
+								type="button"
+								onClick={() => toggleCategory(category)}
+								className="w-full flex items-center justify-between gap-3 bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 px-5 py-4 text-left hover:bg-gray-50 transition-colors"
+							>
+								<div className="flex items-center gap-2">
+									{isExpanded ? (
+										<ChevronDown className="h-4 w-4 text-gray-400" />
+									) : (
+										<ChevronRight className="h-4 w-4 text-gray-400" />
+									)}
+									<h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
+										{CATEGORY_LABELS[category] || category}
+									</h3>
+									<span className="text-xs font-normal normal-case text-gray-400">
+										{catItems.length} item
+									</span>
+								</div>
+								<span className="text-base font-bold text-gray-900 tabular-nums">
+									{formatCurrency(groupTotal)}
+								</span>
+							</button>
+							{isExpanded && (
+								<ItemTable
+									items={catItems}
+									onEdit={(item) => {
+										setEditingItem(item);
+										setIsItemFormOpen(true);
+									}}
+									onDelete={(item) => {
+										setItemToDelete(item);
+										setIsDeleteOpen(true);
+									}}
+								/>
+							)}
+						</div>
+					);
+				})
 			)}
 
 			<ItemFormSlideOver
@@ -458,10 +505,22 @@ function ItemTable({
 					{items.map((item) => (
 						<tr key={item.id} className="hover:bg-gray-50">
 							<td className="px-6 py-4 whitespace-nowrap">
-								<div className="text-sm font-medium text-gray-900">
-									{item.name}
+								<div className="flex items-center gap-2">
+									<div className="text-sm font-medium text-gray-900">
+										{item.name}
+									</div>
+									{item.is_koperasi && (
+										<Badge variant="success">🏪 Koperasi</Badge>
+									)}
 								</div>
-								<div className="text-xs text-gray-400">{item.item_key}</div>
+								<div className="text-xs text-gray-400">
+									{item.item_key}
+									{item.koperasi_product_name && (
+										<span className="ml-2 font-medium text-indigo-600">
+											({item.koperasi_product_name})
+										</span>
+									)}
+								</div>
 							</td>
 							<td className="px-6 py-4 whitespace-nowrap">
 								<Badge variant="secondary">
@@ -530,6 +589,8 @@ function ItemFormSlideOver({
 		level: "all",
 		gender: "all",
 		unit: "fixed",
+		is_koperasi: false,
+		koperasi_product_id: undefined,
 	});
 
 	useEffect(() => {
@@ -543,6 +604,8 @@ function ItemFormSlideOver({
 					level: (initialData.level as any) || "all",
 					gender: (initialData.gender as any) || "all",
 					unit: (initialData.unit as any) || "fixed",
+					is_koperasi: initialData.is_koperasi || false,
+					koperasi_product_id: initialData.koperasi_product_id,
 				});
 			} else {
 				setFormData({
@@ -553,6 +616,8 @@ function ItemFormSlideOver({
 					level: "all",
 					gender: "all",
 					unit: "fixed",
+					is_koperasi: false,
+					koperasi_product_id: undefined,
 				});
 			}
 		}
@@ -618,6 +683,8 @@ function ItemFormSlideOver({
 	const update = (field: keyof DtoCreateFeeConfigItemRequest, value: any) => {
 		setFormData((prev) => ({ ...prev, [field]: value }));
 	};
+
+	const { data: products } = useProducts();
 
 	return (
 		<SlideOver
@@ -773,6 +840,63 @@ function ItemFormSlideOver({
 							)}
 						</select>
 					</div>
+				</div>
+
+				<div className="space-y-4 pt-4 border-t border-gray-100">
+					<div className="flex items-center">
+						<input
+							id="is_koperasi"
+							name="is_koperasi"
+							type="checkbox"
+							checked={formData.is_koperasi}
+							onChange={(e) => {
+								const checked = e.target.checked;
+								update("is_koperasi", checked);
+								if (!checked) {
+									update("koperasi_product_id", undefined);
+								}
+							}}
+							className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+						/>
+						<label
+							htmlFor="is_koperasi"
+							className="ml-2 block text-sm font-medium leading-6 text-gray-900"
+						>
+							Milik Koperasi (Pendapatan masuk kas koperasi)
+						</label>
+					</div>
+
+					{formData.is_koperasi && (
+						<div>
+							<label
+								htmlFor="koperasi_product_id"
+								className="block text-sm font-medium leading-6 text-gray-900 mb-2"
+							>
+								Hubungkan ke Barang Koperasi (Opsional)
+							</label>
+							<select
+								id="koperasi_product_id"
+								value={formData.koperasi_product_id || ""}
+								onChange={(e) =>
+									update(
+										"koperasi_product_id",
+										e.target.value ? Number(e.target.value) : undefined,
+									)
+								}
+								className="block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
+							>
+								<option value="">-- Pilih Barang (Tanpa Stok) --</option>
+								{products?.map((p) => (
+									<option key={p.id} value={p.id}>
+										{p.name}
+									</option>
+								))}
+							</select>
+							<p className="mt-1 text-xs text-gray-500">
+								Pilih barang jika item ini memotong stok (seperti seragam, dll).
+							</p>
+						</div>
+					)}
 				</div>
 			</form>
 		</SlideOver>

@@ -15,8 +15,8 @@ import {
 	UserCircle,
 	Wallet,
 } from "lucide-react";
-import { useGetV1StudentsId } from "../../../../api/endpoints/students/students";
-import { Badge } from "../../../../components/atoms/Badge";
+import { useGetV1StudentsId } from "#/api/endpoints/students/students";
+import { Badge } from "#/components/ui";
 
 export const Route = createFileRoute("/_authenticated/administrasi/siswa/$id")({
 	component: StudentLayout,

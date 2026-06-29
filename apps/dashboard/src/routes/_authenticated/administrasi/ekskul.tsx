@@ -6,13 +6,15 @@ import {
 	getGetV1ExtracurricularsQueryKey,
 	useDeleteV1ExtracurricularsId,
 	useGetV1Extracurriculars,
-} from "../../../api/endpoints/extracurriculars/extracurriculars";
-import type { DtoExtracurricularResponse } from "../../../api/model";
-import { Badge } from "../../../components/atoms/Badge";
-import { Button } from "../../../components/atoms/Button";
-import { ConfirmDialog } from "../../../components/molecules/ConfirmDialog";
-import { EmptyState } from "../../../components/molecules/EmptyState";
-import { useToast } from "../../../components/molecules/Toast";
+} from "#/api/endpoints/extracurriculars/extracurriculars";
+import type { DtoExtracurricularResponse } from "#/api/model";
+import {
+	Badge,
+	Button,
+	ConfirmDialog,
+	EmptyState,
+	useToast,
+} from "#/components/ui";
 import { EkskulForm } from "../../../features/administrasi/components/EkskulForm";
 
 export const Route = createFileRoute("/_authenticated/administrasi/ekskul")({

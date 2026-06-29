@@ -13,23 +13,23 @@ import {
 	Users,
 	Wallet,
 } from "lucide-react";
-import { useGetV1CashBalance } from "../../../api/endpoints/cash/cash";
-import { useGetV1Invoices } from "../../../api/endpoints/invoices/invoices";
-import { useGetV1ReportsAnnual } from "../../../api/endpoints/reports/reports";
-import { useGetV1Students } from "../../../api/endpoints/students/students";
+import { useGetV1CashBalance } from "#/api/endpoints/cash/cash";
+import { useGetV1Invoices } from "#/api/endpoints/invoices/invoices";
+import { useGetV1ReportsAnnual } from "#/api/endpoints/reports/reports";
+import { useGetV1Students } from "#/api/endpoints/students/students";
+import { useAuth } from "#/features/auth/AuthContext";
+import { useAccess } from "#/features/auth/access";
 import { academicYearAtom } from "../../../store/global";
 import { formatCurrency } from "../../../utils/format";
-import { useAuth } from "../../auth/AuthContext";
 
 export function DashboardView() {
 	const { user } = useAuth();
+	const { hasModule } = useAccess();
 	const [activeAy] = useAtom(academicYearAtom);
-	const role = user?.role || "";
 	const enabled = !!activeAy?.id;
 
-	const isAdminKeuangan = role === "admin_keuangan" || role === "superadmin";
-	const isAdminAdministrasi =
-		role === "admin_administrasi" || role === "superadmin";
+	const isAdminKeuangan = hasModule("keuangan");
+	const isAdminAdministrasi = hasModule("administrasi");
 
 	const { data: studentsData, isLoading: studentsLoading } = useGetV1Students(
 		{ academic_year_id: activeAy?.id, status: "active", limit: 1 },

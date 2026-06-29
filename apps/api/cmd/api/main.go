@@ -1,29 +1,21 @@
 package main
 
 import (
+	"flag"
+	"log"
+	"time"
+
 	"api/config"
 	"api/handler"
+	"api/internal/bootstrap"
 	"api/middleware"
 	"api/model"
 	"api/repository"
 	"api/seeders"
 	"api/service"
-	"api/utility"
-	"context"
-	"flag"
-	"log"
-	"net/http"
-	"os"
-	"os/signal"
-	"strings"
-	"syscall"
-	"time"
 
-	"github.com/labstack/echo/v4"
-	echoMiddleware "github.com/labstack/echo/v4/middleware"
-	echoSwagger "github.com/swaggo/echo-swagger"
-
-	_ "api/docs"
+	"api/internal/modules/koperasi/barang"
+	"api/internal/modules/koperasi/kas"
 )
 
 // @title          Alizzah Manajemen API
@@ -88,6 +80,8 @@ func main() {
 		&model.Dispensation{},
 		// Token blacklist
 		&model.TokenBlacklist{},
+		// RBAC by-modul: grant akses modul per-user
+		&model.UserModule{},
 	); err != nil {
 		log.Fatal("Gagal AutoMigrate:", err)
 	}
@@ -122,7 +116,7 @@ func main() {
 	}
 
 	// Seed data (urutan penting karena ada dependency antar seeder)
-	seeders.SeedUsers(db)              // 1. Users (semua role)
+	seeders.SeedUsers(db)              // 1. Users (superadmin saja; admin dibuat via UI)
 	seeders.SeedAcademicYears(db)      // 2. Tahun Ajaran
 	seeders.SeedClassGroups(db)        // 3. Rombel (depends on #2)
 	seeders.SeedExtracurriculars(db)   // 4. Ekskul/Pasta
@@ -131,38 +125,18 @@ func main() {
 	seeders.SeedFacilities(db)         // 6b. Fasilitas (Antar Jemput, dll)
 	seeders.SeedStudentsFromLegacy(db) // 7. Siswa + Enrollment + Savings (depends on #1,2,3)
 	seeders.SeedEffectiveDays(db)      // 8. Hari Efektif (depends on #3)
-	seeders.SeedDispensations(db)       // 8b. Dispensasi sample (depends on #2,7)
-	seeders.SeedSampleTransactions(db)  // 9. Sample Tagihan/Bayar/Pengeluaran (depends on #5,7,8)
-	seeders.SeedIncomeTransactions(db)  // 10. Sample Penerimaan Dana Bantuan (depends on #2)
+	seeders.SeedDispensations(db)      // 8b. Dispensasi sample (depends on #2,7)
+	seeders.SeedSampleTransactions(db) // 9. Sample Tagihan/Bayar/Pengeluaran (depends on #5,7,8)
+	seeders.SeedIncomeTransactions(db) // 10. Sample Penerimaan Dana Bantuan (depends on #2)
 
 	// Data migrations / fixes
-	seeders.FixClassGroupSchedules(db) // Fix schedule JSON format from old "groups" to "weekdays/weekend"
+	seeders.FixClassGroupSchedules(db)       // Fix schedule JSON format from old "groups" to "weekdays/weekend"
+	seeders.MigrateRolesToModules(db)        // RBAC by-modul: role-bundle lama -> admin + grant modul
+	seeders.BackfillInvoiceKoperasiFlags(db) // Backfill flag is_koperasi pada invoice_item lama yang belum lunas
 
-	// Initialize Echo
-	e := echo.New()
-	e.HTTPErrorHandler = handler.CustomHTTPErrorHandler
-	e.Validator = &utility.CustomValidator{Validator: utility.NewValidator()}
-
-	// Global middleware
-	corsOrigins := strings.Split(os.Getenv("CORS_ALLOWED_ORIGINS"), ",")
-	if len(corsOrigins) == 1 && corsOrigins[0] == "" {
-		corsOrigins = []string{"http://localhost:3000", "http://localhost:5173"}
-	}
-	e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
-		AllowOrigins: corsOrigins,
-		AllowMethods: []string{echo.GET, echo.POST, echo.PUT, echo.PATCH, echo.DELETE},
-		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
-	}))
-	e.Use(echoMiddleware.Recover())
-	e.Use(middleware.MiddlewareLogging)
-
-	// Swagger
-	e.GET("/swagger/*", echoSwagger.WrapHandler)
-
-	// Health check (untuk Docker healthcheck & reverse proxy)
-	e.GET("/health", func(c echo.Context) error {
-		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
-	})
+	// Inisialisasi Echo + middleware global (error handler, validator, CORS,
+	// recover, logging, swagger, health) — lihat internal/bootstrap.
+	e := bootstrap.NewEcho()
 
 	// =====================
 	// Dependency Injection
@@ -170,12 +144,13 @@ func main() {
 
 	// Repositories
 	userRepo := repository.NewUserRepository(db)
+	userModuleRepo := repository.NewUserModuleRepository(db)
 	tokenBlacklistRepo := repository.NewTokenBlacklistRepository(db)
 	ayRepo := repository.NewAcademicYearRepository(db)
 	studentRepo := repository.NewStudentRepository(db)
 	guardianRepo := repository.NewGuardianRepository(db)
 	classGroupRepo := repository.NewClassGroupRepository(db)
-	
+
 	// Batch 3
 	enrollmentRepo := repository.NewStudentEnrollmentRepository(db)
 	effectiveDayRepo := repository.NewEffectiveDayRepository(db)
@@ -207,9 +182,13 @@ func main() {
 	dailyClosingRepo := repository.NewDailyClosingRepository(db)
 	reportRepo := repository.NewReportRepository(db)
 
+	// Otorisasi berbasis modul (RBAC by-modul). superadmin bypass; admin dibatasi
+	// modul yang di-grant (lookup DB tiap request via user_modules).
+	guard := middleware.NewModuleGuard(userModuleRepo)
+
 	// Services
-	authService := service.NewAuthService(userRepo)
-	userService := service.NewUserService(userRepo)
+	authService := service.NewAuthService(userRepo, userModuleRepo)
+	userService := service.NewUserService(userRepo, userModuleRepo)
 	ayService := service.NewAcademicYearService(ayRepo)
 	guardianService := service.NewGuardianService(guardianRepo, studentRepo)
 	classGroupService := service.NewClassGroupService(classGroupRepo)
@@ -228,7 +207,13 @@ func main() {
 	// Batch 6: create transaction infrastructure first
 	txnWriterService := service.NewTransactionWriterService(cashTxnRepo, vaultTxnRepo)
 	savingsService := service.NewSavingsService(db, savingsRepo, savingsTxnRepo, fcRepo, ayRepo, txnWriterService)
-	paymentService := service.NewPaymentService(db, paymentRepo, paymentItemRepo, invoiceItemRepo, invoiceService, savingsRepo, savingsTxnRepo, studentRepo, txnWriterService)
+
+	// Seam koperasi
+	kopKasWriter := kas.NewWriter()
+	kopBarangRepo := barang.NewRepository(db)
+	koperasiSeam := service.NewKoperasiSeamService(db, kopKasWriter, kopBarangRepo)
+
+	paymentService := service.NewPaymentService(db, paymentRepo, paymentItemRepo, invoiceItemRepo, invoiceService, savingsRepo, savingsTxnRepo, studentRepo, txnWriterService, koperasiSeam)
 	expCatService := service.NewExpenseCategoryService(expCatRepo)
 	expenseService := service.NewExpenseService(db, expenseRepo, expCatRepo, ayRepo, txnWriterService)
 
@@ -308,7 +293,7 @@ func main() {
 	// =====================
 	// Routes — /api/v1
 	// =====================
-	api := e.Group("/api/v1", middleware.RateLimiter(20, 40))
+	api := bootstrap.APIGroup(e)
 
 	// Rate limiting: 1 req/detik untuk login (anti brute-force)
 	auth := api.Group("/auth")
@@ -329,69 +314,73 @@ func main() {
 
 	// Academic Years
 	ay := api.Group("/academic-years", middleware.JWTAuth(tokenBlacklistRepo))
-	ay.GET("", ayHandler.List, middleware.RequireRoles("superadmin", "admin_administrasi"))
-	ay.POST("", ayHandler.Create, middleware.RequireRoles("superadmin", "admin_administrasi"))
-	ay.GET("/:id", ayHandler.Get, middleware.RequireRoles("superadmin", "admin_administrasi"))
-	ay.PUT("/:id", ayHandler.Update, middleware.RequireRoles("superadmin", "admin_administrasi"))
-	ay.PATCH("/:id/activate", ayHandler.Activate, middleware.RequireRoles("superadmin"))
+	// Baca daftar TA = data referensi untuk AcademicYearSelector di sidebar; semua
+	// modul dashboard membutuhkannya (tiap dashboard ter-scope per TA). Tulis &
+	// aktivasi = modul administrasi.
+	ayRead := []string{middleware.ModuleAdministrasi, middleware.ModuleKeuangan, middleware.ModuleKoperasi, middleware.ModuleLaporan}
+	ay.GET("", ayHandler.List, guard.RequireModule(ayRead...))
+	ay.POST("", ayHandler.Create, guard.RequireModule(middleware.ModuleAdministrasi))
+	ay.GET("/:id", ayHandler.Get, guard.RequireModule(ayRead...))
+	ay.PUT("/:id", ayHandler.Update, guard.RequireModule(middleware.ModuleAdministrasi))
+	ay.PATCH("/:id/activate", ayHandler.Activate, guard.RequireModule(middleware.ModuleAdministrasi))
 
 	// Students
 	students := api.Group("/students", middleware.JWTAuth(tokenBlacklistRepo))
-	students.GET("", studentHandler.List, middleware.RequireRoles("superadmin", "admin_administrasi", "admin_keuangan"))
-	students.POST("", studentHandler.Create, middleware.RequireRoles("superadmin", "admin_administrasi"))
-	students.POST("/import", studentHandler.Import, middleware.RequireRoles("superadmin", "admin_administrasi"))
-	students.GET("/:id", studentHandler.Get, middleware.RequireRoles("superadmin", "admin_administrasi", "admin_keuangan"))
-	students.PUT("/:id", studentHandler.Update, middleware.RequireRoles("superadmin", "admin_administrasi"))
-	students.DELETE("/:id", studentHandler.Delete, middleware.RequireRoles("superadmin", "admin_administrasi"))
+	students.GET("", studentHandler.List, guard.RequireModule(middleware.ModuleAdministrasi, middleware.ModuleKeuangan, middleware.ModuleKoperasi))
+	students.POST("", studentHandler.Create, guard.RequireModule(middleware.ModuleAdministrasi))
+	students.POST("/import", studentHandler.Import, guard.RequireModule(middleware.ModuleAdministrasi))
+	students.GET("/:id", studentHandler.Get, guard.RequireModule(middleware.ModuleAdministrasi, middleware.ModuleKeuangan))
+	students.PUT("/:id", studentHandler.Update, guard.RequireModule(middleware.ModuleAdministrasi))
+	students.DELETE("/:id", studentHandler.Delete, guard.RequireModule(middleware.ModuleAdministrasi))
 
 	// Batch 3: Student nested endpoints
-	students.GET("/:id/enrollments", enrollmentHandler.GetByStudent, middleware.RequireRoles("superadmin", "admin_administrasi", "admin_keuangan"))
-	students.POST("/enrollments/batch", enrollmentHandler.EnrollBatch, middleware.RequireRoles("superadmin", "admin_administrasi"))
-	students.POST("/:id/enrollments", enrollmentHandler.Enroll, middleware.RequireRoles("superadmin", "admin_administrasi"))
-	students.GET("/:id/extracurriculars", seHandler.GetByStudent, middleware.RequireRoles("superadmin", "admin_administrasi"))
-	students.POST("/:id/extracurriculars", seHandler.Enroll, middleware.RequireRoles("superadmin", "admin_administrasi"))
-	students.PUT("/:id/extracurriculars/:se_id", seHandler.Update, middleware.RequireRoles("superadmin", "admin_administrasi"))
-	students.DELETE("/:id/extracurriculars/:se_id", seHandler.Unenroll, middleware.RequireRoles("superadmin", "admin_administrasi"))
-	students.GET("/:id/dispensations", dispensationHandler.ListByStudent, middleware.RequireRoles("superadmin", "admin_keuangan"))
-	students.POST("/:id/dispensations", dispensationHandler.Create, middleware.RequireRoles("superadmin", "admin_keuangan"))
-	students.GET("/:id/facilities", facilityHandler.ListByStudent, middleware.RequireRoles("superadmin", "admin_administrasi"))
-	students.POST("/:id/facilities", facilityHandler.Enroll, middleware.RequireRoles("superadmin", "admin_administrasi"))
-	students.DELETE("/:id/facilities/:facilityId", facilityHandler.Unenroll, middleware.RequireRoles("superadmin", "admin_administrasi"))
-	students.GET("/:id/academic-events", eventHandler.GetByStudent, middleware.RequireRoles("superadmin", "admin_administrasi"))
+	students.GET("/:id/enrollments", enrollmentHandler.GetByStudent, guard.RequireModule(middleware.ModuleAdministrasi, middleware.ModuleKeuangan))
+	students.POST("/enrollments/batch", enrollmentHandler.EnrollBatch, guard.RequireModule(middleware.ModuleAdministrasi))
+	students.POST("/:id/enrollments", enrollmentHandler.Enroll, guard.RequireModule(middleware.ModuleAdministrasi))
+	students.GET("/:id/extracurriculars", seHandler.GetByStudent, guard.RequireModule(middleware.ModuleAdministrasi))
+	students.POST("/:id/extracurriculars", seHandler.Enroll, guard.RequireModule(middleware.ModuleAdministrasi))
+	students.PUT("/:id/extracurriculars/:se_id", seHandler.Update, guard.RequireModule(middleware.ModuleAdministrasi))
+	students.DELETE("/:id/extracurriculars/:se_id", seHandler.Unenroll, guard.RequireModule(middleware.ModuleAdministrasi))
+	students.GET("/:id/dispensations", dispensationHandler.ListByStudent, guard.RequireModule(middleware.ModuleKeuangan))
+	students.POST("/:id/dispensations", dispensationHandler.Create, guard.RequireModule(middleware.ModuleKeuangan))
+	students.GET("/:id/facilities", facilityHandler.ListByStudent, guard.RequireModule(middleware.ModuleAdministrasi))
+	students.POST("/:id/facilities", facilityHandler.Enroll, guard.RequireModule(middleware.ModuleAdministrasi))
+	students.DELETE("/:id/facilities/:facilityId", facilityHandler.Unenroll, guard.RequireModule(middleware.ModuleAdministrasi))
+	students.GET("/:id/academic-events", eventHandler.GetByStudent, guard.RequireModule(middleware.ModuleAdministrasi))
 
 	// Enrollment management
-	enrollments := api.Group("/enrollments", middleware.JWTAuth(tokenBlacklistRepo), middleware.RequireRoles("superadmin", "admin_administrasi"))
+	enrollments := api.Group("/enrollments", middleware.JWTAuth(tokenBlacklistRepo), guard.RequireModule(middleware.ModuleAdministrasi))
 	enrollments.PATCH("/:id/activate", enrollmentHandler.ActivateEnrollment)
 
 	// Guardians (Standalone)
-	guardians := api.Group("/guardians", middleware.JWTAuth(tokenBlacklistRepo), middleware.RequireRoles("superadmin", "admin_administrasi"))
+	guardians := api.Group("/guardians", middleware.JWTAuth(tokenBlacklistRepo), guard.RequireModule(middleware.ModuleAdministrasi))
 	guardians.POST("", guardianHandler.Create)
 	guardians.GET("/:id", guardianHandler.Get)
 	guardians.PUT("/:id", guardianHandler.Update)
 
 	// Guardians (Nested under students)
-	students.GET("/:id/guardians", guardianHandler.GetByStudent, middleware.RequireRoles("superadmin", "admin_administrasi"))
-	students.POST("/:id/guardians", guardianHandler.LinkToStudent, middleware.RequireRoles("superadmin", "admin_administrasi"))
-	students.DELETE("/:id/guardians/:guardian_id", guardianHandler.UnlinkFromStudent, middleware.RequireRoles("superadmin", "admin_administrasi"))
-	students.PATCH("/:id/guardians/:guardian_id/primary", guardianHandler.SetPrimary, middleware.RequireRoles("superadmin", "admin_administrasi"))
+	students.GET("/:id/guardians", guardianHandler.GetByStudent, guard.RequireModule(middleware.ModuleAdministrasi))
+	students.POST("/:id/guardians", guardianHandler.LinkToStudent, guard.RequireModule(middleware.ModuleAdministrasi))
+	students.DELETE("/:id/guardians/:guardian_id", guardianHandler.UnlinkFromStudent, guard.RequireModule(middleware.ModuleAdministrasi))
+	students.PATCH("/:id/guardians/:guardian_id/primary", guardianHandler.SetPrimary, guard.RequireModule(middleware.ModuleAdministrasi))
 
 	// Class Groups
 	classGroups := api.Group("/class-groups", middleware.JWTAuth(tokenBlacklistRepo))
-	classGroups.GET("", classGroupHandler.List, middleware.RequireRoles("superadmin", "admin_administrasi", "admin_keuangan"))
-	classGroups.POST("", classGroupHandler.Create, middleware.RequireRoles("superadmin", "admin_administrasi"))
-	classGroups.POST("/clone", classGroupHandler.Clone, middleware.RequireRoles("superadmin", "admin_administrasi"))
-	classGroups.GET("/:id", classGroupHandler.Get, middleware.RequireRoles("superadmin", "admin_administrasi", "admin_keuangan"))
-	classGroups.PUT("/:id", classGroupHandler.Update, middleware.RequireRoles("superadmin", "admin_administrasi"))
-	classGroups.DELETE("/:id", classGroupHandler.Delete, middleware.RequireRoles("superadmin", "admin_administrasi"))
+	classGroups.GET("", classGroupHandler.List, guard.RequireModule(middleware.ModuleAdministrasi, middleware.ModuleKeuangan))
+	classGroups.POST("", classGroupHandler.Create, guard.RequireModule(middleware.ModuleAdministrasi))
+	classGroups.POST("/clone", classGroupHandler.Clone, guard.RequireModule(middleware.ModuleAdministrasi))
+	classGroups.GET("/:id", classGroupHandler.Get, guard.RequireModule(middleware.ModuleAdministrasi, middleware.ModuleKeuangan))
+	classGroups.PUT("/:id", classGroupHandler.Update, guard.RequireModule(middleware.ModuleAdministrasi))
+	classGroups.DELETE("/:id", classGroupHandler.Delete, guard.RequireModule(middleware.ModuleAdministrasi))
 
 	// Batch 3: Class Groups nested endpoints
-	classGroups.GET("/:id/students", enrollmentHandler.GetStudentsByClassGroup, middleware.RequireRoles("superadmin", "admin_administrasi", "admin_keuangan"))
-	classGroups.GET("/:id/effective-days", effectiveDayHandler.List, middleware.RequireRoles("superadmin", "admin_administrasi"))
-	classGroups.POST("/:id/effective-days", effectiveDayHandler.Upsert, middleware.RequireRoles("superadmin", "admin_administrasi"))
-	classGroups.PUT("/:id/effective-days/:ed_id", effectiveDayHandler.Update, middleware.RequireRoles("superadmin", "admin_administrasi"))
+	classGroups.GET("/:id/students", enrollmentHandler.GetStudentsByClassGroup, guard.RequireModule(middleware.ModuleAdministrasi, middleware.ModuleKeuangan))
+	classGroups.GET("/:id/effective-days", effectiveDayHandler.List, guard.RequireModule(middleware.ModuleAdministrasi))
+	classGroups.POST("/:id/effective-days", effectiveDayHandler.Upsert, guard.RequireModule(middleware.ModuleAdministrasi))
+	classGroups.PUT("/:id/effective-days/:ed_id", effectiveDayHandler.Update, guard.RequireModule(middleware.ModuleAdministrasi))
 
 	// Extracurriculars
-	extracurriculars := api.Group("/extracurriculars", middleware.JWTAuth(tokenBlacklistRepo), middleware.RequireRoles("superadmin", "admin_administrasi"))
+	extracurriculars := api.Group("/extracurriculars", middleware.JWTAuth(tokenBlacklistRepo), guard.RequireModule(middleware.ModuleAdministrasi))
 	extracurriculars.POST("/sync-invoices", seHandler.SyncInvoices)
 	extracurriculars.GET("", extracurricularHandler.List)
 	extracurriculars.POST("", extracurricularHandler.Create)
@@ -399,7 +388,7 @@ func main() {
 	extracurriculars.DELETE("/:id", extracurricularHandler.Delete)
 
 	// Daycare Enrollments
-	daycare := api.Group("/daycare-enrollments", middleware.JWTAuth(tokenBlacklistRepo), middleware.RequireRoles("superadmin", "admin_administrasi"))
+	daycare := api.Group("/daycare-enrollments", middleware.JWTAuth(tokenBlacklistRepo), guard.RequireModule(middleware.ModuleAdministrasi))
 	daycare.GET("", daycareHandler.List)
 	daycare.POST("", daycareHandler.Create)
 	daycare.POST("/sync-invoices", daycareHandler.SyncInvoices)
@@ -408,7 +397,7 @@ func main() {
 	daycare.PATCH("/:id/status", daycareHandler.UpdateStatus)
 
 	// Batch 4: Academic Events
-	events := api.Group("/academic-events", middleware.JWTAuth(tokenBlacklistRepo), middleware.RequireRoles("superadmin", "admin_administrasi"))
+	events := api.Group("/academic-events", middleware.JWTAuth(tokenBlacklistRepo), guard.RequireModule(middleware.ModuleAdministrasi))
 	events.POST("/promotions/preview", eventHandler.PromotionPreview)
 	events.POST("/promotions", eventHandler.Promotion)
 	events.POST("/graduations", eventHandler.Graduation)
@@ -416,8 +405,8 @@ func main() {
 	events.POST("/transfers", eventHandler.TransferIn)
 	events.POST("/withdrawals", eventHandler.Withdrawal)
 
-	// Batch 4: Fee Configs
-	feeConfigs := api.Group("/fee-configs", middleware.JWTAuth(tokenBlacklistRepo), middleware.RequireRoles("superadmin"))
+	// Batch 4: Fee Configs (Tarif) — modul keuangan
+	feeConfigs := api.Group("/fee-configs", middleware.JWTAuth(tokenBlacklistRepo), guard.RequireModule(middleware.ModuleKeuangan))
 	feeConfigs.GET("", feeConfigHandler.List)
 	feeConfigs.POST("", feeConfigHandler.Create)
 	feeConfigs.GET("/:id", feeConfigHandler.Get)
@@ -428,7 +417,7 @@ func main() {
 	feeConfigs.DELETE("/:id/items/:item_id", feeConfigHandler.DeleteItem)
 
 	// Batch 5: Invoices
-	invoices := api.Group("/invoices", middleware.JWTAuth(tokenBlacklistRepo), middleware.RequireRoles("superadmin", "admin_keuangan"))
+	invoices := api.Group("/invoices", middleware.JWTAuth(tokenBlacklistRepo), guard.RequireModule(middleware.ModuleKeuangan))
 	invoices.GET("", invoiceHandler.List)
 	invoices.GET("/batch", invoiceHandler.Batch)
 	invoices.GET("/:id", invoiceHandler.Get)
@@ -442,29 +431,29 @@ func main() {
 	invoices.DELETE("/:id/installments/:inst_id", invoiceHandler.DeleteInstallment)
 
 	// Batch 5: Student invoices (nested)
-	students.GET("/:id/invoices", invoiceHandler.GetByStudent, middleware.RequireRoles("superadmin", "admin_keuangan"))
+	students.GET("/:id/invoices", invoiceHandler.GetByStudent, guard.RequireModule(middleware.ModuleKeuangan))
 
 	// Batch 6: Payments
-	payments := api.Group("/payments", middleware.JWTAuth(tokenBlacklistRepo), middleware.RequireRoles("superadmin", "admin_keuangan"))
+	payments := api.Group("/payments", middleware.JWTAuth(tokenBlacklistRepo), guard.RequireModule(middleware.ModuleKeuangan))
 	payments.GET("", paymentHandler.List)
 	payments.POST("", paymentHandler.Create)
 	payments.GET("/:id", paymentHandler.Get)
-	students.GET("/:id/payments", paymentHandler.GetByStudent, middleware.RequireRoles("superadmin", "admin_keuangan"))
+	students.GET("/:id/payments", paymentHandler.GetByStudent, guard.RequireModule(middleware.ModuleKeuangan))
 
 	// Batch 6: Savings (nested under students)
-	students.GET("/:id/savings", savingsHandler.GetByStudent, middleware.RequireRoles("superadmin", "admin_keuangan"))
-	students.GET("/:id/savings/transactions", savingsHandler.GetTransactions, middleware.RequireRoles("superadmin", "admin_keuangan"))
-	students.POST("/:id/savings/withdrawals", savingsHandler.GuardianWithdrawal, middleware.RequireRoles("superadmin", "admin_keuangan"))
+	students.GET("/:id/savings", savingsHandler.GetByStudent, guard.RequireModule(middleware.ModuleKeuangan))
+	students.GET("/:id/savings/transactions", savingsHandler.GetTransactions, guard.RequireModule(middleware.ModuleKeuangan))
+	students.POST("/:id/savings/withdrawals", savingsHandler.GuardianWithdrawal, guard.RequireModule(middleware.ModuleKeuangan))
 
 	// Batch 6: Expense Categories
 	expCats := api.Group("/expense-categories", middleware.JWTAuth(tokenBlacklistRepo))
-	expCats.GET("", expCatHandler.List, middleware.RequireRoles("superadmin", "admin_keuangan"))
-	expCats.POST("", expCatHandler.Create, middleware.RequireRoles("superadmin", "admin_keuangan"))
-	expCats.PUT("/:id", expCatHandler.Update, middleware.RequireRoles("superadmin"))
-	expCats.DELETE("/:id", expCatHandler.Delete, middleware.RequireRoles("superadmin"))
+	expCats.GET("", expCatHandler.List, guard.RequireModule(middleware.ModuleKeuangan))
+	expCats.POST("", expCatHandler.Create, guard.RequireModule(middleware.ModuleKeuangan))
+	expCats.PUT("/:id", expCatHandler.Update, guard.RequireModule(middleware.ModuleKeuangan))
+	expCats.DELETE("/:id", expCatHandler.Delete, guard.RequireModule(middleware.ModuleKeuangan))
 
 	// Batch 6: Expenses
-	expenses := api.Group("/expenses", middleware.JWTAuth(tokenBlacklistRepo), middleware.RequireRoles("superadmin", "admin_keuangan"))
+	expenses := api.Group("/expenses", middleware.JWTAuth(tokenBlacklistRepo), guard.RequireModule(middleware.ModuleKeuangan))
 	expenses.GET("", expenseHandler.List)
 	expenses.POST("", expenseHandler.Create)
 	expenses.GET("/:id", expenseHandler.Get)
@@ -472,20 +461,20 @@ func main() {
 	expenses.DELETE("/:id", expenseHandler.Delete)
 
 	// Dispensations
-	dispensations := api.Group("/dispensations", middleware.JWTAuth(tokenBlacklistRepo), middleware.RequireRoles("superadmin", "admin_keuangan"))
+	dispensations := api.Group("/dispensations", middleware.JWTAuth(tokenBlacklistRepo), guard.RequireModule(middleware.ModuleKeuangan))
 	dispensations.PUT("/:id", dispensationHandler.Update)
 	dispensations.PATCH("/:id/toggle", dispensationHandler.Toggle)
 	dispensations.DELETE("/:id", dispensationHandler.Delete)
 
 	// Facilities (master)
 	facilities := api.Group("/facilities", middleware.JWTAuth(tokenBlacklistRepo))
-	facilities.GET("", facilityHandler.List, middleware.RequireRoles("superadmin", "admin_administrasi"))
-	facilities.POST("", facilityHandler.Create, middleware.RequireRoles("superadmin", "admin_administrasi"))
-	facilities.PUT("/:id", facilityHandler.Update, middleware.RequireRoles("superadmin", "admin_administrasi"))
-	facilities.DELETE("/:id", facilityHandler.Delete, middleware.RequireRoles("superadmin"))
+	facilities.GET("", facilityHandler.List, guard.RequireModule(middleware.ModuleAdministrasi))
+	facilities.POST("", facilityHandler.Create, guard.RequireModule(middleware.ModuleAdministrasi))
+	facilities.PUT("/:id", facilityHandler.Update, guard.RequireModule(middleware.ModuleAdministrasi))
+	facilities.DELETE("/:id", facilityHandler.Delete, guard.RequireModule(middleware.ModuleAdministrasi))
 
 	// Income Transactions (Dana Bantuan)
-	incomes := api.Group("/income-transactions", middleware.JWTAuth(tokenBlacklistRepo), middleware.RequireRoles("superadmin", "admin_keuangan"))
+	incomes := api.Group("/income-transactions", middleware.JWTAuth(tokenBlacklistRepo), guard.RequireModule(middleware.ModuleKeuangan))
 	incomes.GET("", incomeHandler.List)
 	incomes.POST("", incomeHandler.Create)
 	incomes.GET("/:id", incomeHandler.Get)
@@ -494,34 +483,37 @@ func main() {
 
 	// Batch 7: Cash
 	cash := api.Group("/cash", middleware.JWTAuth(tokenBlacklistRepo))
-	cash.GET("/balance", cashHandler.GetBalance, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah"))
-	cash.GET("/transactions", cashHandler.GetTransactions, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah"))
-	cash.POST("/transfers", cashHandler.TransferToVault, middleware.RequireRoles("superadmin", "admin_keuangan"))
+	cash.GET("/balance", cashHandler.GetBalance, guard.RequireModule(middleware.ModuleKeuangan, middleware.ModuleLaporan))
+	cash.GET("/transactions", cashHandler.GetTransactions, guard.RequireModule(middleware.ModuleKeuangan, middleware.ModuleLaporan))
+	cash.POST("/transfers", cashHandler.TransferToVault, guard.RequireModule(middleware.ModuleKeuangan))
 
 	// Batch 7: Vault
 	vault := api.Group("/vault", middleware.JWTAuth(tokenBlacklistRepo))
-	vault.GET("/balance", vaultHandler.GetBalance, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah"))
-	vault.GET("/transactions", vaultHandler.GetTransactions, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah"))
+	vault.GET("/balance", vaultHandler.GetBalance, guard.RequireModule(middleware.ModuleKeuangan, middleware.ModuleLaporan))
+	vault.GET("/transactions", vaultHandler.GetTransactions, guard.RequireModule(middleware.ModuleKeuangan, middleware.ModuleLaporan))
 
 	// Batch 7: Daily Closings
 	dc := api.Group("/daily-closings", middleware.JWTAuth(tokenBlacklistRepo))
-	dc.GET("", dailyClosingHandler.List, middleware.RequireRoles("superadmin", "admin_keuangan"))
-	dc.POST("", dailyClosingHandler.Create, middleware.RequireRoles("superadmin", "admin_keuangan"))
-	dc.GET("/:id", dailyClosingHandler.Get, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah", "yayasan"))
-	dc.PATCH("/:id/confirm", dailyClosingHandler.Confirm, middleware.RequireRoles("superadmin", "admin_keuangan"))
+	dc.GET("", dailyClosingHandler.List, guard.RequireModule(middleware.ModuleKeuangan))
+	dc.POST("", dailyClosingHandler.Create, guard.RequireModule(middleware.ModuleKeuangan))
+	dc.GET("/:id", dailyClosingHandler.Get, guard.RequireModule(middleware.ModuleKeuangan, middleware.ModuleLaporan))
+	dc.PATCH("/:id/confirm", dailyClosingHandler.Confirm, guard.RequireModule(middleware.ModuleKeuangan))
 
 	// Batch 7: Reports
 	reports := api.Group("/reports", middleware.JWTAuth(tokenBlacklistRepo))
-	reports.GET("/daily", reportHandler.Daily, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah"))
-	reports.GET("/monthly", reportHandler.Monthly, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah"))
-	reports.GET("/annual", reportHandler.Annual, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah", "yayasan"))
-	reports.GET("/posisi-kas", reportHandler.PosisiKas, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah"))
-	reports.GET("/saldo", reportHandler.Saldo, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah"))
-	reports.GET("/transaksi-pengeluaran", reportHandler.TransaksiPengeluaran, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah"))
-	reports.GET("/tabungan", reportHandler.TabunganReport, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah"))
-	reports.GET("/savings/students/:id", reportHandler.TabunganSiswaReport, middleware.RequireRoles("superadmin", "admin_keuangan"))
-	reports.GET("/students/:id", reportHandler.ByStudent, middleware.RequireRoles("superadmin", "admin_keuangan"))
-	reports.GET("/class-groups/:id", reportHandler.ByClassGroup, middleware.RequireRoles("superadmin", "admin_keuangan", "kepala_sekolah"))
+	reports.GET("/daily", reportHandler.Daily, guard.RequireModule(middleware.ModuleKeuangan, middleware.ModuleLaporan))
+	reports.GET("/monthly", reportHandler.Monthly, guard.RequireModule(middleware.ModuleKeuangan, middleware.ModuleLaporan))
+	reports.GET("/annual", reportHandler.Annual, guard.RequireModule(middleware.ModuleKeuangan, middleware.ModuleLaporan))
+	reports.GET("/posisi-kas", reportHandler.PosisiKas, guard.RequireModule(middleware.ModuleKeuangan, middleware.ModuleLaporan))
+	reports.GET("/saldo", reportHandler.Saldo, guard.RequireModule(middleware.ModuleKeuangan, middleware.ModuleLaporan))
+	reports.GET("/transaksi-pengeluaran", reportHandler.TransaksiPengeluaran, guard.RequireModule(middleware.ModuleKeuangan, middleware.ModuleLaporan))
+	reports.GET("/tabungan", reportHandler.TabunganReport, guard.RequireModule(middleware.ModuleKeuangan, middleware.ModuleLaporan))
+	reports.GET("/savings/students/:id", reportHandler.TabunganSiswaReport, guard.RequireModule(middleware.ModuleKeuangan))
+	reports.GET("/students/:id", reportHandler.ByStudent, guard.RequireModule(middleware.ModuleKeuangan))
+	reports.GET("/class-groups/:id", reportHandler.ByClassGroup, guard.RequireModule(middleware.ModuleKeuangan, middleware.ModuleLaporan))
+
+	// Catatan: modul Koperasi dilayani oleh binary terpisah (cmd/koperasi) demi
+	// deploy/restart & isolasi fault yang independen. Lihat docs/architecture/adr-002.
 
 	// Background: hapus token blacklist expired tiap 10 menit
 	go func() {
@@ -533,28 +525,6 @@ func main() {
 		}
 	}()
 
-	// Start server with graceful shutdown
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
-	go func() {
-		if err := e.Start(":" + port); err != nil && err != http.ErrServerClosed {
-			e.Logger.Fatal("shutting down the server")
-		}
-	}()
-
-	// Wait for interrupt signal
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
-	<-quit
-
-	log.Println("Menerima sinyal shutdown, menunggu request selesai...")
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	if err := e.Shutdown(ctx); err != nil {
-		e.Logger.Fatal(err)
-	}
-	log.Println("Server berhenti")
+	// Start server + graceful shutdown. Port dari env PORT (default 8080).
+	bootstrap.Run(e, bootstrap.Port("PORT", "8080"))
 }

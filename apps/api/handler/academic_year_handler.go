@@ -42,7 +42,7 @@ func (h *AcademicYearHandler) List(c echo.Context) error {
 
 // Create godoc
 // @Summary      Create a new academic year
-// @Description  Create a new academic year (superadmin, admin_administrasi)
+// @Description  Create a new academic year (modul administrasi)
 // @Tags         academic-years
 // @Accept       json
 // @Produce      json

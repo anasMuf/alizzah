@@ -28,18 +28,23 @@ type CreateFeeConfigItemRequest struct {
 	Amount      float64 `json:"amount" validate:"required,min=0"`
 	Unit        string  `json:"unit" validate:"required,oneof=fixed per_day per_monday percent"`
 	IsMandatory bool    `json:"is_mandatory"`
+	IsKoperasi  bool    `json:"is_koperasi"`
+	KoperasiProductID *uint `json:"koperasi_product_id,omitempty"`
 }
 
 type FeeConfigItemResponse struct {
-	ID          uint    `json:"id"`
-	Category    string  `json:"category"`
-	ItemKey     string  `json:"item_key"`
-	Name        string  `json:"name"`
-	Level       string  `json:"level"`
-	Gender      string  `json:"gender"`
-	Amount      float64 `json:"amount"`
-	Unit        string  `json:"unit"`
-	IsMandatory bool    `json:"is_mandatory"`
+	ID                  uint    `json:"id"`
+	Category            string  `json:"category"`
+	ItemKey             string  `json:"item_key"`
+	Name                string  `json:"name"`
+	Level               string  `json:"level"`
+	Gender              string  `json:"gender"`
+	Amount              float64 `json:"amount"`
+	Unit                string  `json:"unit"`
+	IsMandatory         bool    `json:"is_mandatory"`
+	IsKoperasi          bool    `json:"is_koperasi"`
+	KoperasiProductID   *uint   `json:"koperasi_product_id,omitempty"`
+	KoperasiProductName string  `json:"koperasi_product_name,omitempty"`
 }
 
 type FeeConfigItemQueryParams struct {

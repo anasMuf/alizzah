@@ -2,24 +2,26 @@ import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { ChevronRight, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useGetV1AcademicYears } from "../../../../api/endpoints/academic-years/academic-years";
+import { useGetV1AcademicYears } from "#/api/endpoints/academic-years/academic-years";
 import {
 	getGetV1FeeConfigsQueryKey,
 	useGetV1FeeConfigs,
 	usePostV1FeeConfigs,
-} from "../../../../api/endpoints/fee-configs/fee-configs";
-import type { DtoFeeConfigResponse } from "../../../../api/model";
-import { ApiError } from "../../../../api/mutator/custom-instance";
-import { Badge } from "../../../../components/atoms/Badge";
-import { Button } from "../../../../components/atoms/Button";
-import { EmptyState } from "../../../../components/molecules/EmptyState";
-import { SlideOver } from "../../../../components/molecules/SlideOver";
-import { useToast } from "../../../../components/molecules/Toast";
+} from "#/api/endpoints/fee-configs/fee-configs";
+import type { DtoFeeConfigResponse } from "#/api/model";
+import { ApiError } from "#/api/mutator/custom-instance";
+import {
+	Badge,
+	Button,
+	EmptyState,
+	SlideOver,
+	useToast,
+} from "#/components/ui";
+import { hasModule } from "#/features/auth/access";
 
 export const Route = createFileRoute("/_authenticated/pengaturan/tarif/")({
 	beforeLoad: () => {
-		const role = localStorage.getItem("alizzah_role");
-		if (role !== "superadmin") {
+		if (!hasModule("keuangan")) {
 			throw redirect({ to: "/" });
 		}
 	},
@@ -82,6 +84,7 @@ function PengaturanTarifComponent() {
 				<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 					{feeConfigs.map((fc) => (
 						<button
+							type="button"
 							key={fc.id}
 							onClick={() =>
 								navigate({
@@ -152,12 +155,14 @@ function CreateFeeConfigSlideOver({
 		(ay: any) => !existingYearIds.includes(ay.id),
 	);
 
+	const defaultYearId = availableYears[0]?.id;
+
 	useEffect(() => {
 		if (isOpen) {
-			setAcademicYearId(availableYears[0]?.id || 0);
+			setAcademicYearId(defaultYearId || 0);
 			setSavingsAdminRate(0);
 		}
-	}, [isOpen]);
+	}, [isOpen, defaultYearId]);
 
 	const createMutation = usePostV1FeeConfigs({
 		mutation: {

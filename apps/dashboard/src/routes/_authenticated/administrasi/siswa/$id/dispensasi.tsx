@@ -20,13 +20,15 @@ import {
 	useGetStudentDispensations,
 	useToggleDispensation,
 	useUpdateDispensation,
-} from "../../../../../api/endpoints/dispensations/dispensations";
-import { Badge } from "../../../../../components/atoms/Badge";
-import { Button } from "../../../../../components/atoms/Button";
-import { ConfirmDialog } from "../../../../../components/molecules/ConfirmDialog";
-import { FormField } from "../../../../../components/molecules/FormField";
-import { SlideOver } from "../../../../../components/molecules/SlideOver";
-import { useToast } from "../../../../../components/molecules/Toast";
+} from "#/api/endpoints/dispensations/dispensations";
+import {
+	Badge,
+	Button,
+	ConfirmDialog,
+	FormField,
+	SlideOver,
+	useToast,
+} from "#/components/ui";
 import { academicYearAtom } from "../../../../../store/global";
 import { formatCurrency } from "../../../../../utils/format";
 

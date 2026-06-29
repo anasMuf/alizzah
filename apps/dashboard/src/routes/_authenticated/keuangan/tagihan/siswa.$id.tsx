@@ -1,10 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { ChevronRight } from "lucide-react";
-import { useGetV1StudentsIdInvoices } from "../../../../api/endpoints/invoices/invoices";
-import { useGetV1StudentsId } from "../../../../api/endpoints/students/students";
-import { Badge } from "../../../../components/atoms/Badge";
-import { Button } from "../../../../components/atoms/Button";
+import { useGetV1StudentsIdInvoices } from "#/api/endpoints/invoices/invoices";
+import { useGetV1StudentsId } from "#/api/endpoints/students/students";
+import { Badge, Button } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
 import { formatCurrency } from "../../../../utils/format";
 

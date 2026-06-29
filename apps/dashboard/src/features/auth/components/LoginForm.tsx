@@ -3,13 +3,11 @@ import { useForm } from "react-hook-form";
 import {
 	type postV1AuthLoginResponse,
 	usePostV1AuthLogin,
-} from "../../../api/endpoints/auth/auth";
-import { ApiError } from "../../../api/mutator/custom-instance";
-import { Button } from "../../../components/atoms/Button";
-import { FormField } from "../../../components/molecules/FormField";
-import { useToast } from "../../../components/molecules/Toast";
+} from "#/api/endpoints/auth/auth";
+import { ApiError } from "#/api/mutator/custom-instance";
+import { Button, FormField, useToast } from "#/components/ui";
+import { useAuth } from "#/features/auth/AuthContext";
 import { type LoginFormData, loginSchema } from "../../../utils/validation";
-import { useAuth } from "../AuthContext";
 
 export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
 	const { login } = useAuth();

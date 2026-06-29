@@ -11,17 +11,14 @@ import { useState } from "react";
 import {
 	type TabunganSiswaRow,
 	useGetReportsTabunganSiswa,
-} from "../../../../api/endpoints/reports/tabungan";
+} from "#/api/endpoints/reports/tabungan";
 import {
 	useGetV1StudentsIdSavings,
 	useGetV1StudentsIdSavingsTransactions,
 	usePostV1StudentsIdSavingsWithdrawals,
-} from "../../../../api/endpoints/savings/savings";
-import { useGetV1StudentsId } from "../../../../api/endpoints/students/students";
-import { Button } from "../../../../components/atoms/Button";
-import { FormField } from "../../../../components/molecules/FormField";
-import { SlideOver } from "../../../../components/molecules/SlideOver";
-import { useToast } from "../../../../components/molecules/Toast";
+} from "#/api/endpoints/savings/savings";
+import { useGetV1StudentsId } from "#/api/endpoints/students/students";
+import { Button, FormField, SlideOver, useToast } from "#/components/ui";
 import { formatCurrency, formatDate } from "../../../../utils/format";
 
 export const Route = createFileRoute(

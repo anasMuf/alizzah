@@ -8,11 +8,9 @@ import {
 	useGetV1StudentsId,
 	useGetV1StudentsIdGuardians,
 	usePatchV1StudentsIdGuardiansGuardianIdPrimary,
-} from "../../../../../api/endpoints/students/students";
-import { ApiError } from "../../../../../api/mutator/custom-instance";
-import { Button } from "../../../../../components/atoms/Button";
-import { ConfirmDialog } from "../../../../../components/molecules/ConfirmDialog";
-import { useToast } from "../../../../../components/molecules/Toast";
+} from "#/api/endpoints/students/students";
+import { ApiError } from "#/api/mutator/custom-instance";
+import { Button, ConfirmDialog, useToast } from "#/components/ui";
 
 export const Route = createFileRoute(
 	"/_authenticated/administrasi/siswa/$id/profil",

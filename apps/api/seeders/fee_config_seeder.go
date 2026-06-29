@@ -41,6 +41,26 @@ func SeedFeeConfigs(db *gorm.DB) {
 		return
 	}
 
+	koperasiItemKeys := map[string]bool{
+		"seragam_4stel":       true,
+		"rompi_prasiaga":      true,
+		"tas_sekolah":         true,
+		"kaos_kaki":           true,
+		"lunch_box":           true,
+		"baju_ganti":          true,
+		"buku_ddtk":           true,
+		"buku_pk_karakter":    true,
+		"kaos_field_trip":     true,
+		"map_hasil_karya":     true,
+		"map_raport_foto":     true,
+		"buku_asik_membaca":   true,
+		"buku_kreativitas":    true,
+		"buku_jurnal":         true,
+		"kalender":            true,
+		"buku_kotak":          true,
+		"jilbab_field_trip":   true,
+	}
+
 	items := buildFeeConfigItems()
 	for _, item := range items {
 		fci := model.FeeConfigItem{
@@ -54,6 +74,57 @@ func SeedFeeConfigs(db *gorm.DB) {
 			Unit:        item.Unit,
 			IsMandatory: item.IsMandatory,
 		}
+
+		if koperasiItemKeys[item.ItemKey] {
+			fci.IsKoperasi = true
+
+			// Dynamic lookup to associate seeded Koperasi products without import cycles
+			var prodName string
+			switch item.ItemKey {
+			case "seragam_4stel":
+				prodName = "4 Stel Seragam"
+			case "rompi_prasiaga":
+				prodName = "Rompi & Atribut Prasiaga"
+			case "tas_sekolah":
+				prodName = "Tas Sekolah"
+			case "kaos_kaki":
+				prodName = "Kaos Kaki"
+			case "lunch_box":
+				prodName = "1 Set Lunch Box"
+			case "baju_ganti":
+				prodName = "Baju Ganti"
+			case "buku_ddtk":
+				prodName = "Buku DDTK"
+			case "buku_pk_karakter":
+				prodName = "Buku PK Karakter"
+			case "kaos_field_trip":
+				prodName = "Kaos Field Trip"
+			case "map_hasil_karya":
+				prodName = "Map Hasil Karya"
+			case "map_raport_foto":
+				prodName = "Map Raport dan Foto Raport"
+			case "buku_asik_membaca":
+				prodName = "1 Seri Buku Asik Membaca"
+			case "buku_kreativitas":
+				prodName = "Buku Kreatifitas"
+			case "buku_jurnal":
+				prodName = "2 Pcs Buku Jurnal"
+			case "kalender":
+				prodName = "Kalender"
+			case "buku_kotak":
+				prodName = "Buku Kotak"
+			case "jilbab_field_trip":
+				prodName = "Jilbab Field Trip"
+			}
+
+			if prodName != "" {
+				var prodID uint
+				if err := db.Table("koperasi_products").Select("id").Where("name = ? AND is_active = ?", prodName, true).First(&prodID).Error; err == nil {
+					fci.KoperasiProductID = &prodID
+				}
+			}
+		}
+
 		if err := db.Create(&fci).Error; err != nil {
 			log.Printf("Gagal membuat fee item '%s' (level=%s): %v", item.Name, item.Level, err)
 		}

@@ -4,16 +4,13 @@ import {
 	getGetV1ExtracurricularsQueryKey,
 	usePostV1Extracurriculars,
 	usePutV1ExtracurricularsId,
-} from "../../../api/endpoints/extracurriculars/extracurriculars";
+} from "#/api/endpoints/extracurriculars/extracurriculars";
 import type {
 	DtoCreateExtracurricularRequest,
 	DtoExtracurricularResponse,
-} from "../../../api/model";
-import { ApiError } from "../../../api/mutator/custom-instance";
-import { Button } from "../../../components/atoms/Button";
-import { FormField } from "../../../components/molecules/FormField";
-import { SlideOver } from "../../../components/molecules/SlideOver";
-import { useToast } from "../../../components/molecules/Toast";
+} from "#/api/model";
+import { ApiError } from "#/api/mutator/custom-instance";
+import { Button, FormField, SlideOver, useToast } from "#/components/ui";
 
 interface EkskulFormProps {
 	isOpen: boolean;

@@ -6,10 +6,8 @@ import { useState } from "react";
 import {
 	incomeTransactionKeys,
 	useCreateIncomeTransaction,
-} from "../../../../api/endpoints/income-transactions/income-transactions";
-import { Button } from "../../../../components/atoms/Button";
-import { FormField } from "../../../../components/molecules/FormField";
-import { useToast } from "../../../../components/molecules/Toast";
+} from "#/api/endpoints/income-transactions/income-transactions";
+import { Button, FormField, useToast } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
 
 export const Route = createFileRoute(

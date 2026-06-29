@@ -11,7 +11,8 @@ import {
 import {
 	getGetV1AuthMeQueryKey,
 	useGetV1AuthMe,
-} from "../../api/endpoints/auth/auth";
+} from "#/api/endpoints/auth/auth";
+import { setTokenGetter } from "#/api/mutator/custom-instance";
 
 export interface User {
 	id: number;
@@ -21,6 +22,7 @@ export interface User {
 	phone: string;
 	address: string;
 	role: string;
+	modules: string[];
 	deposit: number;
 }
 
@@ -48,6 +50,9 @@ let _token: string | null =
 export function getToken(): string | null {
 	return _token;
 }
+
+// Daftarkan sumber token ke api-client (memutus siklus auth <-> api-client).
+setTokenGetter(getToken);
 
 export function setTokenValue(token: string | null) {
 	_token = token;
@@ -88,6 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		setTokenValue(null);
 		setToken(null);
 		localStorage.removeItem("alizzah_role");
+		localStorage.removeItem("alizzah_modules");
 		queryClient.removeQueries({ queryKey: getGetV1AuthMeQueryKey() });
 	};
 
@@ -118,6 +124,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			const u = userResponse.data.data as User;
 			if (u && u.role) {
 				localStorage.setItem("alizzah_role", u.role);
+				localStorage.setItem(
+					"alizzah_modules",
+					JSON.stringify(u.modules ?? []),
+				);
 			}
 			return u;
 		}

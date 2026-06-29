@@ -9,13 +9,15 @@ import {
 	useDeleteFacility,
 	useGetFacilities,
 	useUpdateFacility,
-} from "../../../../api/endpoints/facilities/facilities";
-import { Button } from "../../../../components/atoms/Button";
-import { ConfirmDialog } from "../../../../components/molecules/ConfirmDialog";
-import { EmptyState } from "../../../../components/molecules/EmptyState";
-import { FormField } from "../../../../components/molecules/FormField";
-import { SlideOver } from "../../../../components/molecules/SlideOver";
-import { useToast } from "../../../../components/molecules/Toast";
+} from "#/api/endpoints/facilities/facilities";
+import {
+	Button,
+	ConfirmDialog,
+	EmptyState,
+	FormField,
+	SlideOver,
+	useToast,
+} from "#/components/ui";
 
 export const Route = createFileRoute("/_authenticated/administrasi/fasilitas/")(
 	{

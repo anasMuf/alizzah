@@ -4,16 +4,13 @@ import {
 	getGetV1ClassGroupsIdEffectiveDaysQueryKey,
 	usePostV1ClassGroupsIdEffectiveDays,
 	usePutV1ClassGroupsIdEffectiveDaysEdId,
-} from "../../../api/endpoints/effective-days/effective-days";
+} from "#/api/endpoints/effective-days/effective-days";
 import type {
 	DtoEffectiveDayResponse,
 	DtoUpsertEffectiveDayRequest,
-} from "../../../api/model";
-import { ApiError } from "../../../api/mutator/custom-instance";
-import { Button } from "../../../components/atoms/Button";
-import { FormField } from "../../../components/molecules/FormField";
-import { SlideOver } from "../../../components/molecules/SlideOver";
-import { useToast } from "../../../components/molecules/Toast";
+} from "#/api/model";
+import { ApiError } from "#/api/mutator/custom-instance";
+import { Button, FormField, SlideOver, useToast } from "#/components/ui";
 
 interface EffectiveDayFormProps {
 	isOpen: boolean;

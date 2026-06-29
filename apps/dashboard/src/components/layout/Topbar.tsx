@@ -1,10 +1,9 @@
 import { useRouterState } from "@tanstack/react-router";
 import { Menu } from "lucide-react";
 import { useState } from "react";
-import { usePostV1AuthLogout } from "../../api/endpoints/auth/auth";
-import { useAuth } from "../../features/auth/AuthContext";
-import { Button } from "../atoms/Button";
-import { ConfirmDialog } from "../molecules/ConfirmDialog";
+import { usePostV1AuthLogout } from "#/api/endpoints/auth/auth";
+import { Button, ConfirmDialog } from "#/components/ui";
+import { useAuth } from "#/features/auth/AuthContext";
 
 interface TopbarProps {
 	onMenuClick: () => void;

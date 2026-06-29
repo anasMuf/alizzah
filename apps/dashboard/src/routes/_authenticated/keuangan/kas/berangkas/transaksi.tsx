@@ -8,8 +8,8 @@ import {
 	Filter,
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { useGetV1VaultTransactions } from "../../../../../api/endpoints/vault/vault";
-import { Button } from "../../../../../components/atoms/Button";
+import { useGetV1VaultTransactions } from "#/api/endpoints/vault/vault";
+import { Button } from "#/components/ui";
 import { academicYearAtom } from "../../../../../store/global";
 import { formatCurrency, formatDate } from "../../../../../utils/format";
 

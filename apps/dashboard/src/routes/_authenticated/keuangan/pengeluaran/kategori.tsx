@@ -8,15 +8,17 @@ import {
 	useGetV1ExpenseCategories,
 	usePostV1ExpenseCategories,
 	usePutV1ExpenseCategoriesId,
-} from "../../../../api/endpoints/expense-categories/expense-categories";
-import type { DtoExpenseCategoryResponse } from "../../../../api/model";
-import { ApiError } from "../../../../api/mutator/custom-instance";
-import { Button } from "../../../../components/atoms/Button";
-import { ConfirmDialog } from "../../../../components/molecules/ConfirmDialog";
-import { EmptyState } from "../../../../components/molecules/EmptyState";
-import { FormField } from "../../../../components/molecules/FormField";
-import { SlideOver } from "../../../../components/molecules/SlideOver";
-import { useToast } from "../../../../components/molecules/Toast";
+} from "#/api/endpoints/expense-categories/expense-categories";
+import type { DtoExpenseCategoryResponse } from "#/api/model";
+import { ApiError } from "#/api/mutator/custom-instance";
+import {
+	Button,
+	ConfirmDialog,
+	EmptyState,
+	FormField,
+	SlideOver,
+	useToast,
+} from "#/components/ui";
 
 export const Route = createFileRoute(
 	"/_authenticated/keuangan/pengeluaran/kategori",

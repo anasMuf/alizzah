@@ -3,9 +3,9 @@ import { useAtom } from "jotai";
 import { ChevronRight, Search, Wallet } from "lucide-react";
 import { useState } from "react";
 import { useDebounce } from "use-debounce";
-import { useGetV1ClassGroups } from "../../../../api/endpoints/class-groups/class-groups";
-import { useGetV1Students } from "../../../../api/endpoints/students/students";
-import { Pagination } from "../../../../components/molecules/Pagination";
+import { useGetV1ClassGroups } from "#/api/endpoints/class-groups/class-groups";
+import { useGetV1Students } from "#/api/endpoints/students/students";
+import { Pagination } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
 
 export const Route = createFileRoute("/_authenticated/keuangan/tabungan/")({

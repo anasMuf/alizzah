@@ -3,11 +3,9 @@ import { useAtom } from "jotai";
 import { ChevronRight, Filter, Search } from "lucide-react";
 import { useState } from "react";
 import { useDebounce } from "use-debounce";
-import { useGetV1ClassGroups } from "../../../../api/endpoints/class-groups/class-groups";
-import { useGetV1Invoices } from "../../../../api/endpoints/invoices/invoices";
-import { Badge } from "../../../../components/atoms/Badge";
-import { Button } from "../../../../components/atoms/Button";
-import { Pagination } from "../../../../components/molecules/Pagination";
+import { useGetV1ClassGroups } from "#/api/endpoints/class-groups/class-groups";
+import { useGetV1Invoices } from "#/api/endpoints/invoices/invoices";
+import { Badge, Button, Pagination } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
 import { formatCurrency } from "../../../../utils/format";
 

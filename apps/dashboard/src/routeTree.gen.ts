@@ -13,11 +13,21 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedKoperasiIndexRouteImport } from './routes/_authenticated/koperasi/index'
 import { Route as AuthenticatedKeuanganIndexRouteImport } from './routes/_authenticated/keuangan/index'
 import { Route as AuthenticatedPengaturanPenggunaRouteImport } from './routes/_authenticated/pengaturan/pengguna'
+import { Route as AuthenticatedKoperasiPemasokRouteImport } from './routes/_authenticated/koperasi/pemasok'
+import { Route as AuthenticatedKoperasiLaporanRouteImport } from './routes/_authenticated/koperasi/laporan'
+import { Route as AuthenticatedKoperasiLainLainRouteImport } from './routes/_authenticated/koperasi/lain-lain'
+import { Route as AuthenticatedKoperasiKasRouteImport } from './routes/_authenticated/koperasi/kas'
+import { Route as AuthenticatedKoperasiBarangRouteImport } from './routes/_authenticated/koperasi/barang'
 import { Route as AuthenticatedAdministrasiTahunAjaranRouteImport } from './routes/_authenticated/administrasi/tahun-ajaran'
 import { Route as AuthenticatedAdministrasiEkskulRouteImport } from './routes/_authenticated/administrasi/ekskul'
 import { Route as AuthenticatedPengaturanTarifIndexRouteImport } from './routes/_authenticated/pengaturan/tarif/index'
+import { Route as AuthenticatedKoperasiPinjamanIndexRouteImport } from './routes/_authenticated/koperasi/pinjaman/index'
+import { Route as AuthenticatedKoperasiPenjualanIndexRouteImport } from './routes/_authenticated/koperasi/penjualan/index'
+import { Route as AuthenticatedKoperasiPembelianIndexRouteImport } from './routes/_authenticated/koperasi/pembelian/index'
+import { Route as AuthenticatedKoperasiAnggotaIndexRouteImport } from './routes/_authenticated/koperasi/anggota/index'
 import { Route as AuthenticatedKeuanganTagihanIndexRouteImport } from './routes/_authenticated/keuangan/tagihan/index'
 import { Route as AuthenticatedKeuanganTabunganIndexRouteImport } from './routes/_authenticated/keuangan/tabungan/index'
 import { Route as AuthenticatedKeuanganPengeluaranIndexRouteImport } from './routes/_authenticated/keuangan/pengeluaran/index'
@@ -31,6 +41,12 @@ import { Route as AuthenticatedAdministrasiRombelIndexRouteImport } from './rout
 import { Route as AuthenticatedAdministrasiFasilitasIndexRouteImport } from './routes/_authenticated/administrasi/fasilitas/index'
 import { Route as AuthenticatedAdministrasiDaycareIndexRouteImport } from './routes/_authenticated/administrasi/daycare/index'
 import { Route as AuthenticatedPengaturanTarifIdRouteImport } from './routes/_authenticated/pengaturan/tarif/$id'
+import { Route as AuthenticatedKoperasiPinjamanIdRouteImport } from './routes/_authenticated/koperasi/pinjaman/$id'
+import { Route as AuthenticatedKoperasiPenjualanPosRouteImport } from './routes/_authenticated/koperasi/penjualan/pos'
+import { Route as AuthenticatedKoperasiPenjualanIdRouteImport } from './routes/_authenticated/koperasi/penjualan/$id'
+import { Route as AuthenticatedKoperasiPembelianPosRouteImport } from './routes/_authenticated/koperasi/pembelian/pos'
+import { Route as AuthenticatedKoperasiPembelianIdRouteImport } from './routes/_authenticated/koperasi/pembelian/$id'
+import { Route as AuthenticatedKoperasiAnggotaIdRouteImport } from './routes/_authenticated/koperasi/anggota/$id'
 import { Route as AuthenticatedKeuanganTagihanIdRouteImport } from './routes/_authenticated/keuangan/tagihan/$id'
 import { Route as AuthenticatedKeuanganPengeluaranKategoriRouteImport } from './routes/_authenticated/keuangan/pengeluaran/kategori'
 import { Route as AuthenticatedKeuanganPengeluaranBaruRouteImport } from './routes/_authenticated/keuangan/pengeluaran/baru'
@@ -93,6 +109,12 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedKoperasiIndexRoute =
+  AuthenticatedKoperasiIndexRouteImport.update({
+    id: '/koperasi/',
+    path: '/koperasi/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedKeuanganIndexRoute =
   AuthenticatedKeuanganIndexRouteImport.update({
     id: '/keuangan/',
@@ -103,6 +125,36 @@ const AuthenticatedPengaturanPenggunaRoute =
   AuthenticatedPengaturanPenggunaRouteImport.update({
     id: '/pengaturan/pengguna',
     path: '/pengaturan/pengguna',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedKoperasiPemasokRoute =
+  AuthenticatedKoperasiPemasokRouteImport.update({
+    id: '/koperasi/pemasok',
+    path: '/koperasi/pemasok',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedKoperasiLaporanRoute =
+  AuthenticatedKoperasiLaporanRouteImport.update({
+    id: '/koperasi/laporan',
+    path: '/koperasi/laporan',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedKoperasiLainLainRoute =
+  AuthenticatedKoperasiLainLainRouteImport.update({
+    id: '/koperasi/lain-lain',
+    path: '/koperasi/lain-lain',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedKoperasiKasRoute =
+  AuthenticatedKoperasiKasRouteImport.update({
+    id: '/koperasi/kas',
+    path: '/koperasi/kas',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedKoperasiBarangRoute =
+  AuthenticatedKoperasiBarangRouteImport.update({
+    id: '/koperasi/barang',
+    path: '/koperasi/barang',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedAdministrasiTahunAjaranRoute =
@@ -121,6 +173,30 @@ const AuthenticatedPengaturanTarifIndexRoute =
   AuthenticatedPengaturanTarifIndexRouteImport.update({
     id: '/pengaturan/tarif/',
     path: '/pengaturan/tarif/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedKoperasiPinjamanIndexRoute =
+  AuthenticatedKoperasiPinjamanIndexRouteImport.update({
+    id: '/koperasi/pinjaman/',
+    path: '/koperasi/pinjaman/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedKoperasiPenjualanIndexRoute =
+  AuthenticatedKoperasiPenjualanIndexRouteImport.update({
+    id: '/koperasi/penjualan/',
+    path: '/koperasi/penjualan/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedKoperasiPembelianIndexRoute =
+  AuthenticatedKoperasiPembelianIndexRouteImport.update({
+    id: '/koperasi/pembelian/',
+    path: '/koperasi/pembelian/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedKoperasiAnggotaIndexRoute =
+  AuthenticatedKoperasiAnggotaIndexRouteImport.update({
+    id: '/koperasi/anggota/',
+    path: '/koperasi/anggota/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedKeuanganTagihanIndexRoute =
@@ -199,6 +275,42 @@ const AuthenticatedPengaturanTarifIdRoute =
   AuthenticatedPengaturanTarifIdRouteImport.update({
     id: '/pengaturan/tarif/$id',
     path: '/pengaturan/tarif/$id',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedKoperasiPinjamanIdRoute =
+  AuthenticatedKoperasiPinjamanIdRouteImport.update({
+    id: '/koperasi/pinjaman/$id',
+    path: '/koperasi/pinjaman/$id',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedKoperasiPenjualanPosRoute =
+  AuthenticatedKoperasiPenjualanPosRouteImport.update({
+    id: '/koperasi/penjualan/pos',
+    path: '/koperasi/penjualan/pos',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedKoperasiPenjualanIdRoute =
+  AuthenticatedKoperasiPenjualanIdRouteImport.update({
+    id: '/koperasi/penjualan/$id',
+    path: '/koperasi/penjualan/$id',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedKoperasiPembelianPosRoute =
+  AuthenticatedKoperasiPembelianPosRouteImport.update({
+    id: '/koperasi/pembelian/pos',
+    path: '/koperasi/pembelian/pos',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedKoperasiPembelianIdRoute =
+  AuthenticatedKoperasiPembelianIdRouteImport.update({
+    id: '/koperasi/pembelian/$id',
+    path: '/koperasi/pembelian/$id',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedKoperasiAnggotaIdRoute =
+  AuthenticatedKoperasiAnggotaIdRouteImport.update({
+    id: '/koperasi/anggota/$id',
+    path: '/koperasi/anggota/$id',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedKeuanganTagihanIdRoute =
@@ -460,8 +572,14 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/administrasi/ekskul': typeof AuthenticatedAdministrasiEkskulRoute
   '/administrasi/tahun-ajaran': typeof AuthenticatedAdministrasiTahunAjaranRoute
+  '/koperasi/barang': typeof AuthenticatedKoperasiBarangRoute
+  '/koperasi/kas': typeof AuthenticatedKoperasiKasRoute
+  '/koperasi/lain-lain': typeof AuthenticatedKoperasiLainLainRoute
+  '/koperasi/laporan': typeof AuthenticatedKoperasiLaporanRoute
+  '/koperasi/pemasok': typeof AuthenticatedKoperasiPemasokRoute
   '/pengaturan/pengguna': typeof AuthenticatedPengaturanPenggunaRoute
   '/keuangan/': typeof AuthenticatedKeuanganIndexRoute
+  '/koperasi/': typeof AuthenticatedKoperasiIndexRoute
   '/administrasi/daycare/baru': typeof AuthenticatedAdministrasiDaycareBaruRoute
   '/administrasi/rombel/baru': typeof AuthenticatedAdministrasiRombelBaruRoute
   '/administrasi/siklus/keluar': typeof AuthenticatedAdministrasiSiklusKeluarRoute
@@ -490,6 +608,12 @@ export interface FileRoutesByFullPath {
   '/keuangan/pengeluaran/baru': typeof AuthenticatedKeuanganPengeluaranBaruRoute
   '/keuangan/pengeluaran/kategori': typeof AuthenticatedKeuanganPengeluaranKategoriRoute
   '/keuangan/tagihan/$id': typeof AuthenticatedKeuanganTagihanIdRoute
+  '/koperasi/anggota/$id': typeof AuthenticatedKoperasiAnggotaIdRoute
+  '/koperasi/pembelian/$id': typeof AuthenticatedKoperasiPembelianIdRoute
+  '/koperasi/pembelian/pos': typeof AuthenticatedKoperasiPembelianPosRoute
+  '/koperasi/penjualan/$id': typeof AuthenticatedKoperasiPenjualanIdRoute
+  '/koperasi/penjualan/pos': typeof AuthenticatedKoperasiPenjualanPosRoute
+  '/koperasi/pinjaman/$id': typeof AuthenticatedKoperasiPinjamanIdRoute
   '/pengaturan/tarif/$id': typeof AuthenticatedPengaturanTarifIdRoute
   '/administrasi/daycare/': typeof AuthenticatedAdministrasiDaycareIndexRoute
   '/administrasi/fasilitas/': typeof AuthenticatedAdministrasiFasilitasIndexRoute
@@ -503,6 +627,10 @@ export interface FileRoutesByFullPath {
   '/keuangan/pengeluaran/': typeof AuthenticatedKeuanganPengeluaranIndexRoute
   '/keuangan/tabungan/': typeof AuthenticatedKeuanganTabunganIndexRoute
   '/keuangan/tagihan/': typeof AuthenticatedKeuanganTagihanIndexRoute
+  '/koperasi/anggota/': typeof AuthenticatedKoperasiAnggotaIndexRoute
+  '/koperasi/pembelian/': typeof AuthenticatedKoperasiPembelianIndexRoute
+  '/koperasi/penjualan/': typeof AuthenticatedKoperasiPenjualanIndexRoute
+  '/koperasi/pinjaman/': typeof AuthenticatedKoperasiPinjamanIndexRoute
   '/pengaturan/tarif/': typeof AuthenticatedPengaturanTarifIndexRoute
   '/administrasi/rombel/$id/hari-efektif': typeof AuthenticatedAdministrasiRombelIdHariEfektifRoute
   '/administrasi/siswa/$id/akademik': typeof AuthenticatedAdministrasiSiswaIdAkademikRoute
@@ -525,8 +653,14 @@ export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
   '/administrasi/ekskul': typeof AuthenticatedAdministrasiEkskulRoute
   '/administrasi/tahun-ajaran': typeof AuthenticatedAdministrasiTahunAjaranRoute
+  '/koperasi/barang': typeof AuthenticatedKoperasiBarangRoute
+  '/koperasi/kas': typeof AuthenticatedKoperasiKasRoute
+  '/koperasi/lain-lain': typeof AuthenticatedKoperasiLainLainRoute
+  '/koperasi/laporan': typeof AuthenticatedKoperasiLaporanRoute
+  '/koperasi/pemasok': typeof AuthenticatedKoperasiPemasokRoute
   '/pengaturan/pengguna': typeof AuthenticatedPengaturanPenggunaRoute
   '/keuangan': typeof AuthenticatedKeuanganIndexRoute
+  '/koperasi': typeof AuthenticatedKoperasiIndexRoute
   '/administrasi/daycare/baru': typeof AuthenticatedAdministrasiDaycareBaruRoute
   '/administrasi/rombel/baru': typeof AuthenticatedAdministrasiRombelBaruRoute
   '/administrasi/siklus/keluar': typeof AuthenticatedAdministrasiSiklusKeluarRoute
@@ -554,6 +688,12 @@ export interface FileRoutesByTo {
   '/keuangan/pengeluaran/baru': typeof AuthenticatedKeuanganPengeluaranBaruRoute
   '/keuangan/pengeluaran/kategori': typeof AuthenticatedKeuanganPengeluaranKategoriRoute
   '/keuangan/tagihan/$id': typeof AuthenticatedKeuanganTagihanIdRoute
+  '/koperasi/anggota/$id': typeof AuthenticatedKoperasiAnggotaIdRoute
+  '/koperasi/pembelian/$id': typeof AuthenticatedKoperasiPembelianIdRoute
+  '/koperasi/pembelian/pos': typeof AuthenticatedKoperasiPembelianPosRoute
+  '/koperasi/penjualan/$id': typeof AuthenticatedKoperasiPenjualanIdRoute
+  '/koperasi/penjualan/pos': typeof AuthenticatedKoperasiPenjualanPosRoute
+  '/koperasi/pinjaman/$id': typeof AuthenticatedKoperasiPinjamanIdRoute
   '/pengaturan/tarif/$id': typeof AuthenticatedPengaturanTarifIdRoute
   '/administrasi/daycare': typeof AuthenticatedAdministrasiDaycareIndexRoute
   '/administrasi/fasilitas': typeof AuthenticatedAdministrasiFasilitasIndexRoute
@@ -567,6 +707,10 @@ export interface FileRoutesByTo {
   '/keuangan/pengeluaran': typeof AuthenticatedKeuanganPengeluaranIndexRoute
   '/keuangan/tabungan': typeof AuthenticatedKeuanganTabunganIndexRoute
   '/keuangan/tagihan': typeof AuthenticatedKeuanganTagihanIndexRoute
+  '/koperasi/anggota': typeof AuthenticatedKoperasiAnggotaIndexRoute
+  '/koperasi/pembelian': typeof AuthenticatedKoperasiPembelianIndexRoute
+  '/koperasi/penjualan': typeof AuthenticatedKoperasiPenjualanIndexRoute
+  '/koperasi/pinjaman': typeof AuthenticatedKoperasiPinjamanIndexRoute
   '/pengaturan/tarif': typeof AuthenticatedPengaturanTarifIndexRoute
   '/administrasi/rombel/$id/hari-efektif': typeof AuthenticatedAdministrasiRombelIdHariEfektifRoute
   '/administrasi/siswa/$id/akademik': typeof AuthenticatedAdministrasiSiswaIdAkademikRoute
@@ -591,8 +735,14 @@ export interface FileRoutesById {
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/administrasi/ekskul': typeof AuthenticatedAdministrasiEkskulRoute
   '/_authenticated/administrasi/tahun-ajaran': typeof AuthenticatedAdministrasiTahunAjaranRoute
+  '/_authenticated/koperasi/barang': typeof AuthenticatedKoperasiBarangRoute
+  '/_authenticated/koperasi/kas': typeof AuthenticatedKoperasiKasRoute
+  '/_authenticated/koperasi/lain-lain': typeof AuthenticatedKoperasiLainLainRoute
+  '/_authenticated/koperasi/laporan': typeof AuthenticatedKoperasiLaporanRoute
+  '/_authenticated/koperasi/pemasok': typeof AuthenticatedKoperasiPemasokRoute
   '/_authenticated/pengaturan/pengguna': typeof AuthenticatedPengaturanPenggunaRoute
   '/_authenticated/keuangan/': typeof AuthenticatedKeuanganIndexRoute
+  '/_authenticated/koperasi/': typeof AuthenticatedKoperasiIndexRoute
   '/_authenticated/administrasi/daycare/baru': typeof AuthenticatedAdministrasiDaycareBaruRoute
   '/_authenticated/administrasi/rombel/baru': typeof AuthenticatedAdministrasiRombelBaruRoute
   '/_authenticated/administrasi/siklus/keluar': typeof AuthenticatedAdministrasiSiklusKeluarRoute
@@ -621,6 +771,12 @@ export interface FileRoutesById {
   '/_authenticated/keuangan/pengeluaran/baru': typeof AuthenticatedKeuanganPengeluaranBaruRoute
   '/_authenticated/keuangan/pengeluaran/kategori': typeof AuthenticatedKeuanganPengeluaranKategoriRoute
   '/_authenticated/keuangan/tagihan/$id': typeof AuthenticatedKeuanganTagihanIdRoute
+  '/_authenticated/koperasi/anggota/$id': typeof AuthenticatedKoperasiAnggotaIdRoute
+  '/_authenticated/koperasi/pembelian/$id': typeof AuthenticatedKoperasiPembelianIdRoute
+  '/_authenticated/koperasi/pembelian/pos': typeof AuthenticatedKoperasiPembelianPosRoute
+  '/_authenticated/koperasi/penjualan/$id': typeof AuthenticatedKoperasiPenjualanIdRoute
+  '/_authenticated/koperasi/penjualan/pos': typeof AuthenticatedKoperasiPenjualanPosRoute
+  '/_authenticated/koperasi/pinjaman/$id': typeof AuthenticatedKoperasiPinjamanIdRoute
   '/_authenticated/pengaturan/tarif/$id': typeof AuthenticatedPengaturanTarifIdRoute
   '/_authenticated/administrasi/daycare/': typeof AuthenticatedAdministrasiDaycareIndexRoute
   '/_authenticated/administrasi/fasilitas/': typeof AuthenticatedAdministrasiFasilitasIndexRoute
@@ -634,6 +790,10 @@ export interface FileRoutesById {
   '/_authenticated/keuangan/pengeluaran/': typeof AuthenticatedKeuanganPengeluaranIndexRoute
   '/_authenticated/keuangan/tabungan/': typeof AuthenticatedKeuanganTabunganIndexRoute
   '/_authenticated/keuangan/tagihan/': typeof AuthenticatedKeuanganTagihanIndexRoute
+  '/_authenticated/koperasi/anggota/': typeof AuthenticatedKoperasiAnggotaIndexRoute
+  '/_authenticated/koperasi/pembelian/': typeof AuthenticatedKoperasiPembelianIndexRoute
+  '/_authenticated/koperasi/penjualan/': typeof AuthenticatedKoperasiPenjualanIndexRoute
+  '/_authenticated/koperasi/pinjaman/': typeof AuthenticatedKoperasiPinjamanIndexRoute
   '/_authenticated/pengaturan/tarif/': typeof AuthenticatedPengaturanTarifIndexRoute
   '/_authenticated/administrasi/rombel/$id/hari-efektif': typeof AuthenticatedAdministrasiRombelIdHariEfektifRoute
   '/_authenticated/administrasi/siswa/$id/akademik': typeof AuthenticatedAdministrasiSiswaIdAkademikRoute
@@ -658,8 +818,14 @@ export interface FileRouteTypes {
     | '/register'
     | '/administrasi/ekskul'
     | '/administrasi/tahun-ajaran'
+    | '/koperasi/barang'
+    | '/koperasi/kas'
+    | '/koperasi/lain-lain'
+    | '/koperasi/laporan'
+    | '/koperasi/pemasok'
     | '/pengaturan/pengguna'
     | '/keuangan/'
+    | '/koperasi/'
     | '/administrasi/daycare/baru'
     | '/administrasi/rombel/baru'
     | '/administrasi/siklus/keluar'
@@ -688,6 +854,12 @@ export interface FileRouteTypes {
     | '/keuangan/pengeluaran/baru'
     | '/keuangan/pengeluaran/kategori'
     | '/keuangan/tagihan/$id'
+    | '/koperasi/anggota/$id'
+    | '/koperasi/pembelian/$id'
+    | '/koperasi/pembelian/pos'
+    | '/koperasi/penjualan/$id'
+    | '/koperasi/penjualan/pos'
+    | '/koperasi/pinjaman/$id'
     | '/pengaturan/tarif/$id'
     | '/administrasi/daycare/'
     | '/administrasi/fasilitas/'
@@ -701,6 +873,10 @@ export interface FileRouteTypes {
     | '/keuangan/pengeluaran/'
     | '/keuangan/tabungan/'
     | '/keuangan/tagihan/'
+    | '/koperasi/anggota/'
+    | '/koperasi/pembelian/'
+    | '/koperasi/penjualan/'
+    | '/koperasi/pinjaman/'
     | '/pengaturan/tarif/'
     | '/administrasi/rombel/$id/hari-efektif'
     | '/administrasi/siswa/$id/akademik'
@@ -723,8 +899,14 @@ export interface FileRouteTypes {
     | '/'
     | '/administrasi/ekskul'
     | '/administrasi/tahun-ajaran'
+    | '/koperasi/barang'
+    | '/koperasi/kas'
+    | '/koperasi/lain-lain'
+    | '/koperasi/laporan'
+    | '/koperasi/pemasok'
     | '/pengaturan/pengguna'
     | '/keuangan'
+    | '/koperasi'
     | '/administrasi/daycare/baru'
     | '/administrasi/rombel/baru'
     | '/administrasi/siklus/keluar'
@@ -752,6 +934,12 @@ export interface FileRouteTypes {
     | '/keuangan/pengeluaran/baru'
     | '/keuangan/pengeluaran/kategori'
     | '/keuangan/tagihan/$id'
+    | '/koperasi/anggota/$id'
+    | '/koperasi/pembelian/$id'
+    | '/koperasi/pembelian/pos'
+    | '/koperasi/penjualan/$id'
+    | '/koperasi/penjualan/pos'
+    | '/koperasi/pinjaman/$id'
     | '/pengaturan/tarif/$id'
     | '/administrasi/daycare'
     | '/administrasi/fasilitas'
@@ -765,6 +953,10 @@ export interface FileRouteTypes {
     | '/keuangan/pengeluaran'
     | '/keuangan/tabungan'
     | '/keuangan/tagihan'
+    | '/koperasi/anggota'
+    | '/koperasi/pembelian'
+    | '/koperasi/penjualan'
+    | '/koperasi/pinjaman'
     | '/pengaturan/tarif'
     | '/administrasi/rombel/$id/hari-efektif'
     | '/administrasi/siswa/$id/akademik'
@@ -788,8 +980,14 @@ export interface FileRouteTypes {
     | '/_authenticated/'
     | '/_authenticated/administrasi/ekskul'
     | '/_authenticated/administrasi/tahun-ajaran'
+    | '/_authenticated/koperasi/barang'
+    | '/_authenticated/koperasi/kas'
+    | '/_authenticated/koperasi/lain-lain'
+    | '/_authenticated/koperasi/laporan'
+    | '/_authenticated/koperasi/pemasok'
     | '/_authenticated/pengaturan/pengguna'
     | '/_authenticated/keuangan/'
+    | '/_authenticated/koperasi/'
     | '/_authenticated/administrasi/daycare/baru'
     | '/_authenticated/administrasi/rombel/baru'
     | '/_authenticated/administrasi/siklus/keluar'
@@ -818,6 +1016,12 @@ export interface FileRouteTypes {
     | '/_authenticated/keuangan/pengeluaran/baru'
     | '/_authenticated/keuangan/pengeluaran/kategori'
     | '/_authenticated/keuangan/tagihan/$id'
+    | '/_authenticated/koperasi/anggota/$id'
+    | '/_authenticated/koperasi/pembelian/$id'
+    | '/_authenticated/koperasi/pembelian/pos'
+    | '/_authenticated/koperasi/penjualan/$id'
+    | '/_authenticated/koperasi/penjualan/pos'
+    | '/_authenticated/koperasi/pinjaman/$id'
     | '/_authenticated/pengaturan/tarif/$id'
     | '/_authenticated/administrasi/daycare/'
     | '/_authenticated/administrasi/fasilitas/'
@@ -831,6 +1035,10 @@ export interface FileRouteTypes {
     | '/_authenticated/keuangan/pengeluaran/'
     | '/_authenticated/keuangan/tabungan/'
     | '/_authenticated/keuangan/tagihan/'
+    | '/_authenticated/koperasi/anggota/'
+    | '/_authenticated/koperasi/pembelian/'
+    | '/_authenticated/koperasi/penjualan/'
+    | '/_authenticated/koperasi/pinjaman/'
     | '/_authenticated/pengaturan/tarif/'
     | '/_authenticated/administrasi/rombel/$id/hari-efektif'
     | '/_authenticated/administrasi/siswa/$id/akademik'
@@ -884,6 +1092,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/koperasi/': {
+      id: '/_authenticated/koperasi/'
+      path: '/koperasi'
+      fullPath: '/koperasi/'
+      preLoaderRoute: typeof AuthenticatedKoperasiIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/keuangan/': {
       id: '/_authenticated/keuangan/'
       path: '/keuangan'
@@ -896,6 +1111,41 @@ declare module '@tanstack/react-router' {
       path: '/pengaturan/pengguna'
       fullPath: '/pengaturan/pengguna'
       preLoaderRoute: typeof AuthenticatedPengaturanPenggunaRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/koperasi/pemasok': {
+      id: '/_authenticated/koperasi/pemasok'
+      path: '/koperasi/pemasok'
+      fullPath: '/koperasi/pemasok'
+      preLoaderRoute: typeof AuthenticatedKoperasiPemasokRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/koperasi/laporan': {
+      id: '/_authenticated/koperasi/laporan'
+      path: '/koperasi/laporan'
+      fullPath: '/koperasi/laporan'
+      preLoaderRoute: typeof AuthenticatedKoperasiLaporanRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/koperasi/lain-lain': {
+      id: '/_authenticated/koperasi/lain-lain'
+      path: '/koperasi/lain-lain'
+      fullPath: '/koperasi/lain-lain'
+      preLoaderRoute: typeof AuthenticatedKoperasiLainLainRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/koperasi/kas': {
+      id: '/_authenticated/koperasi/kas'
+      path: '/koperasi/kas'
+      fullPath: '/koperasi/kas'
+      preLoaderRoute: typeof AuthenticatedKoperasiKasRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/koperasi/barang': {
+      id: '/_authenticated/koperasi/barang'
+      path: '/koperasi/barang'
+      fullPath: '/koperasi/barang'
+      preLoaderRoute: typeof AuthenticatedKoperasiBarangRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/administrasi/tahun-ajaran': {
@@ -917,6 +1167,34 @@ declare module '@tanstack/react-router' {
       path: '/pengaturan/tarif'
       fullPath: '/pengaturan/tarif/'
       preLoaderRoute: typeof AuthenticatedPengaturanTarifIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/koperasi/pinjaman/': {
+      id: '/_authenticated/koperasi/pinjaman/'
+      path: '/koperasi/pinjaman'
+      fullPath: '/koperasi/pinjaman/'
+      preLoaderRoute: typeof AuthenticatedKoperasiPinjamanIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/koperasi/penjualan/': {
+      id: '/_authenticated/koperasi/penjualan/'
+      path: '/koperasi/penjualan'
+      fullPath: '/koperasi/penjualan/'
+      preLoaderRoute: typeof AuthenticatedKoperasiPenjualanIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/koperasi/pembelian/': {
+      id: '/_authenticated/koperasi/pembelian/'
+      path: '/koperasi/pembelian'
+      fullPath: '/koperasi/pembelian/'
+      preLoaderRoute: typeof AuthenticatedKoperasiPembelianIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/koperasi/anggota/': {
+      id: '/_authenticated/koperasi/anggota/'
+      path: '/koperasi/anggota'
+      fullPath: '/koperasi/anggota/'
+      preLoaderRoute: typeof AuthenticatedKoperasiAnggotaIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/keuangan/tagihan/': {
@@ -1008,6 +1286,48 @@ declare module '@tanstack/react-router' {
       path: '/pengaturan/tarif/$id'
       fullPath: '/pengaturan/tarif/$id'
       preLoaderRoute: typeof AuthenticatedPengaturanTarifIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/koperasi/pinjaman/$id': {
+      id: '/_authenticated/koperasi/pinjaman/$id'
+      path: '/koperasi/pinjaman/$id'
+      fullPath: '/koperasi/pinjaman/$id'
+      preLoaderRoute: typeof AuthenticatedKoperasiPinjamanIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/koperasi/penjualan/pos': {
+      id: '/_authenticated/koperasi/penjualan/pos'
+      path: '/koperasi/penjualan/pos'
+      fullPath: '/koperasi/penjualan/pos'
+      preLoaderRoute: typeof AuthenticatedKoperasiPenjualanPosRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/koperasi/penjualan/$id': {
+      id: '/_authenticated/koperasi/penjualan/$id'
+      path: '/koperasi/penjualan/$id'
+      fullPath: '/koperasi/penjualan/$id'
+      preLoaderRoute: typeof AuthenticatedKoperasiPenjualanIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/koperasi/pembelian/pos': {
+      id: '/_authenticated/koperasi/pembelian/pos'
+      path: '/koperasi/pembelian/pos'
+      fullPath: '/koperasi/pembelian/pos'
+      preLoaderRoute: typeof AuthenticatedKoperasiPembelianPosRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/koperasi/pembelian/$id': {
+      id: '/_authenticated/koperasi/pembelian/$id'
+      path: '/koperasi/pembelian/$id'
+      fullPath: '/koperasi/pembelian/$id'
+      preLoaderRoute: typeof AuthenticatedKoperasiPembelianIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/koperasi/anggota/$id': {
+      id: '/_authenticated/koperasi/anggota/$id'
+      path: '/koperasi/anggota/$id'
+      fullPath: '/koperasi/anggota/$id'
+      preLoaderRoute: typeof AuthenticatedKoperasiAnggotaIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/keuangan/tagihan/$id': {
@@ -1344,8 +1664,14 @@ interface AuthenticatedRouteChildren {
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedAdministrasiEkskulRoute: typeof AuthenticatedAdministrasiEkskulRoute
   AuthenticatedAdministrasiTahunAjaranRoute: typeof AuthenticatedAdministrasiTahunAjaranRoute
+  AuthenticatedKoperasiBarangRoute: typeof AuthenticatedKoperasiBarangRoute
+  AuthenticatedKoperasiKasRoute: typeof AuthenticatedKoperasiKasRoute
+  AuthenticatedKoperasiLainLainRoute: typeof AuthenticatedKoperasiLainLainRoute
+  AuthenticatedKoperasiLaporanRoute: typeof AuthenticatedKoperasiLaporanRoute
+  AuthenticatedKoperasiPemasokRoute: typeof AuthenticatedKoperasiPemasokRoute
   AuthenticatedPengaturanPenggunaRoute: typeof AuthenticatedPengaturanPenggunaRoute
   AuthenticatedKeuanganIndexRoute: typeof AuthenticatedKeuanganIndexRoute
+  AuthenticatedKoperasiIndexRoute: typeof AuthenticatedKoperasiIndexRoute
   AuthenticatedAdministrasiDaycareBaruRoute: typeof AuthenticatedAdministrasiDaycareBaruRoute
   AuthenticatedAdministrasiRombelBaruRoute: typeof AuthenticatedAdministrasiRombelBaruRoute
   AuthenticatedAdministrasiSiklusKeluarRoute: typeof AuthenticatedAdministrasiSiklusKeluarRoute
@@ -1374,6 +1700,12 @@ interface AuthenticatedRouteChildren {
   AuthenticatedKeuanganPengeluaranBaruRoute: typeof AuthenticatedKeuanganPengeluaranBaruRoute
   AuthenticatedKeuanganPengeluaranKategoriRoute: typeof AuthenticatedKeuanganPengeluaranKategoriRoute
   AuthenticatedKeuanganTagihanIdRoute: typeof AuthenticatedKeuanganTagihanIdRoute
+  AuthenticatedKoperasiAnggotaIdRoute: typeof AuthenticatedKoperasiAnggotaIdRoute
+  AuthenticatedKoperasiPembelianIdRoute: typeof AuthenticatedKoperasiPembelianIdRoute
+  AuthenticatedKoperasiPembelianPosRoute: typeof AuthenticatedKoperasiPembelianPosRoute
+  AuthenticatedKoperasiPenjualanIdRoute: typeof AuthenticatedKoperasiPenjualanIdRoute
+  AuthenticatedKoperasiPenjualanPosRoute: typeof AuthenticatedKoperasiPenjualanPosRoute
+  AuthenticatedKoperasiPinjamanIdRoute: typeof AuthenticatedKoperasiPinjamanIdRoute
   AuthenticatedPengaturanTarifIdRoute: typeof AuthenticatedPengaturanTarifIdRoute
   AuthenticatedAdministrasiDaycareIndexRoute: typeof AuthenticatedAdministrasiDaycareIndexRoute
   AuthenticatedAdministrasiFasilitasIndexRoute: typeof AuthenticatedAdministrasiFasilitasIndexRoute
@@ -1387,6 +1719,10 @@ interface AuthenticatedRouteChildren {
   AuthenticatedKeuanganPengeluaranIndexRoute: typeof AuthenticatedKeuanganPengeluaranIndexRoute
   AuthenticatedKeuanganTabunganIndexRoute: typeof AuthenticatedKeuanganTabunganIndexRoute
   AuthenticatedKeuanganTagihanIndexRoute: typeof AuthenticatedKeuanganTagihanIndexRoute
+  AuthenticatedKoperasiAnggotaIndexRoute: typeof AuthenticatedKoperasiAnggotaIndexRoute
+  AuthenticatedKoperasiPembelianIndexRoute: typeof AuthenticatedKoperasiPembelianIndexRoute
+  AuthenticatedKoperasiPenjualanIndexRoute: typeof AuthenticatedKoperasiPenjualanIndexRoute
+  AuthenticatedKoperasiPinjamanIndexRoute: typeof AuthenticatedKoperasiPinjamanIndexRoute
   AuthenticatedPengaturanTarifIndexRoute: typeof AuthenticatedPengaturanTarifIndexRoute
   AuthenticatedAdministrasiRombelIdHariEfektifRoute: typeof AuthenticatedAdministrasiRombelIdHariEfektifRoute
   AuthenticatedKeuanganKasBerangkasTransaksiRoute: typeof AuthenticatedKeuanganKasBerangkasTransaksiRoute
@@ -1402,8 +1738,14 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdministrasiEkskulRoute: AuthenticatedAdministrasiEkskulRoute,
   AuthenticatedAdministrasiTahunAjaranRoute:
     AuthenticatedAdministrasiTahunAjaranRoute,
+  AuthenticatedKoperasiBarangRoute: AuthenticatedKoperasiBarangRoute,
+  AuthenticatedKoperasiKasRoute: AuthenticatedKoperasiKasRoute,
+  AuthenticatedKoperasiLainLainRoute: AuthenticatedKoperasiLainLainRoute,
+  AuthenticatedKoperasiLaporanRoute: AuthenticatedKoperasiLaporanRoute,
+  AuthenticatedKoperasiPemasokRoute: AuthenticatedKoperasiPemasokRoute,
   AuthenticatedPengaturanPenggunaRoute: AuthenticatedPengaturanPenggunaRoute,
   AuthenticatedKeuanganIndexRoute: AuthenticatedKeuanganIndexRoute,
+  AuthenticatedKoperasiIndexRoute: AuthenticatedKoperasiIndexRoute,
   AuthenticatedAdministrasiDaycareBaruRoute:
     AuthenticatedAdministrasiDaycareBaruRoute,
   AuthenticatedAdministrasiRombelBaruRoute:
@@ -1459,6 +1801,14 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedKeuanganPengeluaranKategoriRoute:
     AuthenticatedKeuanganPengeluaranKategoriRoute,
   AuthenticatedKeuanganTagihanIdRoute: AuthenticatedKeuanganTagihanIdRoute,
+  AuthenticatedKoperasiAnggotaIdRoute: AuthenticatedKoperasiAnggotaIdRoute,
+  AuthenticatedKoperasiPembelianIdRoute: AuthenticatedKoperasiPembelianIdRoute,
+  AuthenticatedKoperasiPembelianPosRoute:
+    AuthenticatedKoperasiPembelianPosRoute,
+  AuthenticatedKoperasiPenjualanIdRoute: AuthenticatedKoperasiPenjualanIdRoute,
+  AuthenticatedKoperasiPenjualanPosRoute:
+    AuthenticatedKoperasiPenjualanPosRoute,
+  AuthenticatedKoperasiPinjamanIdRoute: AuthenticatedKoperasiPinjamanIdRoute,
   AuthenticatedPengaturanTarifIdRoute: AuthenticatedPengaturanTarifIdRoute,
   AuthenticatedAdministrasiDaycareIndexRoute:
     AuthenticatedAdministrasiDaycareIndexRoute,
@@ -1483,6 +1833,14 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedKeuanganTabunganIndexRoute,
   AuthenticatedKeuanganTagihanIndexRoute:
     AuthenticatedKeuanganTagihanIndexRoute,
+  AuthenticatedKoperasiAnggotaIndexRoute:
+    AuthenticatedKoperasiAnggotaIndexRoute,
+  AuthenticatedKoperasiPembelianIndexRoute:
+    AuthenticatedKoperasiPembelianIndexRoute,
+  AuthenticatedKoperasiPenjualanIndexRoute:
+    AuthenticatedKoperasiPenjualanIndexRoute,
+  AuthenticatedKoperasiPinjamanIndexRoute:
+    AuthenticatedKoperasiPinjamanIndexRoute,
   AuthenticatedPengaturanTarifIndexRoute:
     AuthenticatedPengaturanTarifIndexRoute,
   AuthenticatedAdministrasiRombelIdHariEfektifRoute:

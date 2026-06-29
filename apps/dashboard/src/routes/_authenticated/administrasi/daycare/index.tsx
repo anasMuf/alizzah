@@ -7,12 +7,14 @@ import {
 	getGetV1DaycareEnrollmentsQueryKey,
 	useGetV1DaycareEnrollments,
 	usePatchV1DaycareEnrollmentsIdStatus,
-} from "../../../../api/endpoints/daycare-enrollments/daycare-enrollments";
-import { Badge } from "../../../../components/atoms/Badge";
-import { Button } from "../../../../components/atoms/Button";
-import { ConfirmDialog } from "../../../../components/molecules/ConfirmDialog";
-import { EmptyState } from "../../../../components/molecules/EmptyState";
-import { useToast } from "../../../../components/molecules/Toast";
+} from "#/api/endpoints/daycare-enrollments/daycare-enrollments";
+import {
+	Badge,
+	Button,
+	ConfirmDialog,
+	EmptyState,
+	useToast,
+} from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
 
 export const Route = createFileRoute("/_authenticated/administrasi/daycare/")({

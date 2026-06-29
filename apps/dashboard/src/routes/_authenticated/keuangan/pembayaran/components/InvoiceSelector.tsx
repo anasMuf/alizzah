@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
-import { useGetV1InvoicesBatch } from "../../../../../api/endpoints/invoices/invoice-batch";
-import { useGetV1StudentsIdInvoices } from "../../../../../api/endpoints/invoices/invoices";
+import { useGetV1InvoicesBatch } from "#/api/endpoints/invoices/invoice-batch";
+import { useGetV1StudentsIdInvoices } from "#/api/endpoints/invoices/invoices";
 import { formatCurrency } from "../../../../../utils/format";
 
 interface InvoiceSelectorProps {
@@ -8,8 +8,10 @@ interface InvoiceSelectorProps {
 	academicYearId: number | undefined;
 	selectedInvoices: number[];
 	payAmounts: Record<number, number>;
+	excludedItems: number[];
 	initialInvoiceId: number | null;
 	onToggleInvoice: (id: number) => void;
+	onToggleItem: (itemId: number) => void;
 	onAmountChange: (itemId: number, val: string) => void;
 }
 
@@ -18,8 +20,10 @@ export function InvoiceSelector({
 	academicYearId,
 	selectedInvoices,
 	payAmounts,
+	excludedItems,
 	initialInvoiceId,
 	onToggleInvoice,
+	onToggleItem,
 	onAmountChange,
 }: InvoiceSelectorProps) {
 	// Fetch invoice list
@@ -139,7 +143,11 @@ export function InvoiceSelector({
 							<span className="ml-2.5 flex-1 font-medium text-gray-900">
 								{inv.type === "monthly"
 									? `Bulanan ${inv.month}/${inv.year}`
-									: "Registrasi / Lainnya"}
+									: inv.type === "registration"
+										? "Registrasi"
+										: inv.type === "initial"
+											? "Biaya Awal"
+											: "Lainnya"}
 							</span>
 							<span className="font-semibold text-rose-600 tabular-nums">
 								{formatCurrency(sisa)}
@@ -156,46 +164,70 @@ export function InvoiceSelector({
 						Detail Item
 					</p>
 					<div className="space-y-1">
-						{invoiceItems.map((item: any) => (
-							<div
-								key={item.id}
-								className={`flex items-center gap-2 py-1.5 px-2 rounded text-sm ${item.is_dispensation ? "bg-green-50" : ""}`}
-							>
-								<span
-									className={`flex-1 ${item.is_dispensation ? "text-green-700 italic text-xs" : "text-gray-800"}`}
+						{invoiceItems.map((item: any) => {
+							const checkable = !item.is_dispensation && !item.is_locked;
+							const isExcluded = excludedItems.includes(item.id);
+							return (
+								<div
+									key={item.id}
+									className={`flex items-center gap-2 py-1.5 px-2 rounded text-sm ${item.is_dispensation ? "bg-green-50" : ""} ${isExcluded ? "opacity-50" : ""}`}
 								>
-									{item.name}
-									{item.is_locked && (
-										<span className="ml-1 text-xs text-indigo-500">
-											(dispensasi)
-										</span>
-									)}
-								</span>
-								<span
-									className={`text-xs tabular-nums ${item.is_dispensation ? "text-green-600" : "text-gray-500"}`}
-								>
-									{formatCurrency(item.sisa_tagihan)}
-								</span>
-								<div className="w-24">
-									{item.is_dispensation || item.is_locked ? (
-										<span
-											className={`block text-right text-xs font-medium tabular-nums ${item.is_dispensation ? "text-green-600" : "text-gray-900"}`}
-										>
-											{formatCurrency(payAmounts[item.id] ?? item.sisa_tagihan)}
-										</span>
-									) : (
+									{checkable ? (
 										<input
-											type="number"
-											className="block w-full rounded border-0 py-1 px-2 text-xs text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 text-right tabular-nums"
-											value={payAmounts[item.id] ?? ""}
-											onChange={(e) => onAmountChange(item.id, e.target.value)}
-											max={item.sisa_tagihan}
-											min={0}
+											type="checkbox"
+											className="h-3.5 w-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+											checked={!isExcluded}
+											onChange={() => onToggleItem(item.id)}
+											title={
+												isExcluded
+													? "Sertakan item ini"
+													: "Kecualikan dari pembayaran"
+											}
 										/>
+									) : (
+										<span className="w-3.5" />
 									)}
+									<span
+										className={`flex-1 ${item.is_dispensation ? "text-green-700 italic text-xs" : "text-gray-800"} ${isExcluded ? "line-through" : ""}`}
+									>
+										{item.name}
+										{item.is_locked && (
+											<span className="ml-1 text-xs text-indigo-500">
+												(dispensasi)
+											</span>
+										)}
+									</span>
+									<span
+										className={`text-xs tabular-nums ${item.is_dispensation ? "text-green-600" : "text-gray-500"}`}
+									>
+										{formatCurrency(item.sisa_tagihan)}
+									</span>
+									<div className="w-24">
+										{item.is_dispensation || item.is_locked ? (
+											<span
+												className={`block text-right text-xs font-medium tabular-nums ${item.is_dispensation ? "text-green-600" : "text-gray-900"}`}
+											>
+												{formatCurrency(
+													payAmounts[item.id] ?? item.sisa_tagihan,
+												)}
+											</span>
+										) : (
+											<input
+												type="number"
+												className="block w-full rounded border-0 py-1 px-2 text-xs text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 text-right tabular-nums disabled:bg-gray-100 disabled:text-gray-400"
+												value={payAmounts[item.id] ?? ""}
+												onChange={(e) =>
+													onAmountChange(item.id, e.target.value)
+												}
+												disabled={isExcluded}
+												max={item.sisa_tagihan}
+												min={0}
+											/>
+										)}
+									</div>
 								</div>
-							</div>
-						))}
+							);
+						})}
 					</div>
 				</div>
 			)}

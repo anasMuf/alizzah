@@ -3,19 +3,21 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { ArrowLeft, Edit, ExternalLink, Save, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useGetV1ExpenseCategories } from "../../../../api/endpoints/expense-categories/expense-categories";
+import { useGetV1ExpenseCategories } from "#/api/endpoints/expense-categories/expense-categories";
 import {
 	useDeleteV1ExpensesId,
 	useGetV1ExpensesId,
 	usePutV1ExpensesId,
-} from "../../../../api/endpoints/expenses/expenses";
-import { ApiError } from "../../../../api/mutator/custom-instance";
-import { Alert } from "../../../../components/atoms/Alert";
-import { Badge } from "../../../../components/atoms/Badge";
-import { Button } from "../../../../components/atoms/Button";
-import { ConfirmDialog } from "../../../../components/molecules/ConfirmDialog";
-import { EmptyState } from "../../../../components/molecules/EmptyState";
-import { useToast } from "../../../../components/molecules/Toast";
+} from "#/api/endpoints/expenses/expenses";
+import { ApiError } from "#/api/mutator/custom-instance";
+import {
+	Alert,
+	Badge,
+	Button,
+	ConfirmDialog,
+	EmptyState,
+	useToast,
+} from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
 import {
 	formatCurrency,

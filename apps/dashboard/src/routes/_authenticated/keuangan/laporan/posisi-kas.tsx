@@ -2,10 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { ChevronRight, Printer } from "lucide-react";
 import { useState } from "react";
-import type { PosisiKasPost } from "../../../../api/endpoints/reports/posisi-kas";
-import { useGetReportsPosisiKas } from "../../../../api/endpoints/reports/posisi-kas";
-import { Alert } from "../../../../components/atoms/Alert";
-import { Button } from "../../../../components/atoms/Button";
+import type { PosisiKasPost } from "#/api/endpoints/reports/posisi-kas";
+import { useGetReportsPosisiKas } from "#/api/endpoints/reports/posisi-kas";
+import { Alert, Button } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
 
 export const Route = createFileRoute(

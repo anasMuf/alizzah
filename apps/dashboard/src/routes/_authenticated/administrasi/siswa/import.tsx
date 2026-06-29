@@ -11,10 +11,9 @@ import { useRef, useState } from "react";
 import {
 	getGetV1StudentsQueryKey,
 	usePostV1StudentsImport,
-} from "../../../../api/endpoints/students/students";
-import { ApiError } from "../../../../api/mutator/custom-instance";
-import { Button } from "../../../../components/atoms/Button";
-import { useToast } from "../../../../components/molecules/Toast";
+} from "#/api/endpoints/students/students";
+import { ApiError } from "#/api/mutator/custom-instance";
+import { Button, useToast } from "#/components/ui";
 
 export const Route = createFileRoute(
 	"/_authenticated/administrasi/siswa/import",

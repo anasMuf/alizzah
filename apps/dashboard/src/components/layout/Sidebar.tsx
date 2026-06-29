@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import {
+	ArrowLeftRight,
 	Baby,
 	BarChart3,
 	BookOpen,
@@ -9,19 +10,26 @@ import {
 	CreditCard,
 	FileText,
 	FolderTree,
+	HandCoins,
 	Layers,
 	LayoutDashboard,
+	Package,
 	PiggyBank,
+	ReceiptText,
 	RefreshCw,
+	ShoppingBag,
+	ShoppingCart,
+	Store,
 	Tags,
 	TrendingDown,
 	TrendingUp,
+	Truck,
 	UserCog,
 	Users,
 	Vault,
 } from "lucide-react";
 import { twMerge } from "tailwind-merge";
-import { useAuth } from "../../features/auth/AuthContext";
+import { useAccess } from "#/features/auth/access";
 import { AcademicYearSelector } from "./AcademicYearSelector";
 
 interface SidebarProps {
@@ -29,13 +37,12 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isOpen }: SidebarProps) {
-	const { user } = useAuth();
-	const role = user?.role || localStorage.getItem("alizzah_role") || "";
+	const { isSuperadmin, hasModule } = useAccess();
 
-	const isSuperAdmin = role === "superadmin";
-	const isAdminAdministrasi = role === "admin_administrasi" || isSuperAdmin;
-	const isAdminKeuangan = role === "admin_keuangan" || isSuperAdmin;
-	const isKepsekOrYayasan = role === "kepala_sekolah" || role === "yayasan";
+	const showAdministrasi = hasModule("administrasi");
+	const showKeuangan = hasModule("keuangan");
+	const showKoperasi = hasModule("koperasi");
+	const showLaporan = hasModule("laporan");
 
 	return (
 		<aside
@@ -58,7 +65,7 @@ export function Sidebar({ isOpen }: SidebarProps) {
 						Dashboard
 					</NavLink>
 
-					{isAdminAdministrasi && (
+					{showAdministrasi && (
 						<div className="pt-4">
 							<p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
 								Administrasi
@@ -87,7 +94,7 @@ export function Sidebar({ isOpen }: SidebarProps) {
 						</div>
 					)}
 
-					{(isAdminKeuangan || isKepsekOrYayasan) && (
+					{(showKeuangan || showLaporan) && (
 						<div className="pt-4">
 							<p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
 								Keuangan
@@ -96,7 +103,7 @@ export function Sidebar({ isOpen }: SidebarProps) {
 								Overview
 							</NavLink>
 
-							{isAdminKeuangan && (
+							{showKeuangan && (
 								<>
 									<NavLink to="/keuangan/tagihan" icon={FileText}>
 										Tagihan
@@ -122,6 +129,9 @@ export function Sidebar({ isOpen }: SidebarProps) {
 									<NavLink to="/keuangan/kas" icon={Vault}>
 										Kas & Berangkas
 									</NavLink>
+									<NavLink to="/pengaturan/tarif" icon={Tags}>
+										Tarif
+									</NavLink>
 								</>
 							)}
 
@@ -131,16 +141,51 @@ export function Sidebar({ isOpen }: SidebarProps) {
 						</div>
 					)}
 
-					{isSuperAdmin && (
+					{showKoperasi && (
+						<div className="pt-4">
+							<p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+								Koperasi
+							</p>
+							<NavLink to="/koperasi" icon={Store} exact>
+								Ringkasan
+							</NavLink>
+							<NavLink to="/koperasi/anggota" icon={Users}>
+								Anggota
+							</NavLink>
+							<NavLink to="/koperasi/barang" icon={Package}>
+								Barang
+							</NavLink>
+							<NavLink to="/koperasi/pemasok" icon={Truck}>
+								Pemasok
+							</NavLink>
+							<NavLink to="/koperasi/penjualan" icon={ShoppingCart}>
+								Penjualan
+							</NavLink>
+							<NavLink to="/koperasi/pembelian" icon={ShoppingBag}>
+								Pembelian
+							</NavLink>
+							<NavLink to="/koperasi/pinjaman" icon={HandCoins}>
+								Pinjaman
+							</NavLink>
+							<NavLink to="/koperasi/kas" icon={ReceiptText}>
+								Kas
+							</NavLink>
+							<NavLink to="/koperasi/lain-lain" icon={ArrowLeftRight}>
+								Lain-lain
+							</NavLink>
+							<NavLink to="/koperasi/laporan" icon={BarChart3}>
+								Laporan
+							</NavLink>
+						</div>
+					)}
+
+					{isSuperadmin && (
 						<div className="pt-4">
 							<p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
 								Pengaturan
 							</p>
 							<NavLink to="/pengaturan/pengguna" icon={UserCog}>
 								Pengguna
-							</NavLink>
-							<NavLink to="/pengaturan/tarif" icon={Tags}>
-								Tarif
 							</NavLink>
 						</div>
 					)}

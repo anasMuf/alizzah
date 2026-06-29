@@ -6,14 +6,16 @@ import {
 	getGetV1AcademicYearsQueryKey,
 	useGetV1AcademicYears,
 	usePatchV1AcademicYearsIdActivate,
-} from "../../../api/endpoints/academic-years/academic-years";
-import type { DtoAcademicYearResponse } from "../../../api/model";
-import { ApiError } from "../../../api/mutator/custom-instance";
-import { Badge } from "../../../components/atoms/Badge";
-import { Button } from "../../../components/atoms/Button";
-import { ConfirmDialog } from "../../../components/molecules/ConfirmDialog";
-import { EmptyState } from "../../../components/molecules/EmptyState";
-import { useToast } from "../../../components/molecules/Toast";
+} from "#/api/endpoints/academic-years/academic-years";
+import type { DtoAcademicYearResponse } from "#/api/model";
+import { ApiError } from "#/api/mutator/custom-instance";
+import {
+	Badge,
+	Button,
+	ConfirmDialog,
+	EmptyState,
+	useToast,
+} from "#/components/ui";
 import { AcademicYearForm } from "../../../features/administrasi/components/AcademicYearForm";
 
 export const Route = createFileRoute(

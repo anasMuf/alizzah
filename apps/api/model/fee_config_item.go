@@ -11,6 +11,8 @@ type FeeConfigItem struct {
 	Amount      float64 `gorm:"type:decimal(15,2);not null"`
 	Unit        string  `gorm:"size:20;not null;default:fixed"`
 	IsMandatory bool    `gorm:"not null;default:false"` // true = otomatis masuk tagihan per jenjang, false = perlu enrollment manual
+	IsKoperasi  bool    `gorm:"not null;default:false"` // true = pendapatan item ini masuk kas koperasi
+	KoperasiProductID *uint `gorm:""`                   // opsional: product_id di koperasi_products (untuk stok)
 	BaseModelTimeAt
 
 	FeeConfig FeeConfig `gorm:"foreignKey:FeeConfigID"`

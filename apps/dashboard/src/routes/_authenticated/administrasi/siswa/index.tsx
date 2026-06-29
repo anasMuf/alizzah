@@ -10,16 +10,18 @@ import {
 	X,
 } from "lucide-react";
 import { type FormEvent, useState } from "react";
-import { useGetV1ClassGroups } from "../../../../api/endpoints/class-groups/class-groups";
-import { usePostV1StudentsIdEnrollments } from "../../../../api/endpoints/student-enrollments/enroll";
-import { useGetV1Students } from "../../../../api/endpoints/students/students";
-import { customInstance } from "../../../../api/mutator/custom-instance";
-import { Badge } from "../../../../components/atoms/Badge";
-import { Button } from "../../../../components/atoms/Button";
-import { EmptyState } from "../../../../components/molecules/EmptyState";
-import { Pagination } from "../../../../components/molecules/Pagination";
-import { SlideOver } from "../../../../components/molecules/SlideOver";
-import { useToast } from "../../../../components/molecules/Toast";
+import { useGetV1ClassGroups } from "#/api/endpoints/class-groups/class-groups";
+import { usePostV1StudentsIdEnrollments } from "#/api/endpoints/student-enrollments/enroll";
+import { useGetV1Students } from "#/api/endpoints/students/students";
+import { customInstance } from "#/api/mutator/custom-instance";
+import {
+	Badge,
+	Button,
+	EmptyState,
+	Pagination,
+	SlideOver,
+	useToast,
+} from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
 
 export const Route = createFileRoute("/_authenticated/administrasi/siswa/")({

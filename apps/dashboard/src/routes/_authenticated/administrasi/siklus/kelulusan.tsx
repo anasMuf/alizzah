@@ -8,14 +8,11 @@ import {
 	Square,
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { usePostV1AcademicEventsGraduations } from "../../../../api/endpoints/academic-events/academic-events";
-import { useGetV1AcademicYears } from "../../../../api/endpoints/academic-years/academic-years";
-import { useGetV1Students } from "../../../../api/endpoints/students/students";
-import { ApiError } from "../../../../api/mutator/custom-instance";
-import { Button } from "../../../../components/atoms/Button";
-import { ConfirmDialog } from "../../../../components/molecules/ConfirmDialog";
-import { FormField } from "../../../../components/molecules/FormField";
-import { useToast } from "../../../../components/molecules/Toast";
+import { usePostV1AcademicEventsGraduations } from "#/api/endpoints/academic-events/academic-events";
+import { useGetV1AcademicYears } from "#/api/endpoints/academic-years/academic-years";
+import { useGetV1Students } from "#/api/endpoints/students/students";
+import { ApiError } from "#/api/mutator/custom-instance";
+import { Button, ConfirmDialog, FormField, useToast } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
 
 export const Route = createFileRoute(

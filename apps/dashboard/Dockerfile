@@ -7,19 +7,20 @@
 # ---- build ----
 FROM node:22-alpine AS build
 WORKDIR /repo
-RUN npm install -g pnpm@9
+RUN npm install -g pnpm@10
 
-# Manifest dulu (layer cache). Semua package.json workspace harus ada agar
-# --frozen-lockfile cocok dengan lockfile root.
+# Manifest dulu (layer cache) agar --frozen-lockfile cocok dengan lockfile root.
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/api/package.json apps/api/package.json
 COPY apps/dashboard/package.json apps/dashboard/package.json
 RUN pnpm install --frozen-lockfile
 
-# Sumber dashboard + build
+# Sumber dashboard, lalu build
 COPY apps/dashboard apps/dashboard
 ARG VITE_API_URL
+ARG VITE_KOPERASI_API_URL
 ENV VITE_API_URL=${VITE_API_URL}
+ENV VITE_KOPERASI_API_URL=${VITE_KOPERASI_API_URL}
 RUN pnpm --filter dashboard build
 
 # ---- runtime ----

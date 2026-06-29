@@ -2,11 +2,9 @@ import { useState } from "react";
 import {
 	type postV1UsersResponse,
 	usePostV1Users,
-} from "../../../api/endpoints/users/users";
-import { ApiError } from "../../../api/mutator/custom-instance";
-import { Button } from "../../../components/atoms/Button";
-import { FormField } from "../../../components/molecules/FormField";
-import { useToast } from "../../../components/molecules/Toast";
+} from "#/api/endpoints/users/users";
+import { ApiError } from "#/api/mutator/custom-instance";
+import { Button, FormField, useToast } from "#/components/ui";
 
 export function RegisterForm({ onSuccess }: { onSuccess: () => void }) {
 	const { addToast } = useToast();

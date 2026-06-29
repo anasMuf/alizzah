@@ -5,15 +5,13 @@ import {
 	getGetV1ClassGroupsQueryKey,
 	usePostV1ClassGroups,
 	usePutV1ClassGroupsId,
-} from "../../../api/endpoints/class-groups/class-groups";
+} from "#/api/endpoints/class-groups/class-groups";
 import type {
 	DtoClassGroupResponse,
 	DtoCreateClassGroupRequest,
-} from "../../../api/model";
-import { ApiError } from "../../../api/mutator/custom-instance";
-import { Button } from "../../../components/atoms/Button";
-import { FormField } from "../../../components/molecules/FormField";
-import { useToast } from "../../../components/molecules/Toast";
+} from "#/api/model";
+import { ApiError } from "#/api/mutator/custom-instance";
+import { Button, FormField, useToast } from "#/components/ui";
 
 interface RombelFormProps {
 	initialData?: DtoClassGroupResponse | null;

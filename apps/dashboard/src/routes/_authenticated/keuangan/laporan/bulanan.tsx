@@ -2,9 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { ChevronRight, Printer } from "lucide-react";
 import { useState } from "react";
-import { useGetV1ReportsMonthly } from "../../../../api/endpoints/reports/reports";
-import { Alert } from "../../../../components/atoms/Alert";
-import { Button } from "../../../../components/atoms/Button";
+import { useGetV1ReportsMonthly } from "#/api/endpoints/reports/reports";
+import { Alert, Button } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
 import { formatCurrency } from "../../../../utils/format";
 

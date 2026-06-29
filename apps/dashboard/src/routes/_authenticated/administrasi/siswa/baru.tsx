@@ -5,15 +5,13 @@ import { useState } from "react";
 import {
 	getGetV1StudentsQueryKey,
 	usePostV1Students,
-} from "../../../../api/endpoints/students/students";
+} from "#/api/endpoints/students/students";
 import type {
 	DtoCreateGuardianInline,
 	DtoCreateStudentRequest,
-} from "../../../../api/model";
-import { ApiError } from "../../../../api/mutator/custom-instance";
-import { Button } from "../../../../components/atoms/Button";
-import { FormField } from "../../../../components/molecules/FormField";
-import { useToast } from "../../../../components/molecules/Toast";
+} from "#/api/model";
+import { ApiError } from "#/api/mutator/custom-instance";
+import { Button, FormField, useToast } from "#/components/ui";
 
 export const Route = createFileRoute("/_authenticated/administrasi/siswa/baru")(
 	{

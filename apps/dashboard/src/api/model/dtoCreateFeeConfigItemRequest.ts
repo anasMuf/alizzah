@@ -21,4 +21,6 @@ export interface DtoCreateFeeConfigItemRequest {
 	/** @maxLength 100 */
 	name: string;
 	unit: DtoCreateFeeConfigItemRequestUnit;
+	is_koperasi?: boolean;
+	koperasi_product_id?: number;
 }

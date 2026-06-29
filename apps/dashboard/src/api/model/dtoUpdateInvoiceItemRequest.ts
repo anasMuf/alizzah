@@ -11,4 +11,5 @@ export interface DtoUpdateInvoiceItemRequest {
 	amount: number;
 	/** @maxLength 100 */
 	name: string;
+	koperasi_variant_id?: number;
 }

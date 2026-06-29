@@ -1,18 +1,37 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
 	ArrowLeft,
+	ChevronDown,
 	ChevronRight,
 	Download,
 	Printer,
 	Receipt,
 } from "lucide-react";
-import { useGetV1PaymentsId } from "../../../../api/endpoints/payments/payments";
-import { Button } from "../../../../components/atoms/Button";
+import { useState } from "react";
+import { useGetV1PaymentsId } from "#/api/endpoints/payments/payments";
+import { Button } from "#/components/ui";
 import {
 	formatCurrency,
 	formatDate,
 	formatDateTime,
 } from "../../../../utils/format";
+
+// Label ramah per kategori item, agar ringkasan kwitansi menjelaskan
+// jenis pembayaran (mis. "Registrasi Tahunan") alih-alih label generik.
+const CATEGORY_LABELS: Record<string, string> = {
+	initial: "Biaya Awal",
+	registration: "Registrasi Tahunan",
+	monthly_spp: "SPP Bulanan",
+	monthly_infaq: "Infaq Harian",
+	calisan: "CALISAN",
+	pasta: "PASTA",
+	ekskul: "Ekskul",
+	savings_mandatory: "Tabungan Wajib",
+	daycare: "Daycare",
+	graduation: "Wisuda",
+	incidental: "Insidental / Tambahan",
+	dispensation: "Dispensasi",
+};
 
 export const Route = createFileRoute("/_authenticated/keuangan/pembayaran/$id")(
 	{
@@ -26,6 +45,10 @@ function DetailPembayaranPage() {
 	const { data: paymentResp, isLoading } = useGetV1PaymentsId(Number(id));
 	const payment = (paymentResp?.data as any)?.data;
 
+	// F08-3: rincian item disembunyikan secara default; tampilkan total saja.
+	// Saat dicetak, rincian selalu tampil penuh (struk resmi).
+	const [showDetail, setShowDetail] = useState(false);
+
 	if (isLoading)
 		return (
 			<div className="p-8 text-center text-gray-500">
@@ -38,6 +61,26 @@ function DetailPembayaranPage() {
 				Pembayaran tidak ditemukan.
 			</div>
 		);
+
+	// Kelompokkan item per kategori untuk ringkasan saat rincian tertutup.
+	const groupedItems: { category: string; items: any[]; subtotal: number }[] =
+		(() => {
+			const order: string[] = [];
+			const map: Record<string, any[]> = {};
+			for (const it of (payment.items as any[]) || []) {
+				const c = it.category || "other";
+				if (!map[c]) {
+					map[c] = [];
+					order.push(c);
+				}
+				map[c].push(it);
+			}
+			return order.map((c) => ({
+				category: c,
+				items: map[c],
+				subtotal: map[c].reduce((s, it) => s + Number(it.amount), 0),
+			}));
+		})();
 
 	const handlePrint = () => {
 		window.print();
@@ -159,9 +202,28 @@ function DetailPembayaranPage() {
 
 				{/* Items Table */}
 				<div className="mb-8">
-					<h3 className="text-sm font-semibold text-gray-900 mb-3 uppercase tracking-wider">
-						Rincian Pembayaran
-					</h3>
+					<div className="flex items-center justify-between mb-3">
+						<h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">
+							Rincian Pembayaran
+						</h3>
+						{payment.items && payment.items.length > 0 && (
+							<button
+								type="button"
+								onClick={() => setShowDetail((v) => !v)}
+								className="print:hidden flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-800"
+							>
+								{showDetail ? (
+									<>
+										<ChevronDown className="w-3.5 h-3.5" /> Sembunyikan rincian
+									</>
+								) : (
+									<>
+										<ChevronRight className="w-3.5 h-3.5" /> Lihat rincian
+									</>
+								)}
+							</button>
+						)}
+					</div>
 					<table className="min-w-full divide-y divide-gray-200">
 						<thead>
 							<tr>
@@ -175,16 +237,36 @@ function DetailPembayaranPage() {
 						</thead>
 						<tbody className="divide-y divide-gray-200">
 							{payment.items && payment.items.length > 0 ? (
-								payment.items.map((item: any, idx: number) => (
-									<tr key={idx}>
-										<td className="py-3 text-sm text-gray-700">
-											{item.invoice_item_name || "Pembayaran Tagihan"}
-										</td>
-										<td className="py-3 text-sm text-gray-900 font-medium text-right">
-											{formatCurrency(Number(item.amount))}
-										</td>
-									</tr>
-								))
+								<>
+									{/* Ringkasan saat rincian disembunyikan (layar saja):
+									    satu baris per jenis tagihan agar jelas pembayaran apa */}
+									{!showDetail &&
+										groupedItems.map((g) => (
+											<tr key={g.category} className="print:hidden">
+												<td className="py-3 text-sm text-gray-700">
+													{CATEGORY_LABELS[g.category] || "Pembayaran Tagihan"}{" "}
+													({g.items.length} item)
+												</td>
+												<td className="py-3 text-sm text-gray-900 font-medium text-right">
+													{formatCurrency(g.subtotal)}
+												</td>
+											</tr>
+										))}
+									{/* Rincian penuh: tampil saat dibuka, dan selalu saat dicetak */}
+									{payment.items.map((item: any, idx: number) => (
+										<tr
+											key={idx}
+											className={showDetail ? "" : "hidden print:table-row"}
+										>
+											<td className="py-3 text-sm text-gray-700">
+												{item.invoice_item_name || "Pembayaran Tagihan"}
+											</td>
+											<td className="py-3 text-sm text-gray-900 font-medium text-right">
+												{formatCurrency(Number(item.amount))}
+											</td>
+										</tr>
+									))}
+								</>
 							) : (
 								<tr>
 									<td className="py-3 text-sm text-gray-500" colSpan={2}>

@@ -7,14 +7,16 @@ import {
 	incomeTransactionKeys,
 	useDeleteIncomeTransaction,
 	useGetIncomeTransactions,
-} from "../../../../api/endpoints/income-transactions/income-transactions";
-import { Alert } from "../../../../components/atoms/Alert";
-import { Badge } from "../../../../components/atoms/Badge";
-import { Button } from "../../../../components/atoms/Button";
-import { ConfirmDialog } from "../../../../components/molecules/ConfirmDialog";
-import { EmptyState } from "../../../../components/molecules/EmptyState";
-import { Pagination } from "../../../../components/molecules/Pagination";
-import { useToast } from "../../../../components/molecules/Toast";
+} from "#/api/endpoints/income-transactions/income-transactions";
+import {
+	Alert,
+	Badge,
+	Button,
+	ConfirmDialog,
+	EmptyState,
+	Pagination,
+	useToast,
+} from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
 import { formatCurrency, formatDate } from "../../../../utils/format";
 

@@ -3,7 +3,7 @@ import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 
 import "../styles.css";
-import type { useAuth } from "../features/auth/AuthContext";
+import type { useAuth } from "#/features/auth/AuthContext";
 
 interface MyRouterContext {
 	auth: ReturnType<typeof useAuth>;

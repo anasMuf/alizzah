@@ -4,16 +4,13 @@ import {
 	getGetV1AcademicYearsQueryKey,
 	usePostV1AcademicYears,
 	usePutV1AcademicYearsId,
-} from "../../../api/endpoints/academic-years/academic-years";
+} from "#/api/endpoints/academic-years/academic-years";
 import type {
 	DtoAcademicYearResponse,
 	DtoCreateAcademicYearRequest,
-} from "../../../api/model";
-import { ApiError } from "../../../api/mutator/custom-instance";
-import { Button } from "../../../components/atoms/Button";
-import { FormField } from "../../../components/molecules/FormField";
-import { SlideOver } from "../../../components/molecules/SlideOver";
-import { useToast } from "../../../components/molecules/Toast";
+} from "#/api/model";
+import { ApiError } from "#/api/mutator/custom-instance";
+import { Button, FormField, SlideOver, useToast } from "#/components/ui";
 
 interface AcademicYearFormProps {
 	isOpen: boolean;

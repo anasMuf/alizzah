@@ -12,11 +12,9 @@ import {
 	XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useGetV1ReportsStudentsId } from "../../../../api/endpoints/reports/reports";
-import { useGetV1Students } from "../../../../api/endpoints/students/students";
-import { Alert } from "../../../../components/atoms/Alert";
-import { Badge } from "../../../../components/atoms/Badge";
-import { Button } from "../../../../components/atoms/Button";
+import { useGetV1ReportsStudentsId } from "#/api/endpoints/reports/reports";
+import { useGetV1Students } from "#/api/endpoints/students/students";
+import { Alert, Badge, Button } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
 import { formatCurrency, formatDate } from "../../../../utils/format";
 

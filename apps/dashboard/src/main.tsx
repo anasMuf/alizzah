@@ -5,9 +5,8 @@ if (import.meta.env.DEV) {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import ReactDOM from "react-dom/client";
-import { ErrorBoundary } from "./components/molecules/ErrorBoundary";
-import { ToastProvider } from "./components/molecules/Toast";
-import { AuthProvider, useAuth } from "./features/auth/AuthContext";
+import { ErrorBoundary, ToastProvider } from "#/components/ui";
+import { AuthProvider, useAuth } from "#/features/auth/AuthContext";
 import { routeTree } from "./routeTree.gen";
 
 const queryClient = new QueryClient({

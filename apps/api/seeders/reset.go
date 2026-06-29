@@ -1,6 +1,7 @@
 package seeders
 
 import (
+	"api/internal/modules/koperasi"
 	"log"
 	"strings"
 
@@ -17,7 +18,7 @@ type SeederGroup struct {
 // Key = nama grup yang dipakai di CLI flag.
 var AvailableGroups = map[string]SeederGroup{
 	"users": {
-		Tables: []string{"users"},
+		Tables: []string{"user_modules", "users"},
 		Seed:   SeedUsers,
 	},
 	"academic_years": {
@@ -71,6 +72,23 @@ var AvailableGroups = map[string]SeederGroup{
 // allTablesOrdered berisi semua tabel untuk reset total.
 // Urutan: child tables dulu agar TRUNCATE CASCADE berjalan lancar.
 var allTablesOrdered = []string{
+	// Koperasi tables (truncated first to avoid FK constraint violations with students/users)
+	"koperasi_misc_transactions",
+	"koperasi_cash_transactions",
+	"koperasi_payments",
+	"koperasi_sale_items",
+	"koperasi_sales",
+	"koperasi_loan_installments",
+	"koperasi_loans",
+	"koperasi_members",
+	"koperasi_employees",
+	"koperasi_suppliers",
+	"koperasi_purchase_items",
+	"koperasi_purchases",
+	"koperasi_product_variants",
+	"koperasi_products",
+	"koperasi_master_data",
+
 	// Batch 7
 	"daily_closings",
 	// Income transactions
@@ -110,6 +128,7 @@ var allTablesOrdered = []string{
 	"class_groups",
 	// Batch 1
 	"academic_years",
+	"user_modules",
 	"users",
 }
 
@@ -118,6 +137,9 @@ func ResetAll(db *gorm.DB) {
 	log.Println("=== RESEED ALL: Menghapus semua data... ===")
 	truncateTables(db, allTablesOrdered)
 	log.Println("=== RESEED ALL: Semua data berhasil dihapus ===")
+
+	log.Println("=== RESEED ALL: Menjalankan seeder koperasi... ===")
+	koperasi.Seed(db)
 }
 
 // ResetGroups menghapus data dan seed ulang untuk grup tertentu.

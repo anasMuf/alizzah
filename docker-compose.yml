@@ -52,6 +52,36 @@ services:
       start_period: 30s
     networks: [appnet]
 
+  # Binary koperasi (cmd/koperasi) — image sama, entrypoint berbeda.
+  # Deploy/restart independen dari `api`; berbagi Postgres yang sama.
+  # Memigrasi tabel koperasi_* sendiri, jadi hanya bergantung pada postgres.
+  koperasi-api:
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_OWNER}/alizzah-api:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    entrypoint: ["/app/koperasi"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      KOPERASI_PORT: "8081"
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ALLOWED_ORIGINS: ${KOPERASI_CORS_ALLOWED_ORIGINS:-${CORS_ALLOWED_ORIGINS}}
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      SSL_MODE: disable
+    ports:
+      - "127.0.0.1:${KOPERASI_API_PORT:-8092}:8081"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8081/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks: [appnet]
+
   dashboard:
     image: ${REGISTRY:-ghcr.io}/${IMAGE_OWNER}/alizzah-dashboard:${IMAGE_TAG:-latest}
     restart: unless-stopped

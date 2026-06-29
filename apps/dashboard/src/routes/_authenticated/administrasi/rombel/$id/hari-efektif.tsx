@@ -2,11 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { AlertCircle, Calendar, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
-import { useGetV1ClassGroupsId } from "../../../../../api/endpoints/class-groups/class-groups";
-import { useGetV1ClassGroupsIdEffectiveDays } from "../../../../../api/endpoints/effective-days/effective-days";
-import type { DtoEffectiveDayResponse } from "../../../../../api/model";
-import { Button } from "../../../../../components/atoms/Button";
-import { EmptyState } from "../../../../../components/molecules/EmptyState";
+import { useGetV1ClassGroupsId } from "#/api/endpoints/class-groups/class-groups";
+import { useGetV1ClassGroupsIdEffectiveDays } from "#/api/endpoints/effective-days/effective-days";
+import type { DtoEffectiveDayResponse } from "#/api/model";
+import { Button, EmptyState } from "#/components/ui";
 import { EffectiveDayForm } from "../../../../../features/administrasi/components/EffectiveDayForm";
 import { academicYearAtom } from "../../../../../store/global";
 

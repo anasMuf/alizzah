@@ -12,6 +12,9 @@ type InvoiceItem struct {
 	Quantity    *uint    `gorm:""`                   // jumlah hari/senin (nil = item fixed/flat)
 	UnitPrice   *float64 `gorm:"type:decimal(15,2)"` // harga satuan per hari/senin (nil = item fixed/flat)
 	Notes       string  `gorm:"type:text"`
+	IsKoperasi          bool  `gorm:"not null;default:false"` // denormalisasi dari fee_config_item
+	KoperasiProductID   *uint `gorm:""`                       // diturunkan dari fee_config_item
+	KoperasiVariantID   *uint `gorm:""`                       // dipilih per siswa saat generate/edit invoice
 	BaseModelTimeAt
 
 	Invoice Invoice `gorm:"foreignKey:InvoiceID"`

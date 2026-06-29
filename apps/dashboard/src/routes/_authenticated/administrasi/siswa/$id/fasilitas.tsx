@@ -9,12 +9,14 @@ import {
 	useGetFacilities,
 	useGetStudentFacilities,
 	useUnenrollFacility,
-} from "../../../../../api/endpoints/facilities/facilities";
-import { Badge } from "../../../../../components/atoms/Badge";
-import { Button } from "../../../../../components/atoms/Button";
-import { ConfirmDialog } from "../../../../../components/molecules/ConfirmDialog";
-import { SlideOver } from "../../../../../components/molecules/SlideOver";
-import { useToast } from "../../../../../components/molecules/Toast";
+} from "#/api/endpoints/facilities/facilities";
+import {
+	Badge,
+	Button,
+	ConfirmDialog,
+	SlideOver,
+	useToast,
+} from "#/components/ui";
 import { academicYearAtom } from "../../../../../store/global";
 import { formatDate } from "../../../../../utils/format";
 

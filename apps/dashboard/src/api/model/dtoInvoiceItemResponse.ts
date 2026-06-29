@@ -14,4 +14,7 @@ export interface DtoInvoiceItemResponse {
 	name?: string;
 	paid_amount?: number;
 	status?: string;
+	is_koperasi?: boolean;
+	koperasi_product_id?: number;
+	koperasi_variant_id?: number;
 }

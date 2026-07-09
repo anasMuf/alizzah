@@ -64,7 +64,6 @@ export function StudentSearch({
 				placeholder="Cari nama siswa..."
 				value={searchStudent}
 				onChange={(e) => setSearchStudent(e.target.value)}
-				autoFocus
 			/>
 			{isLoading && (
 				<p className="absolute left-0 top-full mt-1 text-xs text-gray-500 bg-white px-3 py-1 rounded shadow">

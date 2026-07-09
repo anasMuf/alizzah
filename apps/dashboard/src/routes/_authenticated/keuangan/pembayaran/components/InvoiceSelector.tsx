@@ -49,7 +49,12 @@ export function InvoiceSelector({
 			);
 			if (matched) onToggleInvoice(matched.id);
 		}
-	}, [unpaidInvoices, initialInvoiceId]);
+	}, [
+		unpaidInvoices,
+		initialInvoiceId,
+		onToggleInvoice,
+		selectedInvoices.length,
+	]);
 
 	// Batch fetch detail for selected invoices
 	const { data: invoiceDetails = [] } = useGetV1InvoicesBatch(
@@ -102,7 +107,7 @@ export function InvoiceSelector({
 				onAmountChange(item.id, String(item.sisa_tagihan));
 			});
 		}
-	}, [invoiceItems]);
+	}, [invoiceItems, onAmountChange]);
 
 	if (isLoading) {
 		return (

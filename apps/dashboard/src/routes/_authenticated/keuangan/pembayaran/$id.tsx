@@ -90,10 +90,7 @@ function DetailPembayaranPage() {
 		<div className="space-y-6 max-w-4xl mx-auto pb-12 print:max-w-none print:m-0 print:p-0">
 			{/* Breadcrumb - Hidden on print */}
 			<nav className="flex print:hidden" aria-label="Breadcrumb">
-				<ol
-					role="list"
-					className="flex items-center space-x-2 text-sm text-gray-500"
-				>
+				<ol className="flex items-center space-x-2 text-sm text-gray-500">
 					<li>
 						<Link to="/keuangan/pembayaran" className="hover:text-gray-900">
 							Pembayaran

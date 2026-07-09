@@ -152,10 +152,7 @@ function DetailTabunganSiswaPage() {
 		<div className="space-y-6 max-w-7xl mx-auto pb-12">
 			{/* Breadcrumb */}
 			<nav className="flex" aria-label="Breadcrumb">
-				<ol
-					role="list"
-					className="flex items-center space-x-2 text-sm text-gray-500"
-				>
+				<ol className="flex items-center space-x-2 text-sm text-gray-500">
 					<li>
 						<Link to="/keuangan/tabungan" className="hover:text-gray-900">
 							Tabungan
@@ -461,7 +458,7 @@ function DetailTabunganSiswaPage() {
 						Belum ada riwayat mutasi tabungan.
 					</div>
 				) : (
-					<ul role="list" className="divide-y divide-gray-100">
+					<ul className="divide-y divide-gray-100">
 						{transactions.map((trx: any) => (
 							<li
 								key={trx.id}

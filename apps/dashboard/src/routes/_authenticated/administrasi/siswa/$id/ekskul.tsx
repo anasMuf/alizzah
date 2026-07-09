@@ -228,7 +228,7 @@ function SiswaEkskulPage() {
 								</p>
 							</div>
 						) : (
-							<ul role="list" className="divide-y divide-gray-100">
+							<ul className="divide-y divide-gray-100">
 								{mandatoryItems.map((se: any) => (
 									<li key={se.id} className="px-4 py-4 sm:px-6">
 										<div className="flex items-center justify-between">
@@ -285,7 +285,7 @@ function SiswaEkskulPage() {
 								<p className="text-sm">Siswa belum mengikuti PASTA apapun.</p>
 							</div>
 						) : (
-							<ul role="list" className="divide-y divide-gray-100">
+							<ul className="divide-y divide-gray-100">
 								{optionalItems.map((se: any) => {
 									const isActive = !se.end_date;
 									return (

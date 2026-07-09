@@ -40,7 +40,7 @@ function formatRupiah(amount: number): string {
 }
 
 function formatDateID(dateStr: string): string {
-	const d = new Date(dateStr + "T00:00:00");
+	const d = new Date(`${dateStr}T00:00:00`);
 	return d.toLocaleDateString("id-ID", {
 		day: "2-digit",
 		month: "2-digit",
@@ -204,35 +204,33 @@ function LaporanPengeluaranPage() {
 			)}
 
 			{/* Transaction Blocks */}
-			{report && !isLoading && (
-				<>
-					{transactions.length > 0 ? (
-						<div className="space-y-4">
-							{transactions.map((txn) => (
-								<TransactionCard key={txn.id} txn={txn} />
-							))}
+			{report &&
+				!isLoading &&
+				(transactions.length > 0 ? (
+					<div className="space-y-4">
+						{transactions.map((txn) => (
+							<TransactionCard key={txn.id} txn={txn} />
+						))}
 
-							{/* Grand Total */}
-							<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-6">
-								<div className="flex justify-between items-center">
-									<span className="text-base font-bold text-gray-900">
-										Grand Total Pengeluaran {MONTH_NAMES[month - 1]} {year}
-									</span>
-									<span className="text-lg font-bold text-gray-900 tabular-nums">
-										Rp. {formatRupiah(report.grand_total)}
-									</span>
-								</div>
+						{/* Grand Total */}
+						<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-6">
+							<div className="flex justify-between items-center">
+								<span className="text-base font-bold text-gray-900">
+									Grand Total Pengeluaran {MONTH_NAMES[month - 1]} {year}
+								</span>
+								<span className="text-lg font-bold text-gray-900 tabular-nums">
+									Rp. {formatRupiah(report.grand_total)}
+								</span>
 							</div>
 						</div>
-					) : (
-						<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-12 text-center">
-							<p className="text-sm text-gray-500">
-								Tidak ada transaksi pengeluaran pada bulan ini.
-							</p>
-						</div>
-					)}
-				</>
-			)}
+					</div>
+				) : (
+					<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-12 text-center">
+						<p className="text-sm text-gray-500">
+							Tidak ada transaksi pengeluaran pada bulan ini.
+						</p>
+					</div>
+				))}
 
 			{!isLoading && !isError && !report && (
 				<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-12 text-center">

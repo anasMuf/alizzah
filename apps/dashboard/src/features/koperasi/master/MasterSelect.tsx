@@ -61,7 +61,6 @@ export function MasterSelect({
 			{adding ? (
 				<div className="mt-2 flex gap-2">
 					<input
-						// biome-ignore lint/a11y/noAutofocus: fokus diharapkan saat membuka mode tambah
 						autoFocus
 						value={newName}
 						onChange={(e) => setNewName(e.target.value)}

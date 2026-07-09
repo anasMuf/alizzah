@@ -53,7 +53,7 @@ function formatRupiah(amount: number): string {
 }
 
 function formatDateID(dateStr: string): string {
-	const d = new Date(dateStr + "T00:00:00");
+	const d = new Date(`${dateStr}T00:00:00`);
 	return d.toLocaleDateString("id-ID", {
 		day: "2-digit",
 		month: "2-digit",

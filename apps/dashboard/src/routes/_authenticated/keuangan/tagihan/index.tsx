@@ -99,7 +99,10 @@ function TagihanListPage() {
 			<div className="bg-white p-4 rounded-xl shadow-sm ring-1 ring-gray-900/5 space-y-4">
 				<div className="flex flex-wrap gap-4 items-end">
 					<div className="w-full sm:w-auto flex-1 min-w-[200px]">
-						<label className="block text-sm font-medium leading-6 text-gray-900 mb-1">
+						<label
+							htmlFor="search-input"
+							className="block text-sm font-medium leading-6 text-gray-900 mb-1"
+						>
 							Pencarian (Nama/NIS)
 						</label>
 						<div className="relative rounded-md shadow-sm">
@@ -107,6 +110,7 @@ function TagihanListPage() {
 								<Search className="h-5 w-5 text-gray-400" />
 							</div>
 							<input
+								id="search-input"
 								type="text"
 								className="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
 								placeholder="Cari siswa..."
@@ -117,10 +121,14 @@ function TagihanListPage() {
 					</div>
 
 					<div className="w-full sm:w-auto">
-						<label className="block text-sm font-medium leading-6 text-gray-900 mb-1">
+						<label
+							htmlFor="classgroup-select"
+							className="block text-sm font-medium leading-6 text-gray-900 mb-1"
+						>
 							Rombel
 						</label>
 						<select
+							id="classgroup-select"
 							value={selectedClassGroup}
 							onChange={(e) => setSelectedClassGroup(e.target.value)}
 							className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
@@ -135,10 +143,14 @@ function TagihanListPage() {
 					</div>
 
 					<div className="w-full sm:w-auto">
-						<label className="block text-sm font-medium leading-6 text-gray-900 mb-1">
+						<label
+							htmlFor="type-select"
+							className="block text-sm font-medium leading-6 text-gray-900 mb-1"
+						>
 							Jenis Tagihan
 						</label>
 						<select
+							id="type-select"
 							value={selectedType}
 							onChange={(e) => setSelectedType(e.target.value)}
 							className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
@@ -152,10 +164,14 @@ function TagihanListPage() {
 					</div>
 
 					<div className="w-full sm:w-auto">
-						<label className="block text-sm font-medium leading-6 text-gray-900 mb-1">
+						<label
+							htmlFor="status-select"
+							className="block text-sm font-medium leading-6 text-gray-900 mb-1"
+						>
 							Status
 						</label>
 						<select
+							id="status-select"
 							value={selectedStatus}
 							onChange={(e) => setSelectedStatus(e.target.value)}
 							className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"

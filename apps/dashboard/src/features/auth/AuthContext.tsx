@@ -122,7 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		if (!userResponse?.data) return null;
 		if ("data" in userResponse.data) {
 			const u = userResponse.data.data as User;
-			if (u && u.role) {
+			if (u?.role) {
 				localStorage.setItem("alizzah_role", u.role);
 				localStorage.setItem(
 					"alizzah_modules",

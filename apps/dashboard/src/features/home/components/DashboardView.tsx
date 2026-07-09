@@ -180,7 +180,7 @@ export function DashboardView() {
 										Semua <ChevronRight className="h-4 w-4 ml-1" />
 									</Link>
 								</div>
-								<ul role="list" className="divide-y divide-gray-200">
+								<ul className="divide-y divide-gray-200">
 									{unpaidInvoices.length === 0 ? (
 										<li className="px-4 py-8 text-center text-gray-500 text-sm">
 											Semua tagihan sudah lunas.

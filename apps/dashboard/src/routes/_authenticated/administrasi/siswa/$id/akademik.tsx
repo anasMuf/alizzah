@@ -73,7 +73,7 @@ function SiswaAkademikPage() {
 						Belum ada riwayat rombel.
 					</div>
 				) : (
-					<ul role="list" className="divide-y divide-gray-100">
+					<ul className="divide-y divide-gray-100">
 						{enrollments.map((enrollment: any) => (
 							<li
 								key={enrollment.id}

@@ -273,7 +273,6 @@ export function BarangForm({ isOpen, onClose, initialData }: BarangFormProps) {
 						</div>
 						{variants.map((v, i) => (
 							<div
-								// biome-ignore lint/suspicious/noArrayIndexKey: baris varian tak punya id stabil saat baru
 								key={i}
 								className="grid grid-cols-[1fr_1fr_1fr_5rem_2rem] items-center gap-2"
 							>

@@ -3,6 +3,8 @@ package main
 import (
 	"flag"
 	"log"
+	"strconv"
+	"strings"
 	"time"
 
 	"api/config"
@@ -29,6 +31,7 @@ import (
 func main() {
 	// CLI flags
 	reseed := flag.String("reseed", "", "Reset & seed ulang. Nilai: 'all' untuk semua, atau nama grup dipisah koma (users,academic_years,class_groups,extracurriculars,fee_configs,expense_categories,students,effective_days,transactions)")
+	regenInvoice := flag.String("regen-invoice", "", "Regenerate semua invoice (initial, registration, monthly) untuk student ID tertentu. Gunakan koma sebagai pemisah, contoh: --regen-invoice=123,456")
 	flag.Parse()
 
 	// Load environment
@@ -243,6 +246,25 @@ func main() {
 	invoiceCreator := service.NewInvoiceCreatorAdapter(invoiceGenService, invoiceRepo)
 	savingsManager := service.NewSavingsManagerAdapter(savingsService)
 	academicService := service.NewAcademicEventService(db, enrollmentRepo, studentRepo, eventRepo, classGroupRepo, ayRepo, invoiceCreator, savingsManager, invoiceGenService)
+
+	// --regen-invoice: regenerate invoice untuk siswa tertentu (delete & recreate)
+	if *regenInvoice != "" {
+		ids := strings.Split(*regenInvoice, ",")
+		for _, idStr := range ids {
+			id, err := strconv.ParseUint(strings.TrimSpace(idStr), 10, 32)
+			if err != nil {
+				log.Printf("Regen invoice: ID '%s' tidak valid, skip", idStr)
+				continue
+			}
+			if err := invoiceGenService.RegenerateForStudent(uint(id)); err != nil {
+				log.Printf("Regen invoice: gagal untuk student %d: %v", id, err)
+			} else {
+				log.Printf("Regen invoice: berhasil untuk student %d", id)
+			}
+		}
+		log.Println("Regen invoice selesai, tidak menjalankan server (mode CLI).")
+		return
+	}
 
 	// Handlers
 	authHandler := handler.NewAuthHandler(authService, tokenBlacklistRepo)

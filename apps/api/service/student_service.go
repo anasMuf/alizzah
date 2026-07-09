@@ -8,6 +8,7 @@ import (
 	"encoding/csv"
 	"errors"
 	"fmt"
+	"log"
 	"mime/multipart"
 	"strings"
 	"time"
@@ -364,6 +365,8 @@ func (s *studentService) Update(id uint, req dto.UpdateStudentRequest) (*dto.Stu
 		return nil, errors.New("Format birth_date tidak valid (YYYY-MM-DD)")
 	}
 
+	oldGender := student.Gender
+
 	student.FullName = req.FullName
 	student.BirthPlace = req.BirthPlace
 	student.BirthDate = birthDate
@@ -373,6 +376,16 @@ func (s *studentService) Update(id uint, req dto.UpdateStudentRequest) (*dto.Stu
 
 	if err := s.studentRepo.Update(student); err != nil {
 		return nil, err
+	}
+
+	if oldGender != student.Gender && s.invoiceGen != nil {
+		go func(sid uint) {
+			if err := s.invoiceGen.RegenerateForStudent(sid); err != nil {
+				log.Printf("Auto-regen invoice gagal untuk student %d: %v", sid, err)
+			} else {
+				log.Printf("Auto-regen invoice berhasil untuk student %d (gender berubah)", sid)
+			}
+		}(student.ID)
 	}
 
 	return mapStudentToDetailResponse(*student), nil
@@ -525,8 +538,8 @@ func mapStudentToDetailResponse(st model.Student) *dto.StudentDetailResponse {
 		PhotoURL:      photoUrl,
 		Status:        st.Status,
 		IsDaycareOnly: st.IsDaycareOnly,
-		Guardians: gBriefs,
-		CreatedAt: st.CreatedAt.Format(time.RFC3339),
+		Guardians:     gBriefs,
+		CreatedAt:     st.CreatedAt.Format(time.RFC3339),
 	}
 }
 

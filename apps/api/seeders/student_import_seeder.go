@@ -453,7 +453,7 @@ func legacyStudentData() []legacyStudent {
 		{"MUHAMMAD ALTHAF ARBANI", "L", "Berlian 8", "", ""},
 		{"MUHAMMAD ARSA AL HAFIDZ", "L", "Berlian 8", "", ""},
 		{"MUHAMMAD RAFA NIZAM", "L", "Berlian 8", "", ""},
-		{"NADIA PUTRI LESTARI", "L", "Berlian 8", "", ""},
-		{"SALWA NABILA CAHYANI PUTRI", "L", "Berlian 8", "", ""},
+		{"NADIA PUTRI LESTARI", "P", "Berlian 8", "", ""},
+		{"SALWA NABILA CAHYANI PUTRI", "P", "Berlian 8", "", ""},
 	}
 }

@@ -29,6 +29,9 @@ type InvoiceGenerateService interface {
 	AddFacilityToMonthlyRange(studentID, facilityID, academicYearID uint) error
 	RemoveFacilityFromFutureInvoices(studentID, facilityID, academicYearID uint) error
 	ApplyDispensationToExistingInvoices(studentID, academicYearID uint) error
+	// RegenerateForStudent menghapus semua invoice (initial, registration, monthly)
+	// untuk student di tahun ajaran aktif lalu generate ulang dengan data terbaru.
+	RegenerateForStudent(studentID uint) error
 	// WithTx returns an instance whose write-transactions run within tx (as savepoints),
 	// so invoice generation can participate in a larger atomic operation.
 	WithTx(tx *gorm.DB) InvoiceGenerateService
@@ -1187,3 +1190,90 @@ func (s *invoiceGenerateService) ApplyDispensationToExistingInvoices(studentID, 
 	return nil
 }
 
+// RegenerateForStudent menghapus semua invoice (initial, registration, monthly)
+// untuk student di tahun ajaran aktif lalu generate ulang dengan data terbaru.
+func (s *invoiceGenerateService) RegenerateForStudent(studentID uint) error {
+	// 1. Cari enrollment aktif untuk mendapatkan AcademicYearID, Level, ClassGroupID
+	enrollment, err := s.enrollmentRepo.FindActiveByStudentID(studentID)
+	if err != nil {
+		return fmt.Errorf("gagal menemukan enrollment aktif: %w", err)
+	}
+
+	academicYearID := enrollment.AcademicYearID
+	classGroupID := enrollment.ClassGroupID
+	level := enrollment.ClassGroup.Level
+
+	// 2. Ambil gender siswa saat ini
+	var student model.Student
+	if err := s.db.First(&student, studentID).Error; err != nil {
+		return fmt.Errorf("gagal menemukan data siswa: %w", err)
+	}
+	gender := student.Gender
+
+	// 3. Ambil tahun ajaran untuk EndDate
+	ay, err := s.acRepo.FindByID(academicYearID)
+	if err != nil {
+		return fmt.Errorf("gagal menemukan tahun ajaran: %w", err)
+	}
+
+	// 4. Hapus semua invoice (initial, registration, monthly) untuk student+academic_year
+	//    Urutan: invoice_installments → invoice_items → invoices (FK constraint)
+	var invoiceIDs []uint
+	if err := s.db.Model(&model.Invoice{}).
+		Where("student_id = ? AND academic_year_id = ?", studentID, academicYearID).
+		Pluck("id", &invoiceIDs).Error; err != nil {
+		return fmt.Errorf("gagal mengambil daftar invoice: %w", err)
+	}
+
+	// 4. Hard-delete semua invoice lama (iterate satu per satu untuk pastikan DELETE sungguhan)
+	for _, invID := range invoiceIDs {
+		if err := s.db.Exec("DELETE FROM payment_items WHERE invoice_item_id IN (SELECT id FROM invoice_items WHERE invoice_id = ?)", invID).Error; err != nil {
+			return fmt.Errorf("gagal menghapus payment items untuk invoice %d: %w", invID, err)
+		}
+		if err := s.db.Exec("DELETE FROM invoice_installments WHERE invoice_id = ?", invID).Error; err != nil {
+			return fmt.Errorf("gagal menghapus invoice installments untuk invoice %d: %w", invID, err)
+		}
+		if err := s.db.Exec("DELETE FROM invoice_items WHERE invoice_id = ?", invID).Error; err != nil {
+			return fmt.Errorf("gagal menghapus invoice items untuk invoice %d: %w", invID, err)
+		}
+		if err := s.db.Exec("DELETE FROM invoices WHERE id = ?", invID).Error; err != nil {
+			return fmt.Errorf("gagal menghapus invoice %d: %w", invID, err)
+		}
+	}
+
+	// 5. Generate ulang invoice initial (hanya untuk new & mutation)
+	if enrollment.EnrollmentType == "new" || enrollment.EnrollmentType == "mutation" {
+		if err := s.GenerateInitial(dto.GenerateInitialInvoiceParams{
+			StudentID:      studentID,
+			AcademicYearID: academicYearID,
+			Level:          level,
+			Gender:         gender,
+			CreatedBy:      1,
+		}); err != nil {
+			return fmt.Errorf("gagal generate invoice initial: %w", err)
+		}
+	}
+
+	// 6. Generate ulang invoice registration
+	if err := s.GenerateRegistration(dto.GenerateRegistrationInvoiceParams{
+		StudentID:      studentID,
+		AcademicYearID: academicYearID,
+		Level:          level,
+		Gender:         gender,
+		CreatedBy:      1,
+	}); err != nil {
+		return fmt.Errorf("gagal generate invoice registration: %w", err)
+	}
+
+	// 7. Generate ulang invoice bulanan dari start_date enrollment sampai end_date tahun ajaran
+	if err := s.GenerateMonthlyRange(
+		studentID, academicYearID, classGroupID,
+		level, gender,
+		enrollment.StartDate, ay.EndDate,
+		1,
+	); err != nil {
+		return fmt.Errorf("gagal generate invoice bulanan: %w", err)
+	}
+
+	return nil
+}

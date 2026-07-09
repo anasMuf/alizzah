@@ -9,9 +9,10 @@ type ClassGroup struct {
 	Name           string         `gorm:"size:50;not null" json:"name"`
 	Level          string         `gorm:"size:20;not null" json:"level"` // mutiara | intan | berlian
 	Schedule       datatypes.JSON `gorm:"type:jsonb;not null" json:"schedule"`
+	IsMutation     bool           `gorm:"default:false" json:"is_mutation"` // rombel khusus siswa mutasi / transfer masuk
 	BaseModelTimeAt
 
-	AcademicYear AcademicYear `gorm:"foreignKey:AcademicYearID" json:"academic_year,omitempty"`
+	AcademicYear AcademicYear        `gorm:"foreignKey:AcademicYearID" json:"academic_year,omitempty"`
 	Enrollments  []StudentEnrollment `gorm:"foreignKey:ClassGroupID" json:"-"`
 }
 

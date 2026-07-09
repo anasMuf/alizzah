@@ -56,34 +56,34 @@ func SeedClassGroups(db *gorm.DB) {
 	})
 
 	type classGroupDef struct {
-		Name     string
-		Level    string
-		Schedule []byte
+		Name       string
+		Level      string
+		Schedule   []byte
+		IsMutation bool
 	}
 
 	groups := []classGroupDef{
-		{"Mutiara 1", "mutiara", scheduleMutiara123},
-		{"Mutiara 2", "mutiara", scheduleMutiara123},
-		{"Mutiara 3", "mutiara", scheduleMutiara123},
-		{"Mutiara 4", "mutiara", scheduleMutiara456},
-		{"Mutiara 5", "mutiara", scheduleMutiara456},
-		{"Mutiara 6", "mutiara", scheduleMutiara456},
-		{"Intan 1", "intan", scheduleIntan},
-		{"Intan 2", "intan", scheduleIntan},
-		{"Intan 3", "intan", scheduleIntan},
-		{"Intan 4", "intan", scheduleIntan},
-		{"Intan 5", "intan", scheduleIntan},
-		{"Intan 6", "intan", scheduleIntan},
-		{"Intan 7", "intan", scheduleIntan},
-		{"Intan 8", "intan", scheduleIntan},
-		{"Berlian 1", "berlian", scheduleBerlian},
-		{"Berlian 2", "berlian", scheduleBerlian},
-		{"Berlian 3", "berlian", scheduleBerlian},
-		{"Berlian 4", "berlian", scheduleBerlian},
-		{"Berlian 5", "berlian", scheduleBerlian},
-		{"Berlian 6", "berlian", scheduleBerlian},
-		{"Berlian 7", "berlian", scheduleBerlian},
-		{"Berlian 8", "berlian", scheduleBerlian},
+		{"Mutiara 1", "mutiara", scheduleMutiara123, false},
+		{"Mutiara 2", "mutiara", scheduleMutiara123, false},
+		{"Mutiara 3", "mutiara", scheduleMutiara123, false},
+		{"Mutiara 4", "mutiara", scheduleMutiara456, false},
+		{"Mutiara 5", "mutiara", scheduleMutiara456, false},
+		{"Intan 1", "intan", scheduleIntan, true},
+		{"Intan 2", "intan", scheduleIntan, false},
+		{"Intan 3", "intan", scheduleIntan, false},
+		{"Intan 4", "intan", scheduleIntan, false},
+		{"Intan 5", "intan", scheduleIntan, false},
+		{"Intan 6", "intan", scheduleIntan, false},
+		{"Intan 7", "intan", scheduleIntan, false},
+		{"Intan 8", "intan", scheduleIntan, true},
+		{"Berlian 1", "berlian", scheduleBerlian, false},
+		{"Berlian 2", "berlian", scheduleBerlian, false},
+		{"Berlian 3", "berlian", scheduleBerlian, false},
+		{"Berlian 4", "berlian", scheduleBerlian, false},
+		{"Berlian 5", "berlian", scheduleBerlian, false},
+		{"Berlian 6", "berlian", scheduleBerlian, false},
+		{"Berlian 7", "berlian", scheduleBerlian, false},
+		{"Berlian 8", "berlian", scheduleBerlian, false},
 	}
 
 	for _, g := range groups {
@@ -92,12 +92,13 @@ func SeedClassGroups(db *gorm.DB) {
 			Name:           g.Name,
 			Level:          g.Level,
 			Schedule:       g.Schedule,
+			IsMutation:     g.IsMutation,
 		}
 		if err := db.Create(&cg).Error; err != nil {
 			log.Printf("Gagal membuat class group '%s': %v", g.Name, err)
 		}
 	}
-	log.Println("Class group seeder berhasil (22 rombel)")
+	log.Println("Class group seeder berhasil (21 rombel)")
 }
 
 // FixClassGroupSchedules migrates schedule data from old "groups" format to new "weekdays/weekend" format.

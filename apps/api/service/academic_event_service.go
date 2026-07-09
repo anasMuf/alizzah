@@ -209,7 +209,7 @@ func (s *academicEventService) ProcessPromotion(createdBy uint, req dto.Promotio
 		return nil, errors.New("Tahun ajaran tujuan tidak ditemukan")
 	}
 
-	eventDate, err := utility.ParseDate( req.EventDate)
+	eventDate, err := utility.ParseDate(req.EventDate)
 	if err != nil {
 		return nil, fmt.Errorf("Format event_date tidak valid (gunakan YYYY-MM-DD): %s", req.EventDate)
 	}
@@ -392,7 +392,7 @@ func (s *academicEventService) ProcessGraduation(createdBy uint, req dto.Graduat
 		return nil, errors.New("Tahun ajaran tidak ditemukan")
 	}
 
-	eventDate, err := utility.ParseDate( req.EventDate)
+	eventDate, err := utility.ParseDate(req.EventDate)
 	if err != nil {
 		return nil, fmt.Errorf("Format event_date tidak valid (gunakan YYYY-MM-DD): %s", req.EventDate)
 	}
@@ -525,7 +525,7 @@ func (s *academicEventService) ProcessClassChange(createdBy uint, req dto.ClassC
 		return errors.New("Rombel asal dan tujuan tidak boleh sama")
 	}
 
-	eventDate, err := utility.ParseDate( req.EventDate)
+	eventDate, err := utility.ParseDate(req.EventDate)
 	if err != nil {
 		return fmt.Errorf("Format event_date tidak valid (gunakan YYYY-MM-DD): %s", req.EventDate)
 	}
@@ -598,8 +598,8 @@ func (s *academicEventService) ProcessTransferIn(createdBy uint, req dto.Transfe
 	if classGroup.Level != "intan" {
 		return utility.NewUnprocessableError("Mutasi hanya diperbolehkan ke jenjang intan")
 	}
-	if classGroup.Name != "Intan 1" && classGroup.Name != "Intan 8" {
-		return utility.NewUnprocessableError("Mutasi hanya diperbolehkan ke Intan 1 atau Intan 8")
+	if !classGroup.IsMutation {
+		return utility.NewUnprocessableError("Mutasi tidak diperbolehkan ke rombel ini")
 	}
 
 	_, err = s.academicYearRepo.FindByID(req.AcademicYearID)
@@ -607,7 +607,7 @@ func (s *academicEventService) ProcessTransferIn(createdBy uint, req dto.Transfe
 		return errors.New("Tahun ajaran tidak ditemukan")
 	}
 
-	startDate, err := utility.ParseDate( req.StartDate)
+	startDate, err := utility.ParseDate(req.StartDate)
 	if err != nil {
 		return fmt.Errorf("Format start_date tidak valid (gunakan YYYY-MM-DD): %s", req.StartDate)
 	}
@@ -707,7 +707,7 @@ func (s *academicEventService) ProcessTransferIn(createdBy uint, req dto.Transfe
 }
 
 func (s *academicEventService) ProcessWithdrawal(createdBy uint, req dto.WithdrawalRequest) error {
-	eventDate, err := utility.ParseDate( req.EventDate)
+	eventDate, err := utility.ParseDate(req.EventDate)
 	if err != nil {
 		return fmt.Errorf("Format event_date tidak valid (gunakan YYYY-MM-DD): %s", req.EventDate)
 	}

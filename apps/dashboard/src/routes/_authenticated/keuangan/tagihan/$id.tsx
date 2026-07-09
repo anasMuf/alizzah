@@ -137,7 +137,7 @@ function DetailTagihanPage() {
 				item.gender === "all" || item.gender === studentGender;
 			return categoryMatch && levelMatch && genderMatch;
 		});
-	}, [allFeeItems, invoice]);
+	}, [allFeeItems, invoice, invoiceTypeCategories]);
 
 	// Group filtered items by category for dropdown
 	const feeItemsByCategory = useMemo(() => {
@@ -627,10 +627,7 @@ function DetailTagihanPage() {
 			<div className="contents print:hidden">
 				{/* Breadcrumb */}
 				<nav className="flex" aria-label="Breadcrumb">
-					<ol
-						role="list"
-						className="flex items-center space-x-2 text-sm text-gray-500"
-					>
+					<ol className="flex items-center space-x-2 text-sm text-gray-500">
 						<li>
 							<Link to="/keuangan/tagihan" className="hover:text-gray-900">
 								Tagihan

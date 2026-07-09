@@ -60,7 +60,7 @@ function KasirPembayaranPage() {
 		if (initialStudentResp && !selectedStudent) {
 			setSelectedStudent((initialStudentResp.data as any)?.data);
 		}
-	}, [initialStudentResp]);
+	}, [initialStudentResp, selectedStudent]);
 
 	// Invoices
 	const [selectedInvoices, setSelectedInvoices] = useState<number[]>([]);

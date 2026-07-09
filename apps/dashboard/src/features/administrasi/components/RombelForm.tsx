@@ -148,8 +148,7 @@ export function RombelForm({
 		// Normalize calisan time
 		const payload = { ...formData };
 		if (
-			payload.schedule &&
-			payload.schedule.weekdays &&
+			payload.schedule?.weekdays &&
 			!payload.schedule.weekdays.time_out_calisan
 		) {
 			delete payload.schedule.weekdays.time_out_calisan;
@@ -235,7 +234,7 @@ export function RombelForm({
 										<input
 											type="radio"
 											name="mutiara_days"
-											checked={formData.schedule!.weekdays!.days!.includes(
+											checked={formData.schedule?.weekdays?.days?.includes(
 												"Senin",
 											)}
 											onChange={() =>
@@ -251,7 +250,7 @@ export function RombelForm({
 										<input
 											type="radio"
 											name="mutiara_days"
-											checked={formData.schedule!.weekdays!.days!.includes(
+											checked={formData.schedule?.weekdays?.days?.includes(
 												"Selasa",
 											)}
 											onChange={() =>
@@ -271,7 +270,7 @@ export function RombelForm({
 									id="wd_in"
 									type="time"
 									label="Jam Masuk"
-									value={formData.schedule!.weekdays!.time_in}
+									value={formData.schedule?.weekdays?.time_in}
 									onChange={(e) =>
 										setFormData({
 											...formData,
@@ -290,7 +289,7 @@ export function RombelForm({
 									id="wd_out"
 									type="time"
 									label="Jam Pulang"
-									value={formData.schedule!.weekdays!.time_out}
+									value={formData.schedule?.weekdays?.time_out}
 									onChange={(e) =>
 										setFormData({
 											...formData,
@@ -310,7 +309,7 @@ export function RombelForm({
 										id="wd_out_calisan"
 										type="time"
 										label="Jam Pulang (Jika ikut Calisan) - Opsional"
-										value={formData.schedule!.weekdays!.time_out_calisan || ""}
+										value={formData.schedule?.weekdays?.time_out_calisan || ""}
 										onChange={(e) =>
 											setFormData({
 												...formData,
@@ -339,7 +338,7 @@ export function RombelForm({
 										id="wd_in"
 										type="time"
 										label="Jam Masuk"
-										value={formData.schedule!.weekdays!.time_in}
+										value={formData.schedule?.weekdays?.time_in}
 										onChange={(e) =>
 											setFormData({
 												...formData,
@@ -358,7 +357,7 @@ export function RombelForm({
 										id="wd_out"
 										type="time"
 										label="Jam Pulang"
-										value={formData.schedule!.weekdays!.time_out}
+										value={formData.schedule?.weekdays?.time_out}
 										onChange={(e) =>
 											setFormData({
 												...formData,
@@ -379,7 +378,7 @@ export function RombelForm({
 											type="time"
 											label="Jam Pulang (Jika ikut Calisan) - Opsional"
 											value={
-												formData.schedule!.weekdays!.time_out_calisan || ""
+												formData.schedule?.weekdays?.time_out_calisan || ""
 											}
 											onChange={(e) =>
 												setFormData({
@@ -408,7 +407,7 @@ export function RombelForm({
 										id="we_in"
 										type="time"
 										label="Jam Masuk"
-										value={formData.schedule!.weekend!.time_in}
+										value={formData.schedule?.weekend?.time_in}
 										onChange={(e) =>
 											setFormData({
 												...formData,
@@ -427,7 +426,7 @@ export function RombelForm({
 										id="we_out"
 										type="time"
 										label="Jam Pulang"
-										value={formData.schedule!.weekend!.time_out}
+										value={formData.schedule?.weekend?.time_out}
 										onChange={(e) =>
 											setFormData({
 												...formData,

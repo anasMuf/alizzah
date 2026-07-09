@@ -68,10 +68,7 @@ function TagihanSiswaPage() {
 		<div className="space-y-6 max-w-7xl mx-auto pb-12">
 			{/* Breadcrumb */}
 			<nav className="flex" aria-label="Breadcrumb">
-				<ol
-					role="list"
-					className="flex items-center space-x-2 text-sm text-gray-500"
-				>
+				<ol className="flex items-center space-x-2 text-sm text-gray-500">
 					<li>
 						<Link to="/keuangan/tagihan" className="hover:text-gray-900">
 							Tagihan

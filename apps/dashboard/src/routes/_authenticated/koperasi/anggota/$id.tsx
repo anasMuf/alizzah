@@ -9,7 +9,7 @@ function RouteComponent() {
 	const { id } = Route.useParams();
 	const memberId = parseInt(id, 10);
 
-	if (isNaN(memberId)) {
+	if (Number.isNaN(memberId)) {
 		return <div className="p-4 text-red-600">ID Anggota tidak valid</div>;
 	}
 

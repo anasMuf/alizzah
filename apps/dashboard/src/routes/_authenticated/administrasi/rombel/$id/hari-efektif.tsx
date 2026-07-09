@@ -111,7 +111,7 @@ function HariEfektifPage() {
 		<div className="space-y-6 max-w-5xl mx-auto">
 			{/* Breadcrumb */}
 			<nav className="flex" aria-label="Breadcrumb">
-				<ol role="list" className="flex items-center space-x-2">
+				<ol className="flex items-center space-x-2">
 					<li>
 						<Link
 							to="/administrasi/rombel"

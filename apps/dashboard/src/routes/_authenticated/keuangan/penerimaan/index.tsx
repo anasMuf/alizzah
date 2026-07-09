@@ -209,118 +209,116 @@ function PenerimaanListPage() {
 			)}
 
 			{/* Table */}
-			{!isLoading && !isError && (
-				<>
-					{items.length === 0 ? (
-						<EmptyState
-							title="Belum ada data penerimaan"
-							description="Mulai catat penerimaan dana bantuan seperti BOS, donasi, atau hibah."
-						/>
-					) : (
-						<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden">
-							<div className="overflow-x-auto">
-								<table className="min-w-full divide-y divide-gray-300">
-									<thead className="bg-gray-50">
-										<tr>
-											<th className="py-3 pl-6 pr-3 text-left text-sm font-semibold text-gray-900">
-												Tanggal
-											</th>
-											<th className="px-3 py-3 text-left text-sm font-semibold text-gray-900">
-												Kategori
-											</th>
-											<th className="px-3 py-3 text-left text-sm font-semibold text-gray-900">
-												Sumber / Pengirim
-											</th>
-											<th className="px-3 py-3 text-left text-sm font-semibold text-gray-900">
-												Ref
-											</th>
-											<th className="px-3 py-3 text-right text-sm font-semibold text-gray-900">
-												Nominal
-											</th>
-											<th className="px-3 py-3 text-right text-sm font-semibold text-gray-900 pr-6">
-												Aksi
-											</th>
-										</tr>
-									</thead>
-									<tbody className="divide-y divide-gray-100 bg-white">
-										{items.map((item: any) => (
-											<tr key={item.id} className="hover:bg-gray-50">
-												<td className="py-3 pl-6 pr-3 text-sm text-gray-900 tabular-nums whitespace-nowrap">
-													{formatDate(item.transaction_date)}
-												</td>
-												<td className="px-3 py-3 text-sm">
-													<Badge
-														variant={CATEGORY_VARIANTS[item.category] || "info"}
-													>
-														{CATEGORY_LABELS[item.category] || item.category}
-													</Badge>
-												</td>
-												<td className="px-3 py-3 text-sm text-gray-900">
-													<div>{item.source_name}</div>
-													{item.notes && (
-														<div className="text-xs text-gray-500 mt-0.5">
-															{item.notes}
-														</div>
-													)}
-												</td>
-												<td className="px-3 py-3 text-sm text-gray-500">
-													{item.reference_number || "-"}
-												</td>
-												<td className="px-3 py-3 text-sm text-right font-semibold text-gray-900 tabular-nums">
-													{formatCurrency(Number(item.amount))}
-												</td>
-												<td className="px-3 py-3 text-right pr-6">
-													<div className="flex gap-2 justify-end">
-														<Link
-															to="/keuangan/penerimaan/$id"
-															params={{ id: item.id.toString() }}
-															className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
-														>
-															Detail
-														</Link>
-														<button
-															type="button"
-															onClick={() => setDeletingItem(item)}
-															className="text-xs font-medium text-rose-600 hover:text-rose-800 flex items-center"
-														>
-															<Trash2 className="w-3 h-3 mr-0.5" /> Hapus
-														</button>
+			{!isLoading &&
+				!isError &&
+				(items.length === 0 ? (
+					<EmptyState
+						title="Belum ada data penerimaan"
+						description="Mulai catat penerimaan dana bantuan seperti BOS, donasi, atau hibah."
+					/>
+				) : (
+					<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden">
+						<div className="overflow-x-auto">
+							<table className="min-w-full divide-y divide-gray-300">
+								<thead className="bg-gray-50">
+									<tr>
+										<th className="py-3 pl-6 pr-3 text-left text-sm font-semibold text-gray-900">
+											Tanggal
+										</th>
+										<th className="px-3 py-3 text-left text-sm font-semibold text-gray-900">
+											Kategori
+										</th>
+										<th className="px-3 py-3 text-left text-sm font-semibold text-gray-900">
+											Sumber / Pengirim
+										</th>
+										<th className="px-3 py-3 text-left text-sm font-semibold text-gray-900">
+											Ref
+										</th>
+										<th className="px-3 py-3 text-right text-sm font-semibold text-gray-900">
+											Nominal
+										</th>
+										<th className="px-3 py-3 text-right text-sm font-semibold text-gray-900 pr-6">
+											Aksi
+										</th>
+									</tr>
+								</thead>
+								<tbody className="divide-y divide-gray-100 bg-white">
+									{items.map((item: any) => (
+										<tr key={item.id} className="hover:bg-gray-50">
+											<td className="py-3 pl-6 pr-3 text-sm text-gray-900 tabular-nums whitespace-nowrap">
+												{formatDate(item.transaction_date)}
+											</td>
+											<td className="px-3 py-3 text-sm">
+												<Badge
+													variant={CATEGORY_VARIANTS[item.category] || "info"}
+												>
+													{CATEGORY_LABELS[item.category] || item.category}
+												</Badge>
+											</td>
+											<td className="px-3 py-3 text-sm text-gray-900">
+												<div>{item.source_name}</div>
+												{item.notes && (
+													<div className="text-xs text-gray-500 mt-0.5">
+														{item.notes}
 													</div>
-												</td>
-											</tr>
-										))}
-									</tbody>
-									<tfoot>
-										<tr className="bg-gray-50 border-t-2 border-gray-300">
-											<td
-												colSpan={4}
-												className="py-3 pl-6 text-sm font-bold text-gray-900 text-right"
-											>
-												Total Halaman Ini
+												)}
 											</td>
-											<td className="py-3 px-3 text-sm text-right font-bold text-gray-900 tabular-nums">
-												{formatCurrency(totalAmount)}
+											<td className="px-3 py-3 text-sm text-gray-500">
+												{item.reference_number || "-"}
 											</td>
-											<td />
+											<td className="px-3 py-3 text-sm text-right font-semibold text-gray-900 tabular-nums">
+												{formatCurrency(Number(item.amount))}
+											</td>
+											<td className="px-3 py-3 text-right pr-6">
+												<div className="flex gap-2 justify-end">
+													<Link
+														to="/keuangan/penerimaan/$id"
+														params={{ id: item.id.toString() }}
+														className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
+													>
+														Detail
+													</Link>
+													<button
+														type="button"
+														onClick={() => setDeletingItem(item)}
+														className="text-xs font-medium text-rose-600 hover:text-rose-800 flex items-center"
+													>
+														<Trash2 className="w-3 h-3 mr-0.5" /> Hapus
+													</button>
+												</div>
+											</td>
 										</tr>
-									</tfoot>
-								</table>
-							</div>
-
-							{meta && meta.total > meta.limit && (
-								<div className="border-t border-gray-200 px-4 py-3">
-									<Pagination
-										page={meta.page}
-										limit={meta.limit}
-										total={meta.total}
-										onPageChange={setPage}
-									/>
-								</div>
-							)}
+									))}
+								</tbody>
+								<tfoot>
+									<tr className="bg-gray-50 border-t-2 border-gray-300">
+										<td
+											colSpan={4}
+											className="py-3 pl-6 text-sm font-bold text-gray-900 text-right"
+										>
+											Total Halaman Ini
+										</td>
+										<td className="py-3 px-3 text-sm text-right font-bold text-gray-900 tabular-nums">
+											{formatCurrency(totalAmount)}
+										</td>
+										<td />
+									</tr>
+								</tfoot>
+							</table>
 						</div>
-					)}
-				</>
-			)}
+
+						{meta && meta.total > meta.limit && (
+							<div className="border-t border-gray-200 px-4 py-3">
+								<Pagination
+									page={meta.page}
+									limit={meta.limit}
+									total={meta.total}
+									onPageChange={setPage}
+								/>
+							</div>
+						)}
+					</div>
+				))}
 
 			{/* Delete Confirm */}
 			<ConfirmDialog

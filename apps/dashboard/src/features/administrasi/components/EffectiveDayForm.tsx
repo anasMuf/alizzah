@@ -163,7 +163,7 @@ export function EffectiveDayForm({
 					onChange={(e) =>
 						setFormData({
 							...formData,
-							total_days: parseInt(e.target.value) || 0,
+							total_days: parseInt(e.target.value, 10) || 0,
 						})
 					}
 					required
@@ -180,7 +180,7 @@ export function EffectiveDayForm({
 					onChange={(e) =>
 						setFormData({
 							...formData,
-							total_mondays: parseInt(e.target.value) || 0,
+							total_mondays: parseInt(e.target.value, 10) || 0,
 						})
 					}
 					required

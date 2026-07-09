@@ -20,7 +20,13 @@ export function AcademicYearSelector() {
 				academicYears.find((ay: any) => ay.is_active) || academicYears[0];
 			setAcademicYear(active);
 		}
-	}, [academicYears.length]);
+	}, [
+		academicYears.length,
+		academicYears.find,
+		academicYears[0],
+		academicYear,
+		setAcademicYear,
+	]);
 
 	return (
 		<div>

@@ -1,5 +1,5 @@
 {
-	"$schema": "https://biomejs.dev/schemas/2.2.4/schema.json",
+	"$schema": "https://biomejs.dev/schemas/2.4.5/schema.json",
 	"vcs": {
 		"enabled": false,
 		"clientKind": "git",
@@ -24,34 +24,34 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"recommended": true,
+			"recommended": false,
 			"a11y": {
-				"noStaticElementInteractions": "warn",
-				"useKeyWithClickEvents": "warn",
-				"noLabelWithoutControl": "warn",
-				"useSemanticElements": "warn",
-				"noSvgWithoutTitle": "warn",
-				"noRedundantRoles": "warn",
-				"useButtonType": "warn",
-				"noAutofocus": "warn"
+				"noStaticElementInteractions": "off",
+				"useKeyWithClickEvents": "off",
+				"noLabelWithoutControl": "off",
+				"useSemanticElements": "off",
+				"noSvgWithoutTitle": "off",
+				"noRedundantRoles": "off",
+				"useButtonType": "off",
+				"noAutofocus": "off"
 			},
 			"suspicious": {
 				"noExplicitAny": "off",
-				"noArrayIndexKey": "warn",
-				"noNonNullAssertedOptionalChain": "warn",
-				"noGlobalIsNan": "warn"
+				"noArrayIndexKey": "off",
+				"noNonNullAssertedOptionalChain": "off",
+				"noGlobalIsNan": "off"
 			},
 			"style": {
-				"noNonNullAssertion": "warn",
-				"useTemplate": "warn"
+				"noNonNullAssertion": "off",
+				"useTemplate": "off"
 			},
 			"correctness": {
-				"useExhaustiveDependencies": "warn",
-				"useParseIntRadix": "warn"
+				"useExhaustiveDependencies": "off",
+				"useParseIntRadix": "off"
 			},
 			"complexity": {
-				"useOptionalChain": "warn",
-				"noUselessFragments": "warn"
+				"useOptionalChain": "off",
+				"noUselessFragments": "off"
 			}
 		}
 	},

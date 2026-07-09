@@ -6,9 +6,9 @@
  * OpenAPI spec version: 1.0
  */
 
-export type InternalModulesKoperasiPembelianCreateRequestPaymentMethod = typeof InternalModulesKoperasiPembelianCreateRequestPaymentMethod[keyof typeof InternalModulesKoperasiPembelianCreateRequestPaymentMethod];
-
+export type InternalModulesKoperasiPembelianCreateRequestPaymentMethod =
+	(typeof InternalModulesKoperasiPembelianCreateRequestPaymentMethod)[keyof typeof InternalModulesKoperasiPembelianCreateRequestPaymentMethod];
 
 export const InternalModulesKoperasiPembelianCreateRequestPaymentMethod = {
-  cash: 'cash',
+	cash: "cash",
 } as const;

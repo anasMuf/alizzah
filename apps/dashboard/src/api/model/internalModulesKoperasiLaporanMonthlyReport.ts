@@ -5,13 +5,13 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { InternalModulesKoperasiLaporanCategoryLine } from './internalModulesKoperasiLaporanCategoryLine';
+import type { InternalModulesKoperasiLaporanCategoryLine } from "./internalModulesKoperasiLaporanCategoryLine";
 
 export interface InternalModulesKoperasiLaporanMonthlyReport {
-  categories?: InternalModulesKoperasiLaporanCategoryLine[];
-  month?: number;
-  net?: number;
-  total_credit?: number;
-  total_debit?: number;
-  year?: number;
+	categories?: InternalModulesKoperasiLaporanCategoryLine[];
+	month?: number;
+	net?: number;
+	total_credit?: number;
+	total_debit?: number;
+	year?: number;
 }

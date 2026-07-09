@@ -5,17 +5,17 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { InternalModulesKoperasiPinjamanCreateRequestRepaymentMethod } from './internalModulesKoperasiPinjamanCreateRequestRepaymentMethod';
+import type { InternalModulesKoperasiPinjamanCreateRequestRepaymentMethod } from "./internalModulesKoperasiPinjamanCreateRequestRepaymentMethod";
 
 export interface InternalModulesKoperasiPinjamanCreateRequest {
-  academic_year_id: number;
-  loan_date: string;
-  member_id: number;
-  notes?: string;
-  principal: number;
-  /** @maxLength 255 */
-  purpose: string;
-  repayment_method: InternalModulesKoperasiPinjamanCreateRequestRepaymentMethod;
-  /** @minimum 1 */
-  tenor: number;
+	academic_year_id: number;
+	loan_date: string;
+	member_id: number;
+	notes?: string;
+	principal: number;
+	/** @maxLength 255 */
+	purpose: string;
+	repayment_method: InternalModulesKoperasiPinjamanCreateRequestRepaymentMethod;
+	/** @minimum 1 */
+	tenor: number;
 }

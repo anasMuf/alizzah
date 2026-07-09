@@ -7,17 +7,17 @@
  */
 
 export interface InternalModulesKoperasiBarangVariantRequest {
-  /** @minimum 0 */
-  cost_price?: number;
-  id?: number;
-  is_active?: boolean;
-  /** @maxLength 50 */
-  name?: string;
-  /** @minimum 0 */
-  sale_price?: number;
-  /**
-     * stok awal varian baru; update diabaikan
-     * @minimum 0
-     */
-  stock?: number;
+	/** @minimum 0 */
+	cost_price?: number;
+	id?: number;
+	is_active?: boolean;
+	/** @maxLength 50 */
+	name?: string;
+	/** @minimum 0 */
+	sale_price?: number;
+	/**
+	 * stok awal varian baru; update diabaikan
+	 * @minimum 0
+	 */
+	stock?: number;
 }

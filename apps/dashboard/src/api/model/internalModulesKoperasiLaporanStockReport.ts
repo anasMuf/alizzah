@@ -5,9 +5,9 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { InternalModulesKoperasiLaporanStockItem } from './internalModulesKoperasiLaporanStockItem';
+import type { InternalModulesKoperasiLaporanStockItem } from "./internalModulesKoperasiLaporanStockItem";
 
 export interface InternalModulesKoperasiLaporanStockReport {
-  items?: InternalModulesKoperasiLaporanStockItem[];
-  total_stock_value?: number;
+	items?: InternalModulesKoperasiLaporanStockItem[];
+	total_stock_value?: number;
 }

@@ -7,20 +7,20 @@
  */
 
 export type GetV1UsersParams = {
-/**
- * Search by name or email
- */
-search?: string;
-/**
- * Filter by role
- */
-role?: string;
-/**
- * Page number
- */
-page?: number;
-/**
- * Items per page
- */
-limit?: number;
+	/**
+	 * Search by name or email
+	 */
+	search?: string;
+	/**
+	 * Filter by role
+	 */
+	role?: string;
+	/**
+	 * Page number
+	 */
+	page?: number;
+	/**
+	 * Items per page
+	 */
+	limit?: number;
 };

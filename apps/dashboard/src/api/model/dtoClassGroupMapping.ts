@@ -7,6 +7,6 @@
  */
 
 export interface DtoClassGroupMapping {
-  from_class_group_id: number;
-  to_class_group_id: number;
+	from_class_group_id: number;
+	to_class_group_id: number;
 }

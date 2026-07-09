@@ -7,28 +7,28 @@
  */
 
 export type GetV1IncomeTransactionsParams = {
-/**
- * Page number
- */
-page?: number;
-/**
- * Limit per page
- */
-limit?: number;
-/**
- * Academic Year ID
- */
-academic_year_id?: number;
-/**
- * Filter by category (bos, donasi, hibah, lainnya)
- */
-category?: string;
-/**
- * Start Date (YYYY-MM-DD)
- */
-start_date?: string;
-/**
- * End Date (YYYY-MM-DD)
- */
-end_date?: string;
+	/**
+	 * Page number
+	 */
+	page?: number;
+	/**
+	 * Limit per page
+	 */
+	limit?: number;
+	/**
+	 * Academic Year ID
+	 */
+	academic_year_id?: number;
+	/**
+	 * Filter by category (bos, donasi, hibah, lainnya)
+	 */
+	category?: string;
+	/**
+	 * Start Date (YYYY-MM-DD)
+	 */
+	start_date?: string;
+	/**
+	 * End Date (YYYY-MM-DD)
+	 */
+	end_date?: string;
 };

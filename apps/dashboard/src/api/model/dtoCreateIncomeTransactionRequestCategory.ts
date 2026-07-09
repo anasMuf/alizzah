@@ -6,12 +6,12 @@
  * OpenAPI spec version: 1.0
  */
 
-export type DtoCreateIncomeTransactionRequestCategory = typeof DtoCreateIncomeTransactionRequestCategory[keyof typeof DtoCreateIncomeTransactionRequestCategory];
-
+export type DtoCreateIncomeTransactionRequestCategory =
+	(typeof DtoCreateIncomeTransactionRequestCategory)[keyof typeof DtoCreateIncomeTransactionRequestCategory];
 
 export const DtoCreateIncomeTransactionRequestCategory = {
-  bos: 'bos',
-  donasi: 'donasi',
-  hibah: 'hibah',
-  lainnya: 'lainnya',
+	bos: "bos",
+	donasi: "donasi",
+	hibah: "hibah",
+	lainnya: "lainnya",
 } as const;

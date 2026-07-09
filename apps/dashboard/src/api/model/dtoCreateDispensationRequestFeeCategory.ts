@@ -6,9 +6,9 @@
  * OpenAPI spec version: 1.0
  */
 
-export type DtoCreateDispensationRequestFeeCategory = typeof DtoCreateDispensationRequestFeeCategory[keyof typeof DtoCreateDispensationRequestFeeCategory];
-
+export type DtoCreateDispensationRequestFeeCategory =
+	(typeof DtoCreateDispensationRequestFeeCategory)[keyof typeof DtoCreateDispensationRequestFeeCategory];
 
 export const DtoCreateDispensationRequestFeeCategory = {
-  monthly_spp: 'monthly_spp',
+	monthly_spp: "monthly_spp",
 } as const;

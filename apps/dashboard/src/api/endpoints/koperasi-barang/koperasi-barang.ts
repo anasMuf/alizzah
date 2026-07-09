@@ -5,516 +5,736 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import {
-  useMutation,
-  useQuery
-} from '@tanstack/react-query';
-import type {
-  DataTag,
-  DefinedInitialDataOptions,
-  DefinedUseQueryResult,
-  MutationFunction,
-  QueryClient,
-  QueryFunction,
-  QueryKey,
-  UndefinedInitialDataOptions,
-  UseMutationOptions,
-  UseMutationResult,
-  UseQueryOptions,
-  UseQueryResult
-} from '@tanstack/react-query';
 
 import type {
-  DtoSuccessResponse,
-  GetV1KoperasiProducts200,
-  GetV1KoperasiProductsId200,
-  GetV1KoperasiProductsParams,
-  InternalModulesKoperasiBarangCreateRequest,
-  PostV1KoperasiProducts201,
-  PutV1KoperasiProductsId200
-} from '../../model';
+	DataTag,
+	DefinedInitialDataOptions,
+	DefinedUseQueryResult,
+	MutationFunction,
+	QueryClient,
+	QueryFunction,
+	QueryKey,
+	UndefinedInitialDataOptions,
+	UseMutationOptions,
+	UseMutationResult,
+	UseQueryOptions,
+	UseQueryResult,
+} from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
-import { customInstance } from '../../mutator/custom-instance';
+import type {
+	DtoSuccessResponse,
+	GetV1KoperasiProducts200,
+	GetV1KoperasiProductsId200,
+	GetV1KoperasiProductsParams,
+	InternalModulesKoperasiBarangCreateRequest,
+	PostV1KoperasiProducts201,
+	PutV1KoperasiProductsId200,
+} from "../../model";
 
+import { customInstance } from "../../mutator/custom-instance";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
-
-
 export type getV1KoperasiProductsResponse200 = {
-  data: GetV1KoperasiProducts200
-  status: 200
-}
-
-export type getV1KoperasiProductsResponseSuccess = (getV1KoperasiProductsResponse200) & {
-  headers: Headers;
+	data: GetV1KoperasiProducts200;
+	status: 200;
 };
-;
 
-export type getV1KoperasiProductsResponse = (getV1KoperasiProductsResponseSuccess)
+export type getV1KoperasiProductsResponseSuccess =
+	getV1KoperasiProductsResponse200 & {
+		headers: Headers;
+	};
 
-export const getGetV1KoperasiProductsUrl = (params?: GetV1KoperasiProductsParams,) => {
-  const normalizedParams = new URLSearchParams();
+export type getV1KoperasiProductsResponse =
+	getV1KoperasiProductsResponseSuccess;
 
-  Object.entries(params || {}).forEach(([key, value]) => {
-
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/v1/koperasi/products?${stringifiedParams}` : `/v1/koperasi/products`
-}
-
-/**
- * @summary List barang koperasi
- */
-export const getV1KoperasiProducts = async (params?: GetV1KoperasiProductsParams, options?: RequestInit): Promise<getV1KoperasiProductsResponse> => {
-
-  return customInstance<getV1KoperasiProductsResponse>(getGetV1KoperasiProductsUrl(params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetV1KoperasiProductsQueryKey = (params?: GetV1KoperasiProductsParams,) => {
-    return [
-    `/v1/koperasi/products`, ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getGetV1KoperasiProductsQueryOptions = <TData = Awaited<ReturnType<typeof getV1KoperasiProducts>>, TError = unknown>(params?: GetV1KoperasiProductsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiProducts>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getGetV1KoperasiProductsUrl = (
+	params?: GetV1KoperasiProductsParams,
 ) => {
+	const normalizedParams = new URLSearchParams();
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(key, value === null ? "null" : value.toString());
+		}
+	});
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1KoperasiProductsQueryKey(params);
+	const stringifiedParams = normalizedParams.toString();
 
+	return stringifiedParams.length > 0
+		? `/v1/koperasi/products?${stringifiedParams}`
+		: `/v1/koperasi/products`;
+};
 
+/**
+ * @summary List barang koperasi
+ */
+export const getV1KoperasiProducts = async (
+	params?: GetV1KoperasiProductsParams,
+	options?: RequestInit,
+): Promise<getV1KoperasiProductsResponse> => {
+	return customInstance<getV1KoperasiProductsResponse>(
+		getGetV1KoperasiProductsUrl(params),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1KoperasiProducts>>> = ({ signal }) => getV1KoperasiProducts(params, { signal, ...requestOptions });
+export const getGetV1KoperasiProductsQueryKey = (
+	params?: GetV1KoperasiProductsParams,
+) => {
+	return [`/v1/koperasi/products`, ...(params ? [params] : [])] as const;
+};
 
+export const getGetV1KoperasiProductsQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1KoperasiProducts>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiProductsParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiProducts>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
+	const queryKey =
+		queryOptions?.queryKey ?? getGetV1KoperasiProductsQueryKey(params);
 
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1KoperasiProducts>>
+	> = ({ signal }) =>
+		getV1KoperasiProducts(params, { signal, ...requestOptions });
 
+	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1KoperasiProducts>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiProducts>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
+export type GetV1KoperasiProductsQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1KoperasiProducts>>
+>;
+export type GetV1KoperasiProductsQueryError = unknown;
 
-export type GetV1KoperasiProductsQueryResult = NonNullable<Awaited<ReturnType<typeof getV1KoperasiProducts>>>
-export type GetV1KoperasiProductsQueryError = unknown
-
-
-export function useGetV1KoperasiProducts<TData = Awaited<ReturnType<typeof getV1KoperasiProducts>>, TError = unknown>(
- params: undefined |  GetV1KoperasiProductsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiProducts>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1KoperasiProducts>>,
-          TError,
-          Awaited<ReturnType<typeof getV1KoperasiProducts>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1KoperasiProducts<TData = Awaited<ReturnType<typeof getV1KoperasiProducts>>, TError = unknown>(
- params?: GetV1KoperasiProductsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiProducts>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1KoperasiProducts>>,
-          TError,
-          Awaited<ReturnType<typeof getV1KoperasiProducts>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1KoperasiProducts<TData = Awaited<ReturnType<typeof getV1KoperasiProducts>>, TError = unknown>(
- params?: GetV1KoperasiProductsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiProducts>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1KoperasiProducts<
+	TData = Awaited<ReturnType<typeof getV1KoperasiProducts>>,
+	TError = unknown,
+>(
+	params: undefined | GetV1KoperasiProductsParams,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiProducts>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1KoperasiProducts>>,
+					TError,
+					Awaited<ReturnType<typeof getV1KoperasiProducts>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1KoperasiProducts<
+	TData = Awaited<ReturnType<typeof getV1KoperasiProducts>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiProductsParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiProducts>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1KoperasiProducts>>,
+					TError,
+					Awaited<ReturnType<typeof getV1KoperasiProducts>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1KoperasiProducts<
+	TData = Awaited<ReturnType<typeof getV1KoperasiProducts>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiProductsParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiProducts>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary List barang koperasi
  */
 
-export function useGetV1KoperasiProducts<TData = Awaited<ReturnType<typeof getV1KoperasiProducts>>, TError = unknown>(
- params?: GetV1KoperasiProductsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiProducts>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1KoperasiProducts<
+	TData = Awaited<ReturnType<typeof getV1KoperasiProducts>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiProductsParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiProducts>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1KoperasiProductsQueryOptions(params, options);
 
-  const queryOptions = getGetV1KoperasiProductsQueryOptions(params,options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
 
 export type postV1KoperasiProductsResponse201 = {
-  data: PostV1KoperasiProducts201
-  status: 201
-}
-
-export type postV1KoperasiProductsResponseSuccess = (postV1KoperasiProductsResponse201) & {
-  headers: Headers;
+	data: PostV1KoperasiProducts201;
+	status: 201;
 };
-;
 
-export type postV1KoperasiProductsResponse = (postV1KoperasiProductsResponseSuccess)
+export type postV1KoperasiProductsResponseSuccess =
+	postV1KoperasiProductsResponse201 & {
+		headers: Headers;
+	};
+
+export type postV1KoperasiProductsResponse =
+	postV1KoperasiProductsResponseSuccess;
 
 export const getPostV1KoperasiProductsUrl = () => {
-
-
-
-
-  return `/v1/koperasi/products`
-}
-
-/**
- * @summary Tambah barang
- */
-export const postV1KoperasiProducts = async (internalModulesKoperasiBarangCreateRequest: InternalModulesKoperasiBarangCreateRequest, options?: RequestInit): Promise<postV1KoperasiProductsResponse> => {
-
-  return customInstance<postV1KoperasiProductsResponse>(getPostV1KoperasiProductsUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      internalModulesKoperasiBarangCreateRequest,)
-  }
-);}
-
-
-
-
-export const getPostV1KoperasiProductsMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1KoperasiProducts>>, TError,{data: InternalModulesKoperasiBarangCreateRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1KoperasiProducts>>, TError,{data: InternalModulesKoperasiBarangCreateRequest}, TContext> => {
-
-const mutationKey = ['postV1KoperasiProducts'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1KoperasiProducts>>, {data: InternalModulesKoperasiBarangCreateRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  postV1KoperasiProducts(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1KoperasiProductsMutationResult = NonNullable<Awaited<ReturnType<typeof postV1KoperasiProducts>>>
-    export type PostV1KoperasiProductsMutationBody = InternalModulesKoperasiBarangCreateRequest
-    export type PostV1KoperasiProductsMutationError = unknown
-
-    /**
- * @summary Tambah barang
- */
-export const usePostV1KoperasiProducts = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1KoperasiProducts>>, TError,{data: InternalModulesKoperasiBarangCreateRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postV1KoperasiProducts>>,
-        TError,
-        {data: InternalModulesKoperasiBarangCreateRequest},
-        TContext
-      > => {
-      return useMutation(getPostV1KoperasiProductsMutationOptions(options), queryClient);
-    }
-    export type getV1KoperasiProductsIdResponse200 = {
-  data: GetV1KoperasiProductsId200
-  status: 200
-}
-
-export type getV1KoperasiProductsIdResponseSuccess = (getV1KoperasiProductsIdResponse200) & {
-  headers: Headers;
+	return `/v1/koperasi/products`;
 };
-;
 
-export type getV1KoperasiProductsIdResponse = (getV1KoperasiProductsIdResponseSuccess)
+/**
+ * @summary Tambah barang
+ */
+export const postV1KoperasiProducts = async (
+	internalModulesKoperasiBarangCreateRequest: InternalModulesKoperasiBarangCreateRequest,
+	options?: RequestInit,
+): Promise<postV1KoperasiProductsResponse> => {
+	return customInstance<postV1KoperasiProductsResponse>(
+		getPostV1KoperasiProductsUrl(),
+		{
+			...options,
+			method: "POST",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(internalModulesKoperasiBarangCreateRequest),
+		},
+	);
+};
 
-export const getGetV1KoperasiProductsIdUrl = (id: number,) => {
+export const getPostV1KoperasiProductsMutationOptions = <
+	TError = unknown,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1KoperasiProducts>>,
+		TError,
+		{ data: InternalModulesKoperasiBarangCreateRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1KoperasiProducts>>,
+	TError,
+	{ data: InternalModulesKoperasiBarangCreateRequest },
+	TContext
+> => {
+	const mutationKey = ["postV1KoperasiProducts"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1KoperasiProducts>>,
+		{ data: InternalModulesKoperasiBarangCreateRequest }
+	> = (props) => {
+		const { data } = props ?? {};
 
+		return postV1KoperasiProducts(data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-  return `/v1/koperasi/products/${id}`
-}
+export type PostV1KoperasiProductsMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1KoperasiProducts>>
+>;
+export type PostV1KoperasiProductsMutationBody =
+	InternalModulesKoperasiBarangCreateRequest;
+export type PostV1KoperasiProductsMutationError = unknown;
+
+/**
+ * @summary Tambah barang
+ */
+export const usePostV1KoperasiProducts = <TError = unknown, TContext = unknown>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1KoperasiProducts>>,
+			TError,
+			{ data: InternalModulesKoperasiBarangCreateRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1KoperasiProducts>>,
+	TError,
+	{ data: InternalModulesKoperasiBarangCreateRequest },
+	TContext
+> => {
+	return useMutation(
+		getPostV1KoperasiProductsMutationOptions(options),
+		queryClient,
+	);
+};
+export type getV1KoperasiProductsIdResponse200 = {
+	data: GetV1KoperasiProductsId200;
+	status: 200;
+};
+
+export type getV1KoperasiProductsIdResponseSuccess =
+	getV1KoperasiProductsIdResponse200 & {
+		headers: Headers;
+	};
+
+export type getV1KoperasiProductsIdResponse =
+	getV1KoperasiProductsIdResponseSuccess;
+
+export const getGetV1KoperasiProductsIdUrl = (id: number) => {
+	return `/v1/koperasi/products/${id}`;
+};
 
 /**
  * @summary Detail barang
  */
-export const getV1KoperasiProductsId = async (id: number, options?: RequestInit): Promise<getV1KoperasiProductsIdResponse> => {
+export const getV1KoperasiProductsId = async (
+	id: number,
+	options?: RequestInit,
+): Promise<getV1KoperasiProductsIdResponse> => {
+	return customInstance<getV1KoperasiProductsIdResponse>(
+		getGetV1KoperasiProductsIdUrl(id),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
 
-  return customInstance<getV1KoperasiProductsIdResponse>(getGetV1KoperasiProductsIdUrl(id),
-  {
-    ...options,
-    method: 'GET'
+export const getGetV1KoperasiProductsIdQueryKey = (id: number) => {
+	return [`/v1/koperasi/products/${id}`] as const;
+};
 
-
-  }
-);}
-
-
-
-
-
-export const getGetV1KoperasiProductsIdQueryKey = (id: number,) => {
-    return [
-    `/v1/koperasi/products/${id}`
-    ] as const;
-    }
-
-
-export const getGetV1KoperasiProductsIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1KoperasiProductsId>>, TError = unknown>(id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiProductsId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getGetV1KoperasiProductsIdQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1KoperasiProductsId>>,
+	TError = unknown,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiProductsId>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
 ) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+	const queryKey =
+		queryOptions?.queryKey ?? getGetV1KoperasiProductsIdQueryKey(id);
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1KoperasiProductsIdQueryKey(id);
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1KoperasiProductsId>>
+	> = ({ signal }) =>
+		getV1KoperasiProductsId(id, { signal, ...requestOptions });
 
+	return {
+		queryKey,
+		queryFn,
+		enabled: !!id,
+		...queryOptions,
+	} as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1KoperasiProductsId>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
+export type GetV1KoperasiProductsIdQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1KoperasiProductsId>>
+>;
+export type GetV1KoperasiProductsIdQueryError = unknown;
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1KoperasiProductsId>>> = ({ signal }) => getV1KoperasiProductsId(id, { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiProductsId>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetV1KoperasiProductsIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1KoperasiProductsId>>>
-export type GetV1KoperasiProductsIdQueryError = unknown
-
-
-export function useGetV1KoperasiProductsId<TData = Awaited<ReturnType<typeof getV1KoperasiProductsId>>, TError = unknown>(
- id: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiProductsId>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1KoperasiProductsId>>,
-          TError,
-          Awaited<ReturnType<typeof getV1KoperasiProductsId>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1KoperasiProductsId<TData = Awaited<ReturnType<typeof getV1KoperasiProductsId>>, TError = unknown>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiProductsId>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1KoperasiProductsId>>,
-          TError,
-          Awaited<ReturnType<typeof getV1KoperasiProductsId>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1KoperasiProductsId<TData = Awaited<ReturnType<typeof getV1KoperasiProductsId>>, TError = unknown>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiProductsId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1KoperasiProductsId<
+	TData = Awaited<ReturnType<typeof getV1KoperasiProductsId>>,
+	TError = unknown,
+>(
+	id: number,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiProductsId>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1KoperasiProductsId>>,
+					TError,
+					Awaited<ReturnType<typeof getV1KoperasiProductsId>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1KoperasiProductsId<
+	TData = Awaited<ReturnType<typeof getV1KoperasiProductsId>>,
+	TError = unknown,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiProductsId>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1KoperasiProductsId>>,
+					TError,
+					Awaited<ReturnType<typeof getV1KoperasiProductsId>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1KoperasiProductsId<
+	TData = Awaited<ReturnType<typeof getV1KoperasiProductsId>>,
+	TError = unknown,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiProductsId>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary Detail barang
  */
 
-export function useGetV1KoperasiProductsId<TData = Awaited<ReturnType<typeof getV1KoperasiProductsId>>, TError = unknown>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiProductsId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1KoperasiProductsId<
+	TData = Awaited<ReturnType<typeof getV1KoperasiProductsId>>,
+	TError = unknown,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiProductsId>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1KoperasiProductsIdQueryOptions(id, options);
 
-  const queryOptions = getGetV1KoperasiProductsIdQueryOptions(id,options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
 
 export type putV1KoperasiProductsIdResponse200 = {
-  data: PutV1KoperasiProductsId200
-  status: 200
-}
-
-export type putV1KoperasiProductsIdResponseSuccess = (putV1KoperasiProductsIdResponse200) & {
-  headers: Headers;
+	data: PutV1KoperasiProductsId200;
+	status: 200;
 };
-;
 
-export type putV1KoperasiProductsIdResponse = (putV1KoperasiProductsIdResponseSuccess)
+export type putV1KoperasiProductsIdResponseSuccess =
+	putV1KoperasiProductsIdResponse200 & {
+		headers: Headers;
+	};
 
-export const getPutV1KoperasiProductsIdUrl = (id: number,) => {
+export type putV1KoperasiProductsIdResponse =
+	putV1KoperasiProductsIdResponseSuccess;
 
-
-
-
-  return `/v1/koperasi/products/${id}`
-}
+export const getPutV1KoperasiProductsIdUrl = (id: number) => {
+	return `/v1/koperasi/products/${id}`;
+};
 
 /**
  * @summary Perbarui barang
  */
-export const putV1KoperasiProductsId = async (id: number,
-    internalModulesKoperasiBarangCreateRequest: InternalModulesKoperasiBarangCreateRequest, options?: RequestInit): Promise<putV1KoperasiProductsIdResponse> => {
+export const putV1KoperasiProductsId = async (
+	id: number,
+	internalModulesKoperasiBarangCreateRequest: InternalModulesKoperasiBarangCreateRequest,
+	options?: RequestInit,
+): Promise<putV1KoperasiProductsIdResponse> => {
+	return customInstance<putV1KoperasiProductsIdResponse>(
+		getPutV1KoperasiProductsIdUrl(id),
+		{
+			...options,
+			method: "PUT",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(internalModulesKoperasiBarangCreateRequest),
+		},
+	);
+};
 
-  return customInstance<putV1KoperasiProductsIdResponse>(getPutV1KoperasiProductsIdUrl(id),
-  {
-    ...options,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      internalModulesKoperasiBarangCreateRequest,)
-  }
-);}
+export const getPutV1KoperasiProductsIdMutationOptions = <
+	TError = unknown,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof putV1KoperasiProductsId>>,
+		TError,
+		{ id: number; data: InternalModulesKoperasiBarangCreateRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof putV1KoperasiProductsId>>,
+	TError,
+	{ id: number; data: InternalModulesKoperasiBarangCreateRequest },
+	TContext
+> => {
+	const mutationKey = ["putV1KoperasiProductsId"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof putV1KoperasiProductsId>>,
+		{ id: number; data: InternalModulesKoperasiBarangCreateRequest }
+	> = (props) => {
+		const { id, data } = props ?? {};
 
+		return putV1KoperasiProductsId(id, data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-export const getPutV1KoperasiProductsIdMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1KoperasiProductsId>>, TError,{id: number;data: InternalModulesKoperasiBarangCreateRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof putV1KoperasiProductsId>>, TError,{id: number;data: InternalModulesKoperasiBarangCreateRequest}, TContext> => {
+export type PutV1KoperasiProductsIdMutationResult = NonNullable<
+	Awaited<ReturnType<typeof putV1KoperasiProductsId>>
+>;
+export type PutV1KoperasiProductsIdMutationBody =
+	InternalModulesKoperasiBarangCreateRequest;
+export type PutV1KoperasiProductsIdMutationError = unknown;
 
-const mutationKey = ['putV1KoperasiProductsId'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1KoperasiProductsId>>, {id: number;data: InternalModulesKoperasiBarangCreateRequest}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  putV1KoperasiProductsId(id,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PutV1KoperasiProductsIdMutationResult = NonNullable<Awaited<ReturnType<typeof putV1KoperasiProductsId>>>
-    export type PutV1KoperasiProductsIdMutationBody = InternalModulesKoperasiBarangCreateRequest
-    export type PutV1KoperasiProductsIdMutationError = unknown
-
-    /**
+/**
  * @summary Perbarui barang
  */
-export const usePutV1KoperasiProductsId = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1KoperasiProductsId>>, TError,{id: number;data: InternalModulesKoperasiBarangCreateRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof putV1KoperasiProductsId>>,
-        TError,
-        {id: number;data: InternalModulesKoperasiBarangCreateRequest},
-        TContext
-      > => {
-      return useMutation(getPutV1KoperasiProductsIdMutationOptions(options), queryClient);
-    }
-    export type deleteV1KoperasiProductsIdResponse200 = {
-  data: DtoSuccessResponse
-  status: 200
-}
-
-export type deleteV1KoperasiProductsIdResponseSuccess = (deleteV1KoperasiProductsIdResponse200) & {
-  headers: Headers;
+export const usePutV1KoperasiProductsId = <
+	TError = unknown,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof putV1KoperasiProductsId>>,
+			TError,
+			{ id: number; data: InternalModulesKoperasiBarangCreateRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof putV1KoperasiProductsId>>,
+	TError,
+	{ id: number; data: InternalModulesKoperasiBarangCreateRequest },
+	TContext
+> => {
+	return useMutation(
+		getPutV1KoperasiProductsIdMutationOptions(options),
+		queryClient,
+	);
 };
-;
+export type deleteV1KoperasiProductsIdResponse200 = {
+	data: DtoSuccessResponse;
+	status: 200;
+};
 
-export type deleteV1KoperasiProductsIdResponse = (deleteV1KoperasiProductsIdResponseSuccess)
+export type deleteV1KoperasiProductsIdResponseSuccess =
+	deleteV1KoperasiProductsIdResponse200 & {
+		headers: Headers;
+	};
 
-export const getDeleteV1KoperasiProductsIdUrl = (id: number,) => {
+export type deleteV1KoperasiProductsIdResponse =
+	deleteV1KoperasiProductsIdResponseSuccess;
 
-
-
-
-  return `/v1/koperasi/products/${id}`
-}
+export const getDeleteV1KoperasiProductsIdUrl = (id: number) => {
+	return `/v1/koperasi/products/${id}`;
+};
 
 /**
  * @summary Hapus barang
  */
-export const deleteV1KoperasiProductsId = async (id: number, options?: RequestInit): Promise<deleteV1KoperasiProductsIdResponse> => {
+export const deleteV1KoperasiProductsId = async (
+	id: number,
+	options?: RequestInit,
+): Promise<deleteV1KoperasiProductsIdResponse> => {
+	return customInstance<deleteV1KoperasiProductsIdResponse>(
+		getDeleteV1KoperasiProductsIdUrl(id),
+		{
+			...options,
+			method: "DELETE",
+		},
+	);
+};
 
-  return customInstance<deleteV1KoperasiProductsIdResponse>(getDeleteV1KoperasiProductsIdUrl(id),
-  {
-    ...options,
-    method: 'DELETE'
+export const getDeleteV1KoperasiProductsIdMutationOptions = <
+	TError = unknown,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof deleteV1KoperasiProductsId>>,
+		TError,
+		{ id: number },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof deleteV1KoperasiProductsId>>,
+	TError,
+	{ id: number },
+	TContext
+> => {
+	const mutationKey = ["deleteV1KoperasiProductsId"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof deleteV1KoperasiProductsId>>,
+		{ id: number }
+	> = (props) => {
+		const { id } = props ?? {};
 
-  }
-);}
+		return deleteV1KoperasiProductsId(id, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
+export type DeleteV1KoperasiProductsIdMutationResult = NonNullable<
+	Awaited<ReturnType<typeof deleteV1KoperasiProductsId>>
+>;
 
+export type DeleteV1KoperasiProductsIdMutationError = unknown;
 
-export const getDeleteV1KoperasiProductsIdMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1KoperasiProductsId>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof deleteV1KoperasiProductsId>>, TError,{id: number}, TContext> => {
-
-const mutationKey = ['deleteV1KoperasiProductsId'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteV1KoperasiProductsId>>, {id: number}> = (props) => {
-          const {id} = props ?? {};
-
-          return  deleteV1KoperasiProductsId(id,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type DeleteV1KoperasiProductsIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteV1KoperasiProductsId>>>
-
-    export type DeleteV1KoperasiProductsIdMutationError = unknown
-
-    /**
+/**
  * @summary Hapus barang
  */
-export const useDeleteV1KoperasiProductsId = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1KoperasiProductsId>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof deleteV1KoperasiProductsId>>,
-        TError,
-        {id: number},
-        TContext
-      > => {
-      return useMutation(getDeleteV1KoperasiProductsIdMutationOptions(options), queryClient);
-    }
+export const useDeleteV1KoperasiProductsId = <
+	TError = unknown,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof deleteV1KoperasiProductsId>>,
+			TError,
+			{ id: number },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof deleteV1KoperasiProductsId>>,
+	TError,
+	{ id: number },
+	TContext
+> => {
+	return useMutation(
+		getDeleteV1KoperasiProductsIdMutationOptions(options),
+		queryClient,
+	);
+};

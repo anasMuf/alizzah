@@ -7,7 +7,7 @@
  */
 
 export interface DtoSaldoTotalBulan {
-  penerimaan?: number;
-  pengeluaran?: number;
-  selisih?: number;
+	penerimaan?: number;
+	pengeluaran?: number;
+	selisih?: number;
 }

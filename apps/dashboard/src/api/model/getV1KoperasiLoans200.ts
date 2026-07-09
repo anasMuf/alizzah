@@ -5,9 +5,9 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoPaginatedResponse } from './dtoPaginatedResponse';
-import type { InternalModulesKoperasiPinjamanResponse } from './internalModulesKoperasiPinjamanResponse';
+import type { DtoPaginatedResponse } from "./dtoPaginatedResponse";
+import type { InternalModulesKoperasiPinjamanResponse } from "./internalModulesKoperasiPinjamanResponse";
 
 export type GetV1KoperasiLoans200 = DtoPaginatedResponse & {
-  data?: InternalModulesKoperasiPinjamanResponse[];
+	data?: InternalModulesKoperasiPinjamanResponse[];
 };

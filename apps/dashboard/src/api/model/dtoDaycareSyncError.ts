@@ -7,6 +7,6 @@
  */
 
 export interface DtoDaycareSyncError {
-  message?: string;
-  student_id?: number;
+	message?: string;
+	student_id?: number;
 }

@@ -5,11 +5,11 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoFacilityResponse } from './dtoFacilityResponse';
+import type { DtoFacilityResponse } from "./dtoFacilityResponse";
 
 export interface DtoStudentFacilityResponse {
-  end_date?: string;
-  facility?: DtoFacilityResponse;
-  id?: number;
-  start_date?: string;
+	end_date?: string;
+	facility?: DtoFacilityResponse;
+	id?: number;
+	start_date?: string;
 }

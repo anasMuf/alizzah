@@ -5,21 +5,21 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoUpdateDispensationRequestDiscountType } from './dtoUpdateDispensationRequestDiscountType';
+import type { DtoUpdateDispensationRequestDiscountType } from "./dtoUpdateDispensationRequestDiscountType";
 
 export interface DtoUpdateDispensationRequest {
-  discount_type: DtoUpdateDispensationRequestDiscountType;
-  /** @minimum 1 */
-  discount_value: number;
-  /**
-     * @minimum 1
-     * @maximum 12
-     */
-  end_month?: number;
-  /** @minimum 2020 */
-  end_year?: number;
-  is_permanent?: boolean;
-  notes?: string;
-  /** @maxLength 100 */
-  reason: string;
+	discount_type: DtoUpdateDispensationRequestDiscountType;
+	/** @minimum 1 */
+	discount_value: number;
+	/**
+	 * @minimum 1
+	 * @maximum 12
+	 */
+	end_month?: number;
+	/** @minimum 2020 */
+	end_year?: number;
+	is_permanent?: boolean;
+	notes?: string;
+	/** @maxLength 100 */
+	reason: string;
 }

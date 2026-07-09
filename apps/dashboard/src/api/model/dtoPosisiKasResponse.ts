@@ -5,13 +5,13 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoPosisiKasPost } from './dtoPosisiKasPost';
-import type { DtoPosisiKasTotal } from './dtoPosisiKasTotal';
+import type { DtoPosisiKasPost } from "./dtoPosisiKasPost";
+import type { DtoPosisiKasTotal } from "./dtoPosisiKasTotal";
 
 export interface DtoPosisiKasResponse {
-  academic_year?: string;
-  grand_total?: DtoPosisiKasTotal;
-  month?: number;
-  posts?: DtoPosisiKasPost[];
-  year?: number;
+	academic_year?: string;
+	grand_total?: DtoPosisiKasTotal;
+	month?: number;
+	posts?: DtoPosisiKasPost[];
+	year?: number;
 }

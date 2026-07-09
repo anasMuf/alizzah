@@ -5,11 +5,11 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoImportResult } from './dtoImportResult';
+import type { DtoImportResult } from "./dtoImportResult";
 
 export interface DtoImportSummaryResponse {
-  details?: DtoImportResult[];
-  total_failed?: number;
-  total_processed?: number;
-  total_success?: number;
+	details?: DtoImportResult[];
+	total_failed?: number;
+	total_processed?: number;
+	total_success?: number;
 }

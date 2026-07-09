@@ -5,9 +5,9 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoCategoryAmount } from './dtoCategoryAmount';
+import type { DtoCategoryAmount } from "./dtoCategoryAmount";
 
 export interface DtoIncomeSummaryResponse {
-  by_category?: DtoCategoryAmount[];
-  total?: number;
+	by_category?: DtoCategoryAmount[];
+	total?: number;
 }

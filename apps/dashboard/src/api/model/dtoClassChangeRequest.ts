@@ -7,9 +7,9 @@
  */
 
 export interface DtoClassChangeRequest {
-  event_date: string;
-  from_class_group_id: number;
-  notes?: string;
-  student_id: number;
-  to_class_group_id: number;
+	event_date: string;
+	from_class_group_id: number;
+	notes?: string;
+	student_id: number;
+	to_class_group_id: number;
 }

@@ -6,10 +6,10 @@
  * OpenAPI spec version: 1.0
  */
 
-export type InternalModulesKoperasiPinjamanCreateRequestRepaymentMethod = typeof InternalModulesKoperasiPinjamanCreateRequestRepaymentMethod[keyof typeof InternalModulesKoperasiPinjamanCreateRequestRepaymentMethod];
-
+export type InternalModulesKoperasiPinjamanCreateRequestRepaymentMethod =
+	(typeof InternalModulesKoperasiPinjamanCreateRequestRepaymentMethod)[keyof typeof InternalModulesKoperasiPinjamanCreateRequestRepaymentMethod];
 
 export const InternalModulesKoperasiPinjamanCreateRequestRepaymentMethod = {
-  potong_gaji: 'potong_gaji',
-  manual: 'manual',
+	potong_gaji: "potong_gaji",
+	manual: "manual",
 } as const;

@@ -9,10 +9,10 @@ import type { DtoClassGroupSchedule } from "./dtoClassGroupSchedule";
 import type { DtoCreateClassGroupRequestLevel } from "./dtoCreateClassGroupRequestLevel";
 
 export interface DtoCreateClassGroupRequest {
-  academic_year_id: number;
-  is_mutation?: boolean;
-  level: DtoCreateClassGroupRequestLevel;
-  /** @maxLength 50 */
-  name: string;
-  schedule: DtoClassGroupSchedule;
+	academic_year_id: number;
+	is_mutation?: boolean;
+	level: DtoCreateClassGroupRequestLevel;
+	/** @maxLength 50 */
+	name: string;
+	schedule: DtoClassGroupSchedule;
 }

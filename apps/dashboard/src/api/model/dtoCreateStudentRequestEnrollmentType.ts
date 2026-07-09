@@ -6,10 +6,10 @@
  * OpenAPI spec version: 1.0
  */
 
-export type DtoCreateStudentRequestEnrollmentType = typeof DtoCreateStudentRequestEnrollmentType[keyof typeof DtoCreateStudentRequestEnrollmentType];
-
+export type DtoCreateStudentRequestEnrollmentType =
+	(typeof DtoCreateStudentRequestEnrollmentType)[keyof typeof DtoCreateStudentRequestEnrollmentType];
 
 export const DtoCreateStudentRequestEnrollmentType = {
-  new: 'new',
-  mutation: 'mutation',
+	new: "new",
+	mutation: "mutation",
 } as const;

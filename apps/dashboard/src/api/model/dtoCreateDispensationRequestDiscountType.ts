@@ -6,10 +6,10 @@
  * OpenAPI spec version: 1.0
  */
 
-export type DtoCreateDispensationRequestDiscountType = typeof DtoCreateDispensationRequestDiscountType[keyof typeof DtoCreateDispensationRequestDiscountType];
-
+export type DtoCreateDispensationRequestDiscountType =
+	(typeof DtoCreateDispensationRequestDiscountType)[keyof typeof DtoCreateDispensationRequestDiscountType];
 
 export const DtoCreateDispensationRequestDiscountType = {
-  percent: 'percent',
-  fixed: 'fixed',
+	percent: "percent",
+	fixed: "fixed",
 } as const;

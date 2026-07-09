@@ -7,11 +7,11 @@
  */
 
 export interface InternalModulesKoperasiLaporanProfitLoss {
-  cost_of_goods?: number;
-  end_date?: string;
-  gross_profit?: number;
-  net_profit?: number;
-  operating_expense?: number;
-  revenue?: number;
-  start_date?: string;
+	cost_of_goods?: number;
+	end_date?: string;
+	gross_profit?: number;
+	net_profit?: number;
+	operating_expense?: number;
+	revenue?: number;
+	start_date?: string;
 }

@@ -6,11 +6,11 @@
  * OpenAPI spec version: 1.0
  */
 
-export type DtoCreateClassGroupRequestLevel = typeof DtoCreateClassGroupRequestLevel[keyof typeof DtoCreateClassGroupRequestLevel];
-
+export type DtoCreateClassGroupRequestLevel =
+	(typeof DtoCreateClassGroupRequestLevel)[keyof typeof DtoCreateClassGroupRequestLevel];
 
 export const DtoCreateClassGroupRequestLevel = {
-  mutiara: 'mutiara',
-  intan: 'intan',
-  berlian: 'berlian',
+	mutiara: "mutiara",
+	intan: "intan",
+	berlian: "berlian",
 } as const;

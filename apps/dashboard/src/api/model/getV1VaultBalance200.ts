@@ -5,9 +5,9 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoSuccessResponse } from './dtoSuccessResponse';
-import type { DtoVaultBalanceResponse } from './dtoVaultBalanceResponse';
+import type { DtoSuccessResponse } from "./dtoSuccessResponse";
+import type { DtoVaultBalanceResponse } from "./dtoVaultBalanceResponse";
 
 export type GetV1VaultBalance200 = DtoSuccessResponse & {
-  data?: DtoVaultBalanceResponse;
+	data?: DtoVaultBalanceResponse;
 };

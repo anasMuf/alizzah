@@ -5,14 +5,14 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoInvoiceItemResponse } from './dtoInvoiceItemResponse';
+import type { DtoInvoiceItemResponse } from "./dtoInvoiceItemResponse";
 
 export interface DtoInvoiceDetailForReport {
-  id?: number;
-  items?: DtoInvoiceItemResponse[];
-  paid_amount?: number;
-  period?: string;
-  status?: string;
-  total_amount?: number;
-  type?: string;
+	id?: number;
+	items?: DtoInvoiceItemResponse[];
+	paid_amount?: number;
+	period?: string;
+	status?: string;
+	total_amount?: number;
+	type?: string;
 }

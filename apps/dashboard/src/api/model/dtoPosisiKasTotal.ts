@@ -7,9 +7,9 @@
  */
 
 export interface DtoPosisiKasTotal {
-  penerimaan?: number;
-  pengeluaran?: number;
-  saldo_bulan?: number;
-  saldo_sampai?: number;
-  saldo_sebelum?: number;
+	penerimaan?: number;
+	pengeluaran?: number;
+	saldo_bulan?: number;
+	saldo_sampai?: number;
+	saldo_sebelum?: number;
 }

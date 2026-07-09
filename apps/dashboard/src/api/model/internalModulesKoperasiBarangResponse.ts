@@ -5,19 +5,19 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { InternalModulesKoperasiBarangVariantResponse } from './internalModulesKoperasiBarangVariantResponse';
+import type { InternalModulesKoperasiBarangVariantResponse } from "./internalModulesKoperasiBarangVariantResponse";
 
 export interface InternalModulesKoperasiBarangResponse {
-  category?: string;
-  /** Agregat kompatibilitas (sampai FE varian): harga varian default/pertama &
+	category?: string;
+	/** Agregat kompatibilitas (sampai FE varian): harga varian default/pertama &
   total stok seluruh varian — agar tabel & picker lama tetap berfungsi. */
-  cost_price?: number;
-  id?: number;
-  is_active?: boolean;
-  name?: string;
-  sale_price?: number;
-  stock?: number;
-  unit?: string;
-  variant_count?: number;
-  variants?: InternalModulesKoperasiBarangVariantResponse[];
+	cost_price?: number;
+	id?: number;
+	is_active?: boolean;
+	name?: string;
+	sale_price?: number;
+	stock?: number;
+	unit?: string;
+	variant_count?: number;
+	variants?: InternalModulesKoperasiBarangVariantResponse[];
 }

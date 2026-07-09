@@ -7,8 +7,8 @@
  */
 
 export interface InternalModulesKoperasiLaporanCategoryLine {
-  category?: string;
-  credit?: number;
-  debit?: number;
-  net?: number;
+	category?: string;
+	credit?: number;
+	debit?: number;
+	net?: number;
 }

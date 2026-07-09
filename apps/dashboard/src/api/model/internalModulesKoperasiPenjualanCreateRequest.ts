@@ -5,19 +5,19 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { InternalModulesKoperasiPenjualanCreateItemRequest } from './internalModulesKoperasiPenjualanCreateItemRequest';
-import type { InternalModulesKoperasiPenjualanCreateRequestPaymentMethod } from './internalModulesKoperasiPenjualanCreateRequestPaymentMethod';
+import type { InternalModulesKoperasiPenjualanCreateItemRequest } from "./internalModulesKoperasiPenjualanCreateItemRequest";
+import type { InternalModulesKoperasiPenjualanCreateRequestPaymentMethod } from "./internalModulesKoperasiPenjualanCreateRequestPaymentMethod";
 
 export interface InternalModulesKoperasiPenjualanCreateRequest {
-  academic_year_id: number;
-  /** @maxLength 100 */
-  buyer_name?: string;
-  /** @minimum 0 */
-  initial_payment?: number;
-  /** @minItems 1 */
-  items: InternalModulesKoperasiPenjualanCreateItemRequest[];
-  notes?: string;
-  payment_method?: InternalModulesKoperasiPenjualanCreateRequestPaymentMethod;
-  sale_date: string;
-  student_id?: number;
+	academic_year_id: number;
+	/** @maxLength 100 */
+	buyer_name?: string;
+	/** @minimum 0 */
+	initial_payment?: number;
+	/** @minItems 1 */
+	items: InternalModulesKoperasiPenjualanCreateItemRequest[];
+	notes?: string;
+	payment_method?: InternalModulesKoperasiPenjualanCreateRequestPaymentMethod;
+	sale_date: string;
+	student_id?: number;
 }

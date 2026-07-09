@@ -5,10 +5,10 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoEventError } from './dtoEventError';
+import type { DtoEventError } from "./dtoEventError";
 
 export interface DtoPromotionResult {
-  errors?: DtoEventError[];
-  promoted?: number;
-  retained?: number;
+	errors?: DtoEventError[];
+	promoted?: number;
+	retained?: number;
 }

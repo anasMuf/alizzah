@@ -5,270 +5,427 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import {
-  useQuery
-} from '@tanstack/react-query';
-import type {
-  DataTag,
-  DefinedInitialDataOptions,
-  DefinedUseQueryResult,
-  QueryClient,
-  QueryFunction,
-  QueryKey,
-  UndefinedInitialDataOptions,
-  UseQueryOptions,
-  UseQueryResult
-} from '@tanstack/react-query';
 
 import type {
-  GetV1KoperasiCashBalance200,
-  GetV1KoperasiCashBalanceParams,
-  GetV1KoperasiCashTransactions200,
-  GetV1KoperasiCashTransactionsParams
-} from '../../model';
+	DataTag,
+	DefinedInitialDataOptions,
+	DefinedUseQueryResult,
+	QueryClient,
+	QueryFunction,
+	QueryKey,
+	UndefinedInitialDataOptions,
+	UseQueryOptions,
+	UseQueryResult,
+} from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
-import { customInstance } from '../../mutator/custom-instance';
+import type {
+	GetV1KoperasiCashBalance200,
+	GetV1KoperasiCashBalanceParams,
+	GetV1KoperasiCashTransactions200,
+	GetV1KoperasiCashTransactionsParams,
+} from "../../model";
 
+import { customInstance } from "../../mutator/custom-instance";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
-
-
 export type getV1KoperasiCashBalanceResponse200 = {
-  data: GetV1KoperasiCashBalance200
-  status: 200
-}
-
-export type getV1KoperasiCashBalanceResponseSuccess = (getV1KoperasiCashBalanceResponse200) & {
-  headers: Headers;
+	data: GetV1KoperasiCashBalance200;
+	status: 200;
 };
-;
 
-export type getV1KoperasiCashBalanceResponse = (getV1KoperasiCashBalanceResponseSuccess)
+export type getV1KoperasiCashBalanceResponseSuccess =
+	getV1KoperasiCashBalanceResponse200 & {
+		headers: Headers;
+	};
 
-export const getGetV1KoperasiCashBalanceUrl = (params?: GetV1KoperasiCashBalanceParams,) => {
-  const normalizedParams = new URLSearchParams();
+export type getV1KoperasiCashBalanceResponse =
+	getV1KoperasiCashBalanceResponseSuccess;
 
-  Object.entries(params || {}).forEach(([key, value]) => {
-
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/v1/koperasi/cash/balance?${stringifiedParams}` : `/v1/koperasi/cash/balance`
-}
-
-/**
- * @summary Saldo kas koperasi
- */
-export const getV1KoperasiCashBalance = async (params?: GetV1KoperasiCashBalanceParams, options?: RequestInit): Promise<getV1KoperasiCashBalanceResponse> => {
-
-  return customInstance<getV1KoperasiCashBalanceResponse>(getGetV1KoperasiCashBalanceUrl(params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetV1KoperasiCashBalanceQueryKey = (params?: GetV1KoperasiCashBalanceParams,) => {
-    return [
-    `/v1/koperasi/cash/balance`, ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getGetV1KoperasiCashBalanceQueryOptions = <TData = Awaited<ReturnType<typeof getV1KoperasiCashBalance>>, TError = unknown>(params?: GetV1KoperasiCashBalanceParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiCashBalance>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getGetV1KoperasiCashBalanceUrl = (
+	params?: GetV1KoperasiCashBalanceParams,
 ) => {
+	const normalizedParams = new URLSearchParams();
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(key, value === null ? "null" : value.toString());
+		}
+	});
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1KoperasiCashBalanceQueryKey(params);
+	const stringifiedParams = normalizedParams.toString();
 
+	return stringifiedParams.length > 0
+		? `/v1/koperasi/cash/balance?${stringifiedParams}`
+		: `/v1/koperasi/cash/balance`;
+};
 
+/**
+ * @summary Saldo kas koperasi
+ */
+export const getV1KoperasiCashBalance = async (
+	params?: GetV1KoperasiCashBalanceParams,
+	options?: RequestInit,
+): Promise<getV1KoperasiCashBalanceResponse> => {
+	return customInstance<getV1KoperasiCashBalanceResponse>(
+		getGetV1KoperasiCashBalanceUrl(params),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1KoperasiCashBalance>>> = ({ signal }) => getV1KoperasiCashBalance(params, { signal, ...requestOptions });
+export const getGetV1KoperasiCashBalanceQueryKey = (
+	params?: GetV1KoperasiCashBalanceParams,
+) => {
+	return [`/v1/koperasi/cash/balance`, ...(params ? [params] : [])] as const;
+};
 
+export const getGetV1KoperasiCashBalanceQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1KoperasiCashBalance>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiCashBalanceParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiCashBalance>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
+	const queryKey =
+		queryOptions?.queryKey ?? getGetV1KoperasiCashBalanceQueryKey(params);
 
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1KoperasiCashBalance>>
+	> = ({ signal }) =>
+		getV1KoperasiCashBalance(params, { signal, ...requestOptions });
 
+	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1KoperasiCashBalance>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiCashBalance>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
+export type GetV1KoperasiCashBalanceQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1KoperasiCashBalance>>
+>;
+export type GetV1KoperasiCashBalanceQueryError = unknown;
 
-export type GetV1KoperasiCashBalanceQueryResult = NonNullable<Awaited<ReturnType<typeof getV1KoperasiCashBalance>>>
-export type GetV1KoperasiCashBalanceQueryError = unknown
-
-
-export function useGetV1KoperasiCashBalance<TData = Awaited<ReturnType<typeof getV1KoperasiCashBalance>>, TError = unknown>(
- params: undefined |  GetV1KoperasiCashBalanceParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiCashBalance>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1KoperasiCashBalance>>,
-          TError,
-          Awaited<ReturnType<typeof getV1KoperasiCashBalance>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1KoperasiCashBalance<TData = Awaited<ReturnType<typeof getV1KoperasiCashBalance>>, TError = unknown>(
- params?: GetV1KoperasiCashBalanceParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiCashBalance>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1KoperasiCashBalance>>,
-          TError,
-          Awaited<ReturnType<typeof getV1KoperasiCashBalance>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1KoperasiCashBalance<TData = Awaited<ReturnType<typeof getV1KoperasiCashBalance>>, TError = unknown>(
- params?: GetV1KoperasiCashBalanceParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiCashBalance>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1KoperasiCashBalance<
+	TData = Awaited<ReturnType<typeof getV1KoperasiCashBalance>>,
+	TError = unknown,
+>(
+	params: undefined | GetV1KoperasiCashBalanceParams,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiCashBalance>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1KoperasiCashBalance>>,
+					TError,
+					Awaited<ReturnType<typeof getV1KoperasiCashBalance>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1KoperasiCashBalance<
+	TData = Awaited<ReturnType<typeof getV1KoperasiCashBalance>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiCashBalanceParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiCashBalance>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1KoperasiCashBalance>>,
+					TError,
+					Awaited<ReturnType<typeof getV1KoperasiCashBalance>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1KoperasiCashBalance<
+	TData = Awaited<ReturnType<typeof getV1KoperasiCashBalance>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiCashBalanceParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiCashBalance>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary Saldo kas koperasi
  */
 
-export function useGetV1KoperasiCashBalance<TData = Awaited<ReturnType<typeof getV1KoperasiCashBalance>>, TError = unknown>(
- params?: GetV1KoperasiCashBalanceParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiCashBalance>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1KoperasiCashBalance<
+	TData = Awaited<ReturnType<typeof getV1KoperasiCashBalance>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiCashBalanceParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiCashBalance>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1KoperasiCashBalanceQueryOptions(params, options);
 
-  const queryOptions = getGetV1KoperasiCashBalanceQueryOptions(params,options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
 
 export type getV1KoperasiCashTransactionsResponse200 = {
-  data: GetV1KoperasiCashTransactions200
-  status: 200
-}
-
-export type getV1KoperasiCashTransactionsResponseSuccess = (getV1KoperasiCashTransactionsResponse200) & {
-  headers: Headers;
+	data: GetV1KoperasiCashTransactions200;
+	status: 200;
 };
-;
 
-export type getV1KoperasiCashTransactionsResponse = (getV1KoperasiCashTransactionsResponseSuccess)
+export type getV1KoperasiCashTransactionsResponseSuccess =
+	getV1KoperasiCashTransactionsResponse200 & {
+		headers: Headers;
+	};
 
-export const getGetV1KoperasiCashTransactionsUrl = (params?: GetV1KoperasiCashTransactionsParams,) => {
-  const normalizedParams = new URLSearchParams();
+export type getV1KoperasiCashTransactionsResponse =
+	getV1KoperasiCashTransactionsResponseSuccess;
 
-  Object.entries(params || {}).forEach(([key, value]) => {
-
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/v1/koperasi/cash/transactions?${stringifiedParams}` : `/v1/koperasi/cash/transactions`
-}
-
-/**
- * @summary Jurnal arus kas koperasi
- */
-export const getV1KoperasiCashTransactions = async (params?: GetV1KoperasiCashTransactionsParams, options?: RequestInit): Promise<getV1KoperasiCashTransactionsResponse> => {
-
-  return customInstance<getV1KoperasiCashTransactionsResponse>(getGetV1KoperasiCashTransactionsUrl(params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetV1KoperasiCashTransactionsQueryKey = (params?: GetV1KoperasiCashTransactionsParams,) => {
-    return [
-    `/v1/koperasi/cash/transactions`, ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getGetV1KoperasiCashTransactionsQueryOptions = <TData = Awaited<ReturnType<typeof getV1KoperasiCashTransactions>>, TError = unknown>(params?: GetV1KoperasiCashTransactionsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiCashTransactions>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getGetV1KoperasiCashTransactionsUrl = (
+	params?: GetV1KoperasiCashTransactionsParams,
 ) => {
+	const normalizedParams = new URLSearchParams();
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(key, value === null ? "null" : value.toString());
+		}
+	});
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1KoperasiCashTransactionsQueryKey(params);
+	const stringifiedParams = normalizedParams.toString();
 
+	return stringifiedParams.length > 0
+		? `/v1/koperasi/cash/transactions?${stringifiedParams}`
+		: `/v1/koperasi/cash/transactions`;
+};
 
+/**
+ * @summary Jurnal arus kas koperasi
+ */
+export const getV1KoperasiCashTransactions = async (
+	params?: GetV1KoperasiCashTransactionsParams,
+	options?: RequestInit,
+): Promise<getV1KoperasiCashTransactionsResponse> => {
+	return customInstance<getV1KoperasiCashTransactionsResponse>(
+		getGetV1KoperasiCashTransactionsUrl(params),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1KoperasiCashTransactions>>> = ({ signal }) => getV1KoperasiCashTransactions(params, { signal, ...requestOptions });
+export const getGetV1KoperasiCashTransactionsQueryKey = (
+	params?: GetV1KoperasiCashTransactionsParams,
+) => {
+	return [
+		`/v1/koperasi/cash/transactions`,
+		...(params ? [params] : []),
+	] as const;
+};
 
+export const getGetV1KoperasiCashTransactionsQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1KoperasiCashTransactions>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiCashTransactionsParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiCashTransactions>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
+	const queryKey =
+		queryOptions?.queryKey ?? getGetV1KoperasiCashTransactionsQueryKey(params);
 
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1KoperasiCashTransactions>>
+	> = ({ signal }) =>
+		getV1KoperasiCashTransactions(params, { signal, ...requestOptions });
 
+	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1KoperasiCashTransactions>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiCashTransactions>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
+export type GetV1KoperasiCashTransactionsQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1KoperasiCashTransactions>>
+>;
+export type GetV1KoperasiCashTransactionsQueryError = unknown;
 
-export type GetV1KoperasiCashTransactionsQueryResult = NonNullable<Awaited<ReturnType<typeof getV1KoperasiCashTransactions>>>
-export type GetV1KoperasiCashTransactionsQueryError = unknown
-
-
-export function useGetV1KoperasiCashTransactions<TData = Awaited<ReturnType<typeof getV1KoperasiCashTransactions>>, TError = unknown>(
- params: undefined |  GetV1KoperasiCashTransactionsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiCashTransactions>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1KoperasiCashTransactions>>,
-          TError,
-          Awaited<ReturnType<typeof getV1KoperasiCashTransactions>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1KoperasiCashTransactions<TData = Awaited<ReturnType<typeof getV1KoperasiCashTransactions>>, TError = unknown>(
- params?: GetV1KoperasiCashTransactionsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiCashTransactions>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1KoperasiCashTransactions>>,
-          TError,
-          Awaited<ReturnType<typeof getV1KoperasiCashTransactions>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1KoperasiCashTransactions<TData = Awaited<ReturnType<typeof getV1KoperasiCashTransactions>>, TError = unknown>(
- params?: GetV1KoperasiCashTransactionsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiCashTransactions>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1KoperasiCashTransactions<
+	TData = Awaited<ReturnType<typeof getV1KoperasiCashTransactions>>,
+	TError = unknown,
+>(
+	params: undefined | GetV1KoperasiCashTransactionsParams,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiCashTransactions>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1KoperasiCashTransactions>>,
+					TError,
+					Awaited<ReturnType<typeof getV1KoperasiCashTransactions>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1KoperasiCashTransactions<
+	TData = Awaited<ReturnType<typeof getV1KoperasiCashTransactions>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiCashTransactionsParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiCashTransactions>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1KoperasiCashTransactions>>,
+					TError,
+					Awaited<ReturnType<typeof getV1KoperasiCashTransactions>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1KoperasiCashTransactions<
+	TData = Awaited<ReturnType<typeof getV1KoperasiCashTransactions>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiCashTransactionsParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiCashTransactions>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary Jurnal arus kas koperasi
  */
 
-export function useGetV1KoperasiCashTransactions<TData = Awaited<ReturnType<typeof getV1KoperasiCashTransactions>>, TError = unknown>(
- params?: GetV1KoperasiCashTransactionsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiCashTransactions>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1KoperasiCashTransactions<
+	TData = Awaited<ReturnType<typeof getV1KoperasiCashTransactions>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiCashTransactionsParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiCashTransactions>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1KoperasiCashTransactionsQueryOptions(
+		params,
+		options,
+	);
 
-  const queryOptions = getGetV1KoperasiCashTransactionsQueryOptions(params,options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
-

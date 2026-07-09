@@ -7,10 +7,10 @@
  */
 
 export interface InternalModulesKoperasiPinjamanSummaryItem {
-  loan_count?: number;
-  member_id?: number;
-  member_name?: string;
-  remaining?: number;
-  total_paid?: number;
-  total_principal?: number;
+	loan_count?: number;
+	member_id?: number;
+	member_name?: string;
+	remaining?: number;
+	total_paid?: number;
+	total_principal?: number;
 }

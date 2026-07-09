@@ -7,7 +7,7 @@
  */
 
 export interface DtoCreateFacilityRequest {
-  description?: string;
-  /** @maxLength 100 */
-  name: string;
+	description?: string;
+	/** @maxLength 100 */
+	name: string;
 }

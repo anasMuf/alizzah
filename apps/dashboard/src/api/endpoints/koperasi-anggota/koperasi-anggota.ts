@@ -5,955 +5,1432 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import {
-  useMutation,
-  useQuery
-} from '@tanstack/react-query';
-import type {
-  DataTag,
-  DefinedInitialDataOptions,
-  DefinedUseQueryResult,
-  MutationFunction,
-  QueryClient,
-  QueryFunction,
-  QueryKey,
-  UndefinedInitialDataOptions,
-  UseMutationOptions,
-  UseMutationResult,
-  UseQueryOptions,
-  UseQueryResult
-} from '@tanstack/react-query';
 
 import type {
-  DtoSuccessResponse,
-  GetV1KoperasiEmployees200,
-  GetV1KoperasiEmployeesAvailable200,
-  GetV1KoperasiEmployeesAvailableParams,
-  GetV1KoperasiEmployeesParams,
-  GetV1KoperasiMembers200,
-  GetV1KoperasiMembersId200,
-  GetV1KoperasiMembersIdDetail200,
-  GetV1KoperasiMembersParams,
-  InternalModulesKoperasiAnggotaBulkCreateRequest,
-  InternalModulesKoperasiAnggotaCreateRequest,
-  PostV1KoperasiMembers201,
-  PostV1KoperasiMembersBulk201,
-  PutV1KoperasiMembersId200
-} from '../../model';
+	DataTag,
+	DefinedInitialDataOptions,
+	DefinedUseQueryResult,
+	MutationFunction,
+	QueryClient,
+	QueryFunction,
+	QueryKey,
+	UndefinedInitialDataOptions,
+	UseMutationOptions,
+	UseMutationResult,
+	UseQueryOptions,
+	UseQueryResult,
+} from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
-import { customInstance } from '../../mutator/custom-instance';
+import type {
+	DtoSuccessResponse,
+	GetV1KoperasiEmployees200,
+	GetV1KoperasiEmployeesAvailable200,
+	GetV1KoperasiEmployeesAvailableParams,
+	GetV1KoperasiEmployeesParams,
+	GetV1KoperasiMembers200,
+	GetV1KoperasiMembersId200,
+	GetV1KoperasiMembersIdDetail200,
+	GetV1KoperasiMembersParams,
+	InternalModulesKoperasiAnggotaBulkCreateRequest,
+	InternalModulesKoperasiAnggotaCreateRequest,
+	PostV1KoperasiMembers201,
+	PostV1KoperasiMembersBulk201,
+	PutV1KoperasiMembersId200,
+} from "../../model";
 
+import { customInstance } from "../../mutator/custom-instance";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
-
-
 export type getV1KoperasiEmployeesResponse200 = {
-  data: GetV1KoperasiEmployees200
-  status: 200
-}
-
-export type getV1KoperasiEmployeesResponseSuccess = (getV1KoperasiEmployeesResponse200) & {
-  headers: Headers;
+	data: GetV1KoperasiEmployees200;
+	status: 200;
 };
-;
 
-export type getV1KoperasiEmployeesResponse = (getV1KoperasiEmployeesResponseSuccess)
+export type getV1KoperasiEmployeesResponseSuccess =
+	getV1KoperasiEmployeesResponse200 & {
+		headers: Headers;
+	};
 
-export const getGetV1KoperasiEmployeesUrl = (params?: GetV1KoperasiEmployeesParams,) => {
-  const normalizedParams = new URLSearchParams();
+export type getV1KoperasiEmployeesResponse =
+	getV1KoperasiEmployeesResponseSuccess;
 
-  Object.entries(params || {}).forEach(([key, value]) => {
-
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/v1/koperasi/employees?${stringifiedParams}` : `/v1/koperasi/employees`
-}
-
-/**
- * @summary List data referensi pegawai
- */
-export const getV1KoperasiEmployees = async (params?: GetV1KoperasiEmployeesParams, options?: RequestInit): Promise<getV1KoperasiEmployeesResponse> => {
-
-  return customInstance<getV1KoperasiEmployeesResponse>(getGetV1KoperasiEmployeesUrl(params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetV1KoperasiEmployeesQueryKey = (params?: GetV1KoperasiEmployeesParams,) => {
-    return [
-    `/v1/koperasi/employees`, ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getGetV1KoperasiEmployeesQueryOptions = <TData = Awaited<ReturnType<typeof getV1KoperasiEmployees>>, TError = unknown>(params?: GetV1KoperasiEmployeesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiEmployees>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getGetV1KoperasiEmployeesUrl = (
+	params?: GetV1KoperasiEmployeesParams,
 ) => {
+	const normalizedParams = new URLSearchParams();
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(key, value === null ? "null" : value.toString());
+		}
+	});
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1KoperasiEmployeesQueryKey(params);
+	const stringifiedParams = normalizedParams.toString();
 
+	return stringifiedParams.length > 0
+		? `/v1/koperasi/employees?${stringifiedParams}`
+		: `/v1/koperasi/employees`;
+};
 
+/**
+ * @summary List data referensi pegawai
+ */
+export const getV1KoperasiEmployees = async (
+	params?: GetV1KoperasiEmployeesParams,
+	options?: RequestInit,
+): Promise<getV1KoperasiEmployeesResponse> => {
+	return customInstance<getV1KoperasiEmployeesResponse>(
+		getGetV1KoperasiEmployeesUrl(params),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1KoperasiEmployees>>> = ({ signal }) => getV1KoperasiEmployees(params, { signal, ...requestOptions });
+export const getGetV1KoperasiEmployeesQueryKey = (
+	params?: GetV1KoperasiEmployeesParams,
+) => {
+	return [`/v1/koperasi/employees`, ...(params ? [params] : [])] as const;
+};
 
+export const getGetV1KoperasiEmployeesQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1KoperasiEmployees>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiEmployeesParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiEmployees>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
+	const queryKey =
+		queryOptions?.queryKey ?? getGetV1KoperasiEmployeesQueryKey(params);
 
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1KoperasiEmployees>>
+	> = ({ signal }) =>
+		getV1KoperasiEmployees(params, { signal, ...requestOptions });
 
+	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1KoperasiEmployees>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiEmployees>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
+export type GetV1KoperasiEmployeesQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1KoperasiEmployees>>
+>;
+export type GetV1KoperasiEmployeesQueryError = unknown;
 
-export type GetV1KoperasiEmployeesQueryResult = NonNullable<Awaited<ReturnType<typeof getV1KoperasiEmployees>>>
-export type GetV1KoperasiEmployeesQueryError = unknown
-
-
-export function useGetV1KoperasiEmployees<TData = Awaited<ReturnType<typeof getV1KoperasiEmployees>>, TError = unknown>(
- params: undefined |  GetV1KoperasiEmployeesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiEmployees>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1KoperasiEmployees>>,
-          TError,
-          Awaited<ReturnType<typeof getV1KoperasiEmployees>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1KoperasiEmployees<TData = Awaited<ReturnType<typeof getV1KoperasiEmployees>>, TError = unknown>(
- params?: GetV1KoperasiEmployeesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiEmployees>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1KoperasiEmployees>>,
-          TError,
-          Awaited<ReturnType<typeof getV1KoperasiEmployees>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1KoperasiEmployees<TData = Awaited<ReturnType<typeof getV1KoperasiEmployees>>, TError = unknown>(
- params?: GetV1KoperasiEmployeesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiEmployees>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1KoperasiEmployees<
+	TData = Awaited<ReturnType<typeof getV1KoperasiEmployees>>,
+	TError = unknown,
+>(
+	params: undefined | GetV1KoperasiEmployeesParams,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiEmployees>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1KoperasiEmployees>>,
+					TError,
+					Awaited<ReturnType<typeof getV1KoperasiEmployees>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1KoperasiEmployees<
+	TData = Awaited<ReturnType<typeof getV1KoperasiEmployees>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiEmployeesParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiEmployees>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1KoperasiEmployees>>,
+					TError,
+					Awaited<ReturnType<typeof getV1KoperasiEmployees>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1KoperasiEmployees<
+	TData = Awaited<ReturnType<typeof getV1KoperasiEmployees>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiEmployeesParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiEmployees>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary List data referensi pegawai
  */
 
-export function useGetV1KoperasiEmployees<TData = Awaited<ReturnType<typeof getV1KoperasiEmployees>>, TError = unknown>(
- params?: GetV1KoperasiEmployeesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiEmployees>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1KoperasiEmployees<
+	TData = Awaited<ReturnType<typeof getV1KoperasiEmployees>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiEmployeesParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiEmployees>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1KoperasiEmployeesQueryOptions(params, options);
 
-  const queryOptions = getGetV1KoperasiEmployeesQueryOptions(params,options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
 
 export type getV1KoperasiEmployeesAvailableResponse200 = {
-  data: GetV1KoperasiEmployeesAvailable200
-  status: 200
-}
-
-export type getV1KoperasiEmployeesAvailableResponseSuccess = (getV1KoperasiEmployeesAvailableResponse200) & {
-  headers: Headers;
+	data: GetV1KoperasiEmployeesAvailable200;
+	status: 200;
 };
-;
 
-export type getV1KoperasiEmployeesAvailableResponse = (getV1KoperasiEmployeesAvailableResponseSuccess)
+export type getV1KoperasiEmployeesAvailableResponseSuccess =
+	getV1KoperasiEmployeesAvailableResponse200 & {
+		headers: Headers;
+	};
 
-export const getGetV1KoperasiEmployeesAvailableUrl = (params?: GetV1KoperasiEmployeesAvailableParams,) => {
-  const normalizedParams = new URLSearchParams();
+export type getV1KoperasiEmployeesAvailableResponse =
+	getV1KoperasiEmployeesAvailableResponseSuccess;
 
-  Object.entries(params || {}).forEach(([key, value]) => {
-
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/v1/koperasi/employees/available?${stringifiedParams}` : `/v1/koperasi/employees/available`
-}
-
-/**
- * @summary List pegawai yang belum jadi anggota
- */
-export const getV1KoperasiEmployeesAvailable = async (params?: GetV1KoperasiEmployeesAvailableParams, options?: RequestInit): Promise<getV1KoperasiEmployeesAvailableResponse> => {
-
-  return customInstance<getV1KoperasiEmployeesAvailableResponse>(getGetV1KoperasiEmployeesAvailableUrl(params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetV1KoperasiEmployeesAvailableQueryKey = (params?: GetV1KoperasiEmployeesAvailableParams,) => {
-    return [
-    `/v1/koperasi/employees/available`, ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getGetV1KoperasiEmployeesAvailableQueryOptions = <TData = Awaited<ReturnType<typeof getV1KoperasiEmployeesAvailable>>, TError = unknown>(params?: GetV1KoperasiEmployeesAvailableParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiEmployeesAvailable>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getGetV1KoperasiEmployeesAvailableUrl = (
+	params?: GetV1KoperasiEmployeesAvailableParams,
 ) => {
+	const normalizedParams = new URLSearchParams();
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(key, value === null ? "null" : value.toString());
+		}
+	});
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1KoperasiEmployeesAvailableQueryKey(params);
+	const stringifiedParams = normalizedParams.toString();
 
+	return stringifiedParams.length > 0
+		? `/v1/koperasi/employees/available?${stringifiedParams}`
+		: `/v1/koperasi/employees/available`;
+};
 
+/**
+ * @summary List pegawai yang belum jadi anggota
+ */
+export const getV1KoperasiEmployeesAvailable = async (
+	params?: GetV1KoperasiEmployeesAvailableParams,
+	options?: RequestInit,
+): Promise<getV1KoperasiEmployeesAvailableResponse> => {
+	return customInstance<getV1KoperasiEmployeesAvailableResponse>(
+		getGetV1KoperasiEmployeesAvailableUrl(params),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1KoperasiEmployeesAvailable>>> = ({ signal }) => getV1KoperasiEmployeesAvailable(params, { signal, ...requestOptions });
+export const getGetV1KoperasiEmployeesAvailableQueryKey = (
+	params?: GetV1KoperasiEmployeesAvailableParams,
+) => {
+	return [
+		`/v1/koperasi/employees/available`,
+		...(params ? [params] : []),
+	] as const;
+};
 
+export const getGetV1KoperasiEmployeesAvailableQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1KoperasiEmployeesAvailable>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiEmployeesAvailableParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiEmployeesAvailable>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
+	const queryKey =
+		queryOptions?.queryKey ??
+		getGetV1KoperasiEmployeesAvailableQueryKey(params);
 
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1KoperasiEmployeesAvailable>>
+	> = ({ signal }) =>
+		getV1KoperasiEmployeesAvailable(params, { signal, ...requestOptions });
 
+	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1KoperasiEmployeesAvailable>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiEmployeesAvailable>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
+export type GetV1KoperasiEmployeesAvailableQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1KoperasiEmployeesAvailable>>
+>;
+export type GetV1KoperasiEmployeesAvailableQueryError = unknown;
 
-export type GetV1KoperasiEmployeesAvailableQueryResult = NonNullable<Awaited<ReturnType<typeof getV1KoperasiEmployeesAvailable>>>
-export type GetV1KoperasiEmployeesAvailableQueryError = unknown
-
-
-export function useGetV1KoperasiEmployeesAvailable<TData = Awaited<ReturnType<typeof getV1KoperasiEmployeesAvailable>>, TError = unknown>(
- params: undefined |  GetV1KoperasiEmployeesAvailableParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiEmployeesAvailable>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1KoperasiEmployeesAvailable>>,
-          TError,
-          Awaited<ReturnType<typeof getV1KoperasiEmployeesAvailable>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1KoperasiEmployeesAvailable<TData = Awaited<ReturnType<typeof getV1KoperasiEmployeesAvailable>>, TError = unknown>(
- params?: GetV1KoperasiEmployeesAvailableParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiEmployeesAvailable>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1KoperasiEmployeesAvailable>>,
-          TError,
-          Awaited<ReturnType<typeof getV1KoperasiEmployeesAvailable>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1KoperasiEmployeesAvailable<TData = Awaited<ReturnType<typeof getV1KoperasiEmployeesAvailable>>, TError = unknown>(
- params?: GetV1KoperasiEmployeesAvailableParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiEmployeesAvailable>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1KoperasiEmployeesAvailable<
+	TData = Awaited<ReturnType<typeof getV1KoperasiEmployeesAvailable>>,
+	TError = unknown,
+>(
+	params: undefined | GetV1KoperasiEmployeesAvailableParams,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiEmployeesAvailable>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1KoperasiEmployeesAvailable>>,
+					TError,
+					Awaited<ReturnType<typeof getV1KoperasiEmployeesAvailable>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1KoperasiEmployeesAvailable<
+	TData = Awaited<ReturnType<typeof getV1KoperasiEmployeesAvailable>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiEmployeesAvailableParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiEmployeesAvailable>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1KoperasiEmployeesAvailable>>,
+					TError,
+					Awaited<ReturnType<typeof getV1KoperasiEmployeesAvailable>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1KoperasiEmployeesAvailable<
+	TData = Awaited<ReturnType<typeof getV1KoperasiEmployeesAvailable>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiEmployeesAvailableParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiEmployeesAvailable>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary List pegawai yang belum jadi anggota
  */
 
-export function useGetV1KoperasiEmployeesAvailable<TData = Awaited<ReturnType<typeof getV1KoperasiEmployeesAvailable>>, TError = unknown>(
- params?: GetV1KoperasiEmployeesAvailableParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiEmployeesAvailable>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1KoperasiEmployeesAvailable<
+	TData = Awaited<ReturnType<typeof getV1KoperasiEmployeesAvailable>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiEmployeesAvailableParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiEmployeesAvailable>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1KoperasiEmployeesAvailableQueryOptions(
+		params,
+		options,
+	);
 
-  const queryOptions = getGetV1KoperasiEmployeesAvailableQueryOptions(params,options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
 
 export type getV1KoperasiMembersResponse200 = {
-  data: GetV1KoperasiMembers200
-  status: 200
-}
-
-export type getV1KoperasiMembersResponseSuccess = (getV1KoperasiMembersResponse200) & {
-  headers: Headers;
+	data: GetV1KoperasiMembers200;
+	status: 200;
 };
-;
 
-export type getV1KoperasiMembersResponse = (getV1KoperasiMembersResponseSuccess)
+export type getV1KoperasiMembersResponseSuccess =
+	getV1KoperasiMembersResponse200 & {
+		headers: Headers;
+	};
 
-export const getGetV1KoperasiMembersUrl = (params?: GetV1KoperasiMembersParams,) => {
-  const normalizedParams = new URLSearchParams();
+export type getV1KoperasiMembersResponse = getV1KoperasiMembersResponseSuccess;
 
-  Object.entries(params || {}).forEach(([key, value]) => {
-
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/v1/koperasi/members?${stringifiedParams}` : `/v1/koperasi/members`
-}
-
-/**
- * @summary List anggota koperasi
- */
-export const getV1KoperasiMembers = async (params?: GetV1KoperasiMembersParams, options?: RequestInit): Promise<getV1KoperasiMembersResponse> => {
-
-  return customInstance<getV1KoperasiMembersResponse>(getGetV1KoperasiMembersUrl(params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetV1KoperasiMembersQueryKey = (params?: GetV1KoperasiMembersParams,) => {
-    return [
-    `/v1/koperasi/members`, ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getGetV1KoperasiMembersQueryOptions = <TData = Awaited<ReturnType<typeof getV1KoperasiMembers>>, TError = unknown>(params?: GetV1KoperasiMembersParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiMembers>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getGetV1KoperasiMembersUrl = (
+	params?: GetV1KoperasiMembersParams,
 ) => {
+	const normalizedParams = new URLSearchParams();
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(key, value === null ? "null" : value.toString());
+		}
+	});
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1KoperasiMembersQueryKey(params);
+	const stringifiedParams = normalizedParams.toString();
 
+	return stringifiedParams.length > 0
+		? `/v1/koperasi/members?${stringifiedParams}`
+		: `/v1/koperasi/members`;
+};
 
+/**
+ * @summary List anggota koperasi
+ */
+export const getV1KoperasiMembers = async (
+	params?: GetV1KoperasiMembersParams,
+	options?: RequestInit,
+): Promise<getV1KoperasiMembersResponse> => {
+	return customInstance<getV1KoperasiMembersResponse>(
+		getGetV1KoperasiMembersUrl(params),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1KoperasiMembers>>> = ({ signal }) => getV1KoperasiMembers(params, { signal, ...requestOptions });
+export const getGetV1KoperasiMembersQueryKey = (
+	params?: GetV1KoperasiMembersParams,
+) => {
+	return [`/v1/koperasi/members`, ...(params ? [params] : [])] as const;
+};
 
+export const getGetV1KoperasiMembersQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1KoperasiMembers>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiMembersParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiMembers>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
+	const queryKey =
+		queryOptions?.queryKey ?? getGetV1KoperasiMembersQueryKey(params);
 
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1KoperasiMembers>>
+	> = ({ signal }) =>
+		getV1KoperasiMembers(params, { signal, ...requestOptions });
 
+	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1KoperasiMembers>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiMembers>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
+export type GetV1KoperasiMembersQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1KoperasiMembers>>
+>;
+export type GetV1KoperasiMembersQueryError = unknown;
 
-export type GetV1KoperasiMembersQueryResult = NonNullable<Awaited<ReturnType<typeof getV1KoperasiMembers>>>
-export type GetV1KoperasiMembersQueryError = unknown
-
-
-export function useGetV1KoperasiMembers<TData = Awaited<ReturnType<typeof getV1KoperasiMembers>>, TError = unknown>(
- params: undefined |  GetV1KoperasiMembersParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiMembers>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1KoperasiMembers>>,
-          TError,
-          Awaited<ReturnType<typeof getV1KoperasiMembers>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1KoperasiMembers<TData = Awaited<ReturnType<typeof getV1KoperasiMembers>>, TError = unknown>(
- params?: GetV1KoperasiMembersParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiMembers>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1KoperasiMembers>>,
-          TError,
-          Awaited<ReturnType<typeof getV1KoperasiMembers>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1KoperasiMembers<TData = Awaited<ReturnType<typeof getV1KoperasiMembers>>, TError = unknown>(
- params?: GetV1KoperasiMembersParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiMembers>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1KoperasiMembers<
+	TData = Awaited<ReturnType<typeof getV1KoperasiMembers>>,
+	TError = unknown,
+>(
+	params: undefined | GetV1KoperasiMembersParams,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiMembers>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1KoperasiMembers>>,
+					TError,
+					Awaited<ReturnType<typeof getV1KoperasiMembers>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1KoperasiMembers<
+	TData = Awaited<ReturnType<typeof getV1KoperasiMembers>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiMembersParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiMembers>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1KoperasiMembers>>,
+					TError,
+					Awaited<ReturnType<typeof getV1KoperasiMembers>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1KoperasiMembers<
+	TData = Awaited<ReturnType<typeof getV1KoperasiMembers>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiMembersParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiMembers>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary List anggota koperasi
  */
 
-export function useGetV1KoperasiMembers<TData = Awaited<ReturnType<typeof getV1KoperasiMembers>>, TError = unknown>(
- params?: GetV1KoperasiMembersParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiMembers>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1KoperasiMembers<
+	TData = Awaited<ReturnType<typeof getV1KoperasiMembers>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiMembersParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiMembers>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1KoperasiMembersQueryOptions(params, options);
 
-  const queryOptions = getGetV1KoperasiMembersQueryOptions(params,options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
 
 export type postV1KoperasiMembersResponse201 = {
-  data: PostV1KoperasiMembers201
-  status: 201
-}
-
-export type postV1KoperasiMembersResponseSuccess = (postV1KoperasiMembersResponse201) & {
-  headers: Headers;
+	data: PostV1KoperasiMembers201;
+	status: 201;
 };
-;
 
-export type postV1KoperasiMembersResponse = (postV1KoperasiMembersResponseSuccess)
+export type postV1KoperasiMembersResponseSuccess =
+	postV1KoperasiMembersResponse201 & {
+		headers: Headers;
+	};
+
+export type postV1KoperasiMembersResponse =
+	postV1KoperasiMembersResponseSuccess;
 
 export const getPostV1KoperasiMembersUrl = () => {
-
-
-
-
-  return `/v1/koperasi/members`
-}
+	return `/v1/koperasi/members`;
+};
 
 /**
  * @summary Tambah anggota
  */
-export const postV1KoperasiMembers = async (internalModulesKoperasiAnggotaCreateRequest: InternalModulesKoperasiAnggotaCreateRequest, options?: RequestInit): Promise<postV1KoperasiMembersResponse> => {
+export const postV1KoperasiMembers = async (
+	internalModulesKoperasiAnggotaCreateRequest: InternalModulesKoperasiAnggotaCreateRequest,
+	options?: RequestInit,
+): Promise<postV1KoperasiMembersResponse> => {
+	return customInstance<postV1KoperasiMembersResponse>(
+		getPostV1KoperasiMembersUrl(),
+		{
+			...options,
+			method: "POST",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(internalModulesKoperasiAnggotaCreateRequest),
+		},
+	);
+};
 
-  return customInstance<postV1KoperasiMembersResponse>(getPostV1KoperasiMembersUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      internalModulesKoperasiAnggotaCreateRequest,)
-  }
-);}
+export const getPostV1KoperasiMembersMutationOptions = <
+	TError = unknown,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1KoperasiMembers>>,
+		TError,
+		{ data: InternalModulesKoperasiAnggotaCreateRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1KoperasiMembers>>,
+	TError,
+	{ data: InternalModulesKoperasiAnggotaCreateRequest },
+	TContext
+> => {
+	const mutationKey = ["postV1KoperasiMembers"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1KoperasiMembers>>,
+		{ data: InternalModulesKoperasiAnggotaCreateRequest }
+	> = (props) => {
+		const { data } = props ?? {};
 
+		return postV1KoperasiMembers(data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-export const getPostV1KoperasiMembersMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1KoperasiMembers>>, TError,{data: InternalModulesKoperasiAnggotaCreateRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1KoperasiMembers>>, TError,{data: InternalModulesKoperasiAnggotaCreateRequest}, TContext> => {
+export type PostV1KoperasiMembersMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1KoperasiMembers>>
+>;
+export type PostV1KoperasiMembersMutationBody =
+	InternalModulesKoperasiAnggotaCreateRequest;
+export type PostV1KoperasiMembersMutationError = unknown;
 
-const mutationKey = ['postV1KoperasiMembers'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1KoperasiMembers>>, {data: InternalModulesKoperasiAnggotaCreateRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  postV1KoperasiMembers(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1KoperasiMembersMutationResult = NonNullable<Awaited<ReturnType<typeof postV1KoperasiMembers>>>
-    export type PostV1KoperasiMembersMutationBody = InternalModulesKoperasiAnggotaCreateRequest
-    export type PostV1KoperasiMembersMutationError = unknown
-
-    /**
+/**
  * @summary Tambah anggota
  */
-export const usePostV1KoperasiMembers = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1KoperasiMembers>>, TError,{data: InternalModulesKoperasiAnggotaCreateRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postV1KoperasiMembers>>,
-        TError,
-        {data: InternalModulesKoperasiAnggotaCreateRequest},
-        TContext
-      > => {
-      return useMutation(getPostV1KoperasiMembersMutationOptions(options), queryClient);
-    }
-    export type postV1KoperasiMembersBulkResponse201 = {
-  data: PostV1KoperasiMembersBulk201
-  status: 201
-}
-
-export type postV1KoperasiMembersBulkResponseSuccess = (postV1KoperasiMembersBulkResponse201) & {
-  headers: Headers;
+export const usePostV1KoperasiMembers = <TError = unknown, TContext = unknown>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1KoperasiMembers>>,
+			TError,
+			{ data: InternalModulesKoperasiAnggotaCreateRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1KoperasiMembers>>,
+	TError,
+	{ data: InternalModulesKoperasiAnggotaCreateRequest },
+	TContext
+> => {
+	return useMutation(
+		getPostV1KoperasiMembersMutationOptions(options),
+		queryClient,
+	);
 };
-;
+export type postV1KoperasiMembersBulkResponse201 = {
+	data: PostV1KoperasiMembersBulk201;
+	status: 201;
+};
 
-export type postV1KoperasiMembersBulkResponse = (postV1KoperasiMembersBulkResponseSuccess)
+export type postV1KoperasiMembersBulkResponseSuccess =
+	postV1KoperasiMembersBulkResponse201 & {
+		headers: Headers;
+	};
+
+export type postV1KoperasiMembersBulkResponse =
+	postV1KoperasiMembersBulkResponseSuccess;
 
 export const getPostV1KoperasiMembersBulkUrl = () => {
-
-
-
-
-  return `/v1/koperasi/members/bulk`
-}
-
-/**
- * @summary Tambah anggota massal
- */
-export const postV1KoperasiMembersBulk = async (internalModulesKoperasiAnggotaBulkCreateRequest: InternalModulesKoperasiAnggotaBulkCreateRequest, options?: RequestInit): Promise<postV1KoperasiMembersBulkResponse> => {
-
-  return customInstance<postV1KoperasiMembersBulkResponse>(getPostV1KoperasiMembersBulkUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      internalModulesKoperasiAnggotaBulkCreateRequest,)
-  }
-);}
-
-
-
-
-export const getPostV1KoperasiMembersBulkMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1KoperasiMembersBulk>>, TError,{data: InternalModulesKoperasiAnggotaBulkCreateRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1KoperasiMembersBulk>>, TError,{data: InternalModulesKoperasiAnggotaBulkCreateRequest}, TContext> => {
-
-const mutationKey = ['postV1KoperasiMembersBulk'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1KoperasiMembersBulk>>, {data: InternalModulesKoperasiAnggotaBulkCreateRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  postV1KoperasiMembersBulk(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1KoperasiMembersBulkMutationResult = NonNullable<Awaited<ReturnType<typeof postV1KoperasiMembersBulk>>>
-    export type PostV1KoperasiMembersBulkMutationBody = InternalModulesKoperasiAnggotaBulkCreateRequest
-    export type PostV1KoperasiMembersBulkMutationError = unknown
-
-    /**
- * @summary Tambah anggota massal
- */
-export const usePostV1KoperasiMembersBulk = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1KoperasiMembersBulk>>, TError,{data: InternalModulesKoperasiAnggotaBulkCreateRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postV1KoperasiMembersBulk>>,
-        TError,
-        {data: InternalModulesKoperasiAnggotaBulkCreateRequest},
-        TContext
-      > => {
-      return useMutation(getPostV1KoperasiMembersBulkMutationOptions(options), queryClient);
-    }
-    export type getV1KoperasiMembersIdResponse200 = {
-  data: GetV1KoperasiMembersId200
-  status: 200
-}
-
-export type getV1KoperasiMembersIdResponseSuccess = (getV1KoperasiMembersIdResponse200) & {
-  headers: Headers;
+	return `/v1/koperasi/members/bulk`;
 };
-;
 
-export type getV1KoperasiMembersIdResponse = (getV1KoperasiMembersIdResponseSuccess)
+/**
+ * @summary Tambah anggota massal
+ */
+export const postV1KoperasiMembersBulk = async (
+	internalModulesKoperasiAnggotaBulkCreateRequest: InternalModulesKoperasiAnggotaBulkCreateRequest,
+	options?: RequestInit,
+): Promise<postV1KoperasiMembersBulkResponse> => {
+	return customInstance<postV1KoperasiMembersBulkResponse>(
+		getPostV1KoperasiMembersBulkUrl(),
+		{
+			...options,
+			method: "POST",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(internalModulesKoperasiAnggotaBulkCreateRequest),
+		},
+	);
+};
 
-export const getGetV1KoperasiMembersIdUrl = (id: number,) => {
+export const getPostV1KoperasiMembersBulkMutationOptions = <
+	TError = unknown,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1KoperasiMembersBulk>>,
+		TError,
+		{ data: InternalModulesKoperasiAnggotaBulkCreateRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1KoperasiMembersBulk>>,
+	TError,
+	{ data: InternalModulesKoperasiAnggotaBulkCreateRequest },
+	TContext
+> => {
+	const mutationKey = ["postV1KoperasiMembersBulk"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1KoperasiMembersBulk>>,
+		{ data: InternalModulesKoperasiAnggotaBulkCreateRequest }
+	> = (props) => {
+		const { data } = props ?? {};
 
+		return postV1KoperasiMembersBulk(data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-  return `/v1/koperasi/members/${id}`
-}
+export type PostV1KoperasiMembersBulkMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1KoperasiMembersBulk>>
+>;
+export type PostV1KoperasiMembersBulkMutationBody =
+	InternalModulesKoperasiAnggotaBulkCreateRequest;
+export type PostV1KoperasiMembersBulkMutationError = unknown;
+
+/**
+ * @summary Tambah anggota massal
+ */
+export const usePostV1KoperasiMembersBulk = <
+	TError = unknown,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1KoperasiMembersBulk>>,
+			TError,
+			{ data: InternalModulesKoperasiAnggotaBulkCreateRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1KoperasiMembersBulk>>,
+	TError,
+	{ data: InternalModulesKoperasiAnggotaBulkCreateRequest },
+	TContext
+> => {
+	return useMutation(
+		getPostV1KoperasiMembersBulkMutationOptions(options),
+		queryClient,
+	);
+};
+export type getV1KoperasiMembersIdResponse200 = {
+	data: GetV1KoperasiMembersId200;
+	status: 200;
+};
+
+export type getV1KoperasiMembersIdResponseSuccess =
+	getV1KoperasiMembersIdResponse200 & {
+		headers: Headers;
+	};
+
+export type getV1KoperasiMembersIdResponse =
+	getV1KoperasiMembersIdResponseSuccess;
+
+export const getGetV1KoperasiMembersIdUrl = (id: number) => {
+	return `/v1/koperasi/members/${id}`;
+};
 
 /**
  * @summary Detail anggota
  */
-export const getV1KoperasiMembersId = async (id: number, options?: RequestInit): Promise<getV1KoperasiMembersIdResponse> => {
+export const getV1KoperasiMembersId = async (
+	id: number,
+	options?: RequestInit,
+): Promise<getV1KoperasiMembersIdResponse> => {
+	return customInstance<getV1KoperasiMembersIdResponse>(
+		getGetV1KoperasiMembersIdUrl(id),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
 
-  return customInstance<getV1KoperasiMembersIdResponse>(getGetV1KoperasiMembersIdUrl(id),
-  {
-    ...options,
-    method: 'GET'
+export const getGetV1KoperasiMembersIdQueryKey = (id: number) => {
+	return [`/v1/koperasi/members/${id}`] as const;
+};
 
-
-  }
-);}
-
-
-
-
-
-export const getGetV1KoperasiMembersIdQueryKey = (id: number,) => {
-    return [
-    `/v1/koperasi/members/${id}`
-    ] as const;
-    }
-
-
-export const getGetV1KoperasiMembersIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1KoperasiMembersId>>, TError = unknown>(id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiMembersId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getGetV1KoperasiMembersIdQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1KoperasiMembersId>>,
+	TError = unknown,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiMembersId>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
 ) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+	const queryKey =
+		queryOptions?.queryKey ?? getGetV1KoperasiMembersIdQueryKey(id);
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1KoperasiMembersIdQueryKey(id);
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1KoperasiMembersId>>
+	> = ({ signal }) => getV1KoperasiMembersId(id, { signal, ...requestOptions });
 
+	return {
+		queryKey,
+		queryFn,
+		enabled: !!id,
+		...queryOptions,
+	} as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1KoperasiMembersId>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
+export type GetV1KoperasiMembersIdQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1KoperasiMembersId>>
+>;
+export type GetV1KoperasiMembersIdQueryError = unknown;
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1KoperasiMembersId>>> = ({ signal }) => getV1KoperasiMembersId(id, { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiMembersId>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetV1KoperasiMembersIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1KoperasiMembersId>>>
-export type GetV1KoperasiMembersIdQueryError = unknown
-
-
-export function useGetV1KoperasiMembersId<TData = Awaited<ReturnType<typeof getV1KoperasiMembersId>>, TError = unknown>(
- id: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiMembersId>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1KoperasiMembersId>>,
-          TError,
-          Awaited<ReturnType<typeof getV1KoperasiMembersId>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1KoperasiMembersId<TData = Awaited<ReturnType<typeof getV1KoperasiMembersId>>, TError = unknown>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiMembersId>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1KoperasiMembersId>>,
-          TError,
-          Awaited<ReturnType<typeof getV1KoperasiMembersId>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1KoperasiMembersId<TData = Awaited<ReturnType<typeof getV1KoperasiMembersId>>, TError = unknown>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiMembersId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1KoperasiMembersId<
+	TData = Awaited<ReturnType<typeof getV1KoperasiMembersId>>,
+	TError = unknown,
+>(
+	id: number,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiMembersId>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1KoperasiMembersId>>,
+					TError,
+					Awaited<ReturnType<typeof getV1KoperasiMembersId>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1KoperasiMembersId<
+	TData = Awaited<ReturnType<typeof getV1KoperasiMembersId>>,
+	TError = unknown,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiMembersId>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1KoperasiMembersId>>,
+					TError,
+					Awaited<ReturnType<typeof getV1KoperasiMembersId>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1KoperasiMembersId<
+	TData = Awaited<ReturnType<typeof getV1KoperasiMembersId>>,
+	TError = unknown,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiMembersId>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary Detail anggota
  */
 
-export function useGetV1KoperasiMembersId<TData = Awaited<ReturnType<typeof getV1KoperasiMembersId>>, TError = unknown>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiMembersId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1KoperasiMembersId<
+	TData = Awaited<ReturnType<typeof getV1KoperasiMembersId>>,
+	TError = unknown,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiMembersId>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1KoperasiMembersIdQueryOptions(id, options);
 
-  const queryOptions = getGetV1KoperasiMembersIdQueryOptions(id,options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
 
 export type putV1KoperasiMembersIdResponse200 = {
-  data: PutV1KoperasiMembersId200
-  status: 200
-}
-
-export type putV1KoperasiMembersIdResponseSuccess = (putV1KoperasiMembersIdResponse200) & {
-  headers: Headers;
+	data: PutV1KoperasiMembersId200;
+	status: 200;
 };
-;
 
-export type putV1KoperasiMembersIdResponse = (putV1KoperasiMembersIdResponseSuccess)
+export type putV1KoperasiMembersIdResponseSuccess =
+	putV1KoperasiMembersIdResponse200 & {
+		headers: Headers;
+	};
 
-export const getPutV1KoperasiMembersIdUrl = (id: number,) => {
+export type putV1KoperasiMembersIdResponse =
+	putV1KoperasiMembersIdResponseSuccess;
 
-
-
-
-  return `/v1/koperasi/members/${id}`
-}
+export const getPutV1KoperasiMembersIdUrl = (id: number) => {
+	return `/v1/koperasi/members/${id}`;
+};
 
 /**
  * @summary Perbarui anggota
  */
-export const putV1KoperasiMembersId = async (id: number,
-    internalModulesKoperasiAnggotaCreateRequest: InternalModulesKoperasiAnggotaCreateRequest, options?: RequestInit): Promise<putV1KoperasiMembersIdResponse> => {
+export const putV1KoperasiMembersId = async (
+	id: number,
+	internalModulesKoperasiAnggotaCreateRequest: InternalModulesKoperasiAnggotaCreateRequest,
+	options?: RequestInit,
+): Promise<putV1KoperasiMembersIdResponse> => {
+	return customInstance<putV1KoperasiMembersIdResponse>(
+		getPutV1KoperasiMembersIdUrl(id),
+		{
+			...options,
+			method: "PUT",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(internalModulesKoperasiAnggotaCreateRequest),
+		},
+	);
+};
 
-  return customInstance<putV1KoperasiMembersIdResponse>(getPutV1KoperasiMembersIdUrl(id),
-  {
-    ...options,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      internalModulesKoperasiAnggotaCreateRequest,)
-  }
-);}
+export const getPutV1KoperasiMembersIdMutationOptions = <
+	TError = unknown,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof putV1KoperasiMembersId>>,
+		TError,
+		{ id: number; data: InternalModulesKoperasiAnggotaCreateRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof putV1KoperasiMembersId>>,
+	TError,
+	{ id: number; data: InternalModulesKoperasiAnggotaCreateRequest },
+	TContext
+> => {
+	const mutationKey = ["putV1KoperasiMembersId"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof putV1KoperasiMembersId>>,
+		{ id: number; data: InternalModulesKoperasiAnggotaCreateRequest }
+	> = (props) => {
+		const { id, data } = props ?? {};
 
+		return putV1KoperasiMembersId(id, data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-export const getPutV1KoperasiMembersIdMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1KoperasiMembersId>>, TError,{id: number;data: InternalModulesKoperasiAnggotaCreateRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof putV1KoperasiMembersId>>, TError,{id: number;data: InternalModulesKoperasiAnggotaCreateRequest}, TContext> => {
+export type PutV1KoperasiMembersIdMutationResult = NonNullable<
+	Awaited<ReturnType<typeof putV1KoperasiMembersId>>
+>;
+export type PutV1KoperasiMembersIdMutationBody =
+	InternalModulesKoperasiAnggotaCreateRequest;
+export type PutV1KoperasiMembersIdMutationError = unknown;
 
-const mutationKey = ['putV1KoperasiMembersId'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1KoperasiMembersId>>, {id: number;data: InternalModulesKoperasiAnggotaCreateRequest}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  putV1KoperasiMembersId(id,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PutV1KoperasiMembersIdMutationResult = NonNullable<Awaited<ReturnType<typeof putV1KoperasiMembersId>>>
-    export type PutV1KoperasiMembersIdMutationBody = InternalModulesKoperasiAnggotaCreateRequest
-    export type PutV1KoperasiMembersIdMutationError = unknown
-
-    /**
+/**
  * @summary Perbarui anggota
  */
-export const usePutV1KoperasiMembersId = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1KoperasiMembersId>>, TError,{id: number;data: InternalModulesKoperasiAnggotaCreateRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof putV1KoperasiMembersId>>,
-        TError,
-        {id: number;data: InternalModulesKoperasiAnggotaCreateRequest},
-        TContext
-      > => {
-      return useMutation(getPutV1KoperasiMembersIdMutationOptions(options), queryClient);
-    }
-    export type deleteV1KoperasiMembersIdResponse200 = {
-  data: DtoSuccessResponse
-  status: 200
-}
-
-export type deleteV1KoperasiMembersIdResponseSuccess = (deleteV1KoperasiMembersIdResponse200) & {
-  headers: Headers;
+export const usePutV1KoperasiMembersId = <TError = unknown, TContext = unknown>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof putV1KoperasiMembersId>>,
+			TError,
+			{ id: number; data: InternalModulesKoperasiAnggotaCreateRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof putV1KoperasiMembersId>>,
+	TError,
+	{ id: number; data: InternalModulesKoperasiAnggotaCreateRequest },
+	TContext
+> => {
+	return useMutation(
+		getPutV1KoperasiMembersIdMutationOptions(options),
+		queryClient,
+	);
 };
-;
+export type deleteV1KoperasiMembersIdResponse200 = {
+	data: DtoSuccessResponse;
+	status: 200;
+};
 
-export type deleteV1KoperasiMembersIdResponse = (deleteV1KoperasiMembersIdResponseSuccess)
+export type deleteV1KoperasiMembersIdResponseSuccess =
+	deleteV1KoperasiMembersIdResponse200 & {
+		headers: Headers;
+	};
 
-export const getDeleteV1KoperasiMembersIdUrl = (id: number,) => {
+export type deleteV1KoperasiMembersIdResponse =
+	deleteV1KoperasiMembersIdResponseSuccess;
 
-
-
-
-  return `/v1/koperasi/members/${id}`
-}
+export const getDeleteV1KoperasiMembersIdUrl = (id: number) => {
+	return `/v1/koperasi/members/${id}`;
+};
 
 /**
  * @summary Hapus anggota
  */
-export const deleteV1KoperasiMembersId = async (id: number, options?: RequestInit): Promise<deleteV1KoperasiMembersIdResponse> => {
+export const deleteV1KoperasiMembersId = async (
+	id: number,
+	options?: RequestInit,
+): Promise<deleteV1KoperasiMembersIdResponse> => {
+	return customInstance<deleteV1KoperasiMembersIdResponse>(
+		getDeleteV1KoperasiMembersIdUrl(id),
+		{
+			...options,
+			method: "DELETE",
+		},
+	);
+};
 
-  return customInstance<deleteV1KoperasiMembersIdResponse>(getDeleteV1KoperasiMembersIdUrl(id),
-  {
-    ...options,
-    method: 'DELETE'
+export const getDeleteV1KoperasiMembersIdMutationOptions = <
+	TError = unknown,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof deleteV1KoperasiMembersId>>,
+		TError,
+		{ id: number },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof deleteV1KoperasiMembersId>>,
+	TError,
+	{ id: number },
+	TContext
+> => {
+	const mutationKey = ["deleteV1KoperasiMembersId"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof deleteV1KoperasiMembersId>>,
+		{ id: number }
+	> = (props) => {
+		const { id } = props ?? {};
 
-  }
-);}
+		return deleteV1KoperasiMembersId(id, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
+export type DeleteV1KoperasiMembersIdMutationResult = NonNullable<
+	Awaited<ReturnType<typeof deleteV1KoperasiMembersId>>
+>;
 
+export type DeleteV1KoperasiMembersIdMutationError = unknown;
 
-export const getDeleteV1KoperasiMembersIdMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1KoperasiMembersId>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof deleteV1KoperasiMembersId>>, TError,{id: number}, TContext> => {
-
-const mutationKey = ['deleteV1KoperasiMembersId'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteV1KoperasiMembersId>>, {id: number}> = (props) => {
-          const {id} = props ?? {};
-
-          return  deleteV1KoperasiMembersId(id,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type DeleteV1KoperasiMembersIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteV1KoperasiMembersId>>>
-
-    export type DeleteV1KoperasiMembersIdMutationError = unknown
-
-    /**
+/**
  * @summary Hapus anggota
  */
-export const useDeleteV1KoperasiMembersId = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1KoperasiMembersId>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof deleteV1KoperasiMembersId>>,
-        TError,
-        {id: number},
-        TContext
-      > => {
-      return useMutation(getDeleteV1KoperasiMembersIdMutationOptions(options), queryClient);
-    }
-    export type getV1KoperasiMembersIdDetailResponse200 = {
-  data: GetV1KoperasiMembersIdDetail200
-  status: 200
-}
-
-export type getV1KoperasiMembersIdDetailResponseSuccess = (getV1KoperasiMembersIdDetailResponse200) & {
-  headers: Headers;
+export const useDeleteV1KoperasiMembersId = <
+	TError = unknown,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof deleteV1KoperasiMembersId>>,
+			TError,
+			{ id: number },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof deleteV1KoperasiMembersId>>,
+	TError,
+	{ id: number },
+	TContext
+> => {
+	return useMutation(
+		getDeleteV1KoperasiMembersIdMutationOptions(options),
+		queryClient,
+	);
 };
-;
+export type getV1KoperasiMembersIdDetailResponse200 = {
+	data: GetV1KoperasiMembersIdDetail200;
+	status: 200;
+};
 
-export type getV1KoperasiMembersIdDetailResponse = (getV1KoperasiMembersIdDetailResponseSuccess)
+export type getV1KoperasiMembersIdDetailResponseSuccess =
+	getV1KoperasiMembersIdDetailResponse200 & {
+		headers: Headers;
+	};
 
-export const getGetV1KoperasiMembersIdDetailUrl = (id: number,) => {
+export type getV1KoperasiMembersIdDetailResponse =
+	getV1KoperasiMembersIdDetailResponseSuccess;
 
-
-
-
-  return `/v1/koperasi/members/${id}/detail`
-}
+export const getGetV1KoperasiMembersIdDetailUrl = (id: number) => {
+	return `/v1/koperasi/members/${id}/detail`;
+};
 
 /**
  * @summary Detail anggota beserta rekap pinjaman
  */
-export const getV1KoperasiMembersIdDetail = async (id: number, options?: RequestInit): Promise<getV1KoperasiMembersIdDetailResponse> => {
+export const getV1KoperasiMembersIdDetail = async (
+	id: number,
+	options?: RequestInit,
+): Promise<getV1KoperasiMembersIdDetailResponse> => {
+	return customInstance<getV1KoperasiMembersIdDetailResponse>(
+		getGetV1KoperasiMembersIdDetailUrl(id),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
 
-  return customInstance<getV1KoperasiMembersIdDetailResponse>(getGetV1KoperasiMembersIdDetailUrl(id),
-  {
-    ...options,
-    method: 'GET'
+export const getGetV1KoperasiMembersIdDetailQueryKey = (id: number) => {
+	return [`/v1/koperasi/members/${id}/detail`] as const;
+};
 
-
-  }
-);}
-
-
-
-
-
-export const getGetV1KoperasiMembersIdDetailQueryKey = (id: number,) => {
-    return [
-    `/v1/koperasi/members/${id}/detail`
-    ] as const;
-    }
-
-
-export const getGetV1KoperasiMembersIdDetailQueryOptions = <TData = Awaited<ReturnType<typeof getV1KoperasiMembersIdDetail>>, TError = unknown>(id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiMembersIdDetail>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getGetV1KoperasiMembersIdDetailQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1KoperasiMembersIdDetail>>,
+	TError = unknown,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiMembersIdDetail>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
 ) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+	const queryKey =
+		queryOptions?.queryKey ?? getGetV1KoperasiMembersIdDetailQueryKey(id);
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1KoperasiMembersIdDetailQueryKey(id);
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1KoperasiMembersIdDetail>>
+	> = ({ signal }) =>
+		getV1KoperasiMembersIdDetail(id, { signal, ...requestOptions });
 
+	return {
+		queryKey,
+		queryFn,
+		enabled: !!id,
+		...queryOptions,
+	} as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1KoperasiMembersIdDetail>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
+export type GetV1KoperasiMembersIdDetailQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1KoperasiMembersIdDetail>>
+>;
+export type GetV1KoperasiMembersIdDetailQueryError = unknown;
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1KoperasiMembersIdDetail>>> = ({ signal }) => getV1KoperasiMembersIdDetail(id, { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiMembersIdDetail>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetV1KoperasiMembersIdDetailQueryResult = NonNullable<Awaited<ReturnType<typeof getV1KoperasiMembersIdDetail>>>
-export type GetV1KoperasiMembersIdDetailQueryError = unknown
-
-
-export function useGetV1KoperasiMembersIdDetail<TData = Awaited<ReturnType<typeof getV1KoperasiMembersIdDetail>>, TError = unknown>(
- id: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiMembersIdDetail>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1KoperasiMembersIdDetail>>,
-          TError,
-          Awaited<ReturnType<typeof getV1KoperasiMembersIdDetail>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1KoperasiMembersIdDetail<TData = Awaited<ReturnType<typeof getV1KoperasiMembersIdDetail>>, TError = unknown>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiMembersIdDetail>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1KoperasiMembersIdDetail>>,
-          TError,
-          Awaited<ReturnType<typeof getV1KoperasiMembersIdDetail>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1KoperasiMembersIdDetail<TData = Awaited<ReturnType<typeof getV1KoperasiMembersIdDetail>>, TError = unknown>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiMembersIdDetail>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1KoperasiMembersIdDetail<
+	TData = Awaited<ReturnType<typeof getV1KoperasiMembersIdDetail>>,
+	TError = unknown,
+>(
+	id: number,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiMembersIdDetail>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1KoperasiMembersIdDetail>>,
+					TError,
+					Awaited<ReturnType<typeof getV1KoperasiMembersIdDetail>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1KoperasiMembersIdDetail<
+	TData = Awaited<ReturnType<typeof getV1KoperasiMembersIdDetail>>,
+	TError = unknown,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiMembersIdDetail>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1KoperasiMembersIdDetail>>,
+					TError,
+					Awaited<ReturnType<typeof getV1KoperasiMembersIdDetail>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1KoperasiMembersIdDetail<
+	TData = Awaited<ReturnType<typeof getV1KoperasiMembersIdDetail>>,
+	TError = unknown,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiMembersIdDetail>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary Detail anggota beserta rekap pinjaman
  */
 
-export function useGetV1KoperasiMembersIdDetail<TData = Awaited<ReturnType<typeof getV1KoperasiMembersIdDetail>>, TError = unknown>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiMembersIdDetail>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1KoperasiMembersIdDetail<
+	TData = Awaited<ReturnType<typeof getV1KoperasiMembersIdDetail>>,
+	TError = unknown,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiMembersIdDetail>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1KoperasiMembersIdDetailQueryOptions(id, options);
 
-  const queryOptions = getGetV1KoperasiMembersIdDetailQueryOptions(id,options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
-

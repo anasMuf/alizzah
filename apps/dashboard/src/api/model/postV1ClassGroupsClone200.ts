@@ -5,9 +5,9 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoCloneClassGroupsResult } from './dtoCloneClassGroupsResult';
-import type { DtoSuccessResponse } from './dtoSuccessResponse';
+import type { DtoCloneClassGroupsResult } from "./dtoCloneClassGroupsResult";
+import type { DtoSuccessResponse } from "./dtoSuccessResponse";
 
 export type PostV1ClassGroupsClone200 = DtoSuccessResponse & {
-  data?: DtoCloneClassGroupsResult;
+	data?: DtoCloneClassGroupsResult;
 };

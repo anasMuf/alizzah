@@ -5,14 +5,14 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { InternalModulesKoperasiLainlainCreateRequestFlow } from './internalModulesKoperasiLainlainCreateRequestFlow';
+import type { InternalModulesKoperasiLainlainCreateRequestFlow } from "./internalModulesKoperasiLainlainCreateRequestFlow";
 
 export interface InternalModulesKoperasiLainlainCreateRequest {
-  academic_year_id: number;
-  amount: number;
-  /** @maxLength 50 */
-  category: string;
-  description?: string;
-  flow: InternalModulesKoperasiLainlainCreateRequestFlow;
-  transaction_date: string;
+	academic_year_id: number;
+	amount: number;
+	/** @maxLength 50 */
+	category: string;
+	description?: string;
+	flow: InternalModulesKoperasiLainlainCreateRequestFlow;
+	transaction_date: string;
 }

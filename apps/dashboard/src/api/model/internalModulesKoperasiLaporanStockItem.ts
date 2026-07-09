@@ -7,12 +7,12 @@
  */
 
 export interface InternalModulesKoperasiLaporanStockItem {
-  cost_price?: number;
-  name?: string;
-  product_id?: number;
-  sale_price?: number;
-  stock?: number;
-  stock_value?: number;
-  variant_id?: number;
-  variant_name?: string;
+	cost_price?: number;
+	name?: string;
+	product_id?: number;
+	sale_price?: number;
+	stock?: number;
+	stock_value?: number;
+	variant_id?: number;
+	variant_name?: string;
 }

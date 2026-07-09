@@ -5,11 +5,11 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { InternalModulesKoperasiPenjualanPaymentRequestMethod } from './internalModulesKoperasiPenjualanPaymentRequestMethod';
+import type { InternalModulesKoperasiPenjualanPaymentRequestMethod } from "./internalModulesKoperasiPenjualanPaymentRequestMethod";
 
 export interface InternalModulesKoperasiPenjualanPaymentRequest {
-  amount: number;
-  method?: InternalModulesKoperasiPenjualanPaymentRequestMethod;
-  notes?: string;
-  payment_date: string;
+	amount: number;
+	method?: InternalModulesKoperasiPenjualanPaymentRequestMethod;
+	notes?: string;
+	payment_date: string;
 }

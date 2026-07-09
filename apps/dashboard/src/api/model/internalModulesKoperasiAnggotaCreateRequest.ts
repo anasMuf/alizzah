@@ -5,15 +5,15 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { InternalModulesKoperasiAnggotaCreateRequestMemberType } from './internalModulesKoperasiAnggotaCreateRequestMemberType';
+import type { InternalModulesKoperasiAnggotaCreateRequestMemberType } from "./internalModulesKoperasiAnggotaCreateRequestMemberType";
 
 export interface InternalModulesKoperasiAnggotaCreateRequest {
-  address?: string;
-  employee_id?: number;
-  /** @maxLength 100 */
-  full_name: string;
-  is_active?: boolean;
-  member_type: InternalModulesKoperasiAnggotaCreateRequestMemberType;
-  /** @maxLength 20 */
-  phone?: string;
+	address?: string;
+	employee_id?: number;
+	/** @maxLength 100 */
+	full_name: string;
+	is_active?: boolean;
+	member_type: InternalModulesKoperasiAnggotaCreateRequestMemberType;
+	/** @maxLength 20 */
+	phone?: string;
 }

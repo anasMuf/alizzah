@@ -5,15 +5,15 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoClassArrearSummary } from './dtoClassArrearSummary';
-import type { DtoExpenseSummaryResponse } from './dtoExpenseSummaryResponse';
-import type { DtoMonthlyCashSummary } from './dtoMonthlyCashSummary';
-import type { DtoMonthlyIncomeSummary } from './dtoMonthlyIncomeSummary';
+import type { DtoClassArrearSummary } from "./dtoClassArrearSummary";
+import type { DtoExpenseSummaryResponse } from "./dtoExpenseSummaryResponse";
+import type { DtoMonthlyCashSummary } from "./dtoMonthlyCashSummary";
+import type { DtoMonthlyIncomeSummary } from "./dtoMonthlyIncomeSummary";
 
 export interface DtoMonthlyReportResponse {
-  arrears_by_class?: DtoClassArrearSummary[];
-  cash?: DtoMonthlyCashSummary;
-  expense_summary?: DtoExpenseSummaryResponse;
-  income_summary?: DtoMonthlyIncomeSummary;
-  period?: string;
+	arrears_by_class?: DtoClassArrearSummary[];
+	cash?: DtoMonthlyCashSummary;
+	expense_summary?: DtoExpenseSummaryResponse;
+	income_summary?: DtoMonthlyIncomeSummary;
+	period?: string;
 }

@@ -7,5 +7,5 @@
  */
 
 export interface DtoConfirmDailyClosingRequest {
-  notes?: string;
+	notes?: string;
 }

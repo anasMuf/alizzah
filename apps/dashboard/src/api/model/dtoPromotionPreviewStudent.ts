@@ -7,10 +7,10 @@
  */
 
 export interface DtoPromotionPreviewStudent {
-  /** promotion | retained | skipped_berlian */
-  action?: string;
-  from_class?: string;
-  student_id?: number;
-  student_name?: string;
-  to_class?: string;
+	/** promotion | retained | skipped_berlian */
+	action?: string;
+	from_class?: string;
+	student_id?: number;
+	student_name?: string;
+	to_class?: string;
 }

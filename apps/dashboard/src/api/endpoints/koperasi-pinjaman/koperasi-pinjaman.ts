@@ -5,669 +5,1016 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import {
-  useMutation,
-  useQuery
-} from '@tanstack/react-query';
-import type {
-  DataTag,
-  DefinedInitialDataOptions,
-  DefinedUseQueryResult,
-  MutationFunction,
-  QueryClient,
-  QueryFunction,
-  QueryKey,
-  UndefinedInitialDataOptions,
-  UseMutationOptions,
-  UseMutationResult,
-  UseQueryOptions,
-  UseQueryResult
-} from '@tanstack/react-query';
 
 import type {
-  GetV1KoperasiLoans200,
-  GetV1KoperasiLoansId200,
-  GetV1KoperasiLoansIdInstallments200,
-  GetV1KoperasiLoansParams,
-  GetV1KoperasiLoansSummary200,
-  GetV1KoperasiLoansSummaryParams,
-  InternalModulesKoperasiPinjamanCreateRequest,
-  InternalModulesKoperasiPinjamanPaymentRequest,
-  PostV1KoperasiLoans201,
-  PostV1KoperasiLoansIdPayments200
-} from '../../model';
+	DataTag,
+	DefinedInitialDataOptions,
+	DefinedUseQueryResult,
+	MutationFunction,
+	QueryClient,
+	QueryFunction,
+	QueryKey,
+	UndefinedInitialDataOptions,
+	UseMutationOptions,
+	UseMutationResult,
+	UseQueryOptions,
+	UseQueryResult,
+} from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
-import { customInstance } from '../../mutator/custom-instance';
+import type {
+	GetV1KoperasiLoans200,
+	GetV1KoperasiLoansId200,
+	GetV1KoperasiLoansIdInstallments200,
+	GetV1KoperasiLoansParams,
+	GetV1KoperasiLoansSummary200,
+	GetV1KoperasiLoansSummaryParams,
+	InternalModulesKoperasiPinjamanCreateRequest,
+	InternalModulesKoperasiPinjamanPaymentRequest,
+	PostV1KoperasiLoans201,
+	PostV1KoperasiLoansIdPayments200,
+} from "../../model";
 
+import { customInstance } from "../../mutator/custom-instance";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
-
-
 export type getV1KoperasiLoansResponse200 = {
-  data: GetV1KoperasiLoans200
-  status: 200
-}
-
-export type getV1KoperasiLoansResponseSuccess = (getV1KoperasiLoansResponse200) & {
-  headers: Headers;
+	data: GetV1KoperasiLoans200;
+	status: 200;
 };
-;
 
-export type getV1KoperasiLoansResponse = (getV1KoperasiLoansResponseSuccess)
+export type getV1KoperasiLoansResponseSuccess =
+	getV1KoperasiLoansResponse200 & {
+		headers: Headers;
+	};
 
-export const getGetV1KoperasiLoansUrl = (params?: GetV1KoperasiLoansParams,) => {
-  const normalizedParams = new URLSearchParams();
+export type getV1KoperasiLoansResponse = getV1KoperasiLoansResponseSuccess;
 
-  Object.entries(params || {}).forEach(([key, value]) => {
+export const getGetV1KoperasiLoansUrl = (params?: GetV1KoperasiLoansParams) => {
+	const normalizedParams = new URLSearchParams();
 
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(key, value === null ? "null" : value.toString());
+		}
+	});
 
-  const stringifiedParams = normalizedParams.toString();
+	const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/v1/koperasi/loans?${stringifiedParams}` : `/v1/koperasi/loans`
-}
+	return stringifiedParams.length > 0
+		? `/v1/koperasi/loans?${stringifiedParams}`
+		: `/v1/koperasi/loans`;
+};
 
 /**
  * @summary List pinjaman koperasi
  */
-export const getV1KoperasiLoans = async (params?: GetV1KoperasiLoansParams, options?: RequestInit): Promise<getV1KoperasiLoansResponse> => {
+export const getV1KoperasiLoans = async (
+	params?: GetV1KoperasiLoansParams,
+	options?: RequestInit,
+): Promise<getV1KoperasiLoansResponse> => {
+	return customInstance<getV1KoperasiLoansResponse>(
+		getGetV1KoperasiLoansUrl(params),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
 
-  return customInstance<getV1KoperasiLoansResponse>(getGetV1KoperasiLoansUrl(params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetV1KoperasiLoansQueryKey = (params?: GetV1KoperasiLoansParams,) => {
-    return [
-    `/v1/koperasi/loans`, ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getGetV1KoperasiLoansQueryOptions = <TData = Awaited<ReturnType<typeof getV1KoperasiLoans>>, TError = unknown>(params?: GetV1KoperasiLoansParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiLoans>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getGetV1KoperasiLoansQueryKey = (
+	params?: GetV1KoperasiLoansParams,
 ) => {
+	return [`/v1/koperasi/loans`, ...(params ? [params] : [])] as const;
+};
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+export const getGetV1KoperasiLoansQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1KoperasiLoans>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiLoansParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiLoans>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1KoperasiLoansQueryKey(params);
+	const queryKey =
+		queryOptions?.queryKey ?? getGetV1KoperasiLoansQueryKey(params);
 
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1KoperasiLoans>>
+	> = ({ signal }) => getV1KoperasiLoans(params, { signal, ...requestOptions });
 
+	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1KoperasiLoans>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1KoperasiLoans>>> = ({ signal }) => getV1KoperasiLoans(params, { signal, ...requestOptions });
+export type GetV1KoperasiLoansQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1KoperasiLoans>>
+>;
+export type GetV1KoperasiLoansQueryError = unknown;
 
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiLoans>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetV1KoperasiLoansQueryResult = NonNullable<Awaited<ReturnType<typeof getV1KoperasiLoans>>>
-export type GetV1KoperasiLoansQueryError = unknown
-
-
-export function useGetV1KoperasiLoans<TData = Awaited<ReturnType<typeof getV1KoperasiLoans>>, TError = unknown>(
- params: undefined |  GetV1KoperasiLoansParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiLoans>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1KoperasiLoans>>,
-          TError,
-          Awaited<ReturnType<typeof getV1KoperasiLoans>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1KoperasiLoans<TData = Awaited<ReturnType<typeof getV1KoperasiLoans>>, TError = unknown>(
- params?: GetV1KoperasiLoansParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiLoans>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1KoperasiLoans>>,
-          TError,
-          Awaited<ReturnType<typeof getV1KoperasiLoans>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1KoperasiLoans<TData = Awaited<ReturnType<typeof getV1KoperasiLoans>>, TError = unknown>(
- params?: GetV1KoperasiLoansParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiLoans>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1KoperasiLoans<
+	TData = Awaited<ReturnType<typeof getV1KoperasiLoans>>,
+	TError = unknown,
+>(
+	params: undefined | GetV1KoperasiLoansParams,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiLoans>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1KoperasiLoans>>,
+					TError,
+					Awaited<ReturnType<typeof getV1KoperasiLoans>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1KoperasiLoans<
+	TData = Awaited<ReturnType<typeof getV1KoperasiLoans>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiLoansParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiLoans>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1KoperasiLoans>>,
+					TError,
+					Awaited<ReturnType<typeof getV1KoperasiLoans>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1KoperasiLoans<
+	TData = Awaited<ReturnType<typeof getV1KoperasiLoans>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiLoansParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiLoans>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary List pinjaman koperasi
  */
 
-export function useGetV1KoperasiLoans<TData = Awaited<ReturnType<typeof getV1KoperasiLoans>>, TError = unknown>(
- params?: GetV1KoperasiLoansParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiLoans>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1KoperasiLoans<
+	TData = Awaited<ReturnType<typeof getV1KoperasiLoans>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiLoansParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiLoans>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1KoperasiLoansQueryOptions(params, options);
 
-  const queryOptions = getGetV1KoperasiLoansQueryOptions(params,options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
 
 export type postV1KoperasiLoansResponse201 = {
-  data: PostV1KoperasiLoans201
-  status: 201
-}
-
-export type postV1KoperasiLoansResponseSuccess = (postV1KoperasiLoansResponse201) & {
-  headers: Headers;
+	data: PostV1KoperasiLoans201;
+	status: 201;
 };
-;
 
-export type postV1KoperasiLoansResponse = (postV1KoperasiLoansResponseSuccess)
+export type postV1KoperasiLoansResponseSuccess =
+	postV1KoperasiLoansResponse201 & {
+		headers: Headers;
+	};
+
+export type postV1KoperasiLoansResponse = postV1KoperasiLoansResponseSuccess;
 
 export const getPostV1KoperasiLoansUrl = () => {
-
-
-
-
-  return `/v1/koperasi/loans`
-}
-
-/**
- * @summary Catat pinjaman anggota
- */
-export const postV1KoperasiLoans = async (internalModulesKoperasiPinjamanCreateRequest: InternalModulesKoperasiPinjamanCreateRequest, options?: RequestInit): Promise<postV1KoperasiLoansResponse> => {
-
-  return customInstance<postV1KoperasiLoansResponse>(getPostV1KoperasiLoansUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      internalModulesKoperasiPinjamanCreateRequest,)
-  }
-);}
-
-
-
-
-export const getPostV1KoperasiLoansMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1KoperasiLoans>>, TError,{data: InternalModulesKoperasiPinjamanCreateRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1KoperasiLoans>>, TError,{data: InternalModulesKoperasiPinjamanCreateRequest}, TContext> => {
-
-const mutationKey = ['postV1KoperasiLoans'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1KoperasiLoans>>, {data: InternalModulesKoperasiPinjamanCreateRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  postV1KoperasiLoans(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1KoperasiLoansMutationResult = NonNullable<Awaited<ReturnType<typeof postV1KoperasiLoans>>>
-    export type PostV1KoperasiLoansMutationBody = InternalModulesKoperasiPinjamanCreateRequest
-    export type PostV1KoperasiLoansMutationError = unknown
-
-    /**
- * @summary Catat pinjaman anggota
- */
-export const usePostV1KoperasiLoans = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1KoperasiLoans>>, TError,{data: InternalModulesKoperasiPinjamanCreateRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postV1KoperasiLoans>>,
-        TError,
-        {data: InternalModulesKoperasiPinjamanCreateRequest},
-        TContext
-      > => {
-      return useMutation(getPostV1KoperasiLoansMutationOptions(options), queryClient);
-    }
-    export type getV1KoperasiLoansSummaryResponse200 = {
-  data: GetV1KoperasiLoansSummary200
-  status: 200
-}
-
-export type getV1KoperasiLoansSummaryResponseSuccess = (getV1KoperasiLoansSummaryResponse200) & {
-  headers: Headers;
+	return `/v1/koperasi/loans`;
 };
-;
-
-export type getV1KoperasiLoansSummaryResponse = (getV1KoperasiLoansSummaryResponseSuccess)
-
-export const getGetV1KoperasiLoansSummaryUrl = (params?: GetV1KoperasiLoansSummaryParams,) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/v1/koperasi/loans/summary?${stringifiedParams}` : `/v1/koperasi/loans/summary`
-}
 
 /**
- * @summary Rekap pinjaman per anggota (hutang/terbayar/sisa)
+ * @summary Catat pinjaman anggota
  */
-export const getV1KoperasiLoansSummary = async (params?: GetV1KoperasiLoansSummaryParams, options?: RequestInit): Promise<getV1KoperasiLoansSummaryResponse> => {
+export const postV1KoperasiLoans = async (
+	internalModulesKoperasiPinjamanCreateRequest: InternalModulesKoperasiPinjamanCreateRequest,
+	options?: RequestInit,
+): Promise<postV1KoperasiLoansResponse> => {
+	return customInstance<postV1KoperasiLoansResponse>(
+		getPostV1KoperasiLoansUrl(),
+		{
+			...options,
+			method: "POST",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(internalModulesKoperasiPinjamanCreateRequest),
+		},
+	);
+};
 
-  return customInstance<getV1KoperasiLoansSummaryResponse>(getGetV1KoperasiLoansSummaryUrl(params),
-  {
-    ...options,
-    method: 'GET'
+export const getPostV1KoperasiLoansMutationOptions = <
+	TError = unknown,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1KoperasiLoans>>,
+		TError,
+		{ data: InternalModulesKoperasiPinjamanCreateRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1KoperasiLoans>>,
+	TError,
+	{ data: InternalModulesKoperasiPinjamanCreateRequest },
+	TContext
+> => {
+	const mutationKey = ["postV1KoperasiLoans"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1KoperasiLoans>>,
+		{ data: InternalModulesKoperasiPinjamanCreateRequest }
+	> = (props) => {
+		const { data } = props ?? {};
 
-  }
-);}
+		return postV1KoperasiLoans(data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
+export type PostV1KoperasiLoansMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1KoperasiLoans>>
+>;
+export type PostV1KoperasiLoansMutationBody =
+	InternalModulesKoperasiPinjamanCreateRequest;
+export type PostV1KoperasiLoansMutationError = unknown;
 
+/**
+ * @summary Catat pinjaman anggota
+ */
+export const usePostV1KoperasiLoans = <TError = unknown, TContext = unknown>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1KoperasiLoans>>,
+			TError,
+			{ data: InternalModulesKoperasiPinjamanCreateRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1KoperasiLoans>>,
+	TError,
+	{ data: InternalModulesKoperasiPinjamanCreateRequest },
+	TContext
+> => {
+	return useMutation(
+		getPostV1KoperasiLoansMutationOptions(options),
+		queryClient,
+	);
+};
+export type getV1KoperasiLoansSummaryResponse200 = {
+	data: GetV1KoperasiLoansSummary200;
+	status: 200;
+};
 
+export type getV1KoperasiLoansSummaryResponseSuccess =
+	getV1KoperasiLoansSummaryResponse200 & {
+		headers: Headers;
+	};
 
-export const getGetV1KoperasiLoansSummaryQueryKey = (params?: GetV1KoperasiLoansSummaryParams,) => {
-    return [
-    `/v1/koperasi/loans/summary`, ...(params ? [params] : [])
-    ] as const;
-    }
+export type getV1KoperasiLoansSummaryResponse =
+	getV1KoperasiLoansSummaryResponseSuccess;
 
-
-export const getGetV1KoperasiLoansSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getV1KoperasiLoansSummary>>, TError = unknown>(params?: GetV1KoperasiLoansSummaryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiLoansSummary>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getGetV1KoperasiLoansSummaryUrl = (
+	params?: GetV1KoperasiLoansSummaryParams,
 ) => {
+	const normalizedParams = new URLSearchParams();
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(key, value === null ? "null" : value.toString());
+		}
+	});
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1KoperasiLoansSummaryQueryKey(params);
+	const stringifiedParams = normalizedParams.toString();
 
+	return stringifiedParams.length > 0
+		? `/v1/koperasi/loans/summary?${stringifiedParams}`
+		: `/v1/koperasi/loans/summary`;
+};
 
+/**
+ * @summary Rekap pinjaman per anggota (hutang/terbayar/sisa)
+ */
+export const getV1KoperasiLoansSummary = async (
+	params?: GetV1KoperasiLoansSummaryParams,
+	options?: RequestInit,
+): Promise<getV1KoperasiLoansSummaryResponse> => {
+	return customInstance<getV1KoperasiLoansSummaryResponse>(
+		getGetV1KoperasiLoansSummaryUrl(params),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1KoperasiLoansSummary>>> = ({ signal }) => getV1KoperasiLoansSummary(params, { signal, ...requestOptions });
+export const getGetV1KoperasiLoansSummaryQueryKey = (
+	params?: GetV1KoperasiLoansSummaryParams,
+) => {
+	return [`/v1/koperasi/loans/summary`, ...(params ? [params] : [])] as const;
+};
 
+export const getGetV1KoperasiLoansSummaryQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1KoperasiLoansSummary>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiLoansSummaryParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiLoansSummary>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
+	const queryKey =
+		queryOptions?.queryKey ?? getGetV1KoperasiLoansSummaryQueryKey(params);
 
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1KoperasiLoansSummary>>
+	> = ({ signal }) =>
+		getV1KoperasiLoansSummary(params, { signal, ...requestOptions });
 
+	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1KoperasiLoansSummary>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiLoansSummary>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
+export type GetV1KoperasiLoansSummaryQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1KoperasiLoansSummary>>
+>;
+export type GetV1KoperasiLoansSummaryQueryError = unknown;
 
-export type GetV1KoperasiLoansSummaryQueryResult = NonNullable<Awaited<ReturnType<typeof getV1KoperasiLoansSummary>>>
-export type GetV1KoperasiLoansSummaryQueryError = unknown
-
-
-export function useGetV1KoperasiLoansSummary<TData = Awaited<ReturnType<typeof getV1KoperasiLoansSummary>>, TError = unknown>(
- params: undefined |  GetV1KoperasiLoansSummaryParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiLoansSummary>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1KoperasiLoansSummary>>,
-          TError,
-          Awaited<ReturnType<typeof getV1KoperasiLoansSummary>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1KoperasiLoansSummary<TData = Awaited<ReturnType<typeof getV1KoperasiLoansSummary>>, TError = unknown>(
- params?: GetV1KoperasiLoansSummaryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiLoansSummary>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1KoperasiLoansSummary>>,
-          TError,
-          Awaited<ReturnType<typeof getV1KoperasiLoansSummary>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1KoperasiLoansSummary<TData = Awaited<ReturnType<typeof getV1KoperasiLoansSummary>>, TError = unknown>(
- params?: GetV1KoperasiLoansSummaryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiLoansSummary>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1KoperasiLoansSummary<
+	TData = Awaited<ReturnType<typeof getV1KoperasiLoansSummary>>,
+	TError = unknown,
+>(
+	params: undefined | GetV1KoperasiLoansSummaryParams,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiLoansSummary>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1KoperasiLoansSummary>>,
+					TError,
+					Awaited<ReturnType<typeof getV1KoperasiLoansSummary>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1KoperasiLoansSummary<
+	TData = Awaited<ReturnType<typeof getV1KoperasiLoansSummary>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiLoansSummaryParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiLoansSummary>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1KoperasiLoansSummary>>,
+					TError,
+					Awaited<ReturnType<typeof getV1KoperasiLoansSummary>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1KoperasiLoansSummary<
+	TData = Awaited<ReturnType<typeof getV1KoperasiLoansSummary>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiLoansSummaryParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiLoansSummary>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary Rekap pinjaman per anggota (hutang/terbayar/sisa)
  */
 
-export function useGetV1KoperasiLoansSummary<TData = Awaited<ReturnType<typeof getV1KoperasiLoansSummary>>, TError = unknown>(
- params?: GetV1KoperasiLoansSummaryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiLoansSummary>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1KoperasiLoansSummary<
+	TData = Awaited<ReturnType<typeof getV1KoperasiLoansSummary>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiLoansSummaryParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiLoansSummary>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1KoperasiLoansSummaryQueryOptions(
+		params,
+		options,
+	);
 
-  const queryOptions = getGetV1KoperasiLoansSummaryQueryOptions(params,options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
 
 export type getV1KoperasiLoansIdResponse200 = {
-  data: GetV1KoperasiLoansId200
-  status: 200
-}
-
-export type getV1KoperasiLoansIdResponseSuccess = (getV1KoperasiLoansIdResponse200) & {
-  headers: Headers;
+	data: GetV1KoperasiLoansId200;
+	status: 200;
 };
-;
 
-export type getV1KoperasiLoansIdResponse = (getV1KoperasiLoansIdResponseSuccess)
+export type getV1KoperasiLoansIdResponseSuccess =
+	getV1KoperasiLoansIdResponse200 & {
+		headers: Headers;
+	};
 
-export const getGetV1KoperasiLoansIdUrl = (id: number,) => {
+export type getV1KoperasiLoansIdResponse = getV1KoperasiLoansIdResponseSuccess;
 
-
-
-
-  return `/v1/koperasi/loans/${id}`
-}
+export const getGetV1KoperasiLoansIdUrl = (id: number) => {
+	return `/v1/koperasi/loans/${id}`;
+};
 
 /**
  * @summary Detail pinjaman (beserta jadwal angsuran)
  */
-export const getV1KoperasiLoansId = async (id: number, options?: RequestInit): Promise<getV1KoperasiLoansIdResponse> => {
+export const getV1KoperasiLoansId = async (
+	id: number,
+	options?: RequestInit,
+): Promise<getV1KoperasiLoansIdResponse> => {
+	return customInstance<getV1KoperasiLoansIdResponse>(
+		getGetV1KoperasiLoansIdUrl(id),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
 
-  return customInstance<getV1KoperasiLoansIdResponse>(getGetV1KoperasiLoansIdUrl(id),
-  {
-    ...options,
-    method: 'GET'
+export const getGetV1KoperasiLoansIdQueryKey = (id: number) => {
+	return [`/v1/koperasi/loans/${id}`] as const;
+};
 
-
-  }
-);}
-
-
-
-
-
-export const getGetV1KoperasiLoansIdQueryKey = (id: number,) => {
-    return [
-    `/v1/koperasi/loans/${id}`
-    ] as const;
-    }
-
-
-export const getGetV1KoperasiLoansIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1KoperasiLoansId>>, TError = unknown>(id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiLoansId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getGetV1KoperasiLoansIdQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1KoperasiLoansId>>,
+	TError = unknown,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiLoansId>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
 ) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+	const queryKey =
+		queryOptions?.queryKey ?? getGetV1KoperasiLoansIdQueryKey(id);
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1KoperasiLoansIdQueryKey(id);
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1KoperasiLoansId>>
+	> = ({ signal }) => getV1KoperasiLoansId(id, { signal, ...requestOptions });
 
+	return {
+		queryKey,
+		queryFn,
+		enabled: !!id,
+		...queryOptions,
+	} as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1KoperasiLoansId>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
+export type GetV1KoperasiLoansIdQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1KoperasiLoansId>>
+>;
+export type GetV1KoperasiLoansIdQueryError = unknown;
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1KoperasiLoansId>>> = ({ signal }) => getV1KoperasiLoansId(id, { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiLoansId>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetV1KoperasiLoansIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1KoperasiLoansId>>>
-export type GetV1KoperasiLoansIdQueryError = unknown
-
-
-export function useGetV1KoperasiLoansId<TData = Awaited<ReturnType<typeof getV1KoperasiLoansId>>, TError = unknown>(
- id: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiLoansId>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1KoperasiLoansId>>,
-          TError,
-          Awaited<ReturnType<typeof getV1KoperasiLoansId>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1KoperasiLoansId<TData = Awaited<ReturnType<typeof getV1KoperasiLoansId>>, TError = unknown>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiLoansId>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1KoperasiLoansId>>,
-          TError,
-          Awaited<ReturnType<typeof getV1KoperasiLoansId>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1KoperasiLoansId<TData = Awaited<ReturnType<typeof getV1KoperasiLoansId>>, TError = unknown>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiLoansId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1KoperasiLoansId<
+	TData = Awaited<ReturnType<typeof getV1KoperasiLoansId>>,
+	TError = unknown,
+>(
+	id: number,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiLoansId>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1KoperasiLoansId>>,
+					TError,
+					Awaited<ReturnType<typeof getV1KoperasiLoansId>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1KoperasiLoansId<
+	TData = Awaited<ReturnType<typeof getV1KoperasiLoansId>>,
+	TError = unknown,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiLoansId>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1KoperasiLoansId>>,
+					TError,
+					Awaited<ReturnType<typeof getV1KoperasiLoansId>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1KoperasiLoansId<
+	TData = Awaited<ReturnType<typeof getV1KoperasiLoansId>>,
+	TError = unknown,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiLoansId>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary Detail pinjaman (beserta jadwal angsuran)
  */
 
-export function useGetV1KoperasiLoansId<TData = Awaited<ReturnType<typeof getV1KoperasiLoansId>>, TError = unknown>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiLoansId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1KoperasiLoansId<
+	TData = Awaited<ReturnType<typeof getV1KoperasiLoansId>>,
+	TError = unknown,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiLoansId>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1KoperasiLoansIdQueryOptions(id, options);
 
-  const queryOptions = getGetV1KoperasiLoansIdQueryOptions(id,options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
 
 export type getV1KoperasiLoansIdInstallmentsResponse200 = {
-  data: GetV1KoperasiLoansIdInstallments200
-  status: 200
-}
-
-export type getV1KoperasiLoansIdInstallmentsResponseSuccess = (getV1KoperasiLoansIdInstallmentsResponse200) & {
-  headers: Headers;
+	data: GetV1KoperasiLoansIdInstallments200;
+	status: 200;
 };
-;
 
-export type getV1KoperasiLoansIdInstallmentsResponse = (getV1KoperasiLoansIdInstallmentsResponseSuccess)
+export type getV1KoperasiLoansIdInstallmentsResponseSuccess =
+	getV1KoperasiLoansIdInstallmentsResponse200 & {
+		headers: Headers;
+	};
 
-export const getGetV1KoperasiLoansIdInstallmentsUrl = (id: number,) => {
+export type getV1KoperasiLoansIdInstallmentsResponse =
+	getV1KoperasiLoansIdInstallmentsResponseSuccess;
 
-
-
-
-  return `/v1/koperasi/loans/${id}/installments`
-}
+export const getGetV1KoperasiLoansIdInstallmentsUrl = (id: number) => {
+	return `/v1/koperasi/loans/${id}/installments`;
+};
 
 /**
  * @summary Jadwal angsuran pinjaman
  */
-export const getV1KoperasiLoansIdInstallments = async (id: number, options?: RequestInit): Promise<getV1KoperasiLoansIdInstallmentsResponse> => {
+export const getV1KoperasiLoansIdInstallments = async (
+	id: number,
+	options?: RequestInit,
+): Promise<getV1KoperasiLoansIdInstallmentsResponse> => {
+	return customInstance<getV1KoperasiLoansIdInstallmentsResponse>(
+		getGetV1KoperasiLoansIdInstallmentsUrl(id),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
 
-  return customInstance<getV1KoperasiLoansIdInstallmentsResponse>(getGetV1KoperasiLoansIdInstallmentsUrl(id),
-  {
-    ...options,
-    method: 'GET'
+export const getGetV1KoperasiLoansIdInstallmentsQueryKey = (id: number) => {
+	return [`/v1/koperasi/loans/${id}/installments`] as const;
+};
 
-
-  }
-);}
-
-
-
-
-
-export const getGetV1KoperasiLoansIdInstallmentsQueryKey = (id: number,) => {
-    return [
-    `/v1/koperasi/loans/${id}/installments`
-    ] as const;
-    }
-
-
-export const getGetV1KoperasiLoansIdInstallmentsQueryOptions = <TData = Awaited<ReturnType<typeof getV1KoperasiLoansIdInstallments>>, TError = unknown>(id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiLoansIdInstallments>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getGetV1KoperasiLoansIdInstallmentsQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1KoperasiLoansIdInstallments>>,
+	TError = unknown,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiLoansIdInstallments>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
 ) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+	const queryKey =
+		queryOptions?.queryKey ?? getGetV1KoperasiLoansIdInstallmentsQueryKey(id);
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1KoperasiLoansIdInstallmentsQueryKey(id);
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1KoperasiLoansIdInstallments>>
+	> = ({ signal }) =>
+		getV1KoperasiLoansIdInstallments(id, { signal, ...requestOptions });
 
+	return {
+		queryKey,
+		queryFn,
+		enabled: !!id,
+		...queryOptions,
+	} as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1KoperasiLoansIdInstallments>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
+export type GetV1KoperasiLoansIdInstallmentsQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1KoperasiLoansIdInstallments>>
+>;
+export type GetV1KoperasiLoansIdInstallmentsQueryError = unknown;
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1KoperasiLoansIdInstallments>>> = ({ signal }) => getV1KoperasiLoansIdInstallments(id, { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiLoansIdInstallments>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetV1KoperasiLoansIdInstallmentsQueryResult = NonNullable<Awaited<ReturnType<typeof getV1KoperasiLoansIdInstallments>>>
-export type GetV1KoperasiLoansIdInstallmentsQueryError = unknown
-
-
-export function useGetV1KoperasiLoansIdInstallments<TData = Awaited<ReturnType<typeof getV1KoperasiLoansIdInstallments>>, TError = unknown>(
- id: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiLoansIdInstallments>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1KoperasiLoansIdInstallments>>,
-          TError,
-          Awaited<ReturnType<typeof getV1KoperasiLoansIdInstallments>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1KoperasiLoansIdInstallments<TData = Awaited<ReturnType<typeof getV1KoperasiLoansIdInstallments>>, TError = unknown>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiLoansIdInstallments>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1KoperasiLoansIdInstallments>>,
-          TError,
-          Awaited<ReturnType<typeof getV1KoperasiLoansIdInstallments>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1KoperasiLoansIdInstallments<TData = Awaited<ReturnType<typeof getV1KoperasiLoansIdInstallments>>, TError = unknown>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiLoansIdInstallments>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1KoperasiLoansIdInstallments<
+	TData = Awaited<ReturnType<typeof getV1KoperasiLoansIdInstallments>>,
+	TError = unknown,
+>(
+	id: number,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiLoansIdInstallments>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1KoperasiLoansIdInstallments>>,
+					TError,
+					Awaited<ReturnType<typeof getV1KoperasiLoansIdInstallments>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1KoperasiLoansIdInstallments<
+	TData = Awaited<ReturnType<typeof getV1KoperasiLoansIdInstallments>>,
+	TError = unknown,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiLoansIdInstallments>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1KoperasiLoansIdInstallments>>,
+					TError,
+					Awaited<ReturnType<typeof getV1KoperasiLoansIdInstallments>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1KoperasiLoansIdInstallments<
+	TData = Awaited<ReturnType<typeof getV1KoperasiLoansIdInstallments>>,
+	TError = unknown,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiLoansIdInstallments>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary Jadwal angsuran pinjaman
  */
 
-export function useGetV1KoperasiLoansIdInstallments<TData = Awaited<ReturnType<typeof getV1KoperasiLoansIdInstallments>>, TError = unknown>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiLoansIdInstallments>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1KoperasiLoansIdInstallments<
+	TData = Awaited<ReturnType<typeof getV1KoperasiLoansIdInstallments>>,
+	TError = unknown,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiLoansIdInstallments>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1KoperasiLoansIdInstallmentsQueryOptions(
+		id,
+		options,
+	);
 
-  const queryOptions = getGetV1KoperasiLoansIdInstallmentsQueryOptions(id,options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
 
 export type postV1KoperasiLoansIdPaymentsResponse200 = {
-  data: PostV1KoperasiLoansIdPayments200
-  status: 200
-}
-
-export type postV1KoperasiLoansIdPaymentsResponseSuccess = (postV1KoperasiLoansIdPaymentsResponse200) & {
-  headers: Headers;
+	data: PostV1KoperasiLoansIdPayments200;
+	status: 200;
 };
-;
 
-export type postV1KoperasiLoansIdPaymentsResponse = (postV1KoperasiLoansIdPaymentsResponseSuccess)
+export type postV1KoperasiLoansIdPaymentsResponseSuccess =
+	postV1KoperasiLoansIdPaymentsResponse200 & {
+		headers: Headers;
+	};
 
-export const getPostV1KoperasiLoansIdPaymentsUrl = (id: number,) => {
+export type postV1KoperasiLoansIdPaymentsResponse =
+	postV1KoperasiLoansIdPaymentsResponseSuccess;
 
-
-
-
-  return `/v1/koperasi/loans/${id}/payments`
-}
+export const getPostV1KoperasiLoansIdPaymentsUrl = (id: number) => {
+	return `/v1/koperasi/loans/${id}/payments`;
+};
 
 /**
  * @summary Bayar angsuran pinjaman (fleksibel)
  */
-export const postV1KoperasiLoansIdPayments = async (id: number,
-    internalModulesKoperasiPinjamanPaymentRequest: InternalModulesKoperasiPinjamanPaymentRequest, options?: RequestInit): Promise<postV1KoperasiLoansIdPaymentsResponse> => {
+export const postV1KoperasiLoansIdPayments = async (
+	id: number,
+	internalModulesKoperasiPinjamanPaymentRequest: InternalModulesKoperasiPinjamanPaymentRequest,
+	options?: RequestInit,
+): Promise<postV1KoperasiLoansIdPaymentsResponse> => {
+	return customInstance<postV1KoperasiLoansIdPaymentsResponse>(
+		getPostV1KoperasiLoansIdPaymentsUrl(id),
+		{
+			...options,
+			method: "POST",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(internalModulesKoperasiPinjamanPaymentRequest),
+		},
+	);
+};
 
-  return customInstance<postV1KoperasiLoansIdPaymentsResponse>(getPostV1KoperasiLoansIdPaymentsUrl(id),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      internalModulesKoperasiPinjamanPaymentRequest,)
-  }
-);}
+export const getPostV1KoperasiLoansIdPaymentsMutationOptions = <
+	TError = unknown,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1KoperasiLoansIdPayments>>,
+		TError,
+		{ id: number; data: InternalModulesKoperasiPinjamanPaymentRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1KoperasiLoansIdPayments>>,
+	TError,
+	{ id: number; data: InternalModulesKoperasiPinjamanPaymentRequest },
+	TContext
+> => {
+	const mutationKey = ["postV1KoperasiLoansIdPayments"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1KoperasiLoansIdPayments>>,
+		{ id: number; data: InternalModulesKoperasiPinjamanPaymentRequest }
+	> = (props) => {
+		const { id, data } = props ?? {};
 
+		return postV1KoperasiLoansIdPayments(id, data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-export const getPostV1KoperasiLoansIdPaymentsMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1KoperasiLoansIdPayments>>, TError,{id: number;data: InternalModulesKoperasiPinjamanPaymentRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1KoperasiLoansIdPayments>>, TError,{id: number;data: InternalModulesKoperasiPinjamanPaymentRequest}, TContext> => {
+export type PostV1KoperasiLoansIdPaymentsMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1KoperasiLoansIdPayments>>
+>;
+export type PostV1KoperasiLoansIdPaymentsMutationBody =
+	InternalModulesKoperasiPinjamanPaymentRequest;
+export type PostV1KoperasiLoansIdPaymentsMutationError = unknown;
 
-const mutationKey = ['postV1KoperasiLoansIdPayments'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1KoperasiLoansIdPayments>>, {id: number;data: InternalModulesKoperasiPinjamanPaymentRequest}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  postV1KoperasiLoansIdPayments(id,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1KoperasiLoansIdPaymentsMutationResult = NonNullable<Awaited<ReturnType<typeof postV1KoperasiLoansIdPayments>>>
-    export type PostV1KoperasiLoansIdPaymentsMutationBody = InternalModulesKoperasiPinjamanPaymentRequest
-    export type PostV1KoperasiLoansIdPaymentsMutationError = unknown
-
-    /**
+/**
  * @summary Bayar angsuran pinjaman (fleksibel)
  */
-export const usePostV1KoperasiLoansIdPayments = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1KoperasiLoansIdPayments>>, TError,{id: number;data: InternalModulesKoperasiPinjamanPaymentRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postV1KoperasiLoansIdPayments>>,
-        TError,
-        {id: number;data: InternalModulesKoperasiPinjamanPaymentRequest},
-        TContext
-      > => {
-      return useMutation(getPostV1KoperasiLoansIdPaymentsMutationOptions(options), queryClient);
-    }
+export const usePostV1KoperasiLoansIdPayments = <
+	TError = unknown,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1KoperasiLoansIdPayments>>,
+			TError,
+			{ id: number; data: InternalModulesKoperasiPinjamanPaymentRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1KoperasiLoansIdPayments>>,
+	TError,
+	{ id: number; data: InternalModulesKoperasiPinjamanPaymentRequest },
+	TContext
+> => {
+	return useMutation(
+		getPostV1KoperasiLoansIdPaymentsMutationOptions(options),
+		queryClient,
+	);
+};

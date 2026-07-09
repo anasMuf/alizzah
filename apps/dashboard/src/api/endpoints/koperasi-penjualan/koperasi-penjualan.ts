@@ -5,435 +5,624 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import {
-  useMutation,
-  useQuery
-} from '@tanstack/react-query';
-import type {
-  DataTag,
-  DefinedInitialDataOptions,
-  DefinedUseQueryResult,
-  MutationFunction,
-  QueryClient,
-  QueryFunction,
-  QueryKey,
-  UndefinedInitialDataOptions,
-  UseMutationOptions,
-  UseMutationResult,
-  UseQueryOptions,
-  UseQueryResult
-} from '@tanstack/react-query';
 
 import type {
-  GetV1KoperasiSales200,
-  GetV1KoperasiSalesId200,
-  GetV1KoperasiSalesParams,
-  InternalModulesKoperasiPenjualanCreateRequest,
-  InternalModulesKoperasiPenjualanPaymentRequest,
-  PostV1KoperasiSales201,
-  PostV1KoperasiSalesIdPayments200
-} from '../../model';
+	DataTag,
+	DefinedInitialDataOptions,
+	DefinedUseQueryResult,
+	MutationFunction,
+	QueryClient,
+	QueryFunction,
+	QueryKey,
+	UndefinedInitialDataOptions,
+	UseMutationOptions,
+	UseMutationResult,
+	UseQueryOptions,
+	UseQueryResult,
+} from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
-import { customInstance } from '../../mutator/custom-instance';
+import type {
+	GetV1KoperasiSales200,
+	GetV1KoperasiSalesId200,
+	GetV1KoperasiSalesParams,
+	InternalModulesKoperasiPenjualanCreateRequest,
+	InternalModulesKoperasiPenjualanPaymentRequest,
+	PostV1KoperasiSales201,
+	PostV1KoperasiSalesIdPayments200,
+} from "../../model";
 
+import { customInstance } from "../../mutator/custom-instance";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
-
-
 export type getV1KoperasiSalesResponse200 = {
-  data: GetV1KoperasiSales200
-  status: 200
-}
-
-export type getV1KoperasiSalesResponseSuccess = (getV1KoperasiSalesResponse200) & {
-  headers: Headers;
+	data: GetV1KoperasiSales200;
+	status: 200;
 };
-;
 
-export type getV1KoperasiSalesResponse = (getV1KoperasiSalesResponseSuccess)
+export type getV1KoperasiSalesResponseSuccess =
+	getV1KoperasiSalesResponse200 & {
+		headers: Headers;
+	};
 
-export const getGetV1KoperasiSalesUrl = (params?: GetV1KoperasiSalesParams,) => {
-  const normalizedParams = new URLSearchParams();
+export type getV1KoperasiSalesResponse = getV1KoperasiSalesResponseSuccess;
 
-  Object.entries(params || {}).forEach(([key, value]) => {
+export const getGetV1KoperasiSalesUrl = (params?: GetV1KoperasiSalesParams) => {
+	const normalizedParams = new URLSearchParams();
 
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(key, value === null ? "null" : value.toString());
+		}
+	});
 
-  const stringifiedParams = normalizedParams.toString();
+	const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/v1/koperasi/sales?${stringifiedParams}` : `/v1/koperasi/sales`
-}
+	return stringifiedParams.length > 0
+		? `/v1/koperasi/sales?${stringifiedParams}`
+		: `/v1/koperasi/sales`;
+};
 
 /**
  * @summary List penjualan koperasi
  */
-export const getV1KoperasiSales = async (params?: GetV1KoperasiSalesParams, options?: RequestInit): Promise<getV1KoperasiSalesResponse> => {
+export const getV1KoperasiSales = async (
+	params?: GetV1KoperasiSalesParams,
+	options?: RequestInit,
+): Promise<getV1KoperasiSalesResponse> => {
+	return customInstance<getV1KoperasiSalesResponse>(
+		getGetV1KoperasiSalesUrl(params),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
 
-  return customInstance<getV1KoperasiSalesResponse>(getGetV1KoperasiSalesUrl(params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetV1KoperasiSalesQueryKey = (params?: GetV1KoperasiSalesParams,) => {
-    return [
-    `/v1/koperasi/sales`, ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getGetV1KoperasiSalesQueryOptions = <TData = Awaited<ReturnType<typeof getV1KoperasiSales>>, TError = unknown>(params?: GetV1KoperasiSalesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiSales>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getGetV1KoperasiSalesQueryKey = (
+	params?: GetV1KoperasiSalesParams,
 ) => {
+	return [`/v1/koperasi/sales`, ...(params ? [params] : [])] as const;
+};
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+export const getGetV1KoperasiSalesQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1KoperasiSales>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiSalesParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiSales>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1KoperasiSalesQueryKey(params);
+	const queryKey =
+		queryOptions?.queryKey ?? getGetV1KoperasiSalesQueryKey(params);
 
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1KoperasiSales>>
+	> = ({ signal }) => getV1KoperasiSales(params, { signal, ...requestOptions });
 
+	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1KoperasiSales>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1KoperasiSales>>> = ({ signal }) => getV1KoperasiSales(params, { signal, ...requestOptions });
+export type GetV1KoperasiSalesQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1KoperasiSales>>
+>;
+export type GetV1KoperasiSalesQueryError = unknown;
 
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiSales>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetV1KoperasiSalesQueryResult = NonNullable<Awaited<ReturnType<typeof getV1KoperasiSales>>>
-export type GetV1KoperasiSalesQueryError = unknown
-
-
-export function useGetV1KoperasiSales<TData = Awaited<ReturnType<typeof getV1KoperasiSales>>, TError = unknown>(
- params: undefined |  GetV1KoperasiSalesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiSales>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1KoperasiSales>>,
-          TError,
-          Awaited<ReturnType<typeof getV1KoperasiSales>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1KoperasiSales<TData = Awaited<ReturnType<typeof getV1KoperasiSales>>, TError = unknown>(
- params?: GetV1KoperasiSalesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiSales>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1KoperasiSales>>,
-          TError,
-          Awaited<ReturnType<typeof getV1KoperasiSales>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1KoperasiSales<TData = Awaited<ReturnType<typeof getV1KoperasiSales>>, TError = unknown>(
- params?: GetV1KoperasiSalesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiSales>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1KoperasiSales<
+	TData = Awaited<ReturnType<typeof getV1KoperasiSales>>,
+	TError = unknown,
+>(
+	params: undefined | GetV1KoperasiSalesParams,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiSales>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1KoperasiSales>>,
+					TError,
+					Awaited<ReturnType<typeof getV1KoperasiSales>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1KoperasiSales<
+	TData = Awaited<ReturnType<typeof getV1KoperasiSales>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiSalesParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiSales>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1KoperasiSales>>,
+					TError,
+					Awaited<ReturnType<typeof getV1KoperasiSales>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1KoperasiSales<
+	TData = Awaited<ReturnType<typeof getV1KoperasiSales>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiSalesParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiSales>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary List penjualan koperasi
  */
 
-export function useGetV1KoperasiSales<TData = Awaited<ReturnType<typeof getV1KoperasiSales>>, TError = unknown>(
- params?: GetV1KoperasiSalesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiSales>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1KoperasiSales<
+	TData = Awaited<ReturnType<typeof getV1KoperasiSales>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiSalesParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiSales>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1KoperasiSalesQueryOptions(params, options);
 
-  const queryOptions = getGetV1KoperasiSalesQueryOptions(params,options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
 
 export type postV1KoperasiSalesResponse201 = {
-  data: PostV1KoperasiSales201
-  status: 201
-}
-
-export type postV1KoperasiSalesResponseSuccess = (postV1KoperasiSalesResponse201) & {
-  headers: Headers;
+	data: PostV1KoperasiSales201;
+	status: 201;
 };
-;
 
-export type postV1KoperasiSalesResponse = (postV1KoperasiSalesResponseSuccess)
+export type postV1KoperasiSalesResponseSuccess =
+	postV1KoperasiSalesResponse201 & {
+		headers: Headers;
+	};
+
+export type postV1KoperasiSalesResponse = postV1KoperasiSalesResponseSuccess;
 
 export const getPostV1KoperasiSalesUrl = () => {
-
-
-
-
-  return `/v1/koperasi/sales`
-}
-
-/**
- * @summary Catat penjualan
- */
-export const postV1KoperasiSales = async (internalModulesKoperasiPenjualanCreateRequest: InternalModulesKoperasiPenjualanCreateRequest, options?: RequestInit): Promise<postV1KoperasiSalesResponse> => {
-
-  return customInstance<postV1KoperasiSalesResponse>(getPostV1KoperasiSalesUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      internalModulesKoperasiPenjualanCreateRequest,)
-  }
-);}
-
-
-
-
-export const getPostV1KoperasiSalesMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1KoperasiSales>>, TError,{data: InternalModulesKoperasiPenjualanCreateRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1KoperasiSales>>, TError,{data: InternalModulesKoperasiPenjualanCreateRequest}, TContext> => {
-
-const mutationKey = ['postV1KoperasiSales'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1KoperasiSales>>, {data: InternalModulesKoperasiPenjualanCreateRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  postV1KoperasiSales(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1KoperasiSalesMutationResult = NonNullable<Awaited<ReturnType<typeof postV1KoperasiSales>>>
-    export type PostV1KoperasiSalesMutationBody = InternalModulesKoperasiPenjualanCreateRequest
-    export type PostV1KoperasiSalesMutationError = unknown
-
-    /**
- * @summary Catat penjualan
- */
-export const usePostV1KoperasiSales = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1KoperasiSales>>, TError,{data: InternalModulesKoperasiPenjualanCreateRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postV1KoperasiSales>>,
-        TError,
-        {data: InternalModulesKoperasiPenjualanCreateRequest},
-        TContext
-      > => {
-      return useMutation(getPostV1KoperasiSalesMutationOptions(options), queryClient);
-    }
-    export type getV1KoperasiSalesIdResponse200 = {
-  data: GetV1KoperasiSalesId200
-  status: 200
-}
-
-export type getV1KoperasiSalesIdResponseSuccess = (getV1KoperasiSalesIdResponse200) & {
-  headers: Headers;
+	return `/v1/koperasi/sales`;
 };
-;
 
-export type getV1KoperasiSalesIdResponse = (getV1KoperasiSalesIdResponseSuccess)
+/**
+ * @summary Catat penjualan
+ */
+export const postV1KoperasiSales = async (
+	internalModulesKoperasiPenjualanCreateRequest: InternalModulesKoperasiPenjualanCreateRequest,
+	options?: RequestInit,
+): Promise<postV1KoperasiSalesResponse> => {
+	return customInstance<postV1KoperasiSalesResponse>(
+		getPostV1KoperasiSalesUrl(),
+		{
+			...options,
+			method: "POST",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(internalModulesKoperasiPenjualanCreateRequest),
+		},
+	);
+};
 
-export const getGetV1KoperasiSalesIdUrl = (id: number,) => {
+export const getPostV1KoperasiSalesMutationOptions = <
+	TError = unknown,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1KoperasiSales>>,
+		TError,
+		{ data: InternalModulesKoperasiPenjualanCreateRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1KoperasiSales>>,
+	TError,
+	{ data: InternalModulesKoperasiPenjualanCreateRequest },
+	TContext
+> => {
+	const mutationKey = ["postV1KoperasiSales"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1KoperasiSales>>,
+		{ data: InternalModulesKoperasiPenjualanCreateRequest }
+	> = (props) => {
+		const { data } = props ?? {};
 
+		return postV1KoperasiSales(data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-  return `/v1/koperasi/sales/${id}`
-}
+export type PostV1KoperasiSalesMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1KoperasiSales>>
+>;
+export type PostV1KoperasiSalesMutationBody =
+	InternalModulesKoperasiPenjualanCreateRequest;
+export type PostV1KoperasiSalesMutationError = unknown;
+
+/**
+ * @summary Catat penjualan
+ */
+export const usePostV1KoperasiSales = <TError = unknown, TContext = unknown>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1KoperasiSales>>,
+			TError,
+			{ data: InternalModulesKoperasiPenjualanCreateRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1KoperasiSales>>,
+	TError,
+	{ data: InternalModulesKoperasiPenjualanCreateRequest },
+	TContext
+> => {
+	return useMutation(
+		getPostV1KoperasiSalesMutationOptions(options),
+		queryClient,
+	);
+};
+export type getV1KoperasiSalesIdResponse200 = {
+	data: GetV1KoperasiSalesId200;
+	status: 200;
+};
+
+export type getV1KoperasiSalesIdResponseSuccess =
+	getV1KoperasiSalesIdResponse200 & {
+		headers: Headers;
+	};
+
+export type getV1KoperasiSalesIdResponse = getV1KoperasiSalesIdResponseSuccess;
+
+export const getGetV1KoperasiSalesIdUrl = (id: number) => {
+	return `/v1/koperasi/sales/${id}`;
+};
 
 /**
  * @summary Detail penjualan
  */
-export const getV1KoperasiSalesId = async (id: number, options?: RequestInit): Promise<getV1KoperasiSalesIdResponse> => {
+export const getV1KoperasiSalesId = async (
+	id: number,
+	options?: RequestInit,
+): Promise<getV1KoperasiSalesIdResponse> => {
+	return customInstance<getV1KoperasiSalesIdResponse>(
+		getGetV1KoperasiSalesIdUrl(id),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
 
-  return customInstance<getV1KoperasiSalesIdResponse>(getGetV1KoperasiSalesIdUrl(id),
-  {
-    ...options,
-    method: 'GET'
+export const getGetV1KoperasiSalesIdQueryKey = (id: number) => {
+	return [`/v1/koperasi/sales/${id}`] as const;
+};
 
-
-  }
-);}
-
-
-
-
-
-export const getGetV1KoperasiSalesIdQueryKey = (id: number,) => {
-    return [
-    `/v1/koperasi/sales/${id}`
-    ] as const;
-    }
-
-
-export const getGetV1KoperasiSalesIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1KoperasiSalesId>>, TError = unknown>(id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiSalesId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getGetV1KoperasiSalesIdQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1KoperasiSalesId>>,
+	TError = unknown,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiSalesId>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
 ) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+	const queryKey =
+		queryOptions?.queryKey ?? getGetV1KoperasiSalesIdQueryKey(id);
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1KoperasiSalesIdQueryKey(id);
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1KoperasiSalesId>>
+	> = ({ signal }) => getV1KoperasiSalesId(id, { signal, ...requestOptions });
 
+	return {
+		queryKey,
+		queryFn,
+		enabled: !!id,
+		...queryOptions,
+	} as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1KoperasiSalesId>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
+export type GetV1KoperasiSalesIdQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1KoperasiSalesId>>
+>;
+export type GetV1KoperasiSalesIdQueryError = unknown;
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1KoperasiSalesId>>> = ({ signal }) => getV1KoperasiSalesId(id, { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiSalesId>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetV1KoperasiSalesIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1KoperasiSalesId>>>
-export type GetV1KoperasiSalesIdQueryError = unknown
-
-
-export function useGetV1KoperasiSalesId<TData = Awaited<ReturnType<typeof getV1KoperasiSalesId>>, TError = unknown>(
- id: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiSalesId>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1KoperasiSalesId>>,
-          TError,
-          Awaited<ReturnType<typeof getV1KoperasiSalesId>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1KoperasiSalesId<TData = Awaited<ReturnType<typeof getV1KoperasiSalesId>>, TError = unknown>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiSalesId>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1KoperasiSalesId>>,
-          TError,
-          Awaited<ReturnType<typeof getV1KoperasiSalesId>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1KoperasiSalesId<TData = Awaited<ReturnType<typeof getV1KoperasiSalesId>>, TError = unknown>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiSalesId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1KoperasiSalesId<
+	TData = Awaited<ReturnType<typeof getV1KoperasiSalesId>>,
+	TError = unknown,
+>(
+	id: number,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiSalesId>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1KoperasiSalesId>>,
+					TError,
+					Awaited<ReturnType<typeof getV1KoperasiSalesId>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1KoperasiSalesId<
+	TData = Awaited<ReturnType<typeof getV1KoperasiSalesId>>,
+	TError = unknown,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiSalesId>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1KoperasiSalesId>>,
+					TError,
+					Awaited<ReturnType<typeof getV1KoperasiSalesId>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1KoperasiSalesId<
+	TData = Awaited<ReturnType<typeof getV1KoperasiSalesId>>,
+	TError = unknown,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiSalesId>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary Detail penjualan
  */
 
-export function useGetV1KoperasiSalesId<TData = Awaited<ReturnType<typeof getV1KoperasiSalesId>>, TError = unknown>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiSalesId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1KoperasiSalesId<
+	TData = Awaited<ReturnType<typeof getV1KoperasiSalesId>>,
+	TError = unknown,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiSalesId>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1KoperasiSalesIdQueryOptions(id, options);
 
-  const queryOptions = getGetV1KoperasiSalesIdQueryOptions(id,options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
 
 export type postV1KoperasiSalesIdPaymentsResponse200 = {
-  data: PostV1KoperasiSalesIdPayments200
-  status: 200
-}
-
-export type postV1KoperasiSalesIdPaymentsResponseSuccess = (postV1KoperasiSalesIdPaymentsResponse200) & {
-  headers: Headers;
+	data: PostV1KoperasiSalesIdPayments200;
+	status: 200;
 };
-;
 
-export type postV1KoperasiSalesIdPaymentsResponse = (postV1KoperasiSalesIdPaymentsResponseSuccess)
+export type postV1KoperasiSalesIdPaymentsResponseSuccess =
+	postV1KoperasiSalesIdPaymentsResponse200 & {
+		headers: Headers;
+	};
 
-export const getPostV1KoperasiSalesIdPaymentsUrl = (id: number,) => {
+export type postV1KoperasiSalesIdPaymentsResponse =
+	postV1KoperasiSalesIdPaymentsResponseSuccess;
 
-
-
-
-  return `/v1/koperasi/sales/${id}/payments`
-}
+export const getPostV1KoperasiSalesIdPaymentsUrl = (id: number) => {
+	return `/v1/koperasi/sales/${id}/payments`;
+};
 
 /**
  * @summary Bayar (cicil) piutang penjualan
  */
-export const postV1KoperasiSalesIdPayments = async (id: number,
-    internalModulesKoperasiPenjualanPaymentRequest: InternalModulesKoperasiPenjualanPaymentRequest, options?: RequestInit): Promise<postV1KoperasiSalesIdPaymentsResponse> => {
+export const postV1KoperasiSalesIdPayments = async (
+	id: number,
+	internalModulesKoperasiPenjualanPaymentRequest: InternalModulesKoperasiPenjualanPaymentRequest,
+	options?: RequestInit,
+): Promise<postV1KoperasiSalesIdPaymentsResponse> => {
+	return customInstance<postV1KoperasiSalesIdPaymentsResponse>(
+		getPostV1KoperasiSalesIdPaymentsUrl(id),
+		{
+			...options,
+			method: "POST",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(internalModulesKoperasiPenjualanPaymentRequest),
+		},
+	);
+};
 
-  return customInstance<postV1KoperasiSalesIdPaymentsResponse>(getPostV1KoperasiSalesIdPaymentsUrl(id),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      internalModulesKoperasiPenjualanPaymentRequest,)
-  }
-);}
+export const getPostV1KoperasiSalesIdPaymentsMutationOptions = <
+	TError = unknown,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1KoperasiSalesIdPayments>>,
+		TError,
+		{ id: number; data: InternalModulesKoperasiPenjualanPaymentRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1KoperasiSalesIdPayments>>,
+	TError,
+	{ id: number; data: InternalModulesKoperasiPenjualanPaymentRequest },
+	TContext
+> => {
+	const mutationKey = ["postV1KoperasiSalesIdPayments"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1KoperasiSalesIdPayments>>,
+		{ id: number; data: InternalModulesKoperasiPenjualanPaymentRequest }
+	> = (props) => {
+		const { id, data } = props ?? {};
 
+		return postV1KoperasiSalesIdPayments(id, data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-export const getPostV1KoperasiSalesIdPaymentsMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1KoperasiSalesIdPayments>>, TError,{id: number;data: InternalModulesKoperasiPenjualanPaymentRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1KoperasiSalesIdPayments>>, TError,{id: number;data: InternalModulesKoperasiPenjualanPaymentRequest}, TContext> => {
+export type PostV1KoperasiSalesIdPaymentsMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1KoperasiSalesIdPayments>>
+>;
+export type PostV1KoperasiSalesIdPaymentsMutationBody =
+	InternalModulesKoperasiPenjualanPaymentRequest;
+export type PostV1KoperasiSalesIdPaymentsMutationError = unknown;
 
-const mutationKey = ['postV1KoperasiSalesIdPayments'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1KoperasiSalesIdPayments>>, {id: number;data: InternalModulesKoperasiPenjualanPaymentRequest}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  postV1KoperasiSalesIdPayments(id,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1KoperasiSalesIdPaymentsMutationResult = NonNullable<Awaited<ReturnType<typeof postV1KoperasiSalesIdPayments>>>
-    export type PostV1KoperasiSalesIdPaymentsMutationBody = InternalModulesKoperasiPenjualanPaymentRequest
-    export type PostV1KoperasiSalesIdPaymentsMutationError = unknown
-
-    /**
+/**
  * @summary Bayar (cicil) piutang penjualan
  */
-export const usePostV1KoperasiSalesIdPayments = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1KoperasiSalesIdPayments>>, TError,{id: number;data: InternalModulesKoperasiPenjualanPaymentRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postV1KoperasiSalesIdPayments>>,
-        TError,
-        {id: number;data: InternalModulesKoperasiPenjualanPaymentRequest},
-        TContext
-      > => {
-      return useMutation(getPostV1KoperasiSalesIdPaymentsMutationOptions(options), queryClient);
-    }
+export const usePostV1KoperasiSalesIdPayments = <
+	TError = unknown,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1KoperasiSalesIdPayments>>,
+			TError,
+			{ id: number; data: InternalModulesKoperasiPenjualanPaymentRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1KoperasiSalesIdPayments>>,
+	TError,
+	{ id: number; data: InternalModulesKoperasiPenjualanPaymentRequest },
+	TContext
+> => {
+	return useMutation(
+		getPostV1KoperasiSalesIdPaymentsMutationOptions(options),
+		queryClient,
+	);
+};

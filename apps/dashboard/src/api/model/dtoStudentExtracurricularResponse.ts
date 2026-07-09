@@ -5,11 +5,11 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoExtracurricularResponse } from './dtoExtracurricularResponse';
+import type { DtoExtracurricularResponse } from "./dtoExtracurricularResponse";
 
 export interface DtoStudentExtracurricularResponse {
-  end_date?: string;
-  extracurricular?: DtoExtracurricularResponse;
-  id?: number;
-  start_date?: string;
+	end_date?: string;
+	extracurricular?: DtoExtracurricularResponse;
+	id?: number;
+	start_date?: string;
 }

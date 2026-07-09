@@ -5,24 +5,24 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { InternalModulesKoperasiPenjualanItemResponse } from './internalModulesKoperasiPenjualanItemResponse';
+import type { InternalModulesKoperasiPenjualanItemResponse } from "./internalModulesKoperasiPenjualanItemResponse";
 
 export interface InternalModulesKoperasiPenjualanResponse {
-  academic_year_id?: number;
-  buyer_name?: string;
-  created_at?: string;
-  created_by?: string;
-  id?: number;
-  items?: InternalModulesKoperasiPenjualanItemResponse[];
-  notes?: string;
-  paid_amount?: number;
-  /** Σ (unit_price - unit_cost) × qty */
-  profit?: number;
-  remaining?: number;
-  sale_date?: string;
-  source?: string;
-  status?: string;
-  student_id?: number;
-  student_name?: string;
-  total_amount?: number;
+	academic_year_id?: number;
+	buyer_name?: string;
+	created_at?: string;
+	created_by?: string;
+	id?: number;
+	items?: InternalModulesKoperasiPenjualanItemResponse[];
+	notes?: string;
+	paid_amount?: number;
+	/** Σ (unit_price - unit_cost) × qty */
+	profit?: number;
+	remaining?: number;
+	sale_date?: string;
+	source?: string;
+	status?: string;
+	student_id?: number;
+	student_name?: string;
+	total_amount?: number;
 }

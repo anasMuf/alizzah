@@ -7,11 +7,11 @@
  */
 
 export interface InternalModulesKoperasiPemasokCreateRequest {
-  address?: string;
-  /** @maxLength 100 */
-  contact_person?: string;
-  /** @maxLength 100 */
-  name: string;
-  /** @maxLength 20 */
-  phone?: string;
+	address?: string;
+	/** @maxLength 100 */
+	contact_person?: string;
+	/** @maxLength 100 */
+	name: string;
+	/** @maxLength 20 */
+	phone?: string;
 }

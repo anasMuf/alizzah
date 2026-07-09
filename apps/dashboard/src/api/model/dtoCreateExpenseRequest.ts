@@ -7,11 +7,11 @@
  */
 
 export interface DtoCreateExpenseRequest {
-  academic_year_id: number;
-  /** @minimum 1 */
-  amount: number;
-  description: string;
-  expense_category_id: number;
-  expense_date: string;
-  receipt_url?: string;
+	academic_year_id: number;
+	/** @minimum 1 */
+	amount: number;
+	description: string;
+	expense_category_id: number;
+	expense_date: string;
+	receipt_url?: string;
 }

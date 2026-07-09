@@ -5,1559 +5,2188 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import {
-  useMutation,
-  useQuery
-} from '@tanstack/react-query';
-import type {
-  DataTag,
-  DefinedInitialDataOptions,
-  DefinedUseQueryResult,
-  MutationFunction,
-  QueryClient,
-  QueryFunction,
-  QueryKey,
-  UndefinedInitialDataOptions,
-  UseMutationOptions,
-  UseMutationResult,
-  UseQueryOptions,
-  UseQueryResult
-} from '@tanstack/react-query';
 
 import type {
-  DtoAddInvoiceItemRequest,
-  DtoCreateInstallmentScheduleRequest,
-  DtoErrorResponse,
-  DtoSuccessResponse,
-  DtoUpdateInstallmentRequest,
-  DtoUpdateInvoiceItemQuantityRequest,
-  DtoUpdateInvoiceItemRequest,
-  GetV1Invoices200,
-  GetV1InvoicesBatch200,
-  GetV1InvoicesBatchParams,
-  GetV1InvoicesId200,
-  GetV1InvoicesIdInstallments200,
-  GetV1InvoicesParams,
-  GetV1StudentsIdInvoices200,
-  GetV1StudentsIdInvoicesParams,
-  PostV1InvoicesIdInstallments201,
-  PostV1InvoicesIdItems201,
-  PutV1InvoicesIdInstallmentsInstId200,
-  PutV1InvoicesIdItemsItemId200,
-  PutV1InvoicesIdItemsItemIdQuantity200
-} from '../../model';
+	DataTag,
+	DefinedInitialDataOptions,
+	DefinedUseQueryResult,
+	MutationFunction,
+	QueryClient,
+	QueryFunction,
+	QueryKey,
+	UndefinedInitialDataOptions,
+	UseMutationOptions,
+	UseMutationResult,
+	UseQueryOptions,
+	UseQueryResult,
+} from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
-import { customInstance } from '../../mutator/custom-instance';
+import type {
+	DtoAddInvoiceItemRequest,
+	DtoCreateInstallmentScheduleRequest,
+	DtoErrorResponse,
+	DtoSuccessResponse,
+	DtoUpdateInstallmentRequest,
+	DtoUpdateInvoiceItemQuantityRequest,
+	DtoUpdateInvoiceItemRequest,
+	GetV1Invoices200,
+	GetV1InvoicesBatch200,
+	GetV1InvoicesBatchParams,
+	GetV1InvoicesId200,
+	GetV1InvoicesIdInstallments200,
+	GetV1InvoicesParams,
+	GetV1StudentsIdInvoices200,
+	GetV1StudentsIdInvoicesParams,
+	PostV1InvoicesIdInstallments201,
+	PostV1InvoicesIdItems201,
+	PutV1InvoicesIdInstallmentsInstId200,
+	PutV1InvoicesIdItemsItemId200,
+	PutV1InvoicesIdItemsItemIdQuantity200,
+} from "../../model";
 
+import { customInstance } from "../../mutator/custom-instance";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
-
-
 export type getV1InvoicesResponse200 = {
-  data: GetV1Invoices200
-  status: 200
-}
+	data: GetV1Invoices200;
+	status: 200;
+};
 
 export type getV1InvoicesResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type getV1InvoicesResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type getV1InvoicesResponse500 = {
-  data: DtoErrorResponse
-  status: 500
-}
-
-export type getV1InvoicesResponseSuccess = (getV1InvoicesResponse200) & {
-  headers: Headers;
-};
-export type getV1InvoicesResponseError = (getV1InvoicesResponse401 | getV1InvoicesResponse403 | getV1InvoicesResponse500) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 500;
 };
 
-export type getV1InvoicesResponse = (getV1InvoicesResponseSuccess | getV1InvoicesResponseError)
+export type getV1InvoicesResponseSuccess = getV1InvoicesResponse200 & {
+	headers: Headers;
+};
+export type getV1InvoicesResponseError = (
+	| getV1InvoicesResponse401
+	| getV1InvoicesResponse403
+	| getV1InvoicesResponse500
+) & {
+	headers: Headers;
+};
 
-export const getGetV1InvoicesUrl = (params?: GetV1InvoicesParams,) => {
-  const normalizedParams = new URLSearchParams();
+export type getV1InvoicesResponse =
+	| getV1InvoicesResponseSuccess
+	| getV1InvoicesResponseError;
 
-  Object.entries(params || {}).forEach(([key, value]) => {
+export const getGetV1InvoicesUrl = (params?: GetV1InvoicesParams) => {
+	const normalizedParams = new URLSearchParams();
 
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(key, value === null ? "null" : value.toString());
+		}
+	});
 
-  const stringifiedParams = normalizedParams.toString();
+	const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/v1/invoices?${stringifiedParams}` : `/v1/invoices`
-}
+	return stringifiedParams.length > 0
+		? `/v1/invoices?${stringifiedParams}`
+		: `/v1/invoices`;
+};
 
 /**
  * Get a paginated list of invoices with various filters
  * @summary List invoices
  */
-export const getV1Invoices = async (params?: GetV1InvoicesParams, options?: RequestInit): Promise<getV1InvoicesResponse> => {
+export const getV1Invoices = async (
+	params?: GetV1InvoicesParams,
+	options?: RequestInit,
+): Promise<getV1InvoicesResponse> => {
+	return customInstance<getV1InvoicesResponse>(getGetV1InvoicesUrl(params), {
+		...options,
+		method: "GET",
+	});
+};
 
-  return customInstance<getV1InvoicesResponse>(getGetV1InvoicesUrl(params),
-  {
-    ...options,
-    method: 'GET'
+export const getGetV1InvoicesQueryKey = (params?: GetV1InvoicesParams) => {
+	return [`/v1/invoices`, ...(params ? [params] : [])] as const;
+};
 
-
-  }
-);}
-
-
-
-
-
-export const getGetV1InvoicesQueryKey = (params?: GetV1InvoicesParams,) => {
-    return [
-    `/v1/invoices`, ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getGetV1InvoicesQueryOptions = <TData = Awaited<ReturnType<typeof getV1Invoices>>, TError = DtoErrorResponse>(params?: GetV1InvoicesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1Invoices>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getGetV1InvoicesQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1Invoices>>,
+	TError = DtoErrorResponse,
+>(
+	params?: GetV1InvoicesParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<Awaited<ReturnType<typeof getV1Invoices>>, TError, TData>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
 ) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+	const queryKey = queryOptions?.queryKey ?? getGetV1InvoicesQueryKey(params);
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1InvoicesQueryKey(params);
+	const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1Invoices>>> = ({
+		signal,
+	}) => getV1Invoices(params, { signal, ...requestOptions });
 
+	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1Invoices>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
+export type GetV1InvoicesQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1Invoices>>
+>;
+export type GetV1InvoicesQueryError = DtoErrorResponse;
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1Invoices>>> = ({ signal }) => getV1Invoices(params, { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1Invoices>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetV1InvoicesQueryResult = NonNullable<Awaited<ReturnType<typeof getV1Invoices>>>
-export type GetV1InvoicesQueryError = DtoErrorResponse
-
-
-export function useGetV1Invoices<TData = Awaited<ReturnType<typeof getV1Invoices>>, TError = DtoErrorResponse>(
- params: undefined |  GetV1InvoicesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1Invoices>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1Invoices>>,
-          TError,
-          Awaited<ReturnType<typeof getV1Invoices>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1Invoices<TData = Awaited<ReturnType<typeof getV1Invoices>>, TError = DtoErrorResponse>(
- params?: GetV1InvoicesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1Invoices>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1Invoices>>,
-          TError,
-          Awaited<ReturnType<typeof getV1Invoices>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1Invoices<TData = Awaited<ReturnType<typeof getV1Invoices>>, TError = DtoErrorResponse>(
- params?: GetV1InvoicesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1Invoices>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1Invoices<
+	TData = Awaited<ReturnType<typeof getV1Invoices>>,
+	TError = DtoErrorResponse,
+>(
+	params: undefined | GetV1InvoicesParams,
+	options: {
+		query: Partial<
+			UseQueryOptions<Awaited<ReturnType<typeof getV1Invoices>>, TError, TData>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1Invoices>>,
+					TError,
+					Awaited<ReturnType<typeof getV1Invoices>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1Invoices<
+	TData = Awaited<ReturnType<typeof getV1Invoices>>,
+	TError = DtoErrorResponse,
+>(
+	params?: GetV1InvoicesParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<Awaited<ReturnType<typeof getV1Invoices>>, TError, TData>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1Invoices>>,
+					TError,
+					Awaited<ReturnType<typeof getV1Invoices>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1Invoices<
+	TData = Awaited<ReturnType<typeof getV1Invoices>>,
+	TError = DtoErrorResponse,
+>(
+	params?: GetV1InvoicesParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<Awaited<ReturnType<typeof getV1Invoices>>, TError, TData>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary List invoices
  */
 
-export function useGetV1Invoices<TData = Awaited<ReturnType<typeof getV1Invoices>>, TError = DtoErrorResponse>(
- params?: GetV1InvoicesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1Invoices>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1Invoices<
+	TData = Awaited<ReturnType<typeof getV1Invoices>>,
+	TError = DtoErrorResponse,
+>(
+	params?: GetV1InvoicesParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<Awaited<ReturnType<typeof getV1Invoices>>, TError, TData>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1InvoicesQueryOptions(params, options);
 
-  const queryOptions = getGetV1InvoicesQueryOptions(params,options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
 
 export type getV1InvoicesBatchResponse200 = {
-  data: GetV1InvoicesBatch200
-  status: 200
-}
+	data: GetV1InvoicesBatch200;
+	status: 200;
+};
 
 export type getV1InvoicesBatchResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type getV1InvoicesBatchResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type getV1InvoicesBatchResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
-
-export type getV1InvoicesBatchResponseSuccess = (getV1InvoicesBatchResponse200) & {
-  headers: Headers;
-};
-export type getV1InvoicesBatchResponseError = (getV1InvoicesBatchResponse400 | getV1InvoicesBatchResponse401 | getV1InvoicesBatchResponse403) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 403;
 };
 
-export type getV1InvoicesBatchResponse = (getV1InvoicesBatchResponseSuccess | getV1InvoicesBatchResponseError)
+export type getV1InvoicesBatchResponseSuccess =
+	getV1InvoicesBatchResponse200 & {
+		headers: Headers;
+	};
+export type getV1InvoicesBatchResponseError = (
+	| getV1InvoicesBatchResponse400
+	| getV1InvoicesBatchResponse401
+	| getV1InvoicesBatchResponse403
+) & {
+	headers: Headers;
+};
 
-export const getGetV1InvoicesBatchUrl = (params: GetV1InvoicesBatchParams,) => {
-  const normalizedParams = new URLSearchParams();
+export type getV1InvoicesBatchResponse =
+	| getV1InvoicesBatchResponseSuccess
+	| getV1InvoicesBatchResponseError;
 
-  Object.entries(params || {}).forEach(([key, value]) => {
+export const getGetV1InvoicesBatchUrl = (params: GetV1InvoicesBatchParams) => {
+	const normalizedParams = new URLSearchParams();
 
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(key, value === null ? "null" : value.toString());
+		}
+	});
 
-  const stringifiedParams = normalizedParams.toString();
+	const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/v1/invoices/batch?${stringifiedParams}` : `/v1/invoices/batch`
-}
+	return stringifiedParams.length > 0
+		? `/v1/invoices/batch?${stringifiedParams}`
+		: `/v1/invoices/batch`;
+};
 
 /**
  * Get invoice details for multiple IDs at once (for payment page)
  * @summary Get multiple invoices by IDs
  */
-export const getV1InvoicesBatch = async (params: GetV1InvoicesBatchParams, options?: RequestInit): Promise<getV1InvoicesBatchResponse> => {
+export const getV1InvoicesBatch = async (
+	params: GetV1InvoicesBatchParams,
+	options?: RequestInit,
+): Promise<getV1InvoicesBatchResponse> => {
+	return customInstance<getV1InvoicesBatchResponse>(
+		getGetV1InvoicesBatchUrl(params),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
 
-  return customInstance<getV1InvoicesBatchResponse>(getGetV1InvoicesBatchUrl(params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetV1InvoicesBatchQueryKey = (params?: GetV1InvoicesBatchParams,) => {
-    return [
-    `/v1/invoices/batch`, ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getGetV1InvoicesBatchQueryOptions = <TData = Awaited<ReturnType<typeof getV1InvoicesBatch>>, TError = DtoErrorResponse>(params: GetV1InvoicesBatchParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1InvoicesBatch>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getGetV1InvoicesBatchQueryKey = (
+	params?: GetV1InvoicesBatchParams,
 ) => {
+	return [`/v1/invoices/batch`, ...(params ? [params] : [])] as const;
+};
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+export const getGetV1InvoicesBatchQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1InvoicesBatch>>,
+	TError = DtoErrorResponse,
+>(
+	params: GetV1InvoicesBatchParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1InvoicesBatch>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1InvoicesBatchQueryKey(params);
+	const queryKey =
+		queryOptions?.queryKey ?? getGetV1InvoicesBatchQueryKey(params);
 
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1InvoicesBatch>>
+	> = ({ signal }) => getV1InvoicesBatch(params, { signal, ...requestOptions });
 
+	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1InvoicesBatch>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1InvoicesBatch>>> = ({ signal }) => getV1InvoicesBatch(params, { signal, ...requestOptions });
+export type GetV1InvoicesBatchQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1InvoicesBatch>>
+>;
+export type GetV1InvoicesBatchQueryError = DtoErrorResponse;
 
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1InvoicesBatch>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetV1InvoicesBatchQueryResult = NonNullable<Awaited<ReturnType<typeof getV1InvoicesBatch>>>
-export type GetV1InvoicesBatchQueryError = DtoErrorResponse
-
-
-export function useGetV1InvoicesBatch<TData = Awaited<ReturnType<typeof getV1InvoicesBatch>>, TError = DtoErrorResponse>(
- params: GetV1InvoicesBatchParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1InvoicesBatch>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1InvoicesBatch>>,
-          TError,
-          Awaited<ReturnType<typeof getV1InvoicesBatch>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1InvoicesBatch<TData = Awaited<ReturnType<typeof getV1InvoicesBatch>>, TError = DtoErrorResponse>(
- params: GetV1InvoicesBatchParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1InvoicesBatch>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1InvoicesBatch>>,
-          TError,
-          Awaited<ReturnType<typeof getV1InvoicesBatch>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1InvoicesBatch<TData = Awaited<ReturnType<typeof getV1InvoicesBatch>>, TError = DtoErrorResponse>(
- params: GetV1InvoicesBatchParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1InvoicesBatch>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1InvoicesBatch<
+	TData = Awaited<ReturnType<typeof getV1InvoicesBatch>>,
+	TError = DtoErrorResponse,
+>(
+	params: GetV1InvoicesBatchParams,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1InvoicesBatch>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1InvoicesBatch>>,
+					TError,
+					Awaited<ReturnType<typeof getV1InvoicesBatch>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1InvoicesBatch<
+	TData = Awaited<ReturnType<typeof getV1InvoicesBatch>>,
+	TError = DtoErrorResponse,
+>(
+	params: GetV1InvoicesBatchParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1InvoicesBatch>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1InvoicesBatch>>,
+					TError,
+					Awaited<ReturnType<typeof getV1InvoicesBatch>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1InvoicesBatch<
+	TData = Awaited<ReturnType<typeof getV1InvoicesBatch>>,
+	TError = DtoErrorResponse,
+>(
+	params: GetV1InvoicesBatchParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1InvoicesBatch>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary Get multiple invoices by IDs
  */
 
-export function useGetV1InvoicesBatch<TData = Awaited<ReturnType<typeof getV1InvoicesBatch>>, TError = DtoErrorResponse>(
- params: GetV1InvoicesBatchParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1InvoicesBatch>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1InvoicesBatch<
+	TData = Awaited<ReturnType<typeof getV1InvoicesBatch>>,
+	TError = DtoErrorResponse,
+>(
+	params: GetV1InvoicesBatchParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1InvoicesBatch>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1InvoicesBatchQueryOptions(params, options);
 
-  const queryOptions = getGetV1InvoicesBatchQueryOptions(params,options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
 
 export type getV1InvoicesIdResponse200 = {
-  data: GetV1InvoicesId200
-  status: 200
-}
+	data: GetV1InvoicesId200;
+	status: 200;
+};
 
 export type getV1InvoicesIdResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type getV1InvoicesIdResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type getV1InvoicesIdResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type getV1InvoicesIdResponse404 = {
-  data: DtoErrorResponse
-  status: 404
-}
+	data: DtoErrorResponse;
+	status: 404;
+};
 
 export type getV1InvoicesIdResponse500 = {
-  data: DtoErrorResponse
-  status: 500
-}
-
-export type getV1InvoicesIdResponseSuccess = (getV1InvoicesIdResponse200) & {
-  headers: Headers;
-};
-export type getV1InvoicesIdResponseError = (getV1InvoicesIdResponse400 | getV1InvoicesIdResponse401 | getV1InvoicesIdResponse403 | getV1InvoicesIdResponse404 | getV1InvoicesIdResponse500) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 500;
 };
 
-export type getV1InvoicesIdResponse = (getV1InvoicesIdResponseSuccess | getV1InvoicesIdResponseError)
+export type getV1InvoicesIdResponseSuccess = getV1InvoicesIdResponse200 & {
+	headers: Headers;
+};
+export type getV1InvoicesIdResponseError = (
+	| getV1InvoicesIdResponse400
+	| getV1InvoicesIdResponse401
+	| getV1InvoicesIdResponse403
+	| getV1InvoicesIdResponse404
+	| getV1InvoicesIdResponse500
+) & {
+	headers: Headers;
+};
 
-export const getGetV1InvoicesIdUrl = (id: number,) => {
+export type getV1InvoicesIdResponse =
+	| getV1InvoicesIdResponseSuccess
+	| getV1InvoicesIdResponseError;
 
-
-
-
-  return `/v1/invoices/${id}`
-}
+export const getGetV1InvoicesIdUrl = (id: number) => {
+	return `/v1/invoices/${id}`;
+};
 
 /**
  * Get detailed information of a specific invoice
  * @summary Get invoice details
  */
-export const getV1InvoicesId = async (id: number, options?: RequestInit): Promise<getV1InvoicesIdResponse> => {
+export const getV1InvoicesId = async (
+	id: number,
+	options?: RequestInit,
+): Promise<getV1InvoicesIdResponse> => {
+	return customInstance<getV1InvoicesIdResponse>(getGetV1InvoicesIdUrl(id), {
+		...options,
+		method: "GET",
+	});
+};
 
-  return customInstance<getV1InvoicesIdResponse>(getGetV1InvoicesIdUrl(id),
-  {
-    ...options,
-    method: 'GET'
+export const getGetV1InvoicesIdQueryKey = (id: number) => {
+	return [`/v1/invoices/${id}`] as const;
+};
 
-
-  }
-);}
-
-
-
-
-
-export const getGetV1InvoicesIdQueryKey = (id: number,) => {
-    return [
-    `/v1/invoices/${id}`
-    ] as const;
-    }
-
-
-export const getGetV1InvoicesIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1InvoicesId>>, TError = DtoErrorResponse>(id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1InvoicesId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getGetV1InvoicesIdQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1InvoicesId>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1InvoicesId>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
 ) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+	const queryKey = queryOptions?.queryKey ?? getGetV1InvoicesIdQueryKey(id);
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1InvoicesIdQueryKey(id);
+	const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1InvoicesId>>> = ({
+		signal,
+	}) => getV1InvoicesId(id, { signal, ...requestOptions });
 
+	return {
+		queryKey,
+		queryFn,
+		enabled: !!id,
+		...queryOptions,
+	} as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1InvoicesId>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
+export type GetV1InvoicesIdQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1InvoicesId>>
+>;
+export type GetV1InvoicesIdQueryError = DtoErrorResponse;
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1InvoicesId>>> = ({ signal }) => getV1InvoicesId(id, { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1InvoicesId>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetV1InvoicesIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1InvoicesId>>>
-export type GetV1InvoicesIdQueryError = DtoErrorResponse
-
-
-export function useGetV1InvoicesId<TData = Awaited<ReturnType<typeof getV1InvoicesId>>, TError = DtoErrorResponse>(
- id: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1InvoicesId>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1InvoicesId>>,
-          TError,
-          Awaited<ReturnType<typeof getV1InvoicesId>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1InvoicesId<TData = Awaited<ReturnType<typeof getV1InvoicesId>>, TError = DtoErrorResponse>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1InvoicesId>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1InvoicesId>>,
-          TError,
-          Awaited<ReturnType<typeof getV1InvoicesId>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1InvoicesId<TData = Awaited<ReturnType<typeof getV1InvoicesId>>, TError = DtoErrorResponse>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1InvoicesId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1InvoicesId<
+	TData = Awaited<ReturnType<typeof getV1InvoicesId>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1InvoicesId>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1InvoicesId>>,
+					TError,
+					Awaited<ReturnType<typeof getV1InvoicesId>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1InvoicesId<
+	TData = Awaited<ReturnType<typeof getV1InvoicesId>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1InvoicesId>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1InvoicesId>>,
+					TError,
+					Awaited<ReturnType<typeof getV1InvoicesId>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1InvoicesId<
+	TData = Awaited<ReturnType<typeof getV1InvoicesId>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1InvoicesId>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary Get invoice details
  */
 
-export function useGetV1InvoicesId<TData = Awaited<ReturnType<typeof getV1InvoicesId>>, TError = DtoErrorResponse>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1InvoicesId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1InvoicesId<
+	TData = Awaited<ReturnType<typeof getV1InvoicesId>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1InvoicesId>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1InvoicesIdQueryOptions(id, options);
 
-  const queryOptions = getGetV1InvoicesIdQueryOptions(id,options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
 
 export type getV1InvoicesIdInstallmentsResponse200 = {
-  data: GetV1InvoicesIdInstallments200
-  status: 200
-}
+	data: GetV1InvoicesIdInstallments200;
+	status: 200;
+};
 
 export type getV1InvoicesIdInstallmentsResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type getV1InvoicesIdInstallmentsResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type getV1InvoicesIdInstallmentsResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type getV1InvoicesIdInstallmentsResponse404 = {
-  data: DtoErrorResponse
-  status: 404
-}
+	data: DtoErrorResponse;
+	status: 404;
+};
 
 export type getV1InvoicesIdInstallmentsResponse500 = {
-  data: DtoErrorResponse
-  status: 500
-}
-
-export type getV1InvoicesIdInstallmentsResponseSuccess = (getV1InvoicesIdInstallmentsResponse200) & {
-  headers: Headers;
-};
-export type getV1InvoicesIdInstallmentsResponseError = (getV1InvoicesIdInstallmentsResponse400 | getV1InvoicesIdInstallmentsResponse401 | getV1InvoicesIdInstallmentsResponse403 | getV1InvoicesIdInstallmentsResponse404 | getV1InvoicesIdInstallmentsResponse500) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 500;
 };
 
-export type getV1InvoicesIdInstallmentsResponse = (getV1InvoicesIdInstallmentsResponseSuccess | getV1InvoicesIdInstallmentsResponseError)
+export type getV1InvoicesIdInstallmentsResponseSuccess =
+	getV1InvoicesIdInstallmentsResponse200 & {
+		headers: Headers;
+	};
+export type getV1InvoicesIdInstallmentsResponseError = (
+	| getV1InvoicesIdInstallmentsResponse400
+	| getV1InvoicesIdInstallmentsResponse401
+	| getV1InvoicesIdInstallmentsResponse403
+	| getV1InvoicesIdInstallmentsResponse404
+	| getV1InvoicesIdInstallmentsResponse500
+) & {
+	headers: Headers;
+};
 
-export const getGetV1InvoicesIdInstallmentsUrl = (id: number,) => {
+export type getV1InvoicesIdInstallmentsResponse =
+	| getV1InvoicesIdInstallmentsResponseSuccess
+	| getV1InvoicesIdInstallmentsResponseError;
 
-
-
-
-  return `/v1/invoices/${id}/installments`
-}
+export const getGetV1InvoicesIdInstallmentsUrl = (id: number) => {
+	return `/v1/invoices/${id}/installments`;
+};
 
 /**
  * Get a list of installments for an invoice
  * @summary Get invoice installments
  */
-export const getV1InvoicesIdInstallments = async (id: number, options?: RequestInit): Promise<getV1InvoicesIdInstallmentsResponse> => {
+export const getV1InvoicesIdInstallments = async (
+	id: number,
+	options?: RequestInit,
+): Promise<getV1InvoicesIdInstallmentsResponse> => {
+	return customInstance<getV1InvoicesIdInstallmentsResponse>(
+		getGetV1InvoicesIdInstallmentsUrl(id),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
 
-  return customInstance<getV1InvoicesIdInstallmentsResponse>(getGetV1InvoicesIdInstallmentsUrl(id),
-  {
-    ...options,
-    method: 'GET'
+export const getGetV1InvoicesIdInstallmentsQueryKey = (id: number) => {
+	return [`/v1/invoices/${id}/installments`] as const;
+};
 
-
-  }
-);}
-
-
-
-
-
-export const getGetV1InvoicesIdInstallmentsQueryKey = (id: number,) => {
-    return [
-    `/v1/invoices/${id}/installments`
-    ] as const;
-    }
-
-
-export const getGetV1InvoicesIdInstallmentsQueryOptions = <TData = Awaited<ReturnType<typeof getV1InvoicesIdInstallments>>, TError = DtoErrorResponse>(id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1InvoicesIdInstallments>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getGetV1InvoicesIdInstallmentsQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1InvoicesIdInstallments>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1InvoicesIdInstallments>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
 ) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+	const queryKey =
+		queryOptions?.queryKey ?? getGetV1InvoicesIdInstallmentsQueryKey(id);
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1InvoicesIdInstallmentsQueryKey(id);
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1InvoicesIdInstallments>>
+	> = ({ signal }) =>
+		getV1InvoicesIdInstallments(id, { signal, ...requestOptions });
 
+	return {
+		queryKey,
+		queryFn,
+		enabled: !!id,
+		...queryOptions,
+	} as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1InvoicesIdInstallments>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
+export type GetV1InvoicesIdInstallmentsQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1InvoicesIdInstallments>>
+>;
+export type GetV1InvoicesIdInstallmentsQueryError = DtoErrorResponse;
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1InvoicesIdInstallments>>> = ({ signal }) => getV1InvoicesIdInstallments(id, { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1InvoicesIdInstallments>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetV1InvoicesIdInstallmentsQueryResult = NonNullable<Awaited<ReturnType<typeof getV1InvoicesIdInstallments>>>
-export type GetV1InvoicesIdInstallmentsQueryError = DtoErrorResponse
-
-
-export function useGetV1InvoicesIdInstallments<TData = Awaited<ReturnType<typeof getV1InvoicesIdInstallments>>, TError = DtoErrorResponse>(
- id: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1InvoicesIdInstallments>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1InvoicesIdInstallments>>,
-          TError,
-          Awaited<ReturnType<typeof getV1InvoicesIdInstallments>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1InvoicesIdInstallments<TData = Awaited<ReturnType<typeof getV1InvoicesIdInstallments>>, TError = DtoErrorResponse>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1InvoicesIdInstallments>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1InvoicesIdInstallments>>,
-          TError,
-          Awaited<ReturnType<typeof getV1InvoicesIdInstallments>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1InvoicesIdInstallments<TData = Awaited<ReturnType<typeof getV1InvoicesIdInstallments>>, TError = DtoErrorResponse>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1InvoicesIdInstallments>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1InvoicesIdInstallments<
+	TData = Awaited<ReturnType<typeof getV1InvoicesIdInstallments>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1InvoicesIdInstallments>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1InvoicesIdInstallments>>,
+					TError,
+					Awaited<ReturnType<typeof getV1InvoicesIdInstallments>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1InvoicesIdInstallments<
+	TData = Awaited<ReturnType<typeof getV1InvoicesIdInstallments>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1InvoicesIdInstallments>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1InvoicesIdInstallments>>,
+					TError,
+					Awaited<ReturnType<typeof getV1InvoicesIdInstallments>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1InvoicesIdInstallments<
+	TData = Awaited<ReturnType<typeof getV1InvoicesIdInstallments>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1InvoicesIdInstallments>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary Get invoice installments
  */
 
-export function useGetV1InvoicesIdInstallments<TData = Awaited<ReturnType<typeof getV1InvoicesIdInstallments>>, TError = DtoErrorResponse>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1InvoicesIdInstallments>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1InvoicesIdInstallments<
+	TData = Awaited<ReturnType<typeof getV1InvoicesIdInstallments>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1InvoicesIdInstallments>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1InvoicesIdInstallmentsQueryOptions(id, options);
 
-  const queryOptions = getGetV1InvoicesIdInstallmentsQueryOptions(id,options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
 
 export type postV1InvoicesIdInstallmentsResponse201 = {
-  data: PostV1InvoicesIdInstallments201
-  status: 201
-}
+	data: PostV1InvoicesIdInstallments201;
+	status: 201;
+};
 
 export type postV1InvoicesIdInstallmentsResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type postV1InvoicesIdInstallmentsResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type postV1InvoicesIdInstallmentsResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type postV1InvoicesIdInstallmentsResponse404 = {
-  data: DtoErrorResponse
-  status: 404
-}
+	data: DtoErrorResponse;
+	status: 404;
+};
 
 export type postV1InvoicesIdInstallmentsResponse422 = {
-  data: DtoErrorResponse
-  status: 422
-}
+	data: DtoErrorResponse;
+	status: 422;
+};
 
 export type postV1InvoicesIdInstallmentsResponse500 = {
-  data: DtoErrorResponse
-  status: 500
-}
-
-export type postV1InvoicesIdInstallmentsResponseSuccess = (postV1InvoicesIdInstallmentsResponse201) & {
-  headers: Headers;
-};
-export type postV1InvoicesIdInstallmentsResponseError = (postV1InvoicesIdInstallmentsResponse400 | postV1InvoicesIdInstallmentsResponse401 | postV1InvoicesIdInstallmentsResponse403 | postV1InvoicesIdInstallmentsResponse404 | postV1InvoicesIdInstallmentsResponse422 | postV1InvoicesIdInstallmentsResponse500) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 500;
 };
 
-export type postV1InvoicesIdInstallmentsResponse = (postV1InvoicesIdInstallmentsResponseSuccess | postV1InvoicesIdInstallmentsResponseError)
+export type postV1InvoicesIdInstallmentsResponseSuccess =
+	postV1InvoicesIdInstallmentsResponse201 & {
+		headers: Headers;
+	};
+export type postV1InvoicesIdInstallmentsResponseError = (
+	| postV1InvoicesIdInstallmentsResponse400
+	| postV1InvoicesIdInstallmentsResponse401
+	| postV1InvoicesIdInstallmentsResponse403
+	| postV1InvoicesIdInstallmentsResponse404
+	| postV1InvoicesIdInstallmentsResponse422
+	| postV1InvoicesIdInstallmentsResponse500
+) & {
+	headers: Headers;
+};
 
-export const getPostV1InvoicesIdInstallmentsUrl = (id: number,) => {
+export type postV1InvoicesIdInstallmentsResponse =
+	| postV1InvoicesIdInstallmentsResponseSuccess
+	| postV1InvoicesIdInstallmentsResponseError;
 
-
-
-
-  return `/v1/invoices/${id}/installments`
-}
+export const getPostV1InvoicesIdInstallmentsUrl = (id: number) => {
+	return `/v1/invoices/${id}/installments`;
+};
 
 /**
  * Create a schedule of installments for an invoice
  * @summary Create invoice installments
  */
-export const postV1InvoicesIdInstallments = async (id: number,
-    dtoCreateInstallmentScheduleRequest: DtoCreateInstallmentScheduleRequest, options?: RequestInit): Promise<postV1InvoicesIdInstallmentsResponse> => {
+export const postV1InvoicesIdInstallments = async (
+	id: number,
+	dtoCreateInstallmentScheduleRequest: DtoCreateInstallmentScheduleRequest,
+	options?: RequestInit,
+): Promise<postV1InvoicesIdInstallmentsResponse> => {
+	return customInstance<postV1InvoicesIdInstallmentsResponse>(
+		getPostV1InvoicesIdInstallmentsUrl(id),
+		{
+			...options,
+			method: "POST",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(dtoCreateInstallmentScheduleRequest),
+		},
+	);
+};
 
-  return customInstance<postV1InvoicesIdInstallmentsResponse>(getPostV1InvoicesIdInstallmentsUrl(id),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      dtoCreateInstallmentScheduleRequest,)
-  }
-);}
+export const getPostV1InvoicesIdInstallmentsMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1InvoicesIdInstallments>>,
+		TError,
+		{ id: number; data: DtoCreateInstallmentScheduleRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1InvoicesIdInstallments>>,
+	TError,
+	{ id: number; data: DtoCreateInstallmentScheduleRequest },
+	TContext
+> => {
+	const mutationKey = ["postV1InvoicesIdInstallments"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1InvoicesIdInstallments>>,
+		{ id: number; data: DtoCreateInstallmentScheduleRequest }
+	> = (props) => {
+		const { id, data } = props ?? {};
 
+		return postV1InvoicesIdInstallments(id, data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-export const getPostV1InvoicesIdInstallmentsMutationOptions = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1InvoicesIdInstallments>>, TError,{id: number;data: DtoCreateInstallmentScheduleRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1InvoicesIdInstallments>>, TError,{id: number;data: DtoCreateInstallmentScheduleRequest}, TContext> => {
+export type PostV1InvoicesIdInstallmentsMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1InvoicesIdInstallments>>
+>;
+export type PostV1InvoicesIdInstallmentsMutationBody =
+	DtoCreateInstallmentScheduleRequest;
+export type PostV1InvoicesIdInstallmentsMutationError = DtoErrorResponse;
 
-const mutationKey = ['postV1InvoicesIdInstallments'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1InvoicesIdInstallments>>, {id: number;data: DtoCreateInstallmentScheduleRequest}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  postV1InvoicesIdInstallments(id,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1InvoicesIdInstallmentsMutationResult = NonNullable<Awaited<ReturnType<typeof postV1InvoicesIdInstallments>>>
-    export type PostV1InvoicesIdInstallmentsMutationBody = DtoCreateInstallmentScheduleRequest
-    export type PostV1InvoicesIdInstallmentsMutationError = DtoErrorResponse
-
-    /**
+/**
  * @summary Create invoice installments
  */
-export const usePostV1InvoicesIdInstallments = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1InvoicesIdInstallments>>, TError,{id: number;data: DtoCreateInstallmentScheduleRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postV1InvoicesIdInstallments>>,
-        TError,
-        {id: number;data: DtoCreateInstallmentScheduleRequest},
-        TContext
-      > => {
-      return useMutation(getPostV1InvoicesIdInstallmentsMutationOptions(options), queryClient);
-    }
-    export type putV1InvoicesIdInstallmentsInstIdResponse200 = {
-  data: PutV1InvoicesIdInstallmentsInstId200
-  status: 200
-}
+export const usePostV1InvoicesIdInstallments = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1InvoicesIdInstallments>>,
+			TError,
+			{ id: number; data: DtoCreateInstallmentScheduleRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1InvoicesIdInstallments>>,
+	TError,
+	{ id: number; data: DtoCreateInstallmentScheduleRequest },
+	TContext
+> => {
+	return useMutation(
+		getPostV1InvoicesIdInstallmentsMutationOptions(options),
+		queryClient,
+	);
+};
+export type putV1InvoicesIdInstallmentsInstIdResponse200 = {
+	data: PutV1InvoicesIdInstallmentsInstId200;
+	status: 200;
+};
 
 export type putV1InvoicesIdInstallmentsInstIdResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type putV1InvoicesIdInstallmentsInstIdResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type putV1InvoicesIdInstallmentsInstIdResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type putV1InvoicesIdInstallmentsInstIdResponse404 = {
-  data: DtoErrorResponse
-  status: 404
-}
+	data: DtoErrorResponse;
+	status: 404;
+};
 
 export type putV1InvoicesIdInstallmentsInstIdResponse500 = {
-  data: DtoErrorResponse
-  status: 500
-}
-
-export type putV1InvoicesIdInstallmentsInstIdResponseSuccess = (putV1InvoicesIdInstallmentsInstIdResponse200) & {
-  headers: Headers;
-};
-export type putV1InvoicesIdInstallmentsInstIdResponseError = (putV1InvoicesIdInstallmentsInstIdResponse400 | putV1InvoicesIdInstallmentsInstIdResponse401 | putV1InvoicesIdInstallmentsInstIdResponse403 | putV1InvoicesIdInstallmentsInstIdResponse404 | putV1InvoicesIdInstallmentsInstIdResponse500) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 500;
 };
 
-export type putV1InvoicesIdInstallmentsInstIdResponse = (putV1InvoicesIdInstallmentsInstIdResponseSuccess | putV1InvoicesIdInstallmentsInstIdResponseError)
+export type putV1InvoicesIdInstallmentsInstIdResponseSuccess =
+	putV1InvoicesIdInstallmentsInstIdResponse200 & {
+		headers: Headers;
+	};
+export type putV1InvoicesIdInstallmentsInstIdResponseError = (
+	| putV1InvoicesIdInstallmentsInstIdResponse400
+	| putV1InvoicesIdInstallmentsInstIdResponse401
+	| putV1InvoicesIdInstallmentsInstIdResponse403
+	| putV1InvoicesIdInstallmentsInstIdResponse404
+	| putV1InvoicesIdInstallmentsInstIdResponse500
+) & {
+	headers: Headers;
+};
 
-export const getPutV1InvoicesIdInstallmentsInstIdUrl = (id: number,
-    instId: number,) => {
+export type putV1InvoicesIdInstallmentsInstIdResponse =
+	| putV1InvoicesIdInstallmentsInstIdResponseSuccess
+	| putV1InvoicesIdInstallmentsInstIdResponseError;
 
-
-
-
-  return `/v1/invoices/${id}/installments/${instId}`
-}
+export const getPutV1InvoicesIdInstallmentsInstIdUrl = (
+	id: number,
+	instId: number,
+) => {
+	return `/v1/invoices/${id}/installments/${instId}`;
+};
 
 /**
  * Update details of a specific installment
  * @summary Update invoice installment
  */
-export const putV1InvoicesIdInstallmentsInstId = async (id: number,
-    instId: number,
-    dtoUpdateInstallmentRequest: DtoUpdateInstallmentRequest, options?: RequestInit): Promise<putV1InvoicesIdInstallmentsInstIdResponse> => {
+export const putV1InvoicesIdInstallmentsInstId = async (
+	id: number,
+	instId: number,
+	dtoUpdateInstallmentRequest: DtoUpdateInstallmentRequest,
+	options?: RequestInit,
+): Promise<putV1InvoicesIdInstallmentsInstIdResponse> => {
+	return customInstance<putV1InvoicesIdInstallmentsInstIdResponse>(
+		getPutV1InvoicesIdInstallmentsInstIdUrl(id, instId),
+		{
+			...options,
+			method: "PUT",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(dtoUpdateInstallmentRequest),
+		},
+	);
+};
 
-  return customInstance<putV1InvoicesIdInstallmentsInstIdResponse>(getPutV1InvoicesIdInstallmentsInstIdUrl(id,instId),
-  {
-    ...options,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      dtoUpdateInstallmentRequest,)
-  }
-);}
+export const getPutV1InvoicesIdInstallmentsInstIdMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof putV1InvoicesIdInstallmentsInstId>>,
+		TError,
+		{ id: number; instId: number; data: DtoUpdateInstallmentRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof putV1InvoicesIdInstallmentsInstId>>,
+	TError,
+	{ id: number; instId: number; data: DtoUpdateInstallmentRequest },
+	TContext
+> => {
+	const mutationKey = ["putV1InvoicesIdInstallmentsInstId"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof putV1InvoicesIdInstallmentsInstId>>,
+		{ id: number; instId: number; data: DtoUpdateInstallmentRequest }
+	> = (props) => {
+		const { id, instId, data } = props ?? {};
 
+		return putV1InvoicesIdInstallmentsInstId(id, instId, data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-export const getPutV1InvoicesIdInstallmentsInstIdMutationOptions = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1InvoicesIdInstallmentsInstId>>, TError,{id: number;instId: number;data: DtoUpdateInstallmentRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof putV1InvoicesIdInstallmentsInstId>>, TError,{id: number;instId: number;data: DtoUpdateInstallmentRequest}, TContext> => {
+export type PutV1InvoicesIdInstallmentsInstIdMutationResult = NonNullable<
+	Awaited<ReturnType<typeof putV1InvoicesIdInstallmentsInstId>>
+>;
+export type PutV1InvoicesIdInstallmentsInstIdMutationBody =
+	DtoUpdateInstallmentRequest;
+export type PutV1InvoicesIdInstallmentsInstIdMutationError = DtoErrorResponse;
 
-const mutationKey = ['putV1InvoicesIdInstallmentsInstId'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1InvoicesIdInstallmentsInstId>>, {id: number;instId: number;data: DtoUpdateInstallmentRequest}> = (props) => {
-          const {id,instId,data} = props ?? {};
-
-          return  putV1InvoicesIdInstallmentsInstId(id,instId,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PutV1InvoicesIdInstallmentsInstIdMutationResult = NonNullable<Awaited<ReturnType<typeof putV1InvoicesIdInstallmentsInstId>>>
-    export type PutV1InvoicesIdInstallmentsInstIdMutationBody = DtoUpdateInstallmentRequest
-    export type PutV1InvoicesIdInstallmentsInstIdMutationError = DtoErrorResponse
-
-    /**
+/**
  * @summary Update invoice installment
  */
-export const usePutV1InvoicesIdInstallmentsInstId = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1InvoicesIdInstallmentsInstId>>, TError,{id: number;instId: number;data: DtoUpdateInstallmentRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof putV1InvoicesIdInstallmentsInstId>>,
-        TError,
-        {id: number;instId: number;data: DtoUpdateInstallmentRequest},
-        TContext
-      > => {
-      return useMutation(getPutV1InvoicesIdInstallmentsInstIdMutationOptions(options), queryClient);
-    }
-    export type deleteV1InvoicesIdInstallmentsInstIdResponse200 = {
-  data: DtoSuccessResponse
-  status: 200
-}
+export const usePutV1InvoicesIdInstallmentsInstId = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof putV1InvoicesIdInstallmentsInstId>>,
+			TError,
+			{ id: number; instId: number; data: DtoUpdateInstallmentRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof putV1InvoicesIdInstallmentsInstId>>,
+	TError,
+	{ id: number; instId: number; data: DtoUpdateInstallmentRequest },
+	TContext
+> => {
+	return useMutation(
+		getPutV1InvoicesIdInstallmentsInstIdMutationOptions(options),
+		queryClient,
+	);
+};
+export type deleteV1InvoicesIdInstallmentsInstIdResponse200 = {
+	data: DtoSuccessResponse;
+	status: 200;
+};
 
 export type deleteV1InvoicesIdInstallmentsInstIdResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type deleteV1InvoicesIdInstallmentsInstIdResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type deleteV1InvoicesIdInstallmentsInstIdResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type deleteV1InvoicesIdInstallmentsInstIdResponse404 = {
-  data: DtoErrorResponse
-  status: 404
-}
+	data: DtoErrorResponse;
+	status: 404;
+};
 
 export type deleteV1InvoicesIdInstallmentsInstIdResponse500 = {
-  data: DtoErrorResponse
-  status: 500
-}
-
-export type deleteV1InvoicesIdInstallmentsInstIdResponseSuccess = (deleteV1InvoicesIdInstallmentsInstIdResponse200) & {
-  headers: Headers;
-};
-export type deleteV1InvoicesIdInstallmentsInstIdResponseError = (deleteV1InvoicesIdInstallmentsInstIdResponse400 | deleteV1InvoicesIdInstallmentsInstIdResponse401 | deleteV1InvoicesIdInstallmentsInstIdResponse403 | deleteV1InvoicesIdInstallmentsInstIdResponse404 | deleteV1InvoicesIdInstallmentsInstIdResponse500) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 500;
 };
 
-export type deleteV1InvoicesIdInstallmentsInstIdResponse = (deleteV1InvoicesIdInstallmentsInstIdResponseSuccess | deleteV1InvoicesIdInstallmentsInstIdResponseError)
+export type deleteV1InvoicesIdInstallmentsInstIdResponseSuccess =
+	deleteV1InvoicesIdInstallmentsInstIdResponse200 & {
+		headers: Headers;
+	};
+export type deleteV1InvoicesIdInstallmentsInstIdResponseError = (
+	| deleteV1InvoicesIdInstallmentsInstIdResponse400
+	| deleteV1InvoicesIdInstallmentsInstIdResponse401
+	| deleteV1InvoicesIdInstallmentsInstIdResponse403
+	| deleteV1InvoicesIdInstallmentsInstIdResponse404
+	| deleteV1InvoicesIdInstallmentsInstIdResponse500
+) & {
+	headers: Headers;
+};
 
-export const getDeleteV1InvoicesIdInstallmentsInstIdUrl = (id: number,
-    instId: number,) => {
+export type deleteV1InvoicesIdInstallmentsInstIdResponse =
+	| deleteV1InvoicesIdInstallmentsInstIdResponseSuccess
+	| deleteV1InvoicesIdInstallmentsInstIdResponseError;
 
-
-
-
-  return `/v1/invoices/${id}/installments/${instId}`
-}
+export const getDeleteV1InvoicesIdInstallmentsInstIdUrl = (
+	id: number,
+	instId: number,
+) => {
+	return `/v1/invoices/${id}/installments/${instId}`;
+};
 
 /**
  * Delete a specific installment
  * @summary Delete invoice installment
  */
-export const deleteV1InvoicesIdInstallmentsInstId = async (id: number,
-    instId: number, options?: RequestInit): Promise<deleteV1InvoicesIdInstallmentsInstIdResponse> => {
+export const deleteV1InvoicesIdInstallmentsInstId = async (
+	id: number,
+	instId: number,
+	options?: RequestInit,
+): Promise<deleteV1InvoicesIdInstallmentsInstIdResponse> => {
+	return customInstance<deleteV1InvoicesIdInstallmentsInstIdResponse>(
+		getDeleteV1InvoicesIdInstallmentsInstIdUrl(id, instId),
+		{
+			...options,
+			method: "DELETE",
+		},
+	);
+};
 
-  return customInstance<deleteV1InvoicesIdInstallmentsInstIdResponse>(getDeleteV1InvoicesIdInstallmentsInstIdUrl(id,instId),
-  {
-    ...options,
-    method: 'DELETE'
+export const getDeleteV1InvoicesIdInstallmentsInstIdMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof deleteV1InvoicesIdInstallmentsInstId>>,
+		TError,
+		{ id: number; instId: number },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof deleteV1InvoicesIdInstallmentsInstId>>,
+	TError,
+	{ id: number; instId: number },
+	TContext
+> => {
+	const mutationKey = ["deleteV1InvoicesIdInstallmentsInstId"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof deleteV1InvoicesIdInstallmentsInstId>>,
+		{ id: number; instId: number }
+	> = (props) => {
+		const { id, instId } = props ?? {};
 
-  }
-);}
+		return deleteV1InvoicesIdInstallmentsInstId(id, instId, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
+export type DeleteV1InvoicesIdInstallmentsInstIdMutationResult = NonNullable<
+	Awaited<ReturnType<typeof deleteV1InvoicesIdInstallmentsInstId>>
+>;
 
+export type DeleteV1InvoicesIdInstallmentsInstIdMutationError =
+	DtoErrorResponse;
 
-export const getDeleteV1InvoicesIdInstallmentsInstIdMutationOptions = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1InvoicesIdInstallmentsInstId>>, TError,{id: number;instId: number}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof deleteV1InvoicesIdInstallmentsInstId>>, TError,{id: number;instId: number}, TContext> => {
-
-const mutationKey = ['deleteV1InvoicesIdInstallmentsInstId'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteV1InvoicesIdInstallmentsInstId>>, {id: number;instId: number}> = (props) => {
-          const {id,instId} = props ?? {};
-
-          return  deleteV1InvoicesIdInstallmentsInstId(id,instId,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type DeleteV1InvoicesIdInstallmentsInstIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteV1InvoicesIdInstallmentsInstId>>>
-
-    export type DeleteV1InvoicesIdInstallmentsInstIdMutationError = DtoErrorResponse
-
-    /**
+/**
  * @summary Delete invoice installment
  */
-export const useDeleteV1InvoicesIdInstallmentsInstId = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1InvoicesIdInstallmentsInstId>>, TError,{id: number;instId: number}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof deleteV1InvoicesIdInstallmentsInstId>>,
-        TError,
-        {id: number;instId: number},
-        TContext
-      > => {
-      return useMutation(getDeleteV1InvoicesIdInstallmentsInstIdMutationOptions(options), queryClient);
-    }
-    export type postV1InvoicesIdItemsResponse201 = {
-  data: PostV1InvoicesIdItems201
-  status: 201
-}
+export const useDeleteV1InvoicesIdInstallmentsInstId = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof deleteV1InvoicesIdInstallmentsInstId>>,
+			TError,
+			{ id: number; instId: number },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof deleteV1InvoicesIdInstallmentsInstId>>,
+	TError,
+	{ id: number; instId: number },
+	TContext
+> => {
+	return useMutation(
+		getDeleteV1InvoicesIdInstallmentsInstIdMutationOptions(options),
+		queryClient,
+	);
+};
+export type postV1InvoicesIdItemsResponse201 = {
+	data: PostV1InvoicesIdItems201;
+	status: 201;
+};
 
 export type postV1InvoicesIdItemsResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type postV1InvoicesIdItemsResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type postV1InvoicesIdItemsResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type postV1InvoicesIdItemsResponse404 = {
-  data: DtoErrorResponse
-  status: 404
-}
+	data: DtoErrorResponse;
+	status: 404;
+};
 
 export type postV1InvoicesIdItemsResponse500 = {
-  data: DtoErrorResponse
-  status: 500
-}
-
-export type postV1InvoicesIdItemsResponseSuccess = (postV1InvoicesIdItemsResponse201) & {
-  headers: Headers;
-};
-export type postV1InvoicesIdItemsResponseError = (postV1InvoicesIdItemsResponse400 | postV1InvoicesIdItemsResponse401 | postV1InvoicesIdItemsResponse403 | postV1InvoicesIdItemsResponse404 | postV1InvoicesIdItemsResponse500) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 500;
 };
 
-export type postV1InvoicesIdItemsResponse = (postV1InvoicesIdItemsResponseSuccess | postV1InvoicesIdItemsResponseError)
+export type postV1InvoicesIdItemsResponseSuccess =
+	postV1InvoicesIdItemsResponse201 & {
+		headers: Headers;
+	};
+export type postV1InvoicesIdItemsResponseError = (
+	| postV1InvoicesIdItemsResponse400
+	| postV1InvoicesIdItemsResponse401
+	| postV1InvoicesIdItemsResponse403
+	| postV1InvoicesIdItemsResponse404
+	| postV1InvoicesIdItemsResponse500
+) & {
+	headers: Headers;
+};
 
-export const getPostV1InvoicesIdItemsUrl = (id: number,) => {
+export type postV1InvoicesIdItemsResponse =
+	| postV1InvoicesIdItemsResponseSuccess
+	| postV1InvoicesIdItemsResponseError;
 
-
-
-
-  return `/v1/invoices/${id}/items`
-}
+export const getPostV1InvoicesIdItemsUrl = (id: number) => {
+	return `/v1/invoices/${id}/items`;
+};
 
 /**
  * Add a new item to an existing invoice
  * @summary Add item to invoice
  */
-export const postV1InvoicesIdItems = async (id: number,
-    dtoAddInvoiceItemRequest: DtoAddInvoiceItemRequest, options?: RequestInit): Promise<postV1InvoicesIdItemsResponse> => {
+export const postV1InvoicesIdItems = async (
+	id: number,
+	dtoAddInvoiceItemRequest: DtoAddInvoiceItemRequest,
+	options?: RequestInit,
+): Promise<postV1InvoicesIdItemsResponse> => {
+	return customInstance<postV1InvoicesIdItemsResponse>(
+		getPostV1InvoicesIdItemsUrl(id),
+		{
+			...options,
+			method: "POST",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(dtoAddInvoiceItemRequest),
+		},
+	);
+};
 
-  return customInstance<postV1InvoicesIdItemsResponse>(getPostV1InvoicesIdItemsUrl(id),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      dtoAddInvoiceItemRequest,)
-  }
-);}
+export const getPostV1InvoicesIdItemsMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1InvoicesIdItems>>,
+		TError,
+		{ id: number; data: DtoAddInvoiceItemRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1InvoicesIdItems>>,
+	TError,
+	{ id: number; data: DtoAddInvoiceItemRequest },
+	TContext
+> => {
+	const mutationKey = ["postV1InvoicesIdItems"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1InvoicesIdItems>>,
+		{ id: number; data: DtoAddInvoiceItemRequest }
+	> = (props) => {
+		const { id, data } = props ?? {};
 
+		return postV1InvoicesIdItems(id, data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-export const getPostV1InvoicesIdItemsMutationOptions = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1InvoicesIdItems>>, TError,{id: number;data: DtoAddInvoiceItemRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1InvoicesIdItems>>, TError,{id: number;data: DtoAddInvoiceItemRequest}, TContext> => {
+export type PostV1InvoicesIdItemsMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1InvoicesIdItems>>
+>;
+export type PostV1InvoicesIdItemsMutationBody = DtoAddInvoiceItemRequest;
+export type PostV1InvoicesIdItemsMutationError = DtoErrorResponse;
 
-const mutationKey = ['postV1InvoicesIdItems'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1InvoicesIdItems>>, {id: number;data: DtoAddInvoiceItemRequest}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  postV1InvoicesIdItems(id,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1InvoicesIdItemsMutationResult = NonNullable<Awaited<ReturnType<typeof postV1InvoicesIdItems>>>
-    export type PostV1InvoicesIdItemsMutationBody = DtoAddInvoiceItemRequest
-    export type PostV1InvoicesIdItemsMutationError = DtoErrorResponse
-
-    /**
+/**
  * @summary Add item to invoice
  */
-export const usePostV1InvoicesIdItems = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1InvoicesIdItems>>, TError,{id: number;data: DtoAddInvoiceItemRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postV1InvoicesIdItems>>,
-        TError,
-        {id: number;data: DtoAddInvoiceItemRequest},
-        TContext
-      > => {
-      return useMutation(getPostV1InvoicesIdItemsMutationOptions(options), queryClient);
-    }
-    export type putV1InvoicesIdItemsItemIdResponse200 = {
-  data: PutV1InvoicesIdItemsItemId200
-  status: 200
-}
+export const usePostV1InvoicesIdItems = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1InvoicesIdItems>>,
+			TError,
+			{ id: number; data: DtoAddInvoiceItemRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1InvoicesIdItems>>,
+	TError,
+	{ id: number; data: DtoAddInvoiceItemRequest },
+	TContext
+> => {
+	return useMutation(
+		getPostV1InvoicesIdItemsMutationOptions(options),
+		queryClient,
+	);
+};
+export type putV1InvoicesIdItemsItemIdResponse200 = {
+	data: PutV1InvoicesIdItemsItemId200;
+	status: 200;
+};
 
 export type putV1InvoicesIdItemsItemIdResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type putV1InvoicesIdItemsItemIdResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type putV1InvoicesIdItemsItemIdResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type putV1InvoicesIdItemsItemIdResponse404 = {
-  data: DtoErrorResponse
-  status: 404
-}
+	data: DtoErrorResponse;
+	status: 404;
+};
 
 export type putV1InvoicesIdItemsItemIdResponse422 = {
-  data: DtoErrorResponse
-  status: 422
-}
+	data: DtoErrorResponse;
+	status: 422;
+};
 
 export type putV1InvoicesIdItemsItemIdResponse500 = {
-  data: DtoErrorResponse
-  status: 500
-}
-
-export type putV1InvoicesIdItemsItemIdResponseSuccess = (putV1InvoicesIdItemsItemIdResponse200) & {
-  headers: Headers;
-};
-export type putV1InvoicesIdItemsItemIdResponseError = (putV1InvoicesIdItemsItemIdResponse400 | putV1InvoicesIdItemsItemIdResponse401 | putV1InvoicesIdItemsItemIdResponse403 | putV1InvoicesIdItemsItemIdResponse404 | putV1InvoicesIdItemsItemIdResponse422 | putV1InvoicesIdItemsItemIdResponse500) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 500;
 };
 
-export type putV1InvoicesIdItemsItemIdResponse = (putV1InvoicesIdItemsItemIdResponseSuccess | putV1InvoicesIdItemsItemIdResponseError)
+export type putV1InvoicesIdItemsItemIdResponseSuccess =
+	putV1InvoicesIdItemsItemIdResponse200 & {
+		headers: Headers;
+	};
+export type putV1InvoicesIdItemsItemIdResponseError = (
+	| putV1InvoicesIdItemsItemIdResponse400
+	| putV1InvoicesIdItemsItemIdResponse401
+	| putV1InvoicesIdItemsItemIdResponse403
+	| putV1InvoicesIdItemsItemIdResponse404
+	| putV1InvoicesIdItemsItemIdResponse422
+	| putV1InvoicesIdItemsItemIdResponse500
+) & {
+	headers: Headers;
+};
 
-export const getPutV1InvoicesIdItemsItemIdUrl = (id: number,
-    itemId: number,) => {
+export type putV1InvoicesIdItemsItemIdResponse =
+	| putV1InvoicesIdItemsItemIdResponseSuccess
+	| putV1InvoicesIdItemsItemIdResponseError;
 
-
-
-
-  return `/v1/invoices/${id}/items/${itemId}`
-}
+export const getPutV1InvoicesIdItemsItemIdUrl = (
+	id: number,
+	itemId: number,
+) => {
+	return `/v1/invoices/${id}/items/${itemId}`;
+};
 
 /**
  * Update details of a specific invoice item
  * @summary Update invoice item
  */
-export const putV1InvoicesIdItemsItemId = async (id: number,
-    itemId: number,
-    dtoUpdateInvoiceItemRequest: DtoUpdateInvoiceItemRequest, options?: RequestInit): Promise<putV1InvoicesIdItemsItemIdResponse> => {
+export const putV1InvoicesIdItemsItemId = async (
+	id: number,
+	itemId: number,
+	dtoUpdateInvoiceItemRequest: DtoUpdateInvoiceItemRequest,
+	options?: RequestInit,
+): Promise<putV1InvoicesIdItemsItemIdResponse> => {
+	return customInstance<putV1InvoicesIdItemsItemIdResponse>(
+		getPutV1InvoicesIdItemsItemIdUrl(id, itemId),
+		{
+			...options,
+			method: "PUT",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(dtoUpdateInvoiceItemRequest),
+		},
+	);
+};
 
-  return customInstance<putV1InvoicesIdItemsItemIdResponse>(getPutV1InvoicesIdItemsItemIdUrl(id,itemId),
-  {
-    ...options,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      dtoUpdateInvoiceItemRequest,)
-  }
-);}
+export const getPutV1InvoicesIdItemsItemIdMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof putV1InvoicesIdItemsItemId>>,
+		TError,
+		{ id: number; itemId: number; data: DtoUpdateInvoiceItemRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof putV1InvoicesIdItemsItemId>>,
+	TError,
+	{ id: number; itemId: number; data: DtoUpdateInvoiceItemRequest },
+	TContext
+> => {
+	const mutationKey = ["putV1InvoicesIdItemsItemId"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof putV1InvoicesIdItemsItemId>>,
+		{ id: number; itemId: number; data: DtoUpdateInvoiceItemRequest }
+	> = (props) => {
+		const { id, itemId, data } = props ?? {};
 
+		return putV1InvoicesIdItemsItemId(id, itemId, data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-export const getPutV1InvoicesIdItemsItemIdMutationOptions = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1InvoicesIdItemsItemId>>, TError,{id: number;itemId: number;data: DtoUpdateInvoiceItemRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof putV1InvoicesIdItemsItemId>>, TError,{id: number;itemId: number;data: DtoUpdateInvoiceItemRequest}, TContext> => {
+export type PutV1InvoicesIdItemsItemIdMutationResult = NonNullable<
+	Awaited<ReturnType<typeof putV1InvoicesIdItemsItemId>>
+>;
+export type PutV1InvoicesIdItemsItemIdMutationBody =
+	DtoUpdateInvoiceItemRequest;
+export type PutV1InvoicesIdItemsItemIdMutationError = DtoErrorResponse;
 
-const mutationKey = ['putV1InvoicesIdItemsItemId'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1InvoicesIdItemsItemId>>, {id: number;itemId: number;data: DtoUpdateInvoiceItemRequest}> = (props) => {
-          const {id,itemId,data} = props ?? {};
-
-          return  putV1InvoicesIdItemsItemId(id,itemId,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PutV1InvoicesIdItemsItemIdMutationResult = NonNullable<Awaited<ReturnType<typeof putV1InvoicesIdItemsItemId>>>
-    export type PutV1InvoicesIdItemsItemIdMutationBody = DtoUpdateInvoiceItemRequest
-    export type PutV1InvoicesIdItemsItemIdMutationError = DtoErrorResponse
-
-    /**
+/**
  * @summary Update invoice item
  */
-export const usePutV1InvoicesIdItemsItemId = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1InvoicesIdItemsItemId>>, TError,{id: number;itemId: number;data: DtoUpdateInvoiceItemRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof putV1InvoicesIdItemsItemId>>,
-        TError,
-        {id: number;itemId: number;data: DtoUpdateInvoiceItemRequest},
-        TContext
-      > => {
-      return useMutation(getPutV1InvoicesIdItemsItemIdMutationOptions(options), queryClient);
-    }
-    export type deleteV1InvoicesIdItemsItemIdResponse200 = {
-  data: DtoSuccessResponse
-  status: 200
-}
+export const usePutV1InvoicesIdItemsItemId = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof putV1InvoicesIdItemsItemId>>,
+			TError,
+			{ id: number; itemId: number; data: DtoUpdateInvoiceItemRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof putV1InvoicesIdItemsItemId>>,
+	TError,
+	{ id: number; itemId: number; data: DtoUpdateInvoiceItemRequest },
+	TContext
+> => {
+	return useMutation(
+		getPutV1InvoicesIdItemsItemIdMutationOptions(options),
+		queryClient,
+	);
+};
+export type deleteV1InvoicesIdItemsItemIdResponse200 = {
+	data: DtoSuccessResponse;
+	status: 200;
+};
 
 export type deleteV1InvoicesIdItemsItemIdResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type deleteV1InvoicesIdItemsItemIdResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type deleteV1InvoicesIdItemsItemIdResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type deleteV1InvoicesIdItemsItemIdResponse404 = {
-  data: DtoErrorResponse
-  status: 404
-}
+	data: DtoErrorResponse;
+	status: 404;
+};
 
 export type deleteV1InvoicesIdItemsItemIdResponse422 = {
-  data: DtoErrorResponse
-  status: 422
-}
+	data: DtoErrorResponse;
+	status: 422;
+};
 
 export type deleteV1InvoicesIdItemsItemIdResponse500 = {
-  data: DtoErrorResponse
-  status: 500
-}
-
-export type deleteV1InvoicesIdItemsItemIdResponseSuccess = (deleteV1InvoicesIdItemsItemIdResponse200) & {
-  headers: Headers;
-};
-export type deleteV1InvoicesIdItemsItemIdResponseError = (deleteV1InvoicesIdItemsItemIdResponse400 | deleteV1InvoicesIdItemsItemIdResponse401 | deleteV1InvoicesIdItemsItemIdResponse403 | deleteV1InvoicesIdItemsItemIdResponse404 | deleteV1InvoicesIdItemsItemIdResponse422 | deleteV1InvoicesIdItemsItemIdResponse500) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 500;
 };
 
-export type deleteV1InvoicesIdItemsItemIdResponse = (deleteV1InvoicesIdItemsItemIdResponseSuccess | deleteV1InvoicesIdItemsItemIdResponseError)
+export type deleteV1InvoicesIdItemsItemIdResponseSuccess =
+	deleteV1InvoicesIdItemsItemIdResponse200 & {
+		headers: Headers;
+	};
+export type deleteV1InvoicesIdItemsItemIdResponseError = (
+	| deleteV1InvoicesIdItemsItemIdResponse400
+	| deleteV1InvoicesIdItemsItemIdResponse401
+	| deleteV1InvoicesIdItemsItemIdResponse403
+	| deleteV1InvoicesIdItemsItemIdResponse404
+	| deleteV1InvoicesIdItemsItemIdResponse422
+	| deleteV1InvoicesIdItemsItemIdResponse500
+) & {
+	headers: Headers;
+};
 
-export const getDeleteV1InvoicesIdItemsItemIdUrl = (id: number,
-    itemId: number,) => {
+export type deleteV1InvoicesIdItemsItemIdResponse =
+	| deleteV1InvoicesIdItemsItemIdResponseSuccess
+	| deleteV1InvoicesIdItemsItemIdResponseError;
 
-
-
-
-  return `/v1/invoices/${id}/items/${itemId}`
-}
+export const getDeleteV1InvoicesIdItemsItemIdUrl = (
+	id: number,
+	itemId: number,
+) => {
+	return `/v1/invoices/${id}/items/${itemId}`;
+};
 
 /**
  * Delete an item from an invoice
  * @summary Delete invoice item
  */
-export const deleteV1InvoicesIdItemsItemId = async (id: number,
-    itemId: number, options?: RequestInit): Promise<deleteV1InvoicesIdItemsItemIdResponse> => {
+export const deleteV1InvoicesIdItemsItemId = async (
+	id: number,
+	itemId: number,
+	options?: RequestInit,
+): Promise<deleteV1InvoicesIdItemsItemIdResponse> => {
+	return customInstance<deleteV1InvoicesIdItemsItemIdResponse>(
+		getDeleteV1InvoicesIdItemsItemIdUrl(id, itemId),
+		{
+			...options,
+			method: "DELETE",
+		},
+	);
+};
 
-  return customInstance<deleteV1InvoicesIdItemsItemIdResponse>(getDeleteV1InvoicesIdItemsItemIdUrl(id,itemId),
-  {
-    ...options,
-    method: 'DELETE'
+export const getDeleteV1InvoicesIdItemsItemIdMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof deleteV1InvoicesIdItemsItemId>>,
+		TError,
+		{ id: number; itemId: number },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof deleteV1InvoicesIdItemsItemId>>,
+	TError,
+	{ id: number; itemId: number },
+	TContext
+> => {
+	const mutationKey = ["deleteV1InvoicesIdItemsItemId"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof deleteV1InvoicesIdItemsItemId>>,
+		{ id: number; itemId: number }
+	> = (props) => {
+		const { id, itemId } = props ?? {};
 
-  }
-);}
+		return deleteV1InvoicesIdItemsItemId(id, itemId, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
+export type DeleteV1InvoicesIdItemsItemIdMutationResult = NonNullable<
+	Awaited<ReturnType<typeof deleteV1InvoicesIdItemsItemId>>
+>;
 
+export type DeleteV1InvoicesIdItemsItemIdMutationError = DtoErrorResponse;
 
-export const getDeleteV1InvoicesIdItemsItemIdMutationOptions = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1InvoicesIdItemsItemId>>, TError,{id: number;itemId: number}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof deleteV1InvoicesIdItemsItemId>>, TError,{id: number;itemId: number}, TContext> => {
-
-const mutationKey = ['deleteV1InvoicesIdItemsItemId'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteV1InvoicesIdItemsItemId>>, {id: number;itemId: number}> = (props) => {
-          const {id,itemId} = props ?? {};
-
-          return  deleteV1InvoicesIdItemsItemId(id,itemId,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type DeleteV1InvoicesIdItemsItemIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteV1InvoicesIdItemsItemId>>>
-
-    export type DeleteV1InvoicesIdItemsItemIdMutationError = DtoErrorResponse
-
-    /**
+/**
  * @summary Delete invoice item
  */
-export const useDeleteV1InvoicesIdItemsItemId = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1InvoicesIdItemsItemId>>, TError,{id: number;itemId: number}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof deleteV1InvoicesIdItemsItemId>>,
-        TError,
-        {id: number;itemId: number},
-        TContext
-      > => {
-      return useMutation(getDeleteV1InvoicesIdItemsItemIdMutationOptions(options), queryClient);
-    }
-    export type putV1InvoicesIdItemsItemIdQuantityResponse200 = {
-  data: PutV1InvoicesIdItemsItemIdQuantity200
-  status: 200
-}
+export const useDeleteV1InvoicesIdItemsItemId = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof deleteV1InvoicesIdItemsItemId>>,
+			TError,
+			{ id: number; itemId: number },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof deleteV1InvoicesIdItemsItemId>>,
+	TError,
+	{ id: number; itemId: number },
+	TContext
+> => {
+	return useMutation(
+		getDeleteV1InvoicesIdItemsItemIdMutationOptions(options),
+		queryClient,
+	);
+};
+export type putV1InvoicesIdItemsItemIdQuantityResponse200 = {
+	data: PutV1InvoicesIdItemsItemIdQuantity200;
+	status: 200;
+};
 
 export type putV1InvoicesIdItemsItemIdQuantityResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type putV1InvoicesIdItemsItemIdQuantityResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type putV1InvoicesIdItemsItemIdQuantityResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type putV1InvoicesIdItemsItemIdQuantityResponse404 = {
-  data: DtoErrorResponse
-  status: 404
-}
+	data: DtoErrorResponse;
+	status: 404;
+};
 
 export type putV1InvoicesIdItemsItemIdQuantityResponse422 = {
-  data: DtoErrorResponse
-  status: 422
-}
+	data: DtoErrorResponse;
+	status: 422;
+};
 
 export type putV1InvoicesIdItemsItemIdQuantityResponse500 = {
-  data: DtoErrorResponse
-  status: 500
-}
-
-export type putV1InvoicesIdItemsItemIdQuantityResponseSuccess = (putV1InvoicesIdItemsItemIdQuantityResponse200) & {
-  headers: Headers;
-};
-export type putV1InvoicesIdItemsItemIdQuantityResponseError = (putV1InvoicesIdItemsItemIdQuantityResponse400 | putV1InvoicesIdItemsItemIdQuantityResponse401 | putV1InvoicesIdItemsItemIdQuantityResponse403 | putV1InvoicesIdItemsItemIdQuantityResponse404 | putV1InvoicesIdItemsItemIdQuantityResponse422 | putV1InvoicesIdItemsItemIdQuantityResponse500) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 500;
 };
 
-export type putV1InvoicesIdItemsItemIdQuantityResponse = (putV1InvoicesIdItemsItemIdQuantityResponseSuccess | putV1InvoicesIdItemsItemIdQuantityResponseError)
+export type putV1InvoicesIdItemsItemIdQuantityResponseSuccess =
+	putV1InvoicesIdItemsItemIdQuantityResponse200 & {
+		headers: Headers;
+	};
+export type putV1InvoicesIdItemsItemIdQuantityResponseError = (
+	| putV1InvoicesIdItemsItemIdQuantityResponse400
+	| putV1InvoicesIdItemsItemIdQuantityResponse401
+	| putV1InvoicesIdItemsItemIdQuantityResponse403
+	| putV1InvoicesIdItemsItemIdQuantityResponse404
+	| putV1InvoicesIdItemsItemIdQuantityResponse422
+	| putV1InvoicesIdItemsItemIdQuantityResponse500
+) & {
+	headers: Headers;
+};
 
-export const getPutV1InvoicesIdItemsItemIdQuantityUrl = (id: number,
-    itemId: number,) => {
+export type putV1InvoicesIdItemsItemIdQuantityResponse =
+	| putV1InvoicesIdItemsItemIdQuantityResponseSuccess
+	| putV1InvoicesIdItemsItemIdQuantityResponseError;
 
-
-
-
-  return `/v1/invoices/${id}/items/${itemId}/quantity`
-}
+export const getPutV1InvoicesIdItemsItemIdQuantityUrl = (
+	id: number,
+	itemId: number,
+) => {
+	return `/v1/invoices/${id}/items/${itemId}/quantity`;
+};
 
 /**
  * Update the quantity (number of days/Mondays) of a specific invoice item. Only applicable to items with per_day or per_monday unit pricing.
  * @summary Update invoice item quantity
  */
-export const putV1InvoicesIdItemsItemIdQuantity = async (id: number,
-    itemId: number,
-    dtoUpdateInvoiceItemQuantityRequest: DtoUpdateInvoiceItemQuantityRequest, options?: RequestInit): Promise<putV1InvoicesIdItemsItemIdQuantityResponse> => {
+export const putV1InvoicesIdItemsItemIdQuantity = async (
+	id: number,
+	itemId: number,
+	dtoUpdateInvoiceItemQuantityRequest: DtoUpdateInvoiceItemQuantityRequest,
+	options?: RequestInit,
+): Promise<putV1InvoicesIdItemsItemIdQuantityResponse> => {
+	return customInstance<putV1InvoicesIdItemsItemIdQuantityResponse>(
+		getPutV1InvoicesIdItemsItemIdQuantityUrl(id, itemId),
+		{
+			...options,
+			method: "PUT",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(dtoUpdateInvoiceItemQuantityRequest),
+		},
+	);
+};
 
-  return customInstance<putV1InvoicesIdItemsItemIdQuantityResponse>(getPutV1InvoicesIdItemsItemIdQuantityUrl(id,itemId),
-  {
-    ...options,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      dtoUpdateInvoiceItemQuantityRequest,)
-  }
-);}
+export const getPutV1InvoicesIdItemsItemIdQuantityMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof putV1InvoicesIdItemsItemIdQuantity>>,
+		TError,
+		{ id: number; itemId: number; data: DtoUpdateInvoiceItemQuantityRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof putV1InvoicesIdItemsItemIdQuantity>>,
+	TError,
+	{ id: number; itemId: number; data: DtoUpdateInvoiceItemQuantityRequest },
+	TContext
+> => {
+	const mutationKey = ["putV1InvoicesIdItemsItemIdQuantity"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof putV1InvoicesIdItemsItemIdQuantity>>,
+		{ id: number; itemId: number; data: DtoUpdateInvoiceItemQuantityRequest }
+	> = (props) => {
+		const { id, itemId, data } = props ?? {};
 
+		return putV1InvoicesIdItemsItemIdQuantity(id, itemId, data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-export const getPutV1InvoicesIdItemsItemIdQuantityMutationOptions = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1InvoicesIdItemsItemIdQuantity>>, TError,{id: number;itemId: number;data: DtoUpdateInvoiceItemQuantityRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof putV1InvoicesIdItemsItemIdQuantity>>, TError,{id: number;itemId: number;data: DtoUpdateInvoiceItemQuantityRequest}, TContext> => {
+export type PutV1InvoicesIdItemsItemIdQuantityMutationResult = NonNullable<
+	Awaited<ReturnType<typeof putV1InvoicesIdItemsItemIdQuantity>>
+>;
+export type PutV1InvoicesIdItemsItemIdQuantityMutationBody =
+	DtoUpdateInvoiceItemQuantityRequest;
+export type PutV1InvoicesIdItemsItemIdQuantityMutationError = DtoErrorResponse;
 
-const mutationKey = ['putV1InvoicesIdItemsItemIdQuantity'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1InvoicesIdItemsItemIdQuantity>>, {id: number;itemId: number;data: DtoUpdateInvoiceItemQuantityRequest}> = (props) => {
-          const {id,itemId,data} = props ?? {};
-
-          return  putV1InvoicesIdItemsItemIdQuantity(id,itemId,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PutV1InvoicesIdItemsItemIdQuantityMutationResult = NonNullable<Awaited<ReturnType<typeof putV1InvoicesIdItemsItemIdQuantity>>>
-    export type PutV1InvoicesIdItemsItemIdQuantityMutationBody = DtoUpdateInvoiceItemQuantityRequest
-    export type PutV1InvoicesIdItemsItemIdQuantityMutationError = DtoErrorResponse
-
-    /**
+/**
  * @summary Update invoice item quantity
  */
-export const usePutV1InvoicesIdItemsItemIdQuantity = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1InvoicesIdItemsItemIdQuantity>>, TError,{id: number;itemId: number;data: DtoUpdateInvoiceItemQuantityRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof putV1InvoicesIdItemsItemIdQuantity>>,
-        TError,
-        {id: number;itemId: number;data: DtoUpdateInvoiceItemQuantityRequest},
-        TContext
-      > => {
-      return useMutation(getPutV1InvoicesIdItemsItemIdQuantityMutationOptions(options), queryClient);
-    }
-    export type getV1StudentsIdInvoicesResponse200 = {
-  data: GetV1StudentsIdInvoices200
-  status: 200
-}
+export const usePutV1InvoicesIdItemsItemIdQuantity = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof putV1InvoicesIdItemsItemIdQuantity>>,
+			TError,
+			{ id: number; itemId: number; data: DtoUpdateInvoiceItemQuantityRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof putV1InvoicesIdItemsItemIdQuantity>>,
+	TError,
+	{ id: number; itemId: number; data: DtoUpdateInvoiceItemQuantityRequest },
+	TContext
+> => {
+	return useMutation(
+		getPutV1InvoicesIdItemsItemIdQuantityMutationOptions(options),
+		queryClient,
+	);
+};
+export type getV1StudentsIdInvoicesResponse200 = {
+	data: GetV1StudentsIdInvoices200;
+	status: 200;
+};
 
 export type getV1StudentsIdInvoicesResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type getV1StudentsIdInvoicesResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type getV1StudentsIdInvoicesResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type getV1StudentsIdInvoicesResponse500 = {
-  data: DtoErrorResponse
-  status: 500
-}
-
-export type getV1StudentsIdInvoicesResponseSuccess = (getV1StudentsIdInvoicesResponse200) & {
-  headers: Headers;
-};
-export type getV1StudentsIdInvoicesResponseError = (getV1StudentsIdInvoicesResponse400 | getV1StudentsIdInvoicesResponse401 | getV1StudentsIdInvoicesResponse403 | getV1StudentsIdInvoicesResponse500) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 500;
 };
 
-export type getV1StudentsIdInvoicesResponse = (getV1StudentsIdInvoicesResponseSuccess | getV1StudentsIdInvoicesResponseError)
+export type getV1StudentsIdInvoicesResponseSuccess =
+	getV1StudentsIdInvoicesResponse200 & {
+		headers: Headers;
+	};
+export type getV1StudentsIdInvoicesResponseError = (
+	| getV1StudentsIdInvoicesResponse400
+	| getV1StudentsIdInvoicesResponse401
+	| getV1StudentsIdInvoicesResponse403
+	| getV1StudentsIdInvoicesResponse500
+) & {
+	headers: Headers;
+};
 
-export const getGetV1StudentsIdInvoicesUrl = (id: number,
-    params?: GetV1StudentsIdInvoicesParams,) => {
-  const normalizedParams = new URLSearchParams();
+export type getV1StudentsIdInvoicesResponse =
+	| getV1StudentsIdInvoicesResponseSuccess
+	| getV1StudentsIdInvoicesResponseError;
 
-  Object.entries(params || {}).forEach(([key, value]) => {
+export const getGetV1StudentsIdInvoicesUrl = (
+	id: number,
+	params?: GetV1StudentsIdInvoicesParams,
+) => {
+	const normalizedParams = new URLSearchParams();
 
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(key, value === null ? "null" : value.toString());
+		}
+	});
 
-  const stringifiedParams = normalizedParams.toString();
+	const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/v1/students/${id}/invoices?${stringifiedParams}` : `/v1/students/${id}/invoices`
-}
+	return stringifiedParams.length > 0
+		? `/v1/students/${id}/invoices?${stringifiedParams}`
+		: `/v1/students/${id}/invoices`;
+};
 
 /**
  * Get a list of invoices for a specific student
  * @summary Get invoices by student
  */
-export const getV1StudentsIdInvoices = async (id: number,
-    params?: GetV1StudentsIdInvoicesParams, options?: RequestInit): Promise<getV1StudentsIdInvoicesResponse> => {
+export const getV1StudentsIdInvoices = async (
+	id: number,
+	params?: GetV1StudentsIdInvoicesParams,
+	options?: RequestInit,
+): Promise<getV1StudentsIdInvoicesResponse> => {
+	return customInstance<getV1StudentsIdInvoicesResponse>(
+		getGetV1StudentsIdInvoicesUrl(id, params),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
 
-  return customInstance<getV1StudentsIdInvoicesResponse>(getGetV1StudentsIdInvoicesUrl(id,params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetV1StudentsIdInvoicesQueryKey = (id: number,
-    params?: GetV1StudentsIdInvoicesParams,) => {
-    return [
-    `/v1/students/${id}/invoices`, ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getGetV1StudentsIdInvoicesQueryOptions = <TData = Awaited<ReturnType<typeof getV1StudentsIdInvoices>>, TError = DtoErrorResponse>(id: number,
-    params?: GetV1StudentsIdInvoicesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdInvoices>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getGetV1StudentsIdInvoicesQueryKey = (
+	id: number,
+	params?: GetV1StudentsIdInvoicesParams,
 ) => {
+	return [`/v1/students/${id}/invoices`, ...(params ? [params] : [])] as const;
+};
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+export const getGetV1StudentsIdInvoicesQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1StudentsIdInvoices>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	params?: GetV1StudentsIdInvoicesParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1StudentsIdInvoices>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1StudentsIdInvoicesQueryKey(id,params);
+	const queryKey =
+		queryOptions?.queryKey ?? getGetV1StudentsIdInvoicesQueryKey(id, params);
 
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1StudentsIdInvoices>>
+	> = ({ signal }) =>
+		getV1StudentsIdInvoices(id, params, { signal, ...requestOptions });
 
+	return {
+		queryKey,
+		queryFn,
+		enabled: !!id,
+		...queryOptions,
+	} as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1StudentsIdInvoices>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1StudentsIdInvoices>>> = ({ signal }) => getV1StudentsIdInvoices(id,params, { signal, ...requestOptions });
+export type GetV1StudentsIdInvoicesQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1StudentsIdInvoices>>
+>;
+export type GetV1StudentsIdInvoicesQueryError = DtoErrorResponse;
 
-
-
-
-
-   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdInvoices>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetV1StudentsIdInvoicesQueryResult = NonNullable<Awaited<ReturnType<typeof getV1StudentsIdInvoices>>>
-export type GetV1StudentsIdInvoicesQueryError = DtoErrorResponse
-
-
-export function useGetV1StudentsIdInvoices<TData = Awaited<ReturnType<typeof getV1StudentsIdInvoices>>, TError = DtoErrorResponse>(
- id: number,
-    params: undefined |  GetV1StudentsIdInvoicesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdInvoices>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1StudentsIdInvoices>>,
-          TError,
-          Awaited<ReturnType<typeof getV1StudentsIdInvoices>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1StudentsIdInvoices<TData = Awaited<ReturnType<typeof getV1StudentsIdInvoices>>, TError = DtoErrorResponse>(
- id: number,
-    params?: GetV1StudentsIdInvoicesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdInvoices>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1StudentsIdInvoices>>,
-          TError,
-          Awaited<ReturnType<typeof getV1StudentsIdInvoices>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1StudentsIdInvoices<TData = Awaited<ReturnType<typeof getV1StudentsIdInvoices>>, TError = DtoErrorResponse>(
- id: number,
-    params?: GetV1StudentsIdInvoicesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdInvoices>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1StudentsIdInvoices<
+	TData = Awaited<ReturnType<typeof getV1StudentsIdInvoices>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	params: undefined | GetV1StudentsIdInvoicesParams,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1StudentsIdInvoices>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1StudentsIdInvoices>>,
+					TError,
+					Awaited<ReturnType<typeof getV1StudentsIdInvoices>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1StudentsIdInvoices<
+	TData = Awaited<ReturnType<typeof getV1StudentsIdInvoices>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	params?: GetV1StudentsIdInvoicesParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1StudentsIdInvoices>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1StudentsIdInvoices>>,
+					TError,
+					Awaited<ReturnType<typeof getV1StudentsIdInvoices>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1StudentsIdInvoices<
+	TData = Awaited<ReturnType<typeof getV1StudentsIdInvoices>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	params?: GetV1StudentsIdInvoicesParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1StudentsIdInvoices>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary Get invoices by student
  */
 
-export function useGetV1StudentsIdInvoices<TData = Awaited<ReturnType<typeof getV1StudentsIdInvoices>>, TError = DtoErrorResponse>(
- id: number,
-    params?: GetV1StudentsIdInvoicesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdInvoices>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1StudentsIdInvoices<
+	TData = Awaited<ReturnType<typeof getV1StudentsIdInvoices>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	params?: GetV1StudentsIdInvoicesParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1StudentsIdInvoices>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1StudentsIdInvoicesQueryOptions(
+		id,
+		params,
+		options,
+	);
 
-  const queryOptions = getGetV1StudentsIdInvoicesQueryOptions(id,params,options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
-

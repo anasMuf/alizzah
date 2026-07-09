@@ -6,10 +6,10 @@
  * OpenAPI spec version: 1.0
  */
 
-export type InternalModulesKoperasiLainlainCreateRequestFlow = typeof InternalModulesKoperasiLainlainCreateRequestFlow[keyof typeof InternalModulesKoperasiLainlainCreateRequestFlow];
-
+export type InternalModulesKoperasiLainlainCreateRequestFlow =
+	(typeof InternalModulesKoperasiLainlainCreateRequestFlow)[keyof typeof InternalModulesKoperasiLainlainCreateRequestFlow];
 
 export const InternalModulesKoperasiLainlainCreateRequestFlow = {
-  income: 'income',
-  expense: 'expense',
+	income: "income",
+	expense: "expense",
 } as const;

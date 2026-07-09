@@ -7,8 +7,8 @@
  */
 
 export interface InternalModulesKoperasiAnggotaLoanSummary {
-  active_loan_count?: number;
-  total_paid?: number;
-  total_principal?: number;
-  total_remaining?: number;
+	active_loan_count?: number;
+	total_paid?: number;
+	total_principal?: number;
+	total_remaining?: number;
 }

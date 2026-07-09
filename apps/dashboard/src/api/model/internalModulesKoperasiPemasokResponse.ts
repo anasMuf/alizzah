@@ -7,9 +7,9 @@
  */
 
 export interface InternalModulesKoperasiPemasokResponse {
-  address?: string;
-  contact_person?: string;
-  id?: number;
-  name?: string;
-  phone?: string;
+	address?: string;
+	contact_person?: string;
+	id?: number;
+	name?: string;
+	phone?: string;
 }

@@ -7,6 +7,6 @@
  */
 
 export interface DtoUserBriefResponse {
-  full_name?: string;
-  id?: number;
+	full_name?: string;
+	id?: number;
 }

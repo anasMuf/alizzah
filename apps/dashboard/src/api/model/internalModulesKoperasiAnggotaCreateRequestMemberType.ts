@@ -6,11 +6,11 @@
  * OpenAPI spec version: 1.0
  */
 
-export type InternalModulesKoperasiAnggotaCreateRequestMemberType = typeof InternalModulesKoperasiAnggotaCreateRequestMemberType[keyof typeof InternalModulesKoperasiAnggotaCreateRequestMemberType];
-
+export type InternalModulesKoperasiAnggotaCreateRequestMemberType =
+	(typeof InternalModulesKoperasiAnggotaCreateRequestMemberType)[keyof typeof InternalModulesKoperasiAnggotaCreateRequestMemberType];
 
 export const InternalModulesKoperasiAnggotaCreateRequestMemberType = {
-  pegawai: 'pegawai',
-  pengurus_yayasan: 'pengurus_yayasan',
-  pihak_luar: 'pihak_luar',
+	pegawai: "pegawai",
+	pengurus_yayasan: "pengurus_yayasan",
+	pihak_luar: "pihak_luar",
 } as const;

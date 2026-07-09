@@ -7,11 +7,11 @@
  */
 
 export interface InternalModulesKoperasiLaporanOutstandingItem {
-  date?: string;
-  id?: number;
-  paid_amount?: number;
-  party?: string;
-  remaining?: number;
-  status?: string;
-  total_amount?: number;
+	date?: string;
+	id?: number;
+	paid_amount?: number;
+	party?: string;
+	remaining?: number;
+	status?: string;
+	total_amount?: number;
 }

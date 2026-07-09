@@ -5,11 +5,11 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoWithdrawalRequestEventType } from './dtoWithdrawalRequestEventType';
+import type { DtoWithdrawalRequestEventType } from "./dtoWithdrawalRequestEventType";
 
 export interface DtoWithdrawalRequest {
-  event_date: string;
-  event_type: DtoWithdrawalRequestEventType;
-  notes?: string;
-  student_id: number;
+	event_date: string;
+	event_type: DtoWithdrawalRequestEventType;
+	notes?: string;
+	student_id: number;
 }

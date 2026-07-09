@@ -7,8 +7,8 @@
  */
 
 export interface DtoScheduleBlock {
-  days?: string[];
-  time_in?: string;
-  time_out?: string;
-  time_out_calisan?: string;
+	days?: string[];
+	time_in?: string;
+	time_out?: string;
+	time_out_calisan?: string;
 }

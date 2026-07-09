@@ -7,13 +7,13 @@
  */
 
 export interface InternalModulesKoperasiKasTransactionResponse {
-  amount?: number;
-  category?: string;
-  created_by?: string;
-  description?: string;
-  id?: number;
-  source_id?: number;
-  source_type?: string;
-  transaction_date?: string;
-  transaction_type?: string;
+	amount?: number;
+	category?: string;
+	created_by?: string;
+	description?: string;
+	id?: number;
+	source_id?: number;
+	source_type?: string;
+	transaction_date?: string;
+	transaction_type?: string;
 }

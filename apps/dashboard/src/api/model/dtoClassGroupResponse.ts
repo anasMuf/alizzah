@@ -8,11 +8,11 @@
 import type { DtoClassGroupSchedule } from "./dtoClassGroupSchedule";
 
 export interface DtoClassGroupResponse {
-  academic_year_id?: number;
-  id?: number;
-  is_mutation?: boolean;
-  level?: string;
-  name?: string;
-  schedule?: DtoClassGroupSchedule;
-  student_count?: number;
+	academic_year_id?: number;
+	id?: number;
+	is_mutation?: boolean;
+	level?: string;
+	name?: string;
+	schedule?: DtoClassGroupSchedule;
+	student_count?: number;
 }

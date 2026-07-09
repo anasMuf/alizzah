@@ -5,719 +5,990 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import {
-  useMutation,
-  useQuery
-} from '@tanstack/react-query';
-import type {
-  DataTag,
-  DefinedInitialDataOptions,
-  DefinedUseQueryResult,
-  MutationFunction,
-  QueryClient,
-  QueryFunction,
-  QueryKey,
-  UndefinedInitialDataOptions,
-  UseMutationOptions,
-  UseMutationResult,
-  UseQueryOptions,
-  UseQueryResult
-} from '@tanstack/react-query';
 
 import type {
-  DtoCloneClassGroupsRequest,
-  DtoCreateClassGroupRequest,
-  DtoErrorResponse,
-  DtoSuccessResponse,
-  GetV1ClassGroups200,
-  GetV1ClassGroupsId200,
-  GetV1ClassGroupsParams,
-  PostV1ClassGroups201,
-  PostV1ClassGroupsClone200,
-  PutV1ClassGroupsId200
-} from '../../model';
+	DataTag,
+	DefinedInitialDataOptions,
+	DefinedUseQueryResult,
+	MutationFunction,
+	QueryClient,
+	QueryFunction,
+	QueryKey,
+	UndefinedInitialDataOptions,
+	UseMutationOptions,
+	UseMutationResult,
+	UseQueryOptions,
+	UseQueryResult,
+} from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
-import { customInstance } from '../../mutator/custom-instance';
+import type {
+	DtoCloneClassGroupsRequest,
+	DtoCreateClassGroupRequest,
+	DtoErrorResponse,
+	DtoSuccessResponse,
+	GetV1ClassGroups200,
+	GetV1ClassGroupsId200,
+	GetV1ClassGroupsParams,
+	PostV1ClassGroups201,
+	PostV1ClassGroupsClone200,
+	PutV1ClassGroupsId200,
+} from "../../model";
 
+import { customInstance } from "../../mutator/custom-instance";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
-
-
 export type getV1ClassGroupsResponse200 = {
-  data: GetV1ClassGroups200
-  status: 200
-}
+	data: GetV1ClassGroups200;
+	status: 200;
+};
 
 export type getV1ClassGroupsResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type getV1ClassGroupsResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
-
-export type getV1ClassGroupsResponseSuccess = (getV1ClassGroupsResponse200) & {
-  headers: Headers;
-};
-export type getV1ClassGroupsResponseError = (getV1ClassGroupsResponse401 | getV1ClassGroupsResponse403) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 403;
 };
 
-export type getV1ClassGroupsResponse = (getV1ClassGroupsResponseSuccess | getV1ClassGroupsResponseError)
+export type getV1ClassGroupsResponseSuccess = getV1ClassGroupsResponse200 & {
+	headers: Headers;
+};
+export type getV1ClassGroupsResponseError = (
+	| getV1ClassGroupsResponse401
+	| getV1ClassGroupsResponse403
+) & {
+	headers: Headers;
+};
 
-export const getGetV1ClassGroupsUrl = (params?: GetV1ClassGroupsParams,) => {
-  const normalizedParams = new URLSearchParams();
+export type getV1ClassGroupsResponse =
+	| getV1ClassGroupsResponseSuccess
+	| getV1ClassGroupsResponseError;
 
-  Object.entries(params || {}).forEach(([key, value]) => {
+export const getGetV1ClassGroupsUrl = (params?: GetV1ClassGroupsParams) => {
+	const normalizedParams = new URLSearchParams();
 
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(key, value === null ? "null" : value.toString());
+		}
+	});
 
-  const stringifiedParams = normalizedParams.toString();
+	const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/v1/class-groups?${stringifiedParams}` : `/v1/class-groups`
-}
+	return stringifiedParams.length > 0
+		? `/v1/class-groups?${stringifiedParams}`
+		: `/v1/class-groups`;
+};
 
 /**
  * Get all class groups with optional filters
  * @summary List all class groups
  */
-export const getV1ClassGroups = async (params?: GetV1ClassGroupsParams, options?: RequestInit): Promise<getV1ClassGroupsResponse> => {
+export const getV1ClassGroups = async (
+	params?: GetV1ClassGroupsParams,
+	options?: RequestInit,
+): Promise<getV1ClassGroupsResponse> => {
+	return customInstance<getV1ClassGroupsResponse>(
+		getGetV1ClassGroupsUrl(params),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
 
-  return customInstance<getV1ClassGroupsResponse>(getGetV1ClassGroupsUrl(params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetV1ClassGroupsQueryKey = (params?: GetV1ClassGroupsParams,) => {
-    return [
-    `/v1/class-groups`, ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getGetV1ClassGroupsQueryOptions = <TData = Awaited<ReturnType<typeof getV1ClassGroups>>, TError = DtoErrorResponse>(params?: GetV1ClassGroupsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ClassGroups>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getGetV1ClassGroupsQueryKey = (
+	params?: GetV1ClassGroupsParams,
 ) => {
+	return [`/v1/class-groups`, ...(params ? [params] : [])] as const;
+};
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+export const getGetV1ClassGroupsQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1ClassGroups>>,
+	TError = DtoErrorResponse,
+>(
+	params?: GetV1ClassGroupsParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1ClassGroups>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1ClassGroupsQueryKey(params);
+	const queryKey =
+		queryOptions?.queryKey ?? getGetV1ClassGroupsQueryKey(params);
 
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1ClassGroups>>
+	> = ({ signal }) => getV1ClassGroups(params, { signal, ...requestOptions });
 
+	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1ClassGroups>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1ClassGroups>>> = ({ signal }) => getV1ClassGroups(params, { signal, ...requestOptions });
+export type GetV1ClassGroupsQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1ClassGroups>>
+>;
+export type GetV1ClassGroupsQueryError = DtoErrorResponse;
 
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1ClassGroups>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetV1ClassGroupsQueryResult = NonNullable<Awaited<ReturnType<typeof getV1ClassGroups>>>
-export type GetV1ClassGroupsQueryError = DtoErrorResponse
-
-
-export function useGetV1ClassGroups<TData = Awaited<ReturnType<typeof getV1ClassGroups>>, TError = DtoErrorResponse>(
- params: undefined |  GetV1ClassGroupsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ClassGroups>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1ClassGroups>>,
-          TError,
-          Awaited<ReturnType<typeof getV1ClassGroups>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1ClassGroups<TData = Awaited<ReturnType<typeof getV1ClassGroups>>, TError = DtoErrorResponse>(
- params?: GetV1ClassGroupsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ClassGroups>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1ClassGroups>>,
-          TError,
-          Awaited<ReturnType<typeof getV1ClassGroups>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1ClassGroups<TData = Awaited<ReturnType<typeof getV1ClassGroups>>, TError = DtoErrorResponse>(
- params?: GetV1ClassGroupsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ClassGroups>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1ClassGroups<
+	TData = Awaited<ReturnType<typeof getV1ClassGroups>>,
+	TError = DtoErrorResponse,
+>(
+	params: undefined | GetV1ClassGroupsParams,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1ClassGroups>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1ClassGroups>>,
+					TError,
+					Awaited<ReturnType<typeof getV1ClassGroups>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1ClassGroups<
+	TData = Awaited<ReturnType<typeof getV1ClassGroups>>,
+	TError = DtoErrorResponse,
+>(
+	params?: GetV1ClassGroupsParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1ClassGroups>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1ClassGroups>>,
+					TError,
+					Awaited<ReturnType<typeof getV1ClassGroups>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1ClassGroups<
+	TData = Awaited<ReturnType<typeof getV1ClassGroups>>,
+	TError = DtoErrorResponse,
+>(
+	params?: GetV1ClassGroupsParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1ClassGroups>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary List all class groups
  */
 
-export function useGetV1ClassGroups<TData = Awaited<ReturnType<typeof getV1ClassGroups>>, TError = DtoErrorResponse>(
- params?: GetV1ClassGroupsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ClassGroups>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1ClassGroups<
+	TData = Awaited<ReturnType<typeof getV1ClassGroups>>,
+	TError = DtoErrorResponse,
+>(
+	params?: GetV1ClassGroupsParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1ClassGroups>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1ClassGroupsQueryOptions(params, options);
 
-  const queryOptions = getGetV1ClassGroupsQueryOptions(params,options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
 
 export type postV1ClassGroupsResponse201 = {
-  data: PostV1ClassGroups201
-  status: 201
-}
+	data: PostV1ClassGroups201;
+	status: 201;
+};
 
 export type postV1ClassGroupsResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type postV1ClassGroupsResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type postV1ClassGroupsResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
-
-export type postV1ClassGroupsResponseSuccess = (postV1ClassGroupsResponse201) & {
-  headers: Headers;
-};
-export type postV1ClassGroupsResponseError = (postV1ClassGroupsResponse400 | postV1ClassGroupsResponse401 | postV1ClassGroupsResponse403) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 403;
 };
 
-export type postV1ClassGroupsResponse = (postV1ClassGroupsResponseSuccess | postV1ClassGroupsResponseError)
+export type postV1ClassGroupsResponseSuccess = postV1ClassGroupsResponse201 & {
+	headers: Headers;
+};
+export type postV1ClassGroupsResponseError = (
+	| postV1ClassGroupsResponse400
+	| postV1ClassGroupsResponse401
+	| postV1ClassGroupsResponse403
+) & {
+	headers: Headers;
+};
+
+export type postV1ClassGroupsResponse =
+	| postV1ClassGroupsResponseSuccess
+	| postV1ClassGroupsResponseError;
 
 export const getPostV1ClassGroupsUrl = () => {
-
-
-
-
-  return `/v1/class-groups`
-}
+	return `/v1/class-groups`;
+};
 
 /**
  * Create a new class group with schedule
  * @summary Create a new class group
  */
-export const postV1ClassGroups = async (dtoCreateClassGroupRequest: DtoCreateClassGroupRequest, options?: RequestInit): Promise<postV1ClassGroupsResponse> => {
+export const postV1ClassGroups = async (
+	dtoCreateClassGroupRequest: DtoCreateClassGroupRequest,
+	options?: RequestInit,
+): Promise<postV1ClassGroupsResponse> => {
+	return customInstance<postV1ClassGroupsResponse>(getPostV1ClassGroupsUrl(), {
+		...options,
+		method: "POST",
+		headers: { "Content-Type": "application/json", ...options?.headers },
+		body: JSON.stringify(dtoCreateClassGroupRequest),
+	});
+};
 
-  return customInstance<postV1ClassGroupsResponse>(getPostV1ClassGroupsUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      dtoCreateClassGroupRequest,)
-  }
-);}
+export const getPostV1ClassGroupsMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1ClassGroups>>,
+		TError,
+		{ data: DtoCreateClassGroupRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1ClassGroups>>,
+	TError,
+	{ data: DtoCreateClassGroupRequest },
+	TContext
+> => {
+	const mutationKey = ["postV1ClassGroups"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1ClassGroups>>,
+		{ data: DtoCreateClassGroupRequest }
+	> = (props) => {
+		const { data } = props ?? {};
 
+		return postV1ClassGroups(data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-export const getPostV1ClassGroupsMutationOptions = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ClassGroups>>, TError,{data: DtoCreateClassGroupRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1ClassGroups>>, TError,{data: DtoCreateClassGroupRequest}, TContext> => {
+export type PostV1ClassGroupsMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1ClassGroups>>
+>;
+export type PostV1ClassGroupsMutationBody = DtoCreateClassGroupRequest;
+export type PostV1ClassGroupsMutationError = DtoErrorResponse;
 
-const mutationKey = ['postV1ClassGroups'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1ClassGroups>>, {data: DtoCreateClassGroupRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  postV1ClassGroups(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1ClassGroupsMutationResult = NonNullable<Awaited<ReturnType<typeof postV1ClassGroups>>>
-    export type PostV1ClassGroupsMutationBody = DtoCreateClassGroupRequest
-    export type PostV1ClassGroupsMutationError = DtoErrorResponse
-
-    /**
+/**
  * @summary Create a new class group
  */
-export const usePostV1ClassGroups = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ClassGroups>>, TError,{data: DtoCreateClassGroupRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postV1ClassGroups>>,
-        TError,
-        {data: DtoCreateClassGroupRequest},
-        TContext
-      > => {
-      return useMutation(getPostV1ClassGroupsMutationOptions(options), queryClient);
-    }
-    export type postV1ClassGroupsCloneResponse200 = {
-  data: PostV1ClassGroupsClone200
-  status: 200
-}
+export const usePostV1ClassGroups = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1ClassGroups>>,
+			TError,
+			{ data: DtoCreateClassGroupRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1ClassGroups>>,
+	TError,
+	{ data: DtoCreateClassGroupRequest },
+	TContext
+> => {
+	return useMutation(getPostV1ClassGroupsMutationOptions(options), queryClient);
+};
+export type postV1ClassGroupsCloneResponse200 = {
+	data: PostV1ClassGroupsClone200;
+	status: 200;
+};
 
 export type postV1ClassGroupsCloneResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type postV1ClassGroupsCloneResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type postV1ClassGroupsCloneResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
-
-export type postV1ClassGroupsCloneResponseSuccess = (postV1ClassGroupsCloneResponse200) & {
-  headers: Headers;
-};
-export type postV1ClassGroupsCloneResponseError = (postV1ClassGroupsCloneResponse400 | postV1ClassGroupsCloneResponse401 | postV1ClassGroupsCloneResponse403) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 403;
 };
 
-export type postV1ClassGroupsCloneResponse = (postV1ClassGroupsCloneResponseSuccess | postV1ClassGroupsCloneResponseError)
+export type postV1ClassGroupsCloneResponseSuccess =
+	postV1ClassGroupsCloneResponse200 & {
+		headers: Headers;
+	};
+export type postV1ClassGroupsCloneResponseError = (
+	| postV1ClassGroupsCloneResponse400
+	| postV1ClassGroupsCloneResponse401
+	| postV1ClassGroupsCloneResponse403
+) & {
+	headers: Headers;
+};
+
+export type postV1ClassGroupsCloneResponse =
+	| postV1ClassGroupsCloneResponseSuccess
+	| postV1ClassGroupsCloneResponseError;
 
 export const getPostV1ClassGroupsCloneUrl = () => {
-
-
-
-
-  return `/v1/class-groups/clone`
-}
+	return `/v1/class-groups/clone`;
+};
 
 /**
  * Copy all class groups (name, level, schedule) from one academic year to another. Skips duplicates.
  * @summary Clone class groups to another academic year
  */
-export const postV1ClassGroupsClone = async (dtoCloneClassGroupsRequest: DtoCloneClassGroupsRequest, options?: RequestInit): Promise<postV1ClassGroupsCloneResponse> => {
+export const postV1ClassGroupsClone = async (
+	dtoCloneClassGroupsRequest: DtoCloneClassGroupsRequest,
+	options?: RequestInit,
+): Promise<postV1ClassGroupsCloneResponse> => {
+	return customInstance<postV1ClassGroupsCloneResponse>(
+		getPostV1ClassGroupsCloneUrl(),
+		{
+			...options,
+			method: "POST",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(dtoCloneClassGroupsRequest),
+		},
+	);
+};
 
-  return customInstance<postV1ClassGroupsCloneResponse>(getPostV1ClassGroupsCloneUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      dtoCloneClassGroupsRequest,)
-  }
-);}
+export const getPostV1ClassGroupsCloneMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1ClassGroupsClone>>,
+		TError,
+		{ data: DtoCloneClassGroupsRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1ClassGroupsClone>>,
+	TError,
+	{ data: DtoCloneClassGroupsRequest },
+	TContext
+> => {
+	const mutationKey = ["postV1ClassGroupsClone"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1ClassGroupsClone>>,
+		{ data: DtoCloneClassGroupsRequest }
+	> = (props) => {
+		const { data } = props ?? {};
 
+		return postV1ClassGroupsClone(data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-export const getPostV1ClassGroupsCloneMutationOptions = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ClassGroupsClone>>, TError,{data: DtoCloneClassGroupsRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1ClassGroupsClone>>, TError,{data: DtoCloneClassGroupsRequest}, TContext> => {
+export type PostV1ClassGroupsCloneMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1ClassGroupsClone>>
+>;
+export type PostV1ClassGroupsCloneMutationBody = DtoCloneClassGroupsRequest;
+export type PostV1ClassGroupsCloneMutationError = DtoErrorResponse;
 
-const mutationKey = ['postV1ClassGroupsClone'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1ClassGroupsClone>>, {data: DtoCloneClassGroupsRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  postV1ClassGroupsClone(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1ClassGroupsCloneMutationResult = NonNullable<Awaited<ReturnType<typeof postV1ClassGroupsClone>>>
-    export type PostV1ClassGroupsCloneMutationBody = DtoCloneClassGroupsRequest
-    export type PostV1ClassGroupsCloneMutationError = DtoErrorResponse
-
-    /**
+/**
  * @summary Clone class groups to another academic year
  */
-export const usePostV1ClassGroupsClone = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ClassGroupsClone>>, TError,{data: DtoCloneClassGroupsRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postV1ClassGroupsClone>>,
-        TError,
-        {data: DtoCloneClassGroupsRequest},
-        TContext
-      > => {
-      return useMutation(getPostV1ClassGroupsCloneMutationOptions(options), queryClient);
-    }
-    export type getV1ClassGroupsIdResponse200 = {
-  data: GetV1ClassGroupsId200
-  status: 200
-}
+export const usePostV1ClassGroupsClone = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1ClassGroupsClone>>,
+			TError,
+			{ data: DtoCloneClassGroupsRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1ClassGroupsClone>>,
+	TError,
+	{ data: DtoCloneClassGroupsRequest },
+	TContext
+> => {
+	return useMutation(
+		getPostV1ClassGroupsCloneMutationOptions(options),
+		queryClient,
+	);
+};
+export type getV1ClassGroupsIdResponse200 = {
+	data: GetV1ClassGroupsId200;
+	status: 200;
+};
 
 export type getV1ClassGroupsIdResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type getV1ClassGroupsIdResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type getV1ClassGroupsIdResponse404 = {
-  data: DtoErrorResponse
-  status: 404
-}
-
-export type getV1ClassGroupsIdResponseSuccess = (getV1ClassGroupsIdResponse200) & {
-  headers: Headers;
-};
-export type getV1ClassGroupsIdResponseError = (getV1ClassGroupsIdResponse401 | getV1ClassGroupsIdResponse403 | getV1ClassGroupsIdResponse404) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 404;
 };
 
-export type getV1ClassGroupsIdResponse = (getV1ClassGroupsIdResponseSuccess | getV1ClassGroupsIdResponseError)
+export type getV1ClassGroupsIdResponseSuccess =
+	getV1ClassGroupsIdResponse200 & {
+		headers: Headers;
+	};
+export type getV1ClassGroupsIdResponseError = (
+	| getV1ClassGroupsIdResponse401
+	| getV1ClassGroupsIdResponse403
+	| getV1ClassGroupsIdResponse404
+) & {
+	headers: Headers;
+};
 
-export const getGetV1ClassGroupsIdUrl = (id: number,) => {
+export type getV1ClassGroupsIdResponse =
+	| getV1ClassGroupsIdResponseSuccess
+	| getV1ClassGroupsIdResponseError;
 
-
-
-
-  return `/v1/class-groups/${id}`
-}
+export const getGetV1ClassGroupsIdUrl = (id: number) => {
+	return `/v1/class-groups/${id}`;
+};
 
 /**
  * Get a single class group's detail
  * @summary Get class group by ID
  */
-export const getV1ClassGroupsId = async (id: number, options?: RequestInit): Promise<getV1ClassGroupsIdResponse> => {
+export const getV1ClassGroupsId = async (
+	id: number,
+	options?: RequestInit,
+): Promise<getV1ClassGroupsIdResponse> => {
+	return customInstance<getV1ClassGroupsIdResponse>(
+		getGetV1ClassGroupsIdUrl(id),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
 
-  return customInstance<getV1ClassGroupsIdResponse>(getGetV1ClassGroupsIdUrl(id),
-  {
-    ...options,
-    method: 'GET'
+export const getGetV1ClassGroupsIdQueryKey = (id: number) => {
+	return [`/v1/class-groups/${id}`] as const;
+};
 
-
-  }
-);}
-
-
-
-
-
-export const getGetV1ClassGroupsIdQueryKey = (id: number,) => {
-    return [
-    `/v1/class-groups/${id}`
-    ] as const;
-    }
-
-
-export const getGetV1ClassGroupsIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1ClassGroupsId>>, TError = DtoErrorResponse>(id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ClassGroupsId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getGetV1ClassGroupsIdQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1ClassGroupsId>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1ClassGroupsId>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
 ) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+	const queryKey = queryOptions?.queryKey ?? getGetV1ClassGroupsIdQueryKey(id);
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1ClassGroupsIdQueryKey(id);
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1ClassGroupsId>>
+	> = ({ signal }) => getV1ClassGroupsId(id, { signal, ...requestOptions });
 
+	return {
+		queryKey,
+		queryFn,
+		enabled: !!id,
+		...queryOptions,
+	} as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1ClassGroupsId>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
+export type GetV1ClassGroupsIdQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1ClassGroupsId>>
+>;
+export type GetV1ClassGroupsIdQueryError = DtoErrorResponse;
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1ClassGroupsId>>> = ({ signal }) => getV1ClassGroupsId(id, { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1ClassGroupsId>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetV1ClassGroupsIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1ClassGroupsId>>>
-export type GetV1ClassGroupsIdQueryError = DtoErrorResponse
-
-
-export function useGetV1ClassGroupsId<TData = Awaited<ReturnType<typeof getV1ClassGroupsId>>, TError = DtoErrorResponse>(
- id: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ClassGroupsId>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1ClassGroupsId>>,
-          TError,
-          Awaited<ReturnType<typeof getV1ClassGroupsId>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1ClassGroupsId<TData = Awaited<ReturnType<typeof getV1ClassGroupsId>>, TError = DtoErrorResponse>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ClassGroupsId>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1ClassGroupsId>>,
-          TError,
-          Awaited<ReturnType<typeof getV1ClassGroupsId>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1ClassGroupsId<TData = Awaited<ReturnType<typeof getV1ClassGroupsId>>, TError = DtoErrorResponse>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ClassGroupsId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1ClassGroupsId<
+	TData = Awaited<ReturnType<typeof getV1ClassGroupsId>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1ClassGroupsId>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1ClassGroupsId>>,
+					TError,
+					Awaited<ReturnType<typeof getV1ClassGroupsId>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1ClassGroupsId<
+	TData = Awaited<ReturnType<typeof getV1ClassGroupsId>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1ClassGroupsId>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1ClassGroupsId>>,
+					TError,
+					Awaited<ReturnType<typeof getV1ClassGroupsId>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1ClassGroupsId<
+	TData = Awaited<ReturnType<typeof getV1ClassGroupsId>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1ClassGroupsId>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary Get class group by ID
  */
 
-export function useGetV1ClassGroupsId<TData = Awaited<ReturnType<typeof getV1ClassGroupsId>>, TError = DtoErrorResponse>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ClassGroupsId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1ClassGroupsId<
+	TData = Awaited<ReturnType<typeof getV1ClassGroupsId>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1ClassGroupsId>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1ClassGroupsIdQueryOptions(id, options);
 
-  const queryOptions = getGetV1ClassGroupsIdQueryOptions(id,options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
 
 export type putV1ClassGroupsIdResponse200 = {
-  data: PutV1ClassGroupsId200
-  status: 200
-}
+	data: PutV1ClassGroupsId200;
+	status: 200;
+};
 
 export type putV1ClassGroupsIdResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type putV1ClassGroupsIdResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type putV1ClassGroupsIdResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type putV1ClassGroupsIdResponse404 = {
-  data: DtoErrorResponse
-  status: 404
-}
-
-export type putV1ClassGroupsIdResponseSuccess = (putV1ClassGroupsIdResponse200) & {
-  headers: Headers;
-};
-export type putV1ClassGroupsIdResponseError = (putV1ClassGroupsIdResponse400 | putV1ClassGroupsIdResponse401 | putV1ClassGroupsIdResponse403 | putV1ClassGroupsIdResponse404) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 404;
 };
 
-export type putV1ClassGroupsIdResponse = (putV1ClassGroupsIdResponseSuccess | putV1ClassGroupsIdResponseError)
+export type putV1ClassGroupsIdResponseSuccess =
+	putV1ClassGroupsIdResponse200 & {
+		headers: Headers;
+	};
+export type putV1ClassGroupsIdResponseError = (
+	| putV1ClassGroupsIdResponse400
+	| putV1ClassGroupsIdResponse401
+	| putV1ClassGroupsIdResponse403
+	| putV1ClassGroupsIdResponse404
+) & {
+	headers: Headers;
+};
 
-export const getPutV1ClassGroupsIdUrl = (id: number,) => {
+export type putV1ClassGroupsIdResponse =
+	| putV1ClassGroupsIdResponseSuccess
+	| putV1ClassGroupsIdResponseError;
 
-
-
-
-  return `/v1/class-groups/${id}`
-}
+export const getPutV1ClassGroupsIdUrl = (id: number) => {
+	return `/v1/class-groups/${id}`;
+};
 
 /**
  * Update class group data
  * @summary Update a class group
  */
-export const putV1ClassGroupsId = async (id: number,
-    dtoCreateClassGroupRequest: DtoCreateClassGroupRequest, options?: RequestInit): Promise<putV1ClassGroupsIdResponse> => {
+export const putV1ClassGroupsId = async (
+	id: number,
+	dtoCreateClassGroupRequest: DtoCreateClassGroupRequest,
+	options?: RequestInit,
+): Promise<putV1ClassGroupsIdResponse> => {
+	return customInstance<putV1ClassGroupsIdResponse>(
+		getPutV1ClassGroupsIdUrl(id),
+		{
+			...options,
+			method: "PUT",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(dtoCreateClassGroupRequest),
+		},
+	);
+};
 
-  return customInstance<putV1ClassGroupsIdResponse>(getPutV1ClassGroupsIdUrl(id),
-  {
-    ...options,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      dtoCreateClassGroupRequest,)
-  }
-);}
+export const getPutV1ClassGroupsIdMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof putV1ClassGroupsId>>,
+		TError,
+		{ id: number; data: DtoCreateClassGroupRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof putV1ClassGroupsId>>,
+	TError,
+	{ id: number; data: DtoCreateClassGroupRequest },
+	TContext
+> => {
+	const mutationKey = ["putV1ClassGroupsId"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof putV1ClassGroupsId>>,
+		{ id: number; data: DtoCreateClassGroupRequest }
+	> = (props) => {
+		const { id, data } = props ?? {};
 
+		return putV1ClassGroupsId(id, data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-export const getPutV1ClassGroupsIdMutationOptions = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1ClassGroupsId>>, TError,{id: number;data: DtoCreateClassGroupRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof putV1ClassGroupsId>>, TError,{id: number;data: DtoCreateClassGroupRequest}, TContext> => {
+export type PutV1ClassGroupsIdMutationResult = NonNullable<
+	Awaited<ReturnType<typeof putV1ClassGroupsId>>
+>;
+export type PutV1ClassGroupsIdMutationBody = DtoCreateClassGroupRequest;
+export type PutV1ClassGroupsIdMutationError = DtoErrorResponse;
 
-const mutationKey = ['putV1ClassGroupsId'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1ClassGroupsId>>, {id: number;data: DtoCreateClassGroupRequest}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  putV1ClassGroupsId(id,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PutV1ClassGroupsIdMutationResult = NonNullable<Awaited<ReturnType<typeof putV1ClassGroupsId>>>
-    export type PutV1ClassGroupsIdMutationBody = DtoCreateClassGroupRequest
-    export type PutV1ClassGroupsIdMutationError = DtoErrorResponse
-
-    /**
+/**
  * @summary Update a class group
  */
-export const usePutV1ClassGroupsId = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1ClassGroupsId>>, TError,{id: number;data: DtoCreateClassGroupRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof putV1ClassGroupsId>>,
-        TError,
-        {id: number;data: DtoCreateClassGroupRequest},
-        TContext
-      > => {
-      return useMutation(getPutV1ClassGroupsIdMutationOptions(options), queryClient);
-    }
-    export type deleteV1ClassGroupsIdResponse200 = {
-  data: DtoSuccessResponse
-  status: 200
-}
+export const usePutV1ClassGroupsId = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof putV1ClassGroupsId>>,
+			TError,
+			{ id: number; data: DtoCreateClassGroupRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof putV1ClassGroupsId>>,
+	TError,
+	{ id: number; data: DtoCreateClassGroupRequest },
+	TContext
+> => {
+	return useMutation(
+		getPutV1ClassGroupsIdMutationOptions(options),
+		queryClient,
+	);
+};
+export type deleteV1ClassGroupsIdResponse200 = {
+	data: DtoSuccessResponse;
+	status: 200;
+};
 
 export type deleteV1ClassGroupsIdResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type deleteV1ClassGroupsIdResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type deleteV1ClassGroupsIdResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type deleteV1ClassGroupsIdResponse404 = {
-  data: DtoErrorResponse
-  status: 404
-}
+	data: DtoErrorResponse;
+	status: 404;
+};
 
 export type deleteV1ClassGroupsIdResponse422 = {
-  data: DtoErrorResponse
-  status: 422
-}
-
-export type deleteV1ClassGroupsIdResponseSuccess = (deleteV1ClassGroupsIdResponse200) & {
-  headers: Headers;
-};
-export type deleteV1ClassGroupsIdResponseError = (deleteV1ClassGroupsIdResponse400 | deleteV1ClassGroupsIdResponse401 | deleteV1ClassGroupsIdResponse403 | deleteV1ClassGroupsIdResponse404 | deleteV1ClassGroupsIdResponse422) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 422;
 };
 
-export type deleteV1ClassGroupsIdResponse = (deleteV1ClassGroupsIdResponseSuccess | deleteV1ClassGroupsIdResponseError)
+export type deleteV1ClassGroupsIdResponseSuccess =
+	deleteV1ClassGroupsIdResponse200 & {
+		headers: Headers;
+	};
+export type deleteV1ClassGroupsIdResponseError = (
+	| deleteV1ClassGroupsIdResponse400
+	| deleteV1ClassGroupsIdResponse401
+	| deleteV1ClassGroupsIdResponse403
+	| deleteV1ClassGroupsIdResponse404
+	| deleteV1ClassGroupsIdResponse422
+) & {
+	headers: Headers;
+};
 
-export const getDeleteV1ClassGroupsIdUrl = (id: number,) => {
+export type deleteV1ClassGroupsIdResponse =
+	| deleteV1ClassGroupsIdResponseSuccess
+	| deleteV1ClassGroupsIdResponseError;
 
-
-
-
-  return `/v1/class-groups/${id}`
-}
+export const getDeleteV1ClassGroupsIdUrl = (id: number) => {
+	return `/v1/class-groups/${id}`;
+};
 
 /**
  * Delete a class group (fails if it still has active students)
  * @summary Delete a class group
  */
-export const deleteV1ClassGroupsId = async (id: number, options?: RequestInit): Promise<deleteV1ClassGroupsIdResponse> => {
+export const deleteV1ClassGroupsId = async (
+	id: number,
+	options?: RequestInit,
+): Promise<deleteV1ClassGroupsIdResponse> => {
+	return customInstance<deleteV1ClassGroupsIdResponse>(
+		getDeleteV1ClassGroupsIdUrl(id),
+		{
+			...options,
+			method: "DELETE",
+		},
+	);
+};
 
-  return customInstance<deleteV1ClassGroupsIdResponse>(getDeleteV1ClassGroupsIdUrl(id),
-  {
-    ...options,
-    method: 'DELETE'
+export const getDeleteV1ClassGroupsIdMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof deleteV1ClassGroupsId>>,
+		TError,
+		{ id: number },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof deleteV1ClassGroupsId>>,
+	TError,
+	{ id: number },
+	TContext
+> => {
+	const mutationKey = ["deleteV1ClassGroupsId"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof deleteV1ClassGroupsId>>,
+		{ id: number }
+	> = (props) => {
+		const { id } = props ?? {};
 
-  }
-);}
+		return deleteV1ClassGroupsId(id, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
+export type DeleteV1ClassGroupsIdMutationResult = NonNullable<
+	Awaited<ReturnType<typeof deleteV1ClassGroupsId>>
+>;
 
+export type DeleteV1ClassGroupsIdMutationError = DtoErrorResponse;
 
-export const getDeleteV1ClassGroupsIdMutationOptions = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1ClassGroupsId>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof deleteV1ClassGroupsId>>, TError,{id: number}, TContext> => {
-
-const mutationKey = ['deleteV1ClassGroupsId'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteV1ClassGroupsId>>, {id: number}> = (props) => {
-          const {id} = props ?? {};
-
-          return  deleteV1ClassGroupsId(id,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type DeleteV1ClassGroupsIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteV1ClassGroupsId>>>
-
-    export type DeleteV1ClassGroupsIdMutationError = DtoErrorResponse
-
-    /**
+/**
  * @summary Delete a class group
  */
-export const useDeleteV1ClassGroupsId = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1ClassGroupsId>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof deleteV1ClassGroupsId>>,
-        TError,
-        {id: number},
-        TContext
-      > => {
-      return useMutation(getDeleteV1ClassGroupsIdMutationOptions(options), queryClient);
-    }
+export const useDeleteV1ClassGroupsId = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof deleteV1ClassGroupsId>>,
+			TError,
+			{ id: number },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof deleteV1ClassGroupsId>>,
+	TError,
+	{ id: number },
+	TContext
+> => {
+	return useMutation(
+		getDeleteV1ClassGroupsIdMutationOptions(options),
+		queryClient,
+	);
+};

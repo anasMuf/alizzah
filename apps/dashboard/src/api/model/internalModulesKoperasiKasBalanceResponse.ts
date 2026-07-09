@@ -7,6 +7,6 @@
  */
 
 export interface InternalModulesKoperasiKasBalanceResponse {
-  academic_year_id?: number;
-  balance?: number;
+	academic_year_id?: number;
+	balance?: number;
 }

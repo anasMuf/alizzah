@@ -7,7 +7,7 @@
  */
 
 export interface DtoClassArrearSummary {
-  class_group_name?: string;
-  student_count?: number;
-  total_unpaid?: number;
+	class_group_name?: string;
+	student_count?: number;
+	total_unpaid?: number;
 }

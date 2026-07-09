@@ -7,8 +7,8 @@
  */
 
 export interface DtoWithdrawalResponse {
-  admin_fee?: number;
-  amount?: number;
-  net_amount?: number;
-  remaining_balance?: number;
+	admin_fee?: number;
+	amount?: number;
+	net_amount?: number;
+	remaining_balance?: number;
 }

@@ -1,15 +1,9 @@
-import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
-import { ArrowUpDown, Clock, Plus, Users } from "lucide-react";
-import {
-  getGetV1ClassGroupsQueryKey,
-  useGetV1ClassGroups,
-  usePutV1ClassGroupsId,
-} from "#/api/endpoints/class-groups/class-groups";
+import { Clock, Plus, Users } from "lucide-react";
+import { useGetV1ClassGroups } from "#/api/endpoints/class-groups/class-groups";
 import type { DtoClassGroupResponse } from "#/api/model";
-import { ApiError } from "#/api/mutator/custom-instance";
-import { Button, EmptyState, useToast } from "#/components/ui";
+import { Button, EmptyState } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
 
 export const Route = createFileRoute("/_authenticated/administrasi/rombel/")({
@@ -18,8 +12,6 @@ export const Route = createFileRoute("/_authenticated/administrasi/rombel/")({
 
 function RombelIndexPage() {
   const [activeAy] = useAtom(academicYearAtom);
-  const queryClient = useQueryClient();
-  const { addToast } = useToast();
 
   const {
     data: response,
@@ -31,36 +23,6 @@ function RombelIndexPage() {
   );
 
   const classGroups = (response?.data as any)?.data || [];
-
-  const updateMutation = usePutV1ClassGroupsId({
-    mutation: {
-      onSuccess: () => {
-        queryClient.invalidateQueries({
-          queryKey: getGetV1ClassGroupsQueryKey(),
-        });
-      },
-      onError: (error: Error) => {
-        const msg =
-          error instanceof ApiError
-            ? error.message
-            : "Gagal mengubah setelan rombel.";
-        addToast({ variant: "error", title: "Gagal", message: msg });
-      },
-    },
-  });
-
-  const handleToggleMutation = (cg: any) => {
-    updateMutation.mutate({
-      id: cg.id,
-      data: {
-        academic_year_id: cg.academic_year_id,
-        name: cg.name,
-        level: cg.level,
-        schedule: cg.schedule,
-        is_mutation: !cg.is_mutation,
-      },
-    });
-  };
 
   const groupedClassGroups = classGroups.reduce(
     (acc: any, cg: any) => {
@@ -143,32 +105,9 @@ function RombelIndexPage() {
                       className="relative flex flex-col justify-between rounded-lg border border-gray-300 bg-white shadow-sm hover:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 transition-all"
                     >
                       <div className="p-5">
-                        <div className="flex justify-between items-start mb-2">
-                          <h4 className="text-lg font-bold text-gray-900 truncate flex-1">
-                            {cg.name}
-                          </h4>
-                          {level.id === "intan" && (
-                            <label className="relative inline-flex items-center cursor-pointer ml-2 flex-shrink-0">
-                              <input
-                                type="checkbox"
-                                checked={cg.is_mutation || false}
-                                onChange={() => handleToggleMutation(cg)}
-                                disabled={updateMutation.isPending}
-                                className="sr-only peer"
-                              />
-                              <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600" />
-                            </label>
-                          )}
-                        </div>
-
-                        {level.id === "intan" && cg.is_mutation && (
-                          <div className="mb-2">
-                            <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
-                              <ArrowUpDown className="h-3 w-3 mr-1" />
-                              Rombel Mutasi
-                            </span>
-                          </div>
-                        )}
+                        <h4 className="text-lg font-bold text-gray-900 mb-2 truncate">
+                          {cg.name}
+                        </h4>
 
                         <div className="flex items-center text-sm text-gray-500 mb-2">
                           <Users className="mr-2 h-4 w-4 text-gray-400 flex-shrink-0" />

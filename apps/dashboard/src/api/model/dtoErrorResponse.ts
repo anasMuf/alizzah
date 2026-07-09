@@ -7,8 +7,8 @@
  */
 
 export interface DtoErrorResponse {
-	code?: string;
-	details?: unknown;
-	message?: string;
-	status?: number;
+  code?: string;
+  details?: unknown;
+  message?: string;
+  status?: number;
 }

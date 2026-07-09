@@ -5,11 +5,11 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoCreateDaycareEnrollmentRequestPackageType } from "./dtoCreateDaycareEnrollmentRequestPackageType";
+import type { DtoCreateDaycareEnrollmentRequestPackageType } from './dtoCreateDaycareEnrollmentRequestPackageType';
 
 export interface DtoCreateDaycareEnrollmentRequest {
-	academic_year_id: number;
-	package_type: DtoCreateDaycareEnrollmentRequestPackageType;
-	start_date: string;
-	student_id: number;
+  academic_year_id: number;
+  package_type: DtoCreateDaycareEnrollmentRequestPackageType;
+  start_date: string;
+  student_id: number;
 }

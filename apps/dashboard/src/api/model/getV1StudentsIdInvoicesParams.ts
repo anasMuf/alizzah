@@ -7,16 +7,16 @@
  */
 
 export type GetV1StudentsIdInvoicesParams = {
-	/**
-	 * Filter by academic year ID
-	 */
-	academic_year_id?: number;
-	/**
-	 * Filter by type
-	 */
-	type?: string;
-	/**
-	 * Filter by status
-	 */
-	status?: string;
+/**
+ * Filter by academic year ID
+ */
+academic_year_id?: number;
+/**
+ * Filter by type
+ */
+type?: string;
+/**
+ * Filter by status
+ */
+status?: string;
 };

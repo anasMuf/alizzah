@@ -7,10 +7,10 @@
  */
 
 export interface DtoAcademicYearResponse {
-	created_at?: string;
-	end_date?: string;
-	id?: number;
-	is_active?: boolean;
-	name?: string;
-	start_date?: string;
+  created_at?: string;
+  end_date?: string;
+  id?: number;
+  is_active?: boolean;
+  name?: string;
+  start_date?: string;
 }

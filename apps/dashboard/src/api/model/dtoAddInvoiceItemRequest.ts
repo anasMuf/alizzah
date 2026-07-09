@@ -7,9 +7,9 @@
  */
 
 export interface DtoAddInvoiceItemRequest {
-	/** @minimum 1 */
-	amount: number;
-	category: string;
-	/** @maxLength 100 */
-	name: string;
+  /** @minimum 1 */
+  amount: number;
+  category: string;
+  /** @maxLength 100 */
+  name: string;
 }

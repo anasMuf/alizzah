@@ -6,11 +6,11 @@
  * OpenAPI spec version: 1.0
  */
 
-export type DtoCreateGuardianRequestRelationship =
-	(typeof DtoCreateGuardianRequestRelationship)[keyof typeof DtoCreateGuardianRequestRelationship];
+export type DtoCreateGuardianRequestRelationship = typeof DtoCreateGuardianRequestRelationship[keyof typeof DtoCreateGuardianRequestRelationship];
+
 
 export const DtoCreateGuardianRequestRelationship = {
-	ayah: "ayah",
-	ibu: "ibu",
-	wali: "wali",
+  ayah: 'ayah',
+  ibu: 'ibu',
+  wali: 'wali',
 } as const;

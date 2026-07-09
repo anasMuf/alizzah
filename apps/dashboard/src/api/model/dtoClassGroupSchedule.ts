@@ -5,9 +5,9 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoScheduleBlock } from "./dtoScheduleBlock";
+import type { DtoScheduleBlock } from './dtoScheduleBlock';
 
 export interface DtoClassGroupSchedule {
-	weekdays?: DtoScheduleBlock;
-	weekend?: DtoScheduleBlock;
+  weekdays?: DtoScheduleBlock;
+  weekend?: DtoScheduleBlock;
 }

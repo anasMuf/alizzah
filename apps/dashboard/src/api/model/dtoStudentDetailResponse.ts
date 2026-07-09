@@ -5,22 +5,22 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoEnrollmentBriefResponse } from "./dtoEnrollmentBriefResponse";
-import type { DtoFinancialSummaryResponse } from "./dtoFinancialSummaryResponse";
-import type { DtoGuardianBriefResponse } from "./dtoGuardianBriefResponse";
+import type { DtoEnrollmentBriefResponse } from './dtoEnrollmentBriefResponse';
+import type { DtoFinancialSummaryResponse } from './dtoFinancialSummaryResponse';
+import type { DtoGuardianBriefResponse } from './dtoGuardianBriefResponse';
 
 export interface DtoStudentDetailResponse {
-	birth_date?: string;
-	birth_place?: string;
-	created_at?: string;
-	current_enrollment?: DtoEnrollmentBriefResponse;
-	financial_summary?: DtoFinancialSummaryResponse;
-	full_name?: string;
-	gender?: string;
-	guardians?: DtoGuardianBriefResponse[];
-	id?: number;
-	is_daycare_only?: boolean;
-	photo_url?: string;
-	religion?: string;
-	status?: string;
+  active_enrollment?: DtoEnrollmentBriefResponse;
+  birth_date?: string;
+  birth_place?: string;
+  created_at?: string;
+  financial_summary?: DtoFinancialSummaryResponse;
+  full_name?: string;
+  gender?: string;
+  guardians?: DtoGuardianBriefResponse[];
+  id?: number;
+  is_daycare_only?: boolean;
+  photo_url?: string;
+  religion?: string;
+  status?: string;
 }

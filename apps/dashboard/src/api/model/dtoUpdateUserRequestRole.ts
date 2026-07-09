@@ -6,10 +6,10 @@
  * OpenAPI spec version: 1.0
  */
 
-export type DtoUpdateUserRequestRole =
-	(typeof DtoUpdateUserRequestRole)[keyof typeof DtoUpdateUserRequestRole];
+export type DtoUpdateUserRequestRole = typeof DtoUpdateUserRequestRole[keyof typeof DtoUpdateUserRequestRole];
+
 
 export const DtoUpdateUserRequestRole = {
-	superadmin: "superadmin",
-	admin: "admin",
+  superadmin: 'superadmin',
+  admin: 'admin',
 } as const;

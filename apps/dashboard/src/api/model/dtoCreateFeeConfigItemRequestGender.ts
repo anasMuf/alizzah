@@ -6,11 +6,11 @@
  * OpenAPI spec version: 1.0
  */
 
-export type DtoCreateFeeConfigItemRequestGender =
-	(typeof DtoCreateFeeConfigItemRequestGender)[keyof typeof DtoCreateFeeConfigItemRequestGender];
+export type DtoCreateFeeConfigItemRequestGender = typeof DtoCreateFeeConfigItemRequestGender[keyof typeof DtoCreateFeeConfigItemRequestGender];
+
 
 export const DtoCreateFeeConfigItemRequestGender = {
-	all: "all",
-	L: "L",
-	P: "P",
+  all: 'all',
+  L: 'L',
+  P: 'P',
 } as const;

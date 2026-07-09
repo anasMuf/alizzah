@@ -5,24 +5,26 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoAcademicYearBriefResponse } from "./dtoAcademicYearBriefResponse";
-import type { DtoInstallmentResponse } from "./dtoInstallmentResponse";
-import type { DtoInvoiceItemResponse } from "./dtoInvoiceItemResponse";
-import type { DtoStudentBriefResponse } from "./dtoStudentBriefResponse";
+import type { DtoAcademicYearBriefResponse } from './dtoAcademicYearBriefResponse';
+import type { DtoInstallmentResponse } from './dtoInstallmentResponse';
+import type { DtoInvoiceItemResponse } from './dtoInvoiceItemResponse';
+import type { DtoInvoicePaymentBrief } from './dtoInvoicePaymentBrief';
+import type { DtoStudentBriefResponse } from './dtoStudentBriefResponse';
 
 export interface DtoInvoiceDetailResponse {
-	academic_year?: DtoAcademicYearBriefResponse;
-	created_at?: string;
-	due_date?: string;
-	id?: number;
-	installments?: DtoInstallmentResponse[];
-	items?: DtoInvoiceItemResponse[];
-	month?: number;
-	notes?: string;
-	paid_amount?: number;
-	status?: string;
-	student?: DtoStudentBriefResponse;
-	total_amount?: number;
-	type?: string;
-	year?: number;
+  academic_year?: DtoAcademicYearBriefResponse;
+  created_at?: string;
+  due_date?: string;
+  id?: number;
+  installments?: DtoInstallmentResponse[];
+  items?: DtoInvoiceItemResponse[];
+  month?: number;
+  notes?: string;
+  paid_amount?: number;
+  payments?: DtoInvoicePaymentBrief[];
+  status?: string;
+  student?: DtoStudentBriefResponse;
+  total_amount?: number;
+  type?: string;
+  year?: number;
 }

@@ -5,800 +5,628 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
+import {
+  useMutation,
+  useQuery
+} from '@tanstack/react-query';
+import type {
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
+  MutationFunction,
+  QueryClient,
+  QueryFunction,
+  QueryKey,
+  UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
+  UseQueryOptions,
+  UseQueryResult
+} from '@tanstack/react-query';
 
 import type {
-	DataTag,
-	DefinedInitialDataOptions,
-	DefinedUseQueryResult,
-	MutationFunction,
-	QueryClient,
-	QueryFunction,
-	QueryKey,
-	UndefinedInitialDataOptions,
-	UseMutationOptions,
-	UseMutationResult,
-	UseQueryOptions,
-	UseQueryResult,
-} from "@tanstack/react-query";
-import { useMutation, useQuery } from "@tanstack/react-query";
+  DtoCreateUserRequest,
+  DtoErrorResponse,
+  DtoSuccessResponse,
+  DtoUpdateUserRequest,
+  GetV1Users200,
+  GetV1UsersId200,
+  GetV1UsersParams,
+  PostV1Users201,
+  PutV1UsersId200
+} from '../../model';
 
-import type {
-	DtoCreateUserRequest,
-	DtoErrorResponse,
-	DtoSuccessResponse,
-	DtoUpdateUserRequest,
-	GetV1Users200,
-	GetV1UsersId200,
-	GetV1UsersParams,
-	PostV1Users201,
-	PutV1UsersId200,
-} from "../../model";
+import { customInstance } from '../../mutator/custom-instance';
 
-import { customInstance } from "../../mutator/custom-instance";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
+
+
 export type getV1UsersResponse200 = {
-	data: GetV1Users200;
-	status: 200;
-};
+  data: GetV1Users200
+  status: 200
+}
 
 export type getV1UsersResponse401 = {
-	data: DtoErrorResponse;
-	status: 401;
-};
+  data: DtoErrorResponse
+  status: 401
+}
 
 export type getV1UsersResponse403 = {
-	data: DtoErrorResponse;
-	status: 403;
+  data: DtoErrorResponse
+  status: 403
+}
+
+export type getV1UsersResponseSuccess = (getV1UsersResponse200) & {
+  headers: Headers;
+};
+export type getV1UsersResponseError = (getV1UsersResponse401 | getV1UsersResponse403) & {
+  headers: Headers;
 };
 
-export type getV1UsersResponseSuccess = getV1UsersResponse200 & {
-	headers: Headers;
-};
-export type getV1UsersResponseError = (
-	| getV1UsersResponse401
-	| getV1UsersResponse403
-) & {
-	headers: Headers;
-};
+export type getV1UsersResponse = (getV1UsersResponseSuccess | getV1UsersResponseError)
 
-export type getV1UsersResponse =
-	| getV1UsersResponseSuccess
-	| getV1UsersResponseError;
+export const getGetV1UsersUrl = (params?: GetV1UsersParams,) => {
+  const normalizedParams = new URLSearchParams();
 
-export const getGetV1UsersUrl = (params?: GetV1UsersParams) => {
-	const normalizedParams = new URLSearchParams();
+  Object.entries(params || {}).forEach(([key, value]) => {
 
-	Object.entries(params || {}).forEach(([key, value]) => {
-		if (value !== undefined) {
-			normalizedParams.append(key, value === null ? "null" : value.toString());
-		}
-	});
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-	const stringifiedParams = normalizedParams.toString();
+  const stringifiedParams = normalizedParams.toString();
 
-	return stringifiedParams.length > 0
-		? `/v1/users?${stringifiedParams}`
-		: `/v1/users`;
-};
+  return stringifiedParams.length > 0 ? `/v1/users?${stringifiedParams}` : `/v1/users`
+}
 
 /**
  * Get paginated list of users with optional search and role filter
  * @summary List all users
  */
-export const getV1Users = async (
-	params?: GetV1UsersParams,
-	options?: RequestInit,
-): Promise<getV1UsersResponse> => {
-	return customInstance<getV1UsersResponse>(getGetV1UsersUrl(params), {
-		...options,
-		method: "GET",
-	});
-};
+export const getV1Users = async (params?: GetV1UsersParams, options?: RequestInit): Promise<getV1UsersResponse> => {
 
-export const getGetV1UsersQueryKey = (params?: GetV1UsersParams) => {
-	return [`/v1/users`, ...(params ? [params] : [])] as const;
-};
+  return customInstance<getV1UsersResponse>(getGetV1UsersUrl(params),
+  {
+    ...options,
+    method: 'GET'
 
-export const getGetV1UsersQueryOptions = <
-	TData = Awaited<ReturnType<typeof getV1Users>>,
-	TError = DtoErrorResponse,
->(
-	params?: GetV1UsersParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<Awaited<ReturnType<typeof getV1Users>>, TError, TData>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
+
+  }
+);}
+
+
+
+
+
+export const getGetV1UsersQueryKey = (params?: GetV1UsersParams,) => {
+    return [
+    `/v1/users`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetV1UsersQueryOptions = <TData = Awaited<ReturnType<typeof getV1Users>>, TError = DtoErrorResponse>(params?: GetV1UsersParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1Users>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
-	const { query: queryOptions, request: requestOptions } = options ?? {};
 
-	const queryKey = queryOptions?.queryKey ?? getGetV1UsersQueryKey(params);
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-	const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1Users>>> = ({
-		signal,
-	}) => getV1Users(params, { signal, ...requestOptions });
+  const queryKey =  queryOptions?.queryKey ?? getGetV1UsersQueryKey(params);
 
-	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-		Awaited<ReturnType<typeof getV1Users>>,
-		TError,
-		TData
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
-};
 
-export type GetV1UsersQueryResult = NonNullable<
-	Awaited<ReturnType<typeof getV1Users>>
->;
-export type GetV1UsersQueryError = DtoErrorResponse;
 
-export function useGetV1Users<
-	TData = Awaited<ReturnType<typeof getV1Users>>,
-	TError = DtoErrorResponse,
->(
-	params: undefined | GetV1UsersParams,
-	options: {
-		query: Partial<
-			UseQueryOptions<Awaited<ReturnType<typeof getV1Users>>, TError, TData>
-		> &
-			Pick<
-				DefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1Users>>,
-					TError,
-					Awaited<ReturnType<typeof getV1Users>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1Users<
-	TData = Awaited<ReturnType<typeof getV1Users>>,
-	TError = DtoErrorResponse,
->(
-	params?: GetV1UsersParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<Awaited<ReturnType<typeof getV1Users>>, TError, TData>
-		> &
-			Pick<
-				UndefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1Users>>,
-					TError,
-					Awaited<ReturnType<typeof getV1Users>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1Users<
-	TData = Awaited<ReturnType<typeof getV1Users>>,
-	TError = DtoErrorResponse,
->(
-	params?: GetV1UsersParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<Awaited<ReturnType<typeof getV1Users>>, TError, TData>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1Users>>> = ({ signal }) => getV1Users(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1Users>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetV1UsersQueryResult = NonNullable<Awaited<ReturnType<typeof getV1Users>>>
+export type GetV1UsersQueryError = DtoErrorResponse
+
+
+export function useGetV1Users<TData = Awaited<ReturnType<typeof getV1Users>>, TError = DtoErrorResponse>(
+ params: undefined |  GetV1UsersParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1Users>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1Users>>,
+          TError,
+          Awaited<ReturnType<typeof getV1Users>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1Users<TData = Awaited<ReturnType<typeof getV1Users>>, TError = DtoErrorResponse>(
+ params?: GetV1UsersParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1Users>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1Users>>,
+          TError,
+          Awaited<ReturnType<typeof getV1Users>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1Users<TData = Awaited<ReturnType<typeof getV1Users>>, TError = DtoErrorResponse>(
+ params?: GetV1UsersParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1Users>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary List all users
  */
 
-export function useGetV1Users<
-	TData = Awaited<ReturnType<typeof getV1Users>>,
-	TError = DtoErrorResponse,
->(
-	params?: GetV1UsersParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<Awaited<ReturnType<typeof getV1Users>>, TError, TData>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-} {
-	const queryOptions = getGetV1UsersQueryOptions(params, options);
+export function useGetV1Users<TData = Awaited<ReturnType<typeof getV1Users>>, TError = DtoErrorResponse>(
+ params?: GetV1UsersParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1Users>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-		TData,
-		TError
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getGetV1UsersQueryOptions(params,options)
 
-	return { ...query, queryKey: queryOptions.queryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
 }
 
+
+
+
+
+
 export type postV1UsersResponse201 = {
-	data: PostV1Users201;
-	status: 201;
-};
+  data: PostV1Users201
+  status: 201
+}
 
 export type postV1UsersResponse400 = {
-	data: DtoErrorResponse;
-	status: 400;
-};
+  data: DtoErrorResponse
+  status: 400
+}
 
 export type postV1UsersResponse401 = {
-	data: DtoErrorResponse;
-	status: 401;
-};
+  data: DtoErrorResponse
+  status: 401
+}
 
 export type postV1UsersResponse403 = {
-	data: DtoErrorResponse;
-	status: 403;
-};
+  data: DtoErrorResponse
+  status: 403
+}
 
 export type postV1UsersResponse409 = {
-	data: DtoErrorResponse;
-	status: 409;
+  data: DtoErrorResponse
+  status: 409
+}
+
+export type postV1UsersResponseSuccess = (postV1UsersResponse201) & {
+  headers: Headers;
+};
+export type postV1UsersResponseError = (postV1UsersResponse400 | postV1UsersResponse401 | postV1UsersResponse403 | postV1UsersResponse409) & {
+  headers: Headers;
 };
 
-export type postV1UsersResponseSuccess = postV1UsersResponse201 & {
-	headers: Headers;
-};
-export type postV1UsersResponseError = (
-	| postV1UsersResponse400
-	| postV1UsersResponse401
-	| postV1UsersResponse403
-	| postV1UsersResponse409
-) & {
-	headers: Headers;
-};
-
-export type postV1UsersResponse =
-	| postV1UsersResponseSuccess
-	| postV1UsersResponseError;
+export type postV1UsersResponse = (postV1UsersResponseSuccess | postV1UsersResponseError)
 
 export const getPostV1UsersUrl = () => {
-	return `/v1/users`;
-};
+
+
+
+
+  return `/v1/users`
+}
 
 /**
  * Create a new user (superadmin only)
  * @summary Create a new user
  */
-export const postV1Users = async (
-	dtoCreateUserRequest: DtoCreateUserRequest,
-	options?: RequestInit,
-): Promise<postV1UsersResponse> => {
-	return customInstance<postV1UsersResponse>(getPostV1UsersUrl(), {
-		...options,
-		method: "POST",
-		headers: { "Content-Type": "application/json", ...options?.headers },
-		body: JSON.stringify(dtoCreateUserRequest),
-	});
-};
+export const postV1Users = async (dtoCreateUserRequest: DtoCreateUserRequest, options?: RequestInit): Promise<postV1UsersResponse> => {
 
-export const getPostV1UsersMutationOptions = <
-	TError = DtoErrorResponse,
-	TContext = unknown,
->(options?: {
-	mutation?: UseMutationOptions<
-		Awaited<ReturnType<typeof postV1Users>>,
-		TError,
-		{ data: DtoCreateUserRequest },
-		TContext
-	>;
-	request?: SecondParameter<typeof customInstance>;
-}): UseMutationOptions<
-	Awaited<ReturnType<typeof postV1Users>>,
-	TError,
-	{ data: DtoCreateUserRequest },
-	TContext
-> => {
-	const mutationKey = ["postV1Users"];
-	const { mutation: mutationOptions, request: requestOptions } = options
-		? options.mutation &&
-			"mutationKey" in options.mutation &&
-			options.mutation.mutationKey
-			? options
-			: { ...options, mutation: { ...options.mutation, mutationKey } }
-		: { mutation: { mutationKey }, request: undefined };
+  return customInstance<postV1UsersResponse>(getPostV1UsersUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      dtoCreateUserRequest,)
+  }
+);}
 
-	const mutationFn: MutationFunction<
-		Awaited<ReturnType<typeof postV1Users>>,
-		{ data: DtoCreateUserRequest }
-	> = (props) => {
-		const { data } = props ?? {};
 
-		return postV1Users(data, requestOptions);
-	};
 
-	return { mutationFn, ...mutationOptions };
-};
 
-export type PostV1UsersMutationResult = NonNullable<
-	Awaited<ReturnType<typeof postV1Users>>
->;
-export type PostV1UsersMutationBody = DtoCreateUserRequest;
-export type PostV1UsersMutationError = DtoErrorResponse;
+export const getPostV1UsersMutationOptions = <TError = DtoErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1Users>>, TError,{data: DtoCreateUserRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1Users>>, TError,{data: DtoCreateUserRequest}, TContext> => {
 
-/**
+const mutationKey = ['postV1Users'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1Users>>, {data: DtoCreateUserRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  postV1Users(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostV1UsersMutationResult = NonNullable<Awaited<ReturnType<typeof postV1Users>>>
+    export type PostV1UsersMutationBody = DtoCreateUserRequest
+    export type PostV1UsersMutationError = DtoErrorResponse
+
+    /**
  * @summary Create a new user
  */
-export const usePostV1Users = <TError = DtoErrorResponse, TContext = unknown>(
-	options?: {
-		mutation?: UseMutationOptions<
-			Awaited<ReturnType<typeof postV1Users>>,
-			TError,
-			{ data: DtoCreateUserRequest },
-			TContext
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseMutationResult<
-	Awaited<ReturnType<typeof postV1Users>>,
-	TError,
-	{ data: DtoCreateUserRequest },
-	TContext
-> => {
-	return useMutation(getPostV1UsersMutationOptions(options), queryClient);
-};
-export type getV1UsersIdResponse200 = {
-	data: GetV1UsersId200;
-	status: 200;
-};
+export const usePostV1Users = <TError = DtoErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1Users>>, TError,{data: DtoCreateUserRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postV1Users>>,
+        TError,
+        {data: DtoCreateUserRequest},
+        TContext
+      > => {
+      return useMutation(getPostV1UsersMutationOptions(options), queryClient);
+    }
+    export type getV1UsersIdResponse200 = {
+  data: GetV1UsersId200
+  status: 200
+}
 
 export type getV1UsersIdResponse401 = {
-	data: DtoErrorResponse;
-	status: 401;
-};
+  data: DtoErrorResponse
+  status: 401
+}
 
 export type getV1UsersIdResponse403 = {
-	data: DtoErrorResponse;
-	status: 403;
-};
+  data: DtoErrorResponse
+  status: 403
+}
 
 export type getV1UsersIdResponse404 = {
-	data: DtoErrorResponse;
-	status: 404;
+  data: DtoErrorResponse
+  status: 404
+}
+
+export type getV1UsersIdResponseSuccess = (getV1UsersIdResponse200) & {
+  headers: Headers;
+};
+export type getV1UsersIdResponseError = (getV1UsersIdResponse401 | getV1UsersIdResponse403 | getV1UsersIdResponse404) & {
+  headers: Headers;
 };
 
-export type getV1UsersIdResponseSuccess = getV1UsersIdResponse200 & {
-	headers: Headers;
-};
-export type getV1UsersIdResponseError = (
-	| getV1UsersIdResponse401
-	| getV1UsersIdResponse403
-	| getV1UsersIdResponse404
-) & {
-	headers: Headers;
-};
+export type getV1UsersIdResponse = (getV1UsersIdResponseSuccess | getV1UsersIdResponseError)
 
-export type getV1UsersIdResponse =
-	| getV1UsersIdResponseSuccess
-	| getV1UsersIdResponseError;
+export const getGetV1UsersIdUrl = (id: number,) => {
 
-export const getGetV1UsersIdUrl = (id: number) => {
-	return `/v1/users/${id}`;
-};
+
+
+
+  return `/v1/users/${id}`
+}
 
 /**
  * Get a single user's detail
  * @summary Get user by ID
  */
-export const getV1UsersId = async (
-	id: number,
-	options?: RequestInit,
-): Promise<getV1UsersIdResponse> => {
-	return customInstance<getV1UsersIdResponse>(getGetV1UsersIdUrl(id), {
-		...options,
-		method: "GET",
-	});
-};
+export const getV1UsersId = async (id: number, options?: RequestInit): Promise<getV1UsersIdResponse> => {
 
-export const getGetV1UsersIdQueryKey = (id: number) => {
-	return [`/v1/users/${id}`] as const;
-};
+  return customInstance<getV1UsersIdResponse>(getGetV1UsersIdUrl(id),
+  {
+    ...options,
+    method: 'GET'
 
-export const getGetV1UsersIdQueryOptions = <
-	TData = Awaited<ReturnType<typeof getV1UsersId>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<Awaited<ReturnType<typeof getV1UsersId>>, TError, TData>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
+
+  }
+);}
+
+
+
+
+
+export const getGetV1UsersIdQueryKey = (id: number,) => {
+    return [
+    `/v1/users/${id}`
+    ] as const;
+    }
+
+
+export const getGetV1UsersIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1UsersId>>, TError = DtoErrorResponse>(id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1UsersId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
-	const { query: queryOptions, request: requestOptions } = options ?? {};
 
-	const queryKey = queryOptions?.queryKey ?? getGetV1UsersIdQueryKey(id);
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-	const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1UsersId>>> = ({
-		signal,
-	}) => getV1UsersId(id, { signal, ...requestOptions });
+  const queryKey =  queryOptions?.queryKey ?? getGetV1UsersIdQueryKey(id);
 
-	return {
-		queryKey,
-		queryFn,
-		enabled: !!id,
-		...queryOptions,
-	} as UseQueryOptions<
-		Awaited<ReturnType<typeof getV1UsersId>>,
-		TError,
-		TData
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
-};
 
-export type GetV1UsersIdQueryResult = NonNullable<
-	Awaited<ReturnType<typeof getV1UsersId>>
->;
-export type GetV1UsersIdQueryError = DtoErrorResponse;
 
-export function useGetV1UsersId<
-	TData = Awaited<ReturnType<typeof getV1UsersId>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	options: {
-		query: Partial<
-			UseQueryOptions<Awaited<ReturnType<typeof getV1UsersId>>, TError, TData>
-		> &
-			Pick<
-				DefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1UsersId>>,
-					TError,
-					Awaited<ReturnType<typeof getV1UsersId>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1UsersId<
-	TData = Awaited<ReturnType<typeof getV1UsersId>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<Awaited<ReturnType<typeof getV1UsersId>>, TError, TData>
-		> &
-			Pick<
-				UndefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1UsersId>>,
-					TError,
-					Awaited<ReturnType<typeof getV1UsersId>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1UsersId<
-	TData = Awaited<ReturnType<typeof getV1UsersId>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<Awaited<ReturnType<typeof getV1UsersId>>, TError, TData>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1UsersId>>> = ({ signal }) => getV1UsersId(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1UsersId>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetV1UsersIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1UsersId>>>
+export type GetV1UsersIdQueryError = DtoErrorResponse
+
+
+export function useGetV1UsersId<TData = Awaited<ReturnType<typeof getV1UsersId>>, TError = DtoErrorResponse>(
+ id: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1UsersId>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1UsersId>>,
+          TError,
+          Awaited<ReturnType<typeof getV1UsersId>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1UsersId<TData = Awaited<ReturnType<typeof getV1UsersId>>, TError = DtoErrorResponse>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1UsersId>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1UsersId>>,
+          TError,
+          Awaited<ReturnType<typeof getV1UsersId>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1UsersId<TData = Awaited<ReturnType<typeof getV1UsersId>>, TError = DtoErrorResponse>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1UsersId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Get user by ID
  */
 
-export function useGetV1UsersId<
-	TData = Awaited<ReturnType<typeof getV1UsersId>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<Awaited<ReturnType<typeof getV1UsersId>>, TError, TData>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-} {
-	const queryOptions = getGetV1UsersIdQueryOptions(id, options);
+export function useGetV1UsersId<TData = Awaited<ReturnType<typeof getV1UsersId>>, TError = DtoErrorResponse>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1UsersId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-		TData,
-		TError
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getGetV1UsersIdQueryOptions(id,options)
 
-	return { ...query, queryKey: queryOptions.queryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
 }
 
+
+
+
+
+
 export type putV1UsersIdResponse200 = {
-	data: PutV1UsersId200;
-	status: 200;
-};
+  data: PutV1UsersId200
+  status: 200
+}
 
 export type putV1UsersIdResponse400 = {
-	data: DtoErrorResponse;
-	status: 400;
-};
+  data: DtoErrorResponse
+  status: 400
+}
 
 export type putV1UsersIdResponse401 = {
-	data: DtoErrorResponse;
-	status: 401;
-};
+  data: DtoErrorResponse
+  status: 401
+}
 
 export type putV1UsersIdResponse403 = {
-	data: DtoErrorResponse;
-	status: 403;
-};
+  data: DtoErrorResponse
+  status: 403
+}
 
 export type putV1UsersIdResponse404 = {
-	data: DtoErrorResponse;
-	status: 404;
-};
+  data: DtoErrorResponse
+  status: 404
+}
 
 export type putV1UsersIdResponse409 = {
-	data: DtoErrorResponse;
-	status: 409;
+  data: DtoErrorResponse
+  status: 409
+}
+
+export type putV1UsersIdResponseSuccess = (putV1UsersIdResponse200) & {
+  headers: Headers;
+};
+export type putV1UsersIdResponseError = (putV1UsersIdResponse400 | putV1UsersIdResponse401 | putV1UsersIdResponse403 | putV1UsersIdResponse404 | putV1UsersIdResponse409) & {
+  headers: Headers;
 };
 
-export type putV1UsersIdResponseSuccess = putV1UsersIdResponse200 & {
-	headers: Headers;
-};
-export type putV1UsersIdResponseError = (
-	| putV1UsersIdResponse400
-	| putV1UsersIdResponse401
-	| putV1UsersIdResponse403
-	| putV1UsersIdResponse404
-	| putV1UsersIdResponse409
-) & {
-	headers: Headers;
-};
+export type putV1UsersIdResponse = (putV1UsersIdResponseSuccess | putV1UsersIdResponseError)
 
-export type putV1UsersIdResponse =
-	| putV1UsersIdResponseSuccess
-	| putV1UsersIdResponseError;
+export const getPutV1UsersIdUrl = (id: number,) => {
 
-export const getPutV1UsersIdUrl = (id: number) => {
-	return `/v1/users/${id}`;
-};
+
+
+
+  return `/v1/users/${id}`
+}
 
 /**
  * Update user data (superadmin only)
  * @summary Update a user
  */
-export const putV1UsersId = async (
-	id: number,
-	dtoUpdateUserRequest: DtoUpdateUserRequest,
-	options?: RequestInit,
-): Promise<putV1UsersIdResponse> => {
-	return customInstance<putV1UsersIdResponse>(getPutV1UsersIdUrl(id), {
-		...options,
-		method: "PUT",
-		headers: { "Content-Type": "application/json", ...options?.headers },
-		body: JSON.stringify(dtoUpdateUserRequest),
-	});
-};
+export const putV1UsersId = async (id: number,
+    dtoUpdateUserRequest: DtoUpdateUserRequest, options?: RequestInit): Promise<putV1UsersIdResponse> => {
 
-export const getPutV1UsersIdMutationOptions = <
-	TError = DtoErrorResponse,
-	TContext = unknown,
->(options?: {
-	mutation?: UseMutationOptions<
-		Awaited<ReturnType<typeof putV1UsersId>>,
-		TError,
-		{ id: number; data: DtoUpdateUserRequest },
-		TContext
-	>;
-	request?: SecondParameter<typeof customInstance>;
-}): UseMutationOptions<
-	Awaited<ReturnType<typeof putV1UsersId>>,
-	TError,
-	{ id: number; data: DtoUpdateUserRequest },
-	TContext
-> => {
-	const mutationKey = ["putV1UsersId"];
-	const { mutation: mutationOptions, request: requestOptions } = options
-		? options.mutation &&
-			"mutationKey" in options.mutation &&
-			options.mutation.mutationKey
-			? options
-			: { ...options, mutation: { ...options.mutation, mutationKey } }
-		: { mutation: { mutationKey }, request: undefined };
+  return customInstance<putV1UsersIdResponse>(getPutV1UsersIdUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      dtoUpdateUserRequest,)
+  }
+);}
 
-	const mutationFn: MutationFunction<
-		Awaited<ReturnType<typeof putV1UsersId>>,
-		{ id: number; data: DtoUpdateUserRequest }
-	> = (props) => {
-		const { id, data } = props ?? {};
 
-		return putV1UsersId(id, data, requestOptions);
-	};
 
-	return { mutationFn, ...mutationOptions };
-};
 
-export type PutV1UsersIdMutationResult = NonNullable<
-	Awaited<ReturnType<typeof putV1UsersId>>
->;
-export type PutV1UsersIdMutationBody = DtoUpdateUserRequest;
-export type PutV1UsersIdMutationError = DtoErrorResponse;
+export const getPutV1UsersIdMutationOptions = <TError = DtoErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1UsersId>>, TError,{id: number;data: DtoUpdateUserRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
+): UseMutationOptions<Awaited<ReturnType<typeof putV1UsersId>>, TError,{id: number;data: DtoUpdateUserRequest}, TContext> => {
 
-/**
+const mutationKey = ['putV1UsersId'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1UsersId>>, {id: number;data: DtoUpdateUserRequest}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  putV1UsersId(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PutV1UsersIdMutationResult = NonNullable<Awaited<ReturnType<typeof putV1UsersId>>>
+    export type PutV1UsersIdMutationBody = DtoUpdateUserRequest
+    export type PutV1UsersIdMutationError = DtoErrorResponse
+
+    /**
  * @summary Update a user
  */
-export const usePutV1UsersId = <TError = DtoErrorResponse, TContext = unknown>(
-	options?: {
-		mutation?: UseMutationOptions<
-			Awaited<ReturnType<typeof putV1UsersId>>,
-			TError,
-			{ id: number; data: DtoUpdateUserRequest },
-			TContext
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseMutationResult<
-	Awaited<ReturnType<typeof putV1UsersId>>,
-	TError,
-	{ id: number; data: DtoUpdateUserRequest },
-	TContext
-> => {
-	return useMutation(getPutV1UsersIdMutationOptions(options), queryClient);
-};
-export type deleteV1UsersIdResponse200 = {
-	data: DtoSuccessResponse;
-	status: 200;
-};
+export const usePutV1UsersId = <TError = DtoErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1UsersId>>, TError,{id: number;data: DtoUpdateUserRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof putV1UsersId>>,
+        TError,
+        {id: number;data: DtoUpdateUserRequest},
+        TContext
+      > => {
+      return useMutation(getPutV1UsersIdMutationOptions(options), queryClient);
+    }
+    export type deleteV1UsersIdResponse200 = {
+  data: DtoSuccessResponse
+  status: 200
+}
 
 export type deleteV1UsersIdResponse400 = {
-	data: DtoErrorResponse;
-	status: 400;
-};
+  data: DtoErrorResponse
+  status: 400
+}
 
 export type deleteV1UsersIdResponse401 = {
-	data: DtoErrorResponse;
-	status: 401;
-};
+  data: DtoErrorResponse
+  status: 401
+}
 
 export type deleteV1UsersIdResponse403 = {
-	data: DtoErrorResponse;
-	status: 403;
-};
+  data: DtoErrorResponse
+  status: 403
+}
 
 export type deleteV1UsersIdResponse404 = {
-	data: DtoErrorResponse;
-	status: 404;
-};
+  data: DtoErrorResponse
+  status: 404
+}
 
 export type deleteV1UsersIdResponse422 = {
-	data: DtoErrorResponse;
-	status: 422;
+  data: DtoErrorResponse
+  status: 422
+}
+
+export type deleteV1UsersIdResponseSuccess = (deleteV1UsersIdResponse200) & {
+  headers: Headers;
+};
+export type deleteV1UsersIdResponseError = (deleteV1UsersIdResponse400 | deleteV1UsersIdResponse401 | deleteV1UsersIdResponse403 | deleteV1UsersIdResponse404 | deleteV1UsersIdResponse422) & {
+  headers: Headers;
 };
 
-export type deleteV1UsersIdResponseSuccess = deleteV1UsersIdResponse200 & {
-	headers: Headers;
-};
-export type deleteV1UsersIdResponseError = (
-	| deleteV1UsersIdResponse400
-	| deleteV1UsersIdResponse401
-	| deleteV1UsersIdResponse403
-	| deleteV1UsersIdResponse404
-	| deleteV1UsersIdResponse422
-) & {
-	headers: Headers;
-};
+export type deleteV1UsersIdResponse = (deleteV1UsersIdResponseSuccess | deleteV1UsersIdResponseError)
 
-export type deleteV1UsersIdResponse =
-	| deleteV1UsersIdResponseSuccess
-	| deleteV1UsersIdResponseError;
+export const getDeleteV1UsersIdUrl = (id: number,) => {
 
-export const getDeleteV1UsersIdUrl = (id: number) => {
-	return `/v1/users/${id}`;
-};
+
+
+
+  return `/v1/users/${id}`
+}
 
 /**
  * Soft delete a user (superadmin only, cannot delete self)
  * @summary Delete a user
  */
-export const deleteV1UsersId = async (
-	id: number,
-	options?: RequestInit,
-): Promise<deleteV1UsersIdResponse> => {
-	return customInstance<deleteV1UsersIdResponse>(getDeleteV1UsersIdUrl(id), {
-		...options,
-		method: "DELETE",
-	});
-};
+export const deleteV1UsersId = async (id: number, options?: RequestInit): Promise<deleteV1UsersIdResponse> => {
 
-export const getDeleteV1UsersIdMutationOptions = <
-	TError = DtoErrorResponse,
-	TContext = unknown,
->(options?: {
-	mutation?: UseMutationOptions<
-		Awaited<ReturnType<typeof deleteV1UsersId>>,
-		TError,
-		{ id: number },
-		TContext
-	>;
-	request?: SecondParameter<typeof customInstance>;
-}): UseMutationOptions<
-	Awaited<ReturnType<typeof deleteV1UsersId>>,
-	TError,
-	{ id: number },
-	TContext
-> => {
-	const mutationKey = ["deleteV1UsersId"];
-	const { mutation: mutationOptions, request: requestOptions } = options
-		? options.mutation &&
-			"mutationKey" in options.mutation &&
-			options.mutation.mutationKey
-			? options
-			: { ...options, mutation: { ...options.mutation, mutationKey } }
-		: { mutation: { mutationKey }, request: undefined };
+  return customInstance<deleteV1UsersIdResponse>(getDeleteV1UsersIdUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
 
-	const mutationFn: MutationFunction<
-		Awaited<ReturnType<typeof deleteV1UsersId>>,
-		{ id: number }
-	> = (props) => {
-		const { id } = props ?? {};
 
-		return deleteV1UsersId(id, requestOptions);
-	};
+  }
+);}
 
-	return { mutationFn, ...mutationOptions };
-};
 
-export type DeleteV1UsersIdMutationResult = NonNullable<
-	Awaited<ReturnType<typeof deleteV1UsersId>>
->;
 
-export type DeleteV1UsersIdMutationError = DtoErrorResponse;
 
-/**
+export const getDeleteV1UsersIdMutationOptions = <TError = DtoErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1UsersId>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customInstance>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteV1UsersId>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteV1UsersId'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteV1UsersId>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteV1UsersId(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteV1UsersIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteV1UsersId>>>
+
+    export type DeleteV1UsersIdMutationError = DtoErrorResponse
+
+    /**
  * @summary Delete a user
  */
-export const useDeleteV1UsersId = <
-	TError = DtoErrorResponse,
-	TContext = unknown,
->(
-	options?: {
-		mutation?: UseMutationOptions<
-			Awaited<ReturnType<typeof deleteV1UsersId>>,
-			TError,
-			{ id: number },
-			TContext
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseMutationResult<
-	Awaited<ReturnType<typeof deleteV1UsersId>>,
-	TError,
-	{ id: number },
-	TContext
-> => {
-	return useMutation(getDeleteV1UsersIdMutationOptions(options), queryClient);
-};
+export const useDeleteV1UsersId = <TError = DtoErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1UsersId>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteV1UsersId>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteV1UsersIdMutationOptions(options), queryClient);
+    }

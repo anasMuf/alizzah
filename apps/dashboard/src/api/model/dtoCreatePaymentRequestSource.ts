@@ -6,10 +6,10 @@
  * OpenAPI spec version: 1.0
  */
 
-export type DtoCreatePaymentRequestSource =
-	(typeof DtoCreatePaymentRequestSource)[keyof typeof DtoCreatePaymentRequestSource];
+export type DtoCreatePaymentRequestSource = typeof DtoCreatePaymentRequestSource[keyof typeof DtoCreatePaymentRequestSource];
+
 
 export const DtoCreatePaymentRequestSource = {
-	cash: "cash",
-	savings: "savings",
+  cash: 'cash',
+  savings: 'savings',
 } as const;

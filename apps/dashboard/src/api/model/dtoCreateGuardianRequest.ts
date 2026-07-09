@@ -5,13 +5,13 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoCreateGuardianRequestRelationship } from "./dtoCreateGuardianRequestRelationship";
+import type { DtoCreateGuardianRequestRelationship } from './dtoCreateGuardianRequestRelationship';
 
 export interface DtoCreateGuardianRequest {
-	address?: string;
-	/** @maxLength 100 */
-	full_name: string;
-	/** @maxLength 20 */
-	phone: string;
-	relationship: DtoCreateGuardianRequestRelationship;
+  address?: string;
+  /** @maxLength 100 */
+  full_name: string;
+  /** @maxLength 20 */
+  phone: string;
+  relationship: DtoCreateGuardianRequestRelationship;
 }

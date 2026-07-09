@@ -5,15 +5,15 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoUserBriefResponse } from "./dtoUserBriefResponse";
+import type { DtoUserBriefResponse } from './dtoUserBriefResponse';
 
 export interface DtoDailyClosingListResponse {
-	closed_by?: DtoUserBriefResponse;
-	closing_date?: string;
-	difference?: number;
-	id?: number;
-	is_confirmed?: boolean;
-	notes?: string;
-	physical_cash_amount?: number;
-	system_cash_amount?: number;
+  closed_by?: DtoUserBriefResponse;
+  closing_date?: string;
+  difference?: number;
+  id?: number;
+  is_confirmed?: boolean;
+  notes?: string;
+  physical_cash_amount?: number;
+  system_cash_amount?: number;
 }

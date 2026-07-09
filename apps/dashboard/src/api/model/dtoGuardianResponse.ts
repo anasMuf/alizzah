@@ -5,13 +5,13 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoStudentBriefResponse } from "./dtoStudentBriefResponse";
+import type { DtoStudentBriefResponse } from './dtoStudentBriefResponse';
 
 export interface DtoGuardianResponse {
-	address?: string;
-	full_name?: string;
-	id?: number;
-	phone?: string;
-	relationship?: string;
-	students?: DtoStudentBriefResponse[];
+  address?: string;
+  full_name?: string;
+  id?: number;
+  phone?: string;
+  relationship?: string;
+  students?: DtoStudentBriefResponse[];
 }

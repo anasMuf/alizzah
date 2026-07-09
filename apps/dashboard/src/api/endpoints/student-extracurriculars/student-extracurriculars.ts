@@ -5,727 +5,625 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
+import {
+  useMutation,
+  useQuery
+} from '@tanstack/react-query';
+import type {
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
+  MutationFunction,
+  QueryClient,
+  QueryFunction,
+  QueryKey,
+  UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
+  UseQueryOptions,
+  UseQueryResult
+} from '@tanstack/react-query';
 
 import type {
-	DataTag,
-	DefinedInitialDataOptions,
-	DefinedUseQueryResult,
-	MutationFunction,
-	QueryClient,
-	QueryFunction,
-	QueryKey,
-	UndefinedInitialDataOptions,
-	UseMutationOptions,
-	UseMutationResult,
-	UseQueryOptions,
-	UseQueryResult,
-} from "@tanstack/react-query";
-import { useMutation, useQuery } from "@tanstack/react-query";
+  DtoEnrollExtracurricularRequest,
+  DtoErrorResponse,
+  DtoSuccessResponse,
+  DtoUpdateStudentExtracurricularRequest,
+  GetV1StudentsIdExtracurriculars200,
+  GetV1StudentsIdExtracurricularsParams,
+  PostV1ExtracurricularsSyncInvoices200,
+  PostV1StudentsIdExtracurriculars201,
+  PutV1StudentsIdExtracurricularsSeId200
+} from '../../model';
 
-import type {
-	DtoEnrollExtracurricularRequest,
-	DtoErrorResponse,
-	DtoSuccessResponse,
-	DtoUpdateStudentExtracurricularRequest,
-	GetV1StudentsIdExtracurriculars200,
-	GetV1StudentsIdExtracurricularsParams,
-	PostV1StudentsIdExtracurriculars201,
-	PutV1StudentsIdExtracurricularsSeId200,
-} from "../../model";
+import { customInstance } from '../../mutator/custom-instance';
 
-import { customInstance } from "../../mutator/custom-instance";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
-export type getV1StudentsIdExtracurricularsResponse200 = {
-	data: GetV1StudentsIdExtracurriculars200;
-	status: 200;
+
+
+export type postV1ExtracurricularsSyncInvoicesResponse200 = {
+  data: PostV1ExtracurricularsSyncInvoices200
+  status: 200
+}
+
+export type postV1ExtracurricularsSyncInvoicesResponse401 = {
+  data: DtoErrorResponse
+  status: 401
+}
+
+export type postV1ExtracurricularsSyncInvoicesResponse403 = {
+  data: DtoErrorResponse
+  status: 403
+}
+
+export type postV1ExtracurricularsSyncInvoicesResponse500 = {
+  data: DtoErrorResponse
+  status: 500
+}
+
+export type postV1ExtracurricularsSyncInvoicesResponseSuccess = (postV1ExtracurricularsSyncInvoicesResponse200) & {
+  headers: Headers;
 };
+export type postV1ExtracurricularsSyncInvoicesResponseError = (postV1ExtracurricularsSyncInvoicesResponse401 | postV1ExtracurricularsSyncInvoicesResponse403 | postV1ExtracurricularsSyncInvoicesResponse500) & {
+  headers: Headers;
+};
+
+export type postV1ExtracurricularsSyncInvoicesResponse = (postV1ExtracurricularsSyncInvoicesResponseSuccess | postV1ExtracurricularsSyncInvoicesResponseError)
+
+export const getPostV1ExtracurricularsSyncInvoicesUrl = () => {
+
+
+
+
+  return `/v1/extracurriculars/sync-invoices`
+}
+
+/**
+ * Generate missing monthly invoice items for all active extracurricular enrollments
+ * @summary Sync extracurricular monthly invoices
+ */
+export const postV1ExtracurricularsSyncInvoices = async ( options?: RequestInit): Promise<postV1ExtracurricularsSyncInvoicesResponse> => {
+
+  return customInstance<postV1ExtracurricularsSyncInvoicesResponse>(getPostV1ExtracurricularsSyncInvoicesUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getPostV1ExtracurricularsSyncInvoicesMutationOptions = <TError = DtoErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ExtracurricularsSyncInvoices>>, TError,void, TContext>, request?: SecondParameter<typeof customInstance>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1ExtracurricularsSyncInvoices>>, TError,void, TContext> => {
+
+const mutationKey = ['postV1ExtracurricularsSyncInvoices'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1ExtracurricularsSyncInvoices>>, void> = () => {
+
+
+          return  postV1ExtracurricularsSyncInvoices(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostV1ExtracurricularsSyncInvoicesMutationResult = NonNullable<Awaited<ReturnType<typeof postV1ExtracurricularsSyncInvoices>>>
+
+    export type PostV1ExtracurricularsSyncInvoicesMutationError = DtoErrorResponse
+
+    /**
+ * @summary Sync extracurricular monthly invoices
+ */
+export const usePostV1ExtracurricularsSyncInvoices = <TError = DtoErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ExtracurricularsSyncInvoices>>, TError,void, TContext>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postV1ExtracurricularsSyncInvoices>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getPostV1ExtracurricularsSyncInvoicesMutationOptions(options), queryClient);
+    }
+    export type getV1StudentsIdExtracurricularsResponse200 = {
+  data: GetV1StudentsIdExtracurriculars200
+  status: 200
+}
 
 export type getV1StudentsIdExtracurricularsResponse400 = {
-	data: DtoErrorResponse;
-	status: 400;
-};
+  data: DtoErrorResponse
+  status: 400
+}
 
 export type getV1StudentsIdExtracurricularsResponse401 = {
-	data: DtoErrorResponse;
-	status: 401;
-};
+  data: DtoErrorResponse
+  status: 401
+}
 
 export type getV1StudentsIdExtracurricularsResponse403 = {
-	data: DtoErrorResponse;
-	status: 403;
-};
+  data: DtoErrorResponse
+  status: 403
+}
 
 export type getV1StudentsIdExtracurricularsResponse500 = {
-	data: DtoErrorResponse;
-	status: 500;
+  data: DtoErrorResponse
+  status: 500
+}
+
+export type getV1StudentsIdExtracurricularsResponseSuccess = (getV1StudentsIdExtracurricularsResponse200) & {
+  headers: Headers;
+};
+export type getV1StudentsIdExtracurricularsResponseError = (getV1StudentsIdExtracurricularsResponse400 | getV1StudentsIdExtracurricularsResponse401 | getV1StudentsIdExtracurricularsResponse403 | getV1StudentsIdExtracurricularsResponse500) & {
+  headers: Headers;
 };
 
-export type getV1StudentsIdExtracurricularsResponseSuccess =
-	getV1StudentsIdExtracurricularsResponse200 & {
-		headers: Headers;
-	};
-export type getV1StudentsIdExtracurricularsResponseError = (
-	| getV1StudentsIdExtracurricularsResponse400
-	| getV1StudentsIdExtracurricularsResponse401
-	| getV1StudentsIdExtracurricularsResponse403
-	| getV1StudentsIdExtracurricularsResponse500
-) & {
-	headers: Headers;
-};
+export type getV1StudentsIdExtracurricularsResponse = (getV1StudentsIdExtracurricularsResponseSuccess | getV1StudentsIdExtracurricularsResponseError)
 
-export type getV1StudentsIdExtracurricularsResponse =
-	| getV1StudentsIdExtracurricularsResponseSuccess
-	| getV1StudentsIdExtracurricularsResponseError;
+export const getGetV1StudentsIdExtracurricularsUrl = (id: number,
+    params?: GetV1StudentsIdExtracurricularsParams,) => {
+  const normalizedParams = new URLSearchParams();
 
-export const getGetV1StudentsIdExtracurricularsUrl = (
-	id: number,
-	params?: GetV1StudentsIdExtracurricularsParams,
-) => {
-	const normalizedParams = new URLSearchParams();
+  Object.entries(params || {}).forEach(([key, value]) => {
 
-	Object.entries(params || {}).forEach(([key, value]) => {
-		if (value !== undefined) {
-			normalizedParams.append(key, value === null ? "null" : value.toString());
-		}
-	});
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-	const stringifiedParams = normalizedParams.toString();
+  const stringifiedParams = normalizedParams.toString();
 
-	return stringifiedParams.length > 0
-		? `/v1/students/${id}/extracurriculars?${stringifiedParams}`
-		: `/v1/students/${id}/extracurriculars`;
-};
+  return stringifiedParams.length > 0 ? `/v1/students/${id}/extracurriculars?${stringifiedParams}` : `/v1/students/${id}/extracurriculars`
+}
 
 /**
  * Get a list of extracurriculars for a specific student
  * @summary Get student extracurriculars
  */
-export const getV1StudentsIdExtracurriculars = async (
-	id: number,
-	params?: GetV1StudentsIdExtracurricularsParams,
-	options?: RequestInit,
-): Promise<getV1StudentsIdExtracurricularsResponse> => {
-	return customInstance<getV1StudentsIdExtracurricularsResponse>(
-		getGetV1StudentsIdExtracurricularsUrl(id, params),
-		{
-			...options,
-			method: "GET",
-		},
-	);
-};
+export const getV1StudentsIdExtracurriculars = async (id: number,
+    params?: GetV1StudentsIdExtracurricularsParams, options?: RequestInit): Promise<getV1StudentsIdExtracurricularsResponse> => {
 
-export const getGetV1StudentsIdExtracurricularsQueryKey = (
-	id: number,
-	params?: GetV1StudentsIdExtracurricularsParams,
+  return customInstance<getV1StudentsIdExtracurricularsResponse>(getGetV1StudentsIdExtracurricularsUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetV1StudentsIdExtracurricularsQueryKey = (id: number,
+    params?: GetV1StudentsIdExtracurricularsParams,) => {
+    return [
+    `/v1/students/${id}/extracurriculars`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetV1StudentsIdExtracurricularsQueryOptions = <TData = Awaited<ReturnType<typeof getV1StudentsIdExtracurriculars>>, TError = DtoErrorResponse>(id: number,
+    params?: GetV1StudentsIdExtracurricularsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdExtracurriculars>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
-	return [
-		`/v1/students/${id}/extracurriculars`,
-		...(params ? [params] : []),
-	] as const;
-};
 
-export const getGetV1StudentsIdExtracurricularsQueryOptions = <
-	TData = Awaited<ReturnType<typeof getV1StudentsIdExtracurriculars>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	params?: GetV1StudentsIdExtracurricularsParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1StudentsIdExtracurriculars>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-) => {
-	const { query: queryOptions, request: requestOptions } = options ?? {};
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-	const queryKey =
-		queryOptions?.queryKey ??
-		getGetV1StudentsIdExtracurricularsQueryKey(id, params);
+  const queryKey =  queryOptions?.queryKey ?? getGetV1StudentsIdExtracurricularsQueryKey(id,params);
 
-	const queryFn: QueryFunction<
-		Awaited<ReturnType<typeof getV1StudentsIdExtracurriculars>>
-	> = ({ signal }) =>
-		getV1StudentsIdExtracurriculars(id, params, { signal, ...requestOptions });
 
-	return {
-		queryKey,
-		queryFn,
-		enabled: !!id,
-		...queryOptions,
-	} as UseQueryOptions<
-		Awaited<ReturnType<typeof getV1StudentsIdExtracurriculars>>,
-		TError,
-		TData
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
-};
 
-export type GetV1StudentsIdExtracurricularsQueryResult = NonNullable<
-	Awaited<ReturnType<typeof getV1StudentsIdExtracurriculars>>
->;
-export type GetV1StudentsIdExtracurricularsQueryError = DtoErrorResponse;
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1StudentsIdExtracurriculars>>> = ({ signal }) => getV1StudentsIdExtracurriculars(id,params, { signal, ...requestOptions });
 
-export function useGetV1StudentsIdExtracurriculars<
-	TData = Awaited<ReturnType<typeof getV1StudentsIdExtracurriculars>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	params: undefined | GetV1StudentsIdExtracurricularsParams,
-	options: {
-		query: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1StudentsIdExtracurriculars>>,
-				TError,
-				TData
-			>
-		> &
-			Pick<
-				DefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1StudentsIdExtracurriculars>>,
-					TError,
-					Awaited<ReturnType<typeof getV1StudentsIdExtracurriculars>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1StudentsIdExtracurriculars<
-	TData = Awaited<ReturnType<typeof getV1StudentsIdExtracurriculars>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	params?: GetV1StudentsIdExtracurricularsParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1StudentsIdExtracurriculars>>,
-				TError,
-				TData
-			>
-		> &
-			Pick<
-				UndefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1StudentsIdExtracurriculars>>,
-					TError,
-					Awaited<ReturnType<typeof getV1StudentsIdExtracurriculars>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1StudentsIdExtracurriculars<
-	TData = Awaited<ReturnType<typeof getV1StudentsIdExtracurriculars>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	params?: GetV1StudentsIdExtracurricularsParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1StudentsIdExtracurriculars>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdExtracurriculars>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetV1StudentsIdExtracurricularsQueryResult = NonNullable<Awaited<ReturnType<typeof getV1StudentsIdExtracurriculars>>>
+export type GetV1StudentsIdExtracurricularsQueryError = DtoErrorResponse
+
+
+export function useGetV1StudentsIdExtracurriculars<TData = Awaited<ReturnType<typeof getV1StudentsIdExtracurriculars>>, TError = DtoErrorResponse>(
+ id: number,
+    params: undefined |  GetV1StudentsIdExtracurricularsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdExtracurriculars>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1StudentsIdExtracurriculars>>,
+          TError,
+          Awaited<ReturnType<typeof getV1StudentsIdExtracurriculars>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1StudentsIdExtracurriculars<TData = Awaited<ReturnType<typeof getV1StudentsIdExtracurriculars>>, TError = DtoErrorResponse>(
+ id: number,
+    params?: GetV1StudentsIdExtracurricularsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdExtracurriculars>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1StudentsIdExtracurriculars>>,
+          TError,
+          Awaited<ReturnType<typeof getV1StudentsIdExtracurriculars>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1StudentsIdExtracurriculars<TData = Awaited<ReturnType<typeof getV1StudentsIdExtracurriculars>>, TError = DtoErrorResponse>(
+ id: number,
+    params?: GetV1StudentsIdExtracurricularsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdExtracurriculars>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Get student extracurriculars
  */
 
-export function useGetV1StudentsIdExtracurriculars<
-	TData = Awaited<ReturnType<typeof getV1StudentsIdExtracurriculars>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	params?: GetV1StudentsIdExtracurricularsParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1StudentsIdExtracurriculars>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-} {
-	const queryOptions = getGetV1StudentsIdExtracurricularsQueryOptions(
-		id,
-		params,
-		options,
-	);
+export function useGetV1StudentsIdExtracurriculars<TData = Awaited<ReturnType<typeof getV1StudentsIdExtracurriculars>>, TError = DtoErrorResponse>(
+ id: number,
+    params?: GetV1StudentsIdExtracurricularsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdExtracurriculars>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-		TData,
-		TError
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getGetV1StudentsIdExtracurricularsQueryOptions(id,params,options)
 
-	return { ...query, queryKey: queryOptions.queryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
 }
 
+
+
+
+
+
 export type postV1StudentsIdExtracurricularsResponse201 = {
-	data: PostV1StudentsIdExtracurriculars201;
-	status: 201;
-};
+  data: PostV1StudentsIdExtracurriculars201
+  status: 201
+}
 
 export type postV1StudentsIdExtracurricularsResponse400 = {
-	data: DtoErrorResponse;
-	status: 400;
-};
+  data: DtoErrorResponse
+  status: 400
+}
 
 export type postV1StudentsIdExtracurricularsResponse401 = {
-	data: DtoErrorResponse;
-	status: 401;
-};
+  data: DtoErrorResponse
+  status: 401
+}
 
 export type postV1StudentsIdExtracurricularsResponse403 = {
-	data: DtoErrorResponse;
-	status: 403;
-};
+  data: DtoErrorResponse
+  status: 403
+}
 
 export type postV1StudentsIdExtracurricularsResponse409 = {
-	data: DtoErrorResponse;
-	status: 409;
-};
+  data: DtoErrorResponse
+  status: 409
+}
 
 export type postV1StudentsIdExtracurricularsResponse500 = {
-	data: DtoErrorResponse;
-	status: 500;
+  data: DtoErrorResponse
+  status: 500
+}
+
+export type postV1StudentsIdExtracurricularsResponseSuccess = (postV1StudentsIdExtracurricularsResponse201) & {
+  headers: Headers;
+};
+export type postV1StudentsIdExtracurricularsResponseError = (postV1StudentsIdExtracurricularsResponse400 | postV1StudentsIdExtracurricularsResponse401 | postV1StudentsIdExtracurricularsResponse403 | postV1StudentsIdExtracurricularsResponse409 | postV1StudentsIdExtracurricularsResponse500) & {
+  headers: Headers;
 };
 
-export type postV1StudentsIdExtracurricularsResponseSuccess =
-	postV1StudentsIdExtracurricularsResponse201 & {
-		headers: Headers;
-	};
-export type postV1StudentsIdExtracurricularsResponseError = (
-	| postV1StudentsIdExtracurricularsResponse400
-	| postV1StudentsIdExtracurricularsResponse401
-	| postV1StudentsIdExtracurricularsResponse403
-	| postV1StudentsIdExtracurricularsResponse409
-	| postV1StudentsIdExtracurricularsResponse500
-) & {
-	headers: Headers;
-};
+export type postV1StudentsIdExtracurricularsResponse = (postV1StudentsIdExtracurricularsResponseSuccess | postV1StudentsIdExtracurricularsResponseError)
 
-export type postV1StudentsIdExtracurricularsResponse =
-	| postV1StudentsIdExtracurricularsResponseSuccess
-	| postV1StudentsIdExtracurricularsResponseError;
+export const getPostV1StudentsIdExtracurricularsUrl = (id: number,) => {
 
-export const getPostV1StudentsIdExtracurricularsUrl = (id: number) => {
-	return `/v1/students/${id}/extracurriculars`;
-};
+
+
+
+  return `/v1/students/${id}/extracurriculars`
+}
 
 /**
  * Enroll a student in an extracurricular for a specific academic year
  * @summary Enroll student in extracurricular
  */
-export const postV1StudentsIdExtracurriculars = async (
-	id: number,
-	dtoEnrollExtracurricularRequest: DtoEnrollExtracurricularRequest,
-	options?: RequestInit,
-): Promise<postV1StudentsIdExtracurricularsResponse> => {
-	return customInstance<postV1StudentsIdExtracurricularsResponse>(
-		getPostV1StudentsIdExtracurricularsUrl(id),
-		{
-			...options,
-			method: "POST",
-			headers: { "Content-Type": "application/json", ...options?.headers },
-			body: JSON.stringify(dtoEnrollExtracurricularRequest),
-		},
-	);
-};
+export const postV1StudentsIdExtracurriculars = async (id: number,
+    dtoEnrollExtracurricularRequest: DtoEnrollExtracurricularRequest, options?: RequestInit): Promise<postV1StudentsIdExtracurricularsResponse> => {
 
-export const getPostV1StudentsIdExtracurricularsMutationOptions = <
-	TError = DtoErrorResponse,
-	TContext = unknown,
->(options?: {
-	mutation?: UseMutationOptions<
-		Awaited<ReturnType<typeof postV1StudentsIdExtracurriculars>>,
-		TError,
-		{ id: number; data: DtoEnrollExtracurricularRequest },
-		TContext
-	>;
-	request?: SecondParameter<typeof customInstance>;
-}): UseMutationOptions<
-	Awaited<ReturnType<typeof postV1StudentsIdExtracurriculars>>,
-	TError,
-	{ id: number; data: DtoEnrollExtracurricularRequest },
-	TContext
-> => {
-	const mutationKey = ["postV1StudentsIdExtracurriculars"];
-	const { mutation: mutationOptions, request: requestOptions } = options
-		? options.mutation &&
-			"mutationKey" in options.mutation &&
-			options.mutation.mutationKey
-			? options
-			: { ...options, mutation: { ...options.mutation, mutationKey } }
-		: { mutation: { mutationKey }, request: undefined };
+  return customInstance<postV1StudentsIdExtracurricularsResponse>(getPostV1StudentsIdExtracurricularsUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      dtoEnrollExtracurricularRequest,)
+  }
+);}
 
-	const mutationFn: MutationFunction<
-		Awaited<ReturnType<typeof postV1StudentsIdExtracurriculars>>,
-		{ id: number; data: DtoEnrollExtracurricularRequest }
-	> = (props) => {
-		const { id, data } = props ?? {};
 
-		return postV1StudentsIdExtracurriculars(id, data, requestOptions);
-	};
 
-	return { mutationFn, ...mutationOptions };
-};
 
-export type PostV1StudentsIdExtracurricularsMutationResult = NonNullable<
-	Awaited<ReturnType<typeof postV1StudentsIdExtracurriculars>>
->;
-export type PostV1StudentsIdExtracurricularsMutationBody =
-	DtoEnrollExtracurricularRequest;
-export type PostV1StudentsIdExtracurricularsMutationError = DtoErrorResponse;
+export const getPostV1StudentsIdExtracurricularsMutationOptions = <TError = DtoErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1StudentsIdExtracurriculars>>, TError,{id: number;data: DtoEnrollExtracurricularRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1StudentsIdExtracurriculars>>, TError,{id: number;data: DtoEnrollExtracurricularRequest}, TContext> => {
 
-/**
+const mutationKey = ['postV1StudentsIdExtracurriculars'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1StudentsIdExtracurriculars>>, {id: number;data: DtoEnrollExtracurricularRequest}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  postV1StudentsIdExtracurriculars(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostV1StudentsIdExtracurricularsMutationResult = NonNullable<Awaited<ReturnType<typeof postV1StudentsIdExtracurriculars>>>
+    export type PostV1StudentsIdExtracurricularsMutationBody = DtoEnrollExtracurricularRequest
+    export type PostV1StudentsIdExtracurricularsMutationError = DtoErrorResponse
+
+    /**
  * @summary Enroll student in extracurricular
  */
-export const usePostV1StudentsIdExtracurriculars = <
-	TError = DtoErrorResponse,
-	TContext = unknown,
->(
-	options?: {
-		mutation?: UseMutationOptions<
-			Awaited<ReturnType<typeof postV1StudentsIdExtracurriculars>>,
-			TError,
-			{ id: number; data: DtoEnrollExtracurricularRequest },
-			TContext
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseMutationResult<
-	Awaited<ReturnType<typeof postV1StudentsIdExtracurriculars>>,
-	TError,
-	{ id: number; data: DtoEnrollExtracurricularRequest },
-	TContext
-> => {
-	return useMutation(
-		getPostV1StudentsIdExtracurricularsMutationOptions(options),
-		queryClient,
-	);
-};
-export type putV1StudentsIdExtracurricularsSeIdResponse200 = {
-	data: PutV1StudentsIdExtracurricularsSeId200;
-	status: 200;
-};
+export const usePostV1StudentsIdExtracurriculars = <TError = DtoErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1StudentsIdExtracurriculars>>, TError,{id: number;data: DtoEnrollExtracurricularRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postV1StudentsIdExtracurriculars>>,
+        TError,
+        {id: number;data: DtoEnrollExtracurricularRequest},
+        TContext
+      > => {
+      return useMutation(getPostV1StudentsIdExtracurricularsMutationOptions(options), queryClient);
+    }
+    export type putV1StudentsIdExtracurricularsSeIdResponse200 = {
+  data: PutV1StudentsIdExtracurricularsSeId200
+  status: 200
+}
 
 export type putV1StudentsIdExtracurricularsSeIdResponse400 = {
-	data: DtoErrorResponse;
-	status: 400;
-};
+  data: DtoErrorResponse
+  status: 400
+}
 
 export type putV1StudentsIdExtracurricularsSeIdResponse401 = {
-	data: DtoErrorResponse;
-	status: 401;
-};
+  data: DtoErrorResponse
+  status: 401
+}
 
 export type putV1StudentsIdExtracurricularsSeIdResponse403 = {
-	data: DtoErrorResponse;
-	status: 403;
-};
+  data: DtoErrorResponse
+  status: 403
+}
 
 export type putV1StudentsIdExtracurricularsSeIdResponse404 = {
-	data: DtoErrorResponse;
-	status: 404;
-};
+  data: DtoErrorResponse
+  status: 404
+}
 
 export type putV1StudentsIdExtracurricularsSeIdResponse500 = {
-	data: DtoErrorResponse;
-	status: 500;
+  data: DtoErrorResponse
+  status: 500
+}
+
+export type putV1StudentsIdExtracurricularsSeIdResponseSuccess = (putV1StudentsIdExtracurricularsSeIdResponse200) & {
+  headers: Headers;
+};
+export type putV1StudentsIdExtracurricularsSeIdResponseError = (putV1StudentsIdExtracurricularsSeIdResponse400 | putV1StudentsIdExtracurricularsSeIdResponse401 | putV1StudentsIdExtracurricularsSeIdResponse403 | putV1StudentsIdExtracurricularsSeIdResponse404 | putV1StudentsIdExtracurricularsSeIdResponse500) & {
+  headers: Headers;
 };
 
-export type putV1StudentsIdExtracurricularsSeIdResponseSuccess =
-	putV1StudentsIdExtracurricularsSeIdResponse200 & {
-		headers: Headers;
-	};
-export type putV1StudentsIdExtracurricularsSeIdResponseError = (
-	| putV1StudentsIdExtracurricularsSeIdResponse400
-	| putV1StudentsIdExtracurricularsSeIdResponse401
-	| putV1StudentsIdExtracurricularsSeIdResponse403
-	| putV1StudentsIdExtracurricularsSeIdResponse404
-	| putV1StudentsIdExtracurricularsSeIdResponse500
-) & {
-	headers: Headers;
-};
+export type putV1StudentsIdExtracurricularsSeIdResponse = (putV1StudentsIdExtracurricularsSeIdResponseSuccess | putV1StudentsIdExtracurricularsSeIdResponseError)
 
-export type putV1StudentsIdExtracurricularsSeIdResponse =
-	| putV1StudentsIdExtracurricularsSeIdResponseSuccess
-	| putV1StudentsIdExtracurricularsSeIdResponseError;
+export const getPutV1StudentsIdExtracurricularsSeIdUrl = (id: number,
+    seId: number,) => {
 
-export const getPutV1StudentsIdExtracurricularsSeIdUrl = (
-	id: number,
-	seId: number,
-) => {
-	return `/v1/students/${id}/extracurriculars/${seId}`;
-};
+
+
+
+  return `/v1/students/${id}/extracurriculars/${seId}`
+}
 
 /**
  * Update student extracurricular details
  * @summary Update student extracurricular
  */
-export const putV1StudentsIdExtracurricularsSeId = async (
-	id: number,
-	seId: number,
-	dtoUpdateStudentExtracurricularRequest: DtoUpdateStudentExtracurricularRequest,
-	options?: RequestInit,
-): Promise<putV1StudentsIdExtracurricularsSeIdResponse> => {
-	return customInstance<putV1StudentsIdExtracurricularsSeIdResponse>(
-		getPutV1StudentsIdExtracurricularsSeIdUrl(id, seId),
-		{
-			...options,
-			method: "PUT",
-			headers: { "Content-Type": "application/json", ...options?.headers },
-			body: JSON.stringify(dtoUpdateStudentExtracurricularRequest),
-		},
-	);
-};
+export const putV1StudentsIdExtracurricularsSeId = async (id: number,
+    seId: number,
+    dtoUpdateStudentExtracurricularRequest: DtoUpdateStudentExtracurricularRequest, options?: RequestInit): Promise<putV1StudentsIdExtracurricularsSeIdResponse> => {
 
-export const getPutV1StudentsIdExtracurricularsSeIdMutationOptions = <
-	TError = DtoErrorResponse,
-	TContext = unknown,
->(options?: {
-	mutation?: UseMutationOptions<
-		Awaited<ReturnType<typeof putV1StudentsIdExtracurricularsSeId>>,
-		TError,
-		{ id: number; seId: number; data: DtoUpdateStudentExtracurricularRequest },
-		TContext
-	>;
-	request?: SecondParameter<typeof customInstance>;
-}): UseMutationOptions<
-	Awaited<ReturnType<typeof putV1StudentsIdExtracurricularsSeId>>,
-	TError,
-	{ id: number; seId: number; data: DtoUpdateStudentExtracurricularRequest },
-	TContext
-> => {
-	const mutationKey = ["putV1StudentsIdExtracurricularsSeId"];
-	const { mutation: mutationOptions, request: requestOptions } = options
-		? options.mutation &&
-			"mutationKey" in options.mutation &&
-			options.mutation.mutationKey
-			? options
-			: { ...options, mutation: { ...options.mutation, mutationKey } }
-		: { mutation: { mutationKey }, request: undefined };
+  return customInstance<putV1StudentsIdExtracurricularsSeIdResponse>(getPutV1StudentsIdExtracurricularsSeIdUrl(id,seId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      dtoUpdateStudentExtracurricularRequest,)
+  }
+);}
 
-	const mutationFn: MutationFunction<
-		Awaited<ReturnType<typeof putV1StudentsIdExtracurricularsSeId>>,
-		{ id: number; seId: number; data: DtoUpdateStudentExtracurricularRequest }
-	> = (props) => {
-		const { id, seId, data } = props ?? {};
 
-		return putV1StudentsIdExtracurricularsSeId(id, seId, data, requestOptions);
-	};
 
-	return { mutationFn, ...mutationOptions };
-};
 
-export type PutV1StudentsIdExtracurricularsSeIdMutationResult = NonNullable<
-	Awaited<ReturnType<typeof putV1StudentsIdExtracurricularsSeId>>
->;
-export type PutV1StudentsIdExtracurricularsSeIdMutationBody =
-	DtoUpdateStudentExtracurricularRequest;
-export type PutV1StudentsIdExtracurricularsSeIdMutationError = DtoErrorResponse;
+export const getPutV1StudentsIdExtracurricularsSeIdMutationOptions = <TError = DtoErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1StudentsIdExtracurricularsSeId>>, TError,{id: number;seId: number;data: DtoUpdateStudentExtracurricularRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
+): UseMutationOptions<Awaited<ReturnType<typeof putV1StudentsIdExtracurricularsSeId>>, TError,{id: number;seId: number;data: DtoUpdateStudentExtracurricularRequest}, TContext> => {
 
-/**
+const mutationKey = ['putV1StudentsIdExtracurricularsSeId'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1StudentsIdExtracurricularsSeId>>, {id: number;seId: number;data: DtoUpdateStudentExtracurricularRequest}> = (props) => {
+          const {id,seId,data} = props ?? {};
+
+          return  putV1StudentsIdExtracurricularsSeId(id,seId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PutV1StudentsIdExtracurricularsSeIdMutationResult = NonNullable<Awaited<ReturnType<typeof putV1StudentsIdExtracurricularsSeId>>>
+    export type PutV1StudentsIdExtracurricularsSeIdMutationBody = DtoUpdateStudentExtracurricularRequest
+    export type PutV1StudentsIdExtracurricularsSeIdMutationError = DtoErrorResponse
+
+    /**
  * @summary Update student extracurricular
  */
-export const usePutV1StudentsIdExtracurricularsSeId = <
-	TError = DtoErrorResponse,
-	TContext = unknown,
->(
-	options?: {
-		mutation?: UseMutationOptions<
-			Awaited<ReturnType<typeof putV1StudentsIdExtracurricularsSeId>>,
-			TError,
-			{
-				id: number;
-				seId: number;
-				data: DtoUpdateStudentExtracurricularRequest;
-			},
-			TContext
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseMutationResult<
-	Awaited<ReturnType<typeof putV1StudentsIdExtracurricularsSeId>>,
-	TError,
-	{ id: number; seId: number; data: DtoUpdateStudentExtracurricularRequest },
-	TContext
-> => {
-	return useMutation(
-		getPutV1StudentsIdExtracurricularsSeIdMutationOptions(options),
-		queryClient,
-	);
-};
-export type deleteV1StudentsIdExtracurricularsSeIdResponse200 = {
-	data: DtoSuccessResponse;
-	status: 200;
-};
+export const usePutV1StudentsIdExtracurricularsSeId = <TError = DtoErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1StudentsIdExtracurricularsSeId>>, TError,{id: number;seId: number;data: DtoUpdateStudentExtracurricularRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof putV1StudentsIdExtracurricularsSeId>>,
+        TError,
+        {id: number;seId: number;data: DtoUpdateStudentExtracurricularRequest},
+        TContext
+      > => {
+      return useMutation(getPutV1StudentsIdExtracurricularsSeIdMutationOptions(options), queryClient);
+    }
+    export type deleteV1StudentsIdExtracurricularsSeIdResponse200 = {
+  data: DtoSuccessResponse
+  status: 200
+}
 
 export type deleteV1StudentsIdExtracurricularsSeIdResponse400 = {
-	data: DtoErrorResponse;
-	status: 400;
-};
+  data: DtoErrorResponse
+  status: 400
+}
 
 export type deleteV1StudentsIdExtracurricularsSeIdResponse401 = {
-	data: DtoErrorResponse;
-	status: 401;
-};
+  data: DtoErrorResponse
+  status: 401
+}
 
 export type deleteV1StudentsIdExtracurricularsSeIdResponse403 = {
-	data: DtoErrorResponse;
-	status: 403;
-};
+  data: DtoErrorResponse
+  status: 403
+}
 
 export type deleteV1StudentsIdExtracurricularsSeIdResponse404 = {
-	data: DtoErrorResponse;
-	status: 404;
-};
+  data: DtoErrorResponse
+  status: 404
+}
 
 export type deleteV1StudentsIdExtracurricularsSeIdResponse500 = {
-	data: DtoErrorResponse;
-	status: 500;
+  data: DtoErrorResponse
+  status: 500
+}
+
+export type deleteV1StudentsIdExtracurricularsSeIdResponseSuccess = (deleteV1StudentsIdExtracurricularsSeIdResponse200) & {
+  headers: Headers;
+};
+export type deleteV1StudentsIdExtracurricularsSeIdResponseError = (deleteV1StudentsIdExtracurricularsSeIdResponse400 | deleteV1StudentsIdExtracurricularsSeIdResponse401 | deleteV1StudentsIdExtracurricularsSeIdResponse403 | deleteV1StudentsIdExtracurricularsSeIdResponse404 | deleteV1StudentsIdExtracurricularsSeIdResponse500) & {
+  headers: Headers;
 };
 
-export type deleteV1StudentsIdExtracurricularsSeIdResponseSuccess =
-	deleteV1StudentsIdExtracurricularsSeIdResponse200 & {
-		headers: Headers;
-	};
-export type deleteV1StudentsIdExtracurricularsSeIdResponseError = (
-	| deleteV1StudentsIdExtracurricularsSeIdResponse400
-	| deleteV1StudentsIdExtracurricularsSeIdResponse401
-	| deleteV1StudentsIdExtracurricularsSeIdResponse403
-	| deleteV1StudentsIdExtracurricularsSeIdResponse404
-	| deleteV1StudentsIdExtracurricularsSeIdResponse500
-) & {
-	headers: Headers;
-};
+export type deleteV1StudentsIdExtracurricularsSeIdResponse = (deleteV1StudentsIdExtracurricularsSeIdResponseSuccess | deleteV1StudentsIdExtracurricularsSeIdResponseError)
 
-export type deleteV1StudentsIdExtracurricularsSeIdResponse =
-	| deleteV1StudentsIdExtracurricularsSeIdResponseSuccess
-	| deleteV1StudentsIdExtracurricularsSeIdResponseError;
+export const getDeleteV1StudentsIdExtracurricularsSeIdUrl = (id: number,
+    seId: number,) => {
 
-export const getDeleteV1StudentsIdExtracurricularsSeIdUrl = (
-	id: number,
-	seId: number,
-) => {
-	return `/v1/students/${id}/extracurriculars/${seId}`;
-};
+
+
+
+  return `/v1/students/${id}/extracurriculars/${seId}`
+}
 
 /**
  * Unenroll a student from an extracurricular
  * @summary Unenroll student from extracurricular
  */
-export const deleteV1StudentsIdExtracurricularsSeId = async (
-	id: number,
-	seId: number,
-	options?: RequestInit,
-): Promise<deleteV1StudentsIdExtracurricularsSeIdResponse> => {
-	return customInstance<deleteV1StudentsIdExtracurricularsSeIdResponse>(
-		getDeleteV1StudentsIdExtracurricularsSeIdUrl(id, seId),
-		{
-			...options,
-			method: "DELETE",
-		},
-	);
-};
+export const deleteV1StudentsIdExtracurricularsSeId = async (id: number,
+    seId: number, options?: RequestInit): Promise<deleteV1StudentsIdExtracurricularsSeIdResponse> => {
 
-export const getDeleteV1StudentsIdExtracurricularsSeIdMutationOptions = <
-	TError = DtoErrorResponse,
-	TContext = unknown,
->(options?: {
-	mutation?: UseMutationOptions<
-		Awaited<ReturnType<typeof deleteV1StudentsIdExtracurricularsSeId>>,
-		TError,
-		{ id: number; seId: number },
-		TContext
-	>;
-	request?: SecondParameter<typeof customInstance>;
-}): UseMutationOptions<
-	Awaited<ReturnType<typeof deleteV1StudentsIdExtracurricularsSeId>>,
-	TError,
-	{ id: number; seId: number },
-	TContext
-> => {
-	const mutationKey = ["deleteV1StudentsIdExtracurricularsSeId"];
-	const { mutation: mutationOptions, request: requestOptions } = options
-		? options.mutation &&
-			"mutationKey" in options.mutation &&
-			options.mutation.mutationKey
-			? options
-			: { ...options, mutation: { ...options.mutation, mutationKey } }
-		: { mutation: { mutationKey }, request: undefined };
+  return customInstance<deleteV1StudentsIdExtracurricularsSeIdResponse>(getDeleteV1StudentsIdExtracurricularsSeIdUrl(id,seId),
+  {
+    ...options,
+    method: 'DELETE'
 
-	const mutationFn: MutationFunction<
-		Awaited<ReturnType<typeof deleteV1StudentsIdExtracurricularsSeId>>,
-		{ id: number; seId: number }
-	> = (props) => {
-		const { id, seId } = props ?? {};
 
-		return deleteV1StudentsIdExtracurricularsSeId(id, seId, requestOptions);
-	};
+  }
+);}
 
-	return { mutationFn, ...mutationOptions };
-};
 
-export type DeleteV1StudentsIdExtracurricularsSeIdMutationResult = NonNullable<
-	Awaited<ReturnType<typeof deleteV1StudentsIdExtracurricularsSeId>>
->;
 
-export type DeleteV1StudentsIdExtracurricularsSeIdMutationError =
-	DtoErrorResponse;
 
-/**
+export const getDeleteV1StudentsIdExtracurricularsSeIdMutationOptions = <TError = DtoErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1StudentsIdExtracurricularsSeId>>, TError,{id: number;seId: number}, TContext>, request?: SecondParameter<typeof customInstance>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteV1StudentsIdExtracurricularsSeId>>, TError,{id: number;seId: number}, TContext> => {
+
+const mutationKey = ['deleteV1StudentsIdExtracurricularsSeId'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteV1StudentsIdExtracurricularsSeId>>, {id: number;seId: number}> = (props) => {
+          const {id,seId} = props ?? {};
+
+          return  deleteV1StudentsIdExtracurricularsSeId(id,seId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteV1StudentsIdExtracurricularsSeIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteV1StudentsIdExtracurricularsSeId>>>
+
+    export type DeleteV1StudentsIdExtracurricularsSeIdMutationError = DtoErrorResponse
+
+    /**
  * @summary Unenroll student from extracurricular
  */
-export const useDeleteV1StudentsIdExtracurricularsSeId = <
-	TError = DtoErrorResponse,
-	TContext = unknown,
->(
-	options?: {
-		mutation?: UseMutationOptions<
-			Awaited<ReturnType<typeof deleteV1StudentsIdExtracurricularsSeId>>,
-			TError,
-			{ id: number; seId: number },
-			TContext
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseMutationResult<
-	Awaited<ReturnType<typeof deleteV1StudentsIdExtracurricularsSeId>>,
-	TError,
-	{ id: number; seId: number },
-	TContext
-> => {
-	return useMutation(
-		getDeleteV1StudentsIdExtracurricularsSeIdMutationOptions(options),
-		queryClient,
-	);
-};
+export const useDeleteV1StudentsIdExtracurricularsSeId = <TError = DtoErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1StudentsIdExtracurricularsSeId>>, TError,{id: number;seId: number}, TContext>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteV1StudentsIdExtracurricularsSeId>>,
+        TError,
+        {id: number;seId: number},
+        TContext
+      > => {
+      return useMutation(getDeleteV1StudentsIdExtracurricularsSeIdMutationOptions(options), queryClient);
+    }

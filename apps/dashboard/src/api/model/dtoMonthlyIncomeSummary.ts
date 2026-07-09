@@ -5,11 +5,11 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoBilledVsPaid } from "./dtoBilledVsPaid";
+import type { DtoBilledVsPaid } from './dtoBilledVsPaid';
 
 export interface DtoMonthlyIncomeSummary {
-	by_category?: DtoBilledVsPaid[];
-	total_billed?: number;
-	total_paid?: number;
-	total_unpaid?: number;
+  by_category?: DtoBilledVsPaid[];
+  total_billed?: number;
+  total_paid?: number;
+  total_unpaid?: number;
 }

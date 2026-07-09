@@ -7,24 +7,24 @@
  */
 
 export type GetV1DaycareEnrollmentsParams = {
-	/**
-	 * Filter by status
-	 */
-	status?: string;
-	/**
-	 * Search by student name
-	 */
-	search?: string;
-	/**
-	 * Academic Year ID
-	 */
-	academic_year_id?: number;
-	/**
-	 * Page number
-	 */
-	page?: number;
-	/**
-	 * Items per page
-	 */
-	limit?: number;
+/**
+ * Filter by status
+ */
+status?: string;
+/**
+ * Search by student name
+ */
+search?: string;
+/**
+ * Academic Year ID
+ */
+academic_year_id?: number;
+/**
+ * Page number
+ */
+page?: number;
+/**
+ * Items per page
+ */
+limit?: number;
 };

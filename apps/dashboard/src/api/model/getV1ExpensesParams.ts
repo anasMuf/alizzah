@@ -7,28 +7,28 @@
  */
 
 export type GetV1ExpensesParams = {
-	/**
-	 * Page number
-	 */
-	page?: number;
-	/**
-	 * Limit per page
-	 */
-	limit?: number;
-	/**
-	 * Academic Year ID
-	 */
-	academic_year_id?: number;
-	/**
-	 * Expense Category ID
-	 */
-	expense_category_id?: number;
-	/**
-	 * Start Date (YYYY-MM-DD)
-	 */
-	start_date?: string;
-	/**
-	 * End Date (YYYY-MM-DD)
-	 */
-	end_date?: string;
+/**
+ * Page number
+ */
+page?: number;
+/**
+ * Limit per page
+ */
+limit?: number;
+/**
+ * Academic Year ID
+ */
+academic_year_id?: number;
+/**
+ * Expense Category ID
+ */
+expense_category_id?: number;
+/**
+ * Start Date (YYYY-MM-DD)
+ */
+start_date?: string;
+/**
+ * End Date (YYYY-MM-DD)
+ */
+end_date?: string;
 };

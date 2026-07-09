@@ -7,9 +7,9 @@
  */
 
 export interface DtoCreateDailyClosingRequest {
-	academic_year_id: number;
-	closing_date: string;
-	notes?: string;
-	/** @minimum 0 */
-	physical_cash_amount: number;
+  academic_year_id: number;
+  closing_date: string;
+  notes?: string;
+  /** @minimum 0 */
+  physical_cash_amount: number;
 }

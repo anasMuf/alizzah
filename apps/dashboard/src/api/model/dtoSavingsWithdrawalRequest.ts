@@ -7,7 +7,7 @@
  */
 
 export interface DtoSavingsWithdrawalRequest {
-	/** @minimum 1 */
-	amount: number;
-	notes?: string;
+  /** @minimum 1 */
+  amount: number;
+  notes?: string;
 }

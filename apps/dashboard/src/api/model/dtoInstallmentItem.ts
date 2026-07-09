@@ -7,10 +7,10 @@
  */
 
 export interface DtoInstallmentItem {
-	/** @minimum 1 */
-	amount: number;
-	due_date: string;
-	/** @minimum 1 */
-	installment_number: number;
-	notes?: string;
+  /** @minimum 1 */
+  amount: number;
+  due_date: string;
+  /** @minimum 1 */
+  installment_number: number;
+  notes?: string;
 }

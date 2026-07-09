@@ -7,6 +7,6 @@
  */
 
 export interface DtoSuccessResponse {
-	data?: unknown;
-	message?: string;
+  data?: unknown;
+  message?: string;
 }

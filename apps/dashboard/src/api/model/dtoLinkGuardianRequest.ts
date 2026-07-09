@@ -7,6 +7,6 @@
  */
 
 export interface DtoLinkGuardianRequest {
-	guardian_id: number;
-	is_primary?: boolean;
+  guardian_id: number;
+  is_primary?: boolean;
 }

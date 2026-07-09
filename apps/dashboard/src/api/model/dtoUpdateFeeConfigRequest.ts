@@ -7,9 +7,9 @@
  */
 
 export interface DtoUpdateFeeConfigRequest {
-	/**
-	 * @minimum 0
-	 * @maximum 100
-	 */
-	savings_admin_rate: number;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  savings_admin_rate: number;
 }

@@ -6,13 +6,13 @@
  * OpenAPI spec version: 1.0
  */
 
-export type DtoCreateDaycareEnrollmentRequestPackageType =
-	(typeof DtoCreateDaycareEnrollmentRequestPackageType)[keyof typeof DtoCreateDaycareEnrollmentRequestPackageType];
+export type DtoCreateDaycareEnrollmentRequestPackageType = typeof DtoCreateDaycareEnrollmentRequestPackageType[keyof typeof DtoCreateDaycareEnrollmentRequestPackageType];
+
 
 export const DtoCreateDaycareEnrollmentRequestPackageType = {
-	monthly_kb: "monthly_kb",
-	monthly_tk: "monthly_tk",
-	monthly_package_kb: "monthly_package_kb",
-	monthly_package_tk: "monthly_package_tk",
-	daily: "daily",
+  monthly_kb: 'monthly_kb',
+  monthly_tk: 'monthly_tk',
+  monthly_package_kb: 'monthly_package_kb',
+  monthly_package_tk: 'monthly_package_tk',
+  daily: 'daily',
 } as const;

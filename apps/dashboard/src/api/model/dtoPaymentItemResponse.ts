@@ -7,8 +7,8 @@
  */
 
 export interface DtoPaymentItemResponse {
-	amount?: number;
-	id?: number;
-	invoice_item_id?: number;
-	invoice_item_name?: string;
+  amount?: number;
+  id?: number;
+  invoice_item_id?: number;
+  invoice_item_name?: string;
 }

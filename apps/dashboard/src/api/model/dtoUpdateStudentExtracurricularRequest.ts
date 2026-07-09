@@ -7,5 +7,5 @@
  */
 
 export interface DtoUpdateStudentExtracurricularRequest {
-	end_date: string;
+  end_date: string;
 }

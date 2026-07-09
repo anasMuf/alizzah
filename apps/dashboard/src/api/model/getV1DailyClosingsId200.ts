@@ -5,9 +5,9 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoDailyClosingListResponse } from "./dtoDailyClosingListResponse";
-import type { DtoSuccessResponse } from "./dtoSuccessResponse";
+import type { DtoDailyClosingListResponse } from './dtoDailyClosingListResponse';
+import type { DtoSuccessResponse } from './dtoSuccessResponse';
 
 export type GetV1DailyClosingsId200 = DtoSuccessResponse & {
-	data?: DtoDailyClosingListResponse;
+  data?: DtoDailyClosingListResponse;
 };

@@ -5,9 +5,9 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoInvoiceListResponse } from "./dtoInvoiceListResponse";
-import type { DtoPaginatedResponse } from "./dtoPaginatedResponse";
+import type { DtoInvoiceListResponse } from './dtoInvoiceListResponse';
+import type { DtoPaginatedResponse } from './dtoPaginatedResponse';
 
 export type GetV1Invoices200 = DtoPaginatedResponse & {
-	data?: DtoInvoiceListResponse[];
+  data?: DtoInvoiceListResponse[];
 };

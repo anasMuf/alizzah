@@ -7,7 +7,7 @@
  */
 
 export interface DtoAnnualIncomeSummary {
-	total_billed?: number;
-	total_paid?: number;
-	total_unpaid?: number;
+  total_billed?: number;
+  total_paid?: number;
+  total_unpaid?: number;
 }

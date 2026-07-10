@@ -4,9 +4,9 @@ import { useAtom } from "jotai";
 import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import {
-	incomeTransactionKeys,
-	useDeleteIncomeTransaction,
-	useGetIncomeTransactions,
+	getGetV1IncomeTransactionsQueryKey,
+	useDeleteV1IncomeTransactionsId,
+	useGetV1IncomeTransactions,
 } from "#/api/endpoints/income-transactions/income-transactions";
 import {
 	Alert,
@@ -64,7 +64,7 @@ function PenerimaanListPage() {
 		data: listData,
 		isLoading,
 		isError,
-	} = useGetIncomeTransactions(
+	} = useGetV1IncomeTransactions(
 		{
 			page,
 			limit: 20,
@@ -79,7 +79,7 @@ function PenerimaanListPage() {
 	const items: any[] = ((listData as any)?.data as any)?.data || [];
 	const meta = ((listData as any)?.data as any)?.meta;
 
-	const deleteMutation = useDeleteIncomeTransaction({
+	const deleteMutation = useDeleteV1IncomeTransactionsId({
 		mutation: {
 			onSuccess: () => {
 				addToast({
@@ -87,7 +87,9 @@ function PenerimaanListPage() {
 					title: "Berhasil",
 					message: "Penerimaan berhasil dihapus.",
 				});
-				queryClient.invalidateQueries({ queryKey: incomeTransactionKeys.all });
+				queryClient.invalidateQueries({
+					queryKey: getGetV1IncomeTransactionsQueryKey(),
+				});
 				queryClient.invalidateQueries({ queryKey: ["/v1/cash/balance"] });
 				queryClient.invalidateQueries({ queryKey: ["/v1/cash/transactions"] });
 				setDeletingItem(null);
@@ -325,7 +327,7 @@ function PenerimaanListPage() {
 				open={!!deletingItem}
 				onCancel={() => setDeletingItem(null)}
 				onConfirm={() => {
-					if (deletingItem) deleteMutation.mutate(deletingItem.id);
+					if (deletingItem) deleteMutation.mutate({ id: deletingItem.id });
 				}}
 				title="Hapus Penerimaan"
 				variant="danger"

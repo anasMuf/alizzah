@@ -4,8 +4,8 @@ import { useAtom } from "jotai";
 import { ChevronRight } from "lucide-react";
 import { useState } from "react";
 import {
-	incomeTransactionKeys,
-	useCreateIncomeTransaction,
+	getGetV1IncomeTransactionsQueryKey,
+	usePostV1IncomeTransactions,
 } from "#/api/endpoints/income-transactions/income-transactions";
 import { Button, FormField, useToast } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
@@ -38,7 +38,7 @@ function PenerimaanBaruPage() {
 	const [referenceNumber, setReferenceNumber] = useState("");
 	const [notes, setNotes] = useState("");
 
-	const createMutation = useCreateIncomeTransaction({
+	const createMutation = usePostV1IncomeTransactions({
 		mutation: {
 			onSuccess: () => {
 				addToast({
@@ -46,7 +46,9 @@ function PenerimaanBaruPage() {
 					title: "Berhasil",
 					message: "Penerimaan berhasil dicatat.",
 				});
-				queryClient.invalidateQueries({ queryKey: incomeTransactionKeys.all });
+				queryClient.invalidateQueries({
+					queryKey: getGetV1IncomeTransactionsQueryKey(),
+				});
 				// Invalidate kas balance & transactions agar saldo kas langsung ter-update
 				queryClient.invalidateQueries({ queryKey: ["/v1/cash/balance"] });
 				queryClient.invalidateQueries({ queryKey: ["/v1/cash/transactions"] });

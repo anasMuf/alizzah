@@ -3,9 +3,9 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import {
-	incomeTransactionKeys,
-	useDeleteIncomeTransaction,
-	useGetIncomeTransaction,
+	getGetV1IncomeTransactionsQueryKey,
+	useDeleteV1IncomeTransactionsId,
+	useGetV1IncomeTransactionsId,
 } from "#/api/endpoints/income-transactions/income-transactions";
 import { Badge, Button, ConfirmDialog, useToast } from "#/components/ui";
 import { formatCurrency, formatDate } from "../../../../utils/format";
@@ -40,10 +40,10 @@ function PenerimaanDetailPage() {
 	const { addToast } = useToast();
 	const [showDelete, setShowDelete] = useState(false);
 
-	const { data: resp, isLoading } = useGetIncomeTransaction(Number(id));
+	const { data: resp, isLoading } = useGetV1IncomeTransactionsId(Number(id));
 	const item = ((resp as any)?.data as any)?.data;
 
-	const deleteMutation = useDeleteIncomeTransaction({
+	const deleteMutation = useDeleteV1IncomeTransactionsId({
 		mutation: {
 			onSuccess: () => {
 				addToast({
@@ -51,7 +51,9 @@ function PenerimaanDetailPage() {
 					title: "Berhasil",
 					message: "Penerimaan berhasil dihapus.",
 				});
-				queryClient.invalidateQueries({ queryKey: incomeTransactionKeys.all });
+				queryClient.invalidateQueries({
+					queryKey: getGetV1IncomeTransactionsQueryKey(),
+				});
 				queryClient.invalidateQueries({ queryKey: ["/v1/cash/balance"] });
 				queryClient.invalidateQueries({ queryKey: ["/v1/cash/transactions"] });
 				navigate({ to: "/keuangan/penerimaan" });
@@ -181,7 +183,7 @@ function PenerimaanDetailPage() {
 			<ConfirmDialog
 				open={showDelete}
 				onCancel={() => setShowDelete(false)}
-				onConfirm={() => deleteMutation.mutate(Number(id))}
+				onConfirm={() => deleteMutation.mutate({ id: Number(id) })}
 				title="Hapus Penerimaan"
 				variant="danger"
 				confirmLabel="Hapus"

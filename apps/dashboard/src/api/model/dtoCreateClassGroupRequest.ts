@@ -10,6 +10,7 @@ import type { DtoCreateClassGroupRequestLevel } from "./dtoCreateClassGroupReque
 
 export interface DtoCreateClassGroupRequest {
 	academic_year_id: number;
+	is_mutation?: boolean;
 	level: DtoCreateClassGroupRequestLevel;
 	/** @maxLength 50 */
 	name: string;

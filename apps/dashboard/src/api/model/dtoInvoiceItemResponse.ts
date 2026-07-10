@@ -10,11 +10,13 @@ export interface DtoInvoiceItemResponse {
 	amount?: number;
 	category?: string;
 	id?: number;
-	is_mandatory?: boolean;
-	name?: string;
-	paid_amount?: number;
-	status?: string;
 	is_koperasi?: boolean;
+	is_mandatory?: boolean;
 	koperasi_product_id?: number;
 	koperasi_variant_id?: number;
+	name?: string;
+	paid_amount?: number;
+	quantity?: number;
+	status?: string;
+	unit_price?: number;
 }

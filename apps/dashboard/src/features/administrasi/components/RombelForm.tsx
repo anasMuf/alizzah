@@ -35,6 +35,7 @@ export function RombelForm({
 		academic_year_id: academicYearId,
 		name: initialData?.name || "",
 		level: initialData?.level || ("mutiara" as any),
+		is_mutation: initialData?.is_mutation || false,
 		schedule: {
 			weekdays: {
 				days: initialData?.schedule?.weekdays?.days || [
@@ -204,9 +205,15 @@ export function RombelForm({
 									name="level"
 									value={level}
 									checked={formData.level === level}
-									onChange={(e) =>
-										setFormData({ ...formData, level: e.target.value as any })
-									}
+									onChange={(e) => {
+										const newLevel = e.target.value as any;
+										setFormData({
+											...formData,
+											level: newLevel,
+											is_mutation:
+												newLevel === "intan" ? formData.is_mutation : false,
+										});
+									}}
 									className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
 								/>
 								<span className="text-sm text-gray-700 capitalize">
@@ -216,6 +223,42 @@ export function RombelForm({
 						))}
 					</div>
 				</div>
+
+				{formData.level === "intan" && (
+					<div className="sm:col-span-2 mt-2 p-4 bg-amber-50 rounded-lg border border-amber-200">
+						<div className="flex items-center justify-between">
+							<div>
+								<label
+									htmlFor="is_mutation"
+									className="text-sm font-medium text-gray-900"
+								>
+									Rombel Mutasi
+								</label>
+								<p className="text-xs text-gray-500 mt-1 max-w-md">
+									Siswa yang masuk ke rombel ini akan dikenakan{" "}
+									<strong>biaya awal (initial)</strong> seperti siswa baru PPDB.
+									Berlaku untuk enrollment baru, tidak mengubah siswa yang sudah
+									terdaftar.
+								</p>
+							</div>
+							<label className="relative inline-flex items-center cursor-pointer flex-shrink-0 ml-4">
+								<input
+									id="is_mutation"
+									type="checkbox"
+									checked={formData.is_mutation || false}
+									onChange={(e) =>
+										setFormData({
+											...formData,
+											is_mutation: e.target.checked,
+										})
+									}
+									className="sr-only peer"
+								/>
+								<div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600" />
+							</label>
+						</div>
+					</div>
+				)}
 
 				{/* Schedule Configuration */}
 				<div className="sm:col-span-2 mt-4 pt-4 border-t border-gray-200">

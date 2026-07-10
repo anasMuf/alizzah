@@ -23,6 +23,7 @@ import type {
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 import type {
+	DtoCloneClassGroupsRequest,
 	DtoCreateClassGroupRequest,
 	DtoErrorResponse,
 	DtoSuccessResponse,
@@ -30,6 +31,7 @@ import type {
 	GetV1ClassGroupsId200,
 	GetV1ClassGroupsParams,
 	PostV1ClassGroups201,
+	PostV1ClassGroupsClone200,
 	PutV1ClassGroupsId200,
 } from "../../model";
 
@@ -371,6 +373,137 @@ export const usePostV1ClassGroups = <
 	TContext
 > => {
 	return useMutation(getPostV1ClassGroupsMutationOptions(options), queryClient);
+};
+export type postV1ClassGroupsCloneResponse200 = {
+	data: PostV1ClassGroupsClone200;
+	status: 200;
+};
+
+export type postV1ClassGroupsCloneResponse400 = {
+	data: DtoErrorResponse;
+	status: 400;
+};
+
+export type postV1ClassGroupsCloneResponse401 = {
+	data: DtoErrorResponse;
+	status: 401;
+};
+
+export type postV1ClassGroupsCloneResponse403 = {
+	data: DtoErrorResponse;
+	status: 403;
+};
+
+export type postV1ClassGroupsCloneResponseSuccess =
+	postV1ClassGroupsCloneResponse200 & {
+		headers: Headers;
+	};
+export type postV1ClassGroupsCloneResponseError = (
+	| postV1ClassGroupsCloneResponse400
+	| postV1ClassGroupsCloneResponse401
+	| postV1ClassGroupsCloneResponse403
+) & {
+	headers: Headers;
+};
+
+export type postV1ClassGroupsCloneResponse =
+	| postV1ClassGroupsCloneResponseSuccess
+	| postV1ClassGroupsCloneResponseError;
+
+export const getPostV1ClassGroupsCloneUrl = () => {
+	return `/v1/class-groups/clone`;
+};
+
+/**
+ * Copy all class groups (name, level, schedule) from one academic year to another. Skips duplicates.
+ * @summary Clone class groups to another academic year
+ */
+export const postV1ClassGroupsClone = async (
+	dtoCloneClassGroupsRequest: DtoCloneClassGroupsRequest,
+	options?: RequestInit,
+): Promise<postV1ClassGroupsCloneResponse> => {
+	return customInstance<postV1ClassGroupsCloneResponse>(
+		getPostV1ClassGroupsCloneUrl(),
+		{
+			...options,
+			method: "POST",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(dtoCloneClassGroupsRequest),
+		},
+	);
+};
+
+export const getPostV1ClassGroupsCloneMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1ClassGroupsClone>>,
+		TError,
+		{ data: DtoCloneClassGroupsRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1ClassGroupsClone>>,
+	TError,
+	{ data: DtoCloneClassGroupsRequest },
+	TContext
+> => {
+	const mutationKey = ["postV1ClassGroupsClone"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1ClassGroupsClone>>,
+		{ data: DtoCloneClassGroupsRequest }
+	> = (props) => {
+		const { data } = props ?? {};
+
+		return postV1ClassGroupsClone(data, requestOptions);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type PostV1ClassGroupsCloneMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1ClassGroupsClone>>
+>;
+export type PostV1ClassGroupsCloneMutationBody = DtoCloneClassGroupsRequest;
+export type PostV1ClassGroupsCloneMutationError = DtoErrorResponse;
+
+/**
+ * @summary Clone class groups to another academic year
+ */
+export const usePostV1ClassGroupsClone = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1ClassGroupsClone>>,
+			TError,
+			{ data: DtoCloneClassGroupsRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1ClassGroupsClone>>,
+	TError,
+	{ data: DtoCloneClassGroupsRequest },
+	TContext
+> => {
+	return useMutation(
+		getPostV1ClassGroupsCloneMutationOptions(options),
+		queryClient,
+	);
 };
 export type getV1ClassGroupsIdResponse200 = {
 	data: GetV1ClassGroupsId200;

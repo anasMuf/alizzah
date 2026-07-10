@@ -31,6 +31,7 @@ import type {
 	GetV1DaycareEnrollmentsId200,
 	GetV1DaycareEnrollmentsParams,
 	PostV1DaycareEnrollments201,
+	PostV1DaycareEnrollmentsSyncInvoices200,
 	PutV1DaycareEnrollmentsId200,
 } from "../../model";
 
@@ -400,6 +401,133 @@ export const usePostV1DaycareEnrollments = <
 > => {
 	return useMutation(
 		getPostV1DaycareEnrollmentsMutationOptions(options),
+		queryClient,
+	);
+};
+export type postV1DaycareEnrollmentsSyncInvoicesResponse200 = {
+	data: PostV1DaycareEnrollmentsSyncInvoices200;
+	status: 200;
+};
+
+export type postV1DaycareEnrollmentsSyncInvoicesResponse401 = {
+	data: DtoErrorResponse;
+	status: 401;
+};
+
+export type postV1DaycareEnrollmentsSyncInvoicesResponse403 = {
+	data: DtoErrorResponse;
+	status: 403;
+};
+
+export type postV1DaycareEnrollmentsSyncInvoicesResponse500 = {
+	data: DtoErrorResponse;
+	status: 500;
+};
+
+export type postV1DaycareEnrollmentsSyncInvoicesResponseSuccess =
+	postV1DaycareEnrollmentsSyncInvoicesResponse200 & {
+		headers: Headers;
+	};
+export type postV1DaycareEnrollmentsSyncInvoicesResponseError = (
+	| postV1DaycareEnrollmentsSyncInvoicesResponse401
+	| postV1DaycareEnrollmentsSyncInvoicesResponse403
+	| postV1DaycareEnrollmentsSyncInvoicesResponse500
+) & {
+	headers: Headers;
+};
+
+export type postV1DaycareEnrollmentsSyncInvoicesResponse =
+	| postV1DaycareEnrollmentsSyncInvoicesResponseSuccess
+	| postV1DaycareEnrollmentsSyncInvoicesResponseError;
+
+export const getPostV1DaycareEnrollmentsSyncInvoicesUrl = () => {
+	return `/v1/daycare-enrollments/sync-invoices`;
+};
+
+/**
+ * Generate missing monthly invoices for all active daycare enrollments
+ * @summary Sync daycare monthly invoices
+ */
+export const postV1DaycareEnrollmentsSyncInvoices = async (
+	options?: RequestInit,
+): Promise<postV1DaycareEnrollmentsSyncInvoicesResponse> => {
+	return customInstance<postV1DaycareEnrollmentsSyncInvoicesResponse>(
+		getPostV1DaycareEnrollmentsSyncInvoicesUrl(),
+		{
+			...options,
+			method: "POST",
+		},
+	);
+};
+
+export const getPostV1DaycareEnrollmentsSyncInvoicesMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1DaycareEnrollmentsSyncInvoices>>,
+		TError,
+		void,
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1DaycareEnrollmentsSyncInvoices>>,
+	TError,
+	void,
+	TContext
+> => {
+	const mutationKey = ["postV1DaycareEnrollmentsSyncInvoices"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1DaycareEnrollmentsSyncInvoices>>,
+		void
+	> = () => {
+		return postV1DaycareEnrollmentsSyncInvoices(requestOptions);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type PostV1DaycareEnrollmentsSyncInvoicesMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1DaycareEnrollmentsSyncInvoices>>
+>;
+
+export type PostV1DaycareEnrollmentsSyncInvoicesMutationError =
+	DtoErrorResponse;
+
+/**
+ * @summary Sync daycare monthly invoices
+ */
+export const usePostV1DaycareEnrollmentsSyncInvoices = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1DaycareEnrollmentsSyncInvoices>>,
+			TError,
+			void,
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1DaycareEnrollmentsSyncInvoices>>,
+	TError,
+	void,
+	TContext
+> => {
+	return useMutation(
+		getPostV1DaycareEnrollmentsSyncInvoicesMutationOptions(options),
 		queryClient,
 	);
 };

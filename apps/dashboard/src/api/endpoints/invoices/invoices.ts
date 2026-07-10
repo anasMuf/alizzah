@@ -28,8 +28,11 @@ import type {
 	DtoErrorResponse,
 	DtoSuccessResponse,
 	DtoUpdateInstallmentRequest,
+	DtoUpdateInvoiceItemQuantityRequest,
 	DtoUpdateInvoiceItemRequest,
 	GetV1Invoices200,
+	GetV1InvoicesBatch200,
+	GetV1InvoicesBatchParams,
 	GetV1InvoicesId200,
 	GetV1InvoicesIdInstallments200,
 	GetV1InvoicesParams,
@@ -39,6 +42,7 @@ import type {
 	PostV1InvoicesIdItems201,
 	PutV1InvoicesIdInstallmentsInstId200,
 	PutV1InvoicesIdItemsItemId200,
+	PutV1InvoicesIdItemsItemIdQuantity200,
 } from "../../model";
 
 import { customInstance } from "../../mutator/custom-instance";
@@ -227,6 +231,224 @@ export function useGetV1Invoices<
 	queryKey: DataTag<QueryKey, TData, TError>;
 } {
 	const queryOptions = getGetV1InvoicesQueryOptions(params, options);
+
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+	return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export type getV1InvoicesBatchResponse200 = {
+	data: GetV1InvoicesBatch200;
+	status: 200;
+};
+
+export type getV1InvoicesBatchResponse400 = {
+	data: DtoErrorResponse;
+	status: 400;
+};
+
+export type getV1InvoicesBatchResponse401 = {
+	data: DtoErrorResponse;
+	status: 401;
+};
+
+export type getV1InvoicesBatchResponse403 = {
+	data: DtoErrorResponse;
+	status: 403;
+};
+
+export type getV1InvoicesBatchResponseSuccess =
+	getV1InvoicesBatchResponse200 & {
+		headers: Headers;
+	};
+export type getV1InvoicesBatchResponseError = (
+	| getV1InvoicesBatchResponse400
+	| getV1InvoicesBatchResponse401
+	| getV1InvoicesBatchResponse403
+) & {
+	headers: Headers;
+};
+
+export type getV1InvoicesBatchResponse =
+	| getV1InvoicesBatchResponseSuccess
+	| getV1InvoicesBatchResponseError;
+
+export const getGetV1InvoicesBatchUrl = (params: GetV1InvoicesBatchParams) => {
+	const normalizedParams = new URLSearchParams();
+
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(key, value === null ? "null" : value.toString());
+		}
+	});
+
+	const stringifiedParams = normalizedParams.toString();
+
+	return stringifiedParams.length > 0
+		? `/v1/invoices/batch?${stringifiedParams}`
+		: `/v1/invoices/batch`;
+};
+
+/**
+ * Get invoice details for multiple IDs at once (for payment page)
+ * @summary Get multiple invoices by IDs
+ */
+export const getV1InvoicesBatch = async (
+	params: GetV1InvoicesBatchParams,
+	options?: RequestInit,
+): Promise<getV1InvoicesBatchResponse> => {
+	return customInstance<getV1InvoicesBatchResponse>(
+		getGetV1InvoicesBatchUrl(params),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
+
+export const getGetV1InvoicesBatchQueryKey = (
+	params?: GetV1InvoicesBatchParams,
+) => {
+	return [`/v1/invoices/batch`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetV1InvoicesBatchQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1InvoicesBatch>>,
+	TError = DtoErrorResponse,
+>(
+	params: GetV1InvoicesBatchParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1InvoicesBatch>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
+
+	const queryKey =
+		queryOptions?.queryKey ?? getGetV1InvoicesBatchQueryKey(params);
+
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1InvoicesBatch>>
+	> = ({ signal }) => getV1InvoicesBatch(params, { signal, ...requestOptions });
+
+	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1InvoicesBatch>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetV1InvoicesBatchQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1InvoicesBatch>>
+>;
+export type GetV1InvoicesBatchQueryError = DtoErrorResponse;
+
+export function useGetV1InvoicesBatch<
+	TData = Awaited<ReturnType<typeof getV1InvoicesBatch>>,
+	TError = DtoErrorResponse,
+>(
+	params: GetV1InvoicesBatchParams,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1InvoicesBatch>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1InvoicesBatch>>,
+					TError,
+					Awaited<ReturnType<typeof getV1InvoicesBatch>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1InvoicesBatch<
+	TData = Awaited<ReturnType<typeof getV1InvoicesBatch>>,
+	TError = DtoErrorResponse,
+>(
+	params: GetV1InvoicesBatchParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1InvoicesBatch>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1InvoicesBatch>>,
+					TError,
+					Awaited<ReturnType<typeof getV1InvoicesBatch>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1InvoicesBatch<
+	TData = Awaited<ReturnType<typeof getV1InvoicesBatch>>,
+	TError = DtoErrorResponse,
+>(
+	params: GetV1InvoicesBatchParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1InvoicesBatch>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get multiple invoices by IDs
+ */
+
+export function useGetV1InvoicesBatch<
+	TData = Awaited<ReturnType<typeof getV1InvoicesBatch>>,
+	TError = DtoErrorResponse,
+>(
+	params: GetV1InvoicesBatchParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1InvoicesBatch>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1InvoicesBatchQueryOptions(params, options);
 
 	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
 		TData,
@@ -1567,6 +1789,161 @@ export const useDeleteV1InvoicesIdItemsItemId = <
 > => {
 	return useMutation(
 		getDeleteV1InvoicesIdItemsItemIdMutationOptions(options),
+		queryClient,
+	);
+};
+export type putV1InvoicesIdItemsItemIdQuantityResponse200 = {
+	data: PutV1InvoicesIdItemsItemIdQuantity200;
+	status: 200;
+};
+
+export type putV1InvoicesIdItemsItemIdQuantityResponse400 = {
+	data: DtoErrorResponse;
+	status: 400;
+};
+
+export type putV1InvoicesIdItemsItemIdQuantityResponse401 = {
+	data: DtoErrorResponse;
+	status: 401;
+};
+
+export type putV1InvoicesIdItemsItemIdQuantityResponse403 = {
+	data: DtoErrorResponse;
+	status: 403;
+};
+
+export type putV1InvoicesIdItemsItemIdQuantityResponse404 = {
+	data: DtoErrorResponse;
+	status: 404;
+};
+
+export type putV1InvoicesIdItemsItemIdQuantityResponse422 = {
+	data: DtoErrorResponse;
+	status: 422;
+};
+
+export type putV1InvoicesIdItemsItemIdQuantityResponse500 = {
+	data: DtoErrorResponse;
+	status: 500;
+};
+
+export type putV1InvoicesIdItemsItemIdQuantityResponseSuccess =
+	putV1InvoicesIdItemsItemIdQuantityResponse200 & {
+		headers: Headers;
+	};
+export type putV1InvoicesIdItemsItemIdQuantityResponseError = (
+	| putV1InvoicesIdItemsItemIdQuantityResponse400
+	| putV1InvoicesIdItemsItemIdQuantityResponse401
+	| putV1InvoicesIdItemsItemIdQuantityResponse403
+	| putV1InvoicesIdItemsItemIdQuantityResponse404
+	| putV1InvoicesIdItemsItemIdQuantityResponse422
+	| putV1InvoicesIdItemsItemIdQuantityResponse500
+) & {
+	headers: Headers;
+};
+
+export type putV1InvoicesIdItemsItemIdQuantityResponse =
+	| putV1InvoicesIdItemsItemIdQuantityResponseSuccess
+	| putV1InvoicesIdItemsItemIdQuantityResponseError;
+
+export const getPutV1InvoicesIdItemsItemIdQuantityUrl = (
+	id: number,
+	itemId: number,
+) => {
+	return `/v1/invoices/${id}/items/${itemId}/quantity`;
+};
+
+/**
+ * Update the quantity (number of days/Mondays) of a specific invoice item. Only applicable to items with per_day or per_monday unit pricing.
+ * @summary Update invoice item quantity
+ */
+export const putV1InvoicesIdItemsItemIdQuantity = async (
+	id: number,
+	itemId: number,
+	dtoUpdateInvoiceItemQuantityRequest: DtoUpdateInvoiceItemQuantityRequest,
+	options?: RequestInit,
+): Promise<putV1InvoicesIdItemsItemIdQuantityResponse> => {
+	return customInstance<putV1InvoicesIdItemsItemIdQuantityResponse>(
+		getPutV1InvoicesIdItemsItemIdQuantityUrl(id, itemId),
+		{
+			...options,
+			method: "PUT",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(dtoUpdateInvoiceItemQuantityRequest),
+		},
+	);
+};
+
+export const getPutV1InvoicesIdItemsItemIdQuantityMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof putV1InvoicesIdItemsItemIdQuantity>>,
+		TError,
+		{ id: number; itemId: number; data: DtoUpdateInvoiceItemQuantityRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof putV1InvoicesIdItemsItemIdQuantity>>,
+	TError,
+	{ id: number; itemId: number; data: DtoUpdateInvoiceItemQuantityRequest },
+	TContext
+> => {
+	const mutationKey = ["putV1InvoicesIdItemsItemIdQuantity"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof putV1InvoicesIdItemsItemIdQuantity>>,
+		{ id: number; itemId: number; data: DtoUpdateInvoiceItemQuantityRequest }
+	> = (props) => {
+		const { id, itemId, data } = props ?? {};
+
+		return putV1InvoicesIdItemsItemIdQuantity(id, itemId, data, requestOptions);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type PutV1InvoicesIdItemsItemIdQuantityMutationResult = NonNullable<
+	Awaited<ReturnType<typeof putV1InvoicesIdItemsItemIdQuantity>>
+>;
+export type PutV1InvoicesIdItemsItemIdQuantityMutationBody =
+	DtoUpdateInvoiceItemQuantityRequest;
+export type PutV1InvoicesIdItemsItemIdQuantityMutationError = DtoErrorResponse;
+
+/**
+ * @summary Update invoice item quantity
+ */
+export const usePutV1InvoicesIdItemsItemIdQuantity = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof putV1InvoicesIdItemsItemIdQuantity>>,
+			TError,
+			{ id: number; itemId: number; data: DtoUpdateInvoiceItemQuantityRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof putV1InvoicesIdItemsItemIdQuantity>>,
+	TError,
+	{ id: number; itemId: number; data: DtoUpdateInvoiceItemQuantityRequest },
+	TContext
+> => {
+	return useMutation(
+		getPutV1InvoicesIdItemsItemIdQuantityMutationOptions(options),
 		queryClient,
 	);
 };

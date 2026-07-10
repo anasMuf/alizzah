@@ -7,6 +7,8 @@
  */
 
 export interface DtoCreateExpenseCategoryRequest {
+	/** @maxLength 30 */
+	invoice_category?: string;
 	/** @maxLength 100 */
 	name: string;
 	parent_id?: number;

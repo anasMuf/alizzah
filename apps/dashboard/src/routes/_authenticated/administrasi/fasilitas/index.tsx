@@ -3,13 +3,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Bus, Edit2, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import {
-	type CreateFacilityRequest,
-	facilityKeys,
-	useCreateFacility,
-	useDeleteFacility,
-	useGetFacilities,
-	useUpdateFacility,
+	getGetV1FacilitiesQueryKey,
+	useDeleteV1FacilitiesId,
+	useGetV1Facilities,
+	usePostV1Facilities,
+	usePutV1FacilitiesId,
 } from "#/api/endpoints/facilities/facilities";
+import type { DtoCreateFacilityRequest } from "#/api/model";
 import {
 	Button,
 	ConfirmDialog,
@@ -29,7 +29,7 @@ function FasilitasPage() {
 	const queryClient = useQueryClient();
 	const { addToast } = useToast();
 
-	const { data: resp, isLoading } = useGetFacilities();
+	const { data: resp, isLoading } = useGetV1Facilities();
 	const facilities: any[] = ((resp as any)?.data as any)?.data || [];
 
 	const [isFormOpen, setIsFormOpen] = useState(false);
@@ -39,9 +39,9 @@ function FasilitasPage() {
 	const [description, setDescription] = useState("");
 
 	const invalidate = () =>
-		queryClient.invalidateQueries({ queryKey: facilityKeys.all });
+		queryClient.invalidateQueries({ queryKey: getGetV1FacilitiesQueryKey() });
 
-	const createMutation = useCreateFacility({
+	const createMutation = usePostV1Facilities({
 		mutation: {
 			onSuccess: () => {
 				addToast({
@@ -57,7 +57,7 @@ function FasilitasPage() {
 		},
 	});
 
-	const updateMutation = useUpdateFacility({
+	const updateMutation = usePutV1FacilitiesId({
 		mutation: {
 			onSuccess: () => {
 				addToast({
@@ -73,7 +73,7 @@ function FasilitasPage() {
 		},
 	});
 
-	const deleteMutation = useDeleteFacility({
+	const deleteMutation = useDeleteV1FacilitiesId({
 		mutation: {
 			onSuccess: () => {
 				addToast({
@@ -108,14 +108,14 @@ function FasilitasPage() {
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
-		const data: CreateFacilityRequest = {
+		const data: DtoCreateFacilityRequest = {
 			name,
 			description: description || undefined,
-		};
+		} as DtoCreateFacilityRequest;
 		if (editingItem) {
 			updateMutation.mutate({ id: editingItem.id, data });
 		} else {
-			createMutation.mutate(data as any);
+			createMutation.mutate({ data });
 		}
 	};
 
@@ -261,7 +261,9 @@ function FasilitasPage() {
 			<ConfirmDialog
 				open={!!deletingItem}
 				onCancel={() => setDeletingItem(null)}
-				onConfirm={() => deletingItem && deleteMutation.mutate(deletingItem.id)}
+				onConfirm={() =>
+					deletingItem && deleteMutation.mutate({ id: deletingItem.id })
+				}
 				title="Hapus Fasilitas"
 				variant="danger"
 				confirmLabel="Hapus"

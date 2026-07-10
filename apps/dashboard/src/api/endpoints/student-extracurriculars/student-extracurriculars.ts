@@ -29,6 +29,7 @@ import type {
 	DtoUpdateStudentExtracurricularRequest,
 	GetV1StudentsIdExtracurriculars200,
 	GetV1StudentsIdExtracurricularsParams,
+	PostV1ExtracurricularsSyncInvoices200,
 	PostV1StudentsIdExtracurriculars201,
 	PutV1StudentsIdExtracurricularsSeId200,
 } from "../../model";
@@ -37,6 +38,132 @@ import { customInstance } from "../../mutator/custom-instance";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
+export type postV1ExtracurricularsSyncInvoicesResponse200 = {
+	data: PostV1ExtracurricularsSyncInvoices200;
+	status: 200;
+};
+
+export type postV1ExtracurricularsSyncInvoicesResponse401 = {
+	data: DtoErrorResponse;
+	status: 401;
+};
+
+export type postV1ExtracurricularsSyncInvoicesResponse403 = {
+	data: DtoErrorResponse;
+	status: 403;
+};
+
+export type postV1ExtracurricularsSyncInvoicesResponse500 = {
+	data: DtoErrorResponse;
+	status: 500;
+};
+
+export type postV1ExtracurricularsSyncInvoicesResponseSuccess =
+	postV1ExtracurricularsSyncInvoicesResponse200 & {
+		headers: Headers;
+	};
+export type postV1ExtracurricularsSyncInvoicesResponseError = (
+	| postV1ExtracurricularsSyncInvoicesResponse401
+	| postV1ExtracurricularsSyncInvoicesResponse403
+	| postV1ExtracurricularsSyncInvoicesResponse500
+) & {
+	headers: Headers;
+};
+
+export type postV1ExtracurricularsSyncInvoicesResponse =
+	| postV1ExtracurricularsSyncInvoicesResponseSuccess
+	| postV1ExtracurricularsSyncInvoicesResponseError;
+
+export const getPostV1ExtracurricularsSyncInvoicesUrl = () => {
+	return `/v1/extracurriculars/sync-invoices`;
+};
+
+/**
+ * Generate missing monthly invoice items for all active extracurricular enrollments
+ * @summary Sync extracurricular monthly invoices
+ */
+export const postV1ExtracurricularsSyncInvoices = async (
+	options?: RequestInit,
+): Promise<postV1ExtracurricularsSyncInvoicesResponse> => {
+	return customInstance<postV1ExtracurricularsSyncInvoicesResponse>(
+		getPostV1ExtracurricularsSyncInvoicesUrl(),
+		{
+			...options,
+			method: "POST",
+		},
+	);
+};
+
+export const getPostV1ExtracurricularsSyncInvoicesMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1ExtracurricularsSyncInvoices>>,
+		TError,
+		void,
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1ExtracurricularsSyncInvoices>>,
+	TError,
+	void,
+	TContext
+> => {
+	const mutationKey = ["postV1ExtracurricularsSyncInvoices"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1ExtracurricularsSyncInvoices>>,
+		void
+	> = () => {
+		return postV1ExtracurricularsSyncInvoices(requestOptions);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type PostV1ExtracurricularsSyncInvoicesMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1ExtracurricularsSyncInvoices>>
+>;
+
+export type PostV1ExtracurricularsSyncInvoicesMutationError = DtoErrorResponse;
+
+/**
+ * @summary Sync extracurricular monthly invoices
+ */
+export const usePostV1ExtracurricularsSyncInvoices = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1ExtracurricularsSyncInvoices>>,
+			TError,
+			void,
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1ExtracurricularsSyncInvoices>>,
+	TError,
+	void,
+	TContext
+> => {
+	return useMutation(
+		getPostV1ExtracurricularsSyncInvoicesMutationOptions(options),
+		queryClient,
+	);
+};
 export type getV1StudentsIdExtracurricularsResponse200 = {
 	data: GetV1StudentsIdExtracurriculars200;
 	status: 200;

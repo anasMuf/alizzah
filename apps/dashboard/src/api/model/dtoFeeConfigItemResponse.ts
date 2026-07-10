@@ -11,11 +11,12 @@ export interface DtoFeeConfigItemResponse {
 	category?: string;
 	gender?: string;
 	id?: number;
+	is_koperasi?: boolean;
+	is_mandatory?: boolean;
 	item_key?: string;
+	koperasi_product_id?: number;
+	koperasi_product_name?: string;
 	level?: string;
 	name?: string;
 	unit?: string;
-	is_koperasi?: boolean;
-	koperasi_product_id?: number;
-	koperasi_product_name?: string;
 }

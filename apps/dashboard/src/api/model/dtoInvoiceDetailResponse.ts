@@ -8,6 +8,7 @@
 import type { DtoAcademicYearBriefResponse } from "./dtoAcademicYearBriefResponse";
 import type { DtoInstallmentResponse } from "./dtoInstallmentResponse";
 import type { DtoInvoiceItemResponse } from "./dtoInvoiceItemResponse";
+import type { DtoInvoicePaymentBrief } from "./dtoInvoicePaymentBrief";
 import type { DtoStudentBriefResponse } from "./dtoStudentBriefResponse";
 
 export interface DtoInvoiceDetailResponse {
@@ -20,6 +21,7 @@ export interface DtoInvoiceDetailResponse {
 	month?: number;
 	notes?: string;
 	paid_amount?: number;
+	payments?: DtoInvoicePaymentBrief[];
 	status?: string;
 	student?: DtoStudentBriefResponse;
 	total_amount?: number;

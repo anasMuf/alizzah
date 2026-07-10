@@ -10,10 +10,10 @@ import type { DtoFinancialSummaryResponse } from "./dtoFinancialSummaryResponse"
 import type { DtoGuardianBriefResponse } from "./dtoGuardianBriefResponse";
 
 export interface DtoStudentDetailResponse {
+	active_enrollment?: DtoEnrollmentBriefResponse;
 	birth_date?: string;
 	birth_place?: string;
 	created_at?: string;
-	current_enrollment?: DtoEnrollmentBriefResponse;
 	financial_summary?: DtoFinancialSummaryResponse;
 	full_name?: string;
 	gender?: string;

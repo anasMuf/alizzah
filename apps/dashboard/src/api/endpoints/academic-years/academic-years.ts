@@ -272,7 +272,7 @@ export const getPostV1AcademicYearsUrl = () => {
 };
 
 /**
- * Create a new academic year (superadmin, admin_administrasi)
+ * Create a new academic year (modul administrasi)
  * @summary Create a new academic year
  */
 export const postV1AcademicYears = async (

@@ -9,6 +9,7 @@
 export interface DtoExpenseCategoryResponse {
 	children?: DtoExpenseCategoryResponse[];
 	id?: number;
+	invoice_category?: string;
 	name?: string;
 	parent_id?: number;
 }

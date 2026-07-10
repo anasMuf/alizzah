@@ -20,6 +20,7 @@ type CreateClassGroupRequest struct {
 	Name           string             `json:"name" validate:"required,max=50"`
 	Level          string             `json:"level" validate:"required,oneof=mutiara intan berlian"`
 	Schedule       ClassGroupSchedule `json:"schedule" validate:"required"`
+	IsMutation     bool               `json:"is_mutation"`
 }
 
 // ClassGroupResponse is the standard class group response.
@@ -29,6 +30,7 @@ type ClassGroupResponse struct {
 	Name           string             `json:"name"`
 	Level          string             `json:"level"`
 	Schedule       ClassGroupSchedule `json:"schedule"`
+	IsMutation     bool               `json:"is_mutation"`
 	StudentCount   int                `json:"student_count"`
 }
 

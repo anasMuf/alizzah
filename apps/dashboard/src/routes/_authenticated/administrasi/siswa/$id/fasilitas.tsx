@@ -4,11 +4,11 @@ import { useAtom } from "jotai";
 import { Bus, Plus, X } from "lucide-react";
 import { useState } from "react";
 import {
-	facilityKeys,
-	useEnrollFacility,
-	useGetFacilities,
-	useGetStudentFacilities,
-	useUnenrollFacility,
+	getGetV1StudentsIdFacilitiesQueryKey,
+	useDeleteV1StudentsIdFacilitiesFacilityId,
+	useGetV1Facilities,
+	useGetV1StudentsIdFacilities,
+	usePostV1StudentsIdFacilities,
 } from "#/api/endpoints/facilities/facilities";
 import {
 	Badge,
@@ -40,14 +40,14 @@ function SiswaFasilitasPage() {
 	);
 	const [deletingItem, setDeletingItem] = useState<any>(null);
 
-	const { data: sfResp, isLoading } = useGetStudentFacilities(
+	const { data: sfResp, isLoading } = useGetV1StudentsIdFacilities(
 		studentId,
 		{ academic_year_id: activeAy?.id },
-		{ query: { enabled: !!activeAy?.id } },
+		{ query: { enabled: !!activeAy?.id } } as any,
 	);
 	const studentFacilities: any[] = ((sfResp as any)?.data as any)?.data || [];
 
-	const { data: masterResp } = useGetFacilities();
+	const { data: masterResp } = useGetV1Facilities();
 	const allFacilities: any[] = ((masterResp as any)?.data as any)?.data || [];
 
 	// Filter out already enrolled
@@ -62,10 +62,12 @@ function SiswaFasilitasPage() {
 
 	const invalidate = () =>
 		queryClient.invalidateQueries({
-			queryKey: facilityKeys.studentList(studentId),
+			queryKey: getGetV1StudentsIdFacilitiesQueryKey(studentId, {
+				academic_year_id: activeAy?.id,
+			}),
 		});
 
-	const enrollMutation = useEnrollFacility({
+	const enrollMutation = usePostV1StudentsIdFacilities({
 		mutation: {
 			onSuccess: () => {
 				addToast({
@@ -81,7 +83,7 @@ function SiswaFasilitasPage() {
 		},
 	});
 
-	const unenrollMutation = useUnenrollFacility({
+	const unenrollMutation = useDeleteV1StudentsIdFacilitiesFacilityId({
 		mutation: {
 			onSuccess: () => {
 				addToast({
@@ -101,12 +103,12 @@ function SiswaFasilitasPage() {
 		e.preventDefault();
 		if (!selectedFacilityId || !activeAy?.id) return;
 		enrollMutation.mutate({
-			studentId,
+			id: studentId,
 			data: {
 				facility_id: Number(selectedFacilityId),
 				academic_year_id: activeAy.id,
 				start_date: startDate,
-			},
+			} as any,
 		});
 	};
 
@@ -252,7 +254,10 @@ function SiswaFasilitasPage() {
 				onCancel={() => setDeletingItem(null)}
 				onConfirm={() =>
 					deletingItem &&
-					unenrollMutation.mutate({ studentId, sfId: deletingItem.id })
+					unenrollMutation.mutate({
+						id: studentId,
+						facilityId: deletingItem.id,
+					})
 				}
 				title="Lepas Fasilitas"
 				variant="danger"

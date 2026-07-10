@@ -163,6 +163,14 @@ function RombelDetailPage() {
 									<dd>{classGroup.student_count}</dd>
 								</div>
 
+								{classGroup.is_mutation && (
+									<div className="pt-2">
+										<span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
+											Rombel Mutasi — siswa baru kena biaya awal
+										</span>
+									</div>
+								)}
+
 								<div className="pt-4 border-t border-gray-100">
 									<dt className="font-medium text-gray-900 mb-2">JADWAL</dt>
 

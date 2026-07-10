@@ -33,6 +33,7 @@ import type {
 	GetV1StudentsIdAcademicEvents200,
 	PostV1AcademicEventsGraduations200,
 	PostV1AcademicEventsPromotions200,
+	PostV1AcademicEventsPromotionsPreview200,
 } from "../../model";
 
 import { customInstance } from "../../mutator/custom-instance";
@@ -454,6 +455,145 @@ export const usePostV1AcademicEventsPromotions = <
 > => {
 	return useMutation(
 		getPostV1AcademicEventsPromotionsMutationOptions(options),
+		queryClient,
+	);
+};
+export type postV1AcademicEventsPromotionsPreviewResponse200 = {
+	data: PostV1AcademicEventsPromotionsPreview200;
+	status: 200;
+};
+
+export type postV1AcademicEventsPromotionsPreviewResponse400 = {
+	data: DtoErrorResponse;
+	status: 400;
+};
+
+export type postV1AcademicEventsPromotionsPreviewResponse401 = {
+	data: DtoErrorResponse;
+	status: 401;
+};
+
+export type postV1AcademicEventsPromotionsPreviewResponse403 = {
+	data: DtoErrorResponse;
+	status: 403;
+};
+
+export type postV1AcademicEventsPromotionsPreviewResponse500 = {
+	data: DtoErrorResponse;
+	status: 500;
+};
+
+export type postV1AcademicEventsPromotionsPreviewResponseSuccess =
+	postV1AcademicEventsPromotionsPreviewResponse200 & {
+		headers: Headers;
+	};
+export type postV1AcademicEventsPromotionsPreviewResponseError = (
+	| postV1AcademicEventsPromotionsPreviewResponse400
+	| postV1AcademicEventsPromotionsPreviewResponse401
+	| postV1AcademicEventsPromotionsPreviewResponse403
+	| postV1AcademicEventsPromotionsPreviewResponse500
+) & {
+	headers: Headers;
+};
+
+export type postV1AcademicEventsPromotionsPreviewResponse =
+	| postV1AcademicEventsPromotionsPreviewResponseSuccess
+	| postV1AcademicEventsPromotionsPreviewResponseError;
+
+export const getPostV1AcademicEventsPromotionsPreviewUrl = () => {
+	return `/v1/academic-events/promotions/preview`;
+};
+
+/**
+ * Preview what will happen when promotions run, without making any changes
+ * @summary Preview promotion results (dry run)
+ */
+export const postV1AcademicEventsPromotionsPreview = async (
+	dtoPromotionRequest: DtoPromotionRequest,
+	options?: RequestInit,
+): Promise<postV1AcademicEventsPromotionsPreviewResponse> => {
+	return customInstance<postV1AcademicEventsPromotionsPreviewResponse>(
+		getPostV1AcademicEventsPromotionsPreviewUrl(),
+		{
+			...options,
+			method: "POST",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(dtoPromotionRequest),
+		},
+	);
+};
+
+export const getPostV1AcademicEventsPromotionsPreviewMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1AcademicEventsPromotionsPreview>>,
+		TError,
+		{ data: DtoPromotionRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1AcademicEventsPromotionsPreview>>,
+	TError,
+	{ data: DtoPromotionRequest },
+	TContext
+> => {
+	const mutationKey = ["postV1AcademicEventsPromotionsPreview"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1AcademicEventsPromotionsPreview>>,
+		{ data: DtoPromotionRequest }
+	> = (props) => {
+		const { data } = props ?? {};
+
+		return postV1AcademicEventsPromotionsPreview(data, requestOptions);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type PostV1AcademicEventsPromotionsPreviewMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1AcademicEventsPromotionsPreview>>
+>;
+export type PostV1AcademicEventsPromotionsPreviewMutationBody =
+	DtoPromotionRequest;
+export type PostV1AcademicEventsPromotionsPreviewMutationError =
+	DtoErrorResponse;
+
+/**
+ * @summary Preview promotion results (dry run)
+ */
+export const usePostV1AcademicEventsPromotionsPreview = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1AcademicEventsPromotionsPreview>>,
+			TError,
+			{ data: DtoPromotionRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1AcademicEventsPromotionsPreview>>,
+	TError,
+	{ data: DtoPromotionRequest },
+	TContext
+> => {
+	return useMutation(
+		getPostV1AcademicEventsPromotionsPreviewMutationOptions(options),
 		queryClient,
 	);
 };

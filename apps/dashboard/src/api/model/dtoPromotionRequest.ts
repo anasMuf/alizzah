@@ -5,10 +5,12 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
+import type { DtoClassGroupMapping } from "./dtoClassGroupMapping";
 
 export interface DtoPromotionRequest {
 	event_date: string;
 	from_academic_year_id: number;
+	mappings?: DtoClassGroupMapping[];
 	notes?: string;
 	retained_student_ids?: number[];
 	to_academic_year_id: number;

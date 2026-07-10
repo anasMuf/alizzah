@@ -12,14 +12,12 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import {
-	type CreateDispensationRequest,
-	dispensationKeys,
-	type UpdateDispensationRequest,
-	useCreateDispensation,
-	useDeleteDispensation,
-	useGetStudentDispensations,
-	useToggleDispensation,
-	useUpdateDispensation,
+	getGetV1StudentsIdDispensationsQueryKey,
+	useDeleteV1DispensationsId,
+	useGetV1StudentsIdDispensations,
+	usePatchV1DispensationsIdToggle,
+	usePostV1StudentsIdDispensations,
+	usePutV1DispensationsId,
 } from "#/api/endpoints/dispensations/dispensations";
 import {
 	Badge,
@@ -77,7 +75,7 @@ function SiswaDispensasiPage() {
 	const [reason, setReason] = useState("");
 	const [notes, setNotes] = useState("");
 
-	const { data: resp, isLoading } = useGetStudentDispensations(
+	const { data: resp, isLoading } = useGetV1StudentsIdDispensations(
 		studentId,
 		{ academic_year_id: activeAy?.id },
 		{ query: { enabled: !!activeAy?.id } },
@@ -86,10 +84,12 @@ function SiswaDispensasiPage() {
 
 	const invalidate = () =>
 		queryClient.invalidateQueries({
-			queryKey: dispensationKeys.studentList(studentId),
+			queryKey: getGetV1StudentsIdDispensationsQueryKey(studentId, {
+				academic_year_id: activeAy?.id,
+			}),
 		});
 
-	const createMutation = useCreateDispensation({
+	const createMutation = usePostV1StudentsIdDispensations({
 		mutation: {
 			onSuccess: () => {
 				addToast({
@@ -105,7 +105,7 @@ function SiswaDispensasiPage() {
 		},
 	});
 
-	const updateMutation = useUpdateDispensation({
+	const updateMutation = usePutV1DispensationsId({
 		mutation: {
 			onSuccess: () => {
 				addToast({
@@ -121,7 +121,7 @@ function SiswaDispensasiPage() {
 		},
 	});
 
-	const toggleMutation = useToggleDispensation({
+	const toggleMutation = usePatchV1DispensationsIdToggle({
 		mutation: {
 			onSuccess: () => {
 				addToast({
@@ -136,7 +136,7 @@ function SiswaDispensasiPage() {
 		},
 	});
 
-	const deleteMutation = useDeleteDispensation({
+	const deleteMutation = useDeleteV1DispensationsId({
 		mutation: {
 			onSuccess: () => {
 				addToast({
@@ -188,7 +188,7 @@ function SiswaDispensasiPage() {
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (editingItem) {
-			const data: UpdateDispensationRequest = {
+			const data: any = {
 				discount_type: discountType,
 				discount_value: Number(discountValue),
 				is_permanent: isPermanent,
@@ -199,7 +199,7 @@ function SiswaDispensasiPage() {
 			};
 			updateMutation.mutate({ id: editingItem.id, data });
 		} else {
-			const data: CreateDispensationRequest = {
+			const data: any = {
 				academic_year_id: activeAy?.id || 0,
 				fee_category: "monthly_spp",
 				discount_type: discountType,
@@ -212,7 +212,7 @@ function SiswaDispensasiPage() {
 				reason,
 				notes: notes || undefined,
 			};
-			createMutation.mutate({ studentId, data });
+			createMutation.mutate({ id: studentId, data });
 		}
 	};
 
@@ -318,7 +318,7 @@ function SiswaDispensasiPage() {
 								<div className="flex items-center gap-1 ml-4">
 									<button
 										type="button"
-										onClick={() => toggleMutation.mutate(d.id)}
+										onClick={() => toggleMutation.mutate({ id: d.id })}
 										className="p-1 rounded hover:bg-gray-100"
 										title={d.is_active ? "Nonaktifkan" : "Aktifkan"}
 									>
@@ -579,7 +579,9 @@ function SiswaDispensasiPage() {
 			<ConfirmDialog
 				open={!!deletingItem}
 				onCancel={() => setDeletingItem(null)}
-				onConfirm={() => deletingItem && deleteMutation.mutate(deletingItem.id)}
+				onConfirm={() =>
+					deletingItem && deleteMutation.mutate({ id: deletingItem.id })
+				}
 				title="Hapus Dispensasi"
 				variant="danger"
 				confirmLabel="Hapus"

@@ -65,6 +65,7 @@ func (s *classGroupService) Create(req dto.CreateClassGroupRequest) (*dto.ClassG
 		Name:           req.Name,
 		Level:          req.Level,
 		Schedule:       datatypes.JSON(scheduleBytes),
+		IsMutation:     req.IsMutation,
 	}
 
 	if err := s.classGroupRepo.Create(cg); err != nil {
@@ -92,6 +93,7 @@ func (s *classGroupService) Update(id uint, req dto.CreateClassGroupRequest) (*d
 	cg.Name = req.Name
 	cg.Level = req.Level
 	cg.Schedule = datatypes.JSON(scheduleBytes)
+	cg.IsMutation = req.IsMutation
 
 	if err := s.classGroupRepo.Update(cg); err != nil {
 		return nil, err
@@ -157,6 +159,7 @@ func (s *classGroupService) CloneToYear(req dto.CloneClassGroupsRequest) (*dto.C
 			Name:           src.Name,
 			Level:          src.Level,
 			Schedule:       src.Schedule,
+			IsMutation:     src.IsMutation,
 		}
 		if err := s.classGroupRepo.Create(newCG); err != nil {
 			return nil, err
@@ -179,6 +182,7 @@ func mapClassGroupToResponse(cg model.ClassGroup, studentCount int) *dto.ClassGr
 		Name:           cg.Name,
 		Level:          cg.Level,
 		Schedule:       schedule,
+		IsMutation:     cg.IsMutation,
 		StudentCount:   studentCount,
 	}
 }

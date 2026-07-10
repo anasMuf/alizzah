@@ -20,4 +20,5 @@ export const DtoCreateFeeConfigItemRequestCategory = {
 	savings_mandatory: "savings_mandatory",
 	daycare: "daycare",
 	graduation: "graduation",
+	facility: "facility",
 } as const;

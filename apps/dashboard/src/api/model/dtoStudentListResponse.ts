@@ -8,8 +8,8 @@
 import type { DtoEnrollmentBriefResponse } from "./dtoEnrollmentBriefResponse";
 
 export interface DtoStudentListResponse {
+	active_enrollment?: DtoEnrollmentBriefResponse;
 	birth_date?: string;
-	current_enrollment?: DtoEnrollmentBriefResponse;
 	full_name?: string;
 	gender?: string;
 	id?: number;

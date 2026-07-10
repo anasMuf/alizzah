@@ -15,12 +15,13 @@ export interface DtoCreateFeeConfigItemRequest {
 	amount: number;
 	category: DtoCreateFeeConfigItemRequestCategory;
 	gender: DtoCreateFeeConfigItemRequestGender;
+	is_koperasi?: boolean;
+	is_mandatory?: boolean;
 	/** @maxLength 50 */
 	item_key: string;
+	koperasi_product_id?: number;
 	level: DtoCreateFeeConfigItemRequestLevel;
 	/** @maxLength 100 */
 	name: string;
 	unit: DtoCreateFeeConfigItemRequestUnit;
-	is_koperasi?: boolean;
-	koperasi_product_id?: number;
 }

@@ -6,8 +6,8 @@
  * OpenAPI spec version: 1.0
  */
 import type { DtoSuccessResponse } from "./dtoSuccessResponse";
-import type { InternalModulesKoperasiLainlainResponse } from "./internalModulesKoperasiLainlainResponse";
+import type { LainlainResponse } from "./lainlainResponse";
 
 export type GetV1KoperasiMiscTransactionsId200 = DtoSuccessResponse & {
-	data?: InternalModulesKoperasiLainlainResponse;
+	data?: LainlainResponse;
 };

@@ -48,6 +48,7 @@ function TagihanSiswaPage() {
 			monthly: "Bulanan",
 			registration: "Registrasi Tahunan",
 			initial: "Biaya Awal",
+			daycare_initial: "Biaya Awal Daycare",
 			incidental: "Insidental",
 		};
 		return map[type] || type;

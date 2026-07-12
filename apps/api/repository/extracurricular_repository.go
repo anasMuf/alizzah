@@ -31,6 +31,10 @@ func (r *extracurricularRepository) FindAll(params dto.ExtracurricularQueryParam
 	if params.Type != "" {
 		query = query.Where("type = ?", params.Type)
 	}
+	if params.Level != "" {
+		// Tampilkan pasta yg levels kosong (all) ATAU mengandung level siswa
+		query = query.Where("levels = '' OR levels LIKE ?", "%"+params.Level+"%")
+	}
 
 	err := query.Order("name ASC").Find(&exs).Error
 	return exs, err

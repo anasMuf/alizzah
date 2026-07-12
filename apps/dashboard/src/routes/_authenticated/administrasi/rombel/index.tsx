@@ -54,6 +54,12 @@ function RombelIndexPage() {
 					</p>
 				</div>
 				<div className="mt-4 sm:ml-4 sm:mt-0 flex gap-3">
+					<Link to="/administrasi/rombel/hari-efektif-jenjang">
+						<Button variant="secondary" className="flex items-center gap-2">
+							<Clock className="h-4 w-4" />
+							Hari Efektif Per Jenjang
+						</Button>
+					</Link>
 					<Link to="/administrasi/rombel/baru">
 						<Button className="flex items-center gap-2">
 							<Plus className="h-4 w-4" />

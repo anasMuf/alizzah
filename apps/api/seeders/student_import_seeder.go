@@ -51,6 +51,65 @@ func SeedStudentsFromLegacy(db *gorm.DB) {
 	enrollmentStart := activeYear.StartDate
 
 	var totalStudents, totalEnrollments, totalSavings, totalEvents int
+	var repeatStudentIDs []uint
+	repeatNames := map[string]bool{
+		"DWINDA AQILATUNNISA":     true,
+		"ZEA ALMAHYRA":            true,
+		"AKBAR RAYYAN AL FARIZQI": true,
+		"MUHAMMAD SAKDULLOH":      true,
+	}
+
+	// Siswa baru Intan (PPDB TK) — enrollment_type = "mutation"
+	mutationNames := map[string]bool{
+		// Intan 1
+		"MUHAMMAD ABRISAM ZHAFRAN AL KARIM": true,
+		"MUHAMMAD KENZO AL KAUTSAR":         true,
+		"RAJENDRA UTTUNGGA SISWANTO":        true,
+		"DZALENA HELINKA EDRIANNA":          true,
+		"AXANU GHAZALA AKBAR":               true,
+		"FIZA ZAFIA FATCHURROHMAN":          true,
+		"KEYNARRA ALLURA GISKA":             true,
+		"RAYYA FAHIMA SALWA RAMADHANI":      true,
+		"EARLYTA REYFISYA PUTRI":            true,
+		"AZHIFA KHALISA NAADHIRA":           true,
+		"MUHAMMAD DWI RIFKI VIRENDRA":       true,
+		"CIARA FREDELLA ARIANTO":            true,
+		// Intan 2
+		"ISMATUL MAULA NIHAYA": true,
+		"MAUZA ALMEER SAVERIO": true,
+		// Intan 3
+		"MUHAMMAD HAFIY AL MUBAROK": true,
+		"AESTETIKA KAIFAH ARUNIKA":  true,
+		"CLARESTA MEISIELLA FITRI":  true,
+		// Intan 4
+		"MIRZA HANIF ALFARIZQI":         true,
+		"BRYAN GHAVA ALRIZKY":           true,
+		"FELIA AZZA REYNA SABRIAH":      true,
+		"AYESHA KHAIRIYAH RABBANI":      true,
+		"ZALFA AGHNIA PUTRI ERVANDIA":   true,
+		"ATAYA ZAIDAN RIZKI MUHAMMAD":   true,
+		"ABRISAM AHMAD REYNAN HARTANTO": true,
+		"SHAKILA NAURA AZZAHRA":         true,
+		"YASMIN PUTRI SHAKAYLA ZEA":     true,
+		"CALLISTA HANIN SYAHIRA":        true,
+		"ANNASYA NUR ISLAMADINA":        true,
+		"NUH TINATAR AUNILLAH":          true,
+		// Intan 5
+		"MUHAMMAD ADHAM FAIQ ALFARIZQI": true,
+		"MUHAMMAD DYLAN YUSUF DZUHAIRI": true,
+		// Intan 6
+		"KHALIESAH AZZAHRA HUMAIRA MAHVEEN": true,
+		"AMARA ZAREEN ALESHA":               true,
+		"ELFANO RASKI SANJAYA":              true,
+		"FAREL ARYA MEGANTARA":              true,
+		// Intan 7
+		"NADYA ALISYA AZ ZAHRA": true,
+		"SALWA NAILUL MAGFIROH": true,
+		// Intan 8
+		"GRRESARANI ALMAHYRA MAHESWARI": true,
+		"HURIN'IN TAZKIYYA NUFUS":       true,
+		"MUHAMMAD IBRAHIM MUSA":         true,
+	}
 
 	for _, s := range students {
 		// Resolve tempat & tanggal lahir (PPDB punya data asli; siswa naik pakai placeholder)
@@ -77,6 +136,9 @@ func SeedStudentsFromLegacy(db *gorm.DB) {
 			continue
 		}
 		totalStudents++
+		if repeatNames[s.Name] {
+			repeatStudentIDs = append(repeatStudentIDs, student.ID)
+		}
 
 		// Create enrollment
 		cg, ok := cgMap[s.ClassGroup]
@@ -93,7 +155,7 @@ func SeedStudentsFromLegacy(db *gorm.DB) {
 		// saat pertama masuk di TA sebelumnya (yang tidak ikut di-seed), jadi dikosongkan.
 		enrollmentType := "promotion"
 		switch {
-		case cg.IsMutation:
+		case cg.IsMutation || mutationNames[s.Name]:
 			enrollmentType = "mutation"
 		case cg.Level == "mutiara":
 			enrollmentType = "new"
@@ -161,6 +223,14 @@ func SeedStudentsFromLegacy(db *gorm.DB) {
 		}
 	}
 
+	// Hardcode: siswa Mutiara mengulang → enrollment_type = "repeat"
+	for _, sid := range repeatStudentIDs {
+		db.Model(&model.StudentEnrollment{}).
+			Where("student_id = ? AND status = ?", sid, "active").
+			Update("enrollment_type", "repeat")
+		log.Printf("Siswa mengulang: student %d (repeat)", sid)
+	}
+
 	log.Printf("Student import seeder berhasil (%d siswa, %d enrollment, %d tabungan, %d event transfer_in)", totalStudents, totalEnrollments, totalSavings, totalEvents)
 }
 
@@ -222,7 +292,7 @@ func legacyStudentData() []legacyStudent {
 		{"ADIBA HAFIZHAH NUR AKBAR", "P", "Mutiara 4", "Mojokerto", "2022-09-04"},
 		{"DEOLINDA CINTA GAVAPUTRI RAHMAN", "P", "Mutiara 4", "Mojokerto", "2022-05-14"},
 		{"DHEFAN GHAVA FIRMANSYAH", "L", "Mutiara 4", "Jombang", "2022-06-24"},
-		{"DZAKIYAH RIKZATUNNISSA", "P", "Mutiara 4", "Mojokerto", "2023-01-01"},
+		{"DZAKIYAH RIKZATUNNISA", "P", "Mutiara 4", "Mojokerto", "2023-01-01"},
 		{"KAYVIN AHMADSYAH", "L", "Mutiara 4", "Mojokerto", "2023-08-25"},
 		{"FARDAN ZAID AMRULLOH", "L", "Mutiara 4", "", ""},
 		{"QUEENA MIKAYLA", "P", "Mutiara 4", "Mojokerto", "2022-08-25"},

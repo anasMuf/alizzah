@@ -11,6 +11,11 @@ import (
 )
 
 func SeedSampleTransactions(db *gorm.DB) {
+	if !seedSampleTransactions {
+		log.Println("Sample transactions disabled (seedSampleTransactions=false), skip")
+		return
+	}
+
 	var count int64
 	db.Model(&model.Invoice{}).Count(&count)
 	if count > 0 {
@@ -74,38 +79,29 @@ func SeedSampleTransactions(db *gorm.DB) {
 		return matched
 	}
 
-	// === Enroll siswa ke ekskul/pasta (data akademik) ===
+	// === Enroll siswa ke pasta ===
 	var allExtracurriculars []model.Extracurricular
 	db.Find(&allExtracurriculars)
 
 	exByName := make(map[string]model.Extracurricular)
-	var pastaList []model.Extracurricular
+	var pastaAllLevel []model.Extracurricular
 	for _, ex := range allExtracurriculars {
 		exByName[ex.Name] = ex
-		if ex.Type == "pasta" {
-			pastaList = append(pastaList, ex)
+		if ex.Type == "pasta" && ex.Levels == "" {
+			pastaAllLevel = append(pastaAllLevel, ex)
 		}
 	}
 
-	rng := rand.New(rand.NewSource(42)) // deterministic for reproducibility
+	rng := rand.New(rand.NewSource(42))
 	taStartDate := activeYear.StartDate
 
 	var totalSERecords int
 	for _, enr := range enrollments {
 		level := enr.ClassGroup.Level
 
-		// Wajib: Calisan sesuai jenjang
-		if level == "mutiara" {
-			if ex, ok := exByName["Calisan KB"]; ok {
-				db.Create(&model.StudentExtracurricular{
-					StudentID: enr.StudentID, ExtracurricularID: ex.ID,
-					AcademicYearID: activeYear.ID, StartDate: taStartDate,
-				})
-				totalSERecords++
-			}
-		} else {
-			// intan & berlian → Calisan TK
-			if ex, ok := exByName["Calisan TK"]; ok {
+		// Wajib: Aslin untuk Intan & Berlian
+		if level == "intan" || level == "berlian" {
+			if ex, ok := exByName["Aslin (Asah Literasi Numerasi)"]; ok {
 				db.Create(&model.StudentExtracurricular{
 					StudentID: enr.StudentID, ExtracurricularID: ex.ID,
 					AcademicYearID: activeYear.ID, StartDate: taStartDate,
@@ -114,23 +110,12 @@ func SeedSampleTransactions(db *gorm.DB) {
 			}
 		}
 
-		// Wajib: Aslin untuk Berlian
-		if level == "berlian" {
-			if ex, ok := exByName["Aslin"]; ok {
-				db.Create(&model.StudentExtracurricular{
-					StudentID: enr.StudentID, ExtracurricularID: ex.ID,
-					AcademicYearID: activeYear.ID, StartDate: taStartDate,
-				})
-				totalSERecords++
-			}
-		}
-
-		// Opsional: ~40% siswa ikut 1-2 pasta random
-		if rng.Float64() < 0.40 && len(pastaList) > 0 {
-			numPasta := 1 + rng.Intn(2) // 1 atau 2 pasta
-			perm := rng.Perm(len(pastaList))
+		// Opsional: ~40% siswa ikut 1-2 pasta random (all-level, sesuai jenjang)
+		if rng.Float64() < 0.40 && len(pastaAllLevel) > 0 {
+			numPasta := 1 + rng.Intn(2)
+			perm := rng.Perm(len(pastaAllLevel))
 			for i := 0; i < numPasta && i < len(perm); i++ {
-				pasta := pastaList[perm[i]]
+				pasta := pastaAllLevel[perm[i]]
 				db.Create(&model.StudentExtracurricular{
 					StudentID: enr.StudentID, ExtracurricularID: pasta.ID,
 					AcademicYearID: activeYear.ID, StartDate: taStartDate,
@@ -246,14 +231,6 @@ func SeedSampleTransactions(db *gorm.DB) {
 		daycareByStudent[daycareEnrollments[i].StudentID] = &daycareEnrollments[i]
 	}
 
-	// Daycare package → fee item_key mapping
-	daycarePackageToItemKey := map[string]string{
-		"monthly_kb":         "daycare_spd_kb",
-		"monthly_tk":         "daycare_spd_tk",
-		"monthly_package_kb": "daycare_paket_kb",
-		"monthly_package_tk": "daycare_paket_tk",
-	}
-
 	var totalInvoices, totalPayments, totalExpenses int
 
 	// === Generate Invoices for all months ===
@@ -268,8 +245,16 @@ func SeedSampleTransactions(db *gorm.DB) {
 			if level == "intan" || level == "berlian" {
 				sppKey = "spp_tk"
 			}
-
-			sppAmount := findFee("monthly_spp", sppKey, level)
+			// Semester: sem1 (Jul-Des), sem2 (Jan-Jun)
+			sppSem := "_sem1"
+			if tm.Month >= 1 && tm.Month <= 6 {
+				sppSem = "_sem2"
+			}
+			sppAmount := findFee("monthly_spp", sppKey+sppSem, level)
+			if sppAmount == 0 {
+				// Fallback: item tanpa suffix semester (format lama)
+				sppAmount = findFee("monthly_spp", sppKey, level)
+			}
 
 			var infaqTotal float64
 			var infaqDays uint
@@ -334,22 +319,22 @@ func SeedSampleTransactions(db *gorm.DB) {
 				}
 			}
 
-			// Daycare: add monthly item if student has active daycare
-			if de, ok := daycareByStudent[enr.StudentID]; ok {
+			// Daycare: add monthly SPD for active daycare enrollments (Premium only, flat SPD)
+			if de, ok := daycareByStudent[enr.StudentID]; ok && de.Category == "premium" {
 				monthDate := time.Date(int(tm.Year), time.Month(tm.Month), 1, 0, 0, 0, 0, time.UTC)
 				if !monthDate.Before(de.StartDate) {
-					if itemKey, mapped := daycarePackageToItemKey[de.PackageType]; mapped {
-						daycareAmount := findFee("daycare", itemKey, "all")
-						if daycareAmount > 0 {
-							totalAmount += daycareAmount
-							items = append(items, model.InvoiceItem{
-								Name:        findFeeName("daycare", itemKey, feeItems),
-								Category:    "daycare",
-								Amount:      daycareAmount,
-								IsMandatory: true,
-							})
-						}
+					slug := fmt.Sprintf("%s%s", string(de.TimeSlot[0:2]), string(de.TimeSlot[3:5]))
+					spdKey := fmt.Sprintf("daycare_premium_%s_%s_spd", slug, de.AgeGroup)
+					if spdAmount := findFee("daycare", spdKey, "all"); spdAmount > 0 {
+						totalAmount += spdAmount
+						items = append(items, model.InvoiceItem{
+							Name:        findFeeName("daycare", spdKey, feeItems),
+							Category:    "daycare",
+							Amount:      spdAmount,
+							IsMandatory: true,
+						})
 					}
+					// Meal & TPQ: dari attendance, tidak di-seed di sini
 				}
 			}
 

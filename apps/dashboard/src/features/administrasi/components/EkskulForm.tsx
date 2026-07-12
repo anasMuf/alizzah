@@ -1,16 +1,17 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import {
-	getGetV1ExtracurricularsQueryKey,
-	usePostV1Extracurriculars,
-	usePutV1ExtracurricularsId,
-} from "#/api/endpoints/extracurriculars/extracurriculars";
-import type {
-	DtoCreateExtracurricularRequest,
-	DtoExtracurricularResponse,
-} from "#/api/model";
-import { ApiError } from "#/api/mutator/custom-instance";
+import { getGetV1ExtracurricularsQueryKey } from "#/api/endpoints/extracurriculars/extracurriculars";
+import type { DtoExtracurricularResponse } from "#/api/model";
 import { Button, FormField, SlideOver, useToast } from "#/components/ui";
+
+const API_URL = import.meta.env.VITE_API_URL || "";
+const TOKEN_KEY = "alizzah_token";
+
+const LEVELS = [
+	{ value: "mutiara", label: "Mutiara (KB)" },
+	{ value: "intan", label: "Intan (TK A)" },
+	{ value: "berlian", label: "Berlian (TK B)" },
+];
 
 interface EkskulFormProps {
 	isOpen: boolean;
@@ -23,78 +24,70 @@ export function EkskulForm({ isOpen, onClose, initialData }: EkskulFormProps) {
 	const { addToast } = useToast();
 
 	const isEditing = !!initialData;
-
-	const [formData, setFormData] = useState<DtoCreateExtracurricularRequest>({
-		name: "",
-		type: "ekskul",
-	});
+	const [name, setName] = useState("");
+	const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
+	const [saving, setSaving] = useState(false);
 
 	useEffect(() => {
 		if (isOpen) {
 			if (initialData) {
-				setFormData({
-					name: initialData.name || "",
-					type: (initialData.type as any) || "ekskul",
-				});
+				setName(initialData.name || "");
+				const levels = (initialData as any).levels || "";
+				setSelectedLevels(levels ? levels.split(",") : []);
 			} else {
-				setFormData({
-					name: "",
-					type: "ekskul",
-				});
+				setName("");
+				setSelectedLevels([]);
 			}
 		}
 	}, [isOpen, initialData]);
 
-	const createMutation = usePostV1Extracurriculars({
-		mutation: {
-			onSuccess: () => {
-				addToast({
-					variant: "success",
-					title: "Berhasil",
-					message: "Ekstrakurikuler berhasil ditambahkan.",
-				});
-				queryClient.invalidateQueries({
-					queryKey: getGetV1ExtracurricularsQueryKey(),
-				});
-				onClose();
-			},
-			onError: (error: Error) => {
-				const msg =
-					error instanceof ApiError ? error.message : "Terjadi kesalahan";
-				addToast({ variant: "error", title: "Gagal", message: msg });
-			},
-		},
-	});
+	const toggleLevel = (level: string) => {
+		setSelectedLevels((prev) =>
+			prev.includes(level) ? prev.filter((l) => l !== level) : [...prev, level],
+		);
+	};
 
-	const updateMutation = usePutV1ExtracurricularsId({
-		mutation: {
-			onSuccess: () => {
-				addToast({
-					variant: "success",
-					title: "Berhasil",
-					message: "Ekstrakurikuler berhasil diperbarui.",
-				});
-				queryClient.invalidateQueries({
-					queryKey: getGetV1ExtracurricularsQueryKey(),
-				});
-				onClose();
-			},
-			onError: (error: Error) => {
-				const msg =
-					error instanceof ApiError ? error.message : "Terjadi kesalahan";
-				addToast({ variant: "error", title: "Gagal", message: msg });
-			},
-		},
-	});
-
-	const isPending = createMutation.isPending || updateMutation.isPending;
-
-	const handleSubmit = (e: React.FormEvent) => {
+	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (isEditing && initialData) {
-			updateMutation.mutate({ id: initialData?.id || 0, data: formData });
-		} else {
-			createMutation.mutate({ data: { ...formData } });
+		setSaving(true);
+
+		const token = localStorage.getItem(TOKEN_KEY);
+		const levelsStr = selectedLevels.sort().join(",");
+
+		try {
+			const method = isEditing ? "PUT" : "POST";
+			const url = isEditing
+				? `${API_URL}/v1/extracurriculars/${initialData!.id}`
+				: `${API_URL}/v1/extracurriculars`;
+
+			const res = await fetch(url, {
+				method,
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
+				body: JSON.stringify({ name, type: "pasta", levels: levelsStr }),
+			});
+			if (!res.ok) {
+				const err = await res.json();
+				throw new Error(err.message || "Gagal menyimpan");
+			}
+
+			addToast({
+				variant: "success",
+				title: "Berhasil",
+				message: isEditing
+					? "Pasta berhasil diperbarui."
+					: "Pasta berhasil ditambahkan.",
+			});
+			queryClient.invalidateQueries({
+				queryKey: getGetV1ExtracurricularsQueryKey(),
+			});
+			onClose();
+		} catch (err: any) {
+			addToast({ variant: "error", title: "Gagal", message: err.message });
+		} finally {
+			setSaving(false);
 		}
 	};
 
@@ -102,14 +95,14 @@ export function EkskulForm({ isOpen, onClose, initialData }: EkskulFormProps) {
 		<SlideOver
 			isOpen={isOpen}
 			onClose={onClose}
-			title={isEditing ? "Edit Ekstrakurikuler" : "Tambah Ekstrakurikuler"}
+			title={isEditing ? "Edit Pasta" : "Tambah Pasta"}
 			footer={
 				<>
-					<Button variant="secondary" onClick={onClose} disabled={isPending}>
+					<Button variant="secondary" onClick={onClose} disabled={saving}>
 						Batal
 					</Button>
-					<Button variant="primary" onClick={handleSubmit} disabled={isPending}>
-						{isPending ? "Menyimpan..." : "Simpan"}
+					<Button variant="primary" onClick={handleSubmit} disabled={saving}>
+						{saving ? "Menyimpan..." : "Simpan"}
 					</Button>
 				</>
 			}
@@ -118,30 +111,36 @@ export function EkskulForm({ isOpen, onClose, initialData }: EkskulFormProps) {
 				<FormField
 					id="name"
 					name="name"
-					label="Nama Kegiatan"
-					placeholder="e.g. Futsal, PASTA 1"
-					value={formData.name}
-					onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+					label="Nama Pasta"
+					placeholder="e.g. Robotika, Calisan"
+					value={name}
+					onChange={(e) => setName(e.target.value)}
 					required
 				/>
 
 				<div>
 					<label className="block text-sm font-medium leading-6 text-gray-900 mb-2">
-						Jenis Kegiatan
+						Jenjang
 					</label>
-					<select
-						name="type"
-						value={formData.type}
-						onChange={(e) =>
-							setFormData({ ...formData, type: e.target.value as any })
-						}
-						className="block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
-						required
-					>
-						<option value="pasta">PASTA</option>
-						<option value="calisan">CALISAN</option>
-						<option value="ekskul">Ekskul</option>
-					</select>
+					<div className="space-y-2">
+						{LEVELS.map((lv) => (
+							<label
+								key={lv.value}
+								className="flex items-center gap-3 cursor-pointer"
+							>
+								<input
+									type="checkbox"
+									checked={selectedLevels.includes(lv.value)}
+									onChange={() => toggleLevel(lv.value)}
+									className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+								/>
+								<span className="text-sm text-gray-700">{lv.label}</span>
+							</label>
+						))}
+					</div>
+					<p className="mt-1 text-xs text-gray-500">
+						Kosongkan semua = tersedia untuk semua jenjang.
+					</p>
 				</div>
 			</form>
 		</SlideOver>

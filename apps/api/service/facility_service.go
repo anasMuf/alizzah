@@ -7,6 +7,7 @@ import (
 	"api/utility"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -29,11 +30,17 @@ type StudentFacilityService interface {
 // ─── Master Facility Service ─────────────────────────────────────────
 
 type facilityService struct {
-	repo repository.FacilityRepository
+	repo              repository.FacilityRepository
+	feeConfigRepo     repository.FeeConfigRepository
+	feeConfigItemRepo repository.FeeConfigItemRepository
 }
 
-func NewFacilityService(repo repository.FacilityRepository) FacilityService {
-	return &facilityService{repo: repo}
+func NewFacilityService(repo repository.FacilityRepository, feeConfigRepo repository.FeeConfigRepository, feeConfigItemRepo repository.FeeConfigItemRepository) FacilityService {
+	return &facilityService{
+		repo:              repo,
+		feeConfigRepo:     feeConfigRepo,
+		feeConfigItemRepo: feeConfigItemRepo,
+	}
 }
 
 func (s *facilityService) GetAll() ([]dto.FacilityResponse, error) {
@@ -69,6 +76,27 @@ func (s *facilityService) Create(req dto.CreateFacilityRequest) (*dto.FacilityRe
 	if err := s.repo.Create(f); err != nil {
 		return nil, err
 	}
+
+	// Auto-create fee config item Rp 0 (admin tinggal isi nominal di halaman Tarif)
+	feeConfig, _ := s.feeConfigRepo.FindActive()
+	if feeConfig != nil && feeConfig.ID > 0 {
+		slug := strings.ToLower(strings.ReplaceAll(req.Name, " ", "_"))
+		itemKey := "facility_" + slug
+		existing, _ := s.feeConfigItemRepo.FindByItemKeys(feeConfig.ID, []string{itemKey})
+		if len(existing) == 0 {
+			s.feeConfigItemRepo.Create(&model.FeeConfigItem{
+				FeeConfigID: feeConfig.ID,
+				Category:    "facility",
+				ItemKey:     itemKey,
+				Name:        req.Name,
+				Level:       "all",
+				Gender:      "all",
+				Amount:      0,
+				Unit:        "per_day",
+			})
+		}
+	}
+
 	resp := mapFacilityToResponse(*f)
 	return &resp, nil
 }
@@ -78,20 +106,53 @@ func (s *facilityService) Update(id uint, req dto.CreateFacilityRequest) (*dto.F
 	if err != nil {
 		return nil, errors.New("Fasilitas tidak ditemukan")
 	}
+
+	oldName := f.Name
 	f.Name = req.Name
 	f.Description = req.Description
 	if err := s.repo.Update(f); err != nil {
 		return nil, err
 	}
+
+	// Sync fee item name jika berubah
+	if oldName != req.Name {
+		oldSlug := strings.ToLower(strings.ReplaceAll(oldName, " ", "_"))
+		newSlug := strings.ToLower(strings.ReplaceAll(req.Name, " ", "_"))
+		oldKey := "facility_" + oldSlug
+		newKey := "facility_" + newSlug
+
+		feeConfig, _ := s.feeConfigRepo.FindActive()
+		if feeConfig != nil && feeConfig.ID > 0 {
+			item, err := s.feeConfigItemRepo.FindByItemKey(feeConfig.ID, oldKey, "all", "all")
+			if err == nil && item != nil {
+				item.ItemKey = newKey
+				item.Name = req.Name
+				s.feeConfigItemRepo.Update(item)
+			}
+		}
+	}
+
 	resp := mapFacilityToResponse(*f)
 	return &resp, nil
 }
 
 func (s *facilityService) Delete(id uint) error {
-	_, err := s.repo.FindByID(id)
+	f, err := s.repo.FindByID(id)
 	if err != nil {
 		return errors.New("Fasilitas tidak ditemukan")
 	}
+
+	// Hapus fee config item terkait
+	slug := strings.ToLower(strings.ReplaceAll(f.Name, " ", "_"))
+	itemKey := "facility_" + slug
+	feeConfig, _ := s.feeConfigRepo.FindActive()
+	if feeConfig != nil && feeConfig.ID > 0 {
+		items, _ := s.feeConfigItemRepo.FindByItemKeys(feeConfig.ID, []string{itemKey})
+		for _, item := range items {
+			s.feeConfigItemRepo.Delete(item.ID)
+		}
+	}
+
 	return s.repo.Delete(id)
 }
 
@@ -107,11 +168,11 @@ func mapFacilityToResponse(f model.Facility) dto.FacilityResponse {
 // ─── Student Facility Service ────────────────────────────────────────
 
 type studentFacilityService struct {
-	sfRepo      repository.StudentFacilityRepository
-	studentRepo repository.StudentRepository
+	sfRepo       repository.StudentFacilityRepository
+	studentRepo  repository.StudentRepository
 	facilityRepo repository.FacilityRepository
-	acRepo      repository.AcademicYearRepository
-	invoiceGen  InvoiceGenerateService
+	acRepo       repository.AcademicYearRepository
+	invoiceGen   InvoiceGenerateService
 }
 
 func NewStudentFacilityService(

@@ -152,7 +152,9 @@ export function InvoiceSelector({
 										? "Registrasi"
 										: inv.type === "initial"
 											? "Biaya Awal"
-											: "Lainnya"}
+											: inv.type === "daycare_initial"
+												? "Biaya Awal Daycare"
+												: "Lainnya"}
 							</span>
 							<span className="font-semibold text-rose-600 tabular-nums">
 								{formatCurrency(sisa)}

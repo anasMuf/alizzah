@@ -6,8 +6,8 @@
  * OpenAPI spec version: 1.0
  */
 import type { DtoSuccessResponse } from "./dtoSuccessResponse";
-import type { InternalModulesKoperasiLaporanMonthlyReport } from "./internalModulesKoperasiLaporanMonthlyReport";
+import type { LaporanMonthlyReport } from "./laporanMonthlyReport";
 
 export type GetV1KoperasiReportsMonthly200 = DtoSuccessResponse & {
-	data?: InternalModulesKoperasiLaporanMonthlyReport;
+	data?: LaporanMonthlyReport;
 };

@@ -32,11 +32,12 @@ const CATEGORY_OPTIONS = [
 	{ value: "monthly_spp", label: "SPP" },
 	{ value: "monthly_infaq", label: "Infaq Harian" },
 	{ value: "initial", label: "Biaya Awal Masuk" },
+	{ value: "daycare_initial", label: "Biaya Awal Daycare" },
 	{ value: "registration", label: "Biaya Registrasi" },
 	{ value: "pasta", label: "PASTA" },
 	{ value: "calisan", label: "Calisan" },
 	{ value: "ekskul", label: "Ekskul" },
-	{ value: "savings_mandatory", label: "Tabungan Wajib Berlian" },
+	{ value: "savings_mandatory", label: "Tabungan Wajib" },
 	{ value: "daycare", label: "Daycare" },
 	{ value: "graduation", label: "Wisuda" },
 ];

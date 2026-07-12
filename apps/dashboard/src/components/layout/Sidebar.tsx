@@ -80,7 +80,7 @@ export function Sidebar({ isOpen }: SidebarProps) {
 								Siswa
 							</NavLink>
 							<NavLink to="/administrasi/ekskul" icon={BookOpen}>
-								Ekstrakurikuler
+								Pasta
 							</NavLink>
 							<NavLink to="/administrasi/fasilitas" icon={Bus}>
 								Fasilitas

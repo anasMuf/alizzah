@@ -25,6 +25,7 @@ type StudentService interface {
 	Update(id uint, req dto.UpdateStudentRequest) (*dto.StudentDetailResponse, error)
 	Delete(id uint) error
 	Import(file *multipart.FileHeader) (*dto.ImportSummaryResponse, error)
+	RegenerateInvoices(studentID uint) error
 }
 
 type studentService struct {
@@ -409,6 +410,13 @@ func (s *studentService) Delete(id uint) error {
 	}
 
 	return s.studentRepo.Delete(id)
+}
+
+func (s *studentService) RegenerateInvoices(studentID uint) error {
+	if s.invoiceGen == nil {
+		return errors.New("invoice generate service tidak tersedia")
+	}
+	return s.invoiceGen.RegenerateForStudent(studentID)
 }
 
 func (s *studentService) Import(file *multipart.FileHeader) (*dto.ImportSummaryResponse, error) {

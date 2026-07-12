@@ -10,10 +10,15 @@ import type { DtoStudentBriefResponse } from "./dtoStudentBriefResponse";
 
 export interface DtoDaycareEnrollmentResponse {
 	academic_year?: DtoAcademicYearBriefResponse;
+	age_group?: string;
+	category?: string;
 	end_date?: string;
 	id?: number;
 	package_type?: string;
 	start_date?: string;
 	status?: string;
 	student?: DtoStudentBriefResponse;
+	time_slot?: string;
+	with_meal?: boolean;
+	with_tpq?: boolean;
 }

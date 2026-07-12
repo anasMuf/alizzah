@@ -11,6 +11,7 @@ type UpsertEffectiveDayRequest struct {
 type EffectiveDayResponse struct {
 	ID           uint              `json:"id"`
 	ClassGroupID uint              `json:"class_group_id"`
+	Level        string            `json:"level,omitempty"`
 	Month        uint              `json:"month"`
 	Year         uint              `json:"year"`
 	TotalDays    uint              `json:"total_days"`

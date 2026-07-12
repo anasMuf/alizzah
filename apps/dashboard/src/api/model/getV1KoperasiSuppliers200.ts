@@ -6,8 +6,8 @@
  * OpenAPI spec version: 1.0
  */
 import type { DtoSuccessResponse } from "./dtoSuccessResponse";
-import type { InternalModulesKoperasiPemasokResponse } from "./internalModulesKoperasiPemasokResponse";
+import type { PemasokResponse } from "./pemasokResponse";
 
 export type GetV1KoperasiSuppliers200 = DtoSuccessResponse & {
-	data?: InternalModulesKoperasiPemasokResponse[];
+	data?: PemasokResponse[];
 };

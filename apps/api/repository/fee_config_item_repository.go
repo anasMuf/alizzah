@@ -3,8 +3,6 @@ package repository
 import (
 	"api/dto"
 	"api/model"
-	"fmt"
-	"strings"
 
 	"gorm.io/gorm"
 )
@@ -115,10 +113,8 @@ func (r *feeConfigItemRepository) FindByStudentForCategory(feeConfigID uint, cat
 }
 
 func (r *feeConfigItemRepository) FindByExtracurricular(feeConfigID uint, exType, exName string) ([]model.FeeConfigItem, error) {
-	slug := strings.ToLower(strings.ReplaceAll(exName, " ", "_"))
-	itemKey := fmt.Sprintf("%s_%s", exType, slug)
 	var items []model.FeeConfigItem
-	err := r.db.Where("fee_config_id = ? AND item_key = ?", feeConfigID, itemKey).Find(&items).Error
+	err := r.db.Where("fee_config_id = ? AND category = ? AND name = ?", feeConfigID, exType, exName).Find(&items).Error
 	return items, err
 }
 

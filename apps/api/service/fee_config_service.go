@@ -7,6 +7,7 @@ import (
 	"api/utility"
 	"errors"
 	"fmt"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -25,16 +26,18 @@ type FeeConfigService interface {
 }
 
 type feeConfigService struct {
-	fcRepo     repository.FeeConfigRepository
-	itemRepo   repository.FeeConfigItemRepository
-	ayRepo     repository.AcademicYearRepository
+	fcRepo    repository.FeeConfigRepository
+	itemRepo  repository.FeeConfigItemRepository
+	ayRepo    repository.AcademicYearRepository
+	extraRepo repository.ExtracurricularRepository
 }
 
-func NewFeeConfigService(fcRepo repository.FeeConfigRepository, itemRepo repository.FeeConfigItemRepository, ayRepo repository.AcademicYearRepository) FeeConfigService {
+func NewFeeConfigService(fcRepo repository.FeeConfigRepository, itemRepo repository.FeeConfigItemRepository, ayRepo repository.AcademicYearRepository, extraRepo repository.ExtracurricularRepository) FeeConfigService {
 	return &feeConfigService{
-		fcRepo:   fcRepo,
-		itemRepo: itemRepo,
-		ayRepo:   ayRepo,
+		fcRepo:    fcRepo,
+		itemRepo:  itemRepo,
+		ayRepo:    ayRepo,
+		extraRepo: extraRepo,
 	}
 }
 
@@ -203,6 +206,25 @@ func (s *feeConfigService) UpdateItem(feeConfigID, itemID uint, req dto.CreateFe
 		return nil, err
 	}
 
+	// Sinkron: update nama ekstrakurikuler (pasta/calisan/ekskul)
+	if item.Category == "pasta" || item.Category == "calisan" || item.Category == "ekskul" {
+		extraName := item.Name
+		for _, prefix := range []string{"Pasta ", "Calisan ", "Ekskul "} {
+			if strings.HasPrefix(item.Name, prefix) {
+				extraName = item.Name[len(prefix):]
+				break
+			}
+		}
+		extras, _ := s.extraRepo.FindAll(dto.ExtracurricularQueryParams{Type: item.Category})
+		for _, ex := range extras {
+			if strings.EqualFold(ex.Name, extraName) || strings.EqualFold(ex.Name, req.Name) {
+				ex.Name = extraName
+				s.extraRepo.Update(&ex)
+				break
+			}
+		}
+	}
+
 	res := mapFeeConfigItemToResponse(*item)
 	if res.KoperasiProductID != nil {
 		names, _ := s.itemRepo.GetProductNames([]uint{*res.KoperasiProductID})
@@ -227,7 +249,36 @@ func (s *feeConfigService) DeleteItem(feeConfigID, itemID uint) error {
 		return utility.NewUnprocessableError("Tidak bisa menghapus item yang sudah digunakan pada tagihan")
 	}
 
-	return s.itemRepo.Delete(itemID)
+	if err := s.itemRepo.Delete(itemID); err != nil {
+		return err
+	}
+
+	// Sinkron: hapus juga ekstrakurikuler terkait (pasta/calisan/ekskul)
+	// hanya jika tidak ada siswa terdaftar
+	if item.Category == "pasta" || item.Category == "calisan" || item.Category == "ekskul" {
+		// Cari ekstrakurikuler berdasarkan nama (item_key format: <category>_<slug>)
+		// Nama ekskul = nama fee item tanpa prefix "Pasta "/"Calisan "/"Ekskul "
+		extraName := item.Name
+		for _, prefix := range []string{"Pasta ", "Calisan ", "Ekskul "} {
+			if strings.HasPrefix(item.Name, prefix) {
+				extraName = item.Name[len(prefix):]
+				break
+			}
+		}
+
+		// Cari semua ekstrakurikuler dengan nama dan tipe yang cocok
+		extras, _ := s.extraRepo.FindAll(dto.ExtracurricularQueryParams{Type: item.Category})
+		for _, ex := range extras {
+			if strings.EqualFold(ex.Name, extraName) {
+				if used, _ := s.extraRepo.IsUsedByStudents(ex.ID); !used {
+					s.extraRepo.Delete(ex.ID)
+				}
+				break
+			}
+		}
+	}
+
+	return nil
 }
 
 func (s *feeConfigService) populateProductNames(responses []dto.FeeConfigItemResponse) {

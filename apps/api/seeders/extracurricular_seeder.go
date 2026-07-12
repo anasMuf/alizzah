@@ -16,17 +16,17 @@ func SeedExtracurriculars(db *gorm.DB) {
 	}
 
 	items := []model.Extracurricular{
-		{Name: "Robotika", Type: "pasta"},
-		{Name: "Sempoa Kids", Type: "pasta"},
-		{Name: "Tilawah", Type: "pasta"},
-		{Name: "Laptop Kids", Type: "pasta"},
-		{Name: "Taekwondo", Type: "pasta"},
-		{Name: "Tari", Type: "pasta"},
-		{Name: "Melukis", Type: "pasta"},
-		{Name: "Menyanyi", Type: "pasta"},
-		{Name: "Calisan KB", Type: "calisan"},
-		{Name: "Calisan TK", Type: "calisan"},
-		{Name: "Aslin", Type: "ekskul"},
+		{Name: "Aslin (Asah Literasi Numerasi)", Type: "pasta", Levels: "intan,berlian"},
+		{Name: "Calisan (Baca Tulis Al Qur'an)", Type: "pasta", Levels: ""},
+		{Name: "Robotika", Type: "pasta", Levels: "intan,berlian"},
+		{Name: "Sempoa Kids", Type: "pasta", Levels: "intan,berlian"},
+		{Name: "Laptop Kids", Type: "pasta", Levels: "intan,berlian"},
+		{Name: "Tilawah & Tahfidz Surat Pendek", Type: "pasta", Levels: "intan,berlian"},
+		{Name: "Taekwondo", Type: "pasta", Levels: "intan,berlian"},
+		{Name: "Menari & Fashion Show", Type: "pasta", Levels: ""},
+		{Name: "Melukis & Mewarnai", Type: "pasta", Levels: ""},
+		{Name: "Menyanyi", Type: "pasta", Levels: ""},
+		{Name: "Musik Keyboard", Type: "pasta", Levels: "intan,berlian"},
 	}
 
 	for i := range items {
@@ -34,5 +34,5 @@ func SeedExtracurriculars(db *gorm.DB) {
 			log.Printf("Gagal membuat extracurricular '%s': %v", items[i].Name, err)
 		}
 	}
-	log.Println("Extracurricular seeder berhasil (11 records)")
+	log.Printf("Extracurricular seeder berhasil (%d records)", len(items))
 }

@@ -159,6 +159,7 @@ function TagihanListPage() {
 							<option value="monthly">Bulanan</option>
 							<option value="registration">Registrasi Tahunan</option>
 							<option value="initial">Biaya Awal</option>
+							<option value="daycare_initial">Biaya Awal Daycare</option>
 							<option value="incidental">Insidental</option>
 						</select>
 					</div>

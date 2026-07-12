@@ -6,6 +6,7 @@ import (
 	"api/repository"
 	"api/utility"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -19,7 +20,9 @@ type InvoiceGenerateService interface {
 	GenerateMonthlyRange(studentID, academicYearID, classGroupID uint, level, gender string, startDate, endDate time.Time, createdBy uint) error
 	GenerateGraduation(params dto.GenerateGraduationInvoiceParams) (*model.Invoice, error)
 	GenerateDaycareInitial(params dto.GenerateInitialInvoiceParams) error
-	GenerateDaycareMonthlyRange(params dto.GenerateDaycareMonthlyParams) error
+	GenerateDaycareMonthlyInvoices(params dto.GenerateDaycareMonthlyParams) error
+	GenerateDaycareMonthlyBulk(params dto.GenerateDaycareMonthlyParams) (*dto.DaycareSyncResult, error)
+	InjectPremiumDaycareToMonthlyInvoices(de model.DaycareEnrollment) error
 	RemoveDaycareFromFutureInvoices(studentID uint, fromMonth, fromYear uint) error
 	SyncDaycareMonthlyInvoices() (*dto.DaycareSyncResult, error)
 	RecalculateInfaqHarian(classGroupID, month, year uint) error
@@ -182,15 +185,32 @@ func (s *invoiceGenerateService) GenerateMonthly(params dto.GenerateMonthlyInvoi
 		return fmt.Errorf("fee config tidak ditemukan")
 	}
 
+	// Hari efektif: cek per rombel dulu, fallback ke per jenjang
 	effectiveDays, _ := s.effectiveDayRepo.FindByClassGroupMonthYear(
 		params.ClassGroupID, params.Month, params.Year,
 	)
+	if effectiveDays == nil || effectiveDays.ID == 0 {
+		effectiveDays, _ = s.effectiveDayRepo.FindByLevelMonthYear(
+			params.Level, params.Month, params.Year,
+		)
+	}
 
 	var invoiceItems []model.InvoiceItem
 
-	// SPP
+	// SPP — pilih item berdasarkan semester: sem1 (Jul-Des) vs sem2 (Jan-Jun)
+	// Item dengan suffix _sem1/_sem2 difilter per semester; item tanpa suffix
+	// (format lama) tetap dipakai untuk backward compatibility.
 	sppItems, _ := s.feeConfigItemRepo.FindByStudentForCategory(feeConfig.ID, "monthly_spp", params.Level, params.Gender)
+	sppSemester := "sem1"
+	if params.Month >= 1 && params.Month <= 6 {
+		sppSemester = "sem2"
+	}
 	for _, item := range sppItems {
+		keyLower := strings.ToLower(item.ItemKey)
+		hasSemesterSuffix := strings.HasSuffix(keyLower, "_sem1") || strings.HasSuffix(keyLower, "_sem2")
+		if hasSemesterSuffix && !strings.HasSuffix(keyLower, "_"+sppSemester) {
+			continue
+		}
 		invoiceItems = append(invoiceItems, model.InvoiceItem{
 			Name:        item.Name,
 			Category:    item.Category,
@@ -235,16 +255,24 @@ func (s *invoiceGenerateService) GenerateMonthly(params dto.GenerateMonthlyInvoi
 		})
 	}
 
-	// Pasta opsional (hanya jika siswa terdaftar via enrollment manual)
+	// Pasta: mandatory (is_mandatory=true, ex: Aslin) dan opsional
+	// Filter by levels: levels kosong = semua, atau mengandung level siswa
 	for _, exID := range params.ExtracurricularIDs {
 		ex, err := s.extracurricularRepo.FindByID(exID)
 		if err != nil {
 			continue
 		}
+		if ex.Levels != "" && !strings.Contains(","+ex.Levels+",", ","+params.Level+",") {
+			continue
+		}
 		feeItems, _ := s.feeConfigItemRepo.FindByExtracurricular(feeConfig.ID, ex.Type, ex.Name)
 		for _, feeItem := range feeItems {
-			// Skip jika item ini sudah masuk sebagai mandatory
+			// Skip jika item ini sudah masuk sebagai mandatory (di-bypass untuk pasta)
 			if feeItem.IsMandatory {
+				continue
+			}
+			// Skip jika level fee item tidak cocok dengan level siswa
+			if feeItem.Level != "all" && feeItem.Level != params.Level {
 				continue
 			}
 			invoiceItems = append(invoiceItems, model.InvoiceItem{
@@ -256,43 +284,35 @@ func (s *invoiceGenerateService) GenerateMonthly(params dto.GenerateMonthlyInvoi
 		}
 	}
 
-	// Tabungan Wajib Berlian
-	if params.Level == "berlian" {
+	// Tabungan Wajib (Berlian: per Senin, Mutiara: per bulan flat)
+	if params.Level == "berlian" || params.Level == "mutiara" {
 		mandatoryItems, _ := s.feeConfigItemRepo.FindByStudentForCategory(feeConfig.ID, "savings_mandatory", params.Level, params.Gender)
 		for _, item := range mandatoryItems {
-			amount := float64(0)
-			totalMondays := uint(0)
-			if effectiveDays != nil {
-				totalMondays = effectiveDays.TotalMondays
-				amount = item.Amount * float64(totalMondays)
+			amount := item.Amount
+			name := item.Name
+			var quantity *uint
+			var unitPrice *float64
+
+			if item.Unit == "per_monday" {
+				totalMondays := uint(0)
+				if effectiveDays != nil {
+					totalMondays = effectiveDays.TotalMondays
+					amount = item.Amount * float64(totalMondays)
+				}
+				quantity = &totalMondays
+				up := item.Amount
+				unitPrice = &up
+				name = fmt.Sprintf("%s (%d Senin)", item.Name, totalMondays)
 			}
-			unitPrice := item.Amount
+
 			invoiceItems = append(invoiceItems, model.InvoiceItem{
-				Name:        fmt.Sprintf("%s (%d Senin)", item.Name, totalMondays),
+				Name:        name,
 				Category:    "savings_mandatory",
 				Amount:      amount,
-				Quantity:    &totalMondays,
-				UnitPrice:   &unitPrice,
+				Quantity:    quantity,
+				UnitPrice:   unitPrice,
 				IsMandatory: true,
 			})
-		}
-	}
-
-	// Daycare bulanan
-	if s.daycareRepo != nil {
-		de, err := s.daycareRepo.FindActiveByStudentID(params.StudentID, params.AcademicYearID)
-		if err == nil && de != nil {
-			if itemKey, ok := daycarePackageToItemKey[de.PackageType]; ok {
-				feeItems, _ := s.feeConfigItemRepo.FindByItemKeys(feeConfig.ID, []string{itemKey})
-				if len(feeItems) > 0 {
-					invoiceItems = append(invoiceItems, model.InvoiceItem{
-						Name:        feeItems[0].Name,
-						Category:    "daycare",
-						Amount:      feeItems[0].Amount,
-						IsMandatory: true,
-					})
-				}
-			}
 		}
 	}
 
@@ -433,13 +453,25 @@ func (s *invoiceGenerateService) GenerateGraduation(params dto.GenerateGraduatio
 }
 
 func (s *invoiceGenerateService) GenerateDaycareInitial(params dto.GenerateInitialInvoiceParams) error {
+	// Idempotency: cek apakah sudah ada item daycare di invoice type=initial atau type=daycare_initial
+	var count int64
+	s.db.Table("invoice_items").
+		Joins("JOIN invoices ON invoices.id = invoice_items.invoice_id").
+		Where("invoices.student_id = ? AND invoices.academic_year_id = ? AND invoice_items.category = ?",
+			params.StudentID, params.AcademicYearID, "daycare").
+		Count(&count)
+	if count > 0 {
+		return nil // idempotent
+	}
+
 	feeConfig, err := s.feeConfigRepo.FindByAcademicYearID(params.AcademicYearID)
 	if err != nil {
 		return nil
 	}
 
-	items, err := s.feeConfigItemRepo.FindByStudentForCategory(feeConfig.ID, "daycare_initial", params.Level, params.Gender)
-	if err != nil || len(items) == 0 {
+	// Biaya Awal daycare: item_key = "daycare_premium_initial" (category = "daycare")
+	biayaAwal, err := s.feeConfigItemRepo.FindByItemKey(feeConfig.ID, "daycare_premium_initial", "all", "all")
+	if err != nil || biayaAwal == nil {
 		return nil
 	}
 
@@ -447,24 +479,36 @@ func (s *invoiceGenerateService) GenerateDaycareInitial(params dto.GenerateIniti
 		invoice := &model.Invoice{
 			StudentID:      params.StudentID,
 			AcademicYearID: params.AcademicYearID,
-			Type:           "initial",
+			Type:           "daycare_initial",
 			Status:         "unpaid",
-			TotalAmount:    utility.SumFeeConfigItems(items),
+			TotalAmount:    biayaAwal.Amount,
 			Notes:          "Biaya awal pendaftaran daycare",
 		}
 		if err := s.invoiceRepo.WithTx(tx).Create(invoice); err != nil {
 			return err
 		}
-		return s.invoiceItemRepo.WithTx(tx).BulkCreate(
-			utility.MapFeeItemsToInvoiceItems(invoice.ID, items),
-		)
+		return s.invoiceItemRepo.WithTx(tx).Create(&model.InvoiceItem{
+			InvoiceID:   invoice.ID,
+			Name:        biayaAwal.Name,
+			Category:    "daycare",
+			Amount:      biayaAwal.Amount,
+			IsMandatory: false,
+		})
 	})
 }
 
 func (s *invoiceGenerateService) RecalculateInfaqHarian(classGroupID, month, year uint) error {
-	effectiveDays, err := s.effectiveDayRepo.FindByClassGroupMonthYear(classGroupID, month, year)
-	if err != nil {
-		return nil // no effective days yet
+	// Cek per rombel dulu, fallback ke per jenjang
+	effectiveDays, _ := s.effectiveDayRepo.FindByClassGroupMonthYear(classGroupID, month, year)
+	if effectiveDays == nil || effectiveDays.ID == 0 {
+		var level string
+		s.db.Table("class_groups").Select("level").Where("id = ?", classGroupID).Scan(&level)
+		if level != "" {
+			effectiveDays, _ = s.effectiveDayRepo.FindByLevelMonthYear(level, month, year)
+		}
+	}
+	if effectiveDays == nil || effectiveDays.ID == 0 {
+		return nil // no effective days at all
 	}
 
 	// Get all active students in this class group
@@ -821,44 +865,128 @@ func (s *invoiceGenerateService) recalculateInvoiceTotalWithTx(tx *gorm.DB, invo
 	return txInvoiceRepo.UpdateStatus(invoiceID, status, paid)
 }
 
-var daycarePackageToItemKey = map[string]string{
-	"monthly_kb":         "daycare_spd_kb",
-	"monthly_tk":         "daycare_spd_tk",
-	"monthly_package_kb": "daycare_paket_kb",
-	"monthly_package_tk": "daycare_paket_tk",
+// ═══ Daycare Invoice Generation ═══
+
+// buildDaycareSPDKey builds the item_key for SPD fee lookup.
+func buildDaycareSPDKey(category, timeSlot, ageGroup string) string {
+	slug := strings.ReplaceAll(timeSlot, "-", "")
+	if category == "premium" {
+		return fmt.Sprintf("daycare_premium_%s_%s_spd", slug, ageGroup)
+	}
+	return fmt.Sprintf("daycare_regular_%s_%s_daily", slug, ageGroup)
 }
 
-func (s *invoiceGenerateService) GenerateDaycareMonthlyRange(params dto.GenerateDaycareMonthlyParams) error {
-	itemKey, ok := daycarePackageToItemKey[params.PackageType]
-	if !ok {
-		return nil
-	}
-
-	startDate, err := utility.ParseDate(params.StartDate)
+// addDaycareItemToInvoice adds a daycare invoice item with idempotency check by name.
+// Use for FIXED items (Premium SPD) where name never changes.
+func (s *invoiceGenerateService) addDaycareItemToInvoice(invoiceID uint, name string, amount float64, quantity *uint, unitPrice *float64) error {
+	items, err := s.invoiceItemRepo.FindByInvoiceID(invoiceID)
 	if err != nil {
-		return fmt.Errorf("format start_date tidak valid")
+		return err
+	}
+	for _, item := range items {
+		if item.Category == "daycare" && item.Name == name {
+			return nil // idempotent
+		}
 	}
 
-	ay, err := s.acRepo.FindByID(params.AcademicYearID)
+	it := &model.InvoiceItem{
+		InvoiceID: invoiceID,
+		Name:      name,
+		Category:  "daycare",
+		Amount:    amount,
+		Quantity:  quantity,
+		UnitPrice: unitPrice,
+	}
+	return s.invoiceItemRepo.Create(it)
+}
+
+// upsertDaycareAttendanceItem handles attendance-based daycare items.
+// Keeps paid items untouched. Deletes old unpaid items, creates one new unpaid
+// item with the remaining amount (total - totalPaid).
+func (s *invoiceGenerateService) upsertDaycareAttendanceItem(invoiceID uint, namePrefix string, name string, amount float64, quantity *uint, unitPrice *float64) error {
+	items, _ := s.invoiceItemRepo.FindByInvoiceID(invoiceID)
+
+	var totalPaidAmount float64
+	var totalPaidQty uint
+
+	for _, item := range items {
+		if item.Category == "daycare" && strings.HasPrefix(item.Name, namePrefix) {
+			totalPaidAmount += item.PaidAmount
+			if item.Quantity != nil && item.PaidAmount > 0 {
+				totalPaidQty += *item.Quantity
+			}
+			// Hapus item unpaid (akan diganti dengan yg baru)
+			if item.PaidAmount == 0 {
+				s.invoiceItemRepo.Delete(item.ID)
+			}
+		}
+	}
+
+	// Hitung sisa yang belum dibayar
+	unpaidAmount := amount - totalPaidAmount
+	unpaidQty := uint(0)
+	if quantity != nil {
+		unpaidQty = *quantity - totalPaidQty
+	}
+
+	if unpaidAmount <= 0 {
+		return nil // sudah lunas semua
+	}
+
+	// Nama item: kalau ada yg paid, pakai "+X hari", kalau tidak pakai full name
+	itemName := name
+	if totalPaidAmount > 0 {
+		itemName = fmt.Sprintf("%s (+%d hari)", namePrefix, unpaidQty)
+	}
+
+	return s.invoiceItemRepo.Create(&model.InvoiceItem{
+		InvoiceID: invoiceID, Name: itemName, Category: "daycare",
+		Amount: unpaidAmount, Quantity: &unpaidQty, UnitPrice: unitPrice,
+	})
+}
+
+// InjectPremiumDaycareToMonthlyInvoices injects flat SPD + optional meal + optional TPQ
+// into all monthly invoices from enrollment start month to end of academic year.
+func (s *invoiceGenerateService) InjectPremiumDaycareToMonthlyInvoices(de model.DaycareEnrollment) error {
+	feeConfig, err := s.feeConfigRepo.FindByAcademicYearID(de.AcademicYearID)
+	if err != nil || feeConfig == nil {
+		log.Printf("[Daycare SPD] InjectPremium: fee config tidak ditemukan untuk ay=%d: %v", de.AcademicYearID, err)
+		return fmt.Errorf("fee config tidak ditemukan")
+	}
+
+	spdKey := buildDaycareSPDKey("premium", de.TimeSlot, de.AgeGroup)
+	spdItem, err := s.feeConfigItemRepo.FindByItemKey(feeConfig.ID, spdKey, "all", "all")
+	if err != nil || spdItem == nil {
+		log.Printf("[Daycare SPD] InjectPremium: fee item SPD tidak ditemukan key=%s err=%v", spdKey, err)
+		return fmt.Errorf("fee item SPD tidak ditemukan: %s", spdKey)
+	}
+
+	// Get all monthly invoices for this student in this academic year
+	invoices, err := s.invoiceRepo.FindMonthlyByStudentAcademicYear(de.StudentID, de.AcademicYearID)
 	if err != nil {
-		return fmt.Errorf("tahun ajaran tidak ditemukan")
+		return err
 	}
 
-	feeConfig, err := s.feeConfigRepo.FindByAcademicYearID(params.AcademicYearID)
-	if err != nil {
-		return nil
-	}
+	log.Printf("[Daycare SPD] InjectPremium: ditemukan %d monthly invoice untuk student=%d", len(invoices), de.StudentID)
 
-	feeItems, err := s.feeConfigItemRepo.FindByItemKeys(feeConfig.ID, []string{itemKey})
-	if err != nil || len(feeItems) == 0 {
-		return nil
-	}
-	feeItem := feeItems[0]
+	startMonth := uint(de.StartDate.Month())
+	startYear := uint(de.StartDate.Year())
 
-	months := utility.MonthRangeFromDate(startDate, ay.EndDate)
+	for _, inv := range invoices {
+		if inv.Month == nil || inv.Year == nil {
+			continue
+		}
+		// Skip months before enrollment start
+		if *inv.Year < startYear || (*inv.Year == startYear && *inv.Month < startMonth) {
+			continue
+		}
 
-	for _, m := range months {
-		if err := s.addDaycareItemToMonthly(params.StudentID, params.AcademicYearID, m.Month, m.Year, feeItem); err != nil {
+		// SPD (flat dari enrollment)
+		if err := s.addDaycareItemToInvoice(inv.ID, spdItem.Name, spdItem.Amount, nil, nil); err != nil {
+			return err
+		}
+
+		if err := s.recalculateInvoiceTotal(inv.ID); err != nil {
 			return err
 		}
 	}
@@ -866,15 +994,84 @@ func (s *invoiceGenerateService) GenerateDaycareMonthlyRange(params dto.Generate
 	return nil
 }
 
-func (s *invoiceGenerateService) addDaycareItemToMonthly(studentID, academicYearID, month, year uint, feeItem model.FeeConfigItem) error {
-	invoice, err := s.invoiceRepo.FindMonthlyByStudent(studentID, month, year)
+// GenerateDaycareMonthlyInvoices generates SPD items for a specific month.
+func (s *invoiceGenerateService) GenerateDaycareMonthlyInvoices(params dto.GenerateDaycareMonthlyParams) error {
+	de, err := s.daycareRepo.FindActiveByStudentID(params.StudentID, params.AcademicYearID)
+	if err != nil {
+		return fmt.Errorf("pendaftaran daycare tidak ditemukan")
+	}
+
+	log.Printf("[Daycare SPD] Generate untuk student=%d month=%d/%d category=%s slot=%s age=%s",
+		params.StudentID, params.Month, params.Year, de.Category, de.TimeSlot, de.AgeGroup)
+
+	// Inject flat SPD untuk Premium
+	if de.Category == "premium" {
+		_, err := s.invoiceRepo.FindMonthlyByStudent(params.StudentID, params.Month, params.Year)
+		if err != nil {
+			log.Printf("[Daycare SPD] Premium: membuat invoice bulanan baru untuk %d/%d", params.Month, params.Year)
+			invoice := &model.Invoice{
+				StudentID:      params.StudentID,
+				AcademicYearID: params.AcademicYearID,
+				Type:           "monthly",
+				Month:          &params.Month,
+				Year:           &params.Year,
+				Status:         "unpaid",
+				TotalAmount:    0,
+			}
+			if err := s.invoiceRepo.Create(invoice); err != nil {
+				return err
+			}
+		}
+		if err := s.InjectPremiumDaycareToMonthlyInvoices(*de); err != nil {
+			log.Printf("[Daycare SPD] Premium: gagal inject SPD: %v", err)
+			return err
+		}
+		log.Printf("[Daycare SPD] Premium: SPD flat injected")
+	}
+
+	// ─── Attendance-based: SPD Regular + Meal/TPQ (both categories) ───
+	feeConfig, err := s.feeConfigRepo.FindByAcademicYearID(params.AcademicYearID)
+	if err != nil || feeConfig == nil {
+		log.Printf("[Daycare SPD] fee config tidak ditemukan untuk ay=%d: %v", params.AcademicYearID, err)
+		return nil
+	}
+
+	start := time.Date(int(params.Year), time.Month(params.Month), 1, 0, 0, 0, 0, time.UTC)
+	end := start.AddDate(0, 1, 0)
+
+	var atts []model.DaycareAttendance
+	s.db.Where("student_id = ? AND date >= ? AND date < ? AND time_slot != ''", params.StudentID, start, end).
+		Order("date ASC").Find(&atts)
+
+	if len(atts) == 0 {
+		log.Printf("[Daycare SPD] tidak ada attendance untuk %d/%d", params.Month, params.Year)
+		return nil
+	}
+
+	// Hitung per slot (untuk Regular SPD) + meal/tpq days (untuk keduanya)
+	slotCount := make(map[string]int)
+	mealDays, tpqDays := 0, 0
+	for _, a := range atts {
+		if a.TimeSlot != "" {
+			slotCount[a.TimeSlot]++
+		}
+		if a.WithMeal {
+			mealDays++
+		}
+		if a.WithTpq {
+			tpqDays++
+		}
+	}
+
+	// Find or create monthly invoice
+	invoice, err := s.invoiceRepo.FindMonthlyByStudent(params.StudentID, params.Month, params.Year)
 	if err != nil {
 		invoice = &model.Invoice{
-			StudentID:      studentID,
-			AcademicYearID: academicYearID,
+			StudentID:      params.StudentID,
+			AcademicYearID: params.AcademicYearID,
 			Type:           "monthly",
-			Month:          &month,
-			Year:           &year,
+			Month:          &params.Month,
+			Year:           &params.Year,
 			Status:         "unpaid",
 			TotalAmount:    0,
 		}
@@ -883,47 +1080,70 @@ func (s *invoiceGenerateService) addDaycareItemToMonthly(studentID, academicYear
 		}
 	}
 
-	_, err = s.invoiceItemRepo.FindByInvoiceAndCategory(invoice.ID, "daycare")
-	if err == nil {
-		return nil // sudah ada item daycare, skip
+	// Regular: SPD per time slot
+	if de.Category == "regular" {
+		for slot, count := range slotCount {
+			spdKey := buildDaycareSPDKey("regular", slot, de.AgeGroup)
+			spdItem, err := s.feeConfigItemRepo.FindByItemKey(feeConfig.ID, spdKey, "all", "all")
+			if err != nil || spdItem == nil {
+				log.Printf("[Daycare SPD] Regular: fee item tidak ditemukan key=%s err=%v", spdKey, err)
+				continue
+			}
+			dailyRate := spdItem.Amount
+			qty := uint(count)
+			name := fmt.Sprintf("%s (%d hari)", spdItem.Name, count)
+			log.Printf("[Daycare SPD] Regular: tambah item %s = %d x %.0f = %.0f", name, count, dailyRate, dailyRate*float64(count))
+			if err := s.upsertDaycareAttendanceItem(invoice.ID, spdItem.Name, name, dailyRate*float64(count), &qty, &dailyRate); err != nil {
+				return err
+			}
+		}
 	}
 
-	item := &model.InvoiceItem{
-		InvoiceID:   invoice.ID,
-		Name:        feeItem.Name,
-		Category:    "daycare",
-		Amount:      feeItem.Amount,
-		IsMandatory: true,
+	// Meal (kedua kategori: dari attendance)
+	if mealDays > 0 {
+		mealItem, err := s.feeConfigItemRepo.FindByItemKey(feeConfig.ID, "daycare_regular_meal", "all", "all")
+		if err == nil && mealItem != nil {
+			dailyRate := mealItem.Amount
+			qty := uint(mealDays)
+			name := fmt.Sprintf("%s (%d hari)", mealItem.Name, mealDays)
+			log.Printf("[Daycare SPD] Meal: %d hari x %.0f = %.0f", mealDays, dailyRate, dailyRate*float64(mealDays))
+			if err := s.upsertDaycareAttendanceItem(invoice.ID, mealItem.Name, name, dailyRate*float64(mealDays), &qty, &dailyRate); err != nil {
+				return err
+			}
+		}
 	}
-	if err := s.invoiceItemRepo.Create(item); err != nil {
-		return err
+
+	// TPQ (kedua kategori: dari attendance)
+	if tpqDays > 0 {
+		tpqItem, err := s.feeConfigItemRepo.FindByItemKey(feeConfig.ID, "daycare_regular_tpq", "all", "all")
+		if err == nil && tpqItem != nil {
+			dailyRate := tpqItem.Amount
+			qty := uint(tpqDays)
+			name := fmt.Sprintf("%s (%d hari)", tpqItem.Name, tpqDays)
+			log.Printf("[Daycare SPD] TPQ: %d hari x %.0f = %.0f", tpqDays, dailyRate, dailyRate*float64(tpqDays))
+			if err := s.upsertDaycareAttendanceItem(invoice.ID, tpqItem.Name, name, dailyRate*float64(tpqDays), &qty, &dailyRate); err != nil {
+				return err
+			}
+		}
 	}
 
 	return s.recalculateInvoiceTotal(invoice.ID)
 }
 
-func (s *invoiceGenerateService) SyncDaycareMonthlyInvoices() (*dto.DaycareSyncResult, error) {
+// GenerateDaycareMonthlyBulk generates SPD for all active daycare students in a given month.
+func (s *invoiceGenerateService) GenerateDaycareMonthlyBulk(params dto.GenerateDaycareMonthlyParams) (*dto.DaycareSyncResult, error) {
 	enrollments, err := s.daycareRepo.FindAllActive()
 	if err != nil {
 		return nil, fmt.Errorf("gagal mengambil data daycare: %v", err)
 	}
 
-	result := &dto.DaycareSyncResult{
-		TotalEnrollments: len(enrollments),
-	}
+	result := &dto.DaycareSyncResult{TotalEnrollments: len(enrollments)}
 
 	for _, de := range enrollments {
-		if _, ok := daycarePackageToItemKey[de.PackageType]; !ok {
-			result.TotalSkipped++
-			continue
-		}
+		genParams := params
+		genParams.StudentID = de.StudentID
 
-		err := s.GenerateDaycareMonthlyRange(dto.GenerateDaycareMonthlyParams{
-			StudentID:      de.StudentID,
-			AcademicYearID: de.AcademicYearID,
-			PackageType:    de.PackageType,
-			StartDate:      de.StartDate.Format("2006-01-02"),
-		})
+		err := s.GenerateDaycareMonthlyInvoices(genParams)
 		if err != nil {
 			result.Errors = append(result.Errors, dto.DaycareSyncError{
 				StudentID: de.StudentID,
@@ -934,10 +1154,13 @@ func (s *invoiceGenerateService) SyncDaycareMonthlyInvoices() (*dto.DaycareSyncR
 		result.TotalSynced++
 	}
 
-	result.TotalSkipped += len(result.Errors)
+	result.TotalSkipped = len(result.Errors)
+	log.Printf("[Daycare SPD] Bulk: %d berhasil, %d error dari %d enrollment", result.TotalSynced, result.TotalSkipped, result.TotalEnrollments)
 	return result, nil
 }
 
+// RemoveDaycareFromFutureInvoices removes all unpaid daycare items from monthly invoices
+// starting from fromMonth/fromYear (used when daycare enrollment is deactivated).
 func (s *invoiceGenerateService) RemoveDaycareFromFutureInvoices(studentID uint, fromMonth, fromYear uint) error {
 	invoices, err := s.invoiceRepo.FindMonthlyByStudentFromMonth(studentID, fromMonth, fromYear)
 	if err != nil {
@@ -955,8 +1178,41 @@ func (s *invoiceGenerateService) RemoveDaycareFromFutureInvoices(studentID uint,
 			}
 		}
 	}
-
 	return nil
+}
+
+// SyncDaycareMonthlyInvoices syncs daycare SPD items for all active enrollments.
+// For Premium: injects SPD into future invoices.
+// For Regular: skips (handled per-month via attendance).
+func (s *invoiceGenerateService) SyncDaycareMonthlyInvoices() (*dto.DaycareSyncResult, error) {
+	enrollments, err := s.daycareRepo.FindAllActive()
+	if err != nil {
+		return nil, fmt.Errorf("gagal mengambil data daycare: %v", err)
+	}
+
+	result := &dto.DaycareSyncResult{
+		TotalEnrollments: len(enrollments),
+	}
+
+	for _, de := range enrollments {
+		if de.Category != "premium" {
+			result.TotalSkipped++
+			continue
+		}
+
+		err := s.InjectPremiumDaycareToMonthlyInvoices(de)
+		if err != nil {
+			result.Errors = append(result.Errors, dto.DaycareSyncError{
+				StudentID: de.StudentID,
+				Message:   err.Error(),
+			})
+			continue
+		}
+		result.TotalSynced++
+	}
+
+	result.TotalSkipped += len(result.Errors)
+	return result, nil
 }
 
 // ─── Facility Methods ────────────────────────────────────────────────

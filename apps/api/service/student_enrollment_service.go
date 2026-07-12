@@ -17,6 +17,7 @@ type StudentEnrollmentService interface {
 	GetStudentsByClassGroup(classGroupID uint) ([]dto.StudentListResponse, error)
 	ActivateEnrollment(enrollmentID uint) error
 	EnrollStudent(studentID, createdBy uint, req dto.CreateEnrollmentRequest) (*dto.EnrollmentDetailResponse, error)
+	UpdateEnrollmentType(enrollmentID uint, req dto.UpdateEnrollmentRequest) (*dto.EnrollmentDetailResponse, error)
 }
 
 type studentEnrollmentService struct {
@@ -144,6 +145,24 @@ func (s *studentEnrollmentService) ActivateEnrollment(enrollmentID uint) error {
 	}
 
 	return s.enrollmentRepo.UpdateStatus(enrollmentID, "active", nil)
+}
+
+func (s *studentEnrollmentService) UpdateEnrollmentType(enrollmentID uint, req dto.UpdateEnrollmentRequest) (*dto.EnrollmentDetailResponse, error) {
+	_, err := s.enrollmentRepo.FindByID(enrollmentID)
+	if err != nil {
+		return nil, errors.New("Enrollment tidak ditemukan")
+	}
+
+	if err := s.enrollmentRepo.UpdateEnrollmentType(enrollmentID, req.EnrollmentType); err != nil {
+		return nil, fmt.Errorf("gagal mengupdate tipe enrollment: %w", err)
+	}
+
+	// Refresh data
+	updated, err := s.enrollmentRepo.FindByID(enrollmentID)
+	if err != nil {
+		return nil, err
+	}
+	return mapEnrollmentToDetailResponse(*updated), nil
 }
 
 func mapEnrollmentToDetailResponse(e model.StudentEnrollment) *dto.EnrollmentDetailResponse {

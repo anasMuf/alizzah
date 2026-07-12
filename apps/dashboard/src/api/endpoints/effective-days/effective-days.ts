@@ -27,8 +27,11 @@ import type {
 	DtoUpsertEffectiveDayRequest,
 	GetV1ClassGroupsIdEffectiveDays200,
 	GetV1ClassGroupsIdEffectiveDaysParams,
+	GetV1LevelsLevelEffectiveDays200,
+	GetV1LevelsLevelEffectiveDaysParams,
 	PostV1ClassGroupsIdEffectiveDays200,
 	PutV1ClassGroupsIdEffectiveDaysEdId200,
+	PutV1LevelsLevelEffectiveDays200,
 } from "../../model";
 
 import { customInstance } from "../../mutator/custom-instance";
@@ -568,6 +571,335 @@ export const usePutV1ClassGroupsIdEffectiveDaysEdId = <
 > => {
 	return useMutation(
 		getPutV1ClassGroupsIdEffectiveDaysEdIdMutationOptions(options),
+		queryClient,
+	);
+};
+export type getV1LevelsLevelEffectiveDaysResponse200 = {
+	data: GetV1LevelsLevelEffectiveDays200;
+	status: 200;
+};
+
+export type getV1LevelsLevelEffectiveDaysResponseSuccess =
+	getV1LevelsLevelEffectiveDaysResponse200 & {
+		headers: Headers;
+	};
+
+export type getV1LevelsLevelEffectiveDaysResponse =
+	getV1LevelsLevelEffectiveDaysResponseSuccess;
+
+export const getGetV1LevelsLevelEffectiveDaysUrl = (
+	level: string,
+	params?: GetV1LevelsLevelEffectiveDaysParams,
+) => {
+	const normalizedParams = new URLSearchParams();
+
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(key, value === null ? "null" : value.toString());
+		}
+	});
+
+	const stringifiedParams = normalizedParams.toString();
+
+	return stringifiedParams.length > 0
+		? `/v1/levels/${level}/effective-days?${stringifiedParams}`
+		: `/v1/levels/${level}/effective-days`;
+};
+
+/**
+ * Get effective days for a specific level (mutiara/intan/berlian)
+ * @summary List effective days by level
+ */
+export const getV1LevelsLevelEffectiveDays = async (
+	level: string,
+	params?: GetV1LevelsLevelEffectiveDaysParams,
+	options?: RequestInit,
+): Promise<getV1LevelsLevelEffectiveDaysResponse> => {
+	return customInstance<getV1LevelsLevelEffectiveDaysResponse>(
+		getGetV1LevelsLevelEffectiveDaysUrl(level, params),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
+
+export const getGetV1LevelsLevelEffectiveDaysQueryKey = (
+	level: string,
+	params?: GetV1LevelsLevelEffectiveDaysParams,
+) => {
+	return [
+		`/v1/levels/${level}/effective-days`,
+		...(params ? [params] : []),
+	] as const;
+};
+
+export const getGetV1LevelsLevelEffectiveDaysQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1LevelsLevelEffectiveDays>>,
+	TError = unknown,
+>(
+	level: string,
+	params?: GetV1LevelsLevelEffectiveDaysParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1LevelsLevelEffectiveDays>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
+
+	const queryKey =
+		queryOptions?.queryKey ??
+		getGetV1LevelsLevelEffectiveDaysQueryKey(level, params);
+
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1LevelsLevelEffectiveDays>>
+	> = ({ signal }) =>
+		getV1LevelsLevelEffectiveDays(level, params, { signal, ...requestOptions });
+
+	return {
+		queryKey,
+		queryFn,
+		enabled: !!level,
+		...queryOptions,
+	} as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1LevelsLevelEffectiveDays>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetV1LevelsLevelEffectiveDaysQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1LevelsLevelEffectiveDays>>
+>;
+export type GetV1LevelsLevelEffectiveDaysQueryError = unknown;
+
+export function useGetV1LevelsLevelEffectiveDays<
+	TData = Awaited<ReturnType<typeof getV1LevelsLevelEffectiveDays>>,
+	TError = unknown,
+>(
+	level: string,
+	params: undefined | GetV1LevelsLevelEffectiveDaysParams,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1LevelsLevelEffectiveDays>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1LevelsLevelEffectiveDays>>,
+					TError,
+					Awaited<ReturnType<typeof getV1LevelsLevelEffectiveDays>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1LevelsLevelEffectiveDays<
+	TData = Awaited<ReturnType<typeof getV1LevelsLevelEffectiveDays>>,
+	TError = unknown,
+>(
+	level: string,
+	params?: GetV1LevelsLevelEffectiveDaysParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1LevelsLevelEffectiveDays>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1LevelsLevelEffectiveDays>>,
+					TError,
+					Awaited<ReturnType<typeof getV1LevelsLevelEffectiveDays>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1LevelsLevelEffectiveDays<
+	TData = Awaited<ReturnType<typeof getV1LevelsLevelEffectiveDays>>,
+	TError = unknown,
+>(
+	level: string,
+	params?: GetV1LevelsLevelEffectiveDaysParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1LevelsLevelEffectiveDays>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary List effective days by level
+ */
+
+export function useGetV1LevelsLevelEffectiveDays<
+	TData = Awaited<ReturnType<typeof getV1LevelsLevelEffectiveDays>>,
+	TError = unknown,
+>(
+	level: string,
+	params?: GetV1LevelsLevelEffectiveDaysParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1LevelsLevelEffectiveDays>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1LevelsLevelEffectiveDaysQueryOptions(
+		level,
+		params,
+		options,
+	);
+
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+	return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export type putV1LevelsLevelEffectiveDaysResponse200 = {
+	data: PutV1LevelsLevelEffectiveDays200;
+	status: 200;
+};
+
+export type putV1LevelsLevelEffectiveDaysResponseSuccess =
+	putV1LevelsLevelEffectiveDaysResponse200 & {
+		headers: Headers;
+	};
+
+export type putV1LevelsLevelEffectiveDaysResponse =
+	putV1LevelsLevelEffectiveDaysResponseSuccess;
+
+export const getPutV1LevelsLevelEffectiveDaysUrl = (level: string) => {
+	return `/v1/levels/${level}/effective-days`;
+};
+
+/**
+ * Create or update effective days for a specific level
+ * @summary Upsert effective day by level
+ */
+export const putV1LevelsLevelEffectiveDays = async (
+	level: string,
+	dtoUpsertEffectiveDayRequest: DtoUpsertEffectiveDayRequest,
+	options?: RequestInit,
+): Promise<putV1LevelsLevelEffectiveDaysResponse> => {
+	return customInstance<putV1LevelsLevelEffectiveDaysResponse>(
+		getPutV1LevelsLevelEffectiveDaysUrl(level),
+		{
+			...options,
+			method: "PUT",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(dtoUpsertEffectiveDayRequest),
+		},
+	);
+};
+
+export const getPutV1LevelsLevelEffectiveDaysMutationOptions = <
+	TError = unknown,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof putV1LevelsLevelEffectiveDays>>,
+		TError,
+		{ level: string; data: DtoUpsertEffectiveDayRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof putV1LevelsLevelEffectiveDays>>,
+	TError,
+	{ level: string; data: DtoUpsertEffectiveDayRequest },
+	TContext
+> => {
+	const mutationKey = ["putV1LevelsLevelEffectiveDays"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof putV1LevelsLevelEffectiveDays>>,
+		{ level: string; data: DtoUpsertEffectiveDayRequest }
+	> = (props) => {
+		const { level, data } = props ?? {};
+
+		return putV1LevelsLevelEffectiveDays(level, data, requestOptions);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type PutV1LevelsLevelEffectiveDaysMutationResult = NonNullable<
+	Awaited<ReturnType<typeof putV1LevelsLevelEffectiveDays>>
+>;
+export type PutV1LevelsLevelEffectiveDaysMutationBody =
+	DtoUpsertEffectiveDayRequest;
+export type PutV1LevelsLevelEffectiveDaysMutationError = unknown;
+
+/**
+ * @summary Upsert effective day by level
+ */
+export const usePutV1LevelsLevelEffectiveDays = <
+	TError = unknown,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof putV1LevelsLevelEffectiveDays>>,
+			TError,
+			{ level: string; data: DtoUpsertEffectiveDayRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof putV1LevelsLevelEffectiveDays>>,
+	TError,
+	{ level: string; data: DtoUpsertEffectiveDayRequest },
+	TContext
+> => {
+	return useMutation(
+		getPutV1LevelsLevelEffectiveDaysMutationOptions(options),
 		queryClient,
 	);
 };

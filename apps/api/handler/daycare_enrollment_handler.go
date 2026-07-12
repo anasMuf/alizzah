@@ -5,6 +5,7 @@ import (
 	"api/middleware"
 	"api/service"
 	"api/utility"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -312,4 +313,163 @@ func (h *DaycareEnrollmentHandler) SyncInvoices(c echo.Context) error {
 		Message: "Sinkronisasi tagihan daycare bulanan selesai",
 		Data:    result,
 	})
+}
+
+// GenerateMonthlyInvoices godoc
+// @Summary      Generate monthly daycare SPD
+// @Description  Generate SPD for a specific student/month (Regular: attendance-based)
+// @Tags         daycare-enrollments
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        request  body      dto.GenerateDaycareMonthlyRequest  true  "Generate params"
+// @Success      200      {object}  dto.SuccessResponse
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      401      {object}  dto.ErrorResponse
+// @Failure      403      {object}  dto.ErrorResponse
+// @Failure      500      {object}  dto.ErrorResponse
+// @Router       /v1/daycare-enrollments/generate-monthly [post]
+func (h *DaycareEnrollmentHandler) GenerateMonthlyInvoices(c echo.Context) error {
+	var req dto.GenerateDaycareMonthlyRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status:  http.StatusBadRequest,
+			Code:    "BAD_REQUEST",
+			Message: err.Error(),
+		})
+	}
+
+	if err := c.Validate(req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status:  http.StatusBadRequest,
+			Code:    "VALIDATION_ERROR",
+			Message: err.Error(),
+		})
+	}
+
+	err := h.invoiceGen.GenerateDaycareMonthlyInvoices(dto.GenerateDaycareMonthlyParams{
+		StudentID:      req.StudentID,
+		AcademicYearID: req.AcademicYearID,
+		Month:          req.Month,
+		Year:           req.Year,
+		CreatedBy:      middleware.GetCurrentUserID(c),
+	})
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{
+			Status:  status,
+			Code:    code,
+			Message: err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "SPD daycare berhasil digenerate",
+	})
+}
+
+// GenerateMonthlyBulk godoc
+// @Summary      Generate monthly SPD for all active daycare students
+// @Description  Generate SPD for all active daycare students in a given month
+// @Tags         daycare-enrollments
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        request  body      dto.GenerateDaycareMonthlyBulkRequest  true  "Generate params"
+// @Success      200      {object}  dto.SuccessResponse{data=dto.DaycareSyncResult}
+// @Router       /v1/daycare-enrollments/generate-monthly-bulk [post]
+func (h *DaycareEnrollmentHandler) GenerateMonthlyBulk(c echo.Context) error {
+	var req dto.GenerateDaycareMonthlyBulkRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status:  http.StatusBadRequest,
+			Code:    "BAD_REQUEST",
+			Message: err.Error(),
+		})
+	}
+
+	if err := c.Validate(req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status:  http.StatusBadRequest,
+			Code:    "VALIDATION_ERROR",
+			Message: err.Error(),
+		})
+	}
+
+	result, err := h.invoiceGen.GenerateDaycareMonthlyBulk(dto.GenerateDaycareMonthlyParams{
+		AcademicYearID: req.AcademicYearID,
+		Month:          req.Month,
+		Year:           req.Year,
+		CreatedBy:      middleware.GetCurrentUserID(c),
+	})
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{
+			Status:  status,
+			Code:    code,
+			Message: err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: fmt.Sprintf("SPD daycare berhasil digenerate (%d berhasil, %d skip)", result.TotalSynced, result.TotalSkipped),
+		Data:    result,
+	})
+}
+
+// ─── Attendance ──────────────────────────────────────────────────────
+
+// UpsertAttendance godoc
+// @Summary      Upsert daycare attendance
+// @Description  Create or update daily attendance for a daycare student
+// @Tags         daycare-enrollments
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        request  body  dto.UpsertDaycareAttendanceRequest  true  "Attendance data"
+// @Success      200      {object}  dto.SuccessResponse{data=dto.DaycareAttendanceResponse}
+// @Router       /v1/daycare/attendance [put]
+func (h *DaycareEnrollmentHandler) UpsertAttendance(c echo.Context) error {
+	var req dto.UpsertDaycareAttendanceRequest
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Format request tidak valid")
+	}
+	if err := c.Validate(req); err != nil {
+		return err
+	}
+
+	userID := middleware.GetCurrentUserID(c)
+	result, err := h.daycareService.UpsertAttendance(userID, req)
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{Status: status, Code: code, Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Absensi disimpan", Data: result})
+}
+
+// GetAttendance godoc
+// @Summary      Get daycare attendance
+// @Description  Get daily attendance for a daycare student in a specific month
+// @Tags         daycare-enrollments
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        student_id  query   int  true   "Student ID"
+// @Param        month       query   int  true   "Month (1-12)"
+// @Param        year        query   int  true   "Year"
+// @Success      200  {object}  dto.SuccessResponse{data=[]dto.DaycareAttendanceResponse}
+// @Router       /v1/daycare/attendance [get]
+func (h *DaycareEnrollmentHandler) GetAttendance(c echo.Context) error {
+	sid, _ := strconv.Atoi(c.QueryParam("student_id"))
+	month, _ := strconv.Atoi(c.QueryParam("month"))
+	year, _ := strconv.Atoi(c.QueryParam("year"))
+
+	result, err := h.daycareService.GetAttendance(uint(sid), uint(month), uint(year))
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{Status: status, Code: code, Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Data absensi", Data: result})
 }

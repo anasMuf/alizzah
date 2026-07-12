@@ -146,6 +146,53 @@ func (h *StudentEnrollmentHandler) ActivateEnrollment(c echo.Context) error {
 	})
 }
 
+// UpdateEnrollment godoc
+// @Summary      Update enrollment type
+// @Description  Update the enrollment_type of an enrollment (new, repeat, mutation, etc.)
+// @Tags         student-enrollments
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id       path   int                            true  "Enrollment ID"
+// @Param        request  body   dto.UpdateEnrollmentRequest    true  "Enrollment type"
+// @Success      200      {object}  dto.SuccessResponse{data=dto.EnrollmentDetailResponse}
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      404      {object}  dto.ErrorResponse
+// @Router       /v1/enrollments/{id} [put]
+func (h *StudentEnrollmentHandler) UpdateEnrollment(c echo.Context) error {
+	enrollmentID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status:  http.StatusBadRequest,
+			Code:    "BAD_REQUEST",
+			Message: "ID enrollment tidak valid",
+		})
+	}
+
+	var req dto.UpdateEnrollmentRequest
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Format request tidak valid")
+	}
+	if err := c.Validate(req); err != nil {
+		return err
+	}
+
+	result, err := h.enrollmentService.UpdateEnrollmentType(uint(enrollmentID), req)
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{
+			Status:  status,
+			Code:    code,
+			Message: err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "Tipe enrollment berhasil diupdate",
+		Data:    result,
+	})
+}
+
 // Enroll godoc
 // @Summary      Enroll a student into a class group
 // @Description  Create a new enrollment for an existing student + generate invoices

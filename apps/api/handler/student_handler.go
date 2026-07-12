@@ -247,3 +247,31 @@ func (h *StudentHandler) Import(c echo.Context) error {
 		Data:    summary,
 	})
 }
+
+// RegenerateInvoices godoc
+// @Summary      Regenerate student invoices
+// @Description  Delete all invoices (initial, registration, monthly) and regenerate them based on current enrollment data. Initial invoice only generated for enrollment_type "new" or "mutation".
+// @Tags         students
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id   path   int  true  "Student ID"
+// @Success      200  {object}  dto.SuccessResponse
+// @Failure      400  {object}  dto.ErrorResponse
+// @Failure      404  {object}  dto.ErrorResponse
+// @Failure      500  {object}  dto.ErrorResponse
+// @Router       /v1/students/{id}/regenerate-invoices [post]
+func (h *StudentHandler) RegenerateInvoices(c echo.Context) error {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "ID tidak valid")
+	}
+
+	if err := h.studentService.RegenerateInvoices(uint(id)); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "Invoice berhasil diregenerate",
+	})
+}

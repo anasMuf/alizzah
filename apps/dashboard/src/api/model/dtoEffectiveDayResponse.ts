@@ -12,6 +12,7 @@ export interface DtoEffectiveDayResponse {
 	created_at?: string;
 	created_by?: DtoUserBriefResponse;
 	id?: number;
+	level?: string;
 	month?: number;
 	total_days?: number;
 	total_mondays?: number;

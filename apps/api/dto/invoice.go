@@ -16,36 +16,36 @@ type InvoiceQueryParams struct {
 
 // Response — List
 type InvoiceListResponse struct {
-	ID           uint                     `json:"id"`
-	Student      StudentBriefResponse     `json:"student"`
+	ID           uint                      `json:"id"`
+	Student      StudentBriefResponse      `json:"student"`
 	AcademicYear AcademicYearBriefResponse `json:"academic_year"`
-	Type         string                   `json:"type"`
-	Month        *uint                    `json:"month,omitempty"`
-	Year         *uint                    `json:"year,omitempty"`
-	Status       string                   `json:"status"`
-	TotalAmount  float64                  `json:"total_amount"`
-	PaidAmount   float64                  `json:"paid_amount"`
-	DueDate      *string                  `json:"due_date"`
-	CreatedAt    string                   `json:"created_at"`
+	Type         string                    `json:"type"`
+	Month        *uint                     `json:"month,omitempty"`
+	Year         *uint                     `json:"year,omitempty"`
+	Status       string                    `json:"status"`
+	TotalAmount  float64                   `json:"total_amount"`
+	PaidAmount   float64                   `json:"paid_amount"`
+	DueDate      *string                   `json:"due_date"`
+	CreatedAt    string                    `json:"created_at"`
 }
 
 // Response — Detail
 type InvoiceDetailResponse struct {
-	ID           uint                     `json:"id"`
-	Student      StudentBriefResponse     `json:"student"`
+	ID           uint                      `json:"id"`
+	Student      StudentBriefResponse      `json:"student"`
 	AcademicYear AcademicYearBriefResponse `json:"academic_year"`
-	Type         string                   `json:"type"`
-	Month        *uint                    `json:"month,omitempty"`
-	Year         *uint                    `json:"year,omitempty"`
-	Status       string                   `json:"status"`
-	TotalAmount  float64                  `json:"total_amount"`
-	PaidAmount   float64                  `json:"paid_amount"`
-	DueDate      *string                  `json:"due_date"`
-	Notes        *string                  `json:"notes"`
-	Items        []InvoiceItemResponse    `json:"items"`
-	Installments []InstallmentResponse    `json:"installments"`
-	Payments     []InvoicePaymentBrief    `json:"payments"`
-	CreatedAt    string                   `json:"created_at"`
+	Type         string                    `json:"type"`
+	Month        *uint                     `json:"month,omitempty"`
+	Year         *uint                     `json:"year,omitempty"`
+	Status       string                    `json:"status"`
+	TotalAmount  float64                   `json:"total_amount"`
+	PaidAmount   float64                   `json:"paid_amount"`
+	DueDate      *string                   `json:"due_date"`
+	Notes        *string                   `json:"notes"`
+	Items        []InvoiceItemResponse     `json:"items"`
+	Installments []InstallmentResponse     `json:"installments"`
+	Payments     []InvoicePaymentBrief     `json:"payments"`
+	CreatedAt    string                    `json:"created_at"`
 }
 
 type InvoicePaymentBrief struct {
@@ -154,14 +154,7 @@ type GenerateGraduationInvoiceParams struct {
 	CreatedBy      uint
 }
 
-type GenerateDaycareMonthlyParams struct {
-	StudentID      uint
-	AcademicYearID uint
-	PackageType    string
-	StartDate      string
-	CreatedBy      uint
-}
-
+// DaycareSyncResult is the result of daycare invoice synchronization.
 type DaycareSyncResult struct {
 	TotalEnrollments int                `json:"total_enrollments"`
 	TotalSynced      int                `json:"total_synced"`
@@ -175,10 +168,10 @@ type DaycareSyncError struct {
 }
 
 type ExtracurricularSyncResult struct {
-	TotalEnrollments int                          `json:"total_enrollments"`
-	TotalSynced      int                          `json:"total_synced"`
-	TotalSkipped     int                          `json:"total_skipped"`
-	Errors           []ExtracurricularSyncError   `json:"errors,omitempty"`
+	TotalEnrollments int                        `json:"total_enrollments"`
+	TotalSynced      int                        `json:"total_synced"`
+	TotalSkipped     int                        `json:"total_skipped"`
+	Errors           []ExtracurricularSyncError `json:"errors,omitempty"`
 }
 
 type ExtracurricularSyncError struct {

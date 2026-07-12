@@ -29,7 +29,7 @@ const MONTH_NAMES = [
 const TYPE_OPTIONS = [
 	{ value: "", label: "Semua Tabungan" },
 	{ value: "general", label: "Tabungan Umum" },
-	{ value: "mandatory", label: "Tabungan Wajib Berlian" },
+	{ value: "mandatory", label: "Tabungan Wajib" },
 ];
 
 function formatRupiah(amount: number): string {

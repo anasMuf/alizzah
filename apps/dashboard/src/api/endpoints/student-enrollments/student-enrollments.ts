@@ -26,11 +26,13 @@ import type {
 	DtoCreateEnrollmentRequest,
 	DtoErrorResponse,
 	DtoSuccessResponse,
+	DtoUpdateEnrollmentRequest,
 	GetV1ClassGroupsIdStudents200,
 	GetV1StudentsIdEnrollments200,
 	GetV1StudentsIdEnrollmentsParams,
 	HandlerBatchEnrollRequest,
 	PostV1StudentsIdEnrollments201,
+	PutV1EnrollmentsId200,
 } from "../../model";
 
 import { customInstance } from "../../mutator/custom-instance";
@@ -253,6 +255,132 @@ export function useGetV1ClassGroupsIdStudents<
 	return { ...query, queryKey: queryOptions.queryKey };
 }
 
+export type putV1EnrollmentsIdResponse200 = {
+	data: PutV1EnrollmentsId200;
+	status: 200;
+};
+
+export type putV1EnrollmentsIdResponse400 = {
+	data: DtoErrorResponse;
+	status: 400;
+};
+
+export type putV1EnrollmentsIdResponse404 = {
+	data: DtoErrorResponse;
+	status: 404;
+};
+
+export type putV1EnrollmentsIdResponseSuccess =
+	putV1EnrollmentsIdResponse200 & {
+		headers: Headers;
+	};
+export type putV1EnrollmentsIdResponseError = (
+	| putV1EnrollmentsIdResponse400
+	| putV1EnrollmentsIdResponse404
+) & {
+	headers: Headers;
+};
+
+export type putV1EnrollmentsIdResponse =
+	| putV1EnrollmentsIdResponseSuccess
+	| putV1EnrollmentsIdResponseError;
+
+export const getPutV1EnrollmentsIdUrl = (id: number) => {
+	return `/v1/enrollments/${id}`;
+};
+
+/**
+ * Update the enrollment_type of an enrollment (new, repeat, mutation, etc.)
+ * @summary Update enrollment type
+ */
+export const putV1EnrollmentsId = async (
+	id: number,
+	dtoUpdateEnrollmentRequest: DtoUpdateEnrollmentRequest,
+	options?: RequestInit,
+): Promise<putV1EnrollmentsIdResponse> => {
+	return customInstance<putV1EnrollmentsIdResponse>(
+		getPutV1EnrollmentsIdUrl(id),
+		{
+			...options,
+			method: "PUT",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(dtoUpdateEnrollmentRequest),
+		},
+	);
+};
+
+export const getPutV1EnrollmentsIdMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof putV1EnrollmentsId>>,
+		TError,
+		{ id: number; data: DtoUpdateEnrollmentRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof putV1EnrollmentsId>>,
+	TError,
+	{ id: number; data: DtoUpdateEnrollmentRequest },
+	TContext
+> => {
+	const mutationKey = ["putV1EnrollmentsId"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof putV1EnrollmentsId>>,
+		{ id: number; data: DtoUpdateEnrollmentRequest }
+	> = (props) => {
+		const { id, data } = props ?? {};
+
+		return putV1EnrollmentsId(id, data, requestOptions);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type PutV1EnrollmentsIdMutationResult = NonNullable<
+	Awaited<ReturnType<typeof putV1EnrollmentsId>>
+>;
+export type PutV1EnrollmentsIdMutationBody = DtoUpdateEnrollmentRequest;
+export type PutV1EnrollmentsIdMutationError = DtoErrorResponse;
+
+/**
+ * @summary Update enrollment type
+ */
+export const usePutV1EnrollmentsId = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof putV1EnrollmentsId>>,
+			TError,
+			{ id: number; data: DtoUpdateEnrollmentRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof putV1EnrollmentsId>>,
+	TError,
+	{ id: number; data: DtoUpdateEnrollmentRequest },
+	TContext
+> => {
+	return useMutation(
+		getPutV1EnrollmentsIdMutationOptions(options),
+		queryClient,
+	);
+};
 export type patchV1EnrollmentsIdActivateResponse200 = {
 	data: DtoSuccessResponse;
 	status: 200;

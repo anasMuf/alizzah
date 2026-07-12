@@ -1601,3 +1601,132 @@ export const usePatchV1StudentsIdGuardiansGuardianIdPrimary = <
 		queryClient,
 	);
 };
+export type postV1StudentsIdRegenerateInvoicesResponse200 = {
+	data: DtoSuccessResponse;
+	status: 200;
+};
+
+export type postV1StudentsIdRegenerateInvoicesResponse400 = {
+	data: DtoErrorResponse;
+	status: 400;
+};
+
+export type postV1StudentsIdRegenerateInvoicesResponse404 = {
+	data: DtoErrorResponse;
+	status: 404;
+};
+
+export type postV1StudentsIdRegenerateInvoicesResponse500 = {
+	data: DtoErrorResponse;
+	status: 500;
+};
+
+export type postV1StudentsIdRegenerateInvoicesResponseSuccess =
+	postV1StudentsIdRegenerateInvoicesResponse200 & {
+		headers: Headers;
+	};
+export type postV1StudentsIdRegenerateInvoicesResponseError = (
+	| postV1StudentsIdRegenerateInvoicesResponse400
+	| postV1StudentsIdRegenerateInvoicesResponse404
+	| postV1StudentsIdRegenerateInvoicesResponse500
+) & {
+	headers: Headers;
+};
+
+export type postV1StudentsIdRegenerateInvoicesResponse =
+	| postV1StudentsIdRegenerateInvoicesResponseSuccess
+	| postV1StudentsIdRegenerateInvoicesResponseError;
+
+export const getPostV1StudentsIdRegenerateInvoicesUrl = (id: number) => {
+	return `/v1/students/${id}/regenerate-invoices`;
+};
+
+/**
+ * Delete all invoices (initial, registration, monthly) and regenerate them based on current enrollment data. Initial invoice only generated for enrollment_type "new" or "mutation".
+ * @summary Regenerate student invoices
+ */
+export const postV1StudentsIdRegenerateInvoices = async (
+	id: number,
+	options?: RequestInit,
+): Promise<postV1StudentsIdRegenerateInvoicesResponse> => {
+	return customInstance<postV1StudentsIdRegenerateInvoicesResponse>(
+		getPostV1StudentsIdRegenerateInvoicesUrl(id),
+		{
+			...options,
+			method: "POST",
+		},
+	);
+};
+
+export const getPostV1StudentsIdRegenerateInvoicesMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1StudentsIdRegenerateInvoices>>,
+		TError,
+		{ id: number },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1StudentsIdRegenerateInvoices>>,
+	TError,
+	{ id: number },
+	TContext
+> => {
+	const mutationKey = ["postV1StudentsIdRegenerateInvoices"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1StudentsIdRegenerateInvoices>>,
+		{ id: number }
+	> = (props) => {
+		const { id } = props ?? {};
+
+		return postV1StudentsIdRegenerateInvoices(id, requestOptions);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type PostV1StudentsIdRegenerateInvoicesMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1StudentsIdRegenerateInvoices>>
+>;
+
+export type PostV1StudentsIdRegenerateInvoicesMutationError = DtoErrorResponse;
+
+/**
+ * @summary Regenerate student invoices
+ */
+export const usePostV1StudentsIdRegenerateInvoices = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1StudentsIdRegenerateInvoices>>,
+			TError,
+			{ id: number },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1StudentsIdRegenerateInvoices>>,
+	TError,
+	{ id: number },
+	TContext
+> => {
+	return useMutation(
+		getPostV1StudentsIdRegenerateInvoicesMutationOptions(options),
+		queryClient,
+	);
+};

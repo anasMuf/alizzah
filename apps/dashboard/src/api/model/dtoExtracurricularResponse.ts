@@ -8,6 +8,8 @@
 
 export interface DtoExtracurricularResponse {
 	id?: number;
+	is_mandatory?: boolean;
+	levels?: string;
 	name?: string;
 	type?: string;
 }

@@ -6,8 +6,8 @@
  * OpenAPI spec version: 1.0
  */
 import type { DtoSuccessResponse } from "./dtoSuccessResponse";
-import type { InternalModulesKoperasiPembelianResponse } from "./internalModulesKoperasiPembelianResponse";
+import type { PembelianResponse } from "./pembelianResponse";
 
 export type GetV1KoperasiPurchasesId200 = DtoSuccessResponse & {
-	data?: InternalModulesKoperasiPembelianResponse;
+	data?: PembelianResponse;
 };

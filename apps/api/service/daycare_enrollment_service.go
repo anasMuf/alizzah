@@ -7,6 +7,8 @@ import (
 	"api/utility"
 	"errors"
 	"fmt"
+	"log"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -18,6 +20,9 @@ type DaycareEnrollmentService interface {
 	Create(createdBy uint, req dto.CreateDaycareEnrollmentRequest) (*dto.DaycareEnrollmentResponse, error)
 	Update(id uint, req dto.CreateDaycareEnrollmentRequest) (*dto.DaycareEnrollmentResponse, error)
 	UpdateStatus(id uint, req dto.UpdateDaycareStatusRequest) error
+	// Attendance
+	UpsertAttendance(createdBy uint, req dto.UpsertDaycareAttendanceRequest) (*dto.DaycareAttendanceResponse, error)
+	GetAttendance(studentID, month, year uint) ([]dto.DaycareAttendanceResponse, error)
 }
 
 type daycareEnrollmentService struct {
@@ -69,6 +74,13 @@ func (s *daycareEnrollmentService) GetByID(id uint) (*dto.DaycareEnrollmentRespo
 	return mapDaycareEnrollmentToResponse(*de), nil
 }
 
+func (s *daycareEnrollmentService) buildPackageType(req dto.CreateDaycareEnrollmentRequest) string {
+	if req.Category == "premium" {
+		return fmt.Sprintf("premium_%s_%s", strings.ReplaceAll(req.TimeSlot, "-", ""), req.AgeGroup)
+	}
+	return fmt.Sprintf("regular_%s_%s", strings.ReplaceAll(req.TimeSlot, "-", ""), req.AgeGroup)
+}
+
 func (s *daycareEnrollmentService) Create(createdBy uint, req dto.CreateDaycareEnrollmentRequest) (*dto.DaycareEnrollmentResponse, error) {
 	_, err := s.studentRepo.FindByID(req.StudentID)
 	if err != nil {
@@ -80,10 +92,9 @@ func (s *daycareEnrollmentService) Create(createdBy uint, req dto.CreateDaycareE
 		return nil, errors.New("Tahun ajaran tidak ditemukan")
 	}
 
-	// Cek duplikasi
 	existing, _ := s.daycareRepo.FindActiveByStudentID(req.StudentID, req.AcademicYearID)
 	if existing != nil {
-		return nil, utility.NewConflictError("Siswa sudah memiliki pendaftaran daycare aktif di tahun ajaran ini")
+		return nil, utility.NewConflictError("Siswa sudah memiliki pendaftaran daycare aktif")
 	}
 
 	startDate, err := utility.ParseDate(req.StartDate)
@@ -94,7 +105,10 @@ func (s *daycareEnrollmentService) Create(createdBy uint, req dto.CreateDaycareE
 	de := &model.DaycareEnrollment{
 		StudentID:      req.StudentID,
 		AcademicYearID: req.AcademicYearID,
-		PackageType:    req.PackageType,
+		PackageType:    s.buildPackageType(req),
+		Category:       req.Category,
+		TimeSlot:       req.TimeSlot,
+		AgeGroup:       req.AgeGroup,
 		StartDate:      startDate,
 		Status:         "active",
 		CreatedBy:      createdBy,
@@ -104,30 +118,24 @@ func (s *daycareEnrollmentService) Create(createdBy uint, req dto.CreateDaycareE
 		return nil, err
 	}
 
-	if s.invoiceGen != nil {
-		var daycareCount int64
-		s.db.Model(&model.DaycareEnrollment{}).Where("student_id = ?", req.StudentID).Count(&daycareCount)
-		if daycareCount == 1 {
-			student, err := s.studentRepo.FindByID(req.StudentID)
-			if err != nil {
-				return nil, fmt.Errorf("gagal mengambil data siswa: %w", err)
-			}
-			s.invoiceGen.GenerateDaycareInitial(dto.GenerateInitialInvoiceParams{
-				StudentID:      req.StudentID,
-				AcademicYearID: req.AcademicYearID,
-				Level:          "all",
-				Gender:         student.Gender,
-				CreatedBy:      createdBy,
-			})
+	// Generate initial invoice (Biaya Awal) + inject SPD ke future monthly invoices untuk Premium
+	if de.Category == "premium" && s.invoiceGen != nil {
+		student, _ := s.studentRepo.FindByID(req.StudentID)
+		gender := "all"
+		if student != nil {
+			gender = student.Gender
 		}
-
-		s.invoiceGen.GenerateDaycareMonthlyRange(dto.GenerateDaycareMonthlyParams{
+		s.invoiceGen.GenerateDaycareInitial(dto.GenerateInitialInvoiceParams{
 			StudentID:      req.StudentID,
 			AcademicYearID: req.AcademicYearID,
-			PackageType:    req.PackageType,
-			StartDate:      req.StartDate,
+			Level:          "all",
+			Gender:         gender,
 			CreatedBy:      createdBy,
 		})
+		// Inject flat SPD + meal + TPQ ke semua monthly invoice yg sudah ada
+		if err := s.invoiceGen.InjectPremiumDaycareToMonthlyInvoices(*de); err != nil {
+			return nil, err
+		}
 	}
 
 	savedDe, err := s.daycareRepo.FindByID(de.ID)
@@ -150,7 +158,10 @@ func (s *daycareEnrollmentService) Update(id uint, req dto.CreateDaycareEnrollme
 
 	de.StudentID = req.StudentID
 	de.AcademicYearID = req.AcademicYearID
-	de.PackageType = req.PackageType
+	de.Category = req.Category
+	de.TimeSlot = req.TimeSlot
+	de.AgeGroup = req.AgeGroup
+	de.PackageType = s.buildPackageType(req)
 	de.StartDate = startDate
 
 	if err := s.daycareRepo.Update(de); err != nil {
@@ -194,6 +205,80 @@ func (s *daycareEnrollmentService) UpdateStatus(id uint, req dto.UpdateDaycareSt
 	return nil
 }
 
+// ─── Attendance ──────────────────────────────────────────────────────
+
+func (s *daycareEnrollmentService) UpsertAttendance(createdBy uint, req dto.UpsertDaycareAttendanceRequest) (*dto.DaycareAttendanceResponse, error) {
+	date, err := utility.ParseDate(req.Date)
+	if err != nil {
+		return nil, errors.New("Format date tidak valid (YYYY-MM-DD)")
+	}
+
+	att := model.DaycareAttendance{}
+	s.db.Where("student_id = ? AND date = ?", req.StudentID, date).First(&att)
+
+	att.StudentID = req.StudentID
+	att.AcademicYearID = req.AcademicYearID
+	att.Date = date
+	att.TimeSlot = req.TimeSlot
+	att.WithMeal = req.WithMeal
+	att.WithTpq = req.WithTpq
+	att.CreatedBy = createdBy
+
+	if att.ID == 0 {
+		s.db.Create(&att)
+	} else {
+		s.db.Save(&att)
+	}
+
+	// Auto-generate SPD (meal/TPQ dari attendance untuk semua kategori)
+	if s.invoiceGen != nil {
+		de, err := s.daycareRepo.FindActiveByStudentID(req.StudentID, req.AcademicYearID)
+		if err == nil && de != nil {
+			genErr := s.invoiceGen.GenerateDaycareMonthlyInvoices(dto.GenerateDaycareMonthlyParams{
+				StudentID:      req.StudentID,
+				AcademicYearID: req.AcademicYearID,
+				Month:          uint(date.Month()),
+				Year:           uint(date.Year()),
+				CreatedBy:      createdBy,
+			})
+			if genErr != nil {
+				log.Printf("[Daycare SPD] Auto-generate gagal untuk student=%d: %v", req.StudentID, genErr)
+			}
+		}
+	}
+
+	return &dto.DaycareAttendanceResponse{
+		ID:        att.ID,
+		StudentID: att.StudentID,
+		Date:      req.Date,
+		TimeSlot:  att.TimeSlot,
+		WithMeal:  att.WithMeal,
+		WithTpq:   att.WithTpq,
+	}, nil
+}
+
+func (s *daycareEnrollmentService) GetAttendance(studentID, month, year uint) ([]dto.DaycareAttendanceResponse, error) {
+	start := time.Date(int(year), time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+	end := start.AddDate(0, 1, 0)
+
+	var atts []model.DaycareAttendance
+	s.db.Where("student_id = ? AND date >= ? AND date < ?", studentID, start, end).
+		Order("date ASC").Find(&atts)
+
+	var resp []dto.DaycareAttendanceResponse
+	for _, a := range atts {
+		resp = append(resp, dto.DaycareAttendanceResponse{
+			ID:        a.ID,
+			StudentID: a.StudentID,
+			Date:      a.Date.Format("2006-01-02"),
+			TimeSlot:  a.TimeSlot,
+			WithMeal:  a.WithMeal,
+			WithTpq:   a.WithTpq,
+		})
+	}
+	return resp, nil
+}
+
 func mapDaycareEnrollmentToResponse(de model.DaycareEnrollment) *dto.DaycareEnrollmentResponse {
 	var endDateStr *string
 	if de.EndDate != nil {
@@ -201,21 +286,21 @@ func mapDaycareEnrollmentToResponse(de model.DaycareEnrollment) *dto.DaycareEnro
 		endDateStr = &ed
 	}
 
+	var studentBrief dto.StudentBriefResponse
+	if de.Student.ID != 0 {
+		studentBrief = mapStudentBrief(de.Student)
+	}
+
 	return &dto.DaycareEnrollmentResponse{
-		ID: de.ID,
-		Student: dto.StudentBriefResponse{
-			ID:       de.Student.ID,
-			FullName: de.Student.FullName,
-			Gender:   de.Student.Gender,
-			Status:   de.Student.Status,
-		},
-		AcademicYear: dto.AcademicYearBriefResponse{
-			ID:   de.AcademicYear.ID,
-			Name: de.AcademicYear.Name,
-		},
-		PackageType: de.PackageType,
-		StartDate:   de.StartDate.Format("2006-01-02"),
-		EndDate:     endDateStr,
-		Status:      de.Status,
+		ID:           de.ID,
+		Student:      studentBrief,
+		AcademicYear: dto.AcademicYearBriefResponse{ID: de.AcademicYear.ID, Name: de.AcademicYear.Name},
+		Category:     de.Category,
+		TimeSlot:     de.TimeSlot,
+		AgeGroup:     de.AgeGroup,
+		PackageType:  de.PackageType,
+		StartDate:    de.StartDate.Format("2006-01-02"),
+		EndDate:      endDateStr,
+		Status:       de.Status,
 	}
 }

@@ -7,10 +7,28 @@ import {
 	getGetV1DaycareEnrollmentsQueryKey,
 	usePostV1DaycareEnrollments,
 } from "#/api/endpoints/daycare-enrollments/daycare-enrollments";
+import { getGetV1StudentsIdInvoicesQueryKey } from "#/api/endpoints/invoices/invoices";
 import { useGetV1Students } from "#/api/endpoints/students/students";
+import type { DtoCreateDaycareEnrollmentRequest } from "#/api/model";
 import { ApiError } from "#/api/mutator/custom-instance";
 import { Button, FormField, useToast } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
+
+const CATEGORY_OPTIONS = [
+	{ value: "premium", label: "Premium (Rutin, Fasilitas Personal)" },
+	{ value: "regular", label: "Regular (Tidak Rutin, Fasilitas Umum)" },
+];
+
+const TIMESLOT_OPTIONS = [
+	{ value: "07-15", label: "Jam 07.00 – 15.00" },
+	{ value: "10-15", label: "Jam 10.00 – 15.00" },
+	{ value: "10-13", label: "Jam 10.00 – 13.00" },
+];
+
+const AGEGROUP_OPTIONS = [
+	{ value: "kbtk", label: "KB-TK" },
+	{ value: "under3", label: "< 3 Tahun" },
+];
 
 export const Route = createFileRoute(
 	"/_authenticated/administrasi/daycare/baru",
@@ -28,7 +46,9 @@ function DaycareBaruPage() {
 	const [selectedStudent, setSelectedStudent] = useState<any>(null);
 
 	const [formData, setFormData] = useState({
-		package_type: "monthly_kb",
+		category: "regular",
+		time_slot: "07-15",
+		age_group: "kbtk",
 		start_date: new Date().toISOString().split("T")[0],
 	});
 
@@ -50,6 +70,10 @@ function DaycareBaruPage() {
 				queryClient.invalidateQueries({
 					queryKey: getGetV1DaycareEnrollmentsQueryKey(),
 				});
+				// Refresh tagihan siswa jika nanti dibuka
+				queryClient.invalidateQueries({
+					queryKey: getGetV1StudentsIdInvoicesQueryKey(selectedStudent.id),
+				});
 				navigate({ to: "/administrasi/daycare" });
 			},
 			onError: (error: Error) => {
@@ -70,7 +94,12 @@ function DaycareBaruPage() {
 			data: {
 				student_id: selectedStudent.id,
 				academic_year_id: activeAy.id,
-				package_type: formData.package_type as any,
+				category:
+					formData.category as DtoCreateDaycareEnrollmentRequest["category"],
+				time_slot:
+					formData.time_slot as DtoCreateDaycareEnrollmentRequest["time_slot"],
+				age_group:
+					formData.age_group as DtoCreateDaycareEnrollmentRequest["age_group"],
 				start_date: `${formData.start_date}T00:00:00Z`,
 			},
 		});
@@ -219,29 +248,83 @@ function DaycareBaruPage() {
 							)}
 						</div>
 
+						{/* Kategori */}
+						<div className="sm:col-span-6">
+							<label className="block text-sm font-medium leading-6 text-gray-900 mb-2">
+								Kategori Daycare
+							</label>
+							<div className="flex gap-6">
+								{CATEGORY_OPTIONS.map((opt) => (
+									<label
+										key={opt.value}
+										className={`flex items-center gap-2 px-4 py-3 rounded-lg border cursor-pointer transition-colors ${
+											formData.category === opt.value
+												? "border-indigo-500 bg-indigo-50"
+												: "border-gray-200 hover:bg-gray-50"
+										}`}
+									>
+										<input
+											type="radio"
+											name="category"
+											value={opt.value}
+											checked={formData.category === opt.value}
+											onChange={(e) =>
+												setFormData({ ...formData, category: e.target.value })
+											}
+											className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
+										/>
+										<span className="text-sm text-gray-900">{opt.label}</span>
+									</label>
+								))}
+							</div>
+							{formData.category === "premium" && (
+								<p className="mt-2 text-xs text-amber-600">
+									⚠️ Premium akan dikenakan Biaya Awal Rp 400.000.
+								</p>
+							)}
+						</div>
+
+						{/* Time Slot */}
 						<div className="sm:col-span-3">
 							<label className="block text-sm font-medium leading-6 text-gray-900 mb-2">
-								Paket Daycare
+								Jam
 							</label>
 							<select
-								value={formData.package_type}
+								value={formData.time_slot}
 								onChange={(e) =>
-									setFormData({ ...formData, package_type: e.target.value })
+									setFormData({ ...formData, time_slot: e.target.value })
 								}
-								className="block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
+								className="block w-full rounded-md border-0 py-2 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 							>
-								<option value="monthly_kb">Bulanan (Siswa KB Reguler)</option>
-								<option value="monthly_tk">Bulanan (Siswa TK Reguler)</option>
-								<option value="monthly_package_kb">
-									Paket Penitipan (Khusus Daycare Usia KB)
-								</option>
-								<option value="monthly_package_tk">
-									Paket Penitipan (Khusus Daycare Usia TK)
-								</option>
-								<option value="daily">Harian (Insidental)</option>
+								{TIMESLOT_OPTIONS.map((opt) => (
+									<option key={opt.value} value={opt.value}>
+										{opt.label}
+									</option>
+								))}
 							</select>
 						</div>
 
+						{/* Kelompok Umur */}
+						<div className="sm:col-span-3">
+							<label className="block text-sm font-medium leading-6 text-gray-900 mb-2">
+								Kelompok Umur
+							</label>
+							<select
+								value={formData.age_group}
+								onChange={(e) =>
+									setFormData({ ...formData, age_group: e.target.value })
+								}
+								className="block w-full rounded-md border-0 py-2 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
+							>
+								{AGEGROUP_OPTIONS.map((opt) => (
+									<option key={opt.value} value={opt.value}>
+										{opt.label}
+									</option>
+								))}
+							</select>
+						</div>
+
+						{/* Tanggal Mulai */}
 						<div className="sm:col-span-3">
 							<FormField
 								id="start_date"

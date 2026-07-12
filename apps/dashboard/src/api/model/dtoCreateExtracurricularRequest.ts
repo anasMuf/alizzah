@@ -8,6 +8,8 @@
 import type { DtoCreateExtracurricularRequestType } from "./dtoCreateExtracurricularRequestType";
 
 export interface DtoCreateExtracurricularRequest {
+	/** comma-separated: "intan,berlian". "" = all */
+	levels?: string;
 	/** @maxLength 100 */
 	name: string;
 	type: DtoCreateExtracurricularRequestType;

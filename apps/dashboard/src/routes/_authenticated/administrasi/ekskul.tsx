@@ -8,13 +8,7 @@ import {
 	useGetV1Extracurriculars,
 } from "#/api/endpoints/extracurriculars/extracurriculars";
 import type { DtoExtracurricularResponse } from "#/api/model";
-import {
-	Badge,
-	Button,
-	ConfirmDialog,
-	EmptyState,
-	useToast,
-} from "#/components/ui";
+import { Button, ConfirmDialog, EmptyState, useToast } from "#/components/ui";
 import { EkskulForm } from "../../../features/administrasi/components/EkskulForm";
 
 export const Route = createFileRoute("/_authenticated/administrasi/ekskul")({
@@ -26,7 +20,6 @@ function EkskulPage() {
 	const { addToast } = useToast();
 
 	const [search, setSearch] = useState("");
-	const [filterType, setFilterType] = useState("all");
 
 	const [isFormOpen, setIsFormOpen] = useState(false);
 	const [selectedEkskul, setSelectedEkskul] =
@@ -68,10 +61,9 @@ function EkskulPage() {
 	const filteredEkskuls = useMemo(() => {
 		return ekskuls.filter((e: any) => {
 			const matchSearch = e.name.toLowerCase().includes(search.toLowerCase());
-			const matchType = filterType === "all" || e.type === filterType;
-			return matchSearch && matchType;
+			return matchSearch;
 		});
-	}, [ekskuls, search, filterType]);
+	}, [ekskuls, search]);
 
 	const handleEdit = (ekskul: DtoExtracurricularResponse) => {
 		setSelectedEkskul(ekskul);
@@ -83,31 +75,15 @@ function EkskulPage() {
 		setIsDeleteOpen(true);
 	};
 
-	const getEkskulTypeBadge = (type: string) => {
-		switch (type.toLowerCase()) {
-			case "pasta":
-				return <Badge className="bg-blue-100 text-blue-700">PASTA</Badge>;
-			case "calisan":
-				return (
-					<Badge className="bg-emerald-100 text-emerald-700">CALISAN</Badge>
-				);
-			case "ekskul":
-				return <Badge className="bg-purple-100 text-purple-700">EKSKUL</Badge>;
-			default:
-				return <Badge variant="secondary">{type}</Badge>;
-		}
-	};
-
 	return (
 		<div className="space-y-6">
 			<div className="sm:flex sm:items-center sm:justify-between">
 				<div>
 					<h1 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:tracking-tight">
-						Master Ekstrakurikuler
+						Pasta
 					</h1>
 					<p className="mt-1 text-sm text-gray-500">
-						Kelola data kegiatan tambahan siswa seperti PASTA, CALISAN, dan
-						Ekskul Reguler.
+						Kelola data kegiatan pasta siswa.
 					</p>
 				</div>
 				<div className="mt-4 sm:ml-4 sm:mt-0">
@@ -119,7 +95,7 @@ function EkskulPage() {
 						className="flex items-center gap-2"
 					>
 						<Plus className="h-4 w-4" />
-						Tambah Kegiatan
+						Tambah Pasta
 					</Button>
 				</div>
 			</div>
@@ -138,21 +114,7 @@ function EkskulPage() {
 							onChange={(e) => setSearch(e.target.value)}
 						/>
 					</div>
-					<div className="flex gap-2">
-						{["all", "pasta", "calisan", "ekskul"].map((type) => (
-							<button
-								key={type}
-								onClick={() => setFilterType(type)}
-								className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-									filterType === type
-										? "bg-indigo-100 text-indigo-700 ring-1 ring-inset ring-indigo-600/20"
-										: "bg-white text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-								}`}
-							>
-								{type === "all" ? "Semua" : type.toUpperCase()}
-							</button>
-						))}
-					</div>
+					<div className="flex gap-2"></div>
 				</div>
 			</div>
 
@@ -165,7 +127,7 @@ function EkskulPage() {
 			) : filteredEkskuls.length === 0 ? (
 				<EmptyState
 					title="Tidak ada data"
-					description="Belum ada ekstrakurikuler yang ditambahkan atau tidak ada yang cocok dengan pencarian."
+					description="Belum ada pasta yang ditambahkan atau tidak ada yang cocok dengan pencarian."
 				/>
 			) : (
 				<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -176,7 +138,6 @@ function EkskulPage() {
 						>
 							<div className="p-5 flex-1">
 								<div className="flex justify-between items-start mb-2">
-									{getEkskulTypeBadge(ekskul.type)}
 									<div className="flex gap-1">
 										<button
 											onClick={() => handleEdit(ekskul)}
@@ -194,10 +155,32 @@ function EkskulPage() {
 								</div>
 								<h3 className="text-lg font-bold text-gray-900 mt-2">
 									{ekskul.name}
+									{ekskul.is_mandatory && (
+										<span className="ml-2 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+											Wajib
+										</span>
+									)}
 								</h3>
-								<p className="mt-1 text-sm text-gray-500 line-clamp-2">
-									Kegiatan Ekstrakurikuler
-								</p>
+								<div className="mt-1 flex items-center gap-1">
+									{ekskul.levels || "" ? (
+										(ekskul.levels as string).split(",").map((lv: string) => (
+											<span
+												key={lv}
+												className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700"
+											>
+												{lv === "mutiara"
+													? "Mutiara"
+													: lv === "intan"
+														? "Intan"
+														: "Berlian"}
+											</span>
+										))
+									) : (
+										<span className="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
+											Semua Jenjang
+										</span>
+									)}
+								</div>
 							</div>
 						</div>
 					))}

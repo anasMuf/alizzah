@@ -110,6 +110,7 @@ function DetailTagihanPage() {
 	// Mapping tipe tagihan → kategori tarif yang relevan
 	const invoiceTypeCategories: Record<string, string[]> = {
 		initial: ["initial"],
+		daycare_initial: ["daycare"],
 		registration: ["registration"],
 		monthly: [
 			"monthly_spp",
@@ -498,9 +499,12 @@ function DetailTagihanPage() {
 	// F08-3: collapse rincian hanya untuk tagihan "bundel" (biaya awal,
 	// registrasi, wisuda) yang berisi banyak item satu jenis. Tagihan bulanan
 	// & insidental ditampilkan datar — tiap item sudah berdiri sendiri.
-	const collapseRincian = ["initial", "registration", "graduation"].includes(
-		invoice.type,
-	);
+	const collapseRincian = [
+		"initial",
+		"daycare_initial",
+		"registration",
+		"graduation",
+	].includes(invoice.type);
 
 	const renderItemRow = (item: any) => {
 		const itemTotal = Number(item.amount);
@@ -591,6 +595,7 @@ function DetailTagihanPage() {
 			monthly: "Bulanan",
 			registration: "Registrasi Tahunan",
 			initial: "Biaya Awal",
+			daycare_initial: "Biaya Awal Daycare",
 			incidental: "Insidental",
 		};
 		return map[type] || type;

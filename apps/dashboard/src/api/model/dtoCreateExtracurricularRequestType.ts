@@ -11,6 +11,4 @@ export type DtoCreateExtracurricularRequestType =
 
 export const DtoCreateExtracurricularRequestType = {
 	pasta: "pasta",
-	calisan: "calisan",
-	ekskul: "ekskul",
 } as const;

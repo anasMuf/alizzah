@@ -23,6 +23,8 @@ import type {
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 import type {
+	AnggotaBulkCreateRequest,
+	AnggotaCreateRequest,
 	DtoSuccessResponse,
 	GetV1KoperasiEmployees200,
 	GetV1KoperasiEmployeesAvailable200,
@@ -32,8 +34,6 @@ import type {
 	GetV1KoperasiMembersId200,
 	GetV1KoperasiMembersIdDetail200,
 	GetV1KoperasiMembersParams,
-	InternalModulesKoperasiAnggotaBulkCreateRequest,
-	InternalModulesKoperasiAnggotaCreateRequest,
 	PostV1KoperasiMembers201,
 	PostV1KoperasiMembersBulk201,
 	PutV1KoperasiMembersId200,
@@ -661,7 +661,7 @@ export const getPostV1KoperasiMembersUrl = () => {
  * @summary Tambah anggota
  */
 export const postV1KoperasiMembers = async (
-	internalModulesKoperasiAnggotaCreateRequest: InternalModulesKoperasiAnggotaCreateRequest,
+	anggotaCreateRequest: AnggotaCreateRequest,
 	options?: RequestInit,
 ): Promise<postV1KoperasiMembersResponse> => {
 	return customInstance<postV1KoperasiMembersResponse>(
@@ -670,7 +670,7 @@ export const postV1KoperasiMembers = async (
 			...options,
 			method: "POST",
 			headers: { "Content-Type": "application/json", ...options?.headers },
-			body: JSON.stringify(internalModulesKoperasiAnggotaCreateRequest),
+			body: JSON.stringify(anggotaCreateRequest),
 		},
 	);
 };
@@ -682,14 +682,14 @@ export const getPostV1KoperasiMembersMutationOptions = <
 	mutation?: UseMutationOptions<
 		Awaited<ReturnType<typeof postV1KoperasiMembers>>,
 		TError,
-		{ data: InternalModulesKoperasiAnggotaCreateRequest },
+		{ data: AnggotaCreateRequest },
 		TContext
 	>;
 	request?: SecondParameter<typeof customInstance>;
 }): UseMutationOptions<
 	Awaited<ReturnType<typeof postV1KoperasiMembers>>,
 	TError,
-	{ data: InternalModulesKoperasiAnggotaCreateRequest },
+	{ data: AnggotaCreateRequest },
 	TContext
 > => {
 	const mutationKey = ["postV1KoperasiMembers"];
@@ -703,7 +703,7 @@ export const getPostV1KoperasiMembersMutationOptions = <
 
 	const mutationFn: MutationFunction<
 		Awaited<ReturnType<typeof postV1KoperasiMembers>>,
-		{ data: InternalModulesKoperasiAnggotaCreateRequest }
+		{ data: AnggotaCreateRequest }
 	> = (props) => {
 		const { data } = props ?? {};
 
@@ -716,8 +716,7 @@ export const getPostV1KoperasiMembersMutationOptions = <
 export type PostV1KoperasiMembersMutationResult = NonNullable<
 	Awaited<ReturnType<typeof postV1KoperasiMembers>>
 >;
-export type PostV1KoperasiMembersMutationBody =
-	InternalModulesKoperasiAnggotaCreateRequest;
+export type PostV1KoperasiMembersMutationBody = AnggotaCreateRequest;
 export type PostV1KoperasiMembersMutationError = unknown;
 
 /**
@@ -728,7 +727,7 @@ export const usePostV1KoperasiMembers = <TError = unknown, TContext = unknown>(
 		mutation?: UseMutationOptions<
 			Awaited<ReturnType<typeof postV1KoperasiMembers>>,
 			TError,
-			{ data: InternalModulesKoperasiAnggotaCreateRequest },
+			{ data: AnggotaCreateRequest },
 			TContext
 		>;
 		request?: SecondParameter<typeof customInstance>;
@@ -737,7 +736,7 @@ export const usePostV1KoperasiMembers = <TError = unknown, TContext = unknown>(
 ): UseMutationResult<
 	Awaited<ReturnType<typeof postV1KoperasiMembers>>,
 	TError,
-	{ data: InternalModulesKoperasiAnggotaCreateRequest },
+	{ data: AnggotaCreateRequest },
 	TContext
 > => {
 	return useMutation(
@@ -766,7 +765,7 @@ export const getPostV1KoperasiMembersBulkUrl = () => {
  * @summary Tambah anggota massal
  */
 export const postV1KoperasiMembersBulk = async (
-	internalModulesKoperasiAnggotaBulkCreateRequest: InternalModulesKoperasiAnggotaBulkCreateRequest,
+	anggotaBulkCreateRequest: AnggotaBulkCreateRequest,
 	options?: RequestInit,
 ): Promise<postV1KoperasiMembersBulkResponse> => {
 	return customInstance<postV1KoperasiMembersBulkResponse>(
@@ -775,7 +774,7 @@ export const postV1KoperasiMembersBulk = async (
 			...options,
 			method: "POST",
 			headers: { "Content-Type": "application/json", ...options?.headers },
-			body: JSON.stringify(internalModulesKoperasiAnggotaBulkCreateRequest),
+			body: JSON.stringify(anggotaBulkCreateRequest),
 		},
 	);
 };
@@ -787,14 +786,14 @@ export const getPostV1KoperasiMembersBulkMutationOptions = <
 	mutation?: UseMutationOptions<
 		Awaited<ReturnType<typeof postV1KoperasiMembersBulk>>,
 		TError,
-		{ data: InternalModulesKoperasiAnggotaBulkCreateRequest },
+		{ data: AnggotaBulkCreateRequest },
 		TContext
 	>;
 	request?: SecondParameter<typeof customInstance>;
 }): UseMutationOptions<
 	Awaited<ReturnType<typeof postV1KoperasiMembersBulk>>,
 	TError,
-	{ data: InternalModulesKoperasiAnggotaBulkCreateRequest },
+	{ data: AnggotaBulkCreateRequest },
 	TContext
 > => {
 	const mutationKey = ["postV1KoperasiMembersBulk"];
@@ -808,7 +807,7 @@ export const getPostV1KoperasiMembersBulkMutationOptions = <
 
 	const mutationFn: MutationFunction<
 		Awaited<ReturnType<typeof postV1KoperasiMembersBulk>>,
-		{ data: InternalModulesKoperasiAnggotaBulkCreateRequest }
+		{ data: AnggotaBulkCreateRequest }
 	> = (props) => {
 		const { data } = props ?? {};
 
@@ -821,8 +820,7 @@ export const getPostV1KoperasiMembersBulkMutationOptions = <
 export type PostV1KoperasiMembersBulkMutationResult = NonNullable<
 	Awaited<ReturnType<typeof postV1KoperasiMembersBulk>>
 >;
-export type PostV1KoperasiMembersBulkMutationBody =
-	InternalModulesKoperasiAnggotaBulkCreateRequest;
+export type PostV1KoperasiMembersBulkMutationBody = AnggotaBulkCreateRequest;
 export type PostV1KoperasiMembersBulkMutationError = unknown;
 
 /**
@@ -836,7 +834,7 @@ export const usePostV1KoperasiMembersBulk = <
 		mutation?: UseMutationOptions<
 			Awaited<ReturnType<typeof postV1KoperasiMembersBulk>>,
 			TError,
-			{ data: InternalModulesKoperasiAnggotaBulkCreateRequest },
+			{ data: AnggotaBulkCreateRequest },
 			TContext
 		>;
 		request?: SecondParameter<typeof customInstance>;
@@ -845,7 +843,7 @@ export const usePostV1KoperasiMembersBulk = <
 ): UseMutationResult<
 	Awaited<ReturnType<typeof postV1KoperasiMembersBulk>>,
 	TError,
-	{ data: InternalModulesKoperasiAnggotaBulkCreateRequest },
+	{ data: AnggotaBulkCreateRequest },
 	TContext
 > => {
 	return useMutation(
@@ -1060,7 +1058,7 @@ export const getPutV1KoperasiMembersIdUrl = (id: number) => {
  */
 export const putV1KoperasiMembersId = async (
 	id: number,
-	internalModulesKoperasiAnggotaCreateRequest: InternalModulesKoperasiAnggotaCreateRequest,
+	anggotaCreateRequest: AnggotaCreateRequest,
 	options?: RequestInit,
 ): Promise<putV1KoperasiMembersIdResponse> => {
 	return customInstance<putV1KoperasiMembersIdResponse>(
@@ -1069,7 +1067,7 @@ export const putV1KoperasiMembersId = async (
 			...options,
 			method: "PUT",
 			headers: { "Content-Type": "application/json", ...options?.headers },
-			body: JSON.stringify(internalModulesKoperasiAnggotaCreateRequest),
+			body: JSON.stringify(anggotaCreateRequest),
 		},
 	);
 };
@@ -1081,14 +1079,14 @@ export const getPutV1KoperasiMembersIdMutationOptions = <
 	mutation?: UseMutationOptions<
 		Awaited<ReturnType<typeof putV1KoperasiMembersId>>,
 		TError,
-		{ id: number; data: InternalModulesKoperasiAnggotaCreateRequest },
+		{ id: number; data: AnggotaCreateRequest },
 		TContext
 	>;
 	request?: SecondParameter<typeof customInstance>;
 }): UseMutationOptions<
 	Awaited<ReturnType<typeof putV1KoperasiMembersId>>,
 	TError,
-	{ id: number; data: InternalModulesKoperasiAnggotaCreateRequest },
+	{ id: number; data: AnggotaCreateRequest },
 	TContext
 > => {
 	const mutationKey = ["putV1KoperasiMembersId"];
@@ -1102,7 +1100,7 @@ export const getPutV1KoperasiMembersIdMutationOptions = <
 
 	const mutationFn: MutationFunction<
 		Awaited<ReturnType<typeof putV1KoperasiMembersId>>,
-		{ id: number; data: InternalModulesKoperasiAnggotaCreateRequest }
+		{ id: number; data: AnggotaCreateRequest }
 	> = (props) => {
 		const { id, data } = props ?? {};
 
@@ -1115,8 +1113,7 @@ export const getPutV1KoperasiMembersIdMutationOptions = <
 export type PutV1KoperasiMembersIdMutationResult = NonNullable<
 	Awaited<ReturnType<typeof putV1KoperasiMembersId>>
 >;
-export type PutV1KoperasiMembersIdMutationBody =
-	InternalModulesKoperasiAnggotaCreateRequest;
+export type PutV1KoperasiMembersIdMutationBody = AnggotaCreateRequest;
 export type PutV1KoperasiMembersIdMutationError = unknown;
 
 /**
@@ -1127,7 +1124,7 @@ export const usePutV1KoperasiMembersId = <TError = unknown, TContext = unknown>(
 		mutation?: UseMutationOptions<
 			Awaited<ReturnType<typeof putV1KoperasiMembersId>>,
 			TError,
-			{ id: number; data: InternalModulesKoperasiAnggotaCreateRequest },
+			{ id: number; data: AnggotaCreateRequest },
 			TContext
 		>;
 		request?: SecondParameter<typeof customInstance>;
@@ -1136,7 +1133,7 @@ export const usePutV1KoperasiMembersId = <TError = unknown, TContext = unknown>(
 ): UseMutationResult<
 	Awaited<ReturnType<typeof putV1KoperasiMembersId>>,
 	TError,
-	{ id: number; data: InternalModulesKoperasiAnggotaCreateRequest },
+	{ id: number; data: AnggotaCreateRequest },
 	TContext
 > => {
 	return useMutation(

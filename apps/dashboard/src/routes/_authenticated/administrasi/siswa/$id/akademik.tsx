@@ -1,7 +1,7 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { GraduationCap, RefreshCw } from "lucide-react";
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { useGetV1StudentsIdEnrollments } from "#/api/endpoints/student-enrollments/student-enrollments";
 import { Badge, Button } from "#/components/ui";
 
@@ -170,7 +170,10 @@ function SiswaAkademikPage() {
 						</Button>
 					) : (
 						<div className="flex items-center gap-2 shrink-0">
-							<Button variant="secondary" onClick={() => setConfirmRegen(false)}>
+							<Button
+								variant="secondary"
+								onClick={() => setConfirmRegen(false)}
+							>
 								Batal
 							</Button>
 							<Button

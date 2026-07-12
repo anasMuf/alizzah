@@ -1,11 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import {
-	getGetV1ExtracurricularsQueryKey,
-} from "#/api/endpoints/extracurriculars/extracurriculars";
-import type {
-	DtoExtracurricularResponse,
-} from "#/api/model";
+import { getGetV1ExtracurricularsQueryKey } from "#/api/endpoints/extracurriculars/extracurriculars";
+import type { DtoExtracurricularResponse } from "#/api/model";
 import { Button, FormField, SlideOver, useToast } from "#/components/ui";
 
 const API_URL = import.meta.env.VITE_API_URL || "";
@@ -47,9 +43,7 @@ export function EkskulForm({ isOpen, onClose, initialData }: EkskulFormProps) {
 
 	const toggleLevel = (level: string) => {
 		setSelectedLevels((prev) =>
-			prev.includes(level)
-				? prev.filter((l) => l !== level)
-				: [...prev, level],
+			prev.includes(level) ? prev.filter((l) => l !== level) : [...prev, level],
 		);
 	};
 
@@ -82,7 +76,9 @@ export function EkskulForm({ isOpen, onClose, initialData }: EkskulFormProps) {
 			addToast({
 				variant: "success",
 				title: "Berhasil",
-				message: isEditing ? "Pasta berhasil diperbarui." : "Pasta berhasil ditambahkan.",
+				message: isEditing
+					? "Pasta berhasil diperbarui."
+					: "Pasta berhasil ditambahkan.",
 			});
 			queryClient.invalidateQueries({
 				queryKey: getGetV1ExtracurricularsQueryKey(),

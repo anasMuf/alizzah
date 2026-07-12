@@ -8,8 +8,8 @@ import {
 	usePostV1DaycareEnrollments,
 } from "#/api/endpoints/daycare-enrollments/daycare-enrollments";
 import { getGetV1StudentsIdInvoicesQueryKey } from "#/api/endpoints/invoices/invoices";
-import type { DtoCreateDaycareEnrollmentRequest } from "#/api/model";
 import { useGetV1Students } from "#/api/endpoints/students/students";
+import type { DtoCreateDaycareEnrollmentRequest } from "#/api/model";
 import { ApiError } from "#/api/mutator/custom-instance";
 import { Button, FormField, useToast } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
@@ -94,9 +94,12 @@ function DaycareBaruPage() {
 			data: {
 				student_id: selectedStudent.id,
 				academic_year_id: activeAy.id,
-				category: formData.category as DtoCreateDaycareEnrollmentRequest["category"],
-				time_slot: formData.time_slot as DtoCreateDaycareEnrollmentRequest["time_slot"],
-				age_group: formData.age_group as DtoCreateDaycareEnrollmentRequest["age_group"],
+				category:
+					formData.category as DtoCreateDaycareEnrollmentRequest["category"],
+				time_slot:
+					formData.time_slot as DtoCreateDaycareEnrollmentRequest["time_slot"],
+				age_group:
+					formData.age_group as DtoCreateDaycareEnrollmentRequest["age_group"],
 				start_date: `${formData.start_date}T00:00:00Z`,
 			},
 		});

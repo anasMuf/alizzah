@@ -8,12 +8,7 @@ import {
 	useGetV1Extracurriculars,
 } from "#/api/endpoints/extracurriculars/extracurriculars";
 import type { DtoExtracurricularResponse } from "#/api/model";
-import {
-	Button,
-	ConfirmDialog,
-	EmptyState,
-	useToast,
-} from "#/components/ui";
+import { Button, ConfirmDialog, EmptyState, useToast } from "#/components/ui";
 import { EkskulForm } from "../../../features/administrasi/components/EkskulForm";
 
 export const Route = createFileRoute("/_authenticated/administrasi/ekskul")({
@@ -119,8 +114,7 @@ function EkskulPage() {
 							onChange={(e) => setSearch(e.target.value)}
 						/>
 					</div>
-					<div className="flex gap-2">
-					</div>
+					<div className="flex gap-2"></div>
 				</div>
 			</div>
 
@@ -168,10 +162,17 @@ function EkskulPage() {
 									)}
 								</h3>
 								<div className="mt-1 flex items-center gap-1">
-									{(ekskul.levels || "") ? (
+									{ekskul.levels || "" ? (
 										(ekskul.levels as string).split(",").map((lv: string) => (
-											<span key={lv} className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
-												{lv === "mutiara" ? "Mutiara" : lv === "intan" ? "Intan" : "Berlian"}
+											<span
+												key={lv}
+												className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700"
+											>
+												{lv === "mutiara"
+													? "Mutiara"
+													: lv === "intan"
+														? "Intan"
+														: "Berlian"}
 											</span>
 										))
 									) : (

@@ -71,8 +71,7 @@ const REPORT_CARDS = [
 	},
 	{
 		title: "Tabungan Siswa",
-		description:
-			"Saldo dan mutasi harian tabungan umum atau tabungan wajib.",
+		description: "Saldo dan mutasi harian tabungan umum atau tabungan wajib.",
 		icon: PiggyBank,
 		to: "/keuangan/laporan/tabungan",
 		color: "text-pink-600",

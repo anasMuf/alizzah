@@ -499,9 +499,12 @@ function DetailTagihanPage() {
 	// F08-3: collapse rincian hanya untuk tagihan "bundel" (biaya awal,
 	// registrasi, wisuda) yang berisi banyak item satu jenis. Tagihan bulanan
 	// & insidental ditampilkan datar — tiap item sudah berdiri sendiri.
-	const collapseRincian = ["initial", "daycare_initial", "registration", "graduation"].includes(
-		invoice.type,
-	);
+	const collapseRincian = [
+		"initial",
+		"daycare_initial",
+		"registration",
+		"graduation",
+	].includes(invoice.type);
 
 	const renderItemRow = (item: any) => {
 		const itemTotal = Number(item.amount);

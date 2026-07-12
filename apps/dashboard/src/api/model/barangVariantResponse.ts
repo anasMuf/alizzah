@@ -7,10 +7,10 @@
  */
 
 export interface BarangVariantResponse {
-  cost_price?: number;
-  id?: number;
-  is_active?: boolean;
-  name?: string;
-  sale_price?: number;
-  stock?: number;
+	cost_price?: number;
+	id?: number;
+	is_active?: boolean;
+	name?: string;
+	sale_price?: number;
+	stock?: number;
 }

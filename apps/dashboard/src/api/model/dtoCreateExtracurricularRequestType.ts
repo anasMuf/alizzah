@@ -6,9 +6,9 @@
  * OpenAPI spec version: 1.0
  */
 
-export type DtoCreateExtracurricularRequestType = typeof DtoCreateExtracurricularRequestType[keyof typeof DtoCreateExtracurricularRequestType];
-
+export type DtoCreateExtracurricularRequestType =
+	(typeof DtoCreateExtracurricularRequestType)[keyof typeof DtoCreateExtracurricularRequestType];
 
 export const DtoCreateExtracurricularRequestType = {
-  pasta: 'pasta',
+	pasta: "pasta",
 } as const;

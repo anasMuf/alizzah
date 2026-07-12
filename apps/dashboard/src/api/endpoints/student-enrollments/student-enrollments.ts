@@ -5,723 +5,1019 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import {
-  useMutation,
-  useQuery
-} from '@tanstack/react-query';
-import type {
-  DataTag,
-  DefinedInitialDataOptions,
-  DefinedUseQueryResult,
-  MutationFunction,
-  QueryClient,
-  QueryFunction,
-  QueryKey,
-  UndefinedInitialDataOptions,
-  UseMutationOptions,
-  UseMutationResult,
-  UseQueryOptions,
-  UseQueryResult
-} from '@tanstack/react-query';
 
 import type {
-  DtoCreateEnrollmentRequest,
-  DtoErrorResponse,
-  DtoSuccessResponse,
-  DtoUpdateEnrollmentRequest,
-  GetV1ClassGroupsIdStudents200,
-  GetV1StudentsIdEnrollments200,
-  GetV1StudentsIdEnrollmentsParams,
-  HandlerBatchEnrollRequest,
-  PostV1StudentsIdEnrollments201,
-  PutV1EnrollmentsId200
-} from '../../model';
+	DataTag,
+	DefinedInitialDataOptions,
+	DefinedUseQueryResult,
+	MutationFunction,
+	QueryClient,
+	QueryFunction,
+	QueryKey,
+	UndefinedInitialDataOptions,
+	UseMutationOptions,
+	UseMutationResult,
+	UseQueryOptions,
+	UseQueryResult,
+} from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
-import { customInstance } from '../../mutator/custom-instance';
+import type {
+	DtoCreateEnrollmentRequest,
+	DtoErrorResponse,
+	DtoSuccessResponse,
+	DtoUpdateEnrollmentRequest,
+	GetV1ClassGroupsIdStudents200,
+	GetV1StudentsIdEnrollments200,
+	GetV1StudentsIdEnrollmentsParams,
+	HandlerBatchEnrollRequest,
+	PostV1StudentsIdEnrollments201,
+	PutV1EnrollmentsId200,
+} from "../../model";
 
+import { customInstance } from "../../mutator/custom-instance";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
-
-
 export type getV1ClassGroupsIdStudentsResponse200 = {
-  data: GetV1ClassGroupsIdStudents200
-  status: 200
-}
+	data: GetV1ClassGroupsIdStudents200;
+	status: 200;
+};
 
 export type getV1ClassGroupsIdStudentsResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type getV1ClassGroupsIdStudentsResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type getV1ClassGroupsIdStudentsResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type getV1ClassGroupsIdStudentsResponse500 = {
-  data: DtoErrorResponse
-  status: 500
-}
-
-export type getV1ClassGroupsIdStudentsResponseSuccess = (getV1ClassGroupsIdStudentsResponse200) & {
-  headers: Headers;
-};
-export type getV1ClassGroupsIdStudentsResponseError = (getV1ClassGroupsIdStudentsResponse400 | getV1ClassGroupsIdStudentsResponse401 | getV1ClassGroupsIdStudentsResponse403 | getV1ClassGroupsIdStudentsResponse500) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 500;
 };
 
-export type getV1ClassGroupsIdStudentsResponse = (getV1ClassGroupsIdStudentsResponseSuccess | getV1ClassGroupsIdStudentsResponseError)
+export type getV1ClassGroupsIdStudentsResponseSuccess =
+	getV1ClassGroupsIdStudentsResponse200 & {
+		headers: Headers;
+	};
+export type getV1ClassGroupsIdStudentsResponseError = (
+	| getV1ClassGroupsIdStudentsResponse400
+	| getV1ClassGroupsIdStudentsResponse401
+	| getV1ClassGroupsIdStudentsResponse403
+	| getV1ClassGroupsIdStudentsResponse500
+) & {
+	headers: Headers;
+};
 
-export const getGetV1ClassGroupsIdStudentsUrl = (id: number,) => {
+export type getV1ClassGroupsIdStudentsResponse =
+	| getV1ClassGroupsIdStudentsResponseSuccess
+	| getV1ClassGroupsIdStudentsResponseError;
 
-
-
-
-  return `/v1/class-groups/${id}/students`
-}
+export const getGetV1ClassGroupsIdStudentsUrl = (id: number) => {
+	return `/v1/class-groups/${id}/students`;
+};
 
 /**
  * Get a list of students enrolled in a specific class group
  * @summary Get students by class group
  */
-export const getV1ClassGroupsIdStudents = async (id: number, options?: RequestInit): Promise<getV1ClassGroupsIdStudentsResponse> => {
+export const getV1ClassGroupsIdStudents = async (
+	id: number,
+	options?: RequestInit,
+): Promise<getV1ClassGroupsIdStudentsResponse> => {
+	return customInstance<getV1ClassGroupsIdStudentsResponse>(
+		getGetV1ClassGroupsIdStudentsUrl(id),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
 
-  return customInstance<getV1ClassGroupsIdStudentsResponse>(getGetV1ClassGroupsIdStudentsUrl(id),
-  {
-    ...options,
-    method: 'GET'
+export const getGetV1ClassGroupsIdStudentsQueryKey = (id: number) => {
+	return [`/v1/class-groups/${id}/students`] as const;
+};
 
-
-  }
-);}
-
-
-
-
-
-export const getGetV1ClassGroupsIdStudentsQueryKey = (id: number,) => {
-    return [
-    `/v1/class-groups/${id}/students`
-    ] as const;
-    }
-
-
-export const getGetV1ClassGroupsIdStudentsQueryOptions = <TData = Awaited<ReturnType<typeof getV1ClassGroupsIdStudents>>, TError = DtoErrorResponse>(id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ClassGroupsIdStudents>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getGetV1ClassGroupsIdStudentsQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1ClassGroupsIdStudents>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1ClassGroupsIdStudents>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
 ) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+	const queryKey =
+		queryOptions?.queryKey ?? getGetV1ClassGroupsIdStudentsQueryKey(id);
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1ClassGroupsIdStudentsQueryKey(id);
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1ClassGroupsIdStudents>>
+	> = ({ signal }) =>
+		getV1ClassGroupsIdStudents(id, { signal, ...requestOptions });
 
+	return {
+		queryKey,
+		queryFn,
+		enabled: !!id,
+		...queryOptions,
+	} as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1ClassGroupsIdStudents>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
+export type GetV1ClassGroupsIdStudentsQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1ClassGroupsIdStudents>>
+>;
+export type GetV1ClassGroupsIdStudentsQueryError = DtoErrorResponse;
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1ClassGroupsIdStudents>>> = ({ signal }) => getV1ClassGroupsIdStudents(id, { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1ClassGroupsIdStudents>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetV1ClassGroupsIdStudentsQueryResult = NonNullable<Awaited<ReturnType<typeof getV1ClassGroupsIdStudents>>>
-export type GetV1ClassGroupsIdStudentsQueryError = DtoErrorResponse
-
-
-export function useGetV1ClassGroupsIdStudents<TData = Awaited<ReturnType<typeof getV1ClassGroupsIdStudents>>, TError = DtoErrorResponse>(
- id: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ClassGroupsIdStudents>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1ClassGroupsIdStudents>>,
-          TError,
-          Awaited<ReturnType<typeof getV1ClassGroupsIdStudents>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1ClassGroupsIdStudents<TData = Awaited<ReturnType<typeof getV1ClassGroupsIdStudents>>, TError = DtoErrorResponse>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ClassGroupsIdStudents>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1ClassGroupsIdStudents>>,
-          TError,
-          Awaited<ReturnType<typeof getV1ClassGroupsIdStudents>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1ClassGroupsIdStudents<TData = Awaited<ReturnType<typeof getV1ClassGroupsIdStudents>>, TError = DtoErrorResponse>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ClassGroupsIdStudents>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1ClassGroupsIdStudents<
+	TData = Awaited<ReturnType<typeof getV1ClassGroupsIdStudents>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1ClassGroupsIdStudents>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1ClassGroupsIdStudents>>,
+					TError,
+					Awaited<ReturnType<typeof getV1ClassGroupsIdStudents>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1ClassGroupsIdStudents<
+	TData = Awaited<ReturnType<typeof getV1ClassGroupsIdStudents>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1ClassGroupsIdStudents>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1ClassGroupsIdStudents>>,
+					TError,
+					Awaited<ReturnType<typeof getV1ClassGroupsIdStudents>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1ClassGroupsIdStudents<
+	TData = Awaited<ReturnType<typeof getV1ClassGroupsIdStudents>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1ClassGroupsIdStudents>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary Get students by class group
  */
 
-export function useGetV1ClassGroupsIdStudents<TData = Awaited<ReturnType<typeof getV1ClassGroupsIdStudents>>, TError = DtoErrorResponse>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ClassGroupsIdStudents>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1ClassGroupsIdStudents<
+	TData = Awaited<ReturnType<typeof getV1ClassGroupsIdStudents>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1ClassGroupsIdStudents>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1ClassGroupsIdStudentsQueryOptions(id, options);
 
-  const queryOptions = getGetV1ClassGroupsIdStudentsQueryOptions(id,options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
 
 export type putV1EnrollmentsIdResponse200 = {
-  data: PutV1EnrollmentsId200
-  status: 200
-}
+	data: PutV1EnrollmentsId200;
+	status: 200;
+};
 
 export type putV1EnrollmentsIdResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type putV1EnrollmentsIdResponse404 = {
-  data: DtoErrorResponse
-  status: 404
-}
-
-export type putV1EnrollmentsIdResponseSuccess = (putV1EnrollmentsIdResponse200) & {
-  headers: Headers;
-};
-export type putV1EnrollmentsIdResponseError = (putV1EnrollmentsIdResponse400 | putV1EnrollmentsIdResponse404) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 404;
 };
 
-export type putV1EnrollmentsIdResponse = (putV1EnrollmentsIdResponseSuccess | putV1EnrollmentsIdResponseError)
+export type putV1EnrollmentsIdResponseSuccess =
+	putV1EnrollmentsIdResponse200 & {
+		headers: Headers;
+	};
+export type putV1EnrollmentsIdResponseError = (
+	| putV1EnrollmentsIdResponse400
+	| putV1EnrollmentsIdResponse404
+) & {
+	headers: Headers;
+};
 
-export const getPutV1EnrollmentsIdUrl = (id: number,) => {
+export type putV1EnrollmentsIdResponse =
+	| putV1EnrollmentsIdResponseSuccess
+	| putV1EnrollmentsIdResponseError;
 
-
-
-
-  return `/v1/enrollments/${id}`
-}
+export const getPutV1EnrollmentsIdUrl = (id: number) => {
+	return `/v1/enrollments/${id}`;
+};
 
 /**
  * Update the enrollment_type of an enrollment (new, repeat, mutation, etc.)
  * @summary Update enrollment type
  */
-export const putV1EnrollmentsId = async (id: number,
-    dtoUpdateEnrollmentRequest: DtoUpdateEnrollmentRequest, options?: RequestInit): Promise<putV1EnrollmentsIdResponse> => {
+export const putV1EnrollmentsId = async (
+	id: number,
+	dtoUpdateEnrollmentRequest: DtoUpdateEnrollmentRequest,
+	options?: RequestInit,
+): Promise<putV1EnrollmentsIdResponse> => {
+	return customInstance<putV1EnrollmentsIdResponse>(
+		getPutV1EnrollmentsIdUrl(id),
+		{
+			...options,
+			method: "PUT",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(dtoUpdateEnrollmentRequest),
+		},
+	);
+};
 
-  return customInstance<putV1EnrollmentsIdResponse>(getPutV1EnrollmentsIdUrl(id),
-  {
-    ...options,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      dtoUpdateEnrollmentRequest,)
-  }
-);}
+export const getPutV1EnrollmentsIdMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof putV1EnrollmentsId>>,
+		TError,
+		{ id: number; data: DtoUpdateEnrollmentRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof putV1EnrollmentsId>>,
+	TError,
+	{ id: number; data: DtoUpdateEnrollmentRequest },
+	TContext
+> => {
+	const mutationKey = ["putV1EnrollmentsId"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof putV1EnrollmentsId>>,
+		{ id: number; data: DtoUpdateEnrollmentRequest }
+	> = (props) => {
+		const { id, data } = props ?? {};
 
+		return putV1EnrollmentsId(id, data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-export const getPutV1EnrollmentsIdMutationOptions = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1EnrollmentsId>>, TError,{id: number;data: DtoUpdateEnrollmentRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof putV1EnrollmentsId>>, TError,{id: number;data: DtoUpdateEnrollmentRequest}, TContext> => {
+export type PutV1EnrollmentsIdMutationResult = NonNullable<
+	Awaited<ReturnType<typeof putV1EnrollmentsId>>
+>;
+export type PutV1EnrollmentsIdMutationBody = DtoUpdateEnrollmentRequest;
+export type PutV1EnrollmentsIdMutationError = DtoErrorResponse;
 
-const mutationKey = ['putV1EnrollmentsId'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1EnrollmentsId>>, {id: number;data: DtoUpdateEnrollmentRequest}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  putV1EnrollmentsId(id,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PutV1EnrollmentsIdMutationResult = NonNullable<Awaited<ReturnType<typeof putV1EnrollmentsId>>>
-    export type PutV1EnrollmentsIdMutationBody = DtoUpdateEnrollmentRequest
-    export type PutV1EnrollmentsIdMutationError = DtoErrorResponse
-
-    /**
+/**
  * @summary Update enrollment type
  */
-export const usePutV1EnrollmentsId = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1EnrollmentsId>>, TError,{id: number;data: DtoUpdateEnrollmentRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof putV1EnrollmentsId>>,
-        TError,
-        {id: number;data: DtoUpdateEnrollmentRequest},
-        TContext
-      > => {
-      return useMutation(getPutV1EnrollmentsIdMutationOptions(options), queryClient);
-    }
-    export type patchV1EnrollmentsIdActivateResponse200 = {
-  data: DtoSuccessResponse
-  status: 200
-}
+export const usePutV1EnrollmentsId = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof putV1EnrollmentsId>>,
+			TError,
+			{ id: number; data: DtoUpdateEnrollmentRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof putV1EnrollmentsId>>,
+	TError,
+	{ id: number; data: DtoUpdateEnrollmentRequest },
+	TContext
+> => {
+	return useMutation(
+		getPutV1EnrollmentsIdMutationOptions(options),
+		queryClient,
+	);
+};
+export type patchV1EnrollmentsIdActivateResponse200 = {
+	data: DtoSuccessResponse;
+	status: 200;
+};
 
 export type patchV1EnrollmentsIdActivateResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type patchV1EnrollmentsIdActivateResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type patchV1EnrollmentsIdActivateResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type patchV1EnrollmentsIdActivateResponse404 = {
-  data: DtoErrorResponse
-  status: 404
-}
-
-export type patchV1EnrollmentsIdActivateResponseSuccess = (patchV1EnrollmentsIdActivateResponse200) & {
-  headers: Headers;
-};
-export type patchV1EnrollmentsIdActivateResponseError = (patchV1EnrollmentsIdActivateResponse400 | patchV1EnrollmentsIdActivateResponse401 | patchV1EnrollmentsIdActivateResponse403 | patchV1EnrollmentsIdActivateResponse404) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 404;
 };
 
-export type patchV1EnrollmentsIdActivateResponse = (patchV1EnrollmentsIdActivateResponseSuccess | patchV1EnrollmentsIdActivateResponseError)
+export type patchV1EnrollmentsIdActivateResponseSuccess =
+	patchV1EnrollmentsIdActivateResponse200 & {
+		headers: Headers;
+	};
+export type patchV1EnrollmentsIdActivateResponseError = (
+	| patchV1EnrollmentsIdActivateResponse400
+	| patchV1EnrollmentsIdActivateResponse401
+	| patchV1EnrollmentsIdActivateResponse403
+	| patchV1EnrollmentsIdActivateResponse404
+) & {
+	headers: Headers;
+};
 
-export const getPatchV1EnrollmentsIdActivateUrl = (id: number,) => {
+export type patchV1EnrollmentsIdActivateResponse =
+	| patchV1EnrollmentsIdActivateResponseSuccess
+	| patchV1EnrollmentsIdActivateResponseError;
 
-
-
-
-  return `/v1/enrollments/${id}/activate`
-}
+export const getPatchV1EnrollmentsIdActivateUrl = (id: number) => {
+	return `/v1/enrollments/${id}/activate`;
+};
 
 /**
  * Change enrollment status from 'pending' to 'active'
  * @summary Activate a pending enrollment
  */
-export const patchV1EnrollmentsIdActivate = async (id: number, options?: RequestInit): Promise<patchV1EnrollmentsIdActivateResponse> => {
+export const patchV1EnrollmentsIdActivate = async (
+	id: number,
+	options?: RequestInit,
+): Promise<patchV1EnrollmentsIdActivateResponse> => {
+	return customInstance<patchV1EnrollmentsIdActivateResponse>(
+		getPatchV1EnrollmentsIdActivateUrl(id),
+		{
+			...options,
+			method: "PATCH",
+		},
+	);
+};
 
-  return customInstance<patchV1EnrollmentsIdActivateResponse>(getPatchV1EnrollmentsIdActivateUrl(id),
-  {
-    ...options,
-    method: 'PATCH'
+export const getPatchV1EnrollmentsIdActivateMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof patchV1EnrollmentsIdActivate>>,
+		TError,
+		{ id: number },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof patchV1EnrollmentsIdActivate>>,
+	TError,
+	{ id: number },
+	TContext
+> => {
+	const mutationKey = ["patchV1EnrollmentsIdActivate"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof patchV1EnrollmentsIdActivate>>,
+		{ id: number }
+	> = (props) => {
+		const { id } = props ?? {};
 
-  }
-);}
+		return patchV1EnrollmentsIdActivate(id, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
+export type PatchV1EnrollmentsIdActivateMutationResult = NonNullable<
+	Awaited<ReturnType<typeof patchV1EnrollmentsIdActivate>>
+>;
 
+export type PatchV1EnrollmentsIdActivateMutationError = DtoErrorResponse;
 
-export const getPatchV1EnrollmentsIdActivateMutationOptions = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchV1EnrollmentsIdActivate>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof patchV1EnrollmentsIdActivate>>, TError,{id: number}, TContext> => {
-
-const mutationKey = ['patchV1EnrollmentsIdActivate'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof patchV1EnrollmentsIdActivate>>, {id: number}> = (props) => {
-          const {id} = props ?? {};
-
-          return  patchV1EnrollmentsIdActivate(id,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PatchV1EnrollmentsIdActivateMutationResult = NonNullable<Awaited<ReturnType<typeof patchV1EnrollmentsIdActivate>>>
-
-    export type PatchV1EnrollmentsIdActivateMutationError = DtoErrorResponse
-
-    /**
+/**
  * @summary Activate a pending enrollment
  */
-export const usePatchV1EnrollmentsIdActivate = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchV1EnrollmentsIdActivate>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof patchV1EnrollmentsIdActivate>>,
-        TError,
-        {id: number},
-        TContext
-      > => {
-      return useMutation(getPatchV1EnrollmentsIdActivateMutationOptions(options), queryClient);
-    }
-    export type postV1StudentsEnrollmentsBatchResponse201 = {
-  data: DtoSuccessResponse
-  status: 201
-}
+export const usePatchV1EnrollmentsIdActivate = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof patchV1EnrollmentsIdActivate>>,
+			TError,
+			{ id: number },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof patchV1EnrollmentsIdActivate>>,
+	TError,
+	{ id: number },
+	TContext
+> => {
+	return useMutation(
+		getPatchV1EnrollmentsIdActivateMutationOptions(options),
+		queryClient,
+	);
+};
+export type postV1StudentsEnrollmentsBatchResponse201 = {
+	data: DtoSuccessResponse;
+	status: 201;
+};
 
 export type postV1StudentsEnrollmentsBatchResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
-
-export type postV1StudentsEnrollmentsBatchResponseSuccess = (postV1StudentsEnrollmentsBatchResponse201) & {
-  headers: Headers;
-};
-export type postV1StudentsEnrollmentsBatchResponseError = (postV1StudentsEnrollmentsBatchResponse400) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 400;
 };
 
-export type postV1StudentsEnrollmentsBatchResponse = (postV1StudentsEnrollmentsBatchResponseSuccess | postV1StudentsEnrollmentsBatchResponseError)
+export type postV1StudentsEnrollmentsBatchResponseSuccess =
+	postV1StudentsEnrollmentsBatchResponse201 & {
+		headers: Headers;
+	};
+export type postV1StudentsEnrollmentsBatchResponseError =
+	postV1StudentsEnrollmentsBatchResponse400 & {
+		headers: Headers;
+	};
+
+export type postV1StudentsEnrollmentsBatchResponse =
+	| postV1StudentsEnrollmentsBatchResponseSuccess
+	| postV1StudentsEnrollmentsBatchResponseError;
 
 export const getPostV1StudentsEnrollmentsBatchUrl = () => {
-
-
-
-
-  return `/v1/students/enrollments/batch`
-}
+	return `/v1/students/enrollments/batch`;
+};
 
 /**
  * Enroll multiple existing students into the same rombel + generate invoices
  * @summary Bulk enroll students into a class group
  */
-export const postV1StudentsEnrollmentsBatch = async (handlerBatchEnrollRequest: HandlerBatchEnrollRequest, options?: RequestInit): Promise<postV1StudentsEnrollmentsBatchResponse> => {
+export const postV1StudentsEnrollmentsBatch = async (
+	handlerBatchEnrollRequest: HandlerBatchEnrollRequest,
+	options?: RequestInit,
+): Promise<postV1StudentsEnrollmentsBatchResponse> => {
+	return customInstance<postV1StudentsEnrollmentsBatchResponse>(
+		getPostV1StudentsEnrollmentsBatchUrl(),
+		{
+			...options,
+			method: "POST",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(handlerBatchEnrollRequest),
+		},
+	);
+};
 
-  return customInstance<postV1StudentsEnrollmentsBatchResponse>(getPostV1StudentsEnrollmentsBatchUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      handlerBatchEnrollRequest,)
-  }
-);}
+export const getPostV1StudentsEnrollmentsBatchMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1StudentsEnrollmentsBatch>>,
+		TError,
+		{ data: HandlerBatchEnrollRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1StudentsEnrollmentsBatch>>,
+	TError,
+	{ data: HandlerBatchEnrollRequest },
+	TContext
+> => {
+	const mutationKey = ["postV1StudentsEnrollmentsBatch"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1StudentsEnrollmentsBatch>>,
+		{ data: HandlerBatchEnrollRequest }
+	> = (props) => {
+		const { data } = props ?? {};
 
+		return postV1StudentsEnrollmentsBatch(data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-export const getPostV1StudentsEnrollmentsBatchMutationOptions = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1StudentsEnrollmentsBatch>>, TError,{data: HandlerBatchEnrollRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1StudentsEnrollmentsBatch>>, TError,{data: HandlerBatchEnrollRequest}, TContext> => {
+export type PostV1StudentsEnrollmentsBatchMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1StudentsEnrollmentsBatch>>
+>;
+export type PostV1StudentsEnrollmentsBatchMutationBody =
+	HandlerBatchEnrollRequest;
+export type PostV1StudentsEnrollmentsBatchMutationError = DtoErrorResponse;
 
-const mutationKey = ['postV1StudentsEnrollmentsBatch'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1StudentsEnrollmentsBatch>>, {data: HandlerBatchEnrollRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  postV1StudentsEnrollmentsBatch(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1StudentsEnrollmentsBatchMutationResult = NonNullable<Awaited<ReturnType<typeof postV1StudentsEnrollmentsBatch>>>
-    export type PostV1StudentsEnrollmentsBatchMutationBody = HandlerBatchEnrollRequest
-    export type PostV1StudentsEnrollmentsBatchMutationError = DtoErrorResponse
-
-    /**
+/**
  * @summary Bulk enroll students into a class group
  */
-export const usePostV1StudentsEnrollmentsBatch = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1StudentsEnrollmentsBatch>>, TError,{data: HandlerBatchEnrollRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postV1StudentsEnrollmentsBatch>>,
-        TError,
-        {data: HandlerBatchEnrollRequest},
-        TContext
-      > => {
-      return useMutation(getPostV1StudentsEnrollmentsBatchMutationOptions(options), queryClient);
-    }
-    export type getV1StudentsIdEnrollmentsResponse200 = {
-  data: GetV1StudentsIdEnrollments200
-  status: 200
-}
+export const usePostV1StudentsEnrollmentsBatch = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1StudentsEnrollmentsBatch>>,
+			TError,
+			{ data: HandlerBatchEnrollRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1StudentsEnrollmentsBatch>>,
+	TError,
+	{ data: HandlerBatchEnrollRequest },
+	TContext
+> => {
+	return useMutation(
+		getPostV1StudentsEnrollmentsBatchMutationOptions(options),
+		queryClient,
+	);
+};
+export type getV1StudentsIdEnrollmentsResponse200 = {
+	data: GetV1StudentsIdEnrollments200;
+	status: 200;
+};
 
 export type getV1StudentsIdEnrollmentsResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type getV1StudentsIdEnrollmentsResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type getV1StudentsIdEnrollmentsResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type getV1StudentsIdEnrollmentsResponse500 = {
-  data: DtoErrorResponse
-  status: 500
-}
-
-export type getV1StudentsIdEnrollmentsResponseSuccess = (getV1StudentsIdEnrollmentsResponse200) & {
-  headers: Headers;
-};
-export type getV1StudentsIdEnrollmentsResponseError = (getV1StudentsIdEnrollmentsResponse400 | getV1StudentsIdEnrollmentsResponse401 | getV1StudentsIdEnrollmentsResponse403 | getV1StudentsIdEnrollmentsResponse500) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 500;
 };
 
-export type getV1StudentsIdEnrollmentsResponse = (getV1StudentsIdEnrollmentsResponseSuccess | getV1StudentsIdEnrollmentsResponseError)
+export type getV1StudentsIdEnrollmentsResponseSuccess =
+	getV1StudentsIdEnrollmentsResponse200 & {
+		headers: Headers;
+	};
+export type getV1StudentsIdEnrollmentsResponseError = (
+	| getV1StudentsIdEnrollmentsResponse400
+	| getV1StudentsIdEnrollmentsResponse401
+	| getV1StudentsIdEnrollmentsResponse403
+	| getV1StudentsIdEnrollmentsResponse500
+) & {
+	headers: Headers;
+};
 
-export const getGetV1StudentsIdEnrollmentsUrl = (id: number,
-    params?: GetV1StudentsIdEnrollmentsParams,) => {
-  const normalizedParams = new URLSearchParams();
+export type getV1StudentsIdEnrollmentsResponse =
+	| getV1StudentsIdEnrollmentsResponseSuccess
+	| getV1StudentsIdEnrollmentsResponseError;
 
-  Object.entries(params || {}).forEach(([key, value]) => {
+export const getGetV1StudentsIdEnrollmentsUrl = (
+	id: number,
+	params?: GetV1StudentsIdEnrollmentsParams,
+) => {
+	const normalizedParams = new URLSearchParams();
 
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(key, value === null ? "null" : value.toString());
+		}
+	});
 
-  const stringifiedParams = normalizedParams.toString();
+	const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/v1/students/${id}/enrollments?${stringifiedParams}` : `/v1/students/${id}/enrollments`
-}
+	return stringifiedParams.length > 0
+		? `/v1/students/${id}/enrollments?${stringifiedParams}`
+		: `/v1/students/${id}/enrollments`;
+};
 
 /**
  * Get a list of enrollments (class groups) for a specific student
  * @summary Get student enrollments
  */
-export const getV1StudentsIdEnrollments = async (id: number,
-    params?: GetV1StudentsIdEnrollmentsParams, options?: RequestInit): Promise<getV1StudentsIdEnrollmentsResponse> => {
+export const getV1StudentsIdEnrollments = async (
+	id: number,
+	params?: GetV1StudentsIdEnrollmentsParams,
+	options?: RequestInit,
+): Promise<getV1StudentsIdEnrollmentsResponse> => {
+	return customInstance<getV1StudentsIdEnrollmentsResponse>(
+		getGetV1StudentsIdEnrollmentsUrl(id, params),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
 
-  return customInstance<getV1StudentsIdEnrollmentsResponse>(getGetV1StudentsIdEnrollmentsUrl(id,params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetV1StudentsIdEnrollmentsQueryKey = (id: number,
-    params?: GetV1StudentsIdEnrollmentsParams,) => {
-    return [
-    `/v1/students/${id}/enrollments`, ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getGetV1StudentsIdEnrollmentsQueryOptions = <TData = Awaited<ReturnType<typeof getV1StudentsIdEnrollments>>, TError = DtoErrorResponse>(id: number,
-    params?: GetV1StudentsIdEnrollmentsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdEnrollments>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getGetV1StudentsIdEnrollmentsQueryKey = (
+	id: number,
+	params?: GetV1StudentsIdEnrollmentsParams,
 ) => {
+	return [
+		`/v1/students/${id}/enrollments`,
+		...(params ? [params] : []),
+	] as const;
+};
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+export const getGetV1StudentsIdEnrollmentsQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1StudentsIdEnrollments>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	params?: GetV1StudentsIdEnrollmentsParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1StudentsIdEnrollments>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1StudentsIdEnrollmentsQueryKey(id,params);
+	const queryKey =
+		queryOptions?.queryKey ?? getGetV1StudentsIdEnrollmentsQueryKey(id, params);
 
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1StudentsIdEnrollments>>
+	> = ({ signal }) =>
+		getV1StudentsIdEnrollments(id, params, { signal, ...requestOptions });
 
+	return {
+		queryKey,
+		queryFn,
+		enabled: !!id,
+		...queryOptions,
+	} as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1StudentsIdEnrollments>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1StudentsIdEnrollments>>> = ({ signal }) => getV1StudentsIdEnrollments(id,params, { signal, ...requestOptions });
+export type GetV1StudentsIdEnrollmentsQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1StudentsIdEnrollments>>
+>;
+export type GetV1StudentsIdEnrollmentsQueryError = DtoErrorResponse;
 
-
-
-
-
-   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdEnrollments>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetV1StudentsIdEnrollmentsQueryResult = NonNullable<Awaited<ReturnType<typeof getV1StudentsIdEnrollments>>>
-export type GetV1StudentsIdEnrollmentsQueryError = DtoErrorResponse
-
-
-export function useGetV1StudentsIdEnrollments<TData = Awaited<ReturnType<typeof getV1StudentsIdEnrollments>>, TError = DtoErrorResponse>(
- id: number,
-    params: undefined |  GetV1StudentsIdEnrollmentsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdEnrollments>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1StudentsIdEnrollments>>,
-          TError,
-          Awaited<ReturnType<typeof getV1StudentsIdEnrollments>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1StudentsIdEnrollments<TData = Awaited<ReturnType<typeof getV1StudentsIdEnrollments>>, TError = DtoErrorResponse>(
- id: number,
-    params?: GetV1StudentsIdEnrollmentsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdEnrollments>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1StudentsIdEnrollments>>,
-          TError,
-          Awaited<ReturnType<typeof getV1StudentsIdEnrollments>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1StudentsIdEnrollments<TData = Awaited<ReturnType<typeof getV1StudentsIdEnrollments>>, TError = DtoErrorResponse>(
- id: number,
-    params?: GetV1StudentsIdEnrollmentsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdEnrollments>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1StudentsIdEnrollments<
+	TData = Awaited<ReturnType<typeof getV1StudentsIdEnrollments>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	params: undefined | GetV1StudentsIdEnrollmentsParams,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1StudentsIdEnrollments>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1StudentsIdEnrollments>>,
+					TError,
+					Awaited<ReturnType<typeof getV1StudentsIdEnrollments>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1StudentsIdEnrollments<
+	TData = Awaited<ReturnType<typeof getV1StudentsIdEnrollments>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	params?: GetV1StudentsIdEnrollmentsParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1StudentsIdEnrollments>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1StudentsIdEnrollments>>,
+					TError,
+					Awaited<ReturnType<typeof getV1StudentsIdEnrollments>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1StudentsIdEnrollments<
+	TData = Awaited<ReturnType<typeof getV1StudentsIdEnrollments>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	params?: GetV1StudentsIdEnrollmentsParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1StudentsIdEnrollments>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary Get student enrollments
  */
 
-export function useGetV1StudentsIdEnrollments<TData = Awaited<ReturnType<typeof getV1StudentsIdEnrollments>>, TError = DtoErrorResponse>(
- id: number,
-    params?: GetV1StudentsIdEnrollmentsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdEnrollments>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1StudentsIdEnrollments<
+	TData = Awaited<ReturnType<typeof getV1StudentsIdEnrollments>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	params?: GetV1StudentsIdEnrollmentsParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1StudentsIdEnrollments>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1StudentsIdEnrollmentsQueryOptions(
+		id,
+		params,
+		options,
+	);
 
-  const queryOptions = getGetV1StudentsIdEnrollmentsQueryOptions(id,params,options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
 
 export type postV1StudentsIdEnrollmentsResponse201 = {
-  data: PostV1StudentsIdEnrollments201
-  status: 201
-}
+	data: PostV1StudentsIdEnrollments201;
+	status: 201;
+};
 
 export type postV1StudentsIdEnrollmentsResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type postV1StudentsIdEnrollmentsResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type postV1StudentsIdEnrollmentsResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type postV1StudentsIdEnrollmentsResponse409 = {
-  data: DtoErrorResponse
-  status: 409
-}
-
-export type postV1StudentsIdEnrollmentsResponseSuccess = (postV1StudentsIdEnrollmentsResponse201) & {
-  headers: Headers;
-};
-export type postV1StudentsIdEnrollmentsResponseError = (postV1StudentsIdEnrollmentsResponse400 | postV1StudentsIdEnrollmentsResponse401 | postV1StudentsIdEnrollmentsResponse403 | postV1StudentsIdEnrollmentsResponse409) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 409;
 };
 
-export type postV1StudentsIdEnrollmentsResponse = (postV1StudentsIdEnrollmentsResponseSuccess | postV1StudentsIdEnrollmentsResponseError)
+export type postV1StudentsIdEnrollmentsResponseSuccess =
+	postV1StudentsIdEnrollmentsResponse201 & {
+		headers: Headers;
+	};
+export type postV1StudentsIdEnrollmentsResponseError = (
+	| postV1StudentsIdEnrollmentsResponse400
+	| postV1StudentsIdEnrollmentsResponse401
+	| postV1StudentsIdEnrollmentsResponse403
+	| postV1StudentsIdEnrollmentsResponse409
+) & {
+	headers: Headers;
+};
 
-export const getPostV1StudentsIdEnrollmentsUrl = (id: number,) => {
+export type postV1StudentsIdEnrollmentsResponse =
+	| postV1StudentsIdEnrollmentsResponseSuccess
+	| postV1StudentsIdEnrollmentsResponseError;
 
-
-
-
-  return `/v1/students/${id}/enrollments`
-}
+export const getPostV1StudentsIdEnrollmentsUrl = (id: number) => {
+	return `/v1/students/${id}/enrollments`;
+};
 
 /**
  * Create a new enrollment for an existing student + generate invoices
  * @summary Enroll a student into a class group
  */
-export const postV1StudentsIdEnrollments = async (id: number,
-    dtoCreateEnrollmentRequest: DtoCreateEnrollmentRequest, options?: RequestInit): Promise<postV1StudentsIdEnrollmentsResponse> => {
+export const postV1StudentsIdEnrollments = async (
+	id: number,
+	dtoCreateEnrollmentRequest: DtoCreateEnrollmentRequest,
+	options?: RequestInit,
+): Promise<postV1StudentsIdEnrollmentsResponse> => {
+	return customInstance<postV1StudentsIdEnrollmentsResponse>(
+		getPostV1StudentsIdEnrollmentsUrl(id),
+		{
+			...options,
+			method: "POST",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(dtoCreateEnrollmentRequest),
+		},
+	);
+};
 
-  return customInstance<postV1StudentsIdEnrollmentsResponse>(getPostV1StudentsIdEnrollmentsUrl(id),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      dtoCreateEnrollmentRequest,)
-  }
-);}
+export const getPostV1StudentsIdEnrollmentsMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1StudentsIdEnrollments>>,
+		TError,
+		{ id: number; data: DtoCreateEnrollmentRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1StudentsIdEnrollments>>,
+	TError,
+	{ id: number; data: DtoCreateEnrollmentRequest },
+	TContext
+> => {
+	const mutationKey = ["postV1StudentsIdEnrollments"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1StudentsIdEnrollments>>,
+		{ id: number; data: DtoCreateEnrollmentRequest }
+	> = (props) => {
+		const { id, data } = props ?? {};
 
+		return postV1StudentsIdEnrollments(id, data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-export const getPostV1StudentsIdEnrollmentsMutationOptions = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1StudentsIdEnrollments>>, TError,{id: number;data: DtoCreateEnrollmentRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1StudentsIdEnrollments>>, TError,{id: number;data: DtoCreateEnrollmentRequest}, TContext> => {
+export type PostV1StudentsIdEnrollmentsMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1StudentsIdEnrollments>>
+>;
+export type PostV1StudentsIdEnrollmentsMutationBody =
+	DtoCreateEnrollmentRequest;
+export type PostV1StudentsIdEnrollmentsMutationError = DtoErrorResponse;
 
-const mutationKey = ['postV1StudentsIdEnrollments'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1StudentsIdEnrollments>>, {id: number;data: DtoCreateEnrollmentRequest}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  postV1StudentsIdEnrollments(id,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1StudentsIdEnrollmentsMutationResult = NonNullable<Awaited<ReturnType<typeof postV1StudentsIdEnrollments>>>
-    export type PostV1StudentsIdEnrollmentsMutationBody = DtoCreateEnrollmentRequest
-    export type PostV1StudentsIdEnrollmentsMutationError = DtoErrorResponse
-
-    /**
+/**
  * @summary Enroll a student into a class group
  */
-export const usePostV1StudentsIdEnrollments = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1StudentsIdEnrollments>>, TError,{id: number;data: DtoCreateEnrollmentRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postV1StudentsIdEnrollments>>,
-        TError,
-        {id: number;data: DtoCreateEnrollmentRequest},
-        TContext
-      > => {
-      return useMutation(getPostV1StudentsIdEnrollmentsMutationOptions(options), queryClient);
-    }
+export const usePostV1StudentsIdEnrollments = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1StudentsIdEnrollments>>,
+			TError,
+			{ id: number; data: DtoCreateEnrollmentRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1StudentsIdEnrollments>>,
+	TError,
+	{ id: number; data: DtoCreateEnrollmentRequest },
+	TContext
+> => {
+	return useMutation(
+		getPostV1StudentsIdEnrollmentsMutationOptions(options),
+		queryClient,
+	);
+};

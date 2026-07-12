@@ -5,9 +5,9 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoSuccessResponse } from './dtoSuccessResponse';
-import type { LainlainResponse } from './lainlainResponse';
+import type { DtoSuccessResponse } from "./dtoSuccessResponse";
+import type { LainlainResponse } from "./lainlainResponse";
 
 export type PostV1KoperasiMiscTransactions201 = DtoSuccessResponse & {
-  data?: LainlainResponse;
+	data?: LainlainResponse;
 };

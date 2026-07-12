@@ -5,9 +5,9 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoStudentExtracurricularResponse } from './dtoStudentExtracurricularResponse';
-import type { DtoSuccessResponse } from './dtoSuccessResponse';
+import type { DtoStudentExtracurricularResponse } from "./dtoStudentExtracurricularResponse";
+import type { DtoSuccessResponse } from "./dtoSuccessResponse";
 
 export type PostV1StudentsIdExtracurriculars201 = DtoSuccessResponse & {
-  data?: DtoStudentExtracurricularResponse;
+	data?: DtoStudentExtracurricularResponse;
 };

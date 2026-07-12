@@ -7,10 +7,10 @@
  */
 
 export interface DtoCreateFeeConfigRequest {
-  academic_year_id: number;
-  /**
-     * @minimum 0
-     * @maximum 100
-     */
-  savings_admin_rate: number;
+	academic_year_id: number;
+	/**
+	 * @minimum 0
+	 * @maximum 100
+	 */
+	savings_admin_rate: number;
 }

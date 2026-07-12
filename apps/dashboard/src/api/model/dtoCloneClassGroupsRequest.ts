@@ -7,6 +7,6 @@
  */
 
 export interface DtoCloneClassGroupsRequest {
-  from_academic_year_id: number;
-  to_academic_year_id: number;
+	from_academic_year_id: number;
+	to_academic_year_id: number;
 }

@@ -5,9 +5,9 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoSuccessResponse } from './dtoSuccessResponse';
-import type { LaporanStockReport } from './laporanStockReport';
+import type { DtoSuccessResponse } from "./dtoSuccessResponse";
+import type { LaporanStockReport } from "./laporanStockReport";
 
 export type GetV1KoperasiReportsStock200 = DtoSuccessResponse & {
-  data?: LaporanStockReport;
+	data?: LaporanStockReport;
 };

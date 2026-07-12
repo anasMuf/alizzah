@@ -7,12 +7,12 @@
  */
 
 export type GetV1ReportsDailyParams = {
-/**
- * Date (YYYY-MM-DD)
- */
-date: string;
-/**
- * Academic Year ID
- */
-academic_year_id?: number;
+	/**
+	 * Date (YYYY-MM-DD)
+	 */
+	date: string;
+	/**
+	 * Academic Year ID
+	 */
+	academic_year_id?: number;
 };

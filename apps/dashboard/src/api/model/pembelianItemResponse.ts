@@ -7,11 +7,11 @@
  */
 
 export interface PembelianItemResponse {
-  product_id?: number;
-  product_name?: string;
-  quantity?: number;
-  subtotal?: number;
-  unit_price?: number;
-  variant_id?: number;
-  variant_name?: string;
+	product_id?: number;
+	product_name?: string;
+	quantity?: number;
+	subtotal?: number;
+	unit_price?: number;
+	variant_id?: number;
+	variant_name?: string;
 }

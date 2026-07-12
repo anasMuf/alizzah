@@ -5,435 +5,633 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import {
-  useMutation,
-  useQuery
-} from '@tanstack/react-query';
-import type {
-  DataTag,
-  DefinedInitialDataOptions,
-  DefinedUseQueryResult,
-  MutationFunction,
-  QueryClient,
-  QueryFunction,
-  QueryKey,
-  UndefinedInitialDataOptions,
-  UseMutationOptions,
-  UseMutationResult,
-  UseQueryOptions,
-  UseQueryResult
-} from '@tanstack/react-query';
 
 import type {
-  GetV1KoperasiPurchases200,
-  GetV1KoperasiPurchasesId200,
-  GetV1KoperasiPurchasesParams,
-  PembelianCreateRequest,
-  PembelianPaymentRequest,
-  PostV1KoperasiPurchases201,
-  PostV1KoperasiPurchasesIdPayments200
-} from '../../model';
+	DataTag,
+	DefinedInitialDataOptions,
+	DefinedUseQueryResult,
+	MutationFunction,
+	QueryClient,
+	QueryFunction,
+	QueryKey,
+	UndefinedInitialDataOptions,
+	UseMutationOptions,
+	UseMutationResult,
+	UseQueryOptions,
+	UseQueryResult,
+} from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
-import { customInstance } from '../../mutator/custom-instance';
+import type {
+	GetV1KoperasiPurchases200,
+	GetV1KoperasiPurchasesId200,
+	GetV1KoperasiPurchasesParams,
+	PembelianCreateRequest,
+	PembelianPaymentRequest,
+	PostV1KoperasiPurchases201,
+	PostV1KoperasiPurchasesIdPayments200,
+} from "../../model";
 
+import { customInstance } from "../../mutator/custom-instance";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
-
-
 export type getV1KoperasiPurchasesResponse200 = {
-  data: GetV1KoperasiPurchases200
-  status: 200
-}
-
-export type getV1KoperasiPurchasesResponseSuccess = (getV1KoperasiPurchasesResponse200) & {
-  headers: Headers;
+	data: GetV1KoperasiPurchases200;
+	status: 200;
 };
-;
 
-export type getV1KoperasiPurchasesResponse = (getV1KoperasiPurchasesResponseSuccess)
+export type getV1KoperasiPurchasesResponseSuccess =
+	getV1KoperasiPurchasesResponse200 & {
+		headers: Headers;
+	};
 
-export const getGetV1KoperasiPurchasesUrl = (params?: GetV1KoperasiPurchasesParams,) => {
-  const normalizedParams = new URLSearchParams();
+export type getV1KoperasiPurchasesResponse =
+	getV1KoperasiPurchasesResponseSuccess;
 
-  Object.entries(params || {}).forEach(([key, value]) => {
-
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/v1/koperasi/purchases?${stringifiedParams}` : `/v1/koperasi/purchases`
-}
-
-/**
- * @summary List pembelian koperasi
- */
-export const getV1KoperasiPurchases = async (params?: GetV1KoperasiPurchasesParams, options?: RequestInit): Promise<getV1KoperasiPurchasesResponse> => {
-
-  return customInstance<getV1KoperasiPurchasesResponse>(getGetV1KoperasiPurchasesUrl(params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetV1KoperasiPurchasesQueryKey = (params?: GetV1KoperasiPurchasesParams,) => {
-    return [
-    `/v1/koperasi/purchases`, ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getGetV1KoperasiPurchasesQueryOptions = <TData = Awaited<ReturnType<typeof getV1KoperasiPurchases>>, TError = unknown>(params?: GetV1KoperasiPurchasesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiPurchases>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getGetV1KoperasiPurchasesUrl = (
+	params?: GetV1KoperasiPurchasesParams,
 ) => {
+	const normalizedParams = new URLSearchParams();
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(key, value === null ? "null" : value.toString());
+		}
+	});
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1KoperasiPurchasesQueryKey(params);
+	const stringifiedParams = normalizedParams.toString();
 
+	return stringifiedParams.length > 0
+		? `/v1/koperasi/purchases?${stringifiedParams}`
+		: `/v1/koperasi/purchases`;
+};
 
+/**
+ * @summary List pembelian koperasi
+ */
+export const getV1KoperasiPurchases = async (
+	params?: GetV1KoperasiPurchasesParams,
+	options?: RequestInit,
+): Promise<getV1KoperasiPurchasesResponse> => {
+	return customInstance<getV1KoperasiPurchasesResponse>(
+		getGetV1KoperasiPurchasesUrl(params),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1KoperasiPurchases>>> = ({ signal }) => getV1KoperasiPurchases(params, { signal, ...requestOptions });
+export const getGetV1KoperasiPurchasesQueryKey = (
+	params?: GetV1KoperasiPurchasesParams,
+) => {
+	return [`/v1/koperasi/purchases`, ...(params ? [params] : [])] as const;
+};
 
+export const getGetV1KoperasiPurchasesQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1KoperasiPurchases>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiPurchasesParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiPurchases>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
+	const queryKey =
+		queryOptions?.queryKey ?? getGetV1KoperasiPurchasesQueryKey(params);
 
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1KoperasiPurchases>>
+	> = ({ signal }) =>
+		getV1KoperasiPurchases(params, { signal, ...requestOptions });
 
+	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1KoperasiPurchases>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiPurchases>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
+export type GetV1KoperasiPurchasesQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1KoperasiPurchases>>
+>;
+export type GetV1KoperasiPurchasesQueryError = unknown;
 
-export type GetV1KoperasiPurchasesQueryResult = NonNullable<Awaited<ReturnType<typeof getV1KoperasiPurchases>>>
-export type GetV1KoperasiPurchasesQueryError = unknown
-
-
-export function useGetV1KoperasiPurchases<TData = Awaited<ReturnType<typeof getV1KoperasiPurchases>>, TError = unknown>(
- params: undefined |  GetV1KoperasiPurchasesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiPurchases>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1KoperasiPurchases>>,
-          TError,
-          Awaited<ReturnType<typeof getV1KoperasiPurchases>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1KoperasiPurchases<TData = Awaited<ReturnType<typeof getV1KoperasiPurchases>>, TError = unknown>(
- params?: GetV1KoperasiPurchasesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiPurchases>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1KoperasiPurchases>>,
-          TError,
-          Awaited<ReturnType<typeof getV1KoperasiPurchases>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1KoperasiPurchases<TData = Awaited<ReturnType<typeof getV1KoperasiPurchases>>, TError = unknown>(
- params?: GetV1KoperasiPurchasesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiPurchases>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1KoperasiPurchases<
+	TData = Awaited<ReturnType<typeof getV1KoperasiPurchases>>,
+	TError = unknown,
+>(
+	params: undefined | GetV1KoperasiPurchasesParams,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiPurchases>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1KoperasiPurchases>>,
+					TError,
+					Awaited<ReturnType<typeof getV1KoperasiPurchases>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1KoperasiPurchases<
+	TData = Awaited<ReturnType<typeof getV1KoperasiPurchases>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiPurchasesParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiPurchases>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1KoperasiPurchases>>,
+					TError,
+					Awaited<ReturnType<typeof getV1KoperasiPurchases>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1KoperasiPurchases<
+	TData = Awaited<ReturnType<typeof getV1KoperasiPurchases>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiPurchasesParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiPurchases>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary List pembelian koperasi
  */
 
-export function useGetV1KoperasiPurchases<TData = Awaited<ReturnType<typeof getV1KoperasiPurchases>>, TError = unknown>(
- params?: GetV1KoperasiPurchasesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiPurchases>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1KoperasiPurchases<
+	TData = Awaited<ReturnType<typeof getV1KoperasiPurchases>>,
+	TError = unknown,
+>(
+	params?: GetV1KoperasiPurchasesParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiPurchases>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1KoperasiPurchasesQueryOptions(params, options);
 
-  const queryOptions = getGetV1KoperasiPurchasesQueryOptions(params,options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
 
 export type postV1KoperasiPurchasesResponse201 = {
-  data: PostV1KoperasiPurchases201
-  status: 201
-}
-
-export type postV1KoperasiPurchasesResponseSuccess = (postV1KoperasiPurchasesResponse201) & {
-  headers: Headers;
+	data: PostV1KoperasiPurchases201;
+	status: 201;
 };
-;
 
-export type postV1KoperasiPurchasesResponse = (postV1KoperasiPurchasesResponseSuccess)
+export type postV1KoperasiPurchasesResponseSuccess =
+	postV1KoperasiPurchasesResponse201 & {
+		headers: Headers;
+	};
+
+export type postV1KoperasiPurchasesResponse =
+	postV1KoperasiPurchasesResponseSuccess;
 
 export const getPostV1KoperasiPurchasesUrl = () => {
-
-
-
-
-  return `/v1/koperasi/purchases`
-}
-
-/**
- * @summary Catat pembelian/restock
- */
-export const postV1KoperasiPurchases = async (pembelianCreateRequest: PembelianCreateRequest, options?: RequestInit): Promise<postV1KoperasiPurchasesResponse> => {
-
-  return customInstance<postV1KoperasiPurchasesResponse>(getPostV1KoperasiPurchasesUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      pembelianCreateRequest,)
-  }
-);}
-
-
-
-
-export const getPostV1KoperasiPurchasesMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1KoperasiPurchases>>, TError,{data: PembelianCreateRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1KoperasiPurchases>>, TError,{data: PembelianCreateRequest}, TContext> => {
-
-const mutationKey = ['postV1KoperasiPurchases'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1KoperasiPurchases>>, {data: PembelianCreateRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  postV1KoperasiPurchases(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1KoperasiPurchasesMutationResult = NonNullable<Awaited<ReturnType<typeof postV1KoperasiPurchases>>>
-    export type PostV1KoperasiPurchasesMutationBody = PembelianCreateRequest
-    export type PostV1KoperasiPurchasesMutationError = unknown
-
-    /**
- * @summary Catat pembelian/restock
- */
-export const usePostV1KoperasiPurchases = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1KoperasiPurchases>>, TError,{data: PembelianCreateRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postV1KoperasiPurchases>>,
-        TError,
-        {data: PembelianCreateRequest},
-        TContext
-      > => {
-      return useMutation(getPostV1KoperasiPurchasesMutationOptions(options), queryClient);
-    }
-    export type getV1KoperasiPurchasesIdResponse200 = {
-  data: GetV1KoperasiPurchasesId200
-  status: 200
-}
-
-export type getV1KoperasiPurchasesIdResponseSuccess = (getV1KoperasiPurchasesIdResponse200) & {
-  headers: Headers;
+	return `/v1/koperasi/purchases`;
 };
-;
 
-export type getV1KoperasiPurchasesIdResponse = (getV1KoperasiPurchasesIdResponseSuccess)
+/**
+ * @summary Catat pembelian/restock
+ */
+export const postV1KoperasiPurchases = async (
+	pembelianCreateRequest: PembelianCreateRequest,
+	options?: RequestInit,
+): Promise<postV1KoperasiPurchasesResponse> => {
+	return customInstance<postV1KoperasiPurchasesResponse>(
+		getPostV1KoperasiPurchasesUrl(),
+		{
+			...options,
+			method: "POST",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(pembelianCreateRequest),
+		},
+	);
+};
 
-export const getGetV1KoperasiPurchasesIdUrl = (id: number,) => {
+export const getPostV1KoperasiPurchasesMutationOptions = <
+	TError = unknown,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1KoperasiPurchases>>,
+		TError,
+		{ data: PembelianCreateRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1KoperasiPurchases>>,
+	TError,
+	{ data: PembelianCreateRequest },
+	TContext
+> => {
+	const mutationKey = ["postV1KoperasiPurchases"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1KoperasiPurchases>>,
+		{ data: PembelianCreateRequest }
+	> = (props) => {
+		const { data } = props ?? {};
 
+		return postV1KoperasiPurchases(data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-  return `/v1/koperasi/purchases/${id}`
-}
+export type PostV1KoperasiPurchasesMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1KoperasiPurchases>>
+>;
+export type PostV1KoperasiPurchasesMutationBody = PembelianCreateRequest;
+export type PostV1KoperasiPurchasesMutationError = unknown;
+
+/**
+ * @summary Catat pembelian/restock
+ */
+export const usePostV1KoperasiPurchases = <
+	TError = unknown,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1KoperasiPurchases>>,
+			TError,
+			{ data: PembelianCreateRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1KoperasiPurchases>>,
+	TError,
+	{ data: PembelianCreateRequest },
+	TContext
+> => {
+	return useMutation(
+		getPostV1KoperasiPurchasesMutationOptions(options),
+		queryClient,
+	);
+};
+export type getV1KoperasiPurchasesIdResponse200 = {
+	data: GetV1KoperasiPurchasesId200;
+	status: 200;
+};
+
+export type getV1KoperasiPurchasesIdResponseSuccess =
+	getV1KoperasiPurchasesIdResponse200 & {
+		headers: Headers;
+	};
+
+export type getV1KoperasiPurchasesIdResponse =
+	getV1KoperasiPurchasesIdResponseSuccess;
+
+export const getGetV1KoperasiPurchasesIdUrl = (id: number) => {
+	return `/v1/koperasi/purchases/${id}`;
+};
 
 /**
  * @summary Detail pembelian
  */
-export const getV1KoperasiPurchasesId = async (id: number, options?: RequestInit): Promise<getV1KoperasiPurchasesIdResponse> => {
+export const getV1KoperasiPurchasesId = async (
+	id: number,
+	options?: RequestInit,
+): Promise<getV1KoperasiPurchasesIdResponse> => {
+	return customInstance<getV1KoperasiPurchasesIdResponse>(
+		getGetV1KoperasiPurchasesIdUrl(id),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
 
-  return customInstance<getV1KoperasiPurchasesIdResponse>(getGetV1KoperasiPurchasesIdUrl(id),
-  {
-    ...options,
-    method: 'GET'
+export const getGetV1KoperasiPurchasesIdQueryKey = (id: number) => {
+	return [`/v1/koperasi/purchases/${id}`] as const;
+};
 
-
-  }
-);}
-
-
-
-
-
-export const getGetV1KoperasiPurchasesIdQueryKey = (id: number,) => {
-    return [
-    `/v1/koperasi/purchases/${id}`
-    ] as const;
-    }
-
-
-export const getGetV1KoperasiPurchasesIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1KoperasiPurchasesId>>, TError = unknown>(id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiPurchasesId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getGetV1KoperasiPurchasesIdQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1KoperasiPurchasesId>>,
+	TError = unknown,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiPurchasesId>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
 ) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+	const queryKey =
+		queryOptions?.queryKey ?? getGetV1KoperasiPurchasesIdQueryKey(id);
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1KoperasiPurchasesIdQueryKey(id);
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1KoperasiPurchasesId>>
+	> = ({ signal }) =>
+		getV1KoperasiPurchasesId(id, { signal, ...requestOptions });
 
+	return {
+		queryKey,
+		queryFn,
+		enabled: !!id,
+		...queryOptions,
+	} as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1KoperasiPurchasesId>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
+export type GetV1KoperasiPurchasesIdQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1KoperasiPurchasesId>>
+>;
+export type GetV1KoperasiPurchasesIdQueryError = unknown;
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1KoperasiPurchasesId>>> = ({ signal }) => getV1KoperasiPurchasesId(id, { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiPurchasesId>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetV1KoperasiPurchasesIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1KoperasiPurchasesId>>>
-export type GetV1KoperasiPurchasesIdQueryError = unknown
-
-
-export function useGetV1KoperasiPurchasesId<TData = Awaited<ReturnType<typeof getV1KoperasiPurchasesId>>, TError = unknown>(
- id: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiPurchasesId>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1KoperasiPurchasesId>>,
-          TError,
-          Awaited<ReturnType<typeof getV1KoperasiPurchasesId>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1KoperasiPurchasesId<TData = Awaited<ReturnType<typeof getV1KoperasiPurchasesId>>, TError = unknown>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiPurchasesId>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1KoperasiPurchasesId>>,
-          TError,
-          Awaited<ReturnType<typeof getV1KoperasiPurchasesId>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1KoperasiPurchasesId<TData = Awaited<ReturnType<typeof getV1KoperasiPurchasesId>>, TError = unknown>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiPurchasesId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1KoperasiPurchasesId<
+	TData = Awaited<ReturnType<typeof getV1KoperasiPurchasesId>>,
+	TError = unknown,
+>(
+	id: number,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiPurchasesId>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1KoperasiPurchasesId>>,
+					TError,
+					Awaited<ReturnType<typeof getV1KoperasiPurchasesId>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1KoperasiPurchasesId<
+	TData = Awaited<ReturnType<typeof getV1KoperasiPurchasesId>>,
+	TError = unknown,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiPurchasesId>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1KoperasiPurchasesId>>,
+					TError,
+					Awaited<ReturnType<typeof getV1KoperasiPurchasesId>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1KoperasiPurchasesId<
+	TData = Awaited<ReturnType<typeof getV1KoperasiPurchasesId>>,
+	TError = unknown,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiPurchasesId>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary Detail pembelian
  */
 
-export function useGetV1KoperasiPurchasesId<TData = Awaited<ReturnType<typeof getV1KoperasiPurchasesId>>, TError = unknown>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1KoperasiPurchasesId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1KoperasiPurchasesId<
+	TData = Awaited<ReturnType<typeof getV1KoperasiPurchasesId>>,
+	TError = unknown,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1KoperasiPurchasesId>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1KoperasiPurchasesIdQueryOptions(id, options);
 
-  const queryOptions = getGetV1KoperasiPurchasesIdQueryOptions(id,options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
 
 export type postV1KoperasiPurchasesIdPaymentsResponse200 = {
-  data: PostV1KoperasiPurchasesIdPayments200
-  status: 200
-}
-
-export type postV1KoperasiPurchasesIdPaymentsResponseSuccess = (postV1KoperasiPurchasesIdPaymentsResponse200) & {
-  headers: Headers;
+	data: PostV1KoperasiPurchasesIdPayments200;
+	status: 200;
 };
-;
 
-export type postV1KoperasiPurchasesIdPaymentsResponse = (postV1KoperasiPurchasesIdPaymentsResponseSuccess)
+export type postV1KoperasiPurchasesIdPaymentsResponseSuccess =
+	postV1KoperasiPurchasesIdPaymentsResponse200 & {
+		headers: Headers;
+	};
 
-export const getPostV1KoperasiPurchasesIdPaymentsUrl = (id: number,) => {
+export type postV1KoperasiPurchasesIdPaymentsResponse =
+	postV1KoperasiPurchasesIdPaymentsResponseSuccess;
 
-
-
-
-  return `/v1/koperasi/purchases/${id}/payments`
-}
+export const getPostV1KoperasiPurchasesIdPaymentsUrl = (id: number) => {
+	return `/v1/koperasi/purchases/${id}/payments`;
+};
 
 /**
  * @summary Bayar (cicil) hutang pembelian
  */
-export const postV1KoperasiPurchasesIdPayments = async (id: number,
-    pembelianPaymentRequest: PembelianPaymentRequest, options?: RequestInit): Promise<postV1KoperasiPurchasesIdPaymentsResponse> => {
+export const postV1KoperasiPurchasesIdPayments = async (
+	id: number,
+	pembelianPaymentRequest: PembelianPaymentRequest,
+	options?: RequestInit,
+): Promise<postV1KoperasiPurchasesIdPaymentsResponse> => {
+	return customInstance<postV1KoperasiPurchasesIdPaymentsResponse>(
+		getPostV1KoperasiPurchasesIdPaymentsUrl(id),
+		{
+			...options,
+			method: "POST",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(pembelianPaymentRequest),
+		},
+	);
+};
 
-  return customInstance<postV1KoperasiPurchasesIdPaymentsResponse>(getPostV1KoperasiPurchasesIdPaymentsUrl(id),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      pembelianPaymentRequest,)
-  }
-);}
+export const getPostV1KoperasiPurchasesIdPaymentsMutationOptions = <
+	TError = unknown,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1KoperasiPurchasesIdPayments>>,
+		TError,
+		{ id: number; data: PembelianPaymentRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1KoperasiPurchasesIdPayments>>,
+	TError,
+	{ id: number; data: PembelianPaymentRequest },
+	TContext
+> => {
+	const mutationKey = ["postV1KoperasiPurchasesIdPayments"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1KoperasiPurchasesIdPayments>>,
+		{ id: number; data: PembelianPaymentRequest }
+	> = (props) => {
+		const { id, data } = props ?? {};
 
+		return postV1KoperasiPurchasesIdPayments(id, data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-export const getPostV1KoperasiPurchasesIdPaymentsMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1KoperasiPurchasesIdPayments>>, TError,{id: number;data: PembelianPaymentRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1KoperasiPurchasesIdPayments>>, TError,{id: number;data: PembelianPaymentRequest}, TContext> => {
+export type PostV1KoperasiPurchasesIdPaymentsMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1KoperasiPurchasesIdPayments>>
+>;
+export type PostV1KoperasiPurchasesIdPaymentsMutationBody =
+	PembelianPaymentRequest;
+export type PostV1KoperasiPurchasesIdPaymentsMutationError = unknown;
 
-const mutationKey = ['postV1KoperasiPurchasesIdPayments'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1KoperasiPurchasesIdPayments>>, {id: number;data: PembelianPaymentRequest}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  postV1KoperasiPurchasesIdPayments(id,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1KoperasiPurchasesIdPaymentsMutationResult = NonNullable<Awaited<ReturnType<typeof postV1KoperasiPurchasesIdPayments>>>
-    export type PostV1KoperasiPurchasesIdPaymentsMutationBody = PembelianPaymentRequest
-    export type PostV1KoperasiPurchasesIdPaymentsMutationError = unknown
-
-    /**
+/**
  * @summary Bayar (cicil) hutang pembelian
  */
-export const usePostV1KoperasiPurchasesIdPayments = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1KoperasiPurchasesIdPayments>>, TError,{id: number;data: PembelianPaymentRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postV1KoperasiPurchasesIdPayments>>,
-        TError,
-        {id: number;data: PembelianPaymentRequest},
-        TContext
-      > => {
-      return useMutation(getPostV1KoperasiPurchasesIdPaymentsMutationOptions(options), queryClient);
-    }
+export const usePostV1KoperasiPurchasesIdPayments = <
+	TError = unknown,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1KoperasiPurchasesIdPayments>>,
+			TError,
+			{ id: number; data: PembelianPaymentRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1KoperasiPurchasesIdPayments>>,
+	TError,
+	{ id: number; data: PembelianPaymentRequest },
+	TContext
+> => {
+	return useMutation(
+		getPostV1KoperasiPurchasesIdPaymentsMutationOptions(options),
+		queryClient,
+	);
+};

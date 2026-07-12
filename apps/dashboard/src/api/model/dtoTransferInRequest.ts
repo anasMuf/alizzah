@@ -7,9 +7,9 @@
  */
 
 export interface DtoTransferInRequest {
-  academic_year_id: number;
-  notes?: string;
-  start_date: string;
-  student_id: number;
-  to_class_group_id: number;
+	academic_year_id: number;
+	notes?: string;
+	start_date: string;
+	student_id: number;
+	to_class_group_id: number;
 }

@@ -5,9 +5,9 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { AnggotaCreateRequest } from './anggotaCreateRequest';
+import type { AnggotaCreateRequest } from "./anggotaCreateRequest";
 
 export interface AnggotaBulkCreateRequest {
-  /** @minItems 1 */
-  members: AnggotaCreateRequest[];
+	/** @minItems 1 */
+	members: AnggotaCreateRequest[];
 }

@@ -6,10 +6,10 @@
  * OpenAPI spec version: 1.0
  */
 
-export type LainlainCreateRequestFlow = typeof LainlainCreateRequestFlow[keyof typeof LainlainCreateRequestFlow];
-
+export type LainlainCreateRequestFlow =
+	(typeof LainlainCreateRequestFlow)[keyof typeof LainlainCreateRequestFlow];
 
 export const LainlainCreateRequestFlow = {
-  income: 'income',
-  expense: 'expense',
+	income: "income",
+	expense: "expense",
 } as const;

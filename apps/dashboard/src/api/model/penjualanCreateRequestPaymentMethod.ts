@@ -6,9 +6,9 @@
  * OpenAPI spec version: 1.0
  */
 
-export type PenjualanCreateRequestPaymentMethod = typeof PenjualanCreateRequestPaymentMethod[keyof typeof PenjualanCreateRequestPaymentMethod];
-
+export type PenjualanCreateRequestPaymentMethod =
+	(typeof PenjualanCreateRequestPaymentMethod)[keyof typeof PenjualanCreateRequestPaymentMethod];
 
 export const PenjualanCreateRequestPaymentMethod = {
-  cash: 'cash',
+	cash: "cash",
 } as const;

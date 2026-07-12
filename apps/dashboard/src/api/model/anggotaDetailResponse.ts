@@ -5,16 +5,16 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { AnggotaLoanSummary } from './anggotaLoanSummary';
+import type { AnggotaLoanSummary } from "./anggotaLoanSummary";
 
 export interface AnggotaDetailResponse {
-  address?: string;
-  employee_id?: number;
-  employee_name?: string;
-  full_name?: string;
-  id?: number;
-  is_active?: boolean;
-  loan_summary?: AnggotaLoanSummary;
-  member_type?: string;
-  phone?: string;
+	address?: string;
+	employee_id?: number;
+	employee_name?: string;
+	full_name?: string;
+	id?: number;
+	is_active?: boolean;
+	loan_summary?: AnggotaLoanSummary;
+	member_type?: string;
+	phone?: string;
 }

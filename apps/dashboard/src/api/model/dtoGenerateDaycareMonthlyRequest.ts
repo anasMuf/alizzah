@@ -7,12 +7,12 @@
  */
 
 export interface DtoGenerateDaycareMonthlyRequest {
-  academic_year_id: number;
-  /**
-     * @minimum 1
-     * @maximum 12
-     */
-  month: number;
-  student_id: number;
-  year: number;
+	academic_year_id: number;
+	/**
+	 * @minimum 1
+	 * @maximum 12
+	 */
+	month: number;
+	student_id: number;
+	year: number;
 }

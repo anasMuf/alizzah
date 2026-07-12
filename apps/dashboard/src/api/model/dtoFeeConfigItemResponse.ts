@@ -7,16 +7,16 @@
  */
 
 export interface DtoFeeConfigItemResponse {
-  amount?: number;
-  category?: string;
-  gender?: string;
-  id?: number;
-  is_koperasi?: boolean;
-  is_mandatory?: boolean;
-  item_key?: string;
-  koperasi_product_id?: number;
-  koperasi_product_name?: string;
-  level?: string;
-  name?: string;
-  unit?: string;
+	amount?: number;
+	category?: string;
+	gender?: string;
+	id?: number;
+	is_koperasi?: boolean;
+	is_mandatory?: boolean;
+	item_key?: string;
+	koperasi_product_id?: number;
+	koperasi_product_name?: string;
+	level?: string;
+	name?: string;
+	unit?: string;
 }

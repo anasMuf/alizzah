@@ -5,11 +5,11 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { PinjamanPaymentRequestMethod } from './pinjamanPaymentRequestMethod';
+import type { PinjamanPaymentRequestMethod } from "./pinjamanPaymentRequestMethod";
 
 export interface PinjamanPaymentRequest {
-  amount: number;
-  method?: PinjamanPaymentRequestMethod;
-  notes?: string;
-  payment_date: string;
+	amount: number;
+	method?: PinjamanPaymentRequestMethod;
+	notes?: string;
+	payment_date: string;
 }

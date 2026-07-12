@@ -7,14 +7,14 @@
  */
 
 export interface DtoTabunganSiswaRow {
-  /** keluar (penarikan) */
-  credit?: number;
-  date?: string;
-  /** masuk (setoran) */
-  debit?: number;
-  description?: string;
-  /** running balance */
-  saldo?: number;
-  /** deposit | withdrawal | usage | allocation | return */
-  type?: string;
+	/** keluar (penarikan) */
+	credit?: number;
+	date?: string;
+	/** masuk (setoran) */
+	debit?: number;
+	description?: string;
+	/** running balance */
+	saldo?: number;
+	/** deposit | withdrawal | usage | allocation | return */
+	type?: string;
 }

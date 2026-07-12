@@ -7,7 +7,7 @@
  */
 
 export interface DtoCategoryAmount {
-  amount?: number;
-  category?: string;
-  sub_category?: string;
+	amount?: number;
+	category?: string;
+	sub_category?: string;
 }

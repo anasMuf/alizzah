@@ -7,12 +7,12 @@
  */
 
 export interface AnggotaResponse {
-  address?: string;
-  employee_id?: number;
-  employee_name?: string;
-  full_name?: string;
-  id?: number;
-  is_active?: boolean;
-  member_type?: string;
-  phone?: string;
+	address?: string;
+	employee_id?: number;
+	employee_name?: string;
+	full_name?: string;
+	id?: number;
+	is_active?: boolean;
+	member_type?: string;
+	phone?: string;
 }

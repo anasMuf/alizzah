@@ -7,8 +7,8 @@
  */
 
 export interface LaporanCategoryLine {
-  category?: string;
-  credit?: number;
-  debit?: number;
-  net?: number;
+	category?: string;
+	credit?: number;
+	debit?: number;
+	net?: number;
 }

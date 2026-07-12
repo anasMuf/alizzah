@@ -5,29 +5,29 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoCreateGuardianInline } from './dtoCreateGuardianInline';
-import type { DtoCreateStudentRequestEnrollmentStatus } from './dtoCreateStudentRequestEnrollmentStatus';
-import type { DtoCreateStudentRequestEnrollmentType } from './dtoCreateStudentRequestEnrollmentType';
-import type { DtoCreateStudentRequestGender } from './dtoCreateStudentRequestGender';
+import type { DtoCreateGuardianInline } from "./dtoCreateGuardianInline";
+import type { DtoCreateStudentRequestEnrollmentStatus } from "./dtoCreateStudentRequestEnrollmentStatus";
+import type { DtoCreateStudentRequestEnrollmentType } from "./dtoCreateStudentRequestEnrollmentType";
+import type { DtoCreateStudentRequestGender } from "./dtoCreateStudentRequestGender";
 
 export interface DtoCreateStudentRequest {
-  academic_year_id?: number;
-  birth_date: string;
-  /** @maxLength 100 */
-  birth_place: string;
-  /** Optional: langsung enroll ke kelas saat pendaftaran */
-  class_group_id?: number;
-  enrollment_status?: DtoCreateStudentRequestEnrollmentStatus;
-  enrollment_type?: DtoCreateStudentRequestEnrollmentType;
-  /**
-     * @minLength 3
-     * @maxLength 100
-     */
-  full_name: string;
-  gender: DtoCreateStudentRequestGender;
-  guardians?: DtoCreateGuardianInline[];
-  is_daycare_only?: boolean;
-  /** @maxLength 30 */
-  religion?: string;
-  start_date?: string;
+	academic_year_id?: number;
+	birth_date: string;
+	/** @maxLength 100 */
+	birth_place: string;
+	/** Optional: langsung enroll ke kelas saat pendaftaran */
+	class_group_id?: number;
+	enrollment_status?: DtoCreateStudentRequestEnrollmentStatus;
+	enrollment_type?: DtoCreateStudentRequestEnrollmentType;
+	/**
+	 * @minLength 3
+	 * @maxLength 100
+	 */
+	full_name: string;
+	gender: DtoCreateStudentRequestGender;
+	guardians?: DtoCreateGuardianInline[];
+	is_daycare_only?: boolean;
+	/** @maxLength 30 */
+	religion?: string;
+	start_date?: string;
 }

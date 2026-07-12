@@ -7,6 +7,6 @@
  */
 
 export type PostV1StudentsImportBody = {
-  /** CSV file */
-  file: Blob;
+	/** CSV file */
+	file: Blob;
 };

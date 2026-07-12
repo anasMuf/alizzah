@@ -5,8 +5,8 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoUpdateEnrollmentRequestEnrollmentType } from './dtoUpdateEnrollmentRequestEnrollmentType';
+import type { DtoUpdateEnrollmentRequestEnrollmentType } from "./dtoUpdateEnrollmentRequestEnrollmentType";
 
 export interface DtoUpdateEnrollmentRequest {
-  enrollment_type: DtoUpdateEnrollmentRequestEnrollmentType;
+	enrollment_type: DtoUpdateEnrollmentRequestEnrollmentType;
 }

@@ -7,24 +7,24 @@
  */
 
 export type GetV1KoperasiSalesParams = {
-/**
- * Tahun ajaran
- */
-academic_year_id?: number;
-/**
- * Siswa
- */
-student_id?: number;
-/**
- * unpaid|partial|paid
- */
-status?: string;
-/**
- * Halaman
- */
-page?: number;
-/**
- * Per halaman
- */
-limit?: number;
+	/**
+	 * Tahun ajaran
+	 */
+	academic_year_id?: number;
+	/**
+	 * Siswa
+	 */
+	student_id?: number;
+	/**
+	 * unpaid|partial|paid
+	 */
+	status?: string;
+	/**
+	 * Halaman
+	 */
+	page?: number;
+	/**
+	 * Per halaman
+	 */
+	limit?: number;
 };

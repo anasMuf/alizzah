@@ -7,9 +7,9 @@
  */
 
 export interface AnggotaEmployeeResponse {
-  full_name?: string;
-  id?: number;
-  is_active?: boolean;
-  join_date?: string;
-  legacy_id?: number;
+	full_name?: string;
+	id?: number;
+	is_active?: boolean;
+	join_date?: string;
+	legacy_id?: number;
 }

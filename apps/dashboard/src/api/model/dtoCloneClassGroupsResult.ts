@@ -5,10 +5,10 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoClassGroupResponse } from './dtoClassGroupResponse';
+import type { DtoClassGroupResponse } from "./dtoClassGroupResponse";
 
 export interface DtoCloneClassGroupsResult {
-  created?: number;
-  groups?: DtoClassGroupResponse[];
-  skipped?: number;
+	created?: number;
+	groups?: DtoClassGroupResponse[];
+	skipped?: number;
 }

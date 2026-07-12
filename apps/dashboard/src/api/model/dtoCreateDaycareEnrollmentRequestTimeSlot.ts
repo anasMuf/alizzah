@@ -6,11 +6,11 @@
  * OpenAPI spec version: 1.0
  */
 
-export type DtoCreateDaycareEnrollmentRequestTimeSlot = typeof DtoCreateDaycareEnrollmentRequestTimeSlot[keyof typeof DtoCreateDaycareEnrollmentRequestTimeSlot];
-
+export type DtoCreateDaycareEnrollmentRequestTimeSlot =
+	(typeof DtoCreateDaycareEnrollmentRequestTimeSlot)[keyof typeof DtoCreateDaycareEnrollmentRequestTimeSlot];
 
 export const DtoCreateDaycareEnrollmentRequestTimeSlot = {
-  '07-15': '07-15',
-  '10-15': '10-15',
-  '10-13': '10-13',
+	"07-15": "07-15",
+	"10-15": "10-15",
+	"10-13": "10-13",
 } as const;

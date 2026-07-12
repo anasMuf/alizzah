@@ -6,11 +6,11 @@
  * OpenAPI spec version: 1.0
  */
 
-export type DtoCreateGuardianInlineRelationship = typeof DtoCreateGuardianInlineRelationship[keyof typeof DtoCreateGuardianInlineRelationship];
-
+export type DtoCreateGuardianInlineRelationship =
+	(typeof DtoCreateGuardianInlineRelationship)[keyof typeof DtoCreateGuardianInlineRelationship];
 
 export const DtoCreateGuardianInlineRelationship = {
-  ayah: 'ayah',
-  ibu: 'ibu',
-  wali: 'wali',
+	ayah: "ayah",
+	ibu: "ibu",
+	wali: "wali",
 } as const;

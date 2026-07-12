@@ -6,15 +6,15 @@
  * OpenAPI spec version: 1.0
  */
 
-export type DtoUpdateEnrollmentRequestEnrollmentType = typeof DtoUpdateEnrollmentRequestEnrollmentType[keyof typeof DtoUpdateEnrollmentRequestEnrollmentType];
-
+export type DtoUpdateEnrollmentRequestEnrollmentType =
+	(typeof DtoUpdateEnrollmentRequestEnrollmentType)[keyof typeof DtoUpdateEnrollmentRequestEnrollmentType];
 
 export const DtoUpdateEnrollmentRequestEnrollmentType = {
-  new: 'new',
-  repeat: 'repeat',
-  mutation: 'mutation',
-  promotion: 'promotion',
-  transfer: 'transfer',
-  class_change: 'class_change',
-  retained: 'retained',
+	new: "new",
+	repeat: "repeat",
+	mutation: "mutation",
+	promotion: "promotion",
+	transfer: "transfer",
+	class_change: "class_change",
+	retained: "retained",
 } as const;

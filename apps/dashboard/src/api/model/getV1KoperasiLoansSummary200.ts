@@ -5,9 +5,9 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoSuccessResponse } from './dtoSuccessResponse';
-import type { PinjamanSummaryItem } from './pinjamanSummaryItem';
+import type { DtoSuccessResponse } from "./dtoSuccessResponse";
+import type { PinjamanSummaryItem } from "./pinjamanSummaryItem";
 
 export type GetV1KoperasiLoansSummary200 = DtoSuccessResponse & {
-  data?: PinjamanSummaryItem[];
+	data?: PinjamanSummaryItem[];
 };

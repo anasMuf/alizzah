@@ -5,20 +5,20 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoAcademicYearBriefResponse } from './dtoAcademicYearBriefResponse';
-import type { DtoStudentBriefResponse } from './dtoStudentBriefResponse';
+import type { DtoAcademicYearBriefResponse } from "./dtoAcademicYearBriefResponse";
+import type { DtoStudentBriefResponse } from "./dtoStudentBriefResponse";
 
 export interface DtoDaycareEnrollmentResponse {
-  academic_year?: DtoAcademicYearBriefResponse;
-  age_group?: string;
-  category?: string;
-  end_date?: string;
-  id?: number;
-  package_type?: string;
-  start_date?: string;
-  status?: string;
-  student?: DtoStudentBriefResponse;
-  time_slot?: string;
-  with_meal?: boolean;
-  with_tpq?: boolean;
+	academic_year?: DtoAcademicYearBriefResponse;
+	age_group?: string;
+	category?: string;
+	end_date?: string;
+	id?: number;
+	package_type?: string;
+	start_date?: string;
+	status?: string;
+	student?: DtoStudentBriefResponse;
+	time_slot?: string;
+	with_meal?: boolean;
+	with_tpq?: boolean;
 }

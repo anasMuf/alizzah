@@ -6,10 +6,10 @@
  * OpenAPI spec version: 1.0
  */
 
-export type DtoCreateDaycareEnrollmentRequestAgeGroup = typeof DtoCreateDaycareEnrollmentRequestAgeGroup[keyof typeof DtoCreateDaycareEnrollmentRequestAgeGroup];
-
+export type DtoCreateDaycareEnrollmentRequestAgeGroup =
+	(typeof DtoCreateDaycareEnrollmentRequestAgeGroup)[keyof typeof DtoCreateDaycareEnrollmentRequestAgeGroup];
 
 export const DtoCreateDaycareEnrollmentRequestAgeGroup = {
-  kbtk: 'kbtk',
-  under3: 'under3',
+	kbtk: "kbtk",
+	under3: "under3",
 } as const;

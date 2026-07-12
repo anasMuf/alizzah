@@ -6,19 +6,19 @@
  * OpenAPI spec version: 1.0
  */
 
-export type DtoCreateFeeConfigItemRequestCategory = typeof DtoCreateFeeConfigItemRequestCategory[keyof typeof DtoCreateFeeConfigItemRequestCategory];
-
+export type DtoCreateFeeConfigItemRequestCategory =
+	(typeof DtoCreateFeeConfigItemRequestCategory)[keyof typeof DtoCreateFeeConfigItemRequestCategory];
 
 export const DtoCreateFeeConfigItemRequestCategory = {
-  initial: 'initial',
-  registration: 'registration',
-  monthly_spp: 'monthly_spp',
-  monthly_infaq: 'monthly_infaq',
-  pasta: 'pasta',
-  calisan: 'calisan',
-  ekskul: 'ekskul',
-  savings_mandatory: 'savings_mandatory',
-  daycare: 'daycare',
-  graduation: 'graduation',
-  facility: 'facility',
+	initial: "initial",
+	registration: "registration",
+	monthly_spp: "monthly_spp",
+	monthly_infaq: "monthly_infaq",
+	pasta: "pasta",
+	calisan: "calisan",
+	ekskul: "ekskul",
+	savings_mandatory: "savings_mandatory",
+	daycare: "daycare",
+	graduation: "graduation",
+	facility: "facility",
 } as const;

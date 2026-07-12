@@ -7,8 +7,8 @@
  */
 
 export type GetV1KoperasiEmployeesAvailableParams = {
-/**
- * Cari nama
- */
-search?: string;
+	/**
+	 * Cari nama
+	 */
+	search?: string;
 };

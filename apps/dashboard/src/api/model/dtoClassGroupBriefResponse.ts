@@ -7,7 +7,7 @@
  */
 
 export interface DtoClassGroupBriefResponse {
-  id?: number;
-  level?: string;
-  name?: string;
+	id?: number;
+	level?: string;
+	name?: string;
 }

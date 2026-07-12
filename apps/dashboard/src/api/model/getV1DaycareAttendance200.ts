@@ -5,9 +5,9 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoDaycareAttendanceResponse } from './dtoDaycareAttendanceResponse';
-import type { DtoSuccessResponse } from './dtoSuccessResponse';
+import type { DtoDaycareAttendanceResponse } from "./dtoDaycareAttendanceResponse";
+import type { DtoSuccessResponse } from "./dtoSuccessResponse";
 
 export type GetV1DaycareAttendance200 = DtoSuccessResponse & {
-  data?: DtoDaycareAttendanceResponse[];
+	data?: DtoDaycareAttendanceResponse[];
 };

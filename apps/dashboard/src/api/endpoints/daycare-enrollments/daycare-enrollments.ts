@@ -5,1063 +5,1489 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import {
-  useMutation,
-  useQuery
-} from '@tanstack/react-query';
-import type {
-  DataTag,
-  DefinedInitialDataOptions,
-  DefinedUseQueryResult,
-  MutationFunction,
-  QueryClient,
-  QueryFunction,
-  QueryKey,
-  UndefinedInitialDataOptions,
-  UseMutationOptions,
-  UseMutationResult,
-  UseQueryOptions,
-  UseQueryResult
-} from '@tanstack/react-query';
 
 import type {
-  DtoCreateDaycareEnrollmentRequest,
-  DtoErrorResponse,
-  DtoGenerateDaycareMonthlyRequest,
-  DtoSuccessResponse,
-  DtoUpdateDaycareStatusRequest,
-  DtoUpsertDaycareAttendanceRequest,
-  GetV1DaycareAttendance200,
-  GetV1DaycareAttendanceParams,
-  GetV1DaycareEnrollments200,
-  GetV1DaycareEnrollmentsId200,
-  GetV1DaycareEnrollmentsParams,
-  PostV1DaycareEnrollments201,
-  PostV1DaycareEnrollmentsSyncInvoices200,
-  PutV1DaycareAttendance200,
-  PutV1DaycareEnrollmentsId200
-} from '../../model';
+	DataTag,
+	DefinedInitialDataOptions,
+	DefinedUseQueryResult,
+	MutationFunction,
+	QueryClient,
+	QueryFunction,
+	QueryKey,
+	UndefinedInitialDataOptions,
+	UseMutationOptions,
+	UseMutationResult,
+	UseQueryOptions,
+	UseQueryResult,
+} from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
-import { customInstance } from '../../mutator/custom-instance';
+import type {
+	DtoCreateDaycareEnrollmentRequest,
+	DtoErrorResponse,
+	DtoGenerateDaycareMonthlyRequest,
+	DtoSuccessResponse,
+	DtoUpdateDaycareStatusRequest,
+	DtoUpsertDaycareAttendanceRequest,
+	GetV1DaycareAttendance200,
+	GetV1DaycareAttendanceParams,
+	GetV1DaycareEnrollments200,
+	GetV1DaycareEnrollmentsId200,
+	GetV1DaycareEnrollmentsParams,
+	PostV1DaycareEnrollments201,
+	PostV1DaycareEnrollmentsSyncInvoices200,
+	PutV1DaycareAttendance200,
+	PutV1DaycareEnrollmentsId200,
+} from "../../model";
 
+import { customInstance } from "../../mutator/custom-instance";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
-
-
 export type getV1DaycareEnrollmentsResponse200 = {
-  data: GetV1DaycareEnrollments200
-  status: 200
-}
+	data: GetV1DaycareEnrollments200;
+	status: 200;
+};
 
 export type getV1DaycareEnrollmentsResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type getV1DaycareEnrollmentsResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type getV1DaycareEnrollmentsResponse500 = {
-  data: DtoErrorResponse
-  status: 500
-}
-
-export type getV1DaycareEnrollmentsResponseSuccess = (getV1DaycareEnrollmentsResponse200) & {
-  headers: Headers;
-};
-export type getV1DaycareEnrollmentsResponseError = (getV1DaycareEnrollmentsResponse401 | getV1DaycareEnrollmentsResponse403 | getV1DaycareEnrollmentsResponse500) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 500;
 };
 
-export type getV1DaycareEnrollmentsResponse = (getV1DaycareEnrollmentsResponseSuccess | getV1DaycareEnrollmentsResponseError)
+export type getV1DaycareEnrollmentsResponseSuccess =
+	getV1DaycareEnrollmentsResponse200 & {
+		headers: Headers;
+	};
+export type getV1DaycareEnrollmentsResponseError = (
+	| getV1DaycareEnrollmentsResponse401
+	| getV1DaycareEnrollmentsResponse403
+	| getV1DaycareEnrollmentsResponse500
+) & {
+	headers: Headers;
+};
 
-export const getGetV1DaycareEnrollmentsUrl = (params?: GetV1DaycareEnrollmentsParams,) => {
-  const normalizedParams = new URLSearchParams();
+export type getV1DaycareEnrollmentsResponse =
+	| getV1DaycareEnrollmentsResponseSuccess
+	| getV1DaycareEnrollmentsResponseError;
 
-  Object.entries(params || {}).forEach(([key, value]) => {
+export const getGetV1DaycareEnrollmentsUrl = (
+	params?: GetV1DaycareEnrollmentsParams,
+) => {
+	const normalizedParams = new URLSearchParams();
 
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(key, value === null ? "null" : value.toString());
+		}
+	});
 
-  const stringifiedParams = normalizedParams.toString();
+	const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/v1/daycare-enrollments?${stringifiedParams}` : `/v1/daycare-enrollments`
-}
+	return stringifiedParams.length > 0
+		? `/v1/daycare-enrollments?${stringifiedParams}`
+		: `/v1/daycare-enrollments`;
+};
 
 /**
  * Get a paginated list of daycare enrollments
  * @summary List daycare enrollments
  */
-export const getV1DaycareEnrollments = async (params?: GetV1DaycareEnrollmentsParams, options?: RequestInit): Promise<getV1DaycareEnrollmentsResponse> => {
+export const getV1DaycareEnrollments = async (
+	params?: GetV1DaycareEnrollmentsParams,
+	options?: RequestInit,
+): Promise<getV1DaycareEnrollmentsResponse> => {
+	return customInstance<getV1DaycareEnrollmentsResponse>(
+		getGetV1DaycareEnrollmentsUrl(params),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
 
-  return customInstance<getV1DaycareEnrollmentsResponse>(getGetV1DaycareEnrollmentsUrl(params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetV1DaycareEnrollmentsQueryKey = (params?: GetV1DaycareEnrollmentsParams,) => {
-    return [
-    `/v1/daycare-enrollments`, ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getGetV1DaycareEnrollmentsQueryOptions = <TData = Awaited<ReturnType<typeof getV1DaycareEnrollments>>, TError = DtoErrorResponse>(params?: GetV1DaycareEnrollmentsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1DaycareEnrollments>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getGetV1DaycareEnrollmentsQueryKey = (
+	params?: GetV1DaycareEnrollmentsParams,
 ) => {
+	return [`/v1/daycare-enrollments`, ...(params ? [params] : [])] as const;
+};
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+export const getGetV1DaycareEnrollmentsQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1DaycareEnrollments>>,
+	TError = DtoErrorResponse,
+>(
+	params?: GetV1DaycareEnrollmentsParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1DaycareEnrollments>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1DaycareEnrollmentsQueryKey(params);
+	const queryKey =
+		queryOptions?.queryKey ?? getGetV1DaycareEnrollmentsQueryKey(params);
 
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1DaycareEnrollments>>
+	> = ({ signal }) =>
+		getV1DaycareEnrollments(params, { signal, ...requestOptions });
 
+	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1DaycareEnrollments>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1DaycareEnrollments>>> = ({ signal }) => getV1DaycareEnrollments(params, { signal, ...requestOptions });
+export type GetV1DaycareEnrollmentsQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1DaycareEnrollments>>
+>;
+export type GetV1DaycareEnrollmentsQueryError = DtoErrorResponse;
 
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1DaycareEnrollments>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetV1DaycareEnrollmentsQueryResult = NonNullable<Awaited<ReturnType<typeof getV1DaycareEnrollments>>>
-export type GetV1DaycareEnrollmentsQueryError = DtoErrorResponse
-
-
-export function useGetV1DaycareEnrollments<TData = Awaited<ReturnType<typeof getV1DaycareEnrollments>>, TError = DtoErrorResponse>(
- params: undefined |  GetV1DaycareEnrollmentsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1DaycareEnrollments>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1DaycareEnrollments>>,
-          TError,
-          Awaited<ReturnType<typeof getV1DaycareEnrollments>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1DaycareEnrollments<TData = Awaited<ReturnType<typeof getV1DaycareEnrollments>>, TError = DtoErrorResponse>(
- params?: GetV1DaycareEnrollmentsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1DaycareEnrollments>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1DaycareEnrollments>>,
-          TError,
-          Awaited<ReturnType<typeof getV1DaycareEnrollments>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1DaycareEnrollments<TData = Awaited<ReturnType<typeof getV1DaycareEnrollments>>, TError = DtoErrorResponse>(
- params?: GetV1DaycareEnrollmentsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1DaycareEnrollments>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1DaycareEnrollments<
+	TData = Awaited<ReturnType<typeof getV1DaycareEnrollments>>,
+	TError = DtoErrorResponse,
+>(
+	params: undefined | GetV1DaycareEnrollmentsParams,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1DaycareEnrollments>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1DaycareEnrollments>>,
+					TError,
+					Awaited<ReturnType<typeof getV1DaycareEnrollments>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1DaycareEnrollments<
+	TData = Awaited<ReturnType<typeof getV1DaycareEnrollments>>,
+	TError = DtoErrorResponse,
+>(
+	params?: GetV1DaycareEnrollmentsParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1DaycareEnrollments>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1DaycareEnrollments>>,
+					TError,
+					Awaited<ReturnType<typeof getV1DaycareEnrollments>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1DaycareEnrollments<
+	TData = Awaited<ReturnType<typeof getV1DaycareEnrollments>>,
+	TError = DtoErrorResponse,
+>(
+	params?: GetV1DaycareEnrollmentsParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1DaycareEnrollments>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary List daycare enrollments
  */
 
-export function useGetV1DaycareEnrollments<TData = Awaited<ReturnType<typeof getV1DaycareEnrollments>>, TError = DtoErrorResponse>(
- params?: GetV1DaycareEnrollmentsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1DaycareEnrollments>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1DaycareEnrollments<
+	TData = Awaited<ReturnType<typeof getV1DaycareEnrollments>>,
+	TError = DtoErrorResponse,
+>(
+	params?: GetV1DaycareEnrollmentsParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1DaycareEnrollments>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1DaycareEnrollmentsQueryOptions(params, options);
 
-  const queryOptions = getGetV1DaycareEnrollmentsQueryOptions(params,options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
 
 export type postV1DaycareEnrollmentsResponse201 = {
-  data: PostV1DaycareEnrollments201
-  status: 201
-}
+	data: PostV1DaycareEnrollments201;
+	status: 201;
+};
 
 export type postV1DaycareEnrollmentsResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type postV1DaycareEnrollmentsResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type postV1DaycareEnrollmentsResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type postV1DaycareEnrollmentsResponse409 = {
-  data: DtoErrorResponse
-  status: 409
-}
+	data: DtoErrorResponse;
+	status: 409;
+};
 
 export type postV1DaycareEnrollmentsResponse500 = {
-  data: DtoErrorResponse
-  status: 500
-}
-
-export type postV1DaycareEnrollmentsResponseSuccess = (postV1DaycareEnrollmentsResponse201) & {
-  headers: Headers;
-};
-export type postV1DaycareEnrollmentsResponseError = (postV1DaycareEnrollmentsResponse400 | postV1DaycareEnrollmentsResponse401 | postV1DaycareEnrollmentsResponse403 | postV1DaycareEnrollmentsResponse409 | postV1DaycareEnrollmentsResponse500) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 500;
 };
 
-export type postV1DaycareEnrollmentsResponse = (postV1DaycareEnrollmentsResponseSuccess | postV1DaycareEnrollmentsResponseError)
+export type postV1DaycareEnrollmentsResponseSuccess =
+	postV1DaycareEnrollmentsResponse201 & {
+		headers: Headers;
+	};
+export type postV1DaycareEnrollmentsResponseError = (
+	| postV1DaycareEnrollmentsResponse400
+	| postV1DaycareEnrollmentsResponse401
+	| postV1DaycareEnrollmentsResponse403
+	| postV1DaycareEnrollmentsResponse409
+	| postV1DaycareEnrollmentsResponse500
+) & {
+	headers: Headers;
+};
+
+export type postV1DaycareEnrollmentsResponse =
+	| postV1DaycareEnrollmentsResponseSuccess
+	| postV1DaycareEnrollmentsResponseError;
 
 export const getPostV1DaycareEnrollmentsUrl = () => {
-
-
-
-
-  return `/v1/daycare-enrollments`
-}
+	return `/v1/daycare-enrollments`;
+};
 
 /**
  * Create a new daycare enrollment
  * @summary Create daycare enrollment
  */
-export const postV1DaycareEnrollments = async (dtoCreateDaycareEnrollmentRequest: DtoCreateDaycareEnrollmentRequest, options?: RequestInit): Promise<postV1DaycareEnrollmentsResponse> => {
+export const postV1DaycareEnrollments = async (
+	dtoCreateDaycareEnrollmentRequest: DtoCreateDaycareEnrollmentRequest,
+	options?: RequestInit,
+): Promise<postV1DaycareEnrollmentsResponse> => {
+	return customInstance<postV1DaycareEnrollmentsResponse>(
+		getPostV1DaycareEnrollmentsUrl(),
+		{
+			...options,
+			method: "POST",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(dtoCreateDaycareEnrollmentRequest),
+		},
+	);
+};
 
-  return customInstance<postV1DaycareEnrollmentsResponse>(getPostV1DaycareEnrollmentsUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      dtoCreateDaycareEnrollmentRequest,)
-  }
-);}
+export const getPostV1DaycareEnrollmentsMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1DaycareEnrollments>>,
+		TError,
+		{ data: DtoCreateDaycareEnrollmentRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1DaycareEnrollments>>,
+	TError,
+	{ data: DtoCreateDaycareEnrollmentRequest },
+	TContext
+> => {
+	const mutationKey = ["postV1DaycareEnrollments"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1DaycareEnrollments>>,
+		{ data: DtoCreateDaycareEnrollmentRequest }
+	> = (props) => {
+		const { data } = props ?? {};
 
+		return postV1DaycareEnrollments(data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-export const getPostV1DaycareEnrollmentsMutationOptions = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DaycareEnrollments>>, TError,{data: DtoCreateDaycareEnrollmentRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1DaycareEnrollments>>, TError,{data: DtoCreateDaycareEnrollmentRequest}, TContext> => {
+export type PostV1DaycareEnrollmentsMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1DaycareEnrollments>>
+>;
+export type PostV1DaycareEnrollmentsMutationBody =
+	DtoCreateDaycareEnrollmentRequest;
+export type PostV1DaycareEnrollmentsMutationError = DtoErrorResponse;
 
-const mutationKey = ['postV1DaycareEnrollments'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1DaycareEnrollments>>, {data: DtoCreateDaycareEnrollmentRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  postV1DaycareEnrollments(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1DaycareEnrollmentsMutationResult = NonNullable<Awaited<ReturnType<typeof postV1DaycareEnrollments>>>
-    export type PostV1DaycareEnrollmentsMutationBody = DtoCreateDaycareEnrollmentRequest
-    export type PostV1DaycareEnrollmentsMutationError = DtoErrorResponse
-
-    /**
+/**
  * @summary Create daycare enrollment
  */
-export const usePostV1DaycareEnrollments = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DaycareEnrollments>>, TError,{data: DtoCreateDaycareEnrollmentRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postV1DaycareEnrollments>>,
-        TError,
-        {data: DtoCreateDaycareEnrollmentRequest},
-        TContext
-      > => {
-      return useMutation(getPostV1DaycareEnrollmentsMutationOptions(options), queryClient);
-    }
-    export type postV1DaycareEnrollmentsGenerateMonthlyResponse200 = {
-  data: DtoSuccessResponse
-  status: 200
-}
+export const usePostV1DaycareEnrollments = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1DaycareEnrollments>>,
+			TError,
+			{ data: DtoCreateDaycareEnrollmentRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1DaycareEnrollments>>,
+	TError,
+	{ data: DtoCreateDaycareEnrollmentRequest },
+	TContext
+> => {
+	return useMutation(
+		getPostV1DaycareEnrollmentsMutationOptions(options),
+		queryClient,
+	);
+};
+export type postV1DaycareEnrollmentsGenerateMonthlyResponse200 = {
+	data: DtoSuccessResponse;
+	status: 200;
+};
 
 export type postV1DaycareEnrollmentsGenerateMonthlyResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type postV1DaycareEnrollmentsGenerateMonthlyResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type postV1DaycareEnrollmentsGenerateMonthlyResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type postV1DaycareEnrollmentsGenerateMonthlyResponse500 = {
-  data: DtoErrorResponse
-  status: 500
-}
-
-export type postV1DaycareEnrollmentsGenerateMonthlyResponseSuccess = (postV1DaycareEnrollmentsGenerateMonthlyResponse200) & {
-  headers: Headers;
-};
-export type postV1DaycareEnrollmentsGenerateMonthlyResponseError = (postV1DaycareEnrollmentsGenerateMonthlyResponse400 | postV1DaycareEnrollmentsGenerateMonthlyResponse401 | postV1DaycareEnrollmentsGenerateMonthlyResponse403 | postV1DaycareEnrollmentsGenerateMonthlyResponse500) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 500;
 };
 
-export type postV1DaycareEnrollmentsGenerateMonthlyResponse = (postV1DaycareEnrollmentsGenerateMonthlyResponseSuccess | postV1DaycareEnrollmentsGenerateMonthlyResponseError)
+export type postV1DaycareEnrollmentsGenerateMonthlyResponseSuccess =
+	postV1DaycareEnrollmentsGenerateMonthlyResponse200 & {
+		headers: Headers;
+	};
+export type postV1DaycareEnrollmentsGenerateMonthlyResponseError = (
+	| postV1DaycareEnrollmentsGenerateMonthlyResponse400
+	| postV1DaycareEnrollmentsGenerateMonthlyResponse401
+	| postV1DaycareEnrollmentsGenerateMonthlyResponse403
+	| postV1DaycareEnrollmentsGenerateMonthlyResponse500
+) & {
+	headers: Headers;
+};
+
+export type postV1DaycareEnrollmentsGenerateMonthlyResponse =
+	| postV1DaycareEnrollmentsGenerateMonthlyResponseSuccess
+	| postV1DaycareEnrollmentsGenerateMonthlyResponseError;
 
 export const getPostV1DaycareEnrollmentsGenerateMonthlyUrl = () => {
-
-
-
-
-  return `/v1/daycare-enrollments/generate-monthly`
-}
+	return `/v1/daycare-enrollments/generate-monthly`;
+};
 
 /**
  * Generate SPD for a specific student/month (Regular: attendance-based)
  * @summary Generate monthly daycare SPD
  */
-export const postV1DaycareEnrollmentsGenerateMonthly = async (dtoGenerateDaycareMonthlyRequest: DtoGenerateDaycareMonthlyRequest, options?: RequestInit): Promise<postV1DaycareEnrollmentsGenerateMonthlyResponse> => {
+export const postV1DaycareEnrollmentsGenerateMonthly = async (
+	dtoGenerateDaycareMonthlyRequest: DtoGenerateDaycareMonthlyRequest,
+	options?: RequestInit,
+): Promise<postV1DaycareEnrollmentsGenerateMonthlyResponse> => {
+	return customInstance<postV1DaycareEnrollmentsGenerateMonthlyResponse>(
+		getPostV1DaycareEnrollmentsGenerateMonthlyUrl(),
+		{
+			...options,
+			method: "POST",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(dtoGenerateDaycareMonthlyRequest),
+		},
+	);
+};
 
-  return customInstance<postV1DaycareEnrollmentsGenerateMonthlyResponse>(getPostV1DaycareEnrollmentsGenerateMonthlyUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      dtoGenerateDaycareMonthlyRequest,)
-  }
-);}
+export const getPostV1DaycareEnrollmentsGenerateMonthlyMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1DaycareEnrollmentsGenerateMonthly>>,
+		TError,
+		{ data: DtoGenerateDaycareMonthlyRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1DaycareEnrollmentsGenerateMonthly>>,
+	TError,
+	{ data: DtoGenerateDaycareMonthlyRequest },
+	TContext
+> => {
+	const mutationKey = ["postV1DaycareEnrollmentsGenerateMonthly"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1DaycareEnrollmentsGenerateMonthly>>,
+		{ data: DtoGenerateDaycareMonthlyRequest }
+	> = (props) => {
+		const { data } = props ?? {};
 
+		return postV1DaycareEnrollmentsGenerateMonthly(data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-export const getPostV1DaycareEnrollmentsGenerateMonthlyMutationOptions = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DaycareEnrollmentsGenerateMonthly>>, TError,{data: DtoGenerateDaycareMonthlyRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1DaycareEnrollmentsGenerateMonthly>>, TError,{data: DtoGenerateDaycareMonthlyRequest}, TContext> => {
+export type PostV1DaycareEnrollmentsGenerateMonthlyMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1DaycareEnrollmentsGenerateMonthly>>
+>;
+export type PostV1DaycareEnrollmentsGenerateMonthlyMutationBody =
+	DtoGenerateDaycareMonthlyRequest;
+export type PostV1DaycareEnrollmentsGenerateMonthlyMutationError =
+	DtoErrorResponse;
 
-const mutationKey = ['postV1DaycareEnrollmentsGenerateMonthly'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1DaycareEnrollmentsGenerateMonthly>>, {data: DtoGenerateDaycareMonthlyRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  postV1DaycareEnrollmentsGenerateMonthly(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1DaycareEnrollmentsGenerateMonthlyMutationResult = NonNullable<Awaited<ReturnType<typeof postV1DaycareEnrollmentsGenerateMonthly>>>
-    export type PostV1DaycareEnrollmentsGenerateMonthlyMutationBody = DtoGenerateDaycareMonthlyRequest
-    export type PostV1DaycareEnrollmentsGenerateMonthlyMutationError = DtoErrorResponse
-
-    /**
+/**
  * @summary Generate monthly daycare SPD
  */
-export const usePostV1DaycareEnrollmentsGenerateMonthly = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DaycareEnrollmentsGenerateMonthly>>, TError,{data: DtoGenerateDaycareMonthlyRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postV1DaycareEnrollmentsGenerateMonthly>>,
-        TError,
-        {data: DtoGenerateDaycareMonthlyRequest},
-        TContext
-      > => {
-      return useMutation(getPostV1DaycareEnrollmentsGenerateMonthlyMutationOptions(options), queryClient);
-    }
-    export type postV1DaycareEnrollmentsSyncInvoicesResponse200 = {
-  data: PostV1DaycareEnrollmentsSyncInvoices200
-  status: 200
-}
+export const usePostV1DaycareEnrollmentsGenerateMonthly = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1DaycareEnrollmentsGenerateMonthly>>,
+			TError,
+			{ data: DtoGenerateDaycareMonthlyRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1DaycareEnrollmentsGenerateMonthly>>,
+	TError,
+	{ data: DtoGenerateDaycareMonthlyRequest },
+	TContext
+> => {
+	return useMutation(
+		getPostV1DaycareEnrollmentsGenerateMonthlyMutationOptions(options),
+		queryClient,
+	);
+};
+export type postV1DaycareEnrollmentsSyncInvoicesResponse200 = {
+	data: PostV1DaycareEnrollmentsSyncInvoices200;
+	status: 200;
+};
 
 export type postV1DaycareEnrollmentsSyncInvoicesResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type postV1DaycareEnrollmentsSyncInvoicesResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type postV1DaycareEnrollmentsSyncInvoicesResponse500 = {
-  data: DtoErrorResponse
-  status: 500
-}
-
-export type postV1DaycareEnrollmentsSyncInvoicesResponseSuccess = (postV1DaycareEnrollmentsSyncInvoicesResponse200) & {
-  headers: Headers;
-};
-export type postV1DaycareEnrollmentsSyncInvoicesResponseError = (postV1DaycareEnrollmentsSyncInvoicesResponse401 | postV1DaycareEnrollmentsSyncInvoicesResponse403 | postV1DaycareEnrollmentsSyncInvoicesResponse500) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 500;
 };
 
-export type postV1DaycareEnrollmentsSyncInvoicesResponse = (postV1DaycareEnrollmentsSyncInvoicesResponseSuccess | postV1DaycareEnrollmentsSyncInvoicesResponseError)
+export type postV1DaycareEnrollmentsSyncInvoicesResponseSuccess =
+	postV1DaycareEnrollmentsSyncInvoicesResponse200 & {
+		headers: Headers;
+	};
+export type postV1DaycareEnrollmentsSyncInvoicesResponseError = (
+	| postV1DaycareEnrollmentsSyncInvoicesResponse401
+	| postV1DaycareEnrollmentsSyncInvoicesResponse403
+	| postV1DaycareEnrollmentsSyncInvoicesResponse500
+) & {
+	headers: Headers;
+};
+
+export type postV1DaycareEnrollmentsSyncInvoicesResponse =
+	| postV1DaycareEnrollmentsSyncInvoicesResponseSuccess
+	| postV1DaycareEnrollmentsSyncInvoicesResponseError;
 
 export const getPostV1DaycareEnrollmentsSyncInvoicesUrl = () => {
-
-
-
-
-  return `/v1/daycare-enrollments/sync-invoices`
-}
+	return `/v1/daycare-enrollments/sync-invoices`;
+};
 
 /**
  * Generate missing monthly invoices for all active daycare enrollments
  * @summary Sync daycare monthly invoices
  */
-export const postV1DaycareEnrollmentsSyncInvoices = async ( options?: RequestInit): Promise<postV1DaycareEnrollmentsSyncInvoicesResponse> => {
+export const postV1DaycareEnrollmentsSyncInvoices = async (
+	options?: RequestInit,
+): Promise<postV1DaycareEnrollmentsSyncInvoicesResponse> => {
+	return customInstance<postV1DaycareEnrollmentsSyncInvoicesResponse>(
+		getPostV1DaycareEnrollmentsSyncInvoicesUrl(),
+		{
+			...options,
+			method: "POST",
+		},
+	);
+};
 
-  return customInstance<postV1DaycareEnrollmentsSyncInvoicesResponse>(getPostV1DaycareEnrollmentsSyncInvoicesUrl(),
-  {
-    ...options,
-    method: 'POST'
+export const getPostV1DaycareEnrollmentsSyncInvoicesMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1DaycareEnrollmentsSyncInvoices>>,
+		TError,
+		void,
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1DaycareEnrollmentsSyncInvoices>>,
+	TError,
+	void,
+	TContext
+> => {
+	const mutationKey = ["postV1DaycareEnrollmentsSyncInvoices"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1DaycareEnrollmentsSyncInvoices>>,
+		void
+	> = () => {
+		return postV1DaycareEnrollmentsSyncInvoices(requestOptions);
+	};
 
-  }
-);}
+	return { mutationFn, ...mutationOptions };
+};
 
+export type PostV1DaycareEnrollmentsSyncInvoicesMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1DaycareEnrollmentsSyncInvoices>>
+>;
 
+export type PostV1DaycareEnrollmentsSyncInvoicesMutationError =
+	DtoErrorResponse;
 
-
-export const getPostV1DaycareEnrollmentsSyncInvoicesMutationOptions = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DaycareEnrollmentsSyncInvoices>>, TError,void, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1DaycareEnrollmentsSyncInvoices>>, TError,void, TContext> => {
-
-const mutationKey = ['postV1DaycareEnrollmentsSyncInvoices'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1DaycareEnrollmentsSyncInvoices>>, void> = () => {
-
-
-          return  postV1DaycareEnrollmentsSyncInvoices(requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1DaycareEnrollmentsSyncInvoicesMutationResult = NonNullable<Awaited<ReturnType<typeof postV1DaycareEnrollmentsSyncInvoices>>>
-
-    export type PostV1DaycareEnrollmentsSyncInvoicesMutationError = DtoErrorResponse
-
-    /**
+/**
  * @summary Sync daycare monthly invoices
  */
-export const usePostV1DaycareEnrollmentsSyncInvoices = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DaycareEnrollmentsSyncInvoices>>, TError,void, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postV1DaycareEnrollmentsSyncInvoices>>,
-        TError,
-        void,
-        TContext
-      > => {
-      return useMutation(getPostV1DaycareEnrollmentsSyncInvoicesMutationOptions(options), queryClient);
-    }
-    export type getV1DaycareEnrollmentsIdResponse200 = {
-  data: GetV1DaycareEnrollmentsId200
-  status: 200
-}
+export const usePostV1DaycareEnrollmentsSyncInvoices = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1DaycareEnrollmentsSyncInvoices>>,
+			TError,
+			void,
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1DaycareEnrollmentsSyncInvoices>>,
+	TError,
+	void,
+	TContext
+> => {
+	return useMutation(
+		getPostV1DaycareEnrollmentsSyncInvoicesMutationOptions(options),
+		queryClient,
+	);
+};
+export type getV1DaycareEnrollmentsIdResponse200 = {
+	data: GetV1DaycareEnrollmentsId200;
+	status: 200;
+};
 
 export type getV1DaycareEnrollmentsIdResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type getV1DaycareEnrollmentsIdResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type getV1DaycareEnrollmentsIdResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type getV1DaycareEnrollmentsIdResponse404 = {
-  data: DtoErrorResponse
-  status: 404
-}
+	data: DtoErrorResponse;
+	status: 404;
+};
 
 export type getV1DaycareEnrollmentsIdResponse500 = {
-  data: DtoErrorResponse
-  status: 500
-}
-
-export type getV1DaycareEnrollmentsIdResponseSuccess = (getV1DaycareEnrollmentsIdResponse200) & {
-  headers: Headers;
-};
-export type getV1DaycareEnrollmentsIdResponseError = (getV1DaycareEnrollmentsIdResponse400 | getV1DaycareEnrollmentsIdResponse401 | getV1DaycareEnrollmentsIdResponse403 | getV1DaycareEnrollmentsIdResponse404 | getV1DaycareEnrollmentsIdResponse500) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 500;
 };
 
-export type getV1DaycareEnrollmentsIdResponse = (getV1DaycareEnrollmentsIdResponseSuccess | getV1DaycareEnrollmentsIdResponseError)
+export type getV1DaycareEnrollmentsIdResponseSuccess =
+	getV1DaycareEnrollmentsIdResponse200 & {
+		headers: Headers;
+	};
+export type getV1DaycareEnrollmentsIdResponseError = (
+	| getV1DaycareEnrollmentsIdResponse400
+	| getV1DaycareEnrollmentsIdResponse401
+	| getV1DaycareEnrollmentsIdResponse403
+	| getV1DaycareEnrollmentsIdResponse404
+	| getV1DaycareEnrollmentsIdResponse500
+) & {
+	headers: Headers;
+};
 
-export const getGetV1DaycareEnrollmentsIdUrl = (id: number,) => {
+export type getV1DaycareEnrollmentsIdResponse =
+	| getV1DaycareEnrollmentsIdResponseSuccess
+	| getV1DaycareEnrollmentsIdResponseError;
 
-
-
-
-  return `/v1/daycare-enrollments/${id}`
-}
+export const getGetV1DaycareEnrollmentsIdUrl = (id: number) => {
+	return `/v1/daycare-enrollments/${id}`;
+};
 
 /**
  * Get a single daycare enrollment by ID
  * @summary Get daycare enrollment
  */
-export const getV1DaycareEnrollmentsId = async (id: number, options?: RequestInit): Promise<getV1DaycareEnrollmentsIdResponse> => {
+export const getV1DaycareEnrollmentsId = async (
+	id: number,
+	options?: RequestInit,
+): Promise<getV1DaycareEnrollmentsIdResponse> => {
+	return customInstance<getV1DaycareEnrollmentsIdResponse>(
+		getGetV1DaycareEnrollmentsIdUrl(id),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
 
-  return customInstance<getV1DaycareEnrollmentsIdResponse>(getGetV1DaycareEnrollmentsIdUrl(id),
-  {
-    ...options,
-    method: 'GET'
+export const getGetV1DaycareEnrollmentsIdQueryKey = (id: number) => {
+	return [`/v1/daycare-enrollments/${id}`] as const;
+};
 
-
-  }
-);}
-
-
-
-
-
-export const getGetV1DaycareEnrollmentsIdQueryKey = (id: number,) => {
-    return [
-    `/v1/daycare-enrollments/${id}`
-    ] as const;
-    }
-
-
-export const getGetV1DaycareEnrollmentsIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1DaycareEnrollmentsId>>, TError = DtoErrorResponse>(id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1DaycareEnrollmentsId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getGetV1DaycareEnrollmentsIdQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1DaycareEnrollmentsId>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1DaycareEnrollmentsId>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
 ) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+	const queryKey =
+		queryOptions?.queryKey ?? getGetV1DaycareEnrollmentsIdQueryKey(id);
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1DaycareEnrollmentsIdQueryKey(id);
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1DaycareEnrollmentsId>>
+	> = ({ signal }) =>
+		getV1DaycareEnrollmentsId(id, { signal, ...requestOptions });
 
+	return {
+		queryKey,
+		queryFn,
+		enabled: !!id,
+		...queryOptions,
+	} as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1DaycareEnrollmentsId>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
+export type GetV1DaycareEnrollmentsIdQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1DaycareEnrollmentsId>>
+>;
+export type GetV1DaycareEnrollmentsIdQueryError = DtoErrorResponse;
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1DaycareEnrollmentsId>>> = ({ signal }) => getV1DaycareEnrollmentsId(id, { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1DaycareEnrollmentsId>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetV1DaycareEnrollmentsIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1DaycareEnrollmentsId>>>
-export type GetV1DaycareEnrollmentsIdQueryError = DtoErrorResponse
-
-
-export function useGetV1DaycareEnrollmentsId<TData = Awaited<ReturnType<typeof getV1DaycareEnrollmentsId>>, TError = DtoErrorResponse>(
- id: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1DaycareEnrollmentsId>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1DaycareEnrollmentsId>>,
-          TError,
-          Awaited<ReturnType<typeof getV1DaycareEnrollmentsId>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1DaycareEnrollmentsId<TData = Awaited<ReturnType<typeof getV1DaycareEnrollmentsId>>, TError = DtoErrorResponse>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1DaycareEnrollmentsId>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1DaycareEnrollmentsId>>,
-          TError,
-          Awaited<ReturnType<typeof getV1DaycareEnrollmentsId>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1DaycareEnrollmentsId<TData = Awaited<ReturnType<typeof getV1DaycareEnrollmentsId>>, TError = DtoErrorResponse>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1DaycareEnrollmentsId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1DaycareEnrollmentsId<
+	TData = Awaited<ReturnType<typeof getV1DaycareEnrollmentsId>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1DaycareEnrollmentsId>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1DaycareEnrollmentsId>>,
+					TError,
+					Awaited<ReturnType<typeof getV1DaycareEnrollmentsId>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1DaycareEnrollmentsId<
+	TData = Awaited<ReturnType<typeof getV1DaycareEnrollmentsId>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1DaycareEnrollmentsId>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1DaycareEnrollmentsId>>,
+					TError,
+					Awaited<ReturnType<typeof getV1DaycareEnrollmentsId>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1DaycareEnrollmentsId<
+	TData = Awaited<ReturnType<typeof getV1DaycareEnrollmentsId>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1DaycareEnrollmentsId>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary Get daycare enrollment
  */
 
-export function useGetV1DaycareEnrollmentsId<TData = Awaited<ReturnType<typeof getV1DaycareEnrollmentsId>>, TError = DtoErrorResponse>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1DaycareEnrollmentsId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1DaycareEnrollmentsId<
+	TData = Awaited<ReturnType<typeof getV1DaycareEnrollmentsId>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1DaycareEnrollmentsId>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1DaycareEnrollmentsIdQueryOptions(id, options);
 
-  const queryOptions = getGetV1DaycareEnrollmentsIdQueryOptions(id,options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
 
 export type putV1DaycareEnrollmentsIdResponse200 = {
-  data: PutV1DaycareEnrollmentsId200
-  status: 200
-}
+	data: PutV1DaycareEnrollmentsId200;
+	status: 200;
+};
 
 export type putV1DaycareEnrollmentsIdResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type putV1DaycareEnrollmentsIdResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type putV1DaycareEnrollmentsIdResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type putV1DaycareEnrollmentsIdResponse404 = {
-  data: DtoErrorResponse
-  status: 404
-}
+	data: DtoErrorResponse;
+	status: 404;
+};
 
 export type putV1DaycareEnrollmentsIdResponse500 = {
-  data: DtoErrorResponse
-  status: 500
-}
-
-export type putV1DaycareEnrollmentsIdResponseSuccess = (putV1DaycareEnrollmentsIdResponse200) & {
-  headers: Headers;
-};
-export type putV1DaycareEnrollmentsIdResponseError = (putV1DaycareEnrollmentsIdResponse400 | putV1DaycareEnrollmentsIdResponse401 | putV1DaycareEnrollmentsIdResponse403 | putV1DaycareEnrollmentsIdResponse404 | putV1DaycareEnrollmentsIdResponse500) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 500;
 };
 
-export type putV1DaycareEnrollmentsIdResponse = (putV1DaycareEnrollmentsIdResponseSuccess | putV1DaycareEnrollmentsIdResponseError)
+export type putV1DaycareEnrollmentsIdResponseSuccess =
+	putV1DaycareEnrollmentsIdResponse200 & {
+		headers: Headers;
+	};
+export type putV1DaycareEnrollmentsIdResponseError = (
+	| putV1DaycareEnrollmentsIdResponse400
+	| putV1DaycareEnrollmentsIdResponse401
+	| putV1DaycareEnrollmentsIdResponse403
+	| putV1DaycareEnrollmentsIdResponse404
+	| putV1DaycareEnrollmentsIdResponse500
+) & {
+	headers: Headers;
+};
 
-export const getPutV1DaycareEnrollmentsIdUrl = (id: number,) => {
+export type putV1DaycareEnrollmentsIdResponse =
+	| putV1DaycareEnrollmentsIdResponseSuccess
+	| putV1DaycareEnrollmentsIdResponseError;
 
-
-
-
-  return `/v1/daycare-enrollments/${id}`
-}
+export const getPutV1DaycareEnrollmentsIdUrl = (id: number) => {
+	return `/v1/daycare-enrollments/${id}`;
+};
 
 /**
  * Update daycare enrollment details
  * @summary Update daycare enrollment
  */
-export const putV1DaycareEnrollmentsId = async (id: number,
-    dtoCreateDaycareEnrollmentRequest: DtoCreateDaycareEnrollmentRequest, options?: RequestInit): Promise<putV1DaycareEnrollmentsIdResponse> => {
+export const putV1DaycareEnrollmentsId = async (
+	id: number,
+	dtoCreateDaycareEnrollmentRequest: DtoCreateDaycareEnrollmentRequest,
+	options?: RequestInit,
+): Promise<putV1DaycareEnrollmentsIdResponse> => {
+	return customInstance<putV1DaycareEnrollmentsIdResponse>(
+		getPutV1DaycareEnrollmentsIdUrl(id),
+		{
+			...options,
+			method: "PUT",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(dtoCreateDaycareEnrollmentRequest),
+		},
+	);
+};
 
-  return customInstance<putV1DaycareEnrollmentsIdResponse>(getPutV1DaycareEnrollmentsIdUrl(id),
-  {
-    ...options,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      dtoCreateDaycareEnrollmentRequest,)
-  }
-);}
+export const getPutV1DaycareEnrollmentsIdMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof putV1DaycareEnrollmentsId>>,
+		TError,
+		{ id: number; data: DtoCreateDaycareEnrollmentRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof putV1DaycareEnrollmentsId>>,
+	TError,
+	{ id: number; data: DtoCreateDaycareEnrollmentRequest },
+	TContext
+> => {
+	const mutationKey = ["putV1DaycareEnrollmentsId"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof putV1DaycareEnrollmentsId>>,
+		{ id: number; data: DtoCreateDaycareEnrollmentRequest }
+	> = (props) => {
+		const { id, data } = props ?? {};
 
+		return putV1DaycareEnrollmentsId(id, data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-export const getPutV1DaycareEnrollmentsIdMutationOptions = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1DaycareEnrollmentsId>>, TError,{id: number;data: DtoCreateDaycareEnrollmentRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof putV1DaycareEnrollmentsId>>, TError,{id: number;data: DtoCreateDaycareEnrollmentRequest}, TContext> => {
+export type PutV1DaycareEnrollmentsIdMutationResult = NonNullable<
+	Awaited<ReturnType<typeof putV1DaycareEnrollmentsId>>
+>;
+export type PutV1DaycareEnrollmentsIdMutationBody =
+	DtoCreateDaycareEnrollmentRequest;
+export type PutV1DaycareEnrollmentsIdMutationError = DtoErrorResponse;
 
-const mutationKey = ['putV1DaycareEnrollmentsId'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1DaycareEnrollmentsId>>, {id: number;data: DtoCreateDaycareEnrollmentRequest}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  putV1DaycareEnrollmentsId(id,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PutV1DaycareEnrollmentsIdMutationResult = NonNullable<Awaited<ReturnType<typeof putV1DaycareEnrollmentsId>>>
-    export type PutV1DaycareEnrollmentsIdMutationBody = DtoCreateDaycareEnrollmentRequest
-    export type PutV1DaycareEnrollmentsIdMutationError = DtoErrorResponse
-
-    /**
+/**
  * @summary Update daycare enrollment
  */
-export const usePutV1DaycareEnrollmentsId = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1DaycareEnrollmentsId>>, TError,{id: number;data: DtoCreateDaycareEnrollmentRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof putV1DaycareEnrollmentsId>>,
-        TError,
-        {id: number;data: DtoCreateDaycareEnrollmentRequest},
-        TContext
-      > => {
-      return useMutation(getPutV1DaycareEnrollmentsIdMutationOptions(options), queryClient);
-    }
-    export type patchV1DaycareEnrollmentsIdStatusResponse200 = {
-  data: DtoSuccessResponse
-  status: 200
-}
+export const usePutV1DaycareEnrollmentsId = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof putV1DaycareEnrollmentsId>>,
+			TError,
+			{ id: number; data: DtoCreateDaycareEnrollmentRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof putV1DaycareEnrollmentsId>>,
+	TError,
+	{ id: number; data: DtoCreateDaycareEnrollmentRequest },
+	TContext
+> => {
+	return useMutation(
+		getPutV1DaycareEnrollmentsIdMutationOptions(options),
+		queryClient,
+	);
+};
+export type patchV1DaycareEnrollmentsIdStatusResponse200 = {
+	data: DtoSuccessResponse;
+	status: 200;
+};
 
 export type patchV1DaycareEnrollmentsIdStatusResponse400 = {
-  data: DtoErrorResponse
-  status: 400
-}
+	data: DtoErrorResponse;
+	status: 400;
+};
 
 export type patchV1DaycareEnrollmentsIdStatusResponse401 = {
-  data: DtoErrorResponse
-  status: 401
-}
+	data: DtoErrorResponse;
+	status: 401;
+};
 
 export type patchV1DaycareEnrollmentsIdStatusResponse403 = {
-  data: DtoErrorResponse
-  status: 403
-}
+	data: DtoErrorResponse;
+	status: 403;
+};
 
 export type patchV1DaycareEnrollmentsIdStatusResponse404 = {
-  data: DtoErrorResponse
-  status: 404
-}
+	data: DtoErrorResponse;
+	status: 404;
+};
 
 export type patchV1DaycareEnrollmentsIdStatusResponse500 = {
-  data: DtoErrorResponse
-  status: 500
-}
-
-export type patchV1DaycareEnrollmentsIdStatusResponseSuccess = (patchV1DaycareEnrollmentsIdStatusResponse200) & {
-  headers: Headers;
-};
-export type patchV1DaycareEnrollmentsIdStatusResponseError = (patchV1DaycareEnrollmentsIdStatusResponse400 | patchV1DaycareEnrollmentsIdStatusResponse401 | patchV1DaycareEnrollmentsIdStatusResponse403 | patchV1DaycareEnrollmentsIdStatusResponse404 | patchV1DaycareEnrollmentsIdStatusResponse500) & {
-  headers: Headers;
+	data: DtoErrorResponse;
+	status: 500;
 };
 
-export type patchV1DaycareEnrollmentsIdStatusResponse = (patchV1DaycareEnrollmentsIdStatusResponseSuccess | patchV1DaycareEnrollmentsIdStatusResponseError)
+export type patchV1DaycareEnrollmentsIdStatusResponseSuccess =
+	patchV1DaycareEnrollmentsIdStatusResponse200 & {
+		headers: Headers;
+	};
+export type patchV1DaycareEnrollmentsIdStatusResponseError = (
+	| patchV1DaycareEnrollmentsIdStatusResponse400
+	| patchV1DaycareEnrollmentsIdStatusResponse401
+	| patchV1DaycareEnrollmentsIdStatusResponse403
+	| patchV1DaycareEnrollmentsIdStatusResponse404
+	| patchV1DaycareEnrollmentsIdStatusResponse500
+) & {
+	headers: Headers;
+};
 
-export const getPatchV1DaycareEnrollmentsIdStatusUrl = (id: number,) => {
+export type patchV1DaycareEnrollmentsIdStatusResponse =
+	| patchV1DaycareEnrollmentsIdStatusResponseSuccess
+	| patchV1DaycareEnrollmentsIdStatusResponseError;
 
-
-
-
-  return `/v1/daycare-enrollments/${id}/status`
-}
+export const getPatchV1DaycareEnrollmentsIdStatusUrl = (id: number) => {
+	return `/v1/daycare-enrollments/${id}/status`;
+};
 
 /**
  * Update the status of a daycare enrollment
  * @summary Update daycare status
  */
-export const patchV1DaycareEnrollmentsIdStatus = async (id: number,
-    dtoUpdateDaycareStatusRequest: DtoUpdateDaycareStatusRequest, options?: RequestInit): Promise<patchV1DaycareEnrollmentsIdStatusResponse> => {
+export const patchV1DaycareEnrollmentsIdStatus = async (
+	id: number,
+	dtoUpdateDaycareStatusRequest: DtoUpdateDaycareStatusRequest,
+	options?: RequestInit,
+): Promise<patchV1DaycareEnrollmentsIdStatusResponse> => {
+	return customInstance<patchV1DaycareEnrollmentsIdStatusResponse>(
+		getPatchV1DaycareEnrollmentsIdStatusUrl(id),
+		{
+			...options,
+			method: "PATCH",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(dtoUpdateDaycareStatusRequest),
+		},
+	);
+};
 
-  return customInstance<patchV1DaycareEnrollmentsIdStatusResponse>(getPatchV1DaycareEnrollmentsIdStatusUrl(id),
-  {
-    ...options,
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      dtoUpdateDaycareStatusRequest,)
-  }
-);}
+export const getPatchV1DaycareEnrollmentsIdStatusMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof patchV1DaycareEnrollmentsIdStatus>>,
+		TError,
+		{ id: number; data: DtoUpdateDaycareStatusRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof patchV1DaycareEnrollmentsIdStatus>>,
+	TError,
+	{ id: number; data: DtoUpdateDaycareStatusRequest },
+	TContext
+> => {
+	const mutationKey = ["patchV1DaycareEnrollmentsIdStatus"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof patchV1DaycareEnrollmentsIdStatus>>,
+		{ id: number; data: DtoUpdateDaycareStatusRequest }
+	> = (props) => {
+		const { id, data } = props ?? {};
 
+		return patchV1DaycareEnrollmentsIdStatus(id, data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-export const getPatchV1DaycareEnrollmentsIdStatusMutationOptions = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchV1DaycareEnrollmentsIdStatus>>, TError,{id: number;data: DtoUpdateDaycareStatusRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof patchV1DaycareEnrollmentsIdStatus>>, TError,{id: number;data: DtoUpdateDaycareStatusRequest}, TContext> => {
+export type PatchV1DaycareEnrollmentsIdStatusMutationResult = NonNullable<
+	Awaited<ReturnType<typeof patchV1DaycareEnrollmentsIdStatus>>
+>;
+export type PatchV1DaycareEnrollmentsIdStatusMutationBody =
+	DtoUpdateDaycareStatusRequest;
+export type PatchV1DaycareEnrollmentsIdStatusMutationError = DtoErrorResponse;
 
-const mutationKey = ['patchV1DaycareEnrollmentsIdStatus'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof patchV1DaycareEnrollmentsIdStatus>>, {id: number;data: DtoUpdateDaycareStatusRequest}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  patchV1DaycareEnrollmentsIdStatus(id,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PatchV1DaycareEnrollmentsIdStatusMutationResult = NonNullable<Awaited<ReturnType<typeof patchV1DaycareEnrollmentsIdStatus>>>
-    export type PatchV1DaycareEnrollmentsIdStatusMutationBody = DtoUpdateDaycareStatusRequest
-    export type PatchV1DaycareEnrollmentsIdStatusMutationError = DtoErrorResponse
-
-    /**
+/**
  * @summary Update daycare status
  */
-export const usePatchV1DaycareEnrollmentsIdStatus = <TError = DtoErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchV1DaycareEnrollmentsIdStatus>>, TError,{id: number;data: DtoUpdateDaycareStatusRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof patchV1DaycareEnrollmentsIdStatus>>,
-        TError,
-        {id: number;data: DtoUpdateDaycareStatusRequest},
-        TContext
-      > => {
-      return useMutation(getPatchV1DaycareEnrollmentsIdStatusMutationOptions(options), queryClient);
-    }
-    export type getV1DaycareAttendanceResponse200 = {
-  data: GetV1DaycareAttendance200
-  status: 200
-}
-
-export type getV1DaycareAttendanceResponseSuccess = (getV1DaycareAttendanceResponse200) & {
-  headers: Headers;
+export const usePatchV1DaycareEnrollmentsIdStatus = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof patchV1DaycareEnrollmentsIdStatus>>,
+			TError,
+			{ id: number; data: DtoUpdateDaycareStatusRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof patchV1DaycareEnrollmentsIdStatus>>,
+	TError,
+	{ id: number; data: DtoUpdateDaycareStatusRequest },
+	TContext
+> => {
+	return useMutation(
+		getPatchV1DaycareEnrollmentsIdStatusMutationOptions(options),
+		queryClient,
+	);
 };
-;
+export type getV1DaycareAttendanceResponse200 = {
+	data: GetV1DaycareAttendance200;
+	status: 200;
+};
 
-export type getV1DaycareAttendanceResponse = (getV1DaycareAttendanceResponseSuccess)
+export type getV1DaycareAttendanceResponseSuccess =
+	getV1DaycareAttendanceResponse200 & {
+		headers: Headers;
+	};
 
-export const getGetV1DaycareAttendanceUrl = (params: GetV1DaycareAttendanceParams,) => {
-  const normalizedParams = new URLSearchParams();
+export type getV1DaycareAttendanceResponse =
+	getV1DaycareAttendanceResponseSuccess;
 
-  Object.entries(params || {}).forEach(([key, value]) => {
+export const getGetV1DaycareAttendanceUrl = (
+	params: GetV1DaycareAttendanceParams,
+) => {
+	const normalizedParams = new URLSearchParams();
 
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(key, value === null ? "null" : value.toString());
+		}
+	});
 
-  const stringifiedParams = normalizedParams.toString();
+	const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/v1/daycare/attendance?${stringifiedParams}` : `/v1/daycare/attendance`
-}
+	return stringifiedParams.length > 0
+		? `/v1/daycare/attendance?${stringifiedParams}`
+		: `/v1/daycare/attendance`;
+};
 
 /**
  * Get daily attendance for a daycare student in a specific month
  * @summary Get daycare attendance
  */
-export const getV1DaycareAttendance = async (params: GetV1DaycareAttendanceParams, options?: RequestInit): Promise<getV1DaycareAttendanceResponse> => {
+export const getV1DaycareAttendance = async (
+	params: GetV1DaycareAttendanceParams,
+	options?: RequestInit,
+): Promise<getV1DaycareAttendanceResponse> => {
+	return customInstance<getV1DaycareAttendanceResponse>(
+		getGetV1DaycareAttendanceUrl(params),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
 
-  return customInstance<getV1DaycareAttendanceResponse>(getGetV1DaycareAttendanceUrl(params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetV1DaycareAttendanceQueryKey = (params?: GetV1DaycareAttendanceParams,) => {
-    return [
-    `/v1/daycare/attendance`, ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getGetV1DaycareAttendanceQueryOptions = <TData = Awaited<ReturnType<typeof getV1DaycareAttendance>>, TError = unknown>(params: GetV1DaycareAttendanceParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1DaycareAttendance>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getGetV1DaycareAttendanceQueryKey = (
+	params?: GetV1DaycareAttendanceParams,
 ) => {
+	return [`/v1/daycare/attendance`, ...(params ? [params] : [])] as const;
+};
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+export const getGetV1DaycareAttendanceQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1DaycareAttendance>>,
+	TError = unknown,
+>(
+	params: GetV1DaycareAttendanceParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1DaycareAttendance>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1DaycareAttendanceQueryKey(params);
+	const queryKey =
+		queryOptions?.queryKey ?? getGetV1DaycareAttendanceQueryKey(params);
 
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1DaycareAttendance>>
+	> = ({ signal }) =>
+		getV1DaycareAttendance(params, { signal, ...requestOptions });
 
+	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1DaycareAttendance>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1DaycareAttendance>>> = ({ signal }) => getV1DaycareAttendance(params, { signal, ...requestOptions });
+export type GetV1DaycareAttendanceQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1DaycareAttendance>>
+>;
+export type GetV1DaycareAttendanceQueryError = unknown;
 
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1DaycareAttendance>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetV1DaycareAttendanceQueryResult = NonNullable<Awaited<ReturnType<typeof getV1DaycareAttendance>>>
-export type GetV1DaycareAttendanceQueryError = unknown
-
-
-export function useGetV1DaycareAttendance<TData = Awaited<ReturnType<typeof getV1DaycareAttendance>>, TError = unknown>(
- params: GetV1DaycareAttendanceParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1DaycareAttendance>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1DaycareAttendance>>,
-          TError,
-          Awaited<ReturnType<typeof getV1DaycareAttendance>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1DaycareAttendance<TData = Awaited<ReturnType<typeof getV1DaycareAttendance>>, TError = unknown>(
- params: GetV1DaycareAttendanceParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1DaycareAttendance>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1DaycareAttendance>>,
-          TError,
-          Awaited<ReturnType<typeof getV1DaycareAttendance>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1DaycareAttendance<TData = Awaited<ReturnType<typeof getV1DaycareAttendance>>, TError = unknown>(
- params: GetV1DaycareAttendanceParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1DaycareAttendance>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1DaycareAttendance<
+	TData = Awaited<ReturnType<typeof getV1DaycareAttendance>>,
+	TError = unknown,
+>(
+	params: GetV1DaycareAttendanceParams,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1DaycareAttendance>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1DaycareAttendance>>,
+					TError,
+					Awaited<ReturnType<typeof getV1DaycareAttendance>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1DaycareAttendance<
+	TData = Awaited<ReturnType<typeof getV1DaycareAttendance>>,
+	TError = unknown,
+>(
+	params: GetV1DaycareAttendanceParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1DaycareAttendance>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1DaycareAttendance>>,
+					TError,
+					Awaited<ReturnType<typeof getV1DaycareAttendance>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1DaycareAttendance<
+	TData = Awaited<ReturnType<typeof getV1DaycareAttendance>>,
+	TError = unknown,
+>(
+	params: GetV1DaycareAttendanceParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1DaycareAttendance>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary Get daycare attendance
  */
 
-export function useGetV1DaycareAttendance<TData = Awaited<ReturnType<typeof getV1DaycareAttendance>>, TError = unknown>(
- params: GetV1DaycareAttendanceParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1DaycareAttendance>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1DaycareAttendance<
+	TData = Awaited<ReturnType<typeof getV1DaycareAttendance>>,
+	TError = unknown,
+>(
+	params: GetV1DaycareAttendanceParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1DaycareAttendance>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1DaycareAttendanceQueryOptions(params, options);
 
-  const queryOptions = getGetV1DaycareAttendanceQueryOptions(params,options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
 
 export type putV1DaycareAttendanceResponse200 = {
-  data: PutV1DaycareAttendance200
-  status: 200
-}
-
-export type putV1DaycareAttendanceResponseSuccess = (putV1DaycareAttendanceResponse200) & {
-  headers: Headers;
+	data: PutV1DaycareAttendance200;
+	status: 200;
 };
-;
 
-export type putV1DaycareAttendanceResponse = (putV1DaycareAttendanceResponseSuccess)
+export type putV1DaycareAttendanceResponseSuccess =
+	putV1DaycareAttendanceResponse200 & {
+		headers: Headers;
+	};
+
+export type putV1DaycareAttendanceResponse =
+	putV1DaycareAttendanceResponseSuccess;
 
 export const getPutV1DaycareAttendanceUrl = () => {
-
-
-
-
-  return `/v1/daycare/attendance`
-}
+	return `/v1/daycare/attendance`;
+};
 
 /**
  * Create or update daily attendance for a daycare student
  * @summary Upsert daycare attendance
  */
-export const putV1DaycareAttendance = async (dtoUpsertDaycareAttendanceRequest: DtoUpsertDaycareAttendanceRequest, options?: RequestInit): Promise<putV1DaycareAttendanceResponse> => {
+export const putV1DaycareAttendance = async (
+	dtoUpsertDaycareAttendanceRequest: DtoUpsertDaycareAttendanceRequest,
+	options?: RequestInit,
+): Promise<putV1DaycareAttendanceResponse> => {
+	return customInstance<putV1DaycareAttendanceResponse>(
+		getPutV1DaycareAttendanceUrl(),
+		{
+			...options,
+			method: "PUT",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(dtoUpsertDaycareAttendanceRequest),
+		},
+	);
+};
 
-  return customInstance<putV1DaycareAttendanceResponse>(getPutV1DaycareAttendanceUrl(),
-  {
-    ...options,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      dtoUpsertDaycareAttendanceRequest,)
-  }
-);}
+export const getPutV1DaycareAttendanceMutationOptions = <
+	TError = unknown,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof putV1DaycareAttendance>>,
+		TError,
+		{ data: DtoUpsertDaycareAttendanceRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof putV1DaycareAttendance>>,
+	TError,
+	{ data: DtoUpsertDaycareAttendanceRequest },
+	TContext
+> => {
+	const mutationKey = ["putV1DaycareAttendance"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof putV1DaycareAttendance>>,
+		{ data: DtoUpsertDaycareAttendanceRequest }
+	> = (props) => {
+		const { data } = props ?? {};
 
+		return putV1DaycareAttendance(data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-export const getPutV1DaycareAttendanceMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1DaycareAttendance>>, TError,{data: DtoUpsertDaycareAttendanceRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof putV1DaycareAttendance>>, TError,{data: DtoUpsertDaycareAttendanceRequest}, TContext> => {
+export type PutV1DaycareAttendanceMutationResult = NonNullable<
+	Awaited<ReturnType<typeof putV1DaycareAttendance>>
+>;
+export type PutV1DaycareAttendanceMutationBody =
+	DtoUpsertDaycareAttendanceRequest;
+export type PutV1DaycareAttendanceMutationError = unknown;
 
-const mutationKey = ['putV1DaycareAttendance'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1DaycareAttendance>>, {data: DtoUpsertDaycareAttendanceRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  putV1DaycareAttendance(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PutV1DaycareAttendanceMutationResult = NonNullable<Awaited<ReturnType<typeof putV1DaycareAttendance>>>
-    export type PutV1DaycareAttendanceMutationBody = DtoUpsertDaycareAttendanceRequest
-    export type PutV1DaycareAttendanceMutationError = unknown
-
-    /**
+/**
  * @summary Upsert daycare attendance
  */
-export const usePutV1DaycareAttendance = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1DaycareAttendance>>, TError,{data: DtoUpsertDaycareAttendanceRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof putV1DaycareAttendance>>,
-        TError,
-        {data: DtoUpsertDaycareAttendanceRequest},
-        TContext
-      > => {
-      return useMutation(getPutV1DaycareAttendanceMutationOptions(options), queryClient);
-    }
+export const usePutV1DaycareAttendance = <TError = unknown, TContext = unknown>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof putV1DaycareAttendance>>,
+			TError,
+			{ data: DtoUpsertDaycareAttendanceRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof putV1DaycareAttendance>>,
+	TError,
+	{ data: DtoUpsertDaycareAttendanceRequest },
+	TContext
+> => {
+	return useMutation(
+		getPutV1DaycareAttendanceMutationOptions(options),
+		queryClient,
+	);
+};

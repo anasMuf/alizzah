@@ -7,9 +7,9 @@
  */
 
 export interface DtoUpsertDaycareAttendanceRequest {
-  academic_year_id: number;
-  date: string;
-  student_id: number;
-  /** empty = absent */
-  time_slot?: string;
+	academic_year_id: number;
+	date: string;
+	student_id: number;
+	/** empty = absent */
+	time_slot?: string;
 }

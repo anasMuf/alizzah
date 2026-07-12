@@ -5,692 +5,933 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import {
-  useMutation,
-  useQuery
-} from '@tanstack/react-query';
-import type {
-  DataTag,
-  DefinedInitialDataOptions,
-  DefinedUseQueryResult,
-  MutationFunction,
-  QueryClient,
-  QueryFunction,
-  QueryKey,
-  UndefinedInitialDataOptions,
-  UseMutationOptions,
-  UseMutationResult,
-  UseQueryOptions,
-  UseQueryResult
-} from '@tanstack/react-query';
 
 import type {
-  DtoCreateFacilityRequest,
-  DtoEnrollFacilityRequest,
-  DtoSuccessResponse,
-  GetV1Facilities200,
-  GetV1StudentsIdFacilities200,
-  GetV1StudentsIdFacilitiesParams,
-  PostV1Facilities201,
-  PostV1StudentsIdFacilities201,
-  PutV1FacilitiesId200
-} from '../../model';
+	DataTag,
+	DefinedInitialDataOptions,
+	DefinedUseQueryResult,
+	MutationFunction,
+	QueryClient,
+	QueryFunction,
+	QueryKey,
+	UndefinedInitialDataOptions,
+	UseMutationOptions,
+	UseMutationResult,
+	UseQueryOptions,
+	UseQueryResult,
+} from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
-import { customInstance } from '../../mutator/custom-instance';
+import type {
+	DtoCreateFacilityRequest,
+	DtoEnrollFacilityRequest,
+	DtoSuccessResponse,
+	GetV1Facilities200,
+	GetV1StudentsIdFacilities200,
+	GetV1StudentsIdFacilitiesParams,
+	PostV1Facilities201,
+	PostV1StudentsIdFacilities201,
+	PutV1FacilitiesId200,
+} from "../../model";
 
+import { customInstance } from "../../mutator/custom-instance";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
-
-
 export type getV1FacilitiesResponse200 = {
-  data: GetV1Facilities200
-  status: 200
-}
-
-export type getV1FacilitiesResponseSuccess = (getV1FacilitiesResponse200) & {
-  headers: Headers;
+	data: GetV1Facilities200;
+	status: 200;
 };
-;
 
-export type getV1FacilitiesResponse = (getV1FacilitiesResponseSuccess)
+export type getV1FacilitiesResponseSuccess = getV1FacilitiesResponse200 & {
+	headers: Headers;
+};
+
+export type getV1FacilitiesResponse = getV1FacilitiesResponseSuccess;
 
 export const getGetV1FacilitiesUrl = () => {
-
-
-
-
-  return `/v1/facilities`
-}
+	return `/v1/facilities`;
+};
 
 /**
  * @summary List facilities
  */
-export const getV1Facilities = async ( options?: RequestInit): Promise<getV1FacilitiesResponse> => {
-
-  return customInstance<getV1FacilitiesResponse>(getGetV1FacilitiesUrl(),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
+export const getV1Facilities = async (
+	options?: RequestInit,
+): Promise<getV1FacilitiesResponse> => {
+	return customInstance<getV1FacilitiesResponse>(getGetV1FacilitiesUrl(), {
+		...options,
+		method: "GET",
+	});
+};
 
 export const getGetV1FacilitiesQueryKey = () => {
-    return [
-    `/v1/facilities`
-    ] as const;
-    }
+	return [`/v1/facilities`] as const;
+};
 
+export const getGetV1FacilitiesQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1Facilities>>,
+	TError = unknown,
+>(options?: {
+	query?: Partial<
+		UseQueryOptions<Awaited<ReturnType<typeof getV1Facilities>>, TError, TData>
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
-export const getGetV1FacilitiesQueryOptions = <TData = Awaited<ReturnType<typeof getV1Facilities>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1Facilities>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
-) => {
+	const queryKey = queryOptions?.queryKey ?? getGetV1FacilitiesQueryKey();
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+	const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1Facilities>>> = ({
+		signal,
+	}) => getV1Facilities({ signal, ...requestOptions });
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1FacilitiesQueryKey();
+	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1Facilities>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
+export type GetV1FacilitiesQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1Facilities>>
+>;
+export type GetV1FacilitiesQueryError = unknown;
 
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1Facilities>>> = ({ signal }) => getV1Facilities({ signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1Facilities>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetV1FacilitiesQueryResult = NonNullable<Awaited<ReturnType<typeof getV1Facilities>>>
-export type GetV1FacilitiesQueryError = unknown
-
-
-export function useGetV1Facilities<TData = Awaited<ReturnType<typeof getV1Facilities>>, TError = unknown>(
-  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1Facilities>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1Facilities>>,
-          TError,
-          Awaited<ReturnType<typeof getV1Facilities>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1Facilities<TData = Awaited<ReturnType<typeof getV1Facilities>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1Facilities>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1Facilities>>,
-          TError,
-          Awaited<ReturnType<typeof getV1Facilities>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1Facilities<TData = Awaited<ReturnType<typeof getV1Facilities>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1Facilities>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1Facilities<
+	TData = Awaited<ReturnType<typeof getV1Facilities>>,
+	TError = unknown,
+>(
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1Facilities>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1Facilities>>,
+					TError,
+					Awaited<ReturnType<typeof getV1Facilities>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1Facilities<
+	TData = Awaited<ReturnType<typeof getV1Facilities>>,
+	TError = unknown,
+>(
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1Facilities>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1Facilities>>,
+					TError,
+					Awaited<ReturnType<typeof getV1Facilities>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1Facilities<
+	TData = Awaited<ReturnType<typeof getV1Facilities>>,
+	TError = unknown,
+>(
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1Facilities>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary List facilities
  */
 
-export function useGetV1Facilities<TData = Awaited<ReturnType<typeof getV1Facilities>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1Facilities>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1Facilities<
+	TData = Awaited<ReturnType<typeof getV1Facilities>>,
+	TError = unknown,
+>(
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1Facilities>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1FacilitiesQueryOptions(options);
 
-  const queryOptions = getGetV1FacilitiesQueryOptions(options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
 
 export type postV1FacilitiesResponse201 = {
-  data: PostV1Facilities201
-  status: 201
-}
-
-export type postV1FacilitiesResponseSuccess = (postV1FacilitiesResponse201) & {
-  headers: Headers;
+	data: PostV1Facilities201;
+	status: 201;
 };
-;
 
-export type postV1FacilitiesResponse = (postV1FacilitiesResponseSuccess)
+export type postV1FacilitiesResponseSuccess = postV1FacilitiesResponse201 & {
+	headers: Headers;
+};
+
+export type postV1FacilitiesResponse = postV1FacilitiesResponseSuccess;
 
 export const getPostV1FacilitiesUrl = () => {
-
-
-
-
-  return `/v1/facilities`
-}
+	return `/v1/facilities`;
+};
 
 /**
  * @summary Create facility
  */
-export const postV1Facilities = async (dtoCreateFacilityRequest: DtoCreateFacilityRequest, options?: RequestInit): Promise<postV1FacilitiesResponse> => {
+export const postV1Facilities = async (
+	dtoCreateFacilityRequest: DtoCreateFacilityRequest,
+	options?: RequestInit,
+): Promise<postV1FacilitiesResponse> => {
+	return customInstance<postV1FacilitiesResponse>(getPostV1FacilitiesUrl(), {
+		...options,
+		method: "POST",
+		headers: { "Content-Type": "application/json", ...options?.headers },
+		body: JSON.stringify(dtoCreateFacilityRequest),
+	});
+};
 
-  return customInstance<postV1FacilitiesResponse>(getPostV1FacilitiesUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      dtoCreateFacilityRequest,)
-  }
-);}
+export const getPostV1FacilitiesMutationOptions = <
+	TError = unknown,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1Facilities>>,
+		TError,
+		{ data: DtoCreateFacilityRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1Facilities>>,
+	TError,
+	{ data: DtoCreateFacilityRequest },
+	TContext
+> => {
+	const mutationKey = ["postV1Facilities"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1Facilities>>,
+		{ data: DtoCreateFacilityRequest }
+	> = (props) => {
+		const { data } = props ?? {};
 
+		return postV1Facilities(data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-export const getPostV1FacilitiesMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1Facilities>>, TError,{data: DtoCreateFacilityRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1Facilities>>, TError,{data: DtoCreateFacilityRequest}, TContext> => {
+export type PostV1FacilitiesMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1Facilities>>
+>;
+export type PostV1FacilitiesMutationBody = DtoCreateFacilityRequest;
+export type PostV1FacilitiesMutationError = unknown;
 
-const mutationKey = ['postV1Facilities'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1Facilities>>, {data: DtoCreateFacilityRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  postV1Facilities(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1FacilitiesMutationResult = NonNullable<Awaited<ReturnType<typeof postV1Facilities>>>
-    export type PostV1FacilitiesMutationBody = DtoCreateFacilityRequest
-    export type PostV1FacilitiesMutationError = unknown
-
-    /**
+/**
  * @summary Create facility
  */
-export const usePostV1Facilities = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1Facilities>>, TError,{data: DtoCreateFacilityRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postV1Facilities>>,
-        TError,
-        {data: DtoCreateFacilityRequest},
-        TContext
-      > => {
-      return useMutation(getPostV1FacilitiesMutationOptions(options), queryClient);
-    }
-    export type putV1FacilitiesIdResponse200 = {
-  data: PutV1FacilitiesId200
-  status: 200
-}
-
-export type putV1FacilitiesIdResponseSuccess = (putV1FacilitiesIdResponse200) & {
-  headers: Headers;
+export const usePostV1Facilities = <TError = unknown, TContext = unknown>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1Facilities>>,
+			TError,
+			{ data: DtoCreateFacilityRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1Facilities>>,
+	TError,
+	{ data: DtoCreateFacilityRequest },
+	TContext
+> => {
+	return useMutation(getPostV1FacilitiesMutationOptions(options), queryClient);
 };
-;
+export type putV1FacilitiesIdResponse200 = {
+	data: PutV1FacilitiesId200;
+	status: 200;
+};
 
-export type putV1FacilitiesIdResponse = (putV1FacilitiesIdResponseSuccess)
+export type putV1FacilitiesIdResponseSuccess = putV1FacilitiesIdResponse200 & {
+	headers: Headers;
+};
 
-export const getPutV1FacilitiesIdUrl = (id: number,) => {
+export type putV1FacilitiesIdResponse = putV1FacilitiesIdResponseSuccess;
 
-
-
-
-  return `/v1/facilities/${id}`
-}
+export const getPutV1FacilitiesIdUrl = (id: number) => {
+	return `/v1/facilities/${id}`;
+};
 
 /**
  * @summary Update facility
  */
-export const putV1FacilitiesId = async (id: number,
-    dtoCreateFacilityRequest: DtoCreateFacilityRequest, options?: RequestInit): Promise<putV1FacilitiesIdResponse> => {
+export const putV1FacilitiesId = async (
+	id: number,
+	dtoCreateFacilityRequest: DtoCreateFacilityRequest,
+	options?: RequestInit,
+): Promise<putV1FacilitiesIdResponse> => {
+	return customInstance<putV1FacilitiesIdResponse>(
+		getPutV1FacilitiesIdUrl(id),
+		{
+			...options,
+			method: "PUT",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(dtoCreateFacilityRequest),
+		},
+	);
+};
 
-  return customInstance<putV1FacilitiesIdResponse>(getPutV1FacilitiesIdUrl(id),
-  {
-    ...options,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      dtoCreateFacilityRequest,)
-  }
-);}
+export const getPutV1FacilitiesIdMutationOptions = <
+	TError = unknown,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof putV1FacilitiesId>>,
+		TError,
+		{ id: number; data: DtoCreateFacilityRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof putV1FacilitiesId>>,
+	TError,
+	{ id: number; data: DtoCreateFacilityRequest },
+	TContext
+> => {
+	const mutationKey = ["putV1FacilitiesId"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof putV1FacilitiesId>>,
+		{ id: number; data: DtoCreateFacilityRequest }
+	> = (props) => {
+		const { id, data } = props ?? {};
 
+		return putV1FacilitiesId(id, data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-export const getPutV1FacilitiesIdMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1FacilitiesId>>, TError,{id: number;data: DtoCreateFacilityRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof putV1FacilitiesId>>, TError,{id: number;data: DtoCreateFacilityRequest}, TContext> => {
+export type PutV1FacilitiesIdMutationResult = NonNullable<
+	Awaited<ReturnType<typeof putV1FacilitiesId>>
+>;
+export type PutV1FacilitiesIdMutationBody = DtoCreateFacilityRequest;
+export type PutV1FacilitiesIdMutationError = unknown;
 
-const mutationKey = ['putV1FacilitiesId'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1FacilitiesId>>, {id: number;data: DtoCreateFacilityRequest}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  putV1FacilitiesId(id,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PutV1FacilitiesIdMutationResult = NonNullable<Awaited<ReturnType<typeof putV1FacilitiesId>>>
-    export type PutV1FacilitiesIdMutationBody = DtoCreateFacilityRequest
-    export type PutV1FacilitiesIdMutationError = unknown
-
-    /**
+/**
  * @summary Update facility
  */
-export const usePutV1FacilitiesId = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1FacilitiesId>>, TError,{id: number;data: DtoCreateFacilityRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof putV1FacilitiesId>>,
-        TError,
-        {id: number;data: DtoCreateFacilityRequest},
-        TContext
-      > => {
-      return useMutation(getPutV1FacilitiesIdMutationOptions(options), queryClient);
-    }
-    export type deleteV1FacilitiesIdResponse200 = {
-  data: DtoSuccessResponse
-  status: 200
-}
-
-export type deleteV1FacilitiesIdResponseSuccess = (deleteV1FacilitiesIdResponse200) & {
-  headers: Headers;
+export const usePutV1FacilitiesId = <TError = unknown, TContext = unknown>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof putV1FacilitiesId>>,
+			TError,
+			{ id: number; data: DtoCreateFacilityRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof putV1FacilitiesId>>,
+	TError,
+	{ id: number; data: DtoCreateFacilityRequest },
+	TContext
+> => {
+	return useMutation(getPutV1FacilitiesIdMutationOptions(options), queryClient);
 };
-;
+export type deleteV1FacilitiesIdResponse200 = {
+	data: DtoSuccessResponse;
+	status: 200;
+};
 
-export type deleteV1FacilitiesIdResponse = (deleteV1FacilitiesIdResponseSuccess)
+export type deleteV1FacilitiesIdResponseSuccess =
+	deleteV1FacilitiesIdResponse200 & {
+		headers: Headers;
+	};
 
-export const getDeleteV1FacilitiesIdUrl = (id: number,) => {
+export type deleteV1FacilitiesIdResponse = deleteV1FacilitiesIdResponseSuccess;
 
-
-
-
-  return `/v1/facilities/${id}`
-}
+export const getDeleteV1FacilitiesIdUrl = (id: number) => {
+	return `/v1/facilities/${id}`;
+};
 
 /**
  * @summary Delete facility
  */
-export const deleteV1FacilitiesId = async (id: number, options?: RequestInit): Promise<deleteV1FacilitiesIdResponse> => {
-
-  return customInstance<deleteV1FacilitiesIdResponse>(getDeleteV1FacilitiesIdUrl(id),
-  {
-    ...options,
-    method: 'DELETE'
-
-
-  }
-);}
-
-
-
-
-export const getDeleteV1FacilitiesIdMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1FacilitiesId>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof deleteV1FacilitiesId>>, TError,{id: number}, TContext> => {
-
-const mutationKey = ['deleteV1FacilitiesId'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteV1FacilitiesId>>, {id: number}> = (props) => {
-          const {id} = props ?? {};
-
-          return  deleteV1FacilitiesId(id,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type DeleteV1FacilitiesIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteV1FacilitiesId>>>
-
-    export type DeleteV1FacilitiesIdMutationError = unknown
-
-    /**
- * @summary Delete facility
- */
-export const useDeleteV1FacilitiesId = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1FacilitiesId>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof deleteV1FacilitiesId>>,
-        TError,
-        {id: number},
-        TContext
-      > => {
-      return useMutation(getDeleteV1FacilitiesIdMutationOptions(options), queryClient);
-    }
-    export type getV1StudentsIdFacilitiesResponse200 = {
-  data: GetV1StudentsIdFacilities200
-  status: 200
-}
-
-export type getV1StudentsIdFacilitiesResponseSuccess = (getV1StudentsIdFacilitiesResponse200) & {
-  headers: Headers;
+export const deleteV1FacilitiesId = async (
+	id: number,
+	options?: RequestInit,
+): Promise<deleteV1FacilitiesIdResponse> => {
+	return customInstance<deleteV1FacilitiesIdResponse>(
+		getDeleteV1FacilitiesIdUrl(id),
+		{
+			...options,
+			method: "DELETE",
+		},
+	);
 };
-;
 
-export type getV1StudentsIdFacilitiesResponse = (getV1StudentsIdFacilitiesResponseSuccess)
+export const getDeleteV1FacilitiesIdMutationOptions = <
+	TError = unknown,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof deleteV1FacilitiesId>>,
+		TError,
+		{ id: number },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof deleteV1FacilitiesId>>,
+	TError,
+	{ id: number },
+	TContext
+> => {
+	const mutationKey = ["deleteV1FacilitiesId"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
-export const getGetV1StudentsIdFacilitiesUrl = (id: number,
-    params?: GetV1StudentsIdFacilitiesParams,) => {
-  const normalizedParams = new URLSearchParams();
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof deleteV1FacilitiesId>>,
+		{ id: number }
+	> = (props) => {
+		const { id } = props ?? {};
 
-  Object.entries(params || {}).forEach(([key, value]) => {
+		return deleteV1FacilitiesId(id, requestOptions);
+	};
 
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
+	return { mutationFn, ...mutationOptions };
+};
 
-  const stringifiedParams = normalizedParams.toString();
+export type DeleteV1FacilitiesIdMutationResult = NonNullable<
+	Awaited<ReturnType<typeof deleteV1FacilitiesId>>
+>;
 
-  return stringifiedParams.length > 0 ? `/v1/students/${id}/facilities?${stringifiedParams}` : `/v1/students/${id}/facilities`
-}
+export type DeleteV1FacilitiesIdMutationError = unknown;
 
 /**
- * @summary List student facilities
+ * @summary Delete facility
  */
-export const getV1StudentsIdFacilities = async (id: number,
-    params?: GetV1StudentsIdFacilitiesParams, options?: RequestInit): Promise<getV1StudentsIdFacilitiesResponse> => {
+export const useDeleteV1FacilitiesId = <TError = unknown, TContext = unknown>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof deleteV1FacilitiesId>>,
+			TError,
+			{ id: number },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof deleteV1FacilitiesId>>,
+	TError,
+	{ id: number },
+	TContext
+> => {
+	return useMutation(
+		getDeleteV1FacilitiesIdMutationOptions(options),
+		queryClient,
+	);
+};
+export type getV1StudentsIdFacilitiesResponse200 = {
+	data: GetV1StudentsIdFacilities200;
+	status: 200;
+};
 
-  return customInstance<getV1StudentsIdFacilitiesResponse>(getGetV1StudentsIdFacilitiesUrl(id,params),
-  {
-    ...options,
-    method: 'GET'
+export type getV1StudentsIdFacilitiesResponseSuccess =
+	getV1StudentsIdFacilitiesResponse200 & {
+		headers: Headers;
+	};
 
+export type getV1StudentsIdFacilitiesResponse =
+	getV1StudentsIdFacilitiesResponseSuccess;
 
-  }
-);}
-
-
-
-
-
-export const getGetV1StudentsIdFacilitiesQueryKey = (id: number,
-    params?: GetV1StudentsIdFacilitiesParams,) => {
-    return [
-    `/v1/students/${id}/facilities`, ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getGetV1StudentsIdFacilitiesQueryOptions = <TData = Awaited<ReturnType<typeof getV1StudentsIdFacilities>>, TError = unknown>(id: number,
-    params?: GetV1StudentsIdFacilitiesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdFacilities>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getGetV1StudentsIdFacilitiesUrl = (
+	id: number,
+	params?: GetV1StudentsIdFacilitiesParams,
 ) => {
+	const normalizedParams = new URLSearchParams();
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(key, value === null ? "null" : value.toString());
+		}
+	});
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1StudentsIdFacilitiesQueryKey(id,params);
+	const stringifiedParams = normalizedParams.toString();
 
+	return stringifiedParams.length > 0
+		? `/v1/students/${id}/facilities?${stringifiedParams}`
+		: `/v1/students/${id}/facilities`;
+};
 
+/**
+ * @summary List student facilities
+ */
+export const getV1StudentsIdFacilities = async (
+	id: number,
+	params?: GetV1StudentsIdFacilitiesParams,
+	options?: RequestInit,
+): Promise<getV1StudentsIdFacilitiesResponse> => {
+	return customInstance<getV1StudentsIdFacilitiesResponse>(
+		getGetV1StudentsIdFacilitiesUrl(id, params),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1StudentsIdFacilities>>> = ({ signal }) => getV1StudentsIdFacilities(id,params, { signal, ...requestOptions });
+export const getGetV1StudentsIdFacilitiesQueryKey = (
+	id: number,
+	params?: GetV1StudentsIdFacilitiesParams,
+) => {
+	return [
+		`/v1/students/${id}/facilities`,
+		...(params ? [params] : []),
+	] as const;
+};
 
+export const getGetV1StudentsIdFacilitiesQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1StudentsIdFacilities>>,
+	TError = unknown,
+>(
+	id: number,
+	params?: GetV1StudentsIdFacilitiesParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1StudentsIdFacilities>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
 
+	const queryKey =
+		queryOptions?.queryKey ?? getGetV1StudentsIdFacilitiesQueryKey(id, params);
 
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1StudentsIdFacilities>>
+	> = ({ signal }) =>
+		getV1StudentsIdFacilities(id, params, { signal, ...requestOptions });
 
+	return {
+		queryKey,
+		queryFn,
+		enabled: !!id,
+		...queryOptions,
+	} as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1StudentsIdFacilities>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
-   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdFacilities>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
+export type GetV1StudentsIdFacilitiesQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1StudentsIdFacilities>>
+>;
+export type GetV1StudentsIdFacilitiesQueryError = unknown;
 
-export type GetV1StudentsIdFacilitiesQueryResult = NonNullable<Awaited<ReturnType<typeof getV1StudentsIdFacilities>>>
-export type GetV1StudentsIdFacilitiesQueryError = unknown
-
-
-export function useGetV1StudentsIdFacilities<TData = Awaited<ReturnType<typeof getV1StudentsIdFacilities>>, TError = unknown>(
- id: number,
-    params: undefined |  GetV1StudentsIdFacilitiesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdFacilities>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1StudentsIdFacilities>>,
-          TError,
-          Awaited<ReturnType<typeof getV1StudentsIdFacilities>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1StudentsIdFacilities<TData = Awaited<ReturnType<typeof getV1StudentsIdFacilities>>, TError = unknown>(
- id: number,
-    params?: GetV1StudentsIdFacilitiesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdFacilities>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getV1StudentsIdFacilities>>,
-          TError,
-          Awaited<ReturnType<typeof getV1StudentsIdFacilities>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetV1StudentsIdFacilities<TData = Awaited<ReturnType<typeof getV1StudentsIdFacilities>>, TError = unknown>(
- id: number,
-    params?: GetV1StudentsIdFacilitiesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdFacilities>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1StudentsIdFacilities<
+	TData = Awaited<ReturnType<typeof getV1StudentsIdFacilities>>,
+	TError = unknown,
+>(
+	id: number,
+	params: undefined | GetV1StudentsIdFacilitiesParams,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1StudentsIdFacilities>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1StudentsIdFacilities>>,
+					TError,
+					Awaited<ReturnType<typeof getV1StudentsIdFacilities>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1StudentsIdFacilities<
+	TData = Awaited<ReturnType<typeof getV1StudentsIdFacilities>>,
+	TError = unknown,
+>(
+	id: number,
+	params?: GetV1StudentsIdFacilitiesParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1StudentsIdFacilities>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1StudentsIdFacilities>>,
+					TError,
+					Awaited<ReturnType<typeof getV1StudentsIdFacilities>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1StudentsIdFacilities<
+	TData = Awaited<ReturnType<typeof getV1StudentsIdFacilities>>,
+	TError = unknown,
+>(
+	id: number,
+	params?: GetV1StudentsIdFacilitiesParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1StudentsIdFacilities>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary List student facilities
  */
 
-export function useGetV1StudentsIdFacilities<TData = Awaited<ReturnType<typeof getV1StudentsIdFacilities>>, TError = unknown>(
- id: number,
-    params?: GetV1StudentsIdFacilitiesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdFacilities>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetV1StudentsIdFacilities<
+	TData = Awaited<ReturnType<typeof getV1StudentsIdFacilities>>,
+	TError = unknown,
+>(
+	id: number,
+	params?: GetV1StudentsIdFacilitiesParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1StudentsIdFacilities>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1StudentsIdFacilitiesQueryOptions(
+		id,
+		params,
+		options,
+	);
 
-  const queryOptions = getGetV1StudentsIdFacilitiesQueryOptions(id,params,options)
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
+	return { ...query, queryKey: queryOptions.queryKey };
 }
-
-
-
-
-
 
 export type postV1StudentsIdFacilitiesResponse201 = {
-  data: PostV1StudentsIdFacilities201
-  status: 201
-}
-
-export type postV1StudentsIdFacilitiesResponseSuccess = (postV1StudentsIdFacilitiesResponse201) & {
-  headers: Headers;
+	data: PostV1StudentsIdFacilities201;
+	status: 201;
 };
-;
 
-export type postV1StudentsIdFacilitiesResponse = (postV1StudentsIdFacilitiesResponseSuccess)
+export type postV1StudentsIdFacilitiesResponseSuccess =
+	postV1StudentsIdFacilitiesResponse201 & {
+		headers: Headers;
+	};
 
-export const getPostV1StudentsIdFacilitiesUrl = (id: number,) => {
+export type postV1StudentsIdFacilitiesResponse =
+	postV1StudentsIdFacilitiesResponseSuccess;
 
-
-
-
-  return `/v1/students/${id}/facilities`
-}
+export const getPostV1StudentsIdFacilitiesUrl = (id: number) => {
+	return `/v1/students/${id}/facilities`;
+};
 
 /**
  * @summary Enroll student to facility
  */
-export const postV1StudentsIdFacilities = async (id: number,
-    dtoEnrollFacilityRequest: DtoEnrollFacilityRequest, options?: RequestInit): Promise<postV1StudentsIdFacilitiesResponse> => {
+export const postV1StudentsIdFacilities = async (
+	id: number,
+	dtoEnrollFacilityRequest: DtoEnrollFacilityRequest,
+	options?: RequestInit,
+): Promise<postV1StudentsIdFacilitiesResponse> => {
+	return customInstance<postV1StudentsIdFacilitiesResponse>(
+		getPostV1StudentsIdFacilitiesUrl(id),
+		{
+			...options,
+			method: "POST",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(dtoEnrollFacilityRequest),
+		},
+	);
+};
 
-  return customInstance<postV1StudentsIdFacilitiesResponse>(getPostV1StudentsIdFacilitiesUrl(id),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      dtoEnrollFacilityRequest,)
-  }
-);}
+export const getPostV1StudentsIdFacilitiesMutationOptions = <
+	TError = unknown,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1StudentsIdFacilities>>,
+		TError,
+		{ id: number; data: DtoEnrollFacilityRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1StudentsIdFacilities>>,
+	TError,
+	{ id: number; data: DtoEnrollFacilityRequest },
+	TContext
+> => {
+	const mutationKey = ["postV1StudentsIdFacilities"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1StudentsIdFacilities>>,
+		{ id: number; data: DtoEnrollFacilityRequest }
+	> = (props) => {
+		const { id, data } = props ?? {};
 
+		return postV1StudentsIdFacilities(id, data, requestOptions);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
-export const getPostV1StudentsIdFacilitiesMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1StudentsIdFacilities>>, TError,{id: number;data: DtoEnrollFacilityRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1StudentsIdFacilities>>, TError,{id: number;data: DtoEnrollFacilityRequest}, TContext> => {
+export type PostV1StudentsIdFacilitiesMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1StudentsIdFacilities>>
+>;
+export type PostV1StudentsIdFacilitiesMutationBody = DtoEnrollFacilityRequest;
+export type PostV1StudentsIdFacilitiesMutationError = unknown;
 
-const mutationKey = ['postV1StudentsIdFacilities'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1StudentsIdFacilities>>, {id: number;data: DtoEnrollFacilityRequest}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  postV1StudentsIdFacilities(id,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1StudentsIdFacilitiesMutationResult = NonNullable<Awaited<ReturnType<typeof postV1StudentsIdFacilities>>>
-    export type PostV1StudentsIdFacilitiesMutationBody = DtoEnrollFacilityRequest
-    export type PostV1StudentsIdFacilitiesMutationError = unknown
-
-    /**
+/**
  * @summary Enroll student to facility
  */
-export const usePostV1StudentsIdFacilities = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1StudentsIdFacilities>>, TError,{id: number;data: DtoEnrollFacilityRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postV1StudentsIdFacilities>>,
-        TError,
-        {id: number;data: DtoEnrollFacilityRequest},
-        TContext
-      > => {
-      return useMutation(getPostV1StudentsIdFacilitiesMutationOptions(options), queryClient);
-    }
-    export type deleteV1StudentsIdFacilitiesFacilityIdResponse200 = {
-  data: DtoSuccessResponse
-  status: 200
-}
-
-export type deleteV1StudentsIdFacilitiesFacilityIdResponseSuccess = (deleteV1StudentsIdFacilitiesFacilityIdResponse200) & {
-  headers: Headers;
+export const usePostV1StudentsIdFacilities = <
+	TError = unknown,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1StudentsIdFacilities>>,
+			TError,
+			{ id: number; data: DtoEnrollFacilityRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1StudentsIdFacilities>>,
+	TError,
+	{ id: number; data: DtoEnrollFacilityRequest },
+	TContext
+> => {
+	return useMutation(
+		getPostV1StudentsIdFacilitiesMutationOptions(options),
+		queryClient,
+	);
 };
-;
+export type deleteV1StudentsIdFacilitiesFacilityIdResponse200 = {
+	data: DtoSuccessResponse;
+	status: 200;
+};
 
-export type deleteV1StudentsIdFacilitiesFacilityIdResponse = (deleteV1StudentsIdFacilitiesFacilityIdResponseSuccess)
+export type deleteV1StudentsIdFacilitiesFacilityIdResponseSuccess =
+	deleteV1StudentsIdFacilitiesFacilityIdResponse200 & {
+		headers: Headers;
+	};
 
-export const getDeleteV1StudentsIdFacilitiesFacilityIdUrl = (id: number,
-    facilityId: number,) => {
+export type deleteV1StudentsIdFacilitiesFacilityIdResponse =
+	deleteV1StudentsIdFacilitiesFacilityIdResponseSuccess;
 
-
-
-
-  return `/v1/students/${id}/facilities/${facilityId}`
-}
+export const getDeleteV1StudentsIdFacilitiesFacilityIdUrl = (
+	id: number,
+	facilityId: number,
+) => {
+	return `/v1/students/${id}/facilities/${facilityId}`;
+};
 
 /**
  * @summary Unenroll student from facility
  */
-export const deleteV1StudentsIdFacilitiesFacilityId = async (id: number,
-    facilityId: number, options?: RequestInit): Promise<deleteV1StudentsIdFacilitiesFacilityIdResponse> => {
+export const deleteV1StudentsIdFacilitiesFacilityId = async (
+	id: number,
+	facilityId: number,
+	options?: RequestInit,
+): Promise<deleteV1StudentsIdFacilitiesFacilityIdResponse> => {
+	return customInstance<deleteV1StudentsIdFacilitiesFacilityIdResponse>(
+		getDeleteV1StudentsIdFacilitiesFacilityIdUrl(id, facilityId),
+		{
+			...options,
+			method: "DELETE",
+		},
+	);
+};
 
-  return customInstance<deleteV1StudentsIdFacilitiesFacilityIdResponse>(getDeleteV1StudentsIdFacilitiesFacilityIdUrl(id,facilityId),
-  {
-    ...options,
-    method: 'DELETE'
+export const getDeleteV1StudentsIdFacilitiesFacilityIdMutationOptions = <
+	TError = unknown,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof deleteV1StudentsIdFacilitiesFacilityId>>,
+		TError,
+		{ id: number; facilityId: number },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof deleteV1StudentsIdFacilitiesFacilityId>>,
+	TError,
+	{ id: number; facilityId: number },
+	TContext
+> => {
+	const mutationKey = ["deleteV1StudentsIdFacilitiesFacilityId"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
 
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof deleteV1StudentsIdFacilitiesFacilityId>>,
+		{ id: number; facilityId: number }
+	> = (props) => {
+		const { id, facilityId } = props ?? {};
 
-  }
-);}
+		return deleteV1StudentsIdFacilitiesFacilityId(
+			id,
+			facilityId,
+			requestOptions,
+		);
+	};
 
+	return { mutationFn, ...mutationOptions };
+};
 
+export type DeleteV1StudentsIdFacilitiesFacilityIdMutationResult = NonNullable<
+	Awaited<ReturnType<typeof deleteV1StudentsIdFacilitiesFacilityId>>
+>;
 
+export type DeleteV1StudentsIdFacilitiesFacilityIdMutationError = unknown;
 
-export const getDeleteV1StudentsIdFacilitiesFacilityIdMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1StudentsIdFacilitiesFacilityId>>, TError,{id: number;facilityId: number}, TContext>, request?: SecondParameter<typeof customInstance>}
-): UseMutationOptions<Awaited<ReturnType<typeof deleteV1StudentsIdFacilitiesFacilityId>>, TError,{id: number;facilityId: number}, TContext> => {
-
-const mutationKey = ['deleteV1StudentsIdFacilitiesFacilityId'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteV1StudentsIdFacilitiesFacilityId>>, {id: number;facilityId: number}> = (props) => {
-          const {id,facilityId} = props ?? {};
-
-          return  deleteV1StudentsIdFacilitiesFacilityId(id,facilityId,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type DeleteV1StudentsIdFacilitiesFacilityIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteV1StudentsIdFacilitiesFacilityId>>>
-
-    export type DeleteV1StudentsIdFacilitiesFacilityIdMutationError = unknown
-
-    /**
+/**
  * @summary Unenroll student from facility
  */
-export const useDeleteV1StudentsIdFacilitiesFacilityId = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1StudentsIdFacilitiesFacilityId>>, TError,{id: number;facilityId: number}, TContext>, request?: SecondParameter<typeof customInstance>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof deleteV1StudentsIdFacilitiesFacilityId>>,
-        TError,
-        {id: number;facilityId: number},
-        TContext
-      > => {
-      return useMutation(getDeleteV1StudentsIdFacilitiesFacilityIdMutationOptions(options), queryClient);
-    }
+export const useDeleteV1StudentsIdFacilitiesFacilityId = <
+	TError = unknown,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof deleteV1StudentsIdFacilitiesFacilityId>>,
+			TError,
+			{ id: number; facilityId: number },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof deleteV1StudentsIdFacilitiesFacilityId>>,
+	TError,
+	{ id: number; facilityId: number },
+	TContext
+> => {
+	return useMutation(
+		getDeleteV1StudentsIdFacilitiesFacilityIdMutationOptions(options),
+		queryClient,
+	);
+};

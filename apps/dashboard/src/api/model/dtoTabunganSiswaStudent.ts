@@ -7,7 +7,7 @@
  */
 
 export interface DtoTabunganSiswaStudent {
-  class_group?: string;
-  full_name?: string;
-  id?: number;
+	class_group?: string;
+	full_name?: string;
+	id?: number;
 }

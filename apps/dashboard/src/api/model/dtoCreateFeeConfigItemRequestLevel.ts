@@ -6,12 +6,12 @@
  * OpenAPI spec version: 1.0
  */
 
-export type DtoCreateFeeConfigItemRequestLevel = typeof DtoCreateFeeConfigItemRequestLevel[keyof typeof DtoCreateFeeConfigItemRequestLevel];
-
+export type DtoCreateFeeConfigItemRequestLevel =
+	(typeof DtoCreateFeeConfigItemRequestLevel)[keyof typeof DtoCreateFeeConfigItemRequestLevel];
 
 export const DtoCreateFeeConfigItemRequestLevel = {
-  all: 'all',
-  mutiara: 'mutiara',
-  intan: 'intan',
-  berlian: 'berlian',
+	all: "all",
+	mutiara: "mutiara",
+	intan: "intan",
+	berlian: "berlian",
 } as const;

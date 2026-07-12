@@ -7,7 +7,7 @@
  */
 
 export interface DtoEventError {
-  message?: string;
-  student_id?: number;
-  student_name?: string;
+	message?: string;
+	student_id?: number;
+	student_name?: string;
 }

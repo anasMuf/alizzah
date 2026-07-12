@@ -6,10 +6,10 @@
  * OpenAPI spec version: 1.0
  */
 
-export type PinjamanPaymentRequestMethod = typeof PinjamanPaymentRequestMethod[keyof typeof PinjamanPaymentRequestMethod];
-
+export type PinjamanPaymentRequestMethod =
+	(typeof PinjamanPaymentRequestMethod)[keyof typeof PinjamanPaymentRequestMethod];
 
 export const PinjamanPaymentRequestMethod = {
-  cash: 'cash',
-  potong_gaji: 'potong_gaji',
+	cash: "cash",
+	potong_gaji: "potong_gaji",
 } as const;

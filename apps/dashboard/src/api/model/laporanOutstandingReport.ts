@@ -5,9 +5,9 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { LaporanOutstandingItem } from './laporanOutstandingItem';
+import type { LaporanOutstandingItem } from "./laporanOutstandingItem";
 
 export interface LaporanOutstandingReport {
-  items?: LaporanOutstandingItem[];
-  total_remaining?: number;
+	items?: LaporanOutstandingItem[];
+	total_remaining?: number;
 }

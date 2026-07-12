@@ -7,7 +7,7 @@
  */
 
 export interface DtoExtracurricularSyncError {
-  extracurricular_id?: number;
-  message?: string;
-  student_id?: number;
+	extracurricular_id?: number;
+	message?: string;
+	student_id?: number;
 }

@@ -7,9 +7,9 @@
  */
 
 export interface PemasokResponse {
-  address?: string;
-  contact_person?: string;
-  id?: number;
-  name?: string;
-  phone?: string;
+	address?: string;
+	contact_person?: string;
+	id?: number;
+	name?: string;
+	phone?: string;
 }

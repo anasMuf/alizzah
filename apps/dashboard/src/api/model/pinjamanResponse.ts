@@ -5,23 +5,23 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { PinjamanInstallmentResponse } from './pinjamanInstallmentResponse';
+import type { PinjamanInstallmentResponse } from "./pinjamanInstallmentResponse";
 
 export interface PinjamanResponse {
-  academic_year_id?: number;
-  created_at?: string;
-  created_by?: string;
-  id?: number;
-  installments?: PinjamanInstallmentResponse[];
-  loan_date?: string;
-  member_id?: number;
-  member_name?: string;
-  notes?: string;
-  paid_amount?: number;
-  principal?: number;
-  purpose?: string;
-  remaining?: number;
-  repayment_method?: string;
-  status?: string;
-  tenor?: number;
+	academic_year_id?: number;
+	created_at?: string;
+	created_by?: string;
+	id?: number;
+	installments?: PinjamanInstallmentResponse[];
+	loan_date?: string;
+	member_id?: number;
+	member_name?: string;
+	notes?: string;
+	paid_amount?: number;
+	principal?: number;
+	purpose?: string;
+	remaining?: number;
+	repayment_method?: string;
+	status?: string;
+	tenor?: number;
 }

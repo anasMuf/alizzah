@@ -6,10 +6,10 @@
  * OpenAPI spec version: 1.0
  */
 
-export type DtoCreateDaycareEnrollmentRequestCategory = typeof DtoCreateDaycareEnrollmentRequestCategory[keyof typeof DtoCreateDaycareEnrollmentRequestCategory];
-
+export type DtoCreateDaycareEnrollmentRequestCategory =
+	(typeof DtoCreateDaycareEnrollmentRequestCategory)[keyof typeof DtoCreateDaycareEnrollmentRequestCategory];
 
 export const DtoCreateDaycareEnrollmentRequestCategory = {
-  premium: 'premium',
-  regular: 'regular',
+	premium: "premium",
+	regular: "regular",
 } as const;

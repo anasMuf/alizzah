@@ -7,9 +7,9 @@
  */
 
 export interface DtoInstallmentResponse {
-  amount?: number;
-  due_date?: string;
-  id?: number;
-  installment_number?: number;
-  notes?: string;
+	amount?: number;
+	due_date?: string;
+	id?: number;
+	installment_number?: number;
+	notes?: string;
 }

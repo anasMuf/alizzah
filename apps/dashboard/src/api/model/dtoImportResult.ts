@@ -7,8 +7,8 @@
  */
 
 export interface DtoImportResult {
-  error?: string;
-  name?: string;
-  row?: number;
-  success?: boolean;
+	error?: string;
+	name?: string;
+	row?: number;
+	success?: boolean;
 }

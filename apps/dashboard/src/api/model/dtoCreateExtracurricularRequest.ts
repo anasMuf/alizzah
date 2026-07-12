@@ -5,12 +5,12 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoCreateExtracurricularRequestType } from './dtoCreateExtracurricularRequestType';
+import type { DtoCreateExtracurricularRequestType } from "./dtoCreateExtracurricularRequestType";
 
 export interface DtoCreateExtracurricularRequest {
-  /** comma-separated: "intan,berlian". "" = all */
-  levels?: string;
-  /** @maxLength 100 */
-  name: string;
-  type: DtoCreateExtracurricularRequestType;
+	/** comma-separated: "intan,berlian". "" = all */
+	levels?: string;
+	/** @maxLength 100 */
+	name: string;
+	type: DtoCreateExtracurricularRequestType;
 }

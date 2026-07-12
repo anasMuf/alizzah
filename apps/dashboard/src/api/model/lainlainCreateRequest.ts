@@ -5,14 +5,14 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { LainlainCreateRequestFlow } from './lainlainCreateRequestFlow';
+import type { LainlainCreateRequestFlow } from "./lainlainCreateRequestFlow";
 
 export interface LainlainCreateRequest {
-  academic_year_id: number;
-  amount: number;
-  /** @maxLength 50 */
-  category: string;
-  description?: string;
-  flow: LainlainCreateRequestFlow;
-  transaction_date: string;
+	academic_year_id: number;
+	amount: number;
+	/** @maxLength 50 */
+	category: string;
+	description?: string;
+	flow: LainlainCreateRequestFlow;
+	transaction_date: string;
 }

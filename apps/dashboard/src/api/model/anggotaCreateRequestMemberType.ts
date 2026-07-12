@@ -6,11 +6,11 @@
  * OpenAPI spec version: 1.0
  */
 
-export type AnggotaCreateRequestMemberType = typeof AnggotaCreateRequestMemberType[keyof typeof AnggotaCreateRequestMemberType];
-
+export type AnggotaCreateRequestMemberType =
+	(typeof AnggotaCreateRequestMemberType)[keyof typeof AnggotaCreateRequestMemberType];
 
 export const AnggotaCreateRequestMemberType = {
-  pegawai: 'pegawai',
-  pengurus_yayasan: 'pengurus_yayasan',
-  pihak_luar: 'pihak_luar',
+	pegawai: "pegawai",
+	pengurus_yayasan: "pengurus_yayasan",
+	pihak_luar: "pihak_luar",
 } as const;

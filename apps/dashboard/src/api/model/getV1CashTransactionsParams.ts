@@ -7,32 +7,32 @@
  */
 
 export type GetV1CashTransactionsParams = {
-/**
- * Page number
- */
-page?: number;
-/**
- * Limit per page
- */
-limit?: number;
-/**
- * Academic Year ID
- */
-academic_year_id?: number;
-/**
- * Transaction Type (credit/debit)
- */
-transaction_type?: string;
-/**
- * Source Type
- */
-source_type?: string;
-/**
- * Start Date (YYYY-MM-DD)
- */
-start_date?: string;
-/**
- * End Date (YYYY-MM-DD)
- */
-end_date?: string;
+	/**
+	 * Page number
+	 */
+	page?: number;
+	/**
+	 * Limit per page
+	 */
+	limit?: number;
+	/**
+	 * Academic Year ID
+	 */
+	academic_year_id?: number;
+	/**
+	 * Transaction Type (credit/debit)
+	 */
+	transaction_type?: string;
+	/**
+	 * Source Type
+	 */
+	source_type?: string;
+	/**
+	 * Start Date (YYYY-MM-DD)
+	 */
+	start_date?: string;
+	/**
+	 * End Date (YYYY-MM-DD)
+	 */
+	end_date?: string;
 };

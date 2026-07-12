@@ -5,11 +5,11 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoDaycareSyncError } from './dtoDaycareSyncError';
+import type { DtoDaycareSyncError } from "./dtoDaycareSyncError";
 
 export interface DtoDaycareSyncResult {
-  errors?: DtoDaycareSyncError[];
-  total_enrollments?: number;
-  total_skipped?: number;
-  total_synced?: number;
+	errors?: DtoDaycareSyncError[];
+	total_enrollments?: number;
+	total_skipped?: number;
+	total_synced?: number;
 }

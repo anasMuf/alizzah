@@ -6,9 +6,9 @@
  * OpenAPI spec version: 1.0
  */
 
-export type PembelianCreateRequestPaymentMethod = typeof PembelianCreateRequestPaymentMethod[keyof typeof PembelianCreateRequestPaymentMethod];
-
+export type PembelianCreateRequestPaymentMethod =
+	(typeof PembelianCreateRequestPaymentMethod)[keyof typeof PembelianCreateRequestPaymentMethod];
 
 export const PembelianCreateRequestPaymentMethod = {
-  cash: 'cash',
+	cash: "cash",
 } as const;

@@ -7,16 +7,16 @@
  */
 
 export type GetV1DaycareAttendanceParams = {
-/**
- * Student ID
- */
-student_id: number;
-/**
- * Month (1-12)
- */
-month: number;
-/**
- * Year
- */
-year: number;
+	/**
+	 * Student ID
+	 */
+	student_id: number;
+	/**
+	 * Month (1-12)
+	 */
+	month: number;
+	/**
+	 * Year
+	 */
+	year: number;
 };

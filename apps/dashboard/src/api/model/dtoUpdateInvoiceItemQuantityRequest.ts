@@ -7,6 +7,6 @@
  */
 
 export interface DtoUpdateInvoiceItemQuantityRequest {
-  /** @minimum 1 */
-  quantity: number;
+	/** @minimum 1 */
+	quantity: number;
 }

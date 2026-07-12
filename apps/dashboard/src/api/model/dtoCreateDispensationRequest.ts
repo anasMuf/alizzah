@@ -5,31 +5,31 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoCreateDispensationRequestDiscountType } from './dtoCreateDispensationRequestDiscountType';
-import type { DtoCreateDispensationRequestFeeCategory } from './dtoCreateDispensationRequestFeeCategory';
+import type { DtoCreateDispensationRequestDiscountType } from "./dtoCreateDispensationRequestDiscountType";
+import type { DtoCreateDispensationRequestFeeCategory } from "./dtoCreateDispensationRequestFeeCategory";
 
 export interface DtoCreateDispensationRequest {
-  academic_year_id: number;
-  discount_type: DtoCreateDispensationRequestDiscountType;
-  /** @minimum 1 */
-  discount_value: number;
-  /**
-     * @minimum 1
-     * @maximum 12
-     */
-  end_month?: number;
-  /** @minimum 2020 */
-  end_year?: number;
-  fee_category?: DtoCreateDispensationRequestFeeCategory;
-  is_permanent?: boolean;
-  notes?: string;
-  /** @maxLength 100 */
-  reason: string;
-  /**
-     * @minimum 1
-     * @maximum 12
-     */
-  start_month: number;
-  /** @minimum 2020 */
-  start_year: number;
+	academic_year_id: number;
+	discount_type: DtoCreateDispensationRequestDiscountType;
+	/** @minimum 1 */
+	discount_value: number;
+	/**
+	 * @minimum 1
+	 * @maximum 12
+	 */
+	end_month?: number;
+	/** @minimum 2020 */
+	end_year?: number;
+	fee_category?: DtoCreateDispensationRequestFeeCategory;
+	is_permanent?: boolean;
+	notes?: string;
+	/** @maxLength 100 */
+	reason: string;
+	/**
+	 * @minimum 1
+	 * @maximum 12
+	 */
+	start_month: number;
+	/** @minimum 2020 */
+	start_year: number;
 }

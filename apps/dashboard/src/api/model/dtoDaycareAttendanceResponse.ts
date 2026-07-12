@@ -7,8 +7,8 @@
  */
 
 export interface DtoDaycareAttendanceResponse {
-  date?: string;
-  id?: number;
-  student_id?: number;
-  time_slot?: string;
+	date?: string;
+	id?: number;
+	student_id?: number;
+	time_slot?: string;
 }

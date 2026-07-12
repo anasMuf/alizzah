@@ -7,32 +7,32 @@
  */
 
 export type GetV1KoperasiCashTransactionsParams = {
-/**
- * Tahun ajaran
- */
-academic_year_id?: number;
-/**
- * Filter sumber
- */
-source_type?: string;
-/**
- * credit|debit
- */
-transaction_type?: string;
-/**
- * YYYY-MM-DD
- */
-start_date?: string;
-/**
- * YYYY-MM-DD
- */
-end_date?: string;
-/**
- * Halaman
- */
-page?: number;
-/**
- * Per halaman
- */
-limit?: number;
+	/**
+	 * Tahun ajaran
+	 */
+	academic_year_id?: number;
+	/**
+	 * Filter sumber
+	 */
+	source_type?: string;
+	/**
+	 * credit|debit
+	 */
+	transaction_type?: string;
+	/**
+	 * YYYY-MM-DD
+	 */
+	start_date?: string;
+	/**
+	 * YYYY-MM-DD
+	 */
+	end_date?: string;
+	/**
+	 * Halaman
+	 */
+	page?: number;
+	/**
+	 * Per halaman
+	 */
+	limit?: number;
 };

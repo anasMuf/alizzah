@@ -7,8 +7,8 @@
  */
 
 export interface PinjamanInstallmentResponse {
-  amount_due?: number;
-  amount_paid?: number;
-  sequence?: number;
-  status?: string;
+	amount_due?: number;
+	amount_paid?: number;
+	sequence?: number;
+	status?: string;
 }

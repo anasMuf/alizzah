@@ -5,9 +5,9 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoSuccessResponse } from './dtoSuccessResponse';
-import type { KasBalanceResponse } from './kasBalanceResponse';
+import type { DtoSuccessResponse } from "./dtoSuccessResponse";
+import type { KasBalanceResponse } from "./kasBalanceResponse";
 
 export type GetV1KoperasiCashBalance200 = DtoSuccessResponse & {
-  data?: KasBalanceResponse;
+	data?: KasBalanceResponse;
 };

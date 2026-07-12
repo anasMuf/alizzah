@@ -5,13 +5,13 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { LaporanCategoryLine } from './laporanCategoryLine';
+import type { LaporanCategoryLine } from "./laporanCategoryLine";
 
 export interface LaporanMonthlyReport {
-  categories?: LaporanCategoryLine[];
-  month?: number;
-  net?: number;
-  total_credit?: number;
-  total_debit?: number;
-  year?: number;
+	categories?: LaporanCategoryLine[];
+	month?: number;
+	net?: number;
+	total_credit?: number;
+	total_debit?: number;
+	year?: number;
 }

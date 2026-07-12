@@ -5,19 +5,19 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoSaldoRow } from './dtoSaldoRow';
-import type { DtoSaldoTotalBulan } from './dtoSaldoTotalBulan';
+import type { DtoSaldoRow } from "./dtoSaldoRow";
+import type { DtoSaldoTotalBulan } from "./dtoSaldoTotalBulan";
 
 export interface DtoSaldoResponse {
-  academic_year?: string;
-  category?: string;
-  month?: number;
-  /** hanya jika semua pos */
-  post_list?: string[];
-  post_name?: string;
-  rows?: DtoSaldoRow[];
-  saldo_akhir?: number;
-  saldo_sebelum?: number;
-  total_bulan?: DtoSaldoTotalBulan;
-  year?: number;
+	academic_year?: string;
+	category?: string;
+	month?: number;
+	/** hanya jika semua pos */
+	post_list?: string[];
+	post_name?: string;
+	rows?: DtoSaldoRow[];
+	saldo_akhir?: number;
+	saldo_sebelum?: number;
+	total_bulan?: DtoSaldoTotalBulan;
+	year?: number;
 }

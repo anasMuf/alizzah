@@ -7,14 +7,14 @@
  */
 
 export interface PenjualanCreateItemRequest {
-  /** Kirim variant_id (disarankan). product_id masih diterima demi kompatibilitas
+	/** Kirim variant_id (disarankan). product_id masih diterima demi kompatibilitas
   picker lama → di-resolve ke varian "Default" barang. Minimal salah satu wajib. */
-  product_id?: number;
-  quantity: number;
-  /**
-     * kosong → pakai harga jual varian
-     * @minimum 0
-     */
-  unit_price?: number;
-  variant_id?: number;
+	product_id?: number;
+	quantity: number;
+	/**
+	 * kosong → pakai harga jual varian
+	 * @minimum 0
+	 */
+	unit_price?: number;
+	variant_id?: number;
 }

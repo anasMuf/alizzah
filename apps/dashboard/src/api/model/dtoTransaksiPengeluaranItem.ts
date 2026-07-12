@@ -7,8 +7,8 @@
  */
 
 export interface DtoTransaksiPengeluaranItem {
-  amount?: number;
-  category_name?: string;
-  description?: string;
-  no?: number;
+	amount?: number;
+	category_name?: string;
+	description?: string;
+	no?: number;
 }

@@ -5,18 +5,18 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoCreatePaymentRequestSource } from './dtoCreatePaymentRequestSource';
-import type { DtoIncidentalItemReq } from './dtoIncidentalItemReq';
-import type { DtoPaymentItemReq } from './dtoPaymentItemReq';
+import type { DtoCreatePaymentRequestSource } from "./dtoCreatePaymentRequestSource";
+import type { DtoIncidentalItemReq } from "./dtoIncidentalItemReq";
+import type { DtoPaymentItemReq } from "./dtoPaymentItemReq";
 
 export interface DtoCreatePaymentRequest {
-  academic_year_id: number;
-  incidental_items?: DtoIncidentalItemReq[];
-  items?: DtoPaymentItemReq[];
-  notes?: string;
-  payment_date: string;
-  /** @minimum 0 */
-  savings_deposit?: number;
-  source: DtoCreatePaymentRequestSource;
-  student_id: number;
+	academic_year_id: number;
+	incidental_items?: DtoIncidentalItemReq[];
+	items?: DtoPaymentItemReq[];
+	notes?: string;
+	payment_date: string;
+	/** @minimum 0 */
+	savings_deposit?: number;
+	source: DtoCreatePaymentRequestSource;
+	student_id: number;
 }

@@ -5,19 +5,19 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { PembelianCreateItemRequest } from './pembelianCreateItemRequest';
-import type { PembelianCreateRequestPaymentMethod } from './pembelianCreateRequestPaymentMethod';
+import type { PembelianCreateItemRequest } from "./pembelianCreateItemRequest";
+import type { PembelianCreateRequestPaymentMethod } from "./pembelianCreateRequestPaymentMethod";
 
 export interface PembelianCreateRequest {
-  academic_year_id: number;
-  /** @minimum 0 */
-  initial_payment?: number;
-  /** @minItems 1 */
-  items: PembelianCreateItemRequest[];
-  notes?: string;
-  payment_method?: PembelianCreateRequestPaymentMethod;
-  purchase_date: string;
-  /** @maxLength 50 */
-  reference_number?: string;
-  supplier_id: number;
+	academic_year_id: number;
+	/** @minimum 0 */
+	initial_payment?: number;
+	/** @minItems 1 */
+	items: PembelianCreateItemRequest[];
+	notes?: string;
+	payment_method?: PembelianCreateRequestPaymentMethod;
+	purchase_date: string;
+	/** @maxLength 50 */
+	reference_number?: string;
+	supplier_id: number;
 }

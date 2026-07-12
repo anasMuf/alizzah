@@ -5,18 +5,18 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoCashSummaryResponse } from './dtoCashSummaryResponse';
-import type { DtoDailyClosingInReport } from './dtoDailyClosingInReport';
-import type { DtoExpenseSummaryResponse } from './dtoExpenseSummaryResponse';
-import type { DtoIncomeSummaryResponse } from './dtoIncomeSummaryResponse';
-import type { DtoVaultSummaryResponse } from './dtoVaultSummaryResponse';
+import type { DtoCashSummaryResponse } from "./dtoCashSummaryResponse";
+import type { DtoDailyClosingInReport } from "./dtoDailyClosingInReport";
+import type { DtoExpenseSummaryResponse } from "./dtoExpenseSummaryResponse";
+import type { DtoIncomeSummaryResponse } from "./dtoIncomeSummaryResponse";
+import type { DtoVaultSummaryResponse } from "./dtoVaultSummaryResponse";
 
 export interface DtoDailyReportResponse {
-  academic_year?: string;
-  cash?: DtoCashSummaryResponse;
-  daily_closing?: DtoDailyClosingInReport;
-  date?: string;
-  expense_summary?: DtoExpenseSummaryResponse;
-  income_summary?: DtoIncomeSummaryResponse;
-  vault?: DtoVaultSummaryResponse;
+	academic_year?: string;
+	cash?: DtoCashSummaryResponse;
+	daily_closing?: DtoDailyClosingInReport;
+	date?: string;
+	expense_summary?: DtoExpenseSummaryResponse;
+	income_summary?: DtoIncomeSummaryResponse;
+	vault?: DtoVaultSummaryResponse;
 }

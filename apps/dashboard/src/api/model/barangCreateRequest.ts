@@ -5,26 +5,26 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { BarangVariantRequest } from './barangVariantRequest';
+import type { BarangVariantRequest } from "./barangVariantRequest";
 
 export interface BarangCreateRequest {
-  /** @maxLength 50 */
-  category?: string;
-  /**
-     * Legacy single-variant (form barang lama): harga & stok satu varian default.
-     * @minimum 0
-     */
-  cost_price?: number;
-  is_active?: boolean;
-  /** @maxLength 100 */
-  name: string;
-  /** @minimum 0 */
-  sale_price?: number;
-  /** @minimum 0 */
-  stock?: number;
-  /** @maxLength 20 */
-  unit?: string;
-  /** Varian eksplisit (form barang ber-varian). Bila kosong, field legacy di bawah
+	/** @maxLength 50 */
+	category?: string;
+	/**
+	 * Legacy single-variant (form barang lama): harga & stok satu varian default.
+	 * @minimum 0
+	 */
+	cost_price?: number;
+	is_active?: boolean;
+	/** @maxLength 100 */
+	name: string;
+	/** @minimum 0 */
+	sale_price?: number;
+	/** @minimum 0 */
+	stock?: number;
+	/** @maxLength 20 */
+	unit?: string;
+	/** Varian eksplisit (form barang ber-varian). Bila kosong, field legacy di bawah
   dipakai untuk membuat/memperbarui satu varian "Default" (kompatibilitas form lama). */
-  variants?: BarangVariantRequest[];
+	variants?: BarangVariantRequest[];
 }

@@ -6,10 +6,10 @@
  * OpenAPI spec version: 1.0
  */
 
-export type DtoUpdateDaycareStatusRequestStatus = typeof DtoUpdateDaycareStatusRequestStatus[keyof typeof DtoUpdateDaycareStatusRequestStatus];
-
+export type DtoUpdateDaycareStatusRequestStatus =
+	(typeof DtoUpdateDaycareStatusRequestStatus)[keyof typeof DtoUpdateDaycareStatusRequestStatus];
 
 export const DtoUpdateDaycareStatusRequestStatus = {
-  active: 'active',
-  inactive: 'inactive',
+	active: "active",
+	inactive: "inactive",
 } as const;

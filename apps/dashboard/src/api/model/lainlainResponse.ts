@@ -7,13 +7,13 @@
  */
 
 export interface LainlainResponse {
-  academic_year_id?: number;
-  amount?: number;
-  category?: string;
-  created_at?: string;
-  created_by?: string;
-  description?: string;
-  flow?: string;
-  id?: number;
-  transaction_date?: string;
+	academic_year_id?: number;
+	amount?: number;
+	category?: string;
+	created_at?: string;
+	created_by?: string;
+	description?: string;
+	flow?: string;
+	id?: number;
+	transaction_date?: string;
 }

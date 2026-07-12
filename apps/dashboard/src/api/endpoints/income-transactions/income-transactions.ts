@@ -5,920 +5,657 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
+import {
+  useMutation,
+  useQuery
+} from '@tanstack/react-query';
+import type {
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
+  MutationFunction,
+  QueryClient,
+  QueryFunction,
+  QueryKey,
+  UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
+  UseQueryOptions,
+  UseQueryResult
+} from '@tanstack/react-query';
 
 import type {
-	DataTag,
-	DefinedInitialDataOptions,
-	DefinedUseQueryResult,
-	MutationFunction,
-	QueryClient,
-	QueryFunction,
-	QueryKey,
-	UndefinedInitialDataOptions,
-	UseMutationOptions,
-	UseMutationResult,
-	UseQueryOptions,
-	UseQueryResult,
-} from "@tanstack/react-query";
-import { useMutation, useQuery } from "@tanstack/react-query";
+  DtoCreateIncomeTransactionRequest,
+  DtoErrorResponse,
+  DtoSuccessResponse,
+  GetV1IncomeTransactions200,
+  GetV1IncomeTransactionsId200,
+  GetV1IncomeTransactionsParams,
+  PostV1IncomeTransactions201,
+  PutV1IncomeTransactionsId200
+} from '../../model';
 
-import type {
-	DtoCreateIncomeTransactionRequest,
-	DtoErrorResponse,
-	DtoSuccessResponse,
-	GetV1IncomeTransactions200,
-	GetV1IncomeTransactionsId200,
-	GetV1IncomeTransactionsParams,
-	PostV1IncomeTransactions201,
-	PutV1IncomeTransactionsId200,
-} from "../../model";
+import { customInstance } from '../../mutator/custom-instance';
 
-import { customInstance } from "../../mutator/custom-instance";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
+
+
 export type getV1IncomeTransactionsResponse200 = {
-	data: GetV1IncomeTransactions200;
-	status: 200;
-};
+  data: GetV1IncomeTransactions200
+  status: 200
+}
 
 export type getV1IncomeTransactionsResponse401 = {
-	data: DtoErrorResponse;
-	status: 401;
-};
+  data: DtoErrorResponse
+  status: 401
+}
 
 export type getV1IncomeTransactionsResponse403 = {
-	data: DtoErrorResponse;
-	status: 403;
-};
+  data: DtoErrorResponse
+  status: 403
+}
 
 export type getV1IncomeTransactionsResponse500 = {
-	data: DtoErrorResponse;
-	status: 500;
+  data: DtoErrorResponse
+  status: 500
+}
+
+export type getV1IncomeTransactionsResponseSuccess = (getV1IncomeTransactionsResponse200) & {
+  headers: Headers;
+};
+export type getV1IncomeTransactionsResponseError = (getV1IncomeTransactionsResponse401 | getV1IncomeTransactionsResponse403 | getV1IncomeTransactionsResponse500) & {
+  headers: Headers;
 };
 
-export type getV1IncomeTransactionsResponseSuccess =
-	getV1IncomeTransactionsResponse200 & {
-		headers: Headers;
-	};
-export type getV1IncomeTransactionsResponseError = (
-	| getV1IncomeTransactionsResponse401
-	| getV1IncomeTransactionsResponse403
-	| getV1IncomeTransactionsResponse500
-) & {
-	headers: Headers;
-};
+export type getV1IncomeTransactionsResponse = (getV1IncomeTransactionsResponseSuccess | getV1IncomeTransactionsResponseError)
 
-export type getV1IncomeTransactionsResponse =
-	| getV1IncomeTransactionsResponseSuccess
-	| getV1IncomeTransactionsResponseError;
+export const getGetV1IncomeTransactionsUrl = (params?: GetV1IncomeTransactionsParams,) => {
+  const normalizedParams = new URLSearchParams();
 
-export const getGetV1IncomeTransactionsUrl = (
-	params?: GetV1IncomeTransactionsParams,
-) => {
-	const normalizedParams = new URLSearchParams();
+  Object.entries(params || {}).forEach(([key, value]) => {
 
-	Object.entries(params || {}).forEach(([key, value]) => {
-		if (value !== undefined) {
-			normalizedParams.append(key, value === null ? "null" : value.toString());
-		}
-	});
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-	const stringifiedParams = normalizedParams.toString();
+  const stringifiedParams = normalizedParams.toString();
 
-	return stringifiedParams.length > 0
-		? `/v1/income-transactions?${stringifiedParams}`
-		: `/v1/income-transactions`;
-};
+  return stringifiedParams.length > 0 ? `/v1/income-transactions?${stringifiedParams}` : `/v1/income-transactions`
+}
 
 /**
  * Get a paginated list of income transactions (BOS, donasi, hibah, etc.)
  * @summary List income transactions
  */
-export const getV1IncomeTransactions = async (
-	params?: GetV1IncomeTransactionsParams,
-	options?: RequestInit,
-): Promise<getV1IncomeTransactionsResponse> => {
-	return customInstance<getV1IncomeTransactionsResponse>(
-		getGetV1IncomeTransactionsUrl(params),
-		{
-			...options,
-			method: "GET",
-		},
-	);
-};
+export const getV1IncomeTransactions = async (params?: GetV1IncomeTransactionsParams, options?: RequestInit): Promise<getV1IncomeTransactionsResponse> => {
 
-export const getGetV1IncomeTransactionsQueryKey = (
-	params?: GetV1IncomeTransactionsParams,
+  return customInstance<getV1IncomeTransactionsResponse>(getGetV1IncomeTransactionsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetV1IncomeTransactionsQueryKey = (params?: GetV1IncomeTransactionsParams,) => {
+    return [
+    `/v1/income-transactions`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetV1IncomeTransactionsQueryOptions = <TData = Awaited<ReturnType<typeof getV1IncomeTransactions>>, TError = DtoErrorResponse>(params?: GetV1IncomeTransactionsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1IncomeTransactions>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
-	return [`/v1/income-transactions`, ...(params ? [params] : [])] as const;
-};
 
-export const getGetV1IncomeTransactionsQueryOptions = <
-	TData = Awaited<ReturnType<typeof getV1IncomeTransactions>>,
-	TError = DtoErrorResponse,
->(
-	params?: GetV1IncomeTransactionsParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1IncomeTransactions>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-) => {
-	const { query: queryOptions, request: requestOptions } = options ?? {};
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-	const queryKey =
-		queryOptions?.queryKey ?? getGetV1IncomeTransactionsQueryKey(params);
+  const queryKey =  queryOptions?.queryKey ?? getGetV1IncomeTransactionsQueryKey(params);
 
-	const queryFn: QueryFunction<
-		Awaited<ReturnType<typeof getV1IncomeTransactions>>
-	> = ({ signal }) =>
-		getV1IncomeTransactions(params, { signal, ...requestOptions });
 
-	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-		Awaited<ReturnType<typeof getV1IncomeTransactions>>,
-		TError,
-		TData
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
-};
 
-export type GetV1IncomeTransactionsQueryResult = NonNullable<
-	Awaited<ReturnType<typeof getV1IncomeTransactions>>
->;
-export type GetV1IncomeTransactionsQueryError = DtoErrorResponse;
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1IncomeTransactions>>> = ({ signal }) => getV1IncomeTransactions(params, { signal, ...requestOptions });
 
-export function useGetV1IncomeTransactions<
-	TData = Awaited<ReturnType<typeof getV1IncomeTransactions>>,
-	TError = DtoErrorResponse,
->(
-	params: undefined | GetV1IncomeTransactionsParams,
-	options: {
-		query: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1IncomeTransactions>>,
-				TError,
-				TData
-			>
-		> &
-			Pick<
-				DefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1IncomeTransactions>>,
-					TError,
-					Awaited<ReturnType<typeof getV1IncomeTransactions>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1IncomeTransactions<
-	TData = Awaited<ReturnType<typeof getV1IncomeTransactions>>,
-	TError = DtoErrorResponse,
->(
-	params?: GetV1IncomeTransactionsParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1IncomeTransactions>>,
-				TError,
-				TData
-			>
-		> &
-			Pick<
-				UndefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1IncomeTransactions>>,
-					TError,
-					Awaited<ReturnType<typeof getV1IncomeTransactions>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1IncomeTransactions<
-	TData = Awaited<ReturnType<typeof getV1IncomeTransactions>>,
-	TError = DtoErrorResponse,
->(
-	params?: GetV1IncomeTransactionsParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1IncomeTransactions>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1IncomeTransactions>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetV1IncomeTransactionsQueryResult = NonNullable<Awaited<ReturnType<typeof getV1IncomeTransactions>>>
+export type GetV1IncomeTransactionsQueryError = DtoErrorResponse
+
+
+export function useGetV1IncomeTransactions<TData = Awaited<ReturnType<typeof getV1IncomeTransactions>>, TError = DtoErrorResponse>(
+ params: undefined |  GetV1IncomeTransactionsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1IncomeTransactions>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1IncomeTransactions>>,
+          TError,
+          Awaited<ReturnType<typeof getV1IncomeTransactions>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1IncomeTransactions<TData = Awaited<ReturnType<typeof getV1IncomeTransactions>>, TError = DtoErrorResponse>(
+ params?: GetV1IncomeTransactionsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1IncomeTransactions>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1IncomeTransactions>>,
+          TError,
+          Awaited<ReturnType<typeof getV1IncomeTransactions>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1IncomeTransactions<TData = Awaited<ReturnType<typeof getV1IncomeTransactions>>, TError = DtoErrorResponse>(
+ params?: GetV1IncomeTransactionsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1IncomeTransactions>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary List income transactions
  */
 
-export function useGetV1IncomeTransactions<
-	TData = Awaited<ReturnType<typeof getV1IncomeTransactions>>,
-	TError = DtoErrorResponse,
->(
-	params?: GetV1IncomeTransactionsParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1IncomeTransactions>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-} {
-	const queryOptions = getGetV1IncomeTransactionsQueryOptions(params, options);
+export function useGetV1IncomeTransactions<TData = Awaited<ReturnType<typeof getV1IncomeTransactions>>, TError = DtoErrorResponse>(
+ params?: GetV1IncomeTransactionsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1IncomeTransactions>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-		TData,
-		TError
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getGetV1IncomeTransactionsQueryOptions(params,options)
 
-	return { ...query, queryKey: queryOptions.queryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
 }
 
+
+
+
+
+
 export type postV1IncomeTransactionsResponse201 = {
-	data: PostV1IncomeTransactions201;
-	status: 201;
-};
+  data: PostV1IncomeTransactions201
+  status: 201
+}
 
 export type postV1IncomeTransactionsResponse400 = {
-	data: DtoErrorResponse;
-	status: 400;
-};
+  data: DtoErrorResponse
+  status: 400
+}
 
 export type postV1IncomeTransactionsResponse401 = {
-	data: DtoErrorResponse;
-	status: 401;
-};
+  data: DtoErrorResponse
+  status: 401
+}
 
 export type postV1IncomeTransactionsResponse403 = {
-	data: DtoErrorResponse;
-	status: 403;
-};
+  data: DtoErrorResponse
+  status: 403
+}
 
 export type postV1IncomeTransactionsResponse422 = {
-	data: DtoErrorResponse;
-	status: 422;
-};
+  data: DtoErrorResponse
+  status: 422
+}
 
 export type postV1IncomeTransactionsResponse500 = {
-	data: DtoErrorResponse;
-	status: 500;
+  data: DtoErrorResponse
+  status: 500
+}
+
+export type postV1IncomeTransactionsResponseSuccess = (postV1IncomeTransactionsResponse201) & {
+  headers: Headers;
+};
+export type postV1IncomeTransactionsResponseError = (postV1IncomeTransactionsResponse400 | postV1IncomeTransactionsResponse401 | postV1IncomeTransactionsResponse403 | postV1IncomeTransactionsResponse422 | postV1IncomeTransactionsResponse500) & {
+  headers: Headers;
 };
 
-export type postV1IncomeTransactionsResponseSuccess =
-	postV1IncomeTransactionsResponse201 & {
-		headers: Headers;
-	};
-export type postV1IncomeTransactionsResponseError = (
-	| postV1IncomeTransactionsResponse400
-	| postV1IncomeTransactionsResponse401
-	| postV1IncomeTransactionsResponse403
-	| postV1IncomeTransactionsResponse422
-	| postV1IncomeTransactionsResponse500
-) & {
-	headers: Headers;
-};
-
-export type postV1IncomeTransactionsResponse =
-	| postV1IncomeTransactionsResponseSuccess
-	| postV1IncomeTransactionsResponseError;
+export type postV1IncomeTransactionsResponse = (postV1IncomeTransactionsResponseSuccess | postV1IncomeTransactionsResponseError)
 
 export const getPostV1IncomeTransactionsUrl = () => {
-	return `/v1/income-transactions`;
-};
+
+
+
+
+  return `/v1/income-transactions`
+}
 
 /**
  * Record a new income transaction (BOS, donasi, hibah, etc.)
  * @summary Create income transaction
  */
-export const postV1IncomeTransactions = async (
-	dtoCreateIncomeTransactionRequest: DtoCreateIncomeTransactionRequest,
-	options?: RequestInit,
-): Promise<postV1IncomeTransactionsResponse> => {
-	return customInstance<postV1IncomeTransactionsResponse>(
-		getPostV1IncomeTransactionsUrl(),
-		{
-			...options,
-			method: "POST",
-			headers: { "Content-Type": "application/json", ...options?.headers },
-			body: JSON.stringify(dtoCreateIncomeTransactionRequest),
-		},
-	);
-};
+export const postV1IncomeTransactions = async (dtoCreateIncomeTransactionRequest: DtoCreateIncomeTransactionRequest, options?: RequestInit): Promise<postV1IncomeTransactionsResponse> => {
 
-export const getPostV1IncomeTransactionsMutationOptions = <
-	TError = DtoErrorResponse,
-	TContext = unknown,
->(options?: {
-	mutation?: UseMutationOptions<
-		Awaited<ReturnType<typeof postV1IncomeTransactions>>,
-		TError,
-		{ data: DtoCreateIncomeTransactionRequest },
-		TContext
-	>;
-	request?: SecondParameter<typeof customInstance>;
-}): UseMutationOptions<
-	Awaited<ReturnType<typeof postV1IncomeTransactions>>,
-	TError,
-	{ data: DtoCreateIncomeTransactionRequest },
-	TContext
-> => {
-	const mutationKey = ["postV1IncomeTransactions"];
-	const { mutation: mutationOptions, request: requestOptions } = options
-		? options.mutation &&
-			"mutationKey" in options.mutation &&
-			options.mutation.mutationKey
-			? options
-			: { ...options, mutation: { ...options.mutation, mutationKey } }
-		: { mutation: { mutationKey }, request: undefined };
+  return customInstance<postV1IncomeTransactionsResponse>(getPostV1IncomeTransactionsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      dtoCreateIncomeTransactionRequest,)
+  }
+);}
 
-	const mutationFn: MutationFunction<
-		Awaited<ReturnType<typeof postV1IncomeTransactions>>,
-		{ data: DtoCreateIncomeTransactionRequest }
-	> = (props) => {
-		const { data } = props ?? {};
 
-		return postV1IncomeTransactions(data, requestOptions);
-	};
 
-	return { mutationFn, ...mutationOptions };
-};
 
-export type PostV1IncomeTransactionsMutationResult = NonNullable<
-	Awaited<ReturnType<typeof postV1IncomeTransactions>>
->;
-export type PostV1IncomeTransactionsMutationBody =
-	DtoCreateIncomeTransactionRequest;
-export type PostV1IncomeTransactionsMutationError = DtoErrorResponse;
+export const getPostV1IncomeTransactionsMutationOptions = <TError = DtoErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1IncomeTransactions>>, TError,{data: DtoCreateIncomeTransactionRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1IncomeTransactions>>, TError,{data: DtoCreateIncomeTransactionRequest}, TContext> => {
 
-/**
+const mutationKey = ['postV1IncomeTransactions'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1IncomeTransactions>>, {data: DtoCreateIncomeTransactionRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  postV1IncomeTransactions(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostV1IncomeTransactionsMutationResult = NonNullable<Awaited<ReturnType<typeof postV1IncomeTransactions>>>
+    export type PostV1IncomeTransactionsMutationBody = DtoCreateIncomeTransactionRequest
+    export type PostV1IncomeTransactionsMutationError = DtoErrorResponse
+
+    /**
  * @summary Create income transaction
  */
-export const usePostV1IncomeTransactions = <
-	TError = DtoErrorResponse,
-	TContext = unknown,
->(
-	options?: {
-		mutation?: UseMutationOptions<
-			Awaited<ReturnType<typeof postV1IncomeTransactions>>,
-			TError,
-			{ data: DtoCreateIncomeTransactionRequest },
-			TContext
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseMutationResult<
-	Awaited<ReturnType<typeof postV1IncomeTransactions>>,
-	TError,
-	{ data: DtoCreateIncomeTransactionRequest },
-	TContext
-> => {
-	return useMutation(
-		getPostV1IncomeTransactionsMutationOptions(options),
-		queryClient,
-	);
-};
-export type getV1IncomeTransactionsIdResponse200 = {
-	data: GetV1IncomeTransactionsId200;
-	status: 200;
-};
+export const usePostV1IncomeTransactions = <TError = DtoErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1IncomeTransactions>>, TError,{data: DtoCreateIncomeTransactionRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postV1IncomeTransactions>>,
+        TError,
+        {data: DtoCreateIncomeTransactionRequest},
+        TContext
+      > => {
+      return useMutation(getPostV1IncomeTransactionsMutationOptions(options), queryClient);
+    }
+    export type getV1IncomeTransactionsIdResponse200 = {
+  data: GetV1IncomeTransactionsId200
+  status: 200
+}
 
 export type getV1IncomeTransactionsIdResponse400 = {
-	data: DtoErrorResponse;
-	status: 400;
-};
+  data: DtoErrorResponse
+  status: 400
+}
 
 export type getV1IncomeTransactionsIdResponse401 = {
-	data: DtoErrorResponse;
-	status: 401;
-};
+  data: DtoErrorResponse
+  status: 401
+}
 
 export type getV1IncomeTransactionsIdResponse403 = {
-	data: DtoErrorResponse;
-	status: 403;
-};
+  data: DtoErrorResponse
+  status: 403
+}
 
 export type getV1IncomeTransactionsIdResponse404 = {
-	data: DtoErrorResponse;
-	status: 404;
-};
+  data: DtoErrorResponse
+  status: 404
+}
 
 export type getV1IncomeTransactionsIdResponse500 = {
-	data: DtoErrorResponse;
-	status: 500;
+  data: DtoErrorResponse
+  status: 500
+}
+
+export type getV1IncomeTransactionsIdResponseSuccess = (getV1IncomeTransactionsIdResponse200) & {
+  headers: Headers;
+};
+export type getV1IncomeTransactionsIdResponseError = (getV1IncomeTransactionsIdResponse400 | getV1IncomeTransactionsIdResponse401 | getV1IncomeTransactionsIdResponse403 | getV1IncomeTransactionsIdResponse404 | getV1IncomeTransactionsIdResponse500) & {
+  headers: Headers;
 };
 
-export type getV1IncomeTransactionsIdResponseSuccess =
-	getV1IncomeTransactionsIdResponse200 & {
-		headers: Headers;
-	};
-export type getV1IncomeTransactionsIdResponseError = (
-	| getV1IncomeTransactionsIdResponse400
-	| getV1IncomeTransactionsIdResponse401
-	| getV1IncomeTransactionsIdResponse403
-	| getV1IncomeTransactionsIdResponse404
-	| getV1IncomeTransactionsIdResponse500
-) & {
-	headers: Headers;
-};
+export type getV1IncomeTransactionsIdResponse = (getV1IncomeTransactionsIdResponseSuccess | getV1IncomeTransactionsIdResponseError)
 
-export type getV1IncomeTransactionsIdResponse =
-	| getV1IncomeTransactionsIdResponseSuccess
-	| getV1IncomeTransactionsIdResponseError;
+export const getGetV1IncomeTransactionsIdUrl = (id: number,) => {
 
-export const getGetV1IncomeTransactionsIdUrl = (id: number) => {
-	return `/v1/income-transactions/${id}`;
-};
+
+
+
+  return `/v1/income-transactions/${id}`
+}
 
 /**
  * Get income transaction detail
  * @summary Get income transaction by ID
  */
-export const getV1IncomeTransactionsId = async (
-	id: number,
-	options?: RequestInit,
-): Promise<getV1IncomeTransactionsIdResponse> => {
-	return customInstance<getV1IncomeTransactionsIdResponse>(
-		getGetV1IncomeTransactionsIdUrl(id),
-		{
-			...options,
-			method: "GET",
-		},
-	);
-};
+export const getV1IncomeTransactionsId = async (id: number, options?: RequestInit): Promise<getV1IncomeTransactionsIdResponse> => {
 
-export const getGetV1IncomeTransactionsIdQueryKey = (id: number) => {
-	return [`/v1/income-transactions/${id}`] as const;
-};
+  return customInstance<getV1IncomeTransactionsIdResponse>(getGetV1IncomeTransactionsIdUrl(id),
+  {
+    ...options,
+    method: 'GET'
 
-export const getGetV1IncomeTransactionsIdQueryOptions = <
-	TData = Awaited<ReturnType<typeof getV1IncomeTransactionsId>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1IncomeTransactionsId>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
+
+  }
+);}
+
+
+
+
+
+export const getGetV1IncomeTransactionsIdQueryKey = (id: number,) => {
+    return [
+    `/v1/income-transactions/${id}`
+    ] as const;
+    }
+
+
+export const getGetV1IncomeTransactionsIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1IncomeTransactionsId>>, TError = DtoErrorResponse>(id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1IncomeTransactionsId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
-	const { query: queryOptions, request: requestOptions } = options ?? {};
 
-	const queryKey =
-		queryOptions?.queryKey ?? getGetV1IncomeTransactionsIdQueryKey(id);
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-	const queryFn: QueryFunction<
-		Awaited<ReturnType<typeof getV1IncomeTransactionsId>>
-	> = ({ signal }) =>
-		getV1IncomeTransactionsId(id, { signal, ...requestOptions });
+  const queryKey =  queryOptions?.queryKey ?? getGetV1IncomeTransactionsIdQueryKey(id);
 
-	return {
-		queryKey,
-		queryFn,
-		enabled: !!id,
-		...queryOptions,
-	} as UseQueryOptions<
-		Awaited<ReturnType<typeof getV1IncomeTransactionsId>>,
-		TError,
-		TData
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
-};
 
-export type GetV1IncomeTransactionsIdQueryResult = NonNullable<
-	Awaited<ReturnType<typeof getV1IncomeTransactionsId>>
->;
-export type GetV1IncomeTransactionsIdQueryError = DtoErrorResponse;
 
-export function useGetV1IncomeTransactionsId<
-	TData = Awaited<ReturnType<typeof getV1IncomeTransactionsId>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	options: {
-		query: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1IncomeTransactionsId>>,
-				TError,
-				TData
-			>
-		> &
-			Pick<
-				DefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1IncomeTransactionsId>>,
-					TError,
-					Awaited<ReturnType<typeof getV1IncomeTransactionsId>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1IncomeTransactionsId<
-	TData = Awaited<ReturnType<typeof getV1IncomeTransactionsId>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1IncomeTransactionsId>>,
-				TError,
-				TData
-			>
-		> &
-			Pick<
-				UndefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1IncomeTransactionsId>>,
-					TError,
-					Awaited<ReturnType<typeof getV1IncomeTransactionsId>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1IncomeTransactionsId<
-	TData = Awaited<ReturnType<typeof getV1IncomeTransactionsId>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1IncomeTransactionsId>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1IncomeTransactionsId>>> = ({ signal }) => getV1IncomeTransactionsId(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1IncomeTransactionsId>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetV1IncomeTransactionsIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1IncomeTransactionsId>>>
+export type GetV1IncomeTransactionsIdQueryError = DtoErrorResponse
+
+
+export function useGetV1IncomeTransactionsId<TData = Awaited<ReturnType<typeof getV1IncomeTransactionsId>>, TError = DtoErrorResponse>(
+ id: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1IncomeTransactionsId>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1IncomeTransactionsId>>,
+          TError,
+          Awaited<ReturnType<typeof getV1IncomeTransactionsId>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1IncomeTransactionsId<TData = Awaited<ReturnType<typeof getV1IncomeTransactionsId>>, TError = DtoErrorResponse>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1IncomeTransactionsId>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1IncomeTransactionsId>>,
+          TError,
+          Awaited<ReturnType<typeof getV1IncomeTransactionsId>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1IncomeTransactionsId<TData = Awaited<ReturnType<typeof getV1IncomeTransactionsId>>, TError = DtoErrorResponse>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1IncomeTransactionsId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Get income transaction by ID
  */
 
-export function useGetV1IncomeTransactionsId<
-	TData = Awaited<ReturnType<typeof getV1IncomeTransactionsId>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1IncomeTransactionsId>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-} {
-	const queryOptions = getGetV1IncomeTransactionsIdQueryOptions(id, options);
+export function useGetV1IncomeTransactionsId<TData = Awaited<ReturnType<typeof getV1IncomeTransactionsId>>, TError = DtoErrorResponse>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1IncomeTransactionsId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-		TData,
-		TError
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getGetV1IncomeTransactionsIdQueryOptions(id,options)
 
-	return { ...query, queryKey: queryOptions.queryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
 }
 
+
+
+
+
+
 export type putV1IncomeTransactionsIdResponse200 = {
-	data: PutV1IncomeTransactionsId200;
-	status: 200;
-};
+  data: PutV1IncomeTransactionsId200
+  status: 200
+}
 
 export type putV1IncomeTransactionsIdResponse400 = {
-	data: DtoErrorResponse;
-	status: 400;
-};
+  data: DtoErrorResponse
+  status: 400
+}
 
 export type putV1IncomeTransactionsIdResponse401 = {
-	data: DtoErrorResponse;
-	status: 401;
-};
+  data: DtoErrorResponse
+  status: 401
+}
 
 export type putV1IncomeTransactionsIdResponse403 = {
-	data: DtoErrorResponse;
-	status: 403;
-};
+  data: DtoErrorResponse
+  status: 403
+}
 
 export type putV1IncomeTransactionsIdResponse404 = {
-	data: DtoErrorResponse;
-	status: 404;
-};
+  data: DtoErrorResponse
+  status: 404
+}
 
 export type putV1IncomeTransactionsIdResponse422 = {
-	data: DtoErrorResponse;
-	status: 422;
-};
+  data: DtoErrorResponse
+  status: 422
+}
 
 export type putV1IncomeTransactionsIdResponse500 = {
-	data: DtoErrorResponse;
-	status: 500;
+  data: DtoErrorResponse
+  status: 500
+}
+
+export type putV1IncomeTransactionsIdResponseSuccess = (putV1IncomeTransactionsIdResponse200) & {
+  headers: Headers;
+};
+export type putV1IncomeTransactionsIdResponseError = (putV1IncomeTransactionsIdResponse400 | putV1IncomeTransactionsIdResponse401 | putV1IncomeTransactionsIdResponse403 | putV1IncomeTransactionsIdResponse404 | putV1IncomeTransactionsIdResponse422 | putV1IncomeTransactionsIdResponse500) & {
+  headers: Headers;
 };
 
-export type putV1IncomeTransactionsIdResponseSuccess =
-	putV1IncomeTransactionsIdResponse200 & {
-		headers: Headers;
-	};
-export type putV1IncomeTransactionsIdResponseError = (
-	| putV1IncomeTransactionsIdResponse400
-	| putV1IncomeTransactionsIdResponse401
-	| putV1IncomeTransactionsIdResponse403
-	| putV1IncomeTransactionsIdResponse404
-	| putV1IncomeTransactionsIdResponse422
-	| putV1IncomeTransactionsIdResponse500
-) & {
-	headers: Headers;
-};
+export type putV1IncomeTransactionsIdResponse = (putV1IncomeTransactionsIdResponseSuccess | putV1IncomeTransactionsIdResponseError)
 
-export type putV1IncomeTransactionsIdResponse =
-	| putV1IncomeTransactionsIdResponseSuccess
-	| putV1IncomeTransactionsIdResponseError;
+export const getPutV1IncomeTransactionsIdUrl = (id: number,) => {
 
-export const getPutV1IncomeTransactionsIdUrl = (id: number) => {
-	return `/v1/income-transactions/${id}`;
-};
+
+
+
+  return `/v1/income-transactions/${id}`
+}
 
 /**
  * Update an existing income transaction
  * @summary Update income transaction
  */
-export const putV1IncomeTransactionsId = async (
-	id: number,
-	dtoCreateIncomeTransactionRequest: DtoCreateIncomeTransactionRequest,
-	options?: RequestInit,
-): Promise<putV1IncomeTransactionsIdResponse> => {
-	return customInstance<putV1IncomeTransactionsIdResponse>(
-		getPutV1IncomeTransactionsIdUrl(id),
-		{
-			...options,
-			method: "PUT",
-			headers: { "Content-Type": "application/json", ...options?.headers },
-			body: JSON.stringify(dtoCreateIncomeTransactionRequest),
-		},
-	);
-};
+export const putV1IncomeTransactionsId = async (id: number,
+    dtoCreateIncomeTransactionRequest: DtoCreateIncomeTransactionRequest, options?: RequestInit): Promise<putV1IncomeTransactionsIdResponse> => {
 
-export const getPutV1IncomeTransactionsIdMutationOptions = <
-	TError = DtoErrorResponse,
-	TContext = unknown,
->(options?: {
-	mutation?: UseMutationOptions<
-		Awaited<ReturnType<typeof putV1IncomeTransactionsId>>,
-		TError,
-		{ id: number; data: DtoCreateIncomeTransactionRequest },
-		TContext
-	>;
-	request?: SecondParameter<typeof customInstance>;
-}): UseMutationOptions<
-	Awaited<ReturnType<typeof putV1IncomeTransactionsId>>,
-	TError,
-	{ id: number; data: DtoCreateIncomeTransactionRequest },
-	TContext
-> => {
-	const mutationKey = ["putV1IncomeTransactionsId"];
-	const { mutation: mutationOptions, request: requestOptions } = options
-		? options.mutation &&
-			"mutationKey" in options.mutation &&
-			options.mutation.mutationKey
-			? options
-			: { ...options, mutation: { ...options.mutation, mutationKey } }
-		: { mutation: { mutationKey }, request: undefined };
+  return customInstance<putV1IncomeTransactionsIdResponse>(getPutV1IncomeTransactionsIdUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      dtoCreateIncomeTransactionRequest,)
+  }
+);}
 
-	const mutationFn: MutationFunction<
-		Awaited<ReturnType<typeof putV1IncomeTransactionsId>>,
-		{ id: number; data: DtoCreateIncomeTransactionRequest }
-	> = (props) => {
-		const { id, data } = props ?? {};
 
-		return putV1IncomeTransactionsId(id, data, requestOptions);
-	};
 
-	return { mutationFn, ...mutationOptions };
-};
 
-export type PutV1IncomeTransactionsIdMutationResult = NonNullable<
-	Awaited<ReturnType<typeof putV1IncomeTransactionsId>>
->;
-export type PutV1IncomeTransactionsIdMutationBody =
-	DtoCreateIncomeTransactionRequest;
-export type PutV1IncomeTransactionsIdMutationError = DtoErrorResponse;
+export const getPutV1IncomeTransactionsIdMutationOptions = <TError = DtoErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1IncomeTransactionsId>>, TError,{id: number;data: DtoCreateIncomeTransactionRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
+): UseMutationOptions<Awaited<ReturnType<typeof putV1IncomeTransactionsId>>, TError,{id: number;data: DtoCreateIncomeTransactionRequest}, TContext> => {
 
-/**
+const mutationKey = ['putV1IncomeTransactionsId'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1IncomeTransactionsId>>, {id: number;data: DtoCreateIncomeTransactionRequest}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  putV1IncomeTransactionsId(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PutV1IncomeTransactionsIdMutationResult = NonNullable<Awaited<ReturnType<typeof putV1IncomeTransactionsId>>>
+    export type PutV1IncomeTransactionsIdMutationBody = DtoCreateIncomeTransactionRequest
+    export type PutV1IncomeTransactionsIdMutationError = DtoErrorResponse
+
+    /**
  * @summary Update income transaction
  */
-export const usePutV1IncomeTransactionsId = <
-	TError = DtoErrorResponse,
-	TContext = unknown,
->(
-	options?: {
-		mutation?: UseMutationOptions<
-			Awaited<ReturnType<typeof putV1IncomeTransactionsId>>,
-			TError,
-			{ id: number; data: DtoCreateIncomeTransactionRequest },
-			TContext
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseMutationResult<
-	Awaited<ReturnType<typeof putV1IncomeTransactionsId>>,
-	TError,
-	{ id: number; data: DtoCreateIncomeTransactionRequest },
-	TContext
-> => {
-	return useMutation(
-		getPutV1IncomeTransactionsIdMutationOptions(options),
-		queryClient,
-	);
-};
-export type deleteV1IncomeTransactionsIdResponse200 = {
-	data: DtoSuccessResponse;
-	status: 200;
-};
+export const usePutV1IncomeTransactionsId = <TError = DtoErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1IncomeTransactionsId>>, TError,{id: number;data: DtoCreateIncomeTransactionRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof putV1IncomeTransactionsId>>,
+        TError,
+        {id: number;data: DtoCreateIncomeTransactionRequest},
+        TContext
+      > => {
+      return useMutation(getPutV1IncomeTransactionsIdMutationOptions(options), queryClient);
+    }
+    export type deleteV1IncomeTransactionsIdResponse200 = {
+  data: DtoSuccessResponse
+  status: 200
+}
 
 export type deleteV1IncomeTransactionsIdResponse400 = {
-	data: DtoErrorResponse;
-	status: 400;
-};
+  data: DtoErrorResponse
+  status: 400
+}
 
 export type deleteV1IncomeTransactionsIdResponse401 = {
-	data: DtoErrorResponse;
-	status: 401;
-};
+  data: DtoErrorResponse
+  status: 401
+}
 
 export type deleteV1IncomeTransactionsIdResponse403 = {
-	data: DtoErrorResponse;
-	status: 403;
-};
+  data: DtoErrorResponse
+  status: 403
+}
 
 export type deleteV1IncomeTransactionsIdResponse404 = {
-	data: DtoErrorResponse;
-	status: 404;
-};
+  data: DtoErrorResponse
+  status: 404
+}
 
 export type deleteV1IncomeTransactionsIdResponse422 = {
-	data: DtoErrorResponse;
-	status: 422;
-};
+  data: DtoErrorResponse
+  status: 422
+}
 
 export type deleteV1IncomeTransactionsIdResponse500 = {
-	data: DtoErrorResponse;
-	status: 500;
+  data: DtoErrorResponse
+  status: 500
+}
+
+export type deleteV1IncomeTransactionsIdResponseSuccess = (deleteV1IncomeTransactionsIdResponse200) & {
+  headers: Headers;
+};
+export type deleteV1IncomeTransactionsIdResponseError = (deleteV1IncomeTransactionsIdResponse400 | deleteV1IncomeTransactionsIdResponse401 | deleteV1IncomeTransactionsIdResponse403 | deleteV1IncomeTransactionsIdResponse404 | deleteV1IncomeTransactionsIdResponse422 | deleteV1IncomeTransactionsIdResponse500) & {
+  headers: Headers;
 };
 
-export type deleteV1IncomeTransactionsIdResponseSuccess =
-	deleteV1IncomeTransactionsIdResponse200 & {
-		headers: Headers;
-	};
-export type deleteV1IncomeTransactionsIdResponseError = (
-	| deleteV1IncomeTransactionsIdResponse400
-	| deleteV1IncomeTransactionsIdResponse401
-	| deleteV1IncomeTransactionsIdResponse403
-	| deleteV1IncomeTransactionsIdResponse404
-	| deleteV1IncomeTransactionsIdResponse422
-	| deleteV1IncomeTransactionsIdResponse500
-) & {
-	headers: Headers;
-};
+export type deleteV1IncomeTransactionsIdResponse = (deleteV1IncomeTransactionsIdResponseSuccess | deleteV1IncomeTransactionsIdResponseError)
 
-export type deleteV1IncomeTransactionsIdResponse =
-	| deleteV1IncomeTransactionsIdResponseSuccess
-	| deleteV1IncomeTransactionsIdResponseError;
+export const getDeleteV1IncomeTransactionsIdUrl = (id: number,) => {
 
-export const getDeleteV1IncomeTransactionsIdUrl = (id: number) => {
-	return `/v1/income-transactions/${id}`;
-};
+
+
+
+  return `/v1/income-transactions/${id}`
+}
 
 /**
  * Delete an existing income transaction
  * @summary Delete income transaction
  */
-export const deleteV1IncomeTransactionsId = async (
-	id: number,
-	options?: RequestInit,
-): Promise<deleteV1IncomeTransactionsIdResponse> => {
-	return customInstance<deleteV1IncomeTransactionsIdResponse>(
-		getDeleteV1IncomeTransactionsIdUrl(id),
-		{
-			...options,
-			method: "DELETE",
-		},
-	);
-};
+export const deleteV1IncomeTransactionsId = async (id: number, options?: RequestInit): Promise<deleteV1IncomeTransactionsIdResponse> => {
 
-export const getDeleteV1IncomeTransactionsIdMutationOptions = <
-	TError = DtoErrorResponse,
-	TContext = unknown,
->(options?: {
-	mutation?: UseMutationOptions<
-		Awaited<ReturnType<typeof deleteV1IncomeTransactionsId>>,
-		TError,
-		{ id: number },
-		TContext
-	>;
-	request?: SecondParameter<typeof customInstance>;
-}): UseMutationOptions<
-	Awaited<ReturnType<typeof deleteV1IncomeTransactionsId>>,
-	TError,
-	{ id: number },
-	TContext
-> => {
-	const mutationKey = ["deleteV1IncomeTransactionsId"];
-	const { mutation: mutationOptions, request: requestOptions } = options
-		? options.mutation &&
-			"mutationKey" in options.mutation &&
-			options.mutation.mutationKey
-			? options
-			: { ...options, mutation: { ...options.mutation, mutationKey } }
-		: { mutation: { mutationKey }, request: undefined };
+  return customInstance<deleteV1IncomeTransactionsIdResponse>(getDeleteV1IncomeTransactionsIdUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
 
-	const mutationFn: MutationFunction<
-		Awaited<ReturnType<typeof deleteV1IncomeTransactionsId>>,
-		{ id: number }
-	> = (props) => {
-		const { id } = props ?? {};
 
-		return deleteV1IncomeTransactionsId(id, requestOptions);
-	};
+  }
+);}
 
-	return { mutationFn, ...mutationOptions };
-};
 
-export type DeleteV1IncomeTransactionsIdMutationResult = NonNullable<
-	Awaited<ReturnType<typeof deleteV1IncomeTransactionsId>>
->;
 
-export type DeleteV1IncomeTransactionsIdMutationError = DtoErrorResponse;
 
-/**
+export const getDeleteV1IncomeTransactionsIdMutationOptions = <TError = DtoErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1IncomeTransactionsId>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customInstance>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteV1IncomeTransactionsId>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteV1IncomeTransactionsId'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteV1IncomeTransactionsId>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteV1IncomeTransactionsId(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteV1IncomeTransactionsIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteV1IncomeTransactionsId>>>
+
+    export type DeleteV1IncomeTransactionsIdMutationError = DtoErrorResponse
+
+    /**
  * @summary Delete income transaction
  */
-export const useDeleteV1IncomeTransactionsId = <
-	TError = DtoErrorResponse,
-	TContext = unknown,
->(
-	options?: {
-		mutation?: UseMutationOptions<
-			Awaited<ReturnType<typeof deleteV1IncomeTransactionsId>>,
-			TError,
-			{ id: number },
-			TContext
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseMutationResult<
-	Awaited<ReturnType<typeof deleteV1IncomeTransactionsId>>,
-	TError,
-	{ id: number },
-	TContext
-> => {
-	return useMutation(
-		getDeleteV1IncomeTransactionsIdMutationOptions(options),
-		queryClient,
-	);
-};
+export const useDeleteV1IncomeTransactionsId = <TError = DtoErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1IncomeTransactionsId>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteV1IncomeTransactionsId>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteV1IncomeTransactionsIdMutationOptions(options), queryClient);
+    }

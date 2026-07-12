@@ -200,3 +200,96 @@ func (h *EffectiveDayHandler) Update(c echo.Context) error {
 		Data:    ed,
 	})
 }
+
+// === Per-Jenjang ===
+
+// ListLevel godoc
+// @Summary      List effective days by level
+// @Description  Get effective days for a specific level (mutiara/intan/berlian)
+// @Tags         effective-days
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        level             path   string  true   "Level (mutiara/intan/berlian)"
+// @Param        academic_year_id  query  int     false  "Academic Year ID"
+// @Param        year              query  int     false  "Year"
+// @Success      200  {object}  dto.SuccessResponse{data=[]dto.EffectiveDayResponse}
+// @Router       /v1/levels/{level}/effective-days [get]
+func (h *EffectiveDayHandler) ListLevel(c echo.Context) error {
+	level := c.Param("level")
+
+	params := dto.EffectiveDayQueryParams{}
+	if ayID := c.QueryParam("academic_year_id"); ayID != "" {
+		if id, err := strconv.Atoi(ayID); err == nil {
+			params.AcademicYearID = uint(id)
+		}
+	}
+	if y := c.QueryParam("year"); y != "" {
+		if id, err := strconv.Atoi(y); err == nil {
+			params.Year = uint(id)
+		}
+	}
+
+	eds, err := h.effectiveDayService.GetByLevel(level, params)
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{
+			Status:  status,
+			Code:    code,
+			Message: err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "Data hari efektif per jenjang",
+		Data:    eds,
+	})
+}
+
+// UpsertLevel godoc
+// @Summary      Upsert effective day by level
+// @Description  Create or update effective days for a specific level
+// @Tags         effective-days
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        level    path   string                        true   "Level (mutiara/intan/berlian)"
+// @Param        request  body   dto.UpsertEffectiveDayRequest true   "Effective day data"
+// @Success      200      {object}  dto.SuccessResponse{data=dto.EffectiveDayResponse}
+// @Router       /v1/levels/{level}/effective-days [put]
+func (h *EffectiveDayHandler) UpsertLevel(c echo.Context) error {
+	level := c.Param("level")
+
+	var req dto.UpsertEffectiveDayRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status:  http.StatusBadRequest,
+			Code:    "BAD_REQUEST",
+			Message: err.Error(),
+		})
+	}
+
+	if err := c.Validate(req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status:  http.StatusBadRequest,
+			Code:    "VALIDATION_ERROR",
+			Message: err.Error(),
+		})
+	}
+
+	userID := middleware.GetCurrentUserID(c)
+	ed, err := h.effectiveDayService.UpsertLevel(level, userID, req)
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{
+			Status:  status,
+			Code:    code,
+			Message: err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "Berhasil menyimpan hari efektif per jenjang",
+		Data:    ed,
+	})
+}

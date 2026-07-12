@@ -5,17 +5,17 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoCreateUserRequestRole } from "./dtoCreateUserRequestRole";
+import type { DtoCreateUserRequestRole } from './dtoCreateUserRequestRole';
 
 export interface DtoCreateUserRequest {
-	email: string;
-	/**
-	 * @minLength 3
-	 * @maxLength 100
-	 */
-	full_name: string;
-	modules?: string[];
-	/** @minLength 8 */
-	password: string;
-	role: DtoCreateUserRequestRole;
+  email: string;
+  /**
+     * @minLength 3
+     * @maxLength 100
+     */
+  full_name: string;
+  modules?: string[];
+  /** @minLength 8 */
+  password: string;
+  role: DtoCreateUserRequestRole;
 }

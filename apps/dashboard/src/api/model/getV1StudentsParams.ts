@@ -7,32 +7,32 @@
  */
 
 export type GetV1StudentsParams = {
-	/**
-	 * Search by name
-	 */
-	search?: string;
-	/**
-	 * Filter by status
-	 */
-	status?: string;
-	/**
-	 * Filter by class group (Batch 3)
-	 */
-	class_group_id?: number;
-	/**
-	 * Filter by academic year (Batch 3)
-	 */
-	academic_year_id?: number;
-	/**
-	 * Filter by daycare only
-	 */
-	is_daycare_only?: boolean;
-	/**
-	 * Page number
-	 */
-	page?: number;
-	/**
-	 * Items per page
-	 */
-	limit?: number;
+/**
+ * Search by name
+ */
+search?: string;
+/**
+ * Filter by status
+ */
+status?: string;
+/**
+ * Filter by class group (Batch 3)
+ */
+class_group_id?: number;
+/**
+ * Filter by academic year (Batch 3)
+ */
+academic_year_id?: number;
+/**
+ * Filter by daycare only
+ */
+is_daycare_only?: boolean;
+/**
+ * Page number
+ */
+page?: number;
+/**
+ * Items per page
+ */
+limit?: number;
 };

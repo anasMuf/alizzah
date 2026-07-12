@@ -7,24 +7,24 @@
  */
 
 export type GetV1KoperasiLoansParams = {
-	/**
-	 * Tahun ajaran
-	 */
-	academic_year_id?: number;
-	/**
-	 * Anggota
-	 */
-	member_id?: number;
-	/**
-	 * unpaid|partial|paid
-	 */
-	status?: string;
-	/**
-	 * Halaman
-	 */
-	page?: number;
-	/**
-	 * Per halaman
-	 */
-	limit?: number;
+/**
+ * Tahun ajaran
+ */
+academic_year_id?: number;
+/**
+ * Anggota
+ */
+member_id?: number;
+/**
+ * unpaid|partial|paid
+ */
+status?: string;
+/**
+ * Halaman
+ */
+page?: number;
+/**
+ * Per halaman
+ */
+limit?: number;
 };

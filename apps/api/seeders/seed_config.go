@@ -16,3 +16,7 @@ package seeders
 //
 // Catatan: tagihan tetap dibuat apa pun nilainya — yang di-toggle hanya arus kas.
 const seedSampleFinance = false
+
+// seedSampleTransactions — selalu true. Invoice dibuat dari data enrollment + fee config
+// (bukan dummy). Yang dikontrol oleh seedSampleFinance adalah pembayaran/pengeluaran demo.
+const seedSampleTransactions = true

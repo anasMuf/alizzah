@@ -5,11 +5,11 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoExtracurricularSyncError } from "./dtoExtracurricularSyncError";
+import type { DtoExtracurricularSyncError } from './dtoExtracurricularSyncError';
 
 export interface DtoExtracurricularSyncResult {
-	errors?: DtoExtracurricularSyncError[];
-	total_enrollments?: number;
-	total_skipped?: number;
-	total_synced?: number;
+  errors?: DtoExtracurricularSyncError[];
+  total_enrollments?: number;
+  total_skipped?: number;
+  total_synced?: number;
 }

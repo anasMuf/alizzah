@@ -7,11 +7,11 @@
  */
 
 export interface DtoGraduationStudentResult {
-	graduation_amount?: number;
-	graduation_invoice_id?: number;
-	mandatory_savings_used?: number;
-	remaining_debt?: number;
-	student_id?: number;
-	student_name?: string;
-	surplus_returned_to_general?: number;
+  graduation_amount?: number;
+  graduation_invoice_id?: number;
+  mandatory_savings_used?: number;
+  remaining_debt?: number;
+  student_id?: number;
+  student_name?: string;
+  surplus_returned_to_general?: number;
 }

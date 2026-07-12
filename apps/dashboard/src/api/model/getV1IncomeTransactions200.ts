@@ -5,9 +5,9 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoIncomeTransactionResponse } from "./dtoIncomeTransactionResponse";
-import type { DtoPaginatedResponse } from "./dtoPaginatedResponse";
+import type { DtoIncomeTransactionResponse } from './dtoIncomeTransactionResponse';
+import type { DtoPaginatedResponse } from './dtoPaginatedResponse';
 
 export type GetV1IncomeTransactions200 = DtoPaginatedResponse & {
-	data?: DtoIncomeTransactionResponse[];
+  data?: DtoIncomeTransactionResponse[];
 };

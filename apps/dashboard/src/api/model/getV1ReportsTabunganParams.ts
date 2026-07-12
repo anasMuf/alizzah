@@ -7,16 +7,16 @@
  */
 
 export type GetV1ReportsTabunganParams = {
-	/**
-	 * Month (1-12)
-	 */
-	month: number;
-	/**
-	 * Year
-	 */
-	year: number;
-	/**
-	 * Savings type filter: general, mandatory, or empty for all
-	 */
-	type?: string;
+/**
+ * Month (1-12)
+ */
+month: number;
+/**
+ * Year
+ */
+year: number;
+/**
+ * Savings type filter: general, mandatory, or empty for all
+ */
+type?: string;
 };

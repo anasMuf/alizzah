@@ -5,762 +5,538 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
+import {
+  useMutation,
+  useQuery
+} from '@tanstack/react-query';
+import type {
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
+  MutationFunction,
+  QueryClient,
+  QueryFunction,
+  QueryKey,
+  UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
+  UseQueryOptions,
+  UseQueryResult
+} from '@tanstack/react-query';
 
 import type {
-	DataTag,
-	DefinedInitialDataOptions,
-	DefinedUseQueryResult,
-	MutationFunction,
-	QueryClient,
-	QueryFunction,
-	QueryKey,
-	UndefinedInitialDataOptions,
-	UseMutationOptions,
-	UseMutationResult,
-	UseQueryOptions,
-	UseQueryResult,
-} from "@tanstack/react-query";
-import { useMutation, useQuery } from "@tanstack/react-query";
+  DtoConfirmDailyClosingRequest,
+  DtoCreateDailyClosingRequest,
+  DtoErrorResponse,
+  DtoSuccessResponse,
+  GetV1DailyClosings200,
+  GetV1DailyClosingsId200,
+  GetV1DailyClosingsParams,
+  PostV1DailyClosings201
+} from '../../model';
 
-import type {
-	DtoConfirmDailyClosingRequest,
-	DtoCreateDailyClosingRequest,
-	DtoErrorResponse,
-	DtoSuccessResponse,
-	GetV1DailyClosings200,
-	GetV1DailyClosingsId200,
-	GetV1DailyClosingsParams,
-	PostV1DailyClosings201,
-} from "../../model";
+import { customInstance } from '../../mutator/custom-instance';
 
-import { customInstance } from "../../mutator/custom-instance";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
+
+
 export type getV1DailyClosingsResponse200 = {
-	data: GetV1DailyClosings200;
-	status: 200;
-};
+  data: GetV1DailyClosings200
+  status: 200
+}
 
 export type getV1DailyClosingsResponse401 = {
-	data: DtoErrorResponse;
-	status: 401;
-};
+  data: DtoErrorResponse
+  status: 401
+}
 
 export type getV1DailyClosingsResponse403 = {
-	data: DtoErrorResponse;
-	status: 403;
-};
+  data: DtoErrorResponse
+  status: 403
+}
 
 export type getV1DailyClosingsResponse500 = {
-	data: DtoErrorResponse;
-	status: 500;
+  data: DtoErrorResponse
+  status: 500
+}
+
+export type getV1DailyClosingsResponseSuccess = (getV1DailyClosingsResponse200) & {
+  headers: Headers;
+};
+export type getV1DailyClosingsResponseError = (getV1DailyClosingsResponse401 | getV1DailyClosingsResponse403 | getV1DailyClosingsResponse500) & {
+  headers: Headers;
 };
 
-export type getV1DailyClosingsResponseSuccess =
-	getV1DailyClosingsResponse200 & {
-		headers: Headers;
-	};
-export type getV1DailyClosingsResponseError = (
-	| getV1DailyClosingsResponse401
-	| getV1DailyClosingsResponse403
-	| getV1DailyClosingsResponse500
-) & {
-	headers: Headers;
-};
+export type getV1DailyClosingsResponse = (getV1DailyClosingsResponseSuccess | getV1DailyClosingsResponseError)
 
-export type getV1DailyClosingsResponse =
-	| getV1DailyClosingsResponseSuccess
-	| getV1DailyClosingsResponseError;
+export const getGetV1DailyClosingsUrl = (params?: GetV1DailyClosingsParams,) => {
+  const normalizedParams = new URLSearchParams();
 
-export const getGetV1DailyClosingsUrl = (params?: GetV1DailyClosingsParams) => {
-	const normalizedParams = new URLSearchParams();
+  Object.entries(params || {}).forEach(([key, value]) => {
 
-	Object.entries(params || {}).forEach(([key, value]) => {
-		if (value !== undefined) {
-			normalizedParams.append(key, value === null ? "null" : value.toString());
-		}
-	});
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-	const stringifiedParams = normalizedParams.toString();
+  const stringifiedParams = normalizedParams.toString();
 
-	return stringifiedParams.length > 0
-		? `/v1/daily-closings?${stringifiedParams}`
-		: `/v1/daily-closings`;
-};
+  return stringifiedParams.length > 0 ? `/v1/daily-closings?${stringifiedParams}` : `/v1/daily-closings`
+}
 
 /**
  * Get a paginated list of daily closings
  * @summary List daily closings
  */
-export const getV1DailyClosings = async (
-	params?: GetV1DailyClosingsParams,
-	options?: RequestInit,
-): Promise<getV1DailyClosingsResponse> => {
-	return customInstance<getV1DailyClosingsResponse>(
-		getGetV1DailyClosingsUrl(params),
-		{
-			...options,
-			method: "GET",
-		},
-	);
-};
+export const getV1DailyClosings = async (params?: GetV1DailyClosingsParams, options?: RequestInit): Promise<getV1DailyClosingsResponse> => {
 
-export const getGetV1DailyClosingsQueryKey = (
-	params?: GetV1DailyClosingsParams,
+  return customInstance<getV1DailyClosingsResponse>(getGetV1DailyClosingsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetV1DailyClosingsQueryKey = (params?: GetV1DailyClosingsParams,) => {
+    return [
+    `/v1/daily-closings`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetV1DailyClosingsQueryOptions = <TData = Awaited<ReturnType<typeof getV1DailyClosings>>, TError = DtoErrorResponse>(params?: GetV1DailyClosingsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1DailyClosings>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
-	return [`/v1/daily-closings`, ...(params ? [params] : [])] as const;
-};
 
-export const getGetV1DailyClosingsQueryOptions = <
-	TData = Awaited<ReturnType<typeof getV1DailyClosings>>,
-	TError = DtoErrorResponse,
->(
-	params?: GetV1DailyClosingsParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1DailyClosings>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-) => {
-	const { query: queryOptions, request: requestOptions } = options ?? {};
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-	const queryKey =
-		queryOptions?.queryKey ?? getGetV1DailyClosingsQueryKey(params);
+  const queryKey =  queryOptions?.queryKey ?? getGetV1DailyClosingsQueryKey(params);
 
-	const queryFn: QueryFunction<
-		Awaited<ReturnType<typeof getV1DailyClosings>>
-	> = ({ signal }) => getV1DailyClosings(params, { signal, ...requestOptions });
 
-	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-		Awaited<ReturnType<typeof getV1DailyClosings>>,
-		TError,
-		TData
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
-};
 
-export type GetV1DailyClosingsQueryResult = NonNullable<
-	Awaited<ReturnType<typeof getV1DailyClosings>>
->;
-export type GetV1DailyClosingsQueryError = DtoErrorResponse;
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1DailyClosings>>> = ({ signal }) => getV1DailyClosings(params, { signal, ...requestOptions });
 
-export function useGetV1DailyClosings<
-	TData = Awaited<ReturnType<typeof getV1DailyClosings>>,
-	TError = DtoErrorResponse,
->(
-	params: undefined | GetV1DailyClosingsParams,
-	options: {
-		query: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1DailyClosings>>,
-				TError,
-				TData
-			>
-		> &
-			Pick<
-				DefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1DailyClosings>>,
-					TError,
-					Awaited<ReturnType<typeof getV1DailyClosings>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1DailyClosings<
-	TData = Awaited<ReturnType<typeof getV1DailyClosings>>,
-	TError = DtoErrorResponse,
->(
-	params?: GetV1DailyClosingsParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1DailyClosings>>,
-				TError,
-				TData
-			>
-		> &
-			Pick<
-				UndefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1DailyClosings>>,
-					TError,
-					Awaited<ReturnType<typeof getV1DailyClosings>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1DailyClosings<
-	TData = Awaited<ReturnType<typeof getV1DailyClosings>>,
-	TError = DtoErrorResponse,
->(
-	params?: GetV1DailyClosingsParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1DailyClosings>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1DailyClosings>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetV1DailyClosingsQueryResult = NonNullable<Awaited<ReturnType<typeof getV1DailyClosings>>>
+export type GetV1DailyClosingsQueryError = DtoErrorResponse
+
+
+export function useGetV1DailyClosings<TData = Awaited<ReturnType<typeof getV1DailyClosings>>, TError = DtoErrorResponse>(
+ params: undefined |  GetV1DailyClosingsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1DailyClosings>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1DailyClosings>>,
+          TError,
+          Awaited<ReturnType<typeof getV1DailyClosings>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1DailyClosings<TData = Awaited<ReturnType<typeof getV1DailyClosings>>, TError = DtoErrorResponse>(
+ params?: GetV1DailyClosingsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1DailyClosings>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1DailyClosings>>,
+          TError,
+          Awaited<ReturnType<typeof getV1DailyClosings>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1DailyClosings<TData = Awaited<ReturnType<typeof getV1DailyClosings>>, TError = DtoErrorResponse>(
+ params?: GetV1DailyClosingsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1DailyClosings>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary List daily closings
  */
 
-export function useGetV1DailyClosings<
-	TData = Awaited<ReturnType<typeof getV1DailyClosings>>,
-	TError = DtoErrorResponse,
->(
-	params?: GetV1DailyClosingsParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1DailyClosings>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-} {
-	const queryOptions = getGetV1DailyClosingsQueryOptions(params, options);
+export function useGetV1DailyClosings<TData = Awaited<ReturnType<typeof getV1DailyClosings>>, TError = DtoErrorResponse>(
+ params?: GetV1DailyClosingsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1DailyClosings>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-		TData,
-		TError
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getGetV1DailyClosingsQueryOptions(params,options)
 
-	return { ...query, queryKey: queryOptions.queryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
 }
 
+
+
+
+
+
 export type postV1DailyClosingsResponse201 = {
-	data: PostV1DailyClosings201;
-	status: 201;
-};
+  data: PostV1DailyClosings201
+  status: 201
+}
 
 export type postV1DailyClosingsResponse400 = {
-	data: DtoErrorResponse;
-	status: 400;
-};
+  data: DtoErrorResponse
+  status: 400
+}
 
 export type postV1DailyClosingsResponse401 = {
-	data: DtoErrorResponse;
-	status: 401;
-};
+  data: DtoErrorResponse
+  status: 401
+}
 
 export type postV1DailyClosingsResponse403 = {
-	data: DtoErrorResponse;
-	status: 403;
-};
+  data: DtoErrorResponse
+  status: 403
+}
 
 export type postV1DailyClosingsResponse409 = {
-	data: DtoErrorResponse;
-	status: 409;
-};
+  data: DtoErrorResponse
+  status: 409
+}
 
 export type postV1DailyClosingsResponse500 = {
-	data: DtoErrorResponse;
-	status: 500;
+  data: DtoErrorResponse
+  status: 500
+}
+
+export type postV1DailyClosingsResponseSuccess = (postV1DailyClosingsResponse201) & {
+  headers: Headers;
+};
+export type postV1DailyClosingsResponseError = (postV1DailyClosingsResponse400 | postV1DailyClosingsResponse401 | postV1DailyClosingsResponse403 | postV1DailyClosingsResponse409 | postV1DailyClosingsResponse500) & {
+  headers: Headers;
 };
 
-export type postV1DailyClosingsResponseSuccess =
-	postV1DailyClosingsResponse201 & {
-		headers: Headers;
-	};
-export type postV1DailyClosingsResponseError = (
-	| postV1DailyClosingsResponse400
-	| postV1DailyClosingsResponse401
-	| postV1DailyClosingsResponse403
-	| postV1DailyClosingsResponse409
-	| postV1DailyClosingsResponse500
-) & {
-	headers: Headers;
-};
-
-export type postV1DailyClosingsResponse =
-	| postV1DailyClosingsResponseSuccess
-	| postV1DailyClosingsResponseError;
+export type postV1DailyClosingsResponse = (postV1DailyClosingsResponseSuccess | postV1DailyClosingsResponseError)
 
 export const getPostV1DailyClosingsUrl = () => {
-	return `/v1/daily-closings`;
-};
+
+
+
+
+  return `/v1/daily-closings`
+}
 
 /**
  * Record a new daily closing
  * @summary Create daily closing
  */
-export const postV1DailyClosings = async (
-	dtoCreateDailyClosingRequest: DtoCreateDailyClosingRequest,
-	options?: RequestInit,
-): Promise<postV1DailyClosingsResponse> => {
-	return customInstance<postV1DailyClosingsResponse>(
-		getPostV1DailyClosingsUrl(),
-		{
-			...options,
-			method: "POST",
-			headers: { "Content-Type": "application/json", ...options?.headers },
-			body: JSON.stringify(dtoCreateDailyClosingRequest),
-		},
-	);
-};
+export const postV1DailyClosings = async (dtoCreateDailyClosingRequest: DtoCreateDailyClosingRequest, options?: RequestInit): Promise<postV1DailyClosingsResponse> => {
 
-export const getPostV1DailyClosingsMutationOptions = <
-	TError = DtoErrorResponse,
-	TContext = unknown,
->(options?: {
-	mutation?: UseMutationOptions<
-		Awaited<ReturnType<typeof postV1DailyClosings>>,
-		TError,
-		{ data: DtoCreateDailyClosingRequest },
-		TContext
-	>;
-	request?: SecondParameter<typeof customInstance>;
-}): UseMutationOptions<
-	Awaited<ReturnType<typeof postV1DailyClosings>>,
-	TError,
-	{ data: DtoCreateDailyClosingRequest },
-	TContext
-> => {
-	const mutationKey = ["postV1DailyClosings"];
-	const { mutation: mutationOptions, request: requestOptions } = options
-		? options.mutation &&
-			"mutationKey" in options.mutation &&
-			options.mutation.mutationKey
-			? options
-			: { ...options, mutation: { ...options.mutation, mutationKey } }
-		: { mutation: { mutationKey }, request: undefined };
+  return customInstance<postV1DailyClosingsResponse>(getPostV1DailyClosingsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      dtoCreateDailyClosingRequest,)
+  }
+);}
 
-	const mutationFn: MutationFunction<
-		Awaited<ReturnType<typeof postV1DailyClosings>>,
-		{ data: DtoCreateDailyClosingRequest }
-	> = (props) => {
-		const { data } = props ?? {};
 
-		return postV1DailyClosings(data, requestOptions);
-	};
 
-	return { mutationFn, ...mutationOptions };
-};
 
-export type PostV1DailyClosingsMutationResult = NonNullable<
-	Awaited<ReturnType<typeof postV1DailyClosings>>
->;
-export type PostV1DailyClosingsMutationBody = DtoCreateDailyClosingRequest;
-export type PostV1DailyClosingsMutationError = DtoErrorResponse;
+export const getPostV1DailyClosingsMutationOptions = <TError = DtoErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DailyClosings>>, TError,{data: DtoCreateDailyClosingRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1DailyClosings>>, TError,{data: DtoCreateDailyClosingRequest}, TContext> => {
 
-/**
+const mutationKey = ['postV1DailyClosings'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1DailyClosings>>, {data: DtoCreateDailyClosingRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  postV1DailyClosings(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostV1DailyClosingsMutationResult = NonNullable<Awaited<ReturnType<typeof postV1DailyClosings>>>
+    export type PostV1DailyClosingsMutationBody = DtoCreateDailyClosingRequest
+    export type PostV1DailyClosingsMutationError = DtoErrorResponse
+
+    /**
  * @summary Create daily closing
  */
-export const usePostV1DailyClosings = <
-	TError = DtoErrorResponse,
-	TContext = unknown,
->(
-	options?: {
-		mutation?: UseMutationOptions<
-			Awaited<ReturnType<typeof postV1DailyClosings>>,
-			TError,
-			{ data: DtoCreateDailyClosingRequest },
-			TContext
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseMutationResult<
-	Awaited<ReturnType<typeof postV1DailyClosings>>,
-	TError,
-	{ data: DtoCreateDailyClosingRequest },
-	TContext
-> => {
-	return useMutation(
-		getPostV1DailyClosingsMutationOptions(options),
-		queryClient,
-	);
-};
-export type getV1DailyClosingsIdResponse200 = {
-	data: GetV1DailyClosingsId200;
-	status: 200;
-};
+export const usePostV1DailyClosings = <TError = DtoErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DailyClosings>>, TError,{data: DtoCreateDailyClosingRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postV1DailyClosings>>,
+        TError,
+        {data: DtoCreateDailyClosingRequest},
+        TContext
+      > => {
+      return useMutation(getPostV1DailyClosingsMutationOptions(options), queryClient);
+    }
+    export type getV1DailyClosingsIdResponse200 = {
+  data: GetV1DailyClosingsId200
+  status: 200
+}
 
 export type getV1DailyClosingsIdResponse401 = {
-	data: DtoErrorResponse;
-	status: 401;
-};
+  data: DtoErrorResponse
+  status: 401
+}
 
 export type getV1DailyClosingsIdResponse403 = {
-	data: DtoErrorResponse;
-	status: 403;
-};
+  data: DtoErrorResponse
+  status: 403
+}
 
 export type getV1DailyClosingsIdResponse404 = {
-	data: DtoErrorResponse;
-	status: 404;
-};
+  data: DtoErrorResponse
+  status: 404
+}
 
 export type getV1DailyClosingsIdResponse500 = {
-	data: DtoErrorResponse;
-	status: 500;
+  data: DtoErrorResponse
+  status: 500
+}
+
+export type getV1DailyClosingsIdResponseSuccess = (getV1DailyClosingsIdResponse200) & {
+  headers: Headers;
+};
+export type getV1DailyClosingsIdResponseError = (getV1DailyClosingsIdResponse401 | getV1DailyClosingsIdResponse403 | getV1DailyClosingsIdResponse404 | getV1DailyClosingsIdResponse500) & {
+  headers: Headers;
 };
 
-export type getV1DailyClosingsIdResponseSuccess =
-	getV1DailyClosingsIdResponse200 & {
-		headers: Headers;
-	};
-export type getV1DailyClosingsIdResponseError = (
-	| getV1DailyClosingsIdResponse401
-	| getV1DailyClosingsIdResponse403
-	| getV1DailyClosingsIdResponse404
-	| getV1DailyClosingsIdResponse500
-) & {
-	headers: Headers;
-};
+export type getV1DailyClosingsIdResponse = (getV1DailyClosingsIdResponseSuccess | getV1DailyClosingsIdResponseError)
 
-export type getV1DailyClosingsIdResponse =
-	| getV1DailyClosingsIdResponseSuccess
-	| getV1DailyClosingsIdResponseError;
+export const getGetV1DailyClosingsIdUrl = (id: number,) => {
 
-export const getGetV1DailyClosingsIdUrl = (id: number) => {
-	return `/v1/daily-closings/${id}`;
-};
+
+
+
+  return `/v1/daily-closings/${id}`
+}
 
 /**
  * Get a single daily closing record by ID
  * @summary Get daily closing by ID
  */
-export const getV1DailyClosingsId = async (
-	id: number,
-	options?: RequestInit,
-): Promise<getV1DailyClosingsIdResponse> => {
-	return customInstance<getV1DailyClosingsIdResponse>(
-		getGetV1DailyClosingsIdUrl(id),
-		{
-			...options,
-			method: "GET",
-		},
-	);
-};
+export const getV1DailyClosingsId = async (id: number, options?: RequestInit): Promise<getV1DailyClosingsIdResponse> => {
 
-export const getGetV1DailyClosingsIdQueryKey = (id: number) => {
-	return [`/v1/daily-closings/${id}`] as const;
-};
+  return customInstance<getV1DailyClosingsIdResponse>(getGetV1DailyClosingsIdUrl(id),
+  {
+    ...options,
+    method: 'GET'
 
-export const getGetV1DailyClosingsIdQueryOptions = <
-	TData = Awaited<ReturnType<typeof getV1DailyClosingsId>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1DailyClosingsId>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
+
+  }
+);}
+
+
+
+
+
+export const getGetV1DailyClosingsIdQueryKey = (id: number,) => {
+    return [
+    `/v1/daily-closings/${id}`
+    ] as const;
+    }
+
+
+export const getGetV1DailyClosingsIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1DailyClosingsId>>, TError = DtoErrorResponse>(id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1DailyClosingsId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
-	const { query: queryOptions, request: requestOptions } = options ?? {};
 
-	const queryKey =
-		queryOptions?.queryKey ?? getGetV1DailyClosingsIdQueryKey(id);
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-	const queryFn: QueryFunction<
-		Awaited<ReturnType<typeof getV1DailyClosingsId>>
-	> = ({ signal }) => getV1DailyClosingsId(id, { signal, ...requestOptions });
+  const queryKey =  queryOptions?.queryKey ?? getGetV1DailyClosingsIdQueryKey(id);
 
-	return {
-		queryKey,
-		queryFn,
-		enabled: !!id,
-		...queryOptions,
-	} as UseQueryOptions<
-		Awaited<ReturnType<typeof getV1DailyClosingsId>>,
-		TError,
-		TData
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
-};
 
-export type GetV1DailyClosingsIdQueryResult = NonNullable<
-	Awaited<ReturnType<typeof getV1DailyClosingsId>>
->;
-export type GetV1DailyClosingsIdQueryError = DtoErrorResponse;
 
-export function useGetV1DailyClosingsId<
-	TData = Awaited<ReturnType<typeof getV1DailyClosingsId>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	options: {
-		query: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1DailyClosingsId>>,
-				TError,
-				TData
-			>
-		> &
-			Pick<
-				DefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1DailyClosingsId>>,
-					TError,
-					Awaited<ReturnType<typeof getV1DailyClosingsId>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1DailyClosingsId<
-	TData = Awaited<ReturnType<typeof getV1DailyClosingsId>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1DailyClosingsId>>,
-				TError,
-				TData
-			>
-		> &
-			Pick<
-				UndefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1DailyClosingsId>>,
-					TError,
-					Awaited<ReturnType<typeof getV1DailyClosingsId>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1DailyClosingsId<
-	TData = Awaited<ReturnType<typeof getV1DailyClosingsId>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1DailyClosingsId>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1DailyClosingsId>>> = ({ signal }) => getV1DailyClosingsId(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1DailyClosingsId>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetV1DailyClosingsIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1DailyClosingsId>>>
+export type GetV1DailyClosingsIdQueryError = DtoErrorResponse
+
+
+export function useGetV1DailyClosingsId<TData = Awaited<ReturnType<typeof getV1DailyClosingsId>>, TError = DtoErrorResponse>(
+ id: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1DailyClosingsId>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1DailyClosingsId>>,
+          TError,
+          Awaited<ReturnType<typeof getV1DailyClosingsId>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1DailyClosingsId<TData = Awaited<ReturnType<typeof getV1DailyClosingsId>>, TError = DtoErrorResponse>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1DailyClosingsId>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1DailyClosingsId>>,
+          TError,
+          Awaited<ReturnType<typeof getV1DailyClosingsId>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1DailyClosingsId<TData = Awaited<ReturnType<typeof getV1DailyClosingsId>>, TError = DtoErrorResponse>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1DailyClosingsId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Get daily closing by ID
  */
 
-export function useGetV1DailyClosingsId<
-	TData = Awaited<ReturnType<typeof getV1DailyClosingsId>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1DailyClosingsId>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-} {
-	const queryOptions = getGetV1DailyClosingsIdQueryOptions(id, options);
+export function useGetV1DailyClosingsId<TData = Awaited<ReturnType<typeof getV1DailyClosingsId>>, TError = DtoErrorResponse>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1DailyClosingsId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-		TData,
-		TError
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getGetV1DailyClosingsIdQueryOptions(id,options)
 
-	return { ...query, queryKey: queryOptions.queryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
 }
 
+
+
+
+
+
 export type patchV1DailyClosingsIdConfirmResponse200 = {
-	data: DtoSuccessResponse;
-	status: 200;
-};
+  data: DtoSuccessResponse
+  status: 200
+}
 
 export type patchV1DailyClosingsIdConfirmResponse400 = {
-	data: DtoErrorResponse;
-	status: 400;
-};
+  data: DtoErrorResponse
+  status: 400
+}
 
 export type patchV1DailyClosingsIdConfirmResponse401 = {
-	data: DtoErrorResponse;
-	status: 401;
-};
+  data: DtoErrorResponse
+  status: 401
+}
 
 export type patchV1DailyClosingsIdConfirmResponse403 = {
-	data: DtoErrorResponse;
-	status: 403;
-};
+  data: DtoErrorResponse
+  status: 403
+}
 
 export type patchV1DailyClosingsIdConfirmResponse404 = {
-	data: DtoErrorResponse;
-	status: 404;
-};
+  data: DtoErrorResponse
+  status: 404
+}
 
 export type patchV1DailyClosingsIdConfirmResponse409 = {
-	data: DtoErrorResponse;
-	status: 409;
-};
+  data: DtoErrorResponse
+  status: 409
+}
 
 export type patchV1DailyClosingsIdConfirmResponse500 = {
-	data: DtoErrorResponse;
-	status: 500;
+  data: DtoErrorResponse
+  status: 500
+}
+
+export type patchV1DailyClosingsIdConfirmResponseSuccess = (patchV1DailyClosingsIdConfirmResponse200) & {
+  headers: Headers;
+};
+export type patchV1DailyClosingsIdConfirmResponseError = (patchV1DailyClosingsIdConfirmResponse400 | patchV1DailyClosingsIdConfirmResponse401 | patchV1DailyClosingsIdConfirmResponse403 | patchV1DailyClosingsIdConfirmResponse404 | patchV1DailyClosingsIdConfirmResponse409 | patchV1DailyClosingsIdConfirmResponse500) & {
+  headers: Headers;
 };
 
-export type patchV1DailyClosingsIdConfirmResponseSuccess =
-	patchV1DailyClosingsIdConfirmResponse200 & {
-		headers: Headers;
-	};
-export type patchV1DailyClosingsIdConfirmResponseError = (
-	| patchV1DailyClosingsIdConfirmResponse400
-	| patchV1DailyClosingsIdConfirmResponse401
-	| patchV1DailyClosingsIdConfirmResponse403
-	| patchV1DailyClosingsIdConfirmResponse404
-	| patchV1DailyClosingsIdConfirmResponse409
-	| patchV1DailyClosingsIdConfirmResponse500
-) & {
-	headers: Headers;
-};
+export type patchV1DailyClosingsIdConfirmResponse = (patchV1DailyClosingsIdConfirmResponseSuccess | patchV1DailyClosingsIdConfirmResponseError)
 
-export type patchV1DailyClosingsIdConfirmResponse =
-	| patchV1DailyClosingsIdConfirmResponseSuccess
-	| patchV1DailyClosingsIdConfirmResponseError;
+export const getPatchV1DailyClosingsIdConfirmUrl = (id: number,) => {
 
-export const getPatchV1DailyClosingsIdConfirmUrl = (id: number) => {
-	return `/v1/daily-closings/${id}/confirm`;
-};
+
+
+
+  return `/v1/daily-closings/${id}/confirm`
+}
 
 /**
  * Confirm a daily closing record
  * @summary Confirm daily closing
  */
-export const patchV1DailyClosingsIdConfirm = async (
-	id: number,
-	dtoConfirmDailyClosingRequest: DtoConfirmDailyClosingRequest,
-	options?: RequestInit,
-): Promise<patchV1DailyClosingsIdConfirmResponse> => {
-	return customInstance<patchV1DailyClosingsIdConfirmResponse>(
-		getPatchV1DailyClosingsIdConfirmUrl(id),
-		{
-			...options,
-			method: "PATCH",
-			headers: { "Content-Type": "application/json", ...options?.headers },
-			body: JSON.stringify(dtoConfirmDailyClosingRequest),
-		},
-	);
-};
+export const patchV1DailyClosingsIdConfirm = async (id: number,
+    dtoConfirmDailyClosingRequest: DtoConfirmDailyClosingRequest, options?: RequestInit): Promise<patchV1DailyClosingsIdConfirmResponse> => {
 
-export const getPatchV1DailyClosingsIdConfirmMutationOptions = <
-	TError = DtoErrorResponse,
-	TContext = unknown,
->(options?: {
-	mutation?: UseMutationOptions<
-		Awaited<ReturnType<typeof patchV1DailyClosingsIdConfirm>>,
-		TError,
-		{ id: number; data: DtoConfirmDailyClosingRequest },
-		TContext
-	>;
-	request?: SecondParameter<typeof customInstance>;
-}): UseMutationOptions<
-	Awaited<ReturnType<typeof patchV1DailyClosingsIdConfirm>>,
-	TError,
-	{ id: number; data: DtoConfirmDailyClosingRequest },
-	TContext
-> => {
-	const mutationKey = ["patchV1DailyClosingsIdConfirm"];
-	const { mutation: mutationOptions, request: requestOptions } = options
-		? options.mutation &&
-			"mutationKey" in options.mutation &&
-			options.mutation.mutationKey
-			? options
-			: { ...options, mutation: { ...options.mutation, mutationKey } }
-		: { mutation: { mutationKey }, request: undefined };
+  return customInstance<patchV1DailyClosingsIdConfirmResponse>(getPatchV1DailyClosingsIdConfirmUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      dtoConfirmDailyClosingRequest,)
+  }
+);}
 
-	const mutationFn: MutationFunction<
-		Awaited<ReturnType<typeof patchV1DailyClosingsIdConfirm>>,
-		{ id: number; data: DtoConfirmDailyClosingRequest }
-	> = (props) => {
-		const { id, data } = props ?? {};
 
-		return patchV1DailyClosingsIdConfirm(id, data, requestOptions);
-	};
 
-	return { mutationFn, ...mutationOptions };
-};
 
-export type PatchV1DailyClosingsIdConfirmMutationResult = NonNullable<
-	Awaited<ReturnType<typeof patchV1DailyClosingsIdConfirm>>
->;
-export type PatchV1DailyClosingsIdConfirmMutationBody =
-	DtoConfirmDailyClosingRequest;
-export type PatchV1DailyClosingsIdConfirmMutationError = DtoErrorResponse;
+export const getPatchV1DailyClosingsIdConfirmMutationOptions = <TError = DtoErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchV1DailyClosingsIdConfirm>>, TError,{id: number;data: DtoConfirmDailyClosingRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
+): UseMutationOptions<Awaited<ReturnType<typeof patchV1DailyClosingsIdConfirm>>, TError,{id: number;data: DtoConfirmDailyClosingRequest}, TContext> => {
 
-/**
+const mutationKey = ['patchV1DailyClosingsIdConfirm'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof patchV1DailyClosingsIdConfirm>>, {id: number;data: DtoConfirmDailyClosingRequest}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  patchV1DailyClosingsIdConfirm(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PatchV1DailyClosingsIdConfirmMutationResult = NonNullable<Awaited<ReturnType<typeof patchV1DailyClosingsIdConfirm>>>
+    export type PatchV1DailyClosingsIdConfirmMutationBody = DtoConfirmDailyClosingRequest
+    export type PatchV1DailyClosingsIdConfirmMutationError = DtoErrorResponse
+
+    /**
  * @summary Confirm daily closing
  */
-export const usePatchV1DailyClosingsIdConfirm = <
-	TError = DtoErrorResponse,
-	TContext = unknown,
->(
-	options?: {
-		mutation?: UseMutationOptions<
-			Awaited<ReturnType<typeof patchV1DailyClosingsIdConfirm>>,
-			TError,
-			{ id: number; data: DtoConfirmDailyClosingRequest },
-			TContext
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseMutationResult<
-	Awaited<ReturnType<typeof patchV1DailyClosingsIdConfirm>>,
-	TError,
-	{ id: number; data: DtoConfirmDailyClosingRequest },
-	TContext
-> => {
-	return useMutation(
-		getPatchV1DailyClosingsIdConfirmMutationOptions(options),
-		queryClient,
-	);
-};
+export const usePatchV1DailyClosingsIdConfirm = <TError = DtoErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchV1DailyClosingsIdConfirm>>, TError,{id: number;data: DtoConfirmDailyClosingRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof patchV1DailyClosingsIdConfirm>>,
+        TError,
+        {id: number;data: DtoConfirmDailyClosingRequest},
+        TContext
+      > => {
+      return useMutation(getPatchV1DailyClosingsIdConfirmMutationOptions(options), queryClient);
+    }

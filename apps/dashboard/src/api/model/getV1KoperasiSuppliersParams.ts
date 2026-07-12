@@ -7,8 +7,8 @@
  */
 
 export type GetV1KoperasiSuppliersParams = {
-	/**
-	 * Cari nama
-	 */
-	search?: string;
+/**
+ * Cari nama
+ */
+search?: string;
 };

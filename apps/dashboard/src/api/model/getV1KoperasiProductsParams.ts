@@ -7,12 +7,12 @@
  */
 
 export type GetV1KoperasiProductsParams = {
-	/**
-	 * Cari nama
-	 */
-	search?: string;
-	/**
-	 * Hanya yang aktif
-	 */
-	active?: boolean;
+/**
+ * Cari nama
+ */
+search?: string;
+/**
+ * Hanya yang aktif
+ */
+active?: boolean;
 };

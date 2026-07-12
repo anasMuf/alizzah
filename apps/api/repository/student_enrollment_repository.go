@@ -22,6 +22,7 @@ type StudentEnrollmentRepository interface {
 	FindAllActiveByLevel(academicYearID uint, level string) ([]model.StudentEnrollment, error)
 	CloseEnrollment(id uint, endDate time.Time, status string) error
 	BulkCreate(enrollments []model.StudentEnrollment) error
+	UpdateEnrollmentType(id uint, enrollmentType string) error
 }
 
 type studentEnrollmentRepository struct {
@@ -112,4 +113,8 @@ func (r *studentEnrollmentRepository) BulkCreate(enrollments []model.StudentEnro
 		return nil
 	}
 	return r.db.Create(&enrollments).Error
+}
+
+func (r *studentEnrollmentRepository) UpdateEnrollmentType(id uint, enrollmentType string) error {
+	return r.db.Model(&model.StudentEnrollment{}).Where("id = ?", id).Update("enrollment_type", enrollmentType).Error
 }

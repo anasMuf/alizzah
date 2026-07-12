@@ -7,10 +7,10 @@
  */
 
 export interface DtoGuardianBriefResponse {
-	address?: string;
-	full_name?: string;
-	id?: number;
-	is_primary?: boolean;
-	phone?: string;
-	relationship?: string;
+  address?: string;
+  full_name?: string;
+  id?: number;
+  is_primary?: boolean;
+  phone?: string;
+  relationship?: string;
 }

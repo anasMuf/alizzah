@@ -5,16 +5,16 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoTabunganSiswaPeriod } from "./dtoTabunganSiswaPeriod";
-import type { DtoTabunganSiswaRow } from "./dtoTabunganSiswaRow";
-import type { DtoTabunganSiswaStudent } from "./dtoTabunganSiswaStudent";
+import type { DtoTabunganSiswaPeriod } from './dtoTabunganSiswaPeriod';
+import type { DtoTabunganSiswaRow } from './dtoTabunganSiswaRow';
+import type { DtoTabunganSiswaStudent } from './dtoTabunganSiswaStudent';
 
 export interface DtoTabunganSiswaReportResponse {
-	period?: DtoTabunganSiswaPeriod;
-	rows?: DtoTabunganSiswaRow[];
-	saldo_akhir?: number;
-	saldo_awal?: number;
-	student?: DtoTabunganSiswaStudent;
-	total_credit?: number;
-	total_debit?: number;
+  period?: DtoTabunganSiswaPeriod;
+  rows?: DtoTabunganSiswaRow[];
+  saldo_akhir?: number;
+  saldo_awal?: number;
+  student?: DtoTabunganSiswaStudent;
+  total_credit?: number;
+  total_debit?: number;
 }

@@ -5,9 +5,9 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoClassGroupBriefResponse } from "./dtoClassGroupBriefResponse";
+import type { DtoClassGroupBriefResponse } from './dtoClassGroupBriefResponse';
 
 export interface DtoEnrollmentBriefForStudent {
-	class_group?: DtoClassGroupBriefResponse;
-	class_group_id?: number;
+  class_group?: DtoClassGroupBriefResponse;
+  class_group_id?: number;
 }

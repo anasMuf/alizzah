@@ -7,20 +7,20 @@
  */
 
 export type GetV1ReportsSaldoParams = {
-	/**
-	 * Month (1-12)
-	 */
-	month: number;
-	/**
-	 * Year
-	 */
-	year: number;
-	/**
-	 * Invoice category filter (empty = all posts)
-	 */
-	category?: string;
-	/**
-	 * Academic Year ID
-	 */
-	academic_year_id?: number;
+/**
+ * Month (1-12)
+ */
+month: number;
+/**
+ * Year
+ */
+year: number;
+/**
+ * Invoice category filter (empty = all posts)
+ */
+category?: string;
+/**
+ * Academic Year ID
+ */
+academic_year_id?: number;
 };

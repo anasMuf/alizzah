@@ -7,16 +7,16 @@
  */
 
 export type GetV1StudentsIdPaymentsParams = {
-	/**
-	 * Academic Year ID
-	 */
-	academic_year_id?: number;
-	/**
-	 * Start Date (YYYY-MM-DD)
-	 */
-	start_date?: string;
-	/**
-	 * End Date (YYYY-MM-DD)
-	 */
-	end_date?: string;
+/**
+ * Academic Year ID
+ */
+academic_year_id?: number;
+/**
+ * Start Date (YYYY-MM-DD)
+ */
+start_date?: string;
+/**
+ * End Date (YYYY-MM-DD)
+ */
+end_date?: string;
 };

@@ -5,821 +5,577 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
+import {
+  useMutation,
+  useQuery
+} from '@tanstack/react-query';
+import type {
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
+  MutationFunction,
+  QueryClient,
+  QueryFunction,
+  QueryKey,
+  UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
+  UseQueryOptions,
+  UseQueryResult
+} from '@tanstack/react-query';
 
 import type {
-	DataTag,
-	DefinedInitialDataOptions,
-	DefinedUseQueryResult,
-	MutationFunction,
-	QueryClient,
-	QueryFunction,
-	QueryKey,
-	UndefinedInitialDataOptions,
-	UseMutationOptions,
-	UseMutationResult,
-	UseQueryOptions,
-	UseQueryResult,
-} from "@tanstack/react-query";
-import { useMutation, useQuery } from "@tanstack/react-query";
+  DtoCreatePaymentRequest,
+  DtoErrorResponse,
+  GetV1Payments200,
+  GetV1PaymentsId200,
+  GetV1PaymentsParams,
+  GetV1StudentsIdPayments200,
+  GetV1StudentsIdPaymentsParams,
+  PostV1Payments201
+} from '../../model';
 
-import type {
-	DtoCreatePaymentRequest,
-	DtoErrorResponse,
-	GetV1Payments200,
-	GetV1PaymentsId200,
-	GetV1PaymentsParams,
-	GetV1StudentsIdPayments200,
-	GetV1StudentsIdPaymentsParams,
-	PostV1Payments201,
-} from "../../model";
+import { customInstance } from '../../mutator/custom-instance';
 
-import { customInstance } from "../../mutator/custom-instance";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
+
+
 export type getV1PaymentsResponse200 = {
-	data: GetV1Payments200;
-	status: 200;
-};
+  data: GetV1Payments200
+  status: 200
+}
 
 export type getV1PaymentsResponse401 = {
-	data: DtoErrorResponse;
-	status: 401;
-};
+  data: DtoErrorResponse
+  status: 401
+}
 
 export type getV1PaymentsResponse403 = {
-	data: DtoErrorResponse;
-	status: 403;
-};
+  data: DtoErrorResponse
+  status: 403
+}
 
 export type getV1PaymentsResponse500 = {
-	data: DtoErrorResponse;
-	status: 500;
+  data: DtoErrorResponse
+  status: 500
+}
+
+export type getV1PaymentsResponseSuccess = (getV1PaymentsResponse200) & {
+  headers: Headers;
+};
+export type getV1PaymentsResponseError = (getV1PaymentsResponse401 | getV1PaymentsResponse403 | getV1PaymentsResponse500) & {
+  headers: Headers;
 };
 
-export type getV1PaymentsResponseSuccess = getV1PaymentsResponse200 & {
-	headers: Headers;
-};
-export type getV1PaymentsResponseError = (
-	| getV1PaymentsResponse401
-	| getV1PaymentsResponse403
-	| getV1PaymentsResponse500
-) & {
-	headers: Headers;
-};
+export type getV1PaymentsResponse = (getV1PaymentsResponseSuccess | getV1PaymentsResponseError)
 
-export type getV1PaymentsResponse =
-	| getV1PaymentsResponseSuccess
-	| getV1PaymentsResponseError;
+export const getGetV1PaymentsUrl = (params?: GetV1PaymentsParams,) => {
+  const normalizedParams = new URLSearchParams();
 
-export const getGetV1PaymentsUrl = (params?: GetV1PaymentsParams) => {
-	const normalizedParams = new URLSearchParams();
+  Object.entries(params || {}).forEach(([key, value]) => {
 
-	Object.entries(params || {}).forEach(([key, value]) => {
-		if (value !== undefined) {
-			normalizedParams.append(key, value === null ? "null" : value.toString());
-		}
-	});
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-	const stringifiedParams = normalizedParams.toString();
+  const stringifiedParams = normalizedParams.toString();
 
-	return stringifiedParams.length > 0
-		? `/v1/payments?${stringifiedParams}`
-		: `/v1/payments`;
-};
+  return stringifiedParams.length > 0 ? `/v1/payments?${stringifiedParams}` : `/v1/payments`
+}
 
 /**
  * Get a paginated list of payments
  * @summary Get payment list
  */
-export const getV1Payments = async (
-	params?: GetV1PaymentsParams,
-	options?: RequestInit,
-): Promise<getV1PaymentsResponse> => {
-	return customInstance<getV1PaymentsResponse>(getGetV1PaymentsUrl(params), {
-		...options,
-		method: "GET",
-	});
-};
+export const getV1Payments = async (params?: GetV1PaymentsParams, options?: RequestInit): Promise<getV1PaymentsResponse> => {
 
-export const getGetV1PaymentsQueryKey = (params?: GetV1PaymentsParams) => {
-	return [`/v1/payments`, ...(params ? [params] : [])] as const;
-};
+  return customInstance<getV1PaymentsResponse>(getGetV1PaymentsUrl(params),
+  {
+    ...options,
+    method: 'GET'
 
-export const getGetV1PaymentsQueryOptions = <
-	TData = Awaited<ReturnType<typeof getV1Payments>>,
-	TError = DtoErrorResponse,
->(
-	params?: GetV1PaymentsParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<Awaited<ReturnType<typeof getV1Payments>>, TError, TData>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
+
+  }
+);}
+
+
+
+
+
+export const getGetV1PaymentsQueryKey = (params?: GetV1PaymentsParams,) => {
+    return [
+    `/v1/payments`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetV1PaymentsQueryOptions = <TData = Awaited<ReturnType<typeof getV1Payments>>, TError = DtoErrorResponse>(params?: GetV1PaymentsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1Payments>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
-	const { query: queryOptions, request: requestOptions } = options ?? {};
 
-	const queryKey = queryOptions?.queryKey ?? getGetV1PaymentsQueryKey(params);
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-	const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1Payments>>> = ({
-		signal,
-	}) => getV1Payments(params, { signal, ...requestOptions });
+  const queryKey =  queryOptions?.queryKey ?? getGetV1PaymentsQueryKey(params);
 
-	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-		Awaited<ReturnType<typeof getV1Payments>>,
-		TError,
-		TData
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
-};
 
-export type GetV1PaymentsQueryResult = NonNullable<
-	Awaited<ReturnType<typeof getV1Payments>>
->;
-export type GetV1PaymentsQueryError = DtoErrorResponse;
 
-export function useGetV1Payments<
-	TData = Awaited<ReturnType<typeof getV1Payments>>,
-	TError = DtoErrorResponse,
->(
-	params: undefined | GetV1PaymentsParams,
-	options: {
-		query: Partial<
-			UseQueryOptions<Awaited<ReturnType<typeof getV1Payments>>, TError, TData>
-		> &
-			Pick<
-				DefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1Payments>>,
-					TError,
-					Awaited<ReturnType<typeof getV1Payments>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1Payments<
-	TData = Awaited<ReturnType<typeof getV1Payments>>,
-	TError = DtoErrorResponse,
->(
-	params?: GetV1PaymentsParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<Awaited<ReturnType<typeof getV1Payments>>, TError, TData>
-		> &
-			Pick<
-				UndefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1Payments>>,
-					TError,
-					Awaited<ReturnType<typeof getV1Payments>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1Payments<
-	TData = Awaited<ReturnType<typeof getV1Payments>>,
-	TError = DtoErrorResponse,
->(
-	params?: GetV1PaymentsParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<Awaited<ReturnType<typeof getV1Payments>>, TError, TData>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1Payments>>> = ({ signal }) => getV1Payments(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1Payments>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetV1PaymentsQueryResult = NonNullable<Awaited<ReturnType<typeof getV1Payments>>>
+export type GetV1PaymentsQueryError = DtoErrorResponse
+
+
+export function useGetV1Payments<TData = Awaited<ReturnType<typeof getV1Payments>>, TError = DtoErrorResponse>(
+ params: undefined |  GetV1PaymentsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1Payments>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1Payments>>,
+          TError,
+          Awaited<ReturnType<typeof getV1Payments>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1Payments<TData = Awaited<ReturnType<typeof getV1Payments>>, TError = DtoErrorResponse>(
+ params?: GetV1PaymentsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1Payments>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1Payments>>,
+          TError,
+          Awaited<ReturnType<typeof getV1Payments>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1Payments<TData = Awaited<ReturnType<typeof getV1Payments>>, TError = DtoErrorResponse>(
+ params?: GetV1PaymentsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1Payments>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Get payment list
  */
 
-export function useGetV1Payments<
-	TData = Awaited<ReturnType<typeof getV1Payments>>,
-	TError = DtoErrorResponse,
->(
-	params?: GetV1PaymentsParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<Awaited<ReturnType<typeof getV1Payments>>, TError, TData>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-} {
-	const queryOptions = getGetV1PaymentsQueryOptions(params, options);
+export function useGetV1Payments<TData = Awaited<ReturnType<typeof getV1Payments>>, TError = DtoErrorResponse>(
+ params?: GetV1PaymentsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1Payments>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-		TData,
-		TError
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getGetV1PaymentsQueryOptions(params,options)
 
-	return { ...query, queryKey: queryOptions.queryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
 }
 
+
+
+
+
+
 export type postV1PaymentsResponse201 = {
-	data: PostV1Payments201;
-	status: 201;
-};
+  data: PostV1Payments201
+  status: 201
+}
 
 export type postV1PaymentsResponse400 = {
-	data: DtoErrorResponse;
-	status: 400;
-};
+  data: DtoErrorResponse
+  status: 400
+}
 
 export type postV1PaymentsResponse401 = {
-	data: DtoErrorResponse;
-	status: 401;
-};
+  data: DtoErrorResponse
+  status: 401
+}
 
 export type postV1PaymentsResponse403 = {
-	data: DtoErrorResponse;
-	status: 403;
-};
+  data: DtoErrorResponse
+  status: 403
+}
 
 export type postV1PaymentsResponse422 = {
-	data: DtoErrorResponse;
-	status: 422;
-};
+  data: DtoErrorResponse
+  status: 422
+}
 
 export type postV1PaymentsResponse500 = {
-	data: DtoErrorResponse;
-	status: 500;
+  data: DtoErrorResponse
+  status: 500
+}
+
+export type postV1PaymentsResponseSuccess = (postV1PaymentsResponse201) & {
+  headers: Headers;
+};
+export type postV1PaymentsResponseError = (postV1PaymentsResponse400 | postV1PaymentsResponse401 | postV1PaymentsResponse403 | postV1PaymentsResponse422 | postV1PaymentsResponse500) & {
+  headers: Headers;
 };
 
-export type postV1PaymentsResponseSuccess = postV1PaymentsResponse201 & {
-	headers: Headers;
-};
-export type postV1PaymentsResponseError = (
-	| postV1PaymentsResponse400
-	| postV1PaymentsResponse401
-	| postV1PaymentsResponse403
-	| postV1PaymentsResponse422
-	| postV1PaymentsResponse500
-) & {
-	headers: Headers;
-};
-
-export type postV1PaymentsResponse =
-	| postV1PaymentsResponseSuccess
-	| postV1PaymentsResponseError;
+export type postV1PaymentsResponse = (postV1PaymentsResponseSuccess | postV1PaymentsResponseError)
 
 export const getPostV1PaymentsUrl = () => {
-	return `/v1/payments`;
-};
+
+
+
+
+  return `/v1/payments`
+}
 
 /**
  * Record a new payment from cash or savings
  * @summary Create payment
  */
-export const postV1Payments = async (
-	dtoCreatePaymentRequest: DtoCreatePaymentRequest,
-	options?: RequestInit,
-): Promise<postV1PaymentsResponse> => {
-	return customInstance<postV1PaymentsResponse>(getPostV1PaymentsUrl(), {
-		...options,
-		method: "POST",
-		headers: { "Content-Type": "application/json", ...options?.headers },
-		body: JSON.stringify(dtoCreatePaymentRequest),
-	});
-};
+export const postV1Payments = async (dtoCreatePaymentRequest: DtoCreatePaymentRequest, options?: RequestInit): Promise<postV1PaymentsResponse> => {
 
-export const getPostV1PaymentsMutationOptions = <
-	TError = DtoErrorResponse,
-	TContext = unknown,
->(options?: {
-	mutation?: UseMutationOptions<
-		Awaited<ReturnType<typeof postV1Payments>>,
-		TError,
-		{ data: DtoCreatePaymentRequest },
-		TContext
-	>;
-	request?: SecondParameter<typeof customInstance>;
-}): UseMutationOptions<
-	Awaited<ReturnType<typeof postV1Payments>>,
-	TError,
-	{ data: DtoCreatePaymentRequest },
-	TContext
-> => {
-	const mutationKey = ["postV1Payments"];
-	const { mutation: mutationOptions, request: requestOptions } = options
-		? options.mutation &&
-			"mutationKey" in options.mutation &&
-			options.mutation.mutationKey
-			? options
-			: { ...options, mutation: { ...options.mutation, mutationKey } }
-		: { mutation: { mutationKey }, request: undefined };
+  return customInstance<postV1PaymentsResponse>(getPostV1PaymentsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      dtoCreatePaymentRequest,)
+  }
+);}
 
-	const mutationFn: MutationFunction<
-		Awaited<ReturnType<typeof postV1Payments>>,
-		{ data: DtoCreatePaymentRequest }
-	> = (props) => {
-		const { data } = props ?? {};
 
-		return postV1Payments(data, requestOptions);
-	};
 
-	return { mutationFn, ...mutationOptions };
-};
 
-export type PostV1PaymentsMutationResult = NonNullable<
-	Awaited<ReturnType<typeof postV1Payments>>
->;
-export type PostV1PaymentsMutationBody = DtoCreatePaymentRequest;
-export type PostV1PaymentsMutationError = DtoErrorResponse;
+export const getPostV1PaymentsMutationOptions = <TError = DtoErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1Payments>>, TError,{data: DtoCreatePaymentRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1Payments>>, TError,{data: DtoCreatePaymentRequest}, TContext> => {
 
-/**
+const mutationKey = ['postV1Payments'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1Payments>>, {data: DtoCreatePaymentRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  postV1Payments(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostV1PaymentsMutationResult = NonNullable<Awaited<ReturnType<typeof postV1Payments>>>
+    export type PostV1PaymentsMutationBody = DtoCreatePaymentRequest
+    export type PostV1PaymentsMutationError = DtoErrorResponse
+
+    /**
  * @summary Create payment
  */
-export const usePostV1Payments = <
-	TError = DtoErrorResponse,
-	TContext = unknown,
->(
-	options?: {
-		mutation?: UseMutationOptions<
-			Awaited<ReturnType<typeof postV1Payments>>,
-			TError,
-			{ data: DtoCreatePaymentRequest },
-			TContext
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseMutationResult<
-	Awaited<ReturnType<typeof postV1Payments>>,
-	TError,
-	{ data: DtoCreatePaymentRequest },
-	TContext
-> => {
-	return useMutation(getPostV1PaymentsMutationOptions(options), queryClient);
-};
-export type getV1PaymentsIdResponse200 = {
-	data: GetV1PaymentsId200;
-	status: 200;
-};
+export const usePostV1Payments = <TError = DtoErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1Payments>>, TError,{data: DtoCreatePaymentRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postV1Payments>>,
+        TError,
+        {data: DtoCreatePaymentRequest},
+        TContext
+      > => {
+      return useMutation(getPostV1PaymentsMutationOptions(options), queryClient);
+    }
+    export type getV1PaymentsIdResponse200 = {
+  data: GetV1PaymentsId200
+  status: 200
+}
 
 export type getV1PaymentsIdResponse400 = {
-	data: DtoErrorResponse;
-	status: 400;
-};
+  data: DtoErrorResponse
+  status: 400
+}
 
 export type getV1PaymentsIdResponse401 = {
-	data: DtoErrorResponse;
-	status: 401;
-};
+  data: DtoErrorResponse
+  status: 401
+}
 
 export type getV1PaymentsIdResponse403 = {
-	data: DtoErrorResponse;
-	status: 403;
-};
+  data: DtoErrorResponse
+  status: 403
+}
 
 export type getV1PaymentsIdResponse404 = {
-	data: DtoErrorResponse;
-	status: 404;
-};
+  data: DtoErrorResponse
+  status: 404
+}
 
 export type getV1PaymentsIdResponse500 = {
-	data: DtoErrorResponse;
-	status: 500;
+  data: DtoErrorResponse
+  status: 500
+}
+
+export type getV1PaymentsIdResponseSuccess = (getV1PaymentsIdResponse200) & {
+  headers: Headers;
+};
+export type getV1PaymentsIdResponseError = (getV1PaymentsIdResponse400 | getV1PaymentsIdResponse401 | getV1PaymentsIdResponse403 | getV1PaymentsIdResponse404 | getV1PaymentsIdResponse500) & {
+  headers: Headers;
 };
 
-export type getV1PaymentsIdResponseSuccess = getV1PaymentsIdResponse200 & {
-	headers: Headers;
-};
-export type getV1PaymentsIdResponseError = (
-	| getV1PaymentsIdResponse400
-	| getV1PaymentsIdResponse401
-	| getV1PaymentsIdResponse403
-	| getV1PaymentsIdResponse404
-	| getV1PaymentsIdResponse500
-) & {
-	headers: Headers;
-};
+export type getV1PaymentsIdResponse = (getV1PaymentsIdResponseSuccess | getV1PaymentsIdResponseError)
 
-export type getV1PaymentsIdResponse =
-	| getV1PaymentsIdResponseSuccess
-	| getV1PaymentsIdResponseError;
+export const getGetV1PaymentsIdUrl = (id: number,) => {
 
-export const getGetV1PaymentsIdUrl = (id: number) => {
-	return `/v1/payments/${id}`;
-};
+
+
+
+  return `/v1/payments/${id}`
+}
 
 /**
  * Get payment detail by ID
  * @summary Get payment by ID
  */
-export const getV1PaymentsId = async (
-	id: number,
-	options?: RequestInit,
-): Promise<getV1PaymentsIdResponse> => {
-	return customInstance<getV1PaymentsIdResponse>(getGetV1PaymentsIdUrl(id), {
-		...options,
-		method: "GET",
-	});
-};
+export const getV1PaymentsId = async (id: number, options?: RequestInit): Promise<getV1PaymentsIdResponse> => {
 
-export const getGetV1PaymentsIdQueryKey = (id: number) => {
-	return [`/v1/payments/${id}`] as const;
-};
+  return customInstance<getV1PaymentsIdResponse>(getGetV1PaymentsIdUrl(id),
+  {
+    ...options,
+    method: 'GET'
 
-export const getGetV1PaymentsIdQueryOptions = <
-	TData = Awaited<ReturnType<typeof getV1PaymentsId>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1PaymentsId>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
+
+  }
+);}
+
+
+
+
+
+export const getGetV1PaymentsIdQueryKey = (id: number,) => {
+    return [
+    `/v1/payments/${id}`
+    ] as const;
+    }
+
+
+export const getGetV1PaymentsIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1PaymentsId>>, TError = DtoErrorResponse>(id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1PaymentsId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
-	const { query: queryOptions, request: requestOptions } = options ?? {};
 
-	const queryKey = queryOptions?.queryKey ?? getGetV1PaymentsIdQueryKey(id);
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-	const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1PaymentsId>>> = ({
-		signal,
-	}) => getV1PaymentsId(id, { signal, ...requestOptions });
+  const queryKey =  queryOptions?.queryKey ?? getGetV1PaymentsIdQueryKey(id);
 
-	return {
-		queryKey,
-		queryFn,
-		enabled: !!id,
-		...queryOptions,
-	} as UseQueryOptions<
-		Awaited<ReturnType<typeof getV1PaymentsId>>,
-		TError,
-		TData
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
-};
 
-export type GetV1PaymentsIdQueryResult = NonNullable<
-	Awaited<ReturnType<typeof getV1PaymentsId>>
->;
-export type GetV1PaymentsIdQueryError = DtoErrorResponse;
 
-export function useGetV1PaymentsId<
-	TData = Awaited<ReturnType<typeof getV1PaymentsId>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	options: {
-		query: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1PaymentsId>>,
-				TError,
-				TData
-			>
-		> &
-			Pick<
-				DefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1PaymentsId>>,
-					TError,
-					Awaited<ReturnType<typeof getV1PaymentsId>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1PaymentsId<
-	TData = Awaited<ReturnType<typeof getV1PaymentsId>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1PaymentsId>>,
-				TError,
-				TData
-			>
-		> &
-			Pick<
-				UndefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1PaymentsId>>,
-					TError,
-					Awaited<ReturnType<typeof getV1PaymentsId>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1PaymentsId<
-	TData = Awaited<ReturnType<typeof getV1PaymentsId>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1PaymentsId>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1PaymentsId>>> = ({ signal }) => getV1PaymentsId(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1PaymentsId>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetV1PaymentsIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1PaymentsId>>>
+export type GetV1PaymentsIdQueryError = DtoErrorResponse
+
+
+export function useGetV1PaymentsId<TData = Awaited<ReturnType<typeof getV1PaymentsId>>, TError = DtoErrorResponse>(
+ id: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1PaymentsId>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1PaymentsId>>,
+          TError,
+          Awaited<ReturnType<typeof getV1PaymentsId>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1PaymentsId<TData = Awaited<ReturnType<typeof getV1PaymentsId>>, TError = DtoErrorResponse>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1PaymentsId>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1PaymentsId>>,
+          TError,
+          Awaited<ReturnType<typeof getV1PaymentsId>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1PaymentsId<TData = Awaited<ReturnType<typeof getV1PaymentsId>>, TError = DtoErrorResponse>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1PaymentsId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Get payment by ID
  */
 
-export function useGetV1PaymentsId<
-	TData = Awaited<ReturnType<typeof getV1PaymentsId>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1PaymentsId>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-} {
-	const queryOptions = getGetV1PaymentsIdQueryOptions(id, options);
+export function useGetV1PaymentsId<TData = Awaited<ReturnType<typeof getV1PaymentsId>>, TError = DtoErrorResponse>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1PaymentsId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-		TData,
-		TError
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getGetV1PaymentsIdQueryOptions(id,options)
 
-	return { ...query, queryKey: queryOptions.queryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
 }
 
+
+
+
+
+
 export type getV1StudentsIdPaymentsResponse200 = {
-	data: GetV1StudentsIdPayments200;
-	status: 200;
-};
+  data: GetV1StudentsIdPayments200
+  status: 200
+}
 
 export type getV1StudentsIdPaymentsResponse400 = {
-	data: DtoErrorResponse;
-	status: 400;
-};
+  data: DtoErrorResponse
+  status: 400
+}
 
 export type getV1StudentsIdPaymentsResponse401 = {
-	data: DtoErrorResponse;
-	status: 401;
-};
+  data: DtoErrorResponse
+  status: 401
+}
 
 export type getV1StudentsIdPaymentsResponse403 = {
-	data: DtoErrorResponse;
-	status: 403;
-};
+  data: DtoErrorResponse
+  status: 403
+}
 
 export type getV1StudentsIdPaymentsResponse500 = {
-	data: DtoErrorResponse;
-	status: 500;
+  data: DtoErrorResponse
+  status: 500
+}
+
+export type getV1StudentsIdPaymentsResponseSuccess = (getV1StudentsIdPaymentsResponse200) & {
+  headers: Headers;
+};
+export type getV1StudentsIdPaymentsResponseError = (getV1StudentsIdPaymentsResponse400 | getV1StudentsIdPaymentsResponse401 | getV1StudentsIdPaymentsResponse403 | getV1StudentsIdPaymentsResponse500) & {
+  headers: Headers;
 };
 
-export type getV1StudentsIdPaymentsResponseSuccess =
-	getV1StudentsIdPaymentsResponse200 & {
-		headers: Headers;
-	};
-export type getV1StudentsIdPaymentsResponseError = (
-	| getV1StudentsIdPaymentsResponse400
-	| getV1StudentsIdPaymentsResponse401
-	| getV1StudentsIdPaymentsResponse403
-	| getV1StudentsIdPaymentsResponse500
-) & {
-	headers: Headers;
-};
+export type getV1StudentsIdPaymentsResponse = (getV1StudentsIdPaymentsResponseSuccess | getV1StudentsIdPaymentsResponseError)
 
-export type getV1StudentsIdPaymentsResponse =
-	| getV1StudentsIdPaymentsResponseSuccess
-	| getV1StudentsIdPaymentsResponseError;
+export const getGetV1StudentsIdPaymentsUrl = (id: number,
+    params?: GetV1StudentsIdPaymentsParams,) => {
+  const normalizedParams = new URLSearchParams();
 
-export const getGetV1StudentsIdPaymentsUrl = (
-	id: number,
-	params?: GetV1StudentsIdPaymentsParams,
-) => {
-	const normalizedParams = new URLSearchParams();
+  Object.entries(params || {}).forEach(([key, value]) => {
 
-	Object.entries(params || {}).forEach(([key, value]) => {
-		if (value !== undefined) {
-			normalizedParams.append(key, value === null ? "null" : value.toString());
-		}
-	});
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-	const stringifiedParams = normalizedParams.toString();
+  const stringifiedParams = normalizedParams.toString();
 
-	return stringifiedParams.length > 0
-		? `/v1/students/${id}/payments?${stringifiedParams}`
-		: `/v1/students/${id}/payments`;
-};
+  return stringifiedParams.length > 0 ? `/v1/students/${id}/payments?${stringifiedParams}` : `/v1/students/${id}/payments`
+}
 
 /**
  * Get all payments for a specific student
  * @summary Get payment history by student ID
  */
-export const getV1StudentsIdPayments = async (
-	id: number,
-	params?: GetV1StudentsIdPaymentsParams,
-	options?: RequestInit,
-): Promise<getV1StudentsIdPaymentsResponse> => {
-	return customInstance<getV1StudentsIdPaymentsResponse>(
-		getGetV1StudentsIdPaymentsUrl(id, params),
-		{
-			...options,
-			method: "GET",
-		},
-	);
-};
+export const getV1StudentsIdPayments = async (id: number,
+    params?: GetV1StudentsIdPaymentsParams, options?: RequestInit): Promise<getV1StudentsIdPaymentsResponse> => {
 
-export const getGetV1StudentsIdPaymentsQueryKey = (
-	id: number,
-	params?: GetV1StudentsIdPaymentsParams,
+  return customInstance<getV1StudentsIdPaymentsResponse>(getGetV1StudentsIdPaymentsUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetV1StudentsIdPaymentsQueryKey = (id: number,
+    params?: GetV1StudentsIdPaymentsParams,) => {
+    return [
+    `/v1/students/${id}/payments`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetV1StudentsIdPaymentsQueryOptions = <TData = Awaited<ReturnType<typeof getV1StudentsIdPayments>>, TError = DtoErrorResponse>(id: number,
+    params?: GetV1StudentsIdPaymentsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdPayments>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
-	return [`/v1/students/${id}/payments`, ...(params ? [params] : [])] as const;
-};
 
-export const getGetV1StudentsIdPaymentsQueryOptions = <
-	TData = Awaited<ReturnType<typeof getV1StudentsIdPayments>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	params?: GetV1StudentsIdPaymentsParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1StudentsIdPayments>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-) => {
-	const { query: queryOptions, request: requestOptions } = options ?? {};
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-	const queryKey =
-		queryOptions?.queryKey ?? getGetV1StudentsIdPaymentsQueryKey(id, params);
+  const queryKey =  queryOptions?.queryKey ?? getGetV1StudentsIdPaymentsQueryKey(id,params);
 
-	const queryFn: QueryFunction<
-		Awaited<ReturnType<typeof getV1StudentsIdPayments>>
-	> = ({ signal }) =>
-		getV1StudentsIdPayments(id, params, { signal, ...requestOptions });
 
-	return {
-		queryKey,
-		queryFn,
-		enabled: !!id,
-		...queryOptions,
-	} as UseQueryOptions<
-		Awaited<ReturnType<typeof getV1StudentsIdPayments>>,
-		TError,
-		TData
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
-};
 
-export type GetV1StudentsIdPaymentsQueryResult = NonNullable<
-	Awaited<ReturnType<typeof getV1StudentsIdPayments>>
->;
-export type GetV1StudentsIdPaymentsQueryError = DtoErrorResponse;
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1StudentsIdPayments>>> = ({ signal }) => getV1StudentsIdPayments(id,params, { signal, ...requestOptions });
 
-export function useGetV1StudentsIdPayments<
-	TData = Awaited<ReturnType<typeof getV1StudentsIdPayments>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	params: undefined | GetV1StudentsIdPaymentsParams,
-	options: {
-		query: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1StudentsIdPayments>>,
-				TError,
-				TData
-			>
-		> &
-			Pick<
-				DefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1StudentsIdPayments>>,
-					TError,
-					Awaited<ReturnType<typeof getV1StudentsIdPayments>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1StudentsIdPayments<
-	TData = Awaited<ReturnType<typeof getV1StudentsIdPayments>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	params?: GetV1StudentsIdPaymentsParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1StudentsIdPayments>>,
-				TError,
-				TData
-			>
-		> &
-			Pick<
-				UndefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1StudentsIdPayments>>,
-					TError,
-					Awaited<ReturnType<typeof getV1StudentsIdPayments>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1StudentsIdPayments<
-	TData = Awaited<ReturnType<typeof getV1StudentsIdPayments>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	params?: GetV1StudentsIdPaymentsParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1StudentsIdPayments>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdPayments>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetV1StudentsIdPaymentsQueryResult = NonNullable<Awaited<ReturnType<typeof getV1StudentsIdPayments>>>
+export type GetV1StudentsIdPaymentsQueryError = DtoErrorResponse
+
+
+export function useGetV1StudentsIdPayments<TData = Awaited<ReturnType<typeof getV1StudentsIdPayments>>, TError = DtoErrorResponse>(
+ id: number,
+    params: undefined |  GetV1StudentsIdPaymentsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdPayments>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1StudentsIdPayments>>,
+          TError,
+          Awaited<ReturnType<typeof getV1StudentsIdPayments>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1StudentsIdPayments<TData = Awaited<ReturnType<typeof getV1StudentsIdPayments>>, TError = DtoErrorResponse>(
+ id: number,
+    params?: GetV1StudentsIdPaymentsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdPayments>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1StudentsIdPayments>>,
+          TError,
+          Awaited<ReturnType<typeof getV1StudentsIdPayments>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1StudentsIdPayments<TData = Awaited<ReturnType<typeof getV1StudentsIdPayments>>, TError = DtoErrorResponse>(
+ id: number,
+    params?: GetV1StudentsIdPaymentsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdPayments>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Get payment history by student ID
  */
 
-export function useGetV1StudentsIdPayments<
-	TData = Awaited<ReturnType<typeof getV1StudentsIdPayments>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	params?: GetV1StudentsIdPaymentsParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1StudentsIdPayments>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-} {
-	const queryOptions = getGetV1StudentsIdPaymentsQueryOptions(
-		id,
-		params,
-		options,
-	);
+export function useGetV1StudentsIdPayments<TData = Awaited<ReturnType<typeof getV1StudentsIdPayments>>, TError = DtoErrorResponse>(
+ id: number,
+    params?: GetV1StudentsIdPaymentsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdPayments>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-		TData,
-		TError
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getGetV1StudentsIdPaymentsQueryOptions(id,params,options)
 
-	return { ...query, queryKey: queryOptions.queryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
 }
+
+
+
+
+
+

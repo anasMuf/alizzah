@@ -7,16 +7,16 @@
  */
 
 export type GetV1FeeConfigsIdItemsParams = {
-	/**
-	 * Filter by category
-	 */
-	category?: string;
-	/**
-	 * Filter by level
-	 */
-	level?: string;
-	/**
-	 * Filter by gender
-	 */
-	gender?: string;
+/**
+ * Filter by category
+ */
+category?: string;
+/**
+ * Filter by level
+ */
+level?: string;
+/**
+ * Filter by gender
+ */
+gender?: string;
 };

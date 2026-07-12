@@ -6,12 +6,12 @@
  * OpenAPI spec version: 1.0
  */
 
-export type DtoCreateFeeConfigItemRequestUnit =
-	(typeof DtoCreateFeeConfigItemRequestUnit)[keyof typeof DtoCreateFeeConfigItemRequestUnit];
+export type DtoCreateFeeConfigItemRequestUnit = typeof DtoCreateFeeConfigItemRequestUnit[keyof typeof DtoCreateFeeConfigItemRequestUnit];
+
 
 export const DtoCreateFeeConfigItemRequestUnit = {
-	fixed: "fixed",
-	per_day: "per_day",
-	per_monday: "per_monday",
-	percent: "percent",
+  fixed: 'fixed',
+  per_day: 'per_day',
+  per_monday: 'per_monday',
+  percent: 'percent',
 } as const;

@@ -7,8 +7,8 @@
  */
 
 export interface DtoUpdateInstallmentRequest {
-	/** @minimum 1 */
-	amount: number;
-	due_date: string;
-	notes?: string;
+  /** @minimum 1 */
+  amount: number;
+  due_date: string;
+  notes?: string;
 }

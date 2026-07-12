@@ -7,5 +7,5 @@
  */
 
 export interface DtoAnnualExpenseSummary {
-	total?: number;
+  total?: number;
 }

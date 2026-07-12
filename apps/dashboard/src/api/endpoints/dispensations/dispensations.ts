@@ -5,676 +5,495 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
+import {
+  useMutation,
+  useQuery
+} from '@tanstack/react-query';
+import type {
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
+  MutationFunction,
+  QueryClient,
+  QueryFunction,
+  QueryKey,
+  UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
+  UseQueryOptions,
+  UseQueryResult
+} from '@tanstack/react-query';
 
 import type {
-	DataTag,
-	DefinedInitialDataOptions,
-	DefinedUseQueryResult,
-	MutationFunction,
-	QueryClient,
-	QueryFunction,
-	QueryKey,
-	UndefinedInitialDataOptions,
-	UseMutationOptions,
-	UseMutationResult,
-	UseQueryOptions,
-	UseQueryResult,
-} from "@tanstack/react-query";
-import { useMutation, useQuery } from "@tanstack/react-query";
+  DtoCreateDispensationRequest,
+  DtoSuccessResponse,
+  DtoUpdateDispensationRequest,
+  GetV1StudentsIdDispensations200,
+  GetV1StudentsIdDispensationsParams,
+  PatchV1DispensationsIdToggle200,
+  PostV1StudentsIdDispensations201,
+  PutV1DispensationsId200
+} from '../../model';
 
-import type {
-	DtoCreateDispensationRequest,
-	DtoSuccessResponse,
-	DtoUpdateDispensationRequest,
-	GetV1StudentsIdDispensations200,
-	GetV1StudentsIdDispensationsParams,
-	PatchV1DispensationsIdToggle200,
-	PostV1StudentsIdDispensations201,
-	PutV1DispensationsId200,
-} from "../../model";
+import { customInstance } from '../../mutator/custom-instance';
 
-import { customInstance } from "../../mutator/custom-instance";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
+
+
 export type putV1DispensationsIdResponse200 = {
-	data: PutV1DispensationsId200;
-	status: 200;
-};
-
-export type putV1DispensationsIdResponseSuccess =
-	putV1DispensationsIdResponse200 & {
-		headers: Headers;
-	};
-
-export type putV1DispensationsIdResponse = putV1DispensationsIdResponseSuccess;
-
-export const getPutV1DispensationsIdUrl = (id: number) => {
-	return `/v1/dispensations/${id}`;
-};
-
-/**
- * @summary Update dispensation
- */
-export const putV1DispensationsId = async (
-	id: number,
-	dtoUpdateDispensationRequest: DtoUpdateDispensationRequest,
-	options?: RequestInit,
-): Promise<putV1DispensationsIdResponse> => {
-	return customInstance<putV1DispensationsIdResponse>(
-		getPutV1DispensationsIdUrl(id),
-		{
-			...options,
-			method: "PUT",
-			headers: { "Content-Type": "application/json", ...options?.headers },
-			body: JSON.stringify(dtoUpdateDispensationRequest),
-		},
-	);
-};
-
-export const getPutV1DispensationsIdMutationOptions = <
-	TError = unknown,
-	TContext = unknown,
->(options?: {
-	mutation?: UseMutationOptions<
-		Awaited<ReturnType<typeof putV1DispensationsId>>,
-		TError,
-		{ id: number; data: DtoUpdateDispensationRequest },
-		TContext
-	>;
-	request?: SecondParameter<typeof customInstance>;
-}): UseMutationOptions<
-	Awaited<ReturnType<typeof putV1DispensationsId>>,
-	TError,
-	{ id: number; data: DtoUpdateDispensationRequest },
-	TContext
-> => {
-	const mutationKey = ["putV1DispensationsId"];
-	const { mutation: mutationOptions, request: requestOptions } = options
-		? options.mutation &&
-			"mutationKey" in options.mutation &&
-			options.mutation.mutationKey
-			? options
-			: { ...options, mutation: { ...options.mutation, mutationKey } }
-		: { mutation: { mutationKey }, request: undefined };
-
-	const mutationFn: MutationFunction<
-		Awaited<ReturnType<typeof putV1DispensationsId>>,
-		{ id: number; data: DtoUpdateDispensationRequest }
-	> = (props) => {
-		const { id, data } = props ?? {};
-
-		return putV1DispensationsId(id, data, requestOptions);
-	};
-
-	return { mutationFn, ...mutationOptions };
-};
-
-export type PutV1DispensationsIdMutationResult = NonNullable<
-	Awaited<ReturnType<typeof putV1DispensationsId>>
->;
-export type PutV1DispensationsIdMutationBody = DtoUpdateDispensationRequest;
-export type PutV1DispensationsIdMutationError = unknown;
-
-/**
- * @summary Update dispensation
- */
-export const usePutV1DispensationsId = <TError = unknown, TContext = unknown>(
-	options?: {
-		mutation?: UseMutationOptions<
-			Awaited<ReturnType<typeof putV1DispensationsId>>,
-			TError,
-			{ id: number; data: DtoUpdateDispensationRequest },
-			TContext
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseMutationResult<
-	Awaited<ReturnType<typeof putV1DispensationsId>>,
-	TError,
-	{ id: number; data: DtoUpdateDispensationRequest },
-	TContext
-> => {
-	return useMutation(
-		getPutV1DispensationsIdMutationOptions(options),
-		queryClient,
-	);
-};
-export type deleteV1DispensationsIdResponse200 = {
-	data: DtoSuccessResponse;
-	status: 200;
-};
-
-export type deleteV1DispensationsIdResponseSuccess =
-	deleteV1DispensationsIdResponse200 & {
-		headers: Headers;
-	};
-
-export type deleteV1DispensationsIdResponse =
-	deleteV1DispensationsIdResponseSuccess;
-
-export const getDeleteV1DispensationsIdUrl = (id: number) => {
-	return `/v1/dispensations/${id}`;
-};
-
-/**
- * @summary Delete dispensation
- */
-export const deleteV1DispensationsId = async (
-	id: number,
-	options?: RequestInit,
-): Promise<deleteV1DispensationsIdResponse> => {
-	return customInstance<deleteV1DispensationsIdResponse>(
-		getDeleteV1DispensationsIdUrl(id),
-		{
-			...options,
-			method: "DELETE",
-		},
-	);
-};
-
-export const getDeleteV1DispensationsIdMutationOptions = <
-	TError = unknown,
-	TContext = unknown,
->(options?: {
-	mutation?: UseMutationOptions<
-		Awaited<ReturnType<typeof deleteV1DispensationsId>>,
-		TError,
-		{ id: number },
-		TContext
-	>;
-	request?: SecondParameter<typeof customInstance>;
-}): UseMutationOptions<
-	Awaited<ReturnType<typeof deleteV1DispensationsId>>,
-	TError,
-	{ id: number },
-	TContext
-> => {
-	const mutationKey = ["deleteV1DispensationsId"];
-	const { mutation: mutationOptions, request: requestOptions } = options
-		? options.mutation &&
-			"mutationKey" in options.mutation &&
-			options.mutation.mutationKey
-			? options
-			: { ...options, mutation: { ...options.mutation, mutationKey } }
-		: { mutation: { mutationKey }, request: undefined };
-
-	const mutationFn: MutationFunction<
-		Awaited<ReturnType<typeof deleteV1DispensationsId>>,
-		{ id: number }
-	> = (props) => {
-		const { id } = props ?? {};
-
-		return deleteV1DispensationsId(id, requestOptions);
-	};
-
-	return { mutationFn, ...mutationOptions };
-};
-
-export type DeleteV1DispensationsIdMutationResult = NonNullable<
-	Awaited<ReturnType<typeof deleteV1DispensationsId>>
->;
-
-export type DeleteV1DispensationsIdMutationError = unknown;
-
-/**
- * @summary Delete dispensation
- */
-export const useDeleteV1DispensationsId = <
-	TError = unknown,
-	TContext = unknown,
->(
-	options?: {
-		mutation?: UseMutationOptions<
-			Awaited<ReturnType<typeof deleteV1DispensationsId>>,
-			TError,
-			{ id: number },
-			TContext
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseMutationResult<
-	Awaited<ReturnType<typeof deleteV1DispensationsId>>,
-	TError,
-	{ id: number },
-	TContext
-> => {
-	return useMutation(
-		getDeleteV1DispensationsIdMutationOptions(options),
-		queryClient,
-	);
-};
-export type patchV1DispensationsIdToggleResponse200 = {
-	data: PatchV1DispensationsIdToggle200;
-	status: 200;
-};
-
-export type patchV1DispensationsIdToggleResponseSuccess =
-	patchV1DispensationsIdToggleResponse200 & {
-		headers: Headers;
-	};
-
-export type patchV1DispensationsIdToggleResponse =
-	patchV1DispensationsIdToggleResponseSuccess;
-
-export const getPatchV1DispensationsIdToggleUrl = (id: number) => {
-	return `/v1/dispensations/${id}/toggle`;
-};
-
-/**
- * @summary Toggle dispensation active status
- */
-export const patchV1DispensationsIdToggle = async (
-	id: number,
-	options?: RequestInit,
-): Promise<patchV1DispensationsIdToggleResponse> => {
-	return customInstance<patchV1DispensationsIdToggleResponse>(
-		getPatchV1DispensationsIdToggleUrl(id),
-		{
-			...options,
-			method: "PATCH",
-		},
-	);
-};
-
-export const getPatchV1DispensationsIdToggleMutationOptions = <
-	TError = unknown,
-	TContext = unknown,
->(options?: {
-	mutation?: UseMutationOptions<
-		Awaited<ReturnType<typeof patchV1DispensationsIdToggle>>,
-		TError,
-		{ id: number },
-		TContext
-	>;
-	request?: SecondParameter<typeof customInstance>;
-}): UseMutationOptions<
-	Awaited<ReturnType<typeof patchV1DispensationsIdToggle>>,
-	TError,
-	{ id: number },
-	TContext
-> => {
-	const mutationKey = ["patchV1DispensationsIdToggle"];
-	const { mutation: mutationOptions, request: requestOptions } = options
-		? options.mutation &&
-			"mutationKey" in options.mutation &&
-			options.mutation.mutationKey
-			? options
-			: { ...options, mutation: { ...options.mutation, mutationKey } }
-		: { mutation: { mutationKey }, request: undefined };
-
-	const mutationFn: MutationFunction<
-		Awaited<ReturnType<typeof patchV1DispensationsIdToggle>>,
-		{ id: number }
-	> = (props) => {
-		const { id } = props ?? {};
-
-		return patchV1DispensationsIdToggle(id, requestOptions);
-	};
-
-	return { mutationFn, ...mutationOptions };
-};
-
-export type PatchV1DispensationsIdToggleMutationResult = NonNullable<
-	Awaited<ReturnType<typeof patchV1DispensationsIdToggle>>
->;
-
-export type PatchV1DispensationsIdToggleMutationError = unknown;
-
-/**
- * @summary Toggle dispensation active status
- */
-export const usePatchV1DispensationsIdToggle = <
-	TError = unknown,
-	TContext = unknown,
->(
-	options?: {
-		mutation?: UseMutationOptions<
-			Awaited<ReturnType<typeof patchV1DispensationsIdToggle>>,
-			TError,
-			{ id: number },
-			TContext
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseMutationResult<
-	Awaited<ReturnType<typeof patchV1DispensationsIdToggle>>,
-	TError,
-	{ id: number },
-	TContext
-> => {
-	return useMutation(
-		getPatchV1DispensationsIdToggleMutationOptions(options),
-		queryClient,
-	);
-};
-export type getV1StudentsIdDispensationsResponse200 = {
-	data: GetV1StudentsIdDispensations200;
-	status: 200;
-};
-
-export type getV1StudentsIdDispensationsResponseSuccess =
-	getV1StudentsIdDispensationsResponse200 & {
-		headers: Headers;
-	};
-
-export type getV1StudentsIdDispensationsResponse =
-	getV1StudentsIdDispensationsResponseSuccess;
-
-export const getGetV1StudentsIdDispensationsUrl = (
-	id: number,
-	params?: GetV1StudentsIdDispensationsParams,
-) => {
-	const normalizedParams = new URLSearchParams();
-
-	Object.entries(params || {}).forEach(([key, value]) => {
-		if (value !== undefined) {
-			normalizedParams.append(key, value === null ? "null" : value.toString());
-		}
-	});
-
-	const stringifiedParams = normalizedParams.toString();
-
-	return stringifiedParams.length > 0
-		? `/v1/students/${id}/dispensations?${stringifiedParams}`
-		: `/v1/students/${id}/dispensations`;
-};
-
-/**
- * @summary List dispensations for a student
- */
-export const getV1StudentsIdDispensations = async (
-	id: number,
-	params?: GetV1StudentsIdDispensationsParams,
-	options?: RequestInit,
-): Promise<getV1StudentsIdDispensationsResponse> => {
-	return customInstance<getV1StudentsIdDispensationsResponse>(
-		getGetV1StudentsIdDispensationsUrl(id, params),
-		{
-			...options,
-			method: "GET",
-		},
-	);
-};
-
-export const getGetV1StudentsIdDispensationsQueryKey = (
-	id: number,
-	params?: GetV1StudentsIdDispensationsParams,
-) => {
-	return [
-		`/v1/students/${id}/dispensations`,
-		...(params ? [params] : []),
-	] as const;
-};
-
-export const getGetV1StudentsIdDispensationsQueryOptions = <
-	TData = Awaited<ReturnType<typeof getV1StudentsIdDispensations>>,
-	TError = unknown,
->(
-	id: number,
-	params?: GetV1StudentsIdDispensationsParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1StudentsIdDispensations>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-) => {
-	const { query: queryOptions, request: requestOptions } = options ?? {};
-
-	const queryKey =
-		queryOptions?.queryKey ??
-		getGetV1StudentsIdDispensationsQueryKey(id, params);
-
-	const queryFn: QueryFunction<
-		Awaited<ReturnType<typeof getV1StudentsIdDispensations>>
-	> = ({ signal }) =>
-		getV1StudentsIdDispensations(id, params, { signal, ...requestOptions });
-
-	return {
-		queryKey,
-		queryFn,
-		enabled: !!id,
-		...queryOptions,
-	} as UseQueryOptions<
-		Awaited<ReturnType<typeof getV1StudentsIdDispensations>>,
-		TError,
-		TData
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type GetV1StudentsIdDispensationsQueryResult = NonNullable<
-	Awaited<ReturnType<typeof getV1StudentsIdDispensations>>
->;
-export type GetV1StudentsIdDispensationsQueryError = unknown;
-
-export function useGetV1StudentsIdDispensations<
-	TData = Awaited<ReturnType<typeof getV1StudentsIdDispensations>>,
-	TError = unknown,
->(
-	id: number,
-	params: undefined | GetV1StudentsIdDispensationsParams,
-	options: {
-		query: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1StudentsIdDispensations>>,
-				TError,
-				TData
-			>
-		> &
-			Pick<
-				DefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1StudentsIdDispensations>>,
-					TError,
-					Awaited<ReturnType<typeof getV1StudentsIdDispensations>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1StudentsIdDispensations<
-	TData = Awaited<ReturnType<typeof getV1StudentsIdDispensations>>,
-	TError = unknown,
->(
-	id: number,
-	params?: GetV1StudentsIdDispensationsParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1StudentsIdDispensations>>,
-				TError,
-				TData
-			>
-		> &
-			Pick<
-				UndefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1StudentsIdDispensations>>,
-					TError,
-					Awaited<ReturnType<typeof getV1StudentsIdDispensations>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1StudentsIdDispensations<
-	TData = Awaited<ReturnType<typeof getV1StudentsIdDispensations>>,
-	TError = unknown,
->(
-	id: number,
-	params?: GetV1StudentsIdDispensationsParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1StudentsIdDispensations>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-/**
- * @summary List dispensations for a student
- */
-
-export function useGetV1StudentsIdDispensations<
-	TData = Awaited<ReturnType<typeof getV1StudentsIdDispensations>>,
-	TError = unknown,
->(
-	id: number,
-	params?: GetV1StudentsIdDispensationsParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1StudentsIdDispensations>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-} {
-	const queryOptions = getGetV1StudentsIdDispensationsQueryOptions(
-		id,
-		params,
-		options,
-	);
-
-	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-		TData,
-		TError
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-	return { ...query, queryKey: queryOptions.queryKey };
+  data: PutV1DispensationsId200
+  status: 200
 }
 
+export type putV1DispensationsIdResponseSuccess = (putV1DispensationsIdResponse200) & {
+  headers: Headers;
+};
+;
+
+export type putV1DispensationsIdResponse = (putV1DispensationsIdResponseSuccess)
+
+export const getPutV1DispensationsIdUrl = (id: number,) => {
+
+
+
+
+  return `/v1/dispensations/${id}`
+}
+
+/**
+ * @summary Update dispensation
+ */
+export const putV1DispensationsId = async (id: number,
+    dtoUpdateDispensationRequest: DtoUpdateDispensationRequest, options?: RequestInit): Promise<putV1DispensationsIdResponse> => {
+
+  return customInstance<putV1DispensationsIdResponse>(getPutV1DispensationsIdUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      dtoUpdateDispensationRequest,)
+  }
+);}
+
+
+
+
+export const getPutV1DispensationsIdMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1DispensationsId>>, TError,{id: number;data: DtoUpdateDispensationRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
+): UseMutationOptions<Awaited<ReturnType<typeof putV1DispensationsId>>, TError,{id: number;data: DtoUpdateDispensationRequest}, TContext> => {
+
+const mutationKey = ['putV1DispensationsId'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1DispensationsId>>, {id: number;data: DtoUpdateDispensationRequest}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  putV1DispensationsId(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PutV1DispensationsIdMutationResult = NonNullable<Awaited<ReturnType<typeof putV1DispensationsId>>>
+    export type PutV1DispensationsIdMutationBody = DtoUpdateDispensationRequest
+    export type PutV1DispensationsIdMutationError = unknown
+
+    /**
+ * @summary Update dispensation
+ */
+export const usePutV1DispensationsId = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1DispensationsId>>, TError,{id: number;data: DtoUpdateDispensationRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof putV1DispensationsId>>,
+        TError,
+        {id: number;data: DtoUpdateDispensationRequest},
+        TContext
+      > => {
+      return useMutation(getPutV1DispensationsIdMutationOptions(options), queryClient);
+    }
+    export type deleteV1DispensationsIdResponse200 = {
+  data: DtoSuccessResponse
+  status: 200
+}
+
+export type deleteV1DispensationsIdResponseSuccess = (deleteV1DispensationsIdResponse200) & {
+  headers: Headers;
+};
+;
+
+export type deleteV1DispensationsIdResponse = (deleteV1DispensationsIdResponseSuccess)
+
+export const getDeleteV1DispensationsIdUrl = (id: number,) => {
+
+
+
+
+  return `/v1/dispensations/${id}`
+}
+
+/**
+ * @summary Delete dispensation
+ */
+export const deleteV1DispensationsId = async (id: number, options?: RequestInit): Promise<deleteV1DispensationsIdResponse> => {
+
+  return customInstance<deleteV1DispensationsIdResponse>(getDeleteV1DispensationsIdUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteV1DispensationsIdMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1DispensationsId>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customInstance>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteV1DispensationsId>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteV1DispensationsId'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteV1DispensationsId>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteV1DispensationsId(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteV1DispensationsIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteV1DispensationsId>>>
+
+    export type DeleteV1DispensationsIdMutationError = unknown
+
+    /**
+ * @summary Delete dispensation
+ */
+export const useDeleteV1DispensationsId = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1DispensationsId>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteV1DispensationsId>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteV1DispensationsIdMutationOptions(options), queryClient);
+    }
+    export type patchV1DispensationsIdToggleResponse200 = {
+  data: PatchV1DispensationsIdToggle200
+  status: 200
+}
+
+export type patchV1DispensationsIdToggleResponseSuccess = (patchV1DispensationsIdToggleResponse200) & {
+  headers: Headers;
+};
+;
+
+export type patchV1DispensationsIdToggleResponse = (patchV1DispensationsIdToggleResponseSuccess)
+
+export const getPatchV1DispensationsIdToggleUrl = (id: number,) => {
+
+
+
+
+  return `/v1/dispensations/${id}/toggle`
+}
+
+/**
+ * @summary Toggle dispensation active status
+ */
+export const patchV1DispensationsIdToggle = async (id: number, options?: RequestInit): Promise<patchV1DispensationsIdToggleResponse> => {
+
+  return customInstance<patchV1DispensationsIdToggleResponse>(getPatchV1DispensationsIdToggleUrl(id),
+  {
+    ...options,
+    method: 'PATCH'
+
+
+  }
+);}
+
+
+
+
+export const getPatchV1DispensationsIdToggleMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchV1DispensationsIdToggle>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customInstance>}
+): UseMutationOptions<Awaited<ReturnType<typeof patchV1DispensationsIdToggle>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['patchV1DispensationsIdToggle'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof patchV1DispensationsIdToggle>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  patchV1DispensationsIdToggle(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PatchV1DispensationsIdToggleMutationResult = NonNullable<Awaited<ReturnType<typeof patchV1DispensationsIdToggle>>>
+
+    export type PatchV1DispensationsIdToggleMutationError = unknown
+
+    /**
+ * @summary Toggle dispensation active status
+ */
+export const usePatchV1DispensationsIdToggle = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchV1DispensationsIdToggle>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof patchV1DispensationsIdToggle>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getPatchV1DispensationsIdToggleMutationOptions(options), queryClient);
+    }
+    export type getV1StudentsIdDispensationsResponse200 = {
+  data: GetV1StudentsIdDispensations200
+  status: 200
+}
+
+export type getV1StudentsIdDispensationsResponseSuccess = (getV1StudentsIdDispensationsResponse200) & {
+  headers: Headers;
+};
+;
+
+export type getV1StudentsIdDispensationsResponse = (getV1StudentsIdDispensationsResponseSuccess)
+
+export const getGetV1StudentsIdDispensationsUrl = (id: number,
+    params?: GetV1StudentsIdDispensationsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/students/${id}/dispensations?${stringifiedParams}` : `/v1/students/${id}/dispensations`
+}
+
+/**
+ * @summary List dispensations for a student
+ */
+export const getV1StudentsIdDispensations = async (id: number,
+    params?: GetV1StudentsIdDispensationsParams, options?: RequestInit): Promise<getV1StudentsIdDispensationsResponse> => {
+
+  return customInstance<getV1StudentsIdDispensationsResponse>(getGetV1StudentsIdDispensationsUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetV1StudentsIdDispensationsQueryKey = (id: number,
+    params?: GetV1StudentsIdDispensationsParams,) => {
+    return [
+    `/v1/students/${id}/dispensations`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetV1StudentsIdDispensationsQueryOptions = <TData = Awaited<ReturnType<typeof getV1StudentsIdDispensations>>, TError = unknown>(id: number,
+    params?: GetV1StudentsIdDispensationsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdDispensations>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetV1StudentsIdDispensationsQueryKey(id,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1StudentsIdDispensations>>> = ({ signal }) => getV1StudentsIdDispensations(id,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdDispensations>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetV1StudentsIdDispensationsQueryResult = NonNullable<Awaited<ReturnType<typeof getV1StudentsIdDispensations>>>
+export type GetV1StudentsIdDispensationsQueryError = unknown
+
+
+export function useGetV1StudentsIdDispensations<TData = Awaited<ReturnType<typeof getV1StudentsIdDispensations>>, TError = unknown>(
+ id: number,
+    params: undefined |  GetV1StudentsIdDispensationsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdDispensations>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1StudentsIdDispensations>>,
+          TError,
+          Awaited<ReturnType<typeof getV1StudentsIdDispensations>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1StudentsIdDispensations<TData = Awaited<ReturnType<typeof getV1StudentsIdDispensations>>, TError = unknown>(
+ id: number,
+    params?: GetV1StudentsIdDispensationsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdDispensations>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1StudentsIdDispensations>>,
+          TError,
+          Awaited<ReturnType<typeof getV1StudentsIdDispensations>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1StudentsIdDispensations<TData = Awaited<ReturnType<typeof getV1StudentsIdDispensations>>, TError = unknown>(
+ id: number,
+    params?: GetV1StudentsIdDispensationsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdDispensations>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List dispensations for a student
+ */
+
+export function useGetV1StudentsIdDispensations<TData = Awaited<ReturnType<typeof getV1StudentsIdDispensations>>, TError = unknown>(
+ id: number,
+    params?: GetV1StudentsIdDispensationsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1StudentsIdDispensations>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetV1StudentsIdDispensationsQueryOptions(id,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 export type postV1StudentsIdDispensationsResponse201 = {
-	data: PostV1StudentsIdDispensations201;
-	status: 201;
+  data: PostV1StudentsIdDispensations201
+  status: 201
+}
+
+export type postV1StudentsIdDispensationsResponseSuccess = (postV1StudentsIdDispensationsResponse201) & {
+  headers: Headers;
 };
+;
 
-export type postV1StudentsIdDispensationsResponseSuccess =
-	postV1StudentsIdDispensationsResponse201 & {
-		headers: Headers;
-	};
+export type postV1StudentsIdDispensationsResponse = (postV1StudentsIdDispensationsResponseSuccess)
 
-export type postV1StudentsIdDispensationsResponse =
-	postV1StudentsIdDispensationsResponseSuccess;
+export const getPostV1StudentsIdDispensationsUrl = (id: number,) => {
 
-export const getPostV1StudentsIdDispensationsUrl = (id: number) => {
-	return `/v1/students/${id}/dispensations`;
-};
+
+
+
+  return `/v1/students/${id}/dispensations`
+}
 
 /**
  * @summary Create dispensation for a student
  */
-export const postV1StudentsIdDispensations = async (
-	id: number,
-	dtoCreateDispensationRequest: DtoCreateDispensationRequest,
-	options?: RequestInit,
-): Promise<postV1StudentsIdDispensationsResponse> => {
-	return customInstance<postV1StudentsIdDispensationsResponse>(
-		getPostV1StudentsIdDispensationsUrl(id),
-		{
-			...options,
-			method: "POST",
-			headers: { "Content-Type": "application/json", ...options?.headers },
-			body: JSON.stringify(dtoCreateDispensationRequest),
-		},
-	);
-};
+export const postV1StudentsIdDispensations = async (id: number,
+    dtoCreateDispensationRequest: DtoCreateDispensationRequest, options?: RequestInit): Promise<postV1StudentsIdDispensationsResponse> => {
 
-export const getPostV1StudentsIdDispensationsMutationOptions = <
-	TError = unknown,
-	TContext = unknown,
->(options?: {
-	mutation?: UseMutationOptions<
-		Awaited<ReturnType<typeof postV1StudentsIdDispensations>>,
-		TError,
-		{ id: number; data: DtoCreateDispensationRequest },
-		TContext
-	>;
-	request?: SecondParameter<typeof customInstance>;
-}): UseMutationOptions<
-	Awaited<ReturnType<typeof postV1StudentsIdDispensations>>,
-	TError,
-	{ id: number; data: DtoCreateDispensationRequest },
-	TContext
-> => {
-	const mutationKey = ["postV1StudentsIdDispensations"];
-	const { mutation: mutationOptions, request: requestOptions } = options
-		? options.mutation &&
-			"mutationKey" in options.mutation &&
-			options.mutation.mutationKey
-			? options
-			: { ...options, mutation: { ...options.mutation, mutationKey } }
-		: { mutation: { mutationKey }, request: undefined };
+  return customInstance<postV1StudentsIdDispensationsResponse>(getPostV1StudentsIdDispensationsUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      dtoCreateDispensationRequest,)
+  }
+);}
 
-	const mutationFn: MutationFunction<
-		Awaited<ReturnType<typeof postV1StudentsIdDispensations>>,
-		{ id: number; data: DtoCreateDispensationRequest }
-	> = (props) => {
-		const { id, data } = props ?? {};
 
-		return postV1StudentsIdDispensations(id, data, requestOptions);
-	};
 
-	return { mutationFn, ...mutationOptions };
-};
 
-export type PostV1StudentsIdDispensationsMutationResult = NonNullable<
-	Awaited<ReturnType<typeof postV1StudentsIdDispensations>>
->;
-export type PostV1StudentsIdDispensationsMutationBody =
-	DtoCreateDispensationRequest;
-export type PostV1StudentsIdDispensationsMutationError = unknown;
+export const getPostV1StudentsIdDispensationsMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1StudentsIdDispensations>>, TError,{id: number;data: DtoCreateDispensationRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1StudentsIdDispensations>>, TError,{id: number;data: DtoCreateDispensationRequest}, TContext> => {
 
-/**
+const mutationKey = ['postV1StudentsIdDispensations'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1StudentsIdDispensations>>, {id: number;data: DtoCreateDispensationRequest}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  postV1StudentsIdDispensations(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostV1StudentsIdDispensationsMutationResult = NonNullable<Awaited<ReturnType<typeof postV1StudentsIdDispensations>>>
+    export type PostV1StudentsIdDispensationsMutationBody = DtoCreateDispensationRequest
+    export type PostV1StudentsIdDispensationsMutationError = unknown
+
+    /**
  * @summary Create dispensation for a student
  */
-export const usePostV1StudentsIdDispensations = <
-	TError = unknown,
-	TContext = unknown,
->(
-	options?: {
-		mutation?: UseMutationOptions<
-			Awaited<ReturnType<typeof postV1StudentsIdDispensations>>,
-			TError,
-			{ id: number; data: DtoCreateDispensationRequest },
-			TContext
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseMutationResult<
-	Awaited<ReturnType<typeof postV1StudentsIdDispensations>>,
-	TError,
-	{ id: number; data: DtoCreateDispensationRequest },
-	TContext
-> => {
-	return useMutation(
-		getPostV1StudentsIdDispensationsMutationOptions(options),
-		queryClient,
-	);
-};
+export const usePostV1StudentsIdDispensations = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1StudentsIdDispensations>>, TError,{id: number;data: DtoCreateDispensationRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postV1StudentsIdDispensations>>,
+        TError,
+        {id: number;data: DtoCreateDispensationRequest},
+        TContext
+      > => {
+      return useMutation(getPostV1StudentsIdDispensationsMutationOptions(options), queryClient);
+    }

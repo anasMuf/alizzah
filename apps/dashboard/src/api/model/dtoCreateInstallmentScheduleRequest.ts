@@ -5,9 +5,9 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoInstallmentItem } from "./dtoInstallmentItem";
+import type { DtoInstallmentItem } from './dtoInstallmentItem';
 
 export interface DtoCreateInstallmentScheduleRequest {
-	/** @minItems 1 */
-	installments: DtoInstallmentItem[];
+  /** @minItems 1 */
+  installments: DtoInstallmentItem[];
 }

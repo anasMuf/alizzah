@@ -7,7 +7,7 @@
  */
 
 export interface DtoFinancialSummaryResponse {
-	savings_general_balance?: number;
-	savings_mandatory_balance?: number;
-	total_unpaid?: number;
+  savings_general_balance?: number;
+  savings_mandatory_balance?: number;
+  total_unpaid?: number;
 }

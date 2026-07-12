@@ -5,14 +5,14 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoCreateGuardianInlineRelationship } from "./dtoCreateGuardianInlineRelationship";
+import type { DtoCreateGuardianInlineRelationship } from './dtoCreateGuardianInlineRelationship';
 
 export interface DtoCreateGuardianInline {
-	address?: string;
-	/** @maxLength 100 */
-	full_name: string;
-	is_primary?: boolean;
-	/** @maxLength 20 */
-	phone: string;
-	relationship: DtoCreateGuardianInlineRelationship;
+  address?: string;
+  /** @maxLength 100 */
+  full_name: string;
+  is_primary?: boolean;
+  /** @maxLength 20 */
+  phone: string;
+  relationship: DtoCreateGuardianInlineRelationship;
 }

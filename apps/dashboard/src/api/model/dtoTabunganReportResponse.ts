@@ -5,16 +5,16 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoSaldoTotalBulan } from "./dtoSaldoTotalBulan";
-import type { DtoTabunganReportRow } from "./dtoTabunganReportRow";
+import type { DtoSaldoTotalBulan } from './dtoSaldoTotalBulan';
+import type { DtoTabunganReportRow } from './dtoTabunganReportRow';
 
 export interface DtoTabunganReportResponse {
-	month?: number;
-	rows?: DtoTabunganReportRow[];
-	saldo_akhir?: number;
-	saldo_sebelum?: number;
-	total_bulan?: DtoSaldoTotalBulan;
-	type?: string;
-	type_label?: string;
-	year?: number;
+  month?: number;
+  rows?: DtoTabunganReportRow[];
+  saldo_akhir?: number;
+  saldo_sebelum?: number;
+  total_bulan?: DtoSaldoTotalBulan;
+  type?: string;
+  type_label?: string;
+  year?: number;
 }

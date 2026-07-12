@@ -7,12 +7,12 @@
  */
 
 export type GetV1ClassGroupsIdEffectiveDaysParams = {
-	/**
-	 * Academic Year ID
-	 */
-	academic_year_id?: number;
-	/**
-	 * Year
-	 */
-	year?: number;
+/**
+ * Academic Year ID
+ */
+academic_year_id?: number;
+/**
+ * Year
+ */
+year?: number;
 };

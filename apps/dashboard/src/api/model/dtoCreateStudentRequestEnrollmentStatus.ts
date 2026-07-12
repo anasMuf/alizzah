@@ -6,10 +6,10 @@
  * OpenAPI spec version: 1.0
  */
 
-export type DtoCreateStudentRequestEnrollmentStatus =
-	(typeof DtoCreateStudentRequestEnrollmentStatus)[keyof typeof DtoCreateStudentRequestEnrollmentStatus];
+export type DtoCreateStudentRequestEnrollmentStatus = typeof DtoCreateStudentRequestEnrollmentStatus[keyof typeof DtoCreateStudentRequestEnrollmentStatus];
+
 
 export const DtoCreateStudentRequestEnrollmentStatus = {
-	active: "active",
-	pending: "pending",
+  active: 'active',
+  pending: 'pending',
 } as const;

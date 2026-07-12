@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -56,6 +57,7 @@ func main() {
 		&model.StudentExtracurricular{},
 		&model.StudentAcademicEvent{},
 		&model.DaycareEnrollment{},
+		&model.DaycareAttendance{},
 		// Batch 4
 		&model.FeeConfig{},
 		&model.FeeConfigItem{},
@@ -107,7 +109,20 @@ func main() {
 
 	// Unique constraint: satu tanggal hanya boleh ada satu tutup buku
 	db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS uq_daily_closing_date
-		ON daily_closings (closing_date)`)
+			ON daily_closings (closing_date)`)
+
+	// Effective days: hapus FK constraint lama & buat partial indexes dual-mode
+	db.Exec(`ALTER TABLE effective_days DROP CONSTRAINT IF EXISTS fk_effective_days_class_group`)
+	db.Exec(`DROP INDEX IF EXISTS uq_effective_days`)
+	db.Exec(`DROP INDEX IF EXISTS uq_ed`)
+	db.Exec(`DROP INDEX IF EXISTS uq_ed_cg_month_year`)
+	db.Exec(`DROP INDEX IF EXISTS uq_ed_level_month_year`)
+	db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS uq_ed_cg ON effective_days (class_group_id, month, year) WHERE class_group_id > 0`)
+	db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS uq_ed_level ON effective_days (level, month, year) WHERE level != ''`)
+
+	// Extracurriculars: drop old composite index
+	db.Exec(`DROP INDEX IF EXISTS idx_extracurriculars_name`)
+	db.Exec(`DROP INDEX IF EXISTS uq_extra_name_level`)
 
 	// Reset data jika flag --reseed diberikan
 	if *reseed != "" {
@@ -129,13 +144,20 @@ func main() {
 	seeders.SeedStudentsFromLegacy(db) // 7. Siswa + Enrollment + Savings (depends on #1,2,3)
 	seeders.SeedEffectiveDays(db)      // 8. Hari Efektif (depends on #3)
 	seeders.SeedDispensations(db)      // 8b. Dispensasi sample (depends on #2,7)
-	seeders.SeedSampleTransactions(db) // 9. Sample Tagihan/Bayar/Pengeluaran (depends on #5,7,8)
+	seeders.SeedSampleTransactions(db) // 9. Invoice + Sample Bayar/Pengeluaran (depends on #5,7,8)
 	seeders.SeedIncomeTransactions(db) // 10. Sample Penerimaan Dana Bantuan (depends on #2)
 
 	// Data migrations / fixes
-	seeders.FixClassGroupSchedules(db)       // Fix schedule JSON format from old "groups" to "weekdays/weekend"
-	seeders.MigrateRolesToModules(db)        // RBAC by-modul: role-bundle lama -> admin + grant modul
-	seeders.BackfillInvoiceKoperasiFlags(db) // Backfill flag is_koperasi pada invoice_item lama yang belum lunas
+	seeders.FixClassGroupSchedules(db) // Fix schedule JSON format from old "groups" to "weekdays/weekend"
+	seeders.MigrateRolesToModules(db)  // RBAC by-modul: role-bundle lama -> admin + grant modul
+
+	// Backfill flag is_koperasi — hanya relevan jika seam koperasi aktif
+	if isKoperasiSeamEnabled() {
+		seeders.BackfillInvoiceKoperasiFlags(db)
+	}
+
+	// Unique index by name (after seed — data sudah bersih)
+	db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_extracurriculars_name ON extracurriculars (name)`)
 
 	// Inisialisasi Echo + middleware global (error handler, validator, CORS,
 	// recover, logging, swagger, health) — lihat internal/bootstrap.
@@ -211,10 +233,15 @@ func main() {
 	txnWriterService := service.NewTransactionWriterService(cashTxnRepo, vaultTxnRepo)
 	savingsService := service.NewSavingsService(db, savingsRepo, savingsTxnRepo, fcRepo, ayRepo, txnWriterService)
 
-	// Seam koperasi
-	kopKasWriter := kas.NewWriter()
-	kopBarangRepo := barang.NewRepository(db)
-	koperasiSeam := service.NewKoperasiSeamService(db, kopKasWriter, kopBarangRepo)
+	// Seam koperasi — dinonaktifkan via env KOPERASI_SEAM_ENABLED (default: false).
+	// Saat nonaktif, input pengeluaran koperasi dilakukan manual melalui catatan
+	// expense dengan kategori "Koperasi" agar laporan tetap ada.
+	var koperasiSeam service.KoperasiSeamService
+	if isKoperasiSeamEnabled() {
+		kopKasWriter := kas.NewWriter()
+		kopBarangRepo := barang.NewRepository(db)
+		koperasiSeam = service.NewKoperasiSeamService(db, kopKasWriter, kopBarangRepo)
+	}
 
 	paymentService := service.NewPaymentService(db, paymentRepo, paymentItemRepo, invoiceItemRepo, invoiceService, savingsRepo, savingsTxnRepo, studentRepo, txnWriterService, koperasiSeam)
 	expCatService := service.NewExpenseCategoryService(expCatRepo)
@@ -234,13 +261,13 @@ func main() {
 	studentService := service.NewStudentService(db, studentRepo, enrollmentRepo, classGroupRepo, invoiceRepo, extracurricularRepo, seRepo, fcRepo, fcItemRepo, savingsService, invoiceGenService)
 	enrollmentService := service.NewStudentEnrollmentService(db, enrollmentRepo, studentRepo, classGroupRepo, extracurricularRepo, seRepo, fcRepo, fcItemRepo, invoiceGenService, savingsService)
 	effectiveDayService := service.NewEffectiveDayService(effectiveDayRepo, classGroupRepo, invoiceGenService)
-	extracurricularService := service.NewExtracurricularService(extracurricularRepo)
+	extracurricularService := service.NewExtracurricularService(db, extracurricularRepo, fcRepo, fcItemRepo)
 	seService := service.NewStudentExtracurricularService(seRepo, studentRepo, extracurricularRepo, ayRepo, invoiceGenService)
 	eventService := service.NewStudentAcademicEventService(eventRepo, studentRepo)
 	daycareService := service.NewDaycareEnrollmentService(db, daycareRepo, studentRepo, ayRepo, invoiceGenService)
 
 	// Batch 4
-	fcService := service.NewFeeConfigService(fcRepo, fcItemRepo, ayRepo)
+	fcService := service.NewFeeConfigService(fcRepo, fcItemRepo, ayRepo, extracurricularRepo)
 
 	// Batch 4 — graduation
 	invoiceCreator := service.NewInvoiceCreatorAdapter(invoiceGenService, invoiceRepo)
@@ -302,7 +329,7 @@ func main() {
 	dispensationHandler := handler.NewDispensationHandler(dispensationService)
 
 	// Facilities
-	facilityService := service.NewFacilityService(facilityRepo)
+	facilityService := service.NewFacilityService(facilityRepo, fcRepo, fcItemRepo)
 	sfService := service.NewStudentFacilityService(sfRepo, studentRepo, facilityRepo, ayRepo, invoiceGenService)
 	facilityHandler := handler.NewFacilityHandler(facilityService, sfService)
 
@@ -369,10 +396,12 @@ func main() {
 	students.POST("/:id/facilities", facilityHandler.Enroll, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.DELETE("/:id/facilities/:facilityId", facilityHandler.Unenroll, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.GET("/:id/academic-events", eventHandler.GetByStudent, guard.RequireModule(middleware.ModuleAdministrasi))
+	students.POST("/:id/regenerate-invoices", studentHandler.RegenerateInvoices, guard.RequireModule(middleware.ModuleAdministrasi))
 
 	// Enrollment management
 	enrollments := api.Group("/enrollments", middleware.JWTAuth(tokenBlacklistRepo), guard.RequireModule(middleware.ModuleAdministrasi))
 	enrollments.PATCH("/:id/activate", enrollmentHandler.ActivateEnrollment)
+	enrollments.PUT("/:id", enrollmentHandler.UpdateEnrollment)
 
 	// Guardians (Standalone)
 	guardians := api.Group("/guardians", middleware.JWTAuth(tokenBlacklistRepo), guard.RequireModule(middleware.ModuleAdministrasi))
@@ -401,6 +430,11 @@ func main() {
 	classGroups.POST("/:id/effective-days", effectiveDayHandler.Upsert, guard.RequireModule(middleware.ModuleAdministrasi))
 	classGroups.PUT("/:id/effective-days/:ed_id", effectiveDayHandler.Update, guard.RequireModule(middleware.ModuleAdministrasi))
 
+	// Effective days per jenjang
+	levels := api.Group("/levels", middleware.JWTAuth(tokenBlacklistRepo), guard.RequireModule(middleware.ModuleAdministrasi))
+	levels.GET("/:level/effective-days", effectiveDayHandler.ListLevel)
+	levels.PUT("/:level/effective-days", effectiveDayHandler.UpsertLevel)
+
 	// Extracurriculars
 	extracurriculars := api.Group("/extracurriculars", middleware.JWTAuth(tokenBlacklistRepo), guard.RequireModule(middleware.ModuleAdministrasi))
 	extracurriculars.POST("/sync-invoices", seHandler.SyncInvoices)
@@ -414,9 +448,15 @@ func main() {
 	daycare.GET("", daycareHandler.List)
 	daycare.POST("", daycareHandler.Create)
 	daycare.POST("/sync-invoices", daycareHandler.SyncInvoices)
+	daycare.POST("/generate-monthly", daycareHandler.GenerateMonthlyInvoices)
+	daycare.POST("/generate-monthly-bulk", daycareHandler.GenerateMonthlyBulk)
 	daycare.GET("/:id", daycareHandler.Get)
 	daycare.PUT("/:id", daycareHandler.Update)
 	daycare.PATCH("/:id/status", daycareHandler.UpdateStatus)
+
+	// Daycare Attendance
+	daycare.GET("/attendance", daycareHandler.GetAttendance)
+	daycare.PUT("/attendance", daycareHandler.UpsertAttendance)
 
 	// Batch 4: Academic Events
 	events := api.Group("/academic-events", middleware.JWTAuth(tokenBlacklistRepo), guard.RequireModule(middleware.ModuleAdministrasi))
@@ -549,4 +589,12 @@ func main() {
 
 	// Start server + graceful shutdown. Port dari env PORT (default 8080).
 	bootstrap.Run(e, bootstrap.Port("PORT", "8080"))
+}
+
+// isKoperasiSeamEnabled membaca env KOPERASI_SEAM_ENABLED.
+// Default: false — seam dinonaktifkan, input pengeluaran koperasi dilakukan
+// manual melalui catatan expense dengan kategori "Koperasi".
+// Set ke "true" untuk mengaktifkan kembali integrasi otomatis.
+func isKoperasiSeamEnabled() bool {
+	return os.Getenv("KOPERASI_SEAM_ENABLED") == "true"
 }

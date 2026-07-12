@@ -5,9 +5,9 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoPromotionResult } from "./dtoPromotionResult";
-import type { DtoSuccessResponse } from "./dtoSuccessResponse";
+import type { DtoPromotionResult } from './dtoPromotionResult';
+import type { DtoSuccessResponse } from './dtoSuccessResponse';
 
 export type PostV1AcademicEventsPromotions200 = DtoSuccessResponse & {
-	data?: DtoPromotionResult;
+  data?: DtoPromotionResult;
 };

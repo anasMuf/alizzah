@@ -7,8 +7,8 @@
  */
 
 export interface DtoCashBalanceResponse {
-	balance?: number;
-	last_closing_date?: string;
-	today_credit?: number;
-	today_debit?: number;
+  balance?: number;
+  last_closing_date?: string;
+  today_credit?: number;
+  today_debit?: number;
 }

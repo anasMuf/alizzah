@@ -5,11 +5,11 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoCreateEnrollmentRequestEnrollmentType } from "./dtoCreateEnrollmentRequestEnrollmentType";
+import type { DtoCreateEnrollmentRequestEnrollmentType } from './dtoCreateEnrollmentRequestEnrollmentType';
 
 export interface DtoCreateEnrollmentRequest {
-	academic_year_id: number;
-	class_group_id: number;
-	enrollment_type?: DtoCreateEnrollmentRequestEnrollmentType;
-	start_date: string;
+  academic_year_id: number;
+  class_group_id: number;
+  enrollment_type?: DtoCreateEnrollmentRequestEnrollmentType;
+  start_date: string;
 }

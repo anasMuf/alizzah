@@ -6,11 +6,11 @@
  * OpenAPI spec version: 1.0
  */
 
-export type HandlerBatchEnrollRequestEnrollmentType =
-	(typeof HandlerBatchEnrollRequestEnrollmentType)[keyof typeof HandlerBatchEnrollRequestEnrollmentType];
+export type HandlerBatchEnrollRequestEnrollmentType = typeof HandlerBatchEnrollRequestEnrollmentType[keyof typeof HandlerBatchEnrollRequestEnrollmentType];
+
 
 export const HandlerBatchEnrollRequestEnrollmentType = {
-	new: "new",
-	mutation: "mutation",
-	transfer: "transfer",
+  new: 'new',
+  mutation: 'mutation',
+  transfer: 'transfer',
 } as const;

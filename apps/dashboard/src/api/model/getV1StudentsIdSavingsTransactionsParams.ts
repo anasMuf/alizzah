@@ -7,24 +7,24 @@
  */
 
 export type GetV1StudentsIdSavingsTransactionsParams = {
-	/**
-	 * Savings Type (general/mandatory)
-	 */
-	type?: string;
-	/**
-	 * Start Date (YYYY-MM-DD)
-	 */
-	start_date?: string;
-	/**
-	 * End Date (YYYY-MM-DD)
-	 */
-	end_date?: string;
-	/**
-	 * Page number
-	 */
-	page?: number;
-	/**
-	 * Limit per page
-	 */
-	limit?: number;
+/**
+ * Savings Type (general/mandatory)
+ */
+type?: string;
+/**
+ * Start Date (YYYY-MM-DD)
+ */
+start_date?: string;
+/**
+ * End Date (YYYY-MM-DD)
+ */
+end_date?: string;
+/**
+ * Page number
+ */
+page?: number;
+/**
+ * Limit per page
+ */
+limit?: number;
 };

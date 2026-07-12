@@ -7,8 +7,8 @@
  */
 
 export interface DtoMonthlyCashSummary {
-	closing_balance?: number;
-	opening_balance?: number;
-	total_expense?: number;
-	total_income?: number;
+  closing_balance?: number;
+  opening_balance?: number;
+  total_expense?: number;
+  total_income?: number;
 }

@@ -5,12 +5,12 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { HandlerBatchEnrollRequestEnrollmentType } from "./handlerBatchEnrollRequestEnrollmentType";
+import type { HandlerBatchEnrollRequestEnrollmentType } from './handlerBatchEnrollRequestEnrollmentType';
 
 export interface HandlerBatchEnrollRequest {
-	academic_year_id: number;
-	class_group_id: number;
-	enrollment_type?: HandlerBatchEnrollRequestEnrollmentType;
-	start_date: string;
-	student_ids?: number[];
+  academic_year_id: number;
+  class_group_id: number;
+  enrollment_type?: HandlerBatchEnrollRequestEnrollmentType;
+  start_date: string;
+  student_ids?: number[];
 }

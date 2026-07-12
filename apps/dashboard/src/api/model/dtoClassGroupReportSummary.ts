@@ -7,9 +7,9 @@
  */
 
 export interface DtoClassGroupReportSummary {
-	payment_rate?: string;
-	total_billed?: number;
-	total_paid?: number;
-	total_students?: number;
-	total_unpaid?: number;
+  payment_rate?: string;
+  total_billed?: number;
+  total_paid?: number;
+  total_students?: number;
+  total_unpaid?: number;
 }

@@ -7,8 +7,8 @@
  */
 
 export type GetV1KoperasiCashBalanceParams = {
-	/**
-	 * Tahun ajaran
-	 */
-	academic_year_id?: number;
+/**
+ * Tahun ajaran
+ */
+academic_year_id?: number;
 };

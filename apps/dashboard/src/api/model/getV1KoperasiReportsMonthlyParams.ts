@@ -7,16 +7,16 @@
  */
 
 export type GetV1KoperasiReportsMonthlyParams = {
-	/**
-	 * Tahun ajaran
-	 */
-	academic_year_id?: number;
-	/**
-	 * Bulan (1-12)
-	 */
-	month?: number;
-	/**
-	 * Tahun
-	 */
-	year?: number;
+/**
+ * Tahun ajaran
+ */
+academic_year_id?: number;
+/**
+ * Bulan (1-12)
+ */
+month?: number;
+/**
+ * Tahun
+ */
+year?: number;
 };

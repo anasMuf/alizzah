@@ -7,9 +7,9 @@
  */
 
 export interface DtoGraduationRequest {
-	academic_year_id: number;
-	event_date: string;
-	notes?: string;
-	/** @minItems 1 */
-	student_ids: number[];
+  academic_year_id: number;
+  event_date: string;
+  notes?: string;
+  /** @minItems 1 */
+  student_ids: number[];
 }

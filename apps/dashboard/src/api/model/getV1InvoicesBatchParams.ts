@@ -7,8 +7,8 @@
  */
 
 export type GetV1InvoicesBatchParams = {
-	/**
-	 * Comma-separated invoice IDs (e.g. 1,2,3)
-	 */
-	ids: string;
+/**
+ * Comma-separated invoice IDs (e.g. 1,2,3)
+ */
+ids: string;
 };

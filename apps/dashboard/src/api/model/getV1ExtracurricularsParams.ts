@@ -7,8 +7,8 @@
  */
 
 export type GetV1ExtracurricularsParams = {
-	/**
-	 * Filter by type (wajib/pilihan)
-	 */
-	type?: string;
+/**
+ * Filter by type (wajib/pilihan)
+ */
+type?: string;
 };

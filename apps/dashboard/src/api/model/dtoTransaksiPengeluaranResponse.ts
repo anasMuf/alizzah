@@ -5,12 +5,12 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoTransaksiPengeluaranBlock } from "./dtoTransaksiPengeluaranBlock";
+import type { DtoTransaksiPengeluaranBlock } from './dtoTransaksiPengeluaranBlock';
 
 export interface DtoTransaksiPengeluaranResponse {
-	academic_year?: string;
-	grand_total?: number;
-	month?: number;
-	transactions?: DtoTransaksiPengeluaranBlock[];
-	year?: number;
+  academic_year?: string;
+  grand_total?: number;
+  month?: number;
+  transactions?: DtoTransaksiPengeluaranBlock[];
+  year?: number;
 }

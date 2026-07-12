@@ -7,8 +7,8 @@
  */
 
 export type GetV1StudentsIdDispensationsParams = {
-	/**
-	 * Academic Year ID
-	 */
-	academic_year_id?: number;
+/**
+ * Academic Year ID
+ */
+academic_year_id?: number;
 };

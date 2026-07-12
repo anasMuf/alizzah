@@ -7,9 +7,9 @@
  */
 
 export interface DtoTabunganReportRow {
-	date?: string;
-	penerimaan?: number;
-	pengeluaran?: number;
-	saldo?: number;
-	selisih?: number;
+  date?: string;
+  penerimaan?: number;
+  pengeluaran?: number;
+  saldo?: number;
+  selisih?: number;
 }

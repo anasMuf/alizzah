@@ -6,10 +6,10 @@
  * OpenAPI spec version: 1.0
  */
 
-export type DtoUpdateStudentRequestGender =
-	(typeof DtoUpdateStudentRequestGender)[keyof typeof DtoUpdateStudentRequestGender];
+export type DtoUpdateStudentRequestGender = typeof DtoUpdateStudentRequestGender[keyof typeof DtoUpdateStudentRequestGender];
+
 
 export const DtoUpdateStudentRequestGender = {
-	L: "L",
-	P: "P",
+  L: 'L',
+  P: 'P',
 } as const;

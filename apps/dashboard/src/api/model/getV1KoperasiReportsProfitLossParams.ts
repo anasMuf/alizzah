@@ -7,16 +7,16 @@
  */
 
 export type GetV1KoperasiReportsProfitLossParams = {
-	/**
-	 * Tahun ajaran
-	 */
-	academic_year_id?: number;
-	/**
-	 * YYYY-MM-DD
-	 */
-	start_date?: string;
-	/**
-	 * YYYY-MM-DD
-	 */
-	end_date?: string;
+/**
+ * Tahun ajaran
+ */
+academic_year_id?: number;
+/**
+ * YYYY-MM-DD
+ */
+start_date?: string;
+/**
+ * YYYY-MM-DD
+ */
+end_date?: string;
 };

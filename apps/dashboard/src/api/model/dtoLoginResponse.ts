@@ -5,9 +5,9 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoUserResponse } from "./dtoUserResponse";
+import type { DtoUserResponse } from './dtoUserResponse';
 
 export interface DtoLoginResponse {
-	token?: string;
-	user?: DtoUserResponse;
+  token?: string;
+  user?: DtoUserResponse;
 }

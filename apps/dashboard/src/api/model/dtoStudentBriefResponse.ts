@@ -5,12 +5,12 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoEnrollmentBriefForStudent } from "./dtoEnrollmentBriefForStudent";
+import type { DtoEnrollmentBriefForStudent } from './dtoEnrollmentBriefForStudent';
 
 export interface DtoStudentBriefResponse {
-	active_enrollment?: DtoEnrollmentBriefForStudent;
-	full_name?: string;
-	gender?: string;
-	id?: number;
-	status?: string;
+  active_enrollment?: DtoEnrollmentBriefForStudent;
+  full_name?: string;
+  gender?: string;
+  id?: number;
+  status?: string;
 }

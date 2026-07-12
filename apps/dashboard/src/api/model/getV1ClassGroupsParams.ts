@@ -7,12 +7,12 @@
  */
 
 export type GetV1ClassGroupsParams = {
-	/**
-	 * Filter by academic year
-	 */
-	academic_year_id?: number;
-	/**
-	 * Filter by level (mutiara, intan, berlian)
-	 */
-	level?: string;
+/**
+ * Filter by academic year
+ */
+academic_year_id?: number;
+/**
+ * Filter by level (mutiara, intan, berlian)
+ */
+level?: string;
 };

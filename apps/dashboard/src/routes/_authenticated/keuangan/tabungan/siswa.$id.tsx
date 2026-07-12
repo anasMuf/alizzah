@@ -424,7 +424,7 @@ function DetailTabunganSiswaPage() {
 							<div className="ml-5 w-0 flex-1">
 								<dl>
 									<dt className="text-sm font-medium text-gray-500 truncate">
-										Saldo Tabungan Wajib (Berlian)
+										Saldo Tabungan Wajib
 									</dt>
 									<dd>
 										<div className="text-2xl font-bold text-gray-900">

@@ -7,20 +7,20 @@
  */
 
 export type GetV1KoperasiMiscTransactionsParams = {
-	/**
-	 * Tahun ajaran
-	 */
-	academic_year_id?: number;
-	/**
-	 * income|expense
-	 */
-	flow?: string;
-	/**
-	 * Halaman
-	 */
-	page?: number;
-	/**
-	 * Per halaman
-	 */
-	limit?: number;
+/**
+ * Tahun ajaran
+ */
+academic_year_id?: number;
+/**
+ * income|expense
+ */
+flow?: string;
+/**
+ * Halaman
+ */
+page?: number;
+/**
+ * Per halaman
+ */
+limit?: number;
 };

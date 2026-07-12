@@ -24,12 +24,12 @@ type SavingsService interface {
 }
 
 type savingsService struct {
-	db            *gorm.DB
-	savingsRepo   repository.StudentSavingsRepository
-	txnRepo       repository.SavingsTransactionRepository
-	fcRepo        repository.FeeConfigRepository
-	ayRepo        repository.AcademicYearRepository
-	txnWriter     TransactionWriterService
+	db          *gorm.DB
+	savingsRepo repository.StudentSavingsRepository
+	txnRepo     repository.SavingsTransactionRepository
+	fcRepo      repository.FeeConfigRepository
+	ayRepo      repository.AcademicYearRepository
+	txnWriter   TransactionWriterService
 }
 
 func NewSavingsService(
@@ -195,7 +195,7 @@ func (s *savingsService) InitForNewStudent(studentID uint, level string, tx *gor
 	if err := s.savingsRepo.WithTx(tx).Create(general); err != nil {
 		return err
 	}
-	if level == "berlian" {
+	if level == "berlian" || level == "mutiara" {
 		mandatory := &model.StudentSavings{StudentID: studentID, Type: "mandatory", Balance: 0}
 		return s.savingsRepo.WithTx(tx).Create(mandatory)
 	}

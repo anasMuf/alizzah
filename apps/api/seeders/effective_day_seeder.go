@@ -58,9 +58,89 @@ func SeedEffectiveDays(db *gorm.DB) {
 		}
 	}
 	log.Printf("Effective day seeder berhasil (%d records)", total)
+
+	// Per-jenjang: fallback untuk rombel yang belum di-set manual
+	seedLevelEffectiveDays(db, activeYear, admin, months, holidays)
 }
 
-// countEffectiveDays calculates total school days and total Mondays for a given class group type and month.
+// seedLevelEffectiveDays generates per-jenjang effective days as fallback for
+// class groups that haven't been set manually.
+func seedLevelEffectiveDays(db *gorm.DB, activeYear model.AcademicYear, admin model.User, months []acadMonth, holidays map[string]bool) {
+	levels := []struct {
+		name  string
+		level string
+	}{
+		{"Mutiara", "mutiara"},
+		{"Intan", "intan"},
+		{"Berlian", "berlian"},
+	}
+
+	var total int
+	for _, lv := range levels {
+		for _, my := range months {
+			// Gunakan jadwal default per jenjang:
+			//   mutiara → Sen, Rab, Jum (paling umum)
+			//   intan/berlian → Sen-Sab
+			totalDays, totalMondays := countLevelEffectiveDays(lv.level, my.Month, my.Year, holidays)
+
+			ed := model.EffectiveDay{
+				Level:          lv.level,
+				AcademicYearID: activeYear.ID,
+				Month:          uint(my.Month),
+				Year:           uint(my.Year),
+				TotalDays:      uint(totalDays),
+				TotalMondays:   uint(totalMondays),
+				CreatedBy:      admin.ID,
+			}
+			if err := db.Create(&ed).Error; err != nil {
+				log.Printf("Gagal membuat effective day level %s %d/%d: %v", lv.level, my.Month, my.Year, err)
+			} else {
+				total++
+			}
+		}
+	}
+	log.Printf("Effective day per-jenjang seeder berhasil (%d records)", total)
+}
+
+// countLevelEffectiveDays calculates effective days for a given level (per-jenjang fallback).
+// Mutiara defaults to Mon/Wed/Fri; Intan & Berlian to Mon-Sat.
+func countLevelEffectiveDays(level string, month, year int, holidays map[string]bool) (int, int) {
+	var schoolDays map[time.Weekday]bool
+	if level == "mutiara" {
+		schoolDays = map[time.Weekday]bool{
+			time.Monday:    true,
+			time.Wednesday: true,
+			time.Friday:    true,
+		}
+	} else {
+		schoolDays = map[time.Weekday]bool{
+			time.Monday:    true,
+			time.Tuesday:   true,
+			time.Wednesday: true,
+			time.Thursday:  true,
+			time.Friday:    true,
+			time.Saturday:  true,
+		}
+	}
+
+	totalDays := 0
+	totalMondays := 0
+
+	start := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+	end := start.AddDate(0, 1, 0)
+
+	for d := start; d.Before(end); d = d.AddDate(0, 0, 1) {
+		if d.Weekday() == time.Monday {
+			totalMondays++
+		}
+		if schoolDays[d.Weekday()] && !holidays[d.Format("2006-01-02")] {
+			totalDays++
+		}
+	}
+
+	return totalDays, totalMondays
+}
+
 // Schedule rules:
 //   - Mutiara 1,2,3: Sen, Rab, Jum
 //   - Mutiara 4,5,6: Sel, Kam, Sab

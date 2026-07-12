@@ -3,6 +3,7 @@ package seeders
 import (
 	"api/model"
 	"log"
+	"os"
 
 	"gorm.io/gorm"
 )
@@ -42,23 +43,23 @@ func SeedFeeConfigs(db *gorm.DB) {
 	}
 
 	koperasiItemKeys := map[string]bool{
-		"seragam_4stel":       true,
-		"rompi_prasiaga":      true,
-		"tas_sekolah":         true,
-		"kaos_kaki":           true,
-		"lunch_box":           true,
-		"baju_ganti":          true,
-		"buku_ddtk":           true,
-		"buku_pk_karakter":    true,
-		"kaos_field_trip":     true,
-		"map_hasil_karya":     true,
-		"map_raport_foto":     true,
-		"buku_asik_membaca":   true,
-		"buku_kreativitas":    true,
-		"buku_jurnal":         true,
-		"kalender":            true,
-		"buku_kotak":          true,
-		"jilbab_field_trip":   true,
+		"seragam_4stel":     true,
+		"rompi_prasiaga":    true,
+		"tas_sekolah":       true,
+		"kaos_kaki":         true,
+		"lunch_box":         true,
+		"baju_ganti":        true,
+		"buku_ddtk":         true,
+		"buku_pk_karakter":  true,
+		"kaos_field_trip":   true,
+		"map_hasil_karya":   true,
+		"map_raport_foto":   true,
+		"buku_asik_membaca": true,
+		"buku_kreativitas":  true,
+		"buku_jurnal":       true,
+		"kalender":          true,
+		"buku_kotak":        true,
+		"jilbab_field_trip": true,
 	}
 
 	items := buildFeeConfigItems()
@@ -75,7 +76,7 @@ func SeedFeeConfigs(db *gorm.DB) {
 			IsMandatory: item.IsMandatory,
 		}
 
-		if koperasiItemKeys[item.ItemKey] {
+		if os.Getenv("KOPERASI_SEAM_ENABLED") == "true" && koperasiItemKeys[item.ItemKey] {
 			fci.IsKoperasi = true
 
 			// Dynamic lookup to associate seeded Koperasi products without import cycles
@@ -135,16 +136,19 @@ func SeedFeeConfigs(db *gorm.DB) {
 func buildFeeConfigItems() []feeItemDef {
 	var items []feeItemDef
 
-	// === SPP (monthly_spp) ===
+	// === SPP (monthly_spp) — semester 1 (Jul-Des) & semester 2 (Jan-Jun) ===
 	items = append(items,
-		feeItemDef{"monthly_spp", "spp_kb", "SPP KB", "mutiara", "all", 150000, "fixed", false},
-		feeItemDef{"monthly_spp", "spp_tk", "SPP TK", "intan", "all", 150000, "fixed", false},
-		feeItemDef{"monthly_spp", "spp_tk", "SPP TK", "berlian", "all", 150000, "fixed", false},
+		feeItemDef{"monthly_spp", "spp_kb_sem1", "SPP KB (Sem 1)", "mutiara", "all", 150000, "fixed", false},
+		feeItemDef{"monthly_spp", "spp_kb_sem2", "SPP KB (Sem 2)", "mutiara", "all", 175000, "fixed", false},
+		feeItemDef{"monthly_spp", "spp_tk_sem1", "SPP TK (Sem 1)", "intan", "all", 150000, "fixed", false},
+		feeItemDef{"monthly_spp", "spp_tk_sem2", "SPP TK (Sem 2)", "intan", "all", 175000, "fixed", false},
+		feeItemDef{"monthly_spp", "spp_tk_sem1", "SPP TK (Sem 1)", "berlian", "all", 150000, "fixed", false},
+		feeItemDef{"monthly_spp", "spp_tk_sem2", "SPP TK (Sem 2)", "berlian", "all", 175000, "fixed", false},
 	)
 
 	// === Infaq Harian (monthly_infaq) ===
 	items = append(items,
-		feeItemDef{"monthly_infaq", "infaq_harian", "Infaq Harian", "all", "all", 7000, "per_day", false},
+		feeItemDef{"monthly_infaq", "infaq_harian", "Infaq Harian", "all", "all", 6000, "per_day", false},
 	)
 
 	// === Biaya Awal (initial) ===
@@ -153,16 +157,16 @@ func buildFeeConfigItems() []feeItemDef {
 		name   string
 		amount float64
 	}{
-		{"seragam_4stel", "4 Stel Seragam", 750000},
-		{"rompi_prasiaga", "1 pc Rompi & Atribut Prasiaga", 110000},
+		{"seragam_4stel", "4 Stel Seragam", 765000},
+		{"rompi_prasiaga", "Atribut Prasiaga", 110000},
 		{"tas_sekolah", "1 Tas Sekolah", 85000},
-		{"kaos_kaki", "2 Pasang Kaos Kaki", 25000},
+		{"kaos_kaki", "2 Pc Kaos Kaki", 25000},
 		{"lunch_box", "1 Set Lunch Box", 100000},
 		{"baju_ganti", "1 Stel Baju Ganti", 70000},
 		{"infaq_sarpras", "Infaq Sarpras", 500000},
 		{"infaq_ape", "Infaq APE", 600000},
 		{"buku_ddtk", "Buku DDTK", 20000},
-		{"biaya_psikotes", "Biaya Psikotes IQ", 150000},
+		{"biaya_psikotes", "Psikotes IQ", 150000},
 	}
 	for _, it := range initialItems {
 		items = append(items, feeItemDef{"initial", it.key, it.name, "all", "all", it.amount, "fixed", false})
@@ -181,19 +185,20 @@ func buildFeeConfigItems() []feeItemDef {
 		{"biaya_mpls", "Biaya MPLS", 100000, 100000, 100000, "all"},
 		{"buku_bayar", "Buku Bayar", 10000, 10000, 10000, "all"},
 		{"infaq_awal_tabungan", "Infaq Awal Tabungan", 10000, 10000, 10000, "all"},
-		{"buku_pk_karakter", "Buku PK Karakter", 15000, 15000, 15000, "all"},
-		{"kaos_field_trip", "Kaos Field Trip", 65000, 65000, 65000, "all"},
-		{"map_hasil_karya", "Map Hasil Karya", 25000, 25000, 25000, "all"},
-		{"map_raport_foto", "Map Raport dan Foto Raport", 60000, 0, 50000, "all"},
+		{"buku_pk_karakter", "Buku PK Karakter", 20000, 20000, 20000, "all"},
+		{"kaos_field_trip", "Kaos Field Trip", 75000, 75000, 75000, "all"},
+		{"map_hasil_karya", "Map Hasil Karya", 30000, 0, 30000, "all"},
+		{"map_raport_foto", "Map Raport dan Foto Raport", 60000, 0, 60000, "all"},
 		{"alat_belajar", "Alat Belajar", 200000, 200000, 150000, "all"},
-		{"buku_asik_membaca", "1 Seri Buku Asik Membaca", 40000, 0, 0, "all"},
-		{"buku_kreativitas", "Buku Kreatifitas", 100000, 100000, 100000, "all"},
-		{"iuran_kegiatan", "Iuran Kegiatan Kecamatan/Kabupaten", 80000, 80000, 80000, "all"},
+		{"buku_asik_membaca", "1 Seri Buku Asik Membaca", 50000, 0, 0, "all"},
+		{"buku_kreativitas", "Buku Kreatifitas", 120000, 120000, 120000, "all"},
+		{"iuran_kegiatan", "Iuran Kegiatan Kecamatan/Kabupaten", 100000, 100000, 100000, "all"},
 		{"buku_jurnal", "2 Pcs Buku Jurnal", 30000, 30000, 30000, "all"},
 		{"administrasi_lpp", "Administrasi LPP (4 Trimester)", 60000, 60000, 60000, "all"},
 		{"kalender", "Kalender", 30000, 30000, 30000, "all"},
-		{"buku_kotak", "Buku Kotak", 0, 25000, 0, "all"},
-		{"jilbab_field_trip", "Jilbab Field Trip", 35000, 35000, 35000, "P"},
+		{"buku_kotak", "Buku Kotak", 30000, 30000, 0, "all"},
+		{"jilbab_field_trip", "Jilbab Field Trip", 40000, 40000, 40000, "P"},
+		{"lain_lain", "Lain-lain", 40000, 0, 40000, "all"},
 	}
 	for _, r := range regItems {
 		levelAmounts := map[string]float64{
@@ -208,62 +213,101 @@ func buildFeeConfigItems() []feeItemDef {
 		}
 	}
 
-	// === Pasta ===
-	pastaItems := []struct {
-		key    string
-		name   string
-		amount float64
-	}{
-		{"pasta_robotika", "Pasta Robotika", 100000},
-		{"pasta_sempoa", "Pasta Sempoa Kids", 50000},
-		{"pasta_tilawah", "Pasta Tilawah", 50000},
-		{"pasta_laptop", "Pasta Laptop Kids", 100000},
-		{"pasta_taekwondo", "Pasta Taekwondo", 50000},
-		{"pasta_tari", "Pasta Tari", 50000},
-		{"pasta_melukis", "Pasta Melukis", 50000},
-		{"pasta_menyanyi", "Pasta Menyanyi", 50000},
+	// === Pasta (unified: calisan + ekskul + pasta) ===
+	type pastaItem struct {
+		key       string
+		name      string
+		level     string
+		amount    float64
+		mandatory bool
+	}
+	pastaItems := []pastaItem{
+		{"pasta_aslin", "Aslin (Asah Literasi Numerasi)", "intan", 25000, true},
+		{"pasta_aslin", "Aslin (Asah Literasi Numerasi)", "berlian", 25000, true},
+		{"pasta_calisan", "Calisan (Baca Tulis Al Qur'an)", "mutiara", 50000, false},
+		{"pasta_calisan", "Calisan (Baca Tulis Al Qur'an)", "intan", 50000, false},
+		{"pasta_calisan", "Calisan (Baca Tulis Al Qur'an)", "berlian", 50000, false},
+		{"pasta_robotika", "Robotika", "intan", 100000, false},
+		{"pasta_robotika", "Robotika", "berlian", 100000, false},
+		{"pasta_sempoa", "Sempoa Kids", "intan", 50000, false},
+		{"pasta_sempoa", "Sempoa Kids", "berlian", 50000, false},
+		{"pasta_laptop", "Laptop Kids", "intan", 100000, false},
+		{"pasta_laptop", "Laptop Kids", "berlian", 100000, false},
+		{"pasta_tilawah", "Tilawah & Tahfidz Surat Pendek", "intan", 50000, false},
+		{"pasta_tilawah", "Tilawah & Tahfidz Surat Pendek", "berlian", 50000, false},
+		{"pasta_taekwondo", "Taekwondo", "intan", 50000, false},
+		{"pasta_taekwondo", "Taekwondo", "berlian", 50000, false},
+		{"pasta_menari", "Menari & Fashion Show", "mutiara", 50000, false},
+		{"pasta_menari", "Menari & Fashion Show", "intan", 50000, false},
+		{"pasta_menari", "Menari & Fashion Show", "berlian", 50000, false},
+		{"pasta_melukis", "Melukis & Mewarnai", "mutiara", 50000, false},
+		{"pasta_melukis", "Melukis & Mewarnai", "intan", 50000, false},
+		{"pasta_melukis", "Melukis & Mewarnai", "berlian", 50000, false},
+		{"pasta_menyanyi", "Menyanyi", "mutiara", 50000, false},
+		{"pasta_menyanyi", "Menyanyi", "intan", 50000, false},
+		{"pasta_menyanyi", "Menyanyi", "berlian", 50000, false},
+		{"pasta_keyboard", "Musik Keyboard", "intan", 50000, false},
+		{"pasta_keyboard", "Musik Keyboard", "berlian", 50000, false},
 	}
 	for _, p := range pastaItems {
-		items = append(items, feeItemDef{"pasta", p.key, p.name, "all", "all", p.amount, "fixed", false})
+		items = append(items, feeItemDef{"pasta", p.key, p.name, p.level, "all", p.amount, "fixed", p.mandatory})
 	}
-
-	// === Calisan (wajib per jenjang) ===
-	items = append(items,
-		feeItemDef{"calisan", "calisan_kb", "Calisan KB", "mutiara", "all", 50000, "fixed", true},
-		feeItemDef{"calisan", "calisan_tk", "Calisan TK", "intan", "all", 50000, "fixed", true},
-		feeItemDef{"calisan", "calisan_tk", "Calisan TK", "berlian", "all", 50000, "fixed", true},
-	)
-
-	// === Ekskul wajib (Aslin untuk Berlian) ===
-	items = append(items,
-		feeItemDef{"ekskul", "ekskul_aslin", "Aslin", "berlian", "all", 25000, "fixed", true},
-	)
 
 	// === Tabungan Wajib Berlian ===
 	items = append(items,
-		feeItemDef{"savings_mandatory", "tabungan_wajib", "Tabungan Wajib Berlian", "berlian", "all", 10000, "per_monday", false},
+		feeItemDef{"savings_mandatory", "tabungan_wajib", "Tabungan Wajib Berlian", "berlian", "all", 15000, "per_monday", false},
+	)
+
+	// === Tabungan Wajib Mutiara ===
+	items = append(items,
+		feeItemDef{"savings_mandatory", "tabungan_wajib_mutiara", "Tabungan Wajib Mutiara", "mutiara", "all", 10000, "fixed", false},
 	)
 
 	// === Daycare ===
-	daycareItems := []struct {
+	// Biaya Awal (hanya Premium)
+	items = append(items, feeItemDef{"daycare", "daycare_premium_initial", "Biaya Awal Daycare Premium", "all", "all", 400000, "fixed", false})
+
+	// SPD Premium (flat bulanan)
+	daycareSPD := []struct {
 		key    string
 		name   string
 		amount float64
-		unit   string
 	}{
-		{"daycare_pendaftaran", "Pendaftaran Daycare", 150000, "fixed"},
-		{"daycare_akomodasi", "Akomodasi Daycare", 250000, "fixed"},
-		{"daycare_spd_kb", "SPD Bulanan KB", 200000, "fixed"},
-		{"daycare_spd_tk", "SPD Bulanan TK", 400000, "fixed"},
-		{"daycare_paket_kb", "Paket Bulanan KB", 500000, "fixed"},
-		{"daycare_paket_tk", "Paket Bulanan TK", 900000, "fixed"},
-		{"daycare_harian", "SPP Harian Lepas", 15000, "fixed"},
-		{"daycare_paket_harian", "Paket Harian", 35000, "fixed"},
-		{"daycare_konsumsi", "Biaya Konsumsi", 20000, "per_day"},
+		{"daycare_premium_0715_kbtk_spd", "SPD Premium 07-15 KB-TK", 400000},
+		{"daycare_premium_0715_under3_spd", "SPD Premium 07-15 <3th", 500000},
+		{"daycare_premium_1015_kbtk_spd", "SPD Premium 10-15 KB-TK", 300000},
+		{"daycare_premium_1015_under3_spd", "SPD Premium 10-15 <3th", 400000},
+		{"daycare_premium_1013_kbtk_spd", "SPD Premium 10-13 KB-TK", 200000},
+		{"daycare_premium_1013_under3_spd", "SPD Premium 10-13 <3th", 300000},
 	}
-	for _, d := range daycareItems {
-		items = append(items, feeItemDef{"daycare", d.key, d.name, "all", "all", d.amount, d.unit, false})
+	for _, d := range daycareSPD {
+		items = append(items, feeItemDef{"daycare", d.key, d.name, "all", "all", d.amount, "fixed", false})
 	}
+
+	// SPD Regular (per hari, × kehadiran)
+	daycareDaily := []struct {
+		key    string
+		name   string
+		amount float64
+	}{
+		{"daycare_regular_0715_kbtk_daily", "SPD Regular 07-15 KB-TK", 20000},
+		{"daycare_regular_0715_under3_daily", "SPD Regular 07-15 <3th", 25000},
+		{"daycare_regular_1015_kbtk_daily", "SPD Regular 10-15 KB-TK", 15000},
+		{"daycare_regular_1015_under3_daily", "SPD Regular 10-15 <3th", 20000},
+		{"daycare_regular_1013_kbtk_daily", "SPD Regular 10-13 KB-TK", 10000},
+		{"daycare_regular_1013_under3_daily", "SPD Regular 10-13 <3th", 15000},
+	}
+	for _, d := range daycareDaily {
+		items = append(items, feeItemDef{"daycare", d.key, d.name, "all", "all", d.amount, "per_day", false})
+	}
+
+	// Konsumsi & TPQ
+	items = append(items,
+		feeItemDef{"daycare", "daycare_premium_meal", "Paket Konsumsi Premium", "all", "all", 400000, "fixed", false},
+		feeItemDef{"daycare", "daycare_regular_meal", "Paket Konsumsi Regular", "all", "all", 20000, "per_day", false},
+		feeItemDef{"daycare", "daycare_premium_tpq", "Lanjut TPQ Premium", "all", "all", 80000, "fixed", false},
+		feeItemDef{"daycare", "daycare_regular_tpq", "Lanjut TPQ Regular", "all", "all", 4000, "per_day", false},
+	)
 
 	// === Wisuda (placeholder) ===
 	items = append(items,
@@ -271,9 +315,7 @@ func buildFeeConfigItems() []feeItemDef {
 	)
 
 	// === Fasilitas ===
-	items = append(items,
-		feeItemDef{"facility", "facility_antar_jemput", "Antar Jemput", "all", "all", 15000, "per_day", false},
-	)
+	// === Fasilitas: fee item dibuat otomatis oleh facility seeder ===
 
 	return items
 }

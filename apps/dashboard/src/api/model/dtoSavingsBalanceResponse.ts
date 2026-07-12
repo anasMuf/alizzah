@@ -7,7 +7,7 @@
  */
 
 export interface DtoSavingsBalanceResponse {
-	balance?: number;
-	id?: number;
-	type?: string;
+  balance?: number;
+  id?: number;
+  type?: string;
 }

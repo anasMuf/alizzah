@@ -5,15 +5,16 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoUserBriefResponse } from "./dtoUserBriefResponse";
+import type { DtoUserBriefResponse } from './dtoUserBriefResponse';
 
 export interface DtoEffectiveDayResponse {
-	class_group_id?: number;
-	created_at?: string;
-	created_by?: DtoUserBriefResponse;
-	id?: number;
-	month?: number;
-	total_days?: number;
-	total_mondays?: number;
-	year?: number;
+  class_group_id?: number;
+  created_at?: string;
+  created_by?: DtoUserBriefResponse;
+  id?: number;
+  level?: string;
+  month?: number;
+  total_days?: number;
+  total_mondays?: number;
+  year?: number;
 }

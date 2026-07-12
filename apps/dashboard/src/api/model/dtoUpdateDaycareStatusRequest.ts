@@ -5,9 +5,9 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoUpdateDaycareStatusRequestStatus } from "./dtoUpdateDaycareStatusRequestStatus";
+import type { DtoUpdateDaycareStatusRequestStatus } from './dtoUpdateDaycareStatusRequestStatus';
 
 export interface DtoUpdateDaycareStatusRequest {
-	end_date?: string;
-	status: DtoUpdateDaycareStatusRequestStatus;
+  end_date?: string;
+  status: DtoUpdateDaycareStatusRequestStatus;
 }

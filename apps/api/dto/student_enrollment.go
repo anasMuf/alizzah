@@ -33,3 +33,7 @@ type CreateEnrollmentRequest struct {
 	EnrollmentType string `json:"enrollment_type" validate:"oneof=new mutation transfer"`
 	StartDate      string `json:"start_date" validate:"required,dateonly"`
 }
+
+type UpdateEnrollmentRequest struct {
+	EnrollmentType string `json:"enrollment_type" validate:"required,oneof=new repeat mutation promotion transfer class_change retained"`
+}

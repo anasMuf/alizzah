@@ -7,6 +7,6 @@
  */
 
 export interface DtoTabunganSiswaPeriod {
-	end_date?: string;
-	start_date?: string;
+  end_date?: string;
+  start_date?: string;
 }

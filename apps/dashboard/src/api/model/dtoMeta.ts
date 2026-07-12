@@ -7,9 +7,9 @@
  */
 
 export interface DtoMeta {
-	limit?: number;
-	page?: number;
-	total?: number;
-	/** sum sisa tagihan terfilter; diisi pada daftar invoice */
-	total_outstanding?: number;
+  limit?: number;
+  page?: number;
+  total?: number;
+  /** sum sisa tagihan terfilter; diisi pada daftar invoice */
+  total_outstanding?: number;
 }

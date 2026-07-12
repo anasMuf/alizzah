@@ -7,9 +7,9 @@
  */
 
 export interface DtoUpdateInvoiceItemRequest {
-	/** @minimum 1 */
-	amount: number;
-	koperasi_variant_id?: number;
-	/** @maxLength 100 */
-	name: string;
+  /** @minimum 1 */
+  amount: number;
+  koperasi_variant_id?: number;
+  /** @maxLength 100 */
+  name: string;
 }

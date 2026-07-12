@@ -7,16 +7,16 @@
  */
 
 export type GetV1ReportsPosisiKasParams = {
-	/**
-	 * Month (1-12)
-	 */
-	month: number;
-	/**
-	 * Year
-	 */
-	year: number;
-	/**
-	 * Academic Year ID
-	 */
-	academic_year_id?: number;
+/**
+ * Month (1-12)
+ */
+month: number;
+/**
+ * Year
+ */
+year: number;
+/**
+ * Academic Year ID
+ */
+academic_year_id?: number;
 };

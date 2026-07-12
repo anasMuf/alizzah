@@ -5,16 +5,16 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoExpenseCategoryBrief } from "./dtoExpenseCategoryBrief";
-import type { DtoUserBriefResponse } from "./dtoUserBriefResponse";
+import type { DtoExpenseCategoryBrief } from './dtoExpenseCategoryBrief';
+import type { DtoUserBriefResponse } from './dtoUserBriefResponse';
 
 export interface DtoExpenseResponse {
-	amount?: number;
-	category?: DtoExpenseCategoryBrief;
-	created_at?: string;
-	created_by?: DtoUserBriefResponse;
-	description?: string;
-	expense_date?: string;
-	id?: number;
-	receipt_url?: string;
+  amount?: number;
+  category?: DtoExpenseCategoryBrief;
+  created_at?: string;
+  created_by?: DtoUserBriefResponse;
+  description?: string;
+  expense_date?: string;
+  id?: number;
+  receipt_url?: string;
 }

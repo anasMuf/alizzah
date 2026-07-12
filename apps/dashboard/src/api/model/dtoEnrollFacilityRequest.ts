@@ -7,7 +7,7 @@
  */
 
 export interface DtoEnrollFacilityRequest {
-	academic_year_id: number;
-	facility_id: number;
-	start_date: string;
+  academic_year_id: number;
+  facility_id: number;
+  start_date: string;
 }

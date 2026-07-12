@@ -7,8 +7,8 @@
  */
 
 export interface DtoCashSummaryResponse {
-	closing_balance?: number;
-	opening_balance?: number;
-	total_credit?: number;
-	total_debit?: number;
+  closing_balance?: number;
+  opening_balance?: number;
+  total_credit?: number;
+  total_debit?: number;
 }

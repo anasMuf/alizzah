@@ -7,8 +7,8 @@
  */
 
 export interface DtoFacilityResponse {
-	description?: string;
-	id?: number;
-	is_active?: boolean;
-	name?: string;
+  description?: string;
+  id?: number;
+  is_active?: boolean;
+  name?: string;
 }

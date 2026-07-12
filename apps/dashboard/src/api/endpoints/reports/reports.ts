@@ -5,2374 +5,1498 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
+import {
+  useQuery
+} from '@tanstack/react-query';
+import type {
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
+  QueryClient,
+  QueryFunction,
+  QueryKey,
+  UndefinedInitialDataOptions,
+  UseQueryOptions,
+  UseQueryResult
+} from '@tanstack/react-query';
 
 import type {
-	DataTag,
-	DefinedInitialDataOptions,
-	DefinedUseQueryResult,
-	QueryClient,
-	QueryFunction,
-	QueryKey,
-	UndefinedInitialDataOptions,
-	UseQueryOptions,
-	UseQueryResult,
-} from "@tanstack/react-query";
-import { useQuery } from "@tanstack/react-query";
+  DtoErrorResponse,
+  GetV1ReportsAnnual200,
+  GetV1ReportsAnnualParams,
+  GetV1ReportsClassGroupsId200,
+  GetV1ReportsClassGroupsIdParams,
+  GetV1ReportsDaily200,
+  GetV1ReportsDailyParams,
+  GetV1ReportsMonthly200,
+  GetV1ReportsMonthlyParams,
+  GetV1ReportsPosisiKas200,
+  GetV1ReportsPosisiKasParams,
+  GetV1ReportsSaldo200,
+  GetV1ReportsSaldoParams,
+  GetV1ReportsSavingsStudentsId200,
+  GetV1ReportsSavingsStudentsIdParams,
+  GetV1ReportsStudentsId200,
+  GetV1ReportsStudentsIdParams,
+  GetV1ReportsTabungan200,
+  GetV1ReportsTabunganParams,
+  GetV1ReportsTransaksiPengeluaran200,
+  GetV1ReportsTransaksiPengeluaranParams
+} from '../../model';
 
-import type {
-	DtoErrorResponse,
-	GetV1ReportsAnnual200,
-	GetV1ReportsAnnualParams,
-	GetV1ReportsClassGroupsId200,
-	GetV1ReportsClassGroupsIdParams,
-	GetV1ReportsDaily200,
-	GetV1ReportsDailyParams,
-	GetV1ReportsMonthly200,
-	GetV1ReportsMonthlyParams,
-	GetV1ReportsPosisiKas200,
-	GetV1ReportsPosisiKasParams,
-	GetV1ReportsSaldo200,
-	GetV1ReportsSaldoParams,
-	GetV1ReportsSavingsStudentsId200,
-	GetV1ReportsSavingsStudentsIdParams,
-	GetV1ReportsStudentsId200,
-	GetV1ReportsStudentsIdParams,
-	GetV1ReportsTabungan200,
-	GetV1ReportsTabunganParams,
-	GetV1ReportsTransaksiPengeluaran200,
-	GetV1ReportsTransaksiPengeluaranParams,
-} from "../../model";
+import { customInstance } from '../../mutator/custom-instance';
 
-import { customInstance } from "../../mutator/custom-instance";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
+
+
 export type getV1ReportsAnnualResponse200 = {
-	data: GetV1ReportsAnnual200;
-	status: 200;
-};
+  data: GetV1ReportsAnnual200
+  status: 200
+}
 
 export type getV1ReportsAnnualResponse400 = {
-	data: DtoErrorResponse;
-	status: 400;
-};
+  data: DtoErrorResponse
+  status: 400
+}
 
 export type getV1ReportsAnnualResponse401 = {
-	data: DtoErrorResponse;
-	status: 401;
-};
+  data: DtoErrorResponse
+  status: 401
+}
 
 export type getV1ReportsAnnualResponse403 = {
-	data: DtoErrorResponse;
-	status: 403;
-};
+  data: DtoErrorResponse
+  status: 403
+}
 
 export type getV1ReportsAnnualResponse500 = {
-	data: DtoErrorResponse;
-	status: 500;
+  data: DtoErrorResponse
+  status: 500
+}
+
+export type getV1ReportsAnnualResponseSuccess = (getV1ReportsAnnualResponse200) & {
+  headers: Headers;
+};
+export type getV1ReportsAnnualResponseError = (getV1ReportsAnnualResponse400 | getV1ReportsAnnualResponse401 | getV1ReportsAnnualResponse403 | getV1ReportsAnnualResponse500) & {
+  headers: Headers;
 };
 
-export type getV1ReportsAnnualResponseSuccess =
-	getV1ReportsAnnualResponse200 & {
-		headers: Headers;
-	};
-export type getV1ReportsAnnualResponseError = (
-	| getV1ReportsAnnualResponse400
-	| getV1ReportsAnnualResponse401
-	| getV1ReportsAnnualResponse403
-	| getV1ReportsAnnualResponse500
-) & {
-	headers: Headers;
-};
+export type getV1ReportsAnnualResponse = (getV1ReportsAnnualResponseSuccess | getV1ReportsAnnualResponseError)
 
-export type getV1ReportsAnnualResponse =
-	| getV1ReportsAnnualResponseSuccess
-	| getV1ReportsAnnualResponseError;
+export const getGetV1ReportsAnnualUrl = (params: GetV1ReportsAnnualParams,) => {
+  const normalizedParams = new URLSearchParams();
 
-export const getGetV1ReportsAnnualUrl = (params: GetV1ReportsAnnualParams) => {
-	const normalizedParams = new URLSearchParams();
+  Object.entries(params || {}).forEach(([key, value]) => {
 
-	Object.entries(params || {}).forEach(([key, value]) => {
-		if (value !== undefined) {
-			normalizedParams.append(key, value === null ? "null" : value.toString());
-		}
-	});
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-	const stringifiedParams = normalizedParams.toString();
+  const stringifiedParams = normalizedParams.toString();
 
-	return stringifiedParams.length > 0
-		? `/v1/reports/annual?${stringifiedParams}`
-		: `/v1/reports/annual`;
-};
+  return stringifiedParams.length > 0 ? `/v1/reports/annual?${stringifiedParams}` : `/v1/reports/annual`
+}
 
 /**
  * Get annual financial report
  * @summary Annual report
  */
-export const getV1ReportsAnnual = async (
-	params: GetV1ReportsAnnualParams,
-	options?: RequestInit,
-): Promise<getV1ReportsAnnualResponse> => {
-	return customInstance<getV1ReportsAnnualResponse>(
-		getGetV1ReportsAnnualUrl(params),
-		{
-			...options,
-			method: "GET",
-		},
-	);
-};
+export const getV1ReportsAnnual = async (params: GetV1ReportsAnnualParams, options?: RequestInit): Promise<getV1ReportsAnnualResponse> => {
 
-export const getGetV1ReportsAnnualQueryKey = (
-	params?: GetV1ReportsAnnualParams,
+  return customInstance<getV1ReportsAnnualResponse>(getGetV1ReportsAnnualUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetV1ReportsAnnualQueryKey = (params?: GetV1ReportsAnnualParams,) => {
+    return [
+    `/v1/reports/annual`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetV1ReportsAnnualQueryOptions = <TData = Awaited<ReturnType<typeof getV1ReportsAnnual>>, TError = DtoErrorResponse>(params: GetV1ReportsAnnualParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsAnnual>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
-	return [`/v1/reports/annual`, ...(params ? [params] : [])] as const;
-};
 
-export const getGetV1ReportsAnnualQueryOptions = <
-	TData = Awaited<ReturnType<typeof getV1ReportsAnnual>>,
-	TError = DtoErrorResponse,
->(
-	params: GetV1ReportsAnnualParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsAnnual>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-) => {
-	const { query: queryOptions, request: requestOptions } = options ?? {};
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-	const queryKey =
-		queryOptions?.queryKey ?? getGetV1ReportsAnnualQueryKey(params);
+  const queryKey =  queryOptions?.queryKey ?? getGetV1ReportsAnnualQueryKey(params);
 
-	const queryFn: QueryFunction<
-		Awaited<ReturnType<typeof getV1ReportsAnnual>>
-	> = ({ signal }) => getV1ReportsAnnual(params, { signal, ...requestOptions });
 
-	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-		Awaited<ReturnType<typeof getV1ReportsAnnual>>,
-		TError,
-		TData
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
-};
 
-export type GetV1ReportsAnnualQueryResult = NonNullable<
-	Awaited<ReturnType<typeof getV1ReportsAnnual>>
->;
-export type GetV1ReportsAnnualQueryError = DtoErrorResponse;
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1ReportsAnnual>>> = ({ signal }) => getV1ReportsAnnual(params, { signal, ...requestOptions });
 
-export function useGetV1ReportsAnnual<
-	TData = Awaited<ReturnType<typeof getV1ReportsAnnual>>,
-	TError = DtoErrorResponse,
->(
-	params: GetV1ReportsAnnualParams,
-	options: {
-		query: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsAnnual>>,
-				TError,
-				TData
-			>
-		> &
-			Pick<
-				DefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1ReportsAnnual>>,
-					TError,
-					Awaited<ReturnType<typeof getV1ReportsAnnual>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1ReportsAnnual<
-	TData = Awaited<ReturnType<typeof getV1ReportsAnnual>>,
-	TError = DtoErrorResponse,
->(
-	params: GetV1ReportsAnnualParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsAnnual>>,
-				TError,
-				TData
-			>
-		> &
-			Pick<
-				UndefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1ReportsAnnual>>,
-					TError,
-					Awaited<ReturnType<typeof getV1ReportsAnnual>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1ReportsAnnual<
-	TData = Awaited<ReturnType<typeof getV1ReportsAnnual>>,
-	TError = DtoErrorResponse,
->(
-	params: GetV1ReportsAnnualParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsAnnual>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsAnnual>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetV1ReportsAnnualQueryResult = NonNullable<Awaited<ReturnType<typeof getV1ReportsAnnual>>>
+export type GetV1ReportsAnnualQueryError = DtoErrorResponse
+
+
+export function useGetV1ReportsAnnual<TData = Awaited<ReturnType<typeof getV1ReportsAnnual>>, TError = DtoErrorResponse>(
+ params: GetV1ReportsAnnualParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsAnnual>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1ReportsAnnual>>,
+          TError,
+          Awaited<ReturnType<typeof getV1ReportsAnnual>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1ReportsAnnual<TData = Awaited<ReturnType<typeof getV1ReportsAnnual>>, TError = DtoErrorResponse>(
+ params: GetV1ReportsAnnualParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsAnnual>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1ReportsAnnual>>,
+          TError,
+          Awaited<ReturnType<typeof getV1ReportsAnnual>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1ReportsAnnual<TData = Awaited<ReturnType<typeof getV1ReportsAnnual>>, TError = DtoErrorResponse>(
+ params: GetV1ReportsAnnualParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsAnnual>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Annual report
  */
 
-export function useGetV1ReportsAnnual<
-	TData = Awaited<ReturnType<typeof getV1ReportsAnnual>>,
-	TError = DtoErrorResponse,
->(
-	params: GetV1ReportsAnnualParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsAnnual>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-} {
-	const queryOptions = getGetV1ReportsAnnualQueryOptions(params, options);
+export function useGetV1ReportsAnnual<TData = Awaited<ReturnType<typeof getV1ReportsAnnual>>, TError = DtoErrorResponse>(
+ params: GetV1ReportsAnnualParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsAnnual>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-		TData,
-		TError
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getGetV1ReportsAnnualQueryOptions(params,options)
 
-	return { ...query, queryKey: queryOptions.queryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
 }
 
+
+
+
+
+
 export type getV1ReportsClassGroupsIdResponse200 = {
-	data: GetV1ReportsClassGroupsId200;
-	status: 200;
-};
+  data: GetV1ReportsClassGroupsId200
+  status: 200
+}
 
 export type getV1ReportsClassGroupsIdResponse400 = {
-	data: DtoErrorResponse;
-	status: 400;
-};
+  data: DtoErrorResponse
+  status: 400
+}
 
 export type getV1ReportsClassGroupsIdResponse401 = {
-	data: DtoErrorResponse;
-	status: 401;
-};
+  data: DtoErrorResponse
+  status: 401
+}
 
 export type getV1ReportsClassGroupsIdResponse403 = {
-	data: DtoErrorResponse;
-	status: 403;
-};
+  data: DtoErrorResponse
+  status: 403
+}
 
 export type getV1ReportsClassGroupsIdResponse404 = {
-	data: DtoErrorResponse;
-	status: 404;
-};
+  data: DtoErrorResponse
+  status: 404
+}
 
 export type getV1ReportsClassGroupsIdResponse500 = {
-	data: DtoErrorResponse;
-	status: 500;
+  data: DtoErrorResponse
+  status: 500
+}
+
+export type getV1ReportsClassGroupsIdResponseSuccess = (getV1ReportsClassGroupsIdResponse200) & {
+  headers: Headers;
+};
+export type getV1ReportsClassGroupsIdResponseError = (getV1ReportsClassGroupsIdResponse400 | getV1ReportsClassGroupsIdResponse401 | getV1ReportsClassGroupsIdResponse403 | getV1ReportsClassGroupsIdResponse404 | getV1ReportsClassGroupsIdResponse500) & {
+  headers: Headers;
 };
 
-export type getV1ReportsClassGroupsIdResponseSuccess =
-	getV1ReportsClassGroupsIdResponse200 & {
-		headers: Headers;
-	};
-export type getV1ReportsClassGroupsIdResponseError = (
-	| getV1ReportsClassGroupsIdResponse400
-	| getV1ReportsClassGroupsIdResponse401
-	| getV1ReportsClassGroupsIdResponse403
-	| getV1ReportsClassGroupsIdResponse404
-	| getV1ReportsClassGroupsIdResponse500
-) & {
-	headers: Headers;
-};
+export type getV1ReportsClassGroupsIdResponse = (getV1ReportsClassGroupsIdResponseSuccess | getV1ReportsClassGroupsIdResponseError)
 
-export type getV1ReportsClassGroupsIdResponse =
-	| getV1ReportsClassGroupsIdResponseSuccess
-	| getV1ReportsClassGroupsIdResponseError;
+export const getGetV1ReportsClassGroupsIdUrl = (id: number,
+    params: GetV1ReportsClassGroupsIdParams,) => {
+  const normalizedParams = new URLSearchParams();
 
-export const getGetV1ReportsClassGroupsIdUrl = (
-	id: number,
-	params: GetV1ReportsClassGroupsIdParams,
-) => {
-	const normalizedParams = new URLSearchParams();
+  Object.entries(params || {}).forEach(([key, value]) => {
 
-	Object.entries(params || {}).forEach(([key, value]) => {
-		if (value !== undefined) {
-			normalizedParams.append(key, value === null ? "null" : value.toString());
-		}
-	});
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-	const stringifiedParams = normalizedParams.toString();
+  const stringifiedParams = normalizedParams.toString();
 
-	return stringifiedParams.length > 0
-		? `/v1/reports/class-groups/${id}?${stringifiedParams}`
-		: `/v1/reports/class-groups/${id}`;
-};
+  return stringifiedParams.length > 0 ? `/v1/reports/class-groups/${id}?${stringifiedParams}` : `/v1/reports/class-groups/${id}`
+}
 
 /**
  * Get financial report for a specific class group
  * @summary Report by class group
  */
-export const getV1ReportsClassGroupsId = async (
-	id: number,
-	params: GetV1ReportsClassGroupsIdParams,
-	options?: RequestInit,
-): Promise<getV1ReportsClassGroupsIdResponse> => {
-	return customInstance<getV1ReportsClassGroupsIdResponse>(
-		getGetV1ReportsClassGroupsIdUrl(id, params),
-		{
-			...options,
-			method: "GET",
-		},
-	);
-};
+export const getV1ReportsClassGroupsId = async (id: number,
+    params: GetV1ReportsClassGroupsIdParams, options?: RequestInit): Promise<getV1ReportsClassGroupsIdResponse> => {
 
-export const getGetV1ReportsClassGroupsIdQueryKey = (
-	id: number,
-	params?: GetV1ReportsClassGroupsIdParams,
+  return customInstance<getV1ReportsClassGroupsIdResponse>(getGetV1ReportsClassGroupsIdUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetV1ReportsClassGroupsIdQueryKey = (id: number,
+    params?: GetV1ReportsClassGroupsIdParams,) => {
+    return [
+    `/v1/reports/class-groups/${id}`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetV1ReportsClassGroupsIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1ReportsClassGroupsId>>, TError = DtoErrorResponse>(id: number,
+    params: GetV1ReportsClassGroupsIdParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsClassGroupsId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
-	return [
-		`/v1/reports/class-groups/${id}`,
-		...(params ? [params] : []),
-	] as const;
-};
 
-export const getGetV1ReportsClassGroupsIdQueryOptions = <
-	TData = Awaited<ReturnType<typeof getV1ReportsClassGroupsId>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	params: GetV1ReportsClassGroupsIdParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsClassGroupsId>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-) => {
-	const { query: queryOptions, request: requestOptions } = options ?? {};
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-	const queryKey =
-		queryOptions?.queryKey ?? getGetV1ReportsClassGroupsIdQueryKey(id, params);
+  const queryKey =  queryOptions?.queryKey ?? getGetV1ReportsClassGroupsIdQueryKey(id,params);
 
-	const queryFn: QueryFunction<
-		Awaited<ReturnType<typeof getV1ReportsClassGroupsId>>
-	> = ({ signal }) =>
-		getV1ReportsClassGroupsId(id, params, { signal, ...requestOptions });
 
-	return {
-		queryKey,
-		queryFn,
-		enabled: !!id,
-		...queryOptions,
-	} as UseQueryOptions<
-		Awaited<ReturnType<typeof getV1ReportsClassGroupsId>>,
-		TError,
-		TData
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
-};
 
-export type GetV1ReportsClassGroupsIdQueryResult = NonNullable<
-	Awaited<ReturnType<typeof getV1ReportsClassGroupsId>>
->;
-export type GetV1ReportsClassGroupsIdQueryError = DtoErrorResponse;
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1ReportsClassGroupsId>>> = ({ signal }) => getV1ReportsClassGroupsId(id,params, { signal, ...requestOptions });
 
-export function useGetV1ReportsClassGroupsId<
-	TData = Awaited<ReturnType<typeof getV1ReportsClassGroupsId>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	params: GetV1ReportsClassGroupsIdParams,
-	options: {
-		query: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsClassGroupsId>>,
-				TError,
-				TData
-			>
-		> &
-			Pick<
-				DefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1ReportsClassGroupsId>>,
-					TError,
-					Awaited<ReturnType<typeof getV1ReportsClassGroupsId>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1ReportsClassGroupsId<
-	TData = Awaited<ReturnType<typeof getV1ReportsClassGroupsId>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	params: GetV1ReportsClassGroupsIdParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsClassGroupsId>>,
-				TError,
-				TData
-			>
-		> &
-			Pick<
-				UndefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1ReportsClassGroupsId>>,
-					TError,
-					Awaited<ReturnType<typeof getV1ReportsClassGroupsId>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1ReportsClassGroupsId<
-	TData = Awaited<ReturnType<typeof getV1ReportsClassGroupsId>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	params: GetV1ReportsClassGroupsIdParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsClassGroupsId>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsClassGroupsId>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetV1ReportsClassGroupsIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1ReportsClassGroupsId>>>
+export type GetV1ReportsClassGroupsIdQueryError = DtoErrorResponse
+
+
+export function useGetV1ReportsClassGroupsId<TData = Awaited<ReturnType<typeof getV1ReportsClassGroupsId>>, TError = DtoErrorResponse>(
+ id: number,
+    params: GetV1ReportsClassGroupsIdParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsClassGroupsId>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1ReportsClassGroupsId>>,
+          TError,
+          Awaited<ReturnType<typeof getV1ReportsClassGroupsId>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1ReportsClassGroupsId<TData = Awaited<ReturnType<typeof getV1ReportsClassGroupsId>>, TError = DtoErrorResponse>(
+ id: number,
+    params: GetV1ReportsClassGroupsIdParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsClassGroupsId>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1ReportsClassGroupsId>>,
+          TError,
+          Awaited<ReturnType<typeof getV1ReportsClassGroupsId>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1ReportsClassGroupsId<TData = Awaited<ReturnType<typeof getV1ReportsClassGroupsId>>, TError = DtoErrorResponse>(
+ id: number,
+    params: GetV1ReportsClassGroupsIdParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsClassGroupsId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Report by class group
  */
 
-export function useGetV1ReportsClassGroupsId<
-	TData = Awaited<ReturnType<typeof getV1ReportsClassGroupsId>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	params: GetV1ReportsClassGroupsIdParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsClassGroupsId>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-} {
-	const queryOptions = getGetV1ReportsClassGroupsIdQueryOptions(
-		id,
-		params,
-		options,
-	);
+export function useGetV1ReportsClassGroupsId<TData = Awaited<ReturnType<typeof getV1ReportsClassGroupsId>>, TError = DtoErrorResponse>(
+ id: number,
+    params: GetV1ReportsClassGroupsIdParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsClassGroupsId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-		TData,
-		TError
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getGetV1ReportsClassGroupsIdQueryOptions(id,params,options)
 
-	return { ...query, queryKey: queryOptions.queryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
 }
 
+
+
+
+
+
 export type getV1ReportsDailyResponse200 = {
-	data: GetV1ReportsDaily200;
-	status: 200;
-};
+  data: GetV1ReportsDaily200
+  status: 200
+}
 
 export type getV1ReportsDailyResponse400 = {
-	data: DtoErrorResponse;
-	status: 400;
-};
+  data: DtoErrorResponse
+  status: 400
+}
 
 export type getV1ReportsDailyResponse401 = {
-	data: DtoErrorResponse;
-	status: 401;
-};
+  data: DtoErrorResponse
+  status: 401
+}
 
 export type getV1ReportsDailyResponse403 = {
-	data: DtoErrorResponse;
-	status: 403;
-};
+  data: DtoErrorResponse
+  status: 403
+}
 
 export type getV1ReportsDailyResponse500 = {
-	data: DtoErrorResponse;
-	status: 500;
+  data: DtoErrorResponse
+  status: 500
+}
+
+export type getV1ReportsDailyResponseSuccess = (getV1ReportsDailyResponse200) & {
+  headers: Headers;
+};
+export type getV1ReportsDailyResponseError = (getV1ReportsDailyResponse400 | getV1ReportsDailyResponse401 | getV1ReportsDailyResponse403 | getV1ReportsDailyResponse500) & {
+  headers: Headers;
 };
 
-export type getV1ReportsDailyResponseSuccess = getV1ReportsDailyResponse200 & {
-	headers: Headers;
-};
-export type getV1ReportsDailyResponseError = (
-	| getV1ReportsDailyResponse400
-	| getV1ReportsDailyResponse401
-	| getV1ReportsDailyResponse403
-	| getV1ReportsDailyResponse500
-) & {
-	headers: Headers;
-};
+export type getV1ReportsDailyResponse = (getV1ReportsDailyResponseSuccess | getV1ReportsDailyResponseError)
 
-export type getV1ReportsDailyResponse =
-	| getV1ReportsDailyResponseSuccess
-	| getV1ReportsDailyResponseError;
+export const getGetV1ReportsDailyUrl = (params: GetV1ReportsDailyParams,) => {
+  const normalizedParams = new URLSearchParams();
 
-export const getGetV1ReportsDailyUrl = (params: GetV1ReportsDailyParams) => {
-	const normalizedParams = new URLSearchParams();
+  Object.entries(params || {}).forEach(([key, value]) => {
 
-	Object.entries(params || {}).forEach(([key, value]) => {
-		if (value !== undefined) {
-			normalizedParams.append(key, value === null ? "null" : value.toString());
-		}
-	});
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-	const stringifiedParams = normalizedParams.toString();
+  const stringifiedParams = normalizedParams.toString();
 
-	return stringifiedParams.length > 0
-		? `/v1/reports/daily?${stringifiedParams}`
-		: `/v1/reports/daily`;
-};
+  return stringifiedParams.length > 0 ? `/v1/reports/daily?${stringifiedParams}` : `/v1/reports/daily`
+}
 
 /**
  * Get daily financial report
  * @summary Daily report
  */
-export const getV1ReportsDaily = async (
-	params: GetV1ReportsDailyParams,
-	options?: RequestInit,
-): Promise<getV1ReportsDailyResponse> => {
-	return customInstance<getV1ReportsDailyResponse>(
-		getGetV1ReportsDailyUrl(params),
-		{
-			...options,
-			method: "GET",
-		},
-	);
-};
+export const getV1ReportsDaily = async (params: GetV1ReportsDailyParams, options?: RequestInit): Promise<getV1ReportsDailyResponse> => {
 
-export const getGetV1ReportsDailyQueryKey = (
-	params?: GetV1ReportsDailyParams,
+  return customInstance<getV1ReportsDailyResponse>(getGetV1ReportsDailyUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetV1ReportsDailyQueryKey = (params?: GetV1ReportsDailyParams,) => {
+    return [
+    `/v1/reports/daily`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetV1ReportsDailyQueryOptions = <TData = Awaited<ReturnType<typeof getV1ReportsDaily>>, TError = DtoErrorResponse>(params: GetV1ReportsDailyParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsDaily>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
-	return [`/v1/reports/daily`, ...(params ? [params] : [])] as const;
-};
 
-export const getGetV1ReportsDailyQueryOptions = <
-	TData = Awaited<ReturnType<typeof getV1ReportsDaily>>,
-	TError = DtoErrorResponse,
->(
-	params: GetV1ReportsDailyParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsDaily>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-) => {
-	const { query: queryOptions, request: requestOptions } = options ?? {};
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-	const queryKey =
-		queryOptions?.queryKey ?? getGetV1ReportsDailyQueryKey(params);
+  const queryKey =  queryOptions?.queryKey ?? getGetV1ReportsDailyQueryKey(params);
 
-	const queryFn: QueryFunction<
-		Awaited<ReturnType<typeof getV1ReportsDaily>>
-	> = ({ signal }) => getV1ReportsDaily(params, { signal, ...requestOptions });
 
-	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-		Awaited<ReturnType<typeof getV1ReportsDaily>>,
-		TError,
-		TData
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
-};
 
-export type GetV1ReportsDailyQueryResult = NonNullable<
-	Awaited<ReturnType<typeof getV1ReportsDaily>>
->;
-export type GetV1ReportsDailyQueryError = DtoErrorResponse;
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1ReportsDaily>>> = ({ signal }) => getV1ReportsDaily(params, { signal, ...requestOptions });
 
-export function useGetV1ReportsDaily<
-	TData = Awaited<ReturnType<typeof getV1ReportsDaily>>,
-	TError = DtoErrorResponse,
->(
-	params: GetV1ReportsDailyParams,
-	options: {
-		query: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsDaily>>,
-				TError,
-				TData
-			>
-		> &
-			Pick<
-				DefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1ReportsDaily>>,
-					TError,
-					Awaited<ReturnType<typeof getV1ReportsDaily>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1ReportsDaily<
-	TData = Awaited<ReturnType<typeof getV1ReportsDaily>>,
-	TError = DtoErrorResponse,
->(
-	params: GetV1ReportsDailyParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsDaily>>,
-				TError,
-				TData
-			>
-		> &
-			Pick<
-				UndefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1ReportsDaily>>,
-					TError,
-					Awaited<ReturnType<typeof getV1ReportsDaily>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1ReportsDaily<
-	TData = Awaited<ReturnType<typeof getV1ReportsDaily>>,
-	TError = DtoErrorResponse,
->(
-	params: GetV1ReportsDailyParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsDaily>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsDaily>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetV1ReportsDailyQueryResult = NonNullable<Awaited<ReturnType<typeof getV1ReportsDaily>>>
+export type GetV1ReportsDailyQueryError = DtoErrorResponse
+
+
+export function useGetV1ReportsDaily<TData = Awaited<ReturnType<typeof getV1ReportsDaily>>, TError = DtoErrorResponse>(
+ params: GetV1ReportsDailyParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsDaily>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1ReportsDaily>>,
+          TError,
+          Awaited<ReturnType<typeof getV1ReportsDaily>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1ReportsDaily<TData = Awaited<ReturnType<typeof getV1ReportsDaily>>, TError = DtoErrorResponse>(
+ params: GetV1ReportsDailyParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsDaily>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1ReportsDaily>>,
+          TError,
+          Awaited<ReturnType<typeof getV1ReportsDaily>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1ReportsDaily<TData = Awaited<ReturnType<typeof getV1ReportsDaily>>, TError = DtoErrorResponse>(
+ params: GetV1ReportsDailyParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsDaily>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Daily report
  */
 
-export function useGetV1ReportsDaily<
-	TData = Awaited<ReturnType<typeof getV1ReportsDaily>>,
-	TError = DtoErrorResponse,
->(
-	params: GetV1ReportsDailyParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsDaily>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-} {
-	const queryOptions = getGetV1ReportsDailyQueryOptions(params, options);
+export function useGetV1ReportsDaily<TData = Awaited<ReturnType<typeof getV1ReportsDaily>>, TError = DtoErrorResponse>(
+ params: GetV1ReportsDailyParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsDaily>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-		TData,
-		TError
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getGetV1ReportsDailyQueryOptions(params,options)
 
-	return { ...query, queryKey: queryOptions.queryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
 }
 
+
+
+
+
+
 export type getV1ReportsMonthlyResponse200 = {
-	data: GetV1ReportsMonthly200;
-	status: 200;
-};
+  data: GetV1ReportsMonthly200
+  status: 200
+}
 
 export type getV1ReportsMonthlyResponse400 = {
-	data: DtoErrorResponse;
-	status: 400;
-};
+  data: DtoErrorResponse
+  status: 400
+}
 
 export type getV1ReportsMonthlyResponse401 = {
-	data: DtoErrorResponse;
-	status: 401;
-};
+  data: DtoErrorResponse
+  status: 401
+}
 
 export type getV1ReportsMonthlyResponse403 = {
-	data: DtoErrorResponse;
-	status: 403;
-};
+  data: DtoErrorResponse
+  status: 403
+}
 
 export type getV1ReportsMonthlyResponse500 = {
-	data: DtoErrorResponse;
-	status: 500;
+  data: DtoErrorResponse
+  status: 500
+}
+
+export type getV1ReportsMonthlyResponseSuccess = (getV1ReportsMonthlyResponse200) & {
+  headers: Headers;
+};
+export type getV1ReportsMonthlyResponseError = (getV1ReportsMonthlyResponse400 | getV1ReportsMonthlyResponse401 | getV1ReportsMonthlyResponse403 | getV1ReportsMonthlyResponse500) & {
+  headers: Headers;
 };
 
-export type getV1ReportsMonthlyResponseSuccess =
-	getV1ReportsMonthlyResponse200 & {
-		headers: Headers;
-	};
-export type getV1ReportsMonthlyResponseError = (
-	| getV1ReportsMonthlyResponse400
-	| getV1ReportsMonthlyResponse401
-	| getV1ReportsMonthlyResponse403
-	| getV1ReportsMonthlyResponse500
-) & {
-	headers: Headers;
-};
+export type getV1ReportsMonthlyResponse = (getV1ReportsMonthlyResponseSuccess | getV1ReportsMonthlyResponseError)
 
-export type getV1ReportsMonthlyResponse =
-	| getV1ReportsMonthlyResponseSuccess
-	| getV1ReportsMonthlyResponseError;
+export const getGetV1ReportsMonthlyUrl = (params: GetV1ReportsMonthlyParams,) => {
+  const normalizedParams = new URLSearchParams();
 
-export const getGetV1ReportsMonthlyUrl = (
-	params: GetV1ReportsMonthlyParams,
-) => {
-	const normalizedParams = new URLSearchParams();
+  Object.entries(params || {}).forEach(([key, value]) => {
 
-	Object.entries(params || {}).forEach(([key, value]) => {
-		if (value !== undefined) {
-			normalizedParams.append(key, value === null ? "null" : value.toString());
-		}
-	});
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-	const stringifiedParams = normalizedParams.toString();
+  const stringifiedParams = normalizedParams.toString();
 
-	return stringifiedParams.length > 0
-		? `/v1/reports/monthly?${stringifiedParams}`
-		: `/v1/reports/monthly`;
-};
+  return stringifiedParams.length > 0 ? `/v1/reports/monthly?${stringifiedParams}` : `/v1/reports/monthly`
+}
 
 /**
  * Get monthly financial report
  * @summary Monthly report
  */
-export const getV1ReportsMonthly = async (
-	params: GetV1ReportsMonthlyParams,
-	options?: RequestInit,
-): Promise<getV1ReportsMonthlyResponse> => {
-	return customInstance<getV1ReportsMonthlyResponse>(
-		getGetV1ReportsMonthlyUrl(params),
-		{
-			...options,
-			method: "GET",
-		},
-	);
-};
+export const getV1ReportsMonthly = async (params: GetV1ReportsMonthlyParams, options?: RequestInit): Promise<getV1ReportsMonthlyResponse> => {
 
-export const getGetV1ReportsMonthlyQueryKey = (
-	params?: GetV1ReportsMonthlyParams,
+  return customInstance<getV1ReportsMonthlyResponse>(getGetV1ReportsMonthlyUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetV1ReportsMonthlyQueryKey = (params?: GetV1ReportsMonthlyParams,) => {
+    return [
+    `/v1/reports/monthly`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetV1ReportsMonthlyQueryOptions = <TData = Awaited<ReturnType<typeof getV1ReportsMonthly>>, TError = DtoErrorResponse>(params: GetV1ReportsMonthlyParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsMonthly>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
-	return [`/v1/reports/monthly`, ...(params ? [params] : [])] as const;
-};
 
-export const getGetV1ReportsMonthlyQueryOptions = <
-	TData = Awaited<ReturnType<typeof getV1ReportsMonthly>>,
-	TError = DtoErrorResponse,
->(
-	params: GetV1ReportsMonthlyParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsMonthly>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-) => {
-	const { query: queryOptions, request: requestOptions } = options ?? {};
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-	const queryKey =
-		queryOptions?.queryKey ?? getGetV1ReportsMonthlyQueryKey(params);
+  const queryKey =  queryOptions?.queryKey ?? getGetV1ReportsMonthlyQueryKey(params);
 
-	const queryFn: QueryFunction<
-		Awaited<ReturnType<typeof getV1ReportsMonthly>>
-	> = ({ signal }) =>
-		getV1ReportsMonthly(params, { signal, ...requestOptions });
 
-	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-		Awaited<ReturnType<typeof getV1ReportsMonthly>>,
-		TError,
-		TData
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
-};
 
-export type GetV1ReportsMonthlyQueryResult = NonNullable<
-	Awaited<ReturnType<typeof getV1ReportsMonthly>>
->;
-export type GetV1ReportsMonthlyQueryError = DtoErrorResponse;
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1ReportsMonthly>>> = ({ signal }) => getV1ReportsMonthly(params, { signal, ...requestOptions });
 
-export function useGetV1ReportsMonthly<
-	TData = Awaited<ReturnType<typeof getV1ReportsMonthly>>,
-	TError = DtoErrorResponse,
->(
-	params: GetV1ReportsMonthlyParams,
-	options: {
-		query: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsMonthly>>,
-				TError,
-				TData
-			>
-		> &
-			Pick<
-				DefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1ReportsMonthly>>,
-					TError,
-					Awaited<ReturnType<typeof getV1ReportsMonthly>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1ReportsMonthly<
-	TData = Awaited<ReturnType<typeof getV1ReportsMonthly>>,
-	TError = DtoErrorResponse,
->(
-	params: GetV1ReportsMonthlyParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsMonthly>>,
-				TError,
-				TData
-			>
-		> &
-			Pick<
-				UndefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1ReportsMonthly>>,
-					TError,
-					Awaited<ReturnType<typeof getV1ReportsMonthly>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1ReportsMonthly<
-	TData = Awaited<ReturnType<typeof getV1ReportsMonthly>>,
-	TError = DtoErrorResponse,
->(
-	params: GetV1ReportsMonthlyParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsMonthly>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsMonthly>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetV1ReportsMonthlyQueryResult = NonNullable<Awaited<ReturnType<typeof getV1ReportsMonthly>>>
+export type GetV1ReportsMonthlyQueryError = DtoErrorResponse
+
+
+export function useGetV1ReportsMonthly<TData = Awaited<ReturnType<typeof getV1ReportsMonthly>>, TError = DtoErrorResponse>(
+ params: GetV1ReportsMonthlyParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsMonthly>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1ReportsMonthly>>,
+          TError,
+          Awaited<ReturnType<typeof getV1ReportsMonthly>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1ReportsMonthly<TData = Awaited<ReturnType<typeof getV1ReportsMonthly>>, TError = DtoErrorResponse>(
+ params: GetV1ReportsMonthlyParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsMonthly>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1ReportsMonthly>>,
+          TError,
+          Awaited<ReturnType<typeof getV1ReportsMonthly>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1ReportsMonthly<TData = Awaited<ReturnType<typeof getV1ReportsMonthly>>, TError = DtoErrorResponse>(
+ params: GetV1ReportsMonthlyParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsMonthly>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Monthly report
  */
 
-export function useGetV1ReportsMonthly<
-	TData = Awaited<ReturnType<typeof getV1ReportsMonthly>>,
-	TError = DtoErrorResponse,
->(
-	params: GetV1ReportsMonthlyParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsMonthly>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-} {
-	const queryOptions = getGetV1ReportsMonthlyQueryOptions(params, options);
+export function useGetV1ReportsMonthly<TData = Awaited<ReturnType<typeof getV1ReportsMonthly>>, TError = DtoErrorResponse>(
+ params: GetV1ReportsMonthlyParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsMonthly>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-		TData,
-		TError
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getGetV1ReportsMonthlyQueryOptions(params,options)
 
-	return { ...query, queryKey: queryOptions.queryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
 }
 
+
+
+
+
+
 export type getV1ReportsPosisiKasResponse200 = {
-	data: GetV1ReportsPosisiKas200;
-	status: 200;
-};
+  data: GetV1ReportsPosisiKas200
+  status: 200
+}
 
 export type getV1ReportsPosisiKasResponse400 = {
-	data: DtoErrorResponse;
-	status: 400;
-};
+  data: DtoErrorResponse
+  status: 400
+}
 
 export type getV1ReportsPosisiKasResponse401 = {
-	data: DtoErrorResponse;
-	status: 401;
-};
+  data: DtoErrorResponse
+  status: 401
+}
 
 export type getV1ReportsPosisiKasResponse403 = {
-	data: DtoErrorResponse;
-	status: 403;
-};
+  data: DtoErrorResponse
+  status: 403
+}
 
 export type getV1ReportsPosisiKasResponse500 = {
-	data: DtoErrorResponse;
-	status: 500;
+  data: DtoErrorResponse
+  status: 500
+}
+
+export type getV1ReportsPosisiKasResponseSuccess = (getV1ReportsPosisiKasResponse200) & {
+  headers: Headers;
+};
+export type getV1ReportsPosisiKasResponseError = (getV1ReportsPosisiKasResponse400 | getV1ReportsPosisiKasResponse401 | getV1ReportsPosisiKasResponse403 | getV1ReportsPosisiKasResponse500) & {
+  headers: Headers;
 };
 
-export type getV1ReportsPosisiKasResponseSuccess =
-	getV1ReportsPosisiKasResponse200 & {
-		headers: Headers;
-	};
-export type getV1ReportsPosisiKasResponseError = (
-	| getV1ReportsPosisiKasResponse400
-	| getV1ReportsPosisiKasResponse401
-	| getV1ReportsPosisiKasResponse403
-	| getV1ReportsPosisiKasResponse500
-) & {
-	headers: Headers;
-};
+export type getV1ReportsPosisiKasResponse = (getV1ReportsPosisiKasResponseSuccess | getV1ReportsPosisiKasResponseError)
 
-export type getV1ReportsPosisiKasResponse =
-	| getV1ReportsPosisiKasResponseSuccess
-	| getV1ReportsPosisiKasResponseError;
+export const getGetV1ReportsPosisiKasUrl = (params: GetV1ReportsPosisiKasParams,) => {
+  const normalizedParams = new URLSearchParams();
 
-export const getGetV1ReportsPosisiKasUrl = (
-	params: GetV1ReportsPosisiKasParams,
-) => {
-	const normalizedParams = new URLSearchParams();
+  Object.entries(params || {}).forEach(([key, value]) => {
 
-	Object.entries(params || {}).forEach(([key, value]) => {
-		if (value !== undefined) {
-			normalizedParams.append(key, value === null ? "null" : value.toString());
-		}
-	});
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-	const stringifiedParams = normalizedParams.toString();
+  const stringifiedParams = normalizedParams.toString();
 
-	return stringifiedParams.length > 0
-		? `/v1/reports/posisi-kas?${stringifiedParams}`
-		: `/v1/reports/posisi-kas`;
-};
+  return stringifiedParams.length > 0 ? `/v1/reports/posisi-kas?${stringifiedParams}` : `/v1/reports/posisi-kas`
+}
 
 /**
  * Get cash position report showing balance of all income posts with expense details
  * @summary Cash position report
  */
-export const getV1ReportsPosisiKas = async (
-	params: GetV1ReportsPosisiKasParams,
-	options?: RequestInit,
-): Promise<getV1ReportsPosisiKasResponse> => {
-	return customInstance<getV1ReportsPosisiKasResponse>(
-		getGetV1ReportsPosisiKasUrl(params),
-		{
-			...options,
-			method: "GET",
-		},
-	);
-};
+export const getV1ReportsPosisiKas = async (params: GetV1ReportsPosisiKasParams, options?: RequestInit): Promise<getV1ReportsPosisiKasResponse> => {
 
-export const getGetV1ReportsPosisiKasQueryKey = (
-	params?: GetV1ReportsPosisiKasParams,
+  return customInstance<getV1ReportsPosisiKasResponse>(getGetV1ReportsPosisiKasUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetV1ReportsPosisiKasQueryKey = (params?: GetV1ReportsPosisiKasParams,) => {
+    return [
+    `/v1/reports/posisi-kas`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetV1ReportsPosisiKasQueryOptions = <TData = Awaited<ReturnType<typeof getV1ReportsPosisiKas>>, TError = DtoErrorResponse>(params: GetV1ReportsPosisiKasParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsPosisiKas>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
-	return [`/v1/reports/posisi-kas`, ...(params ? [params] : [])] as const;
-};
 
-export const getGetV1ReportsPosisiKasQueryOptions = <
-	TData = Awaited<ReturnType<typeof getV1ReportsPosisiKas>>,
-	TError = DtoErrorResponse,
->(
-	params: GetV1ReportsPosisiKasParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsPosisiKas>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-) => {
-	const { query: queryOptions, request: requestOptions } = options ?? {};
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-	const queryKey =
-		queryOptions?.queryKey ?? getGetV1ReportsPosisiKasQueryKey(params);
+  const queryKey =  queryOptions?.queryKey ?? getGetV1ReportsPosisiKasQueryKey(params);
 
-	const queryFn: QueryFunction<
-		Awaited<ReturnType<typeof getV1ReportsPosisiKas>>
-	> = ({ signal }) =>
-		getV1ReportsPosisiKas(params, { signal, ...requestOptions });
 
-	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-		Awaited<ReturnType<typeof getV1ReportsPosisiKas>>,
-		TError,
-		TData
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
-};
 
-export type GetV1ReportsPosisiKasQueryResult = NonNullable<
-	Awaited<ReturnType<typeof getV1ReportsPosisiKas>>
->;
-export type GetV1ReportsPosisiKasQueryError = DtoErrorResponse;
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1ReportsPosisiKas>>> = ({ signal }) => getV1ReportsPosisiKas(params, { signal, ...requestOptions });
 
-export function useGetV1ReportsPosisiKas<
-	TData = Awaited<ReturnType<typeof getV1ReportsPosisiKas>>,
-	TError = DtoErrorResponse,
->(
-	params: GetV1ReportsPosisiKasParams,
-	options: {
-		query: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsPosisiKas>>,
-				TError,
-				TData
-			>
-		> &
-			Pick<
-				DefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1ReportsPosisiKas>>,
-					TError,
-					Awaited<ReturnType<typeof getV1ReportsPosisiKas>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1ReportsPosisiKas<
-	TData = Awaited<ReturnType<typeof getV1ReportsPosisiKas>>,
-	TError = DtoErrorResponse,
->(
-	params: GetV1ReportsPosisiKasParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsPosisiKas>>,
-				TError,
-				TData
-			>
-		> &
-			Pick<
-				UndefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1ReportsPosisiKas>>,
-					TError,
-					Awaited<ReturnType<typeof getV1ReportsPosisiKas>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1ReportsPosisiKas<
-	TData = Awaited<ReturnType<typeof getV1ReportsPosisiKas>>,
-	TError = DtoErrorResponse,
->(
-	params: GetV1ReportsPosisiKasParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsPosisiKas>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsPosisiKas>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetV1ReportsPosisiKasQueryResult = NonNullable<Awaited<ReturnType<typeof getV1ReportsPosisiKas>>>
+export type GetV1ReportsPosisiKasQueryError = DtoErrorResponse
+
+
+export function useGetV1ReportsPosisiKas<TData = Awaited<ReturnType<typeof getV1ReportsPosisiKas>>, TError = DtoErrorResponse>(
+ params: GetV1ReportsPosisiKasParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsPosisiKas>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1ReportsPosisiKas>>,
+          TError,
+          Awaited<ReturnType<typeof getV1ReportsPosisiKas>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1ReportsPosisiKas<TData = Awaited<ReturnType<typeof getV1ReportsPosisiKas>>, TError = DtoErrorResponse>(
+ params: GetV1ReportsPosisiKasParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsPosisiKas>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1ReportsPosisiKas>>,
+          TError,
+          Awaited<ReturnType<typeof getV1ReportsPosisiKas>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1ReportsPosisiKas<TData = Awaited<ReturnType<typeof getV1ReportsPosisiKas>>, TError = DtoErrorResponse>(
+ params: GetV1ReportsPosisiKasParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsPosisiKas>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Cash position report
  */
 
-export function useGetV1ReportsPosisiKas<
-	TData = Awaited<ReturnType<typeof getV1ReportsPosisiKas>>,
-	TError = DtoErrorResponse,
->(
-	params: GetV1ReportsPosisiKasParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsPosisiKas>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-} {
-	const queryOptions = getGetV1ReportsPosisiKasQueryOptions(params, options);
+export function useGetV1ReportsPosisiKas<TData = Awaited<ReturnType<typeof getV1ReportsPosisiKas>>, TError = DtoErrorResponse>(
+ params: GetV1ReportsPosisiKasParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsPosisiKas>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-		TData,
-		TError
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getGetV1ReportsPosisiKasQueryOptions(params,options)
 
-	return { ...query, queryKey: queryOptions.queryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
 }
 
+
+
+
+
+
 export type getV1ReportsSaldoResponse200 = {
-	data: GetV1ReportsSaldo200;
-	status: 200;
-};
+  data: GetV1ReportsSaldo200
+  status: 200
+}
 
 export type getV1ReportsSaldoResponse400 = {
-	data: DtoErrorResponse;
-	status: 400;
-};
+  data: DtoErrorResponse
+  status: 400
+}
 
 export type getV1ReportsSaldoResponse401 = {
-	data: DtoErrorResponse;
-	status: 401;
-};
+  data: DtoErrorResponse
+  status: 401
+}
 
 export type getV1ReportsSaldoResponse403 = {
-	data: DtoErrorResponse;
-	status: 403;
-};
+  data: DtoErrorResponse
+  status: 403
+}
 
 export type getV1ReportsSaldoResponse500 = {
-	data: DtoErrorResponse;
-	status: 500;
+  data: DtoErrorResponse
+  status: 500
+}
+
+export type getV1ReportsSaldoResponseSuccess = (getV1ReportsSaldoResponse200) & {
+  headers: Headers;
+};
+export type getV1ReportsSaldoResponseError = (getV1ReportsSaldoResponse400 | getV1ReportsSaldoResponse401 | getV1ReportsSaldoResponse403 | getV1ReportsSaldoResponse500) & {
+  headers: Headers;
 };
 
-export type getV1ReportsSaldoResponseSuccess = getV1ReportsSaldoResponse200 & {
-	headers: Headers;
-};
-export type getV1ReportsSaldoResponseError = (
-	| getV1ReportsSaldoResponse400
-	| getV1ReportsSaldoResponse401
-	| getV1ReportsSaldoResponse403
-	| getV1ReportsSaldoResponse500
-) & {
-	headers: Headers;
-};
+export type getV1ReportsSaldoResponse = (getV1ReportsSaldoResponseSuccess | getV1ReportsSaldoResponseError)
 
-export type getV1ReportsSaldoResponse =
-	| getV1ReportsSaldoResponseSuccess
-	| getV1ReportsSaldoResponseError;
+export const getGetV1ReportsSaldoUrl = (params: GetV1ReportsSaldoParams,) => {
+  const normalizedParams = new URLSearchParams();
 
-export const getGetV1ReportsSaldoUrl = (params: GetV1ReportsSaldoParams) => {
-	const normalizedParams = new URLSearchParams();
+  Object.entries(params || {}).forEach(([key, value]) => {
 
-	Object.entries(params || {}).forEach(([key, value]) => {
-		if (value !== undefined) {
-			normalizedParams.append(key, value === null ? "null" : value.toString());
-		}
-	});
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-	const stringifiedParams = normalizedParams.toString();
+  const stringifiedParams = normalizedParams.toString();
 
-	return stringifiedParams.length > 0
-		? `/v1/reports/saldo?${stringifiedParams}`
-		: `/v1/reports/saldo`;
-};
+  return stringifiedParams.length > 0 ? `/v1/reports/saldo?${stringifiedParams}` : `/v1/reports/saldo`
+}
 
 /**
  * Get daily running balance report, optionally filtered by income post category
  * @summary Balance report per post or all posts
  */
-export const getV1ReportsSaldo = async (
-	params: GetV1ReportsSaldoParams,
-	options?: RequestInit,
-): Promise<getV1ReportsSaldoResponse> => {
-	return customInstance<getV1ReportsSaldoResponse>(
-		getGetV1ReportsSaldoUrl(params),
-		{
-			...options,
-			method: "GET",
-		},
-	);
-};
+export const getV1ReportsSaldo = async (params: GetV1ReportsSaldoParams, options?: RequestInit): Promise<getV1ReportsSaldoResponse> => {
 
-export const getGetV1ReportsSaldoQueryKey = (
-	params?: GetV1ReportsSaldoParams,
+  return customInstance<getV1ReportsSaldoResponse>(getGetV1ReportsSaldoUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetV1ReportsSaldoQueryKey = (params?: GetV1ReportsSaldoParams,) => {
+    return [
+    `/v1/reports/saldo`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetV1ReportsSaldoQueryOptions = <TData = Awaited<ReturnType<typeof getV1ReportsSaldo>>, TError = DtoErrorResponse>(params: GetV1ReportsSaldoParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsSaldo>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
-	return [`/v1/reports/saldo`, ...(params ? [params] : [])] as const;
-};
 
-export const getGetV1ReportsSaldoQueryOptions = <
-	TData = Awaited<ReturnType<typeof getV1ReportsSaldo>>,
-	TError = DtoErrorResponse,
->(
-	params: GetV1ReportsSaldoParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsSaldo>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-) => {
-	const { query: queryOptions, request: requestOptions } = options ?? {};
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-	const queryKey =
-		queryOptions?.queryKey ?? getGetV1ReportsSaldoQueryKey(params);
+  const queryKey =  queryOptions?.queryKey ?? getGetV1ReportsSaldoQueryKey(params);
 
-	const queryFn: QueryFunction<
-		Awaited<ReturnType<typeof getV1ReportsSaldo>>
-	> = ({ signal }) => getV1ReportsSaldo(params, { signal, ...requestOptions });
 
-	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-		Awaited<ReturnType<typeof getV1ReportsSaldo>>,
-		TError,
-		TData
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
-};
 
-export type GetV1ReportsSaldoQueryResult = NonNullable<
-	Awaited<ReturnType<typeof getV1ReportsSaldo>>
->;
-export type GetV1ReportsSaldoQueryError = DtoErrorResponse;
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1ReportsSaldo>>> = ({ signal }) => getV1ReportsSaldo(params, { signal, ...requestOptions });
 
-export function useGetV1ReportsSaldo<
-	TData = Awaited<ReturnType<typeof getV1ReportsSaldo>>,
-	TError = DtoErrorResponse,
->(
-	params: GetV1ReportsSaldoParams,
-	options: {
-		query: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsSaldo>>,
-				TError,
-				TData
-			>
-		> &
-			Pick<
-				DefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1ReportsSaldo>>,
-					TError,
-					Awaited<ReturnType<typeof getV1ReportsSaldo>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1ReportsSaldo<
-	TData = Awaited<ReturnType<typeof getV1ReportsSaldo>>,
-	TError = DtoErrorResponse,
->(
-	params: GetV1ReportsSaldoParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsSaldo>>,
-				TError,
-				TData
-			>
-		> &
-			Pick<
-				UndefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1ReportsSaldo>>,
-					TError,
-					Awaited<ReturnType<typeof getV1ReportsSaldo>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1ReportsSaldo<
-	TData = Awaited<ReturnType<typeof getV1ReportsSaldo>>,
-	TError = DtoErrorResponse,
->(
-	params: GetV1ReportsSaldoParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsSaldo>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsSaldo>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetV1ReportsSaldoQueryResult = NonNullable<Awaited<ReturnType<typeof getV1ReportsSaldo>>>
+export type GetV1ReportsSaldoQueryError = DtoErrorResponse
+
+
+export function useGetV1ReportsSaldo<TData = Awaited<ReturnType<typeof getV1ReportsSaldo>>, TError = DtoErrorResponse>(
+ params: GetV1ReportsSaldoParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsSaldo>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1ReportsSaldo>>,
+          TError,
+          Awaited<ReturnType<typeof getV1ReportsSaldo>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1ReportsSaldo<TData = Awaited<ReturnType<typeof getV1ReportsSaldo>>, TError = DtoErrorResponse>(
+ params: GetV1ReportsSaldoParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsSaldo>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1ReportsSaldo>>,
+          TError,
+          Awaited<ReturnType<typeof getV1ReportsSaldo>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1ReportsSaldo<TData = Awaited<ReturnType<typeof getV1ReportsSaldo>>, TError = DtoErrorResponse>(
+ params: GetV1ReportsSaldoParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsSaldo>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Balance report per post or all posts
  */
 
-export function useGetV1ReportsSaldo<
-	TData = Awaited<ReturnType<typeof getV1ReportsSaldo>>,
-	TError = DtoErrorResponse,
->(
-	params: GetV1ReportsSaldoParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsSaldo>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-} {
-	const queryOptions = getGetV1ReportsSaldoQueryOptions(params, options);
+export function useGetV1ReportsSaldo<TData = Awaited<ReturnType<typeof getV1ReportsSaldo>>, TError = DtoErrorResponse>(
+ params: GetV1ReportsSaldoParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsSaldo>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-		TData,
-		TError
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getGetV1ReportsSaldoQueryOptions(params,options)
 
-	return { ...query, queryKey: queryOptions.queryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
 }
 
+
+
+
+
+
 export type getV1ReportsSavingsStudentsIdResponse200 = {
-	data: GetV1ReportsSavingsStudentsId200;
-	status: 200;
-};
+  data: GetV1ReportsSavingsStudentsId200
+  status: 200
+}
 
 export type getV1ReportsSavingsStudentsIdResponse400 = {
-	data: DtoErrorResponse;
-	status: 400;
-};
+  data: DtoErrorResponse
+  status: 400
+}
 
 export type getV1ReportsSavingsStudentsIdResponse401 = {
-	data: DtoErrorResponse;
-	status: 401;
-};
+  data: DtoErrorResponse
+  status: 401
+}
 
 export type getV1ReportsSavingsStudentsIdResponse404 = {
-	data: DtoErrorResponse;
-	status: 404;
+  data: DtoErrorResponse
+  status: 404
+}
+
+export type getV1ReportsSavingsStudentsIdResponseSuccess = (getV1ReportsSavingsStudentsIdResponse200) & {
+  headers: Headers;
+};
+export type getV1ReportsSavingsStudentsIdResponseError = (getV1ReportsSavingsStudentsIdResponse400 | getV1ReportsSavingsStudentsIdResponse401 | getV1ReportsSavingsStudentsIdResponse404) & {
+  headers: Headers;
 };
 
-export type getV1ReportsSavingsStudentsIdResponseSuccess =
-	getV1ReportsSavingsStudentsIdResponse200 & {
-		headers: Headers;
-	};
-export type getV1ReportsSavingsStudentsIdResponseError = (
-	| getV1ReportsSavingsStudentsIdResponse400
-	| getV1ReportsSavingsStudentsIdResponse401
-	| getV1ReportsSavingsStudentsIdResponse404
-) & {
-	headers: Headers;
-};
+export type getV1ReportsSavingsStudentsIdResponse = (getV1ReportsSavingsStudentsIdResponseSuccess | getV1ReportsSavingsStudentsIdResponseError)
 
-export type getV1ReportsSavingsStudentsIdResponse =
-	| getV1ReportsSavingsStudentsIdResponseSuccess
-	| getV1ReportsSavingsStudentsIdResponseError;
+export const getGetV1ReportsSavingsStudentsIdUrl = (id: number,
+    params?: GetV1ReportsSavingsStudentsIdParams,) => {
+  const normalizedParams = new URLSearchParams();
 
-export const getGetV1ReportsSavingsStudentsIdUrl = (
-	id: number,
-	params?: GetV1ReportsSavingsStudentsIdParams,
-) => {
-	const normalizedParams = new URLSearchParams();
+  Object.entries(params || {}).forEach(([key, value]) => {
 
-	Object.entries(params || {}).forEach(([key, value]) => {
-		if (value !== undefined) {
-			normalizedParams.append(key, value === null ? "null" : value.toString());
-		}
-	});
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-	const stringifiedParams = normalizedParams.toString();
+  const stringifiedParams = normalizedParams.toString();
 
-	return stringifiedParams.length > 0
-		? `/v1/reports/savings/students/${id}?${stringifiedParams}`
-		: `/v1/reports/savings/students/${id}`;
-};
+  return stringifiedParams.length > 0 ? `/v1/reports/savings/students/${id}?${stringifiedParams}` : `/v1/reports/savings/students/${id}`
+}
 
 /**
  * Get individual student savings report with running balance for print
  * @summary Savings report per student
  */
-export const getV1ReportsSavingsStudentsId = async (
-	id: number,
-	params?: GetV1ReportsSavingsStudentsIdParams,
-	options?: RequestInit,
-): Promise<getV1ReportsSavingsStudentsIdResponse> => {
-	return customInstance<getV1ReportsSavingsStudentsIdResponse>(
-		getGetV1ReportsSavingsStudentsIdUrl(id, params),
-		{
-			...options,
-			method: "GET",
-		},
-	);
-};
+export const getV1ReportsSavingsStudentsId = async (id: number,
+    params?: GetV1ReportsSavingsStudentsIdParams, options?: RequestInit): Promise<getV1ReportsSavingsStudentsIdResponse> => {
 
-export const getGetV1ReportsSavingsStudentsIdQueryKey = (
-	id: number,
-	params?: GetV1ReportsSavingsStudentsIdParams,
+  return customInstance<getV1ReportsSavingsStudentsIdResponse>(getGetV1ReportsSavingsStudentsIdUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetV1ReportsSavingsStudentsIdQueryKey = (id: number,
+    params?: GetV1ReportsSavingsStudentsIdParams,) => {
+    return [
+    `/v1/reports/savings/students/${id}`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetV1ReportsSavingsStudentsIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1ReportsSavingsStudentsId>>, TError = DtoErrorResponse>(id: number,
+    params?: GetV1ReportsSavingsStudentsIdParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsSavingsStudentsId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
-	return [
-		`/v1/reports/savings/students/${id}`,
-		...(params ? [params] : []),
-	] as const;
-};
 
-export const getGetV1ReportsSavingsStudentsIdQueryOptions = <
-	TData = Awaited<ReturnType<typeof getV1ReportsSavingsStudentsId>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	params?: GetV1ReportsSavingsStudentsIdParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsSavingsStudentsId>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-) => {
-	const { query: queryOptions, request: requestOptions } = options ?? {};
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-	const queryKey =
-		queryOptions?.queryKey ??
-		getGetV1ReportsSavingsStudentsIdQueryKey(id, params);
+  const queryKey =  queryOptions?.queryKey ?? getGetV1ReportsSavingsStudentsIdQueryKey(id,params);
 
-	const queryFn: QueryFunction<
-		Awaited<ReturnType<typeof getV1ReportsSavingsStudentsId>>
-	> = ({ signal }) =>
-		getV1ReportsSavingsStudentsId(id, params, { signal, ...requestOptions });
 
-	return {
-		queryKey,
-		queryFn,
-		enabled: !!id,
-		...queryOptions,
-	} as UseQueryOptions<
-		Awaited<ReturnType<typeof getV1ReportsSavingsStudentsId>>,
-		TError,
-		TData
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
-};
 
-export type GetV1ReportsSavingsStudentsIdQueryResult = NonNullable<
-	Awaited<ReturnType<typeof getV1ReportsSavingsStudentsId>>
->;
-export type GetV1ReportsSavingsStudentsIdQueryError = DtoErrorResponse;
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1ReportsSavingsStudentsId>>> = ({ signal }) => getV1ReportsSavingsStudentsId(id,params, { signal, ...requestOptions });
 
-export function useGetV1ReportsSavingsStudentsId<
-	TData = Awaited<ReturnType<typeof getV1ReportsSavingsStudentsId>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	params: undefined | GetV1ReportsSavingsStudentsIdParams,
-	options: {
-		query: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsSavingsStudentsId>>,
-				TError,
-				TData
-			>
-		> &
-			Pick<
-				DefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1ReportsSavingsStudentsId>>,
-					TError,
-					Awaited<ReturnType<typeof getV1ReportsSavingsStudentsId>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1ReportsSavingsStudentsId<
-	TData = Awaited<ReturnType<typeof getV1ReportsSavingsStudentsId>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	params?: GetV1ReportsSavingsStudentsIdParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsSavingsStudentsId>>,
-				TError,
-				TData
-			>
-		> &
-			Pick<
-				UndefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1ReportsSavingsStudentsId>>,
-					TError,
-					Awaited<ReturnType<typeof getV1ReportsSavingsStudentsId>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1ReportsSavingsStudentsId<
-	TData = Awaited<ReturnType<typeof getV1ReportsSavingsStudentsId>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	params?: GetV1ReportsSavingsStudentsIdParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsSavingsStudentsId>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsSavingsStudentsId>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetV1ReportsSavingsStudentsIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1ReportsSavingsStudentsId>>>
+export type GetV1ReportsSavingsStudentsIdQueryError = DtoErrorResponse
+
+
+export function useGetV1ReportsSavingsStudentsId<TData = Awaited<ReturnType<typeof getV1ReportsSavingsStudentsId>>, TError = DtoErrorResponse>(
+ id: number,
+    params: undefined |  GetV1ReportsSavingsStudentsIdParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsSavingsStudentsId>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1ReportsSavingsStudentsId>>,
+          TError,
+          Awaited<ReturnType<typeof getV1ReportsSavingsStudentsId>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1ReportsSavingsStudentsId<TData = Awaited<ReturnType<typeof getV1ReportsSavingsStudentsId>>, TError = DtoErrorResponse>(
+ id: number,
+    params?: GetV1ReportsSavingsStudentsIdParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsSavingsStudentsId>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1ReportsSavingsStudentsId>>,
+          TError,
+          Awaited<ReturnType<typeof getV1ReportsSavingsStudentsId>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1ReportsSavingsStudentsId<TData = Awaited<ReturnType<typeof getV1ReportsSavingsStudentsId>>, TError = DtoErrorResponse>(
+ id: number,
+    params?: GetV1ReportsSavingsStudentsIdParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsSavingsStudentsId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Savings report per student
  */
 
-export function useGetV1ReportsSavingsStudentsId<
-	TData = Awaited<ReturnType<typeof getV1ReportsSavingsStudentsId>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	params?: GetV1ReportsSavingsStudentsIdParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsSavingsStudentsId>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-} {
-	const queryOptions = getGetV1ReportsSavingsStudentsIdQueryOptions(
-		id,
-		params,
-		options,
-	);
+export function useGetV1ReportsSavingsStudentsId<TData = Awaited<ReturnType<typeof getV1ReportsSavingsStudentsId>>, TError = DtoErrorResponse>(
+ id: number,
+    params?: GetV1ReportsSavingsStudentsIdParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsSavingsStudentsId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-		TData,
-		TError
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getGetV1ReportsSavingsStudentsIdQueryOptions(id,params,options)
 
-	return { ...query, queryKey: queryOptions.queryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
 }
 
+
+
+
+
+
 export type getV1ReportsStudentsIdResponse200 = {
-	data: GetV1ReportsStudentsId200;
-	status: 200;
-};
+  data: GetV1ReportsStudentsId200
+  status: 200
+}
 
 export type getV1ReportsStudentsIdResponse400 = {
-	data: DtoErrorResponse;
-	status: 400;
-};
+  data: DtoErrorResponse
+  status: 400
+}
 
 export type getV1ReportsStudentsIdResponse401 = {
-	data: DtoErrorResponse;
-	status: 401;
-};
+  data: DtoErrorResponse
+  status: 401
+}
 
 export type getV1ReportsStudentsIdResponse403 = {
-	data: DtoErrorResponse;
-	status: 403;
-};
+  data: DtoErrorResponse
+  status: 403
+}
 
 export type getV1ReportsStudentsIdResponse404 = {
-	data: DtoErrorResponse;
-	status: 404;
-};
+  data: DtoErrorResponse
+  status: 404
+}
 
 export type getV1ReportsStudentsIdResponse500 = {
-	data: DtoErrorResponse;
-	status: 500;
+  data: DtoErrorResponse
+  status: 500
+}
+
+export type getV1ReportsStudentsIdResponseSuccess = (getV1ReportsStudentsIdResponse200) & {
+  headers: Headers;
+};
+export type getV1ReportsStudentsIdResponseError = (getV1ReportsStudentsIdResponse400 | getV1ReportsStudentsIdResponse401 | getV1ReportsStudentsIdResponse403 | getV1ReportsStudentsIdResponse404 | getV1ReportsStudentsIdResponse500) & {
+  headers: Headers;
 };
 
-export type getV1ReportsStudentsIdResponseSuccess =
-	getV1ReportsStudentsIdResponse200 & {
-		headers: Headers;
-	};
-export type getV1ReportsStudentsIdResponseError = (
-	| getV1ReportsStudentsIdResponse400
-	| getV1ReportsStudentsIdResponse401
-	| getV1ReportsStudentsIdResponse403
-	| getV1ReportsStudentsIdResponse404
-	| getV1ReportsStudentsIdResponse500
-) & {
-	headers: Headers;
-};
+export type getV1ReportsStudentsIdResponse = (getV1ReportsStudentsIdResponseSuccess | getV1ReportsStudentsIdResponseError)
 
-export type getV1ReportsStudentsIdResponse =
-	| getV1ReportsStudentsIdResponseSuccess
-	| getV1ReportsStudentsIdResponseError;
+export const getGetV1ReportsStudentsIdUrl = (id: number,
+    params?: GetV1ReportsStudentsIdParams,) => {
+  const normalizedParams = new URLSearchParams();
 
-export const getGetV1ReportsStudentsIdUrl = (
-	id: number,
-	params?: GetV1ReportsStudentsIdParams,
-) => {
-	const normalizedParams = new URLSearchParams();
+  Object.entries(params || {}).forEach(([key, value]) => {
 
-	Object.entries(params || {}).forEach(([key, value]) => {
-		if (value !== undefined) {
-			normalizedParams.append(key, value === null ? "null" : value.toString());
-		}
-	});
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-	const stringifiedParams = normalizedParams.toString();
+  const stringifiedParams = normalizedParams.toString();
 
-	return stringifiedParams.length > 0
-		? `/v1/reports/students/${id}?${stringifiedParams}`
-		: `/v1/reports/students/${id}`;
-};
+  return stringifiedParams.length > 0 ? `/v1/reports/students/${id}?${stringifiedParams}` : `/v1/reports/students/${id}`
+}
 
 /**
  * Get financial report for a specific student
  * @summary Report by student
  */
-export const getV1ReportsStudentsId = async (
-	id: number,
-	params?: GetV1ReportsStudentsIdParams,
-	options?: RequestInit,
-): Promise<getV1ReportsStudentsIdResponse> => {
-	return customInstance<getV1ReportsStudentsIdResponse>(
-		getGetV1ReportsStudentsIdUrl(id, params),
-		{
-			...options,
-			method: "GET",
-		},
-	);
-};
+export const getV1ReportsStudentsId = async (id: number,
+    params?: GetV1ReportsStudentsIdParams, options?: RequestInit): Promise<getV1ReportsStudentsIdResponse> => {
 
-export const getGetV1ReportsStudentsIdQueryKey = (
-	id: number,
-	params?: GetV1ReportsStudentsIdParams,
+  return customInstance<getV1ReportsStudentsIdResponse>(getGetV1ReportsStudentsIdUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetV1ReportsStudentsIdQueryKey = (id: number,
+    params?: GetV1ReportsStudentsIdParams,) => {
+    return [
+    `/v1/reports/students/${id}`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetV1ReportsStudentsIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1ReportsStudentsId>>, TError = DtoErrorResponse>(id: number,
+    params?: GetV1ReportsStudentsIdParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsStudentsId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
-	return [`/v1/reports/students/${id}`, ...(params ? [params] : [])] as const;
-};
 
-export const getGetV1ReportsStudentsIdQueryOptions = <
-	TData = Awaited<ReturnType<typeof getV1ReportsStudentsId>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	params?: GetV1ReportsStudentsIdParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsStudentsId>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-) => {
-	const { query: queryOptions, request: requestOptions } = options ?? {};
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-	const queryKey =
-		queryOptions?.queryKey ?? getGetV1ReportsStudentsIdQueryKey(id, params);
+  const queryKey =  queryOptions?.queryKey ?? getGetV1ReportsStudentsIdQueryKey(id,params);
 
-	const queryFn: QueryFunction<
-		Awaited<ReturnType<typeof getV1ReportsStudentsId>>
-	> = ({ signal }) =>
-		getV1ReportsStudentsId(id, params, { signal, ...requestOptions });
 
-	return {
-		queryKey,
-		queryFn,
-		enabled: !!id,
-		...queryOptions,
-	} as UseQueryOptions<
-		Awaited<ReturnType<typeof getV1ReportsStudentsId>>,
-		TError,
-		TData
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
-};
 
-export type GetV1ReportsStudentsIdQueryResult = NonNullable<
-	Awaited<ReturnType<typeof getV1ReportsStudentsId>>
->;
-export type GetV1ReportsStudentsIdQueryError = DtoErrorResponse;
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1ReportsStudentsId>>> = ({ signal }) => getV1ReportsStudentsId(id,params, { signal, ...requestOptions });
 
-export function useGetV1ReportsStudentsId<
-	TData = Awaited<ReturnType<typeof getV1ReportsStudentsId>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	params: undefined | GetV1ReportsStudentsIdParams,
-	options: {
-		query: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsStudentsId>>,
-				TError,
-				TData
-			>
-		> &
-			Pick<
-				DefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1ReportsStudentsId>>,
-					TError,
-					Awaited<ReturnType<typeof getV1ReportsStudentsId>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1ReportsStudentsId<
-	TData = Awaited<ReturnType<typeof getV1ReportsStudentsId>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	params?: GetV1ReportsStudentsIdParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsStudentsId>>,
-				TError,
-				TData
-			>
-		> &
-			Pick<
-				UndefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1ReportsStudentsId>>,
-					TError,
-					Awaited<ReturnType<typeof getV1ReportsStudentsId>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1ReportsStudentsId<
-	TData = Awaited<ReturnType<typeof getV1ReportsStudentsId>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	params?: GetV1ReportsStudentsIdParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsStudentsId>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsStudentsId>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetV1ReportsStudentsIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1ReportsStudentsId>>>
+export type GetV1ReportsStudentsIdQueryError = DtoErrorResponse
+
+
+export function useGetV1ReportsStudentsId<TData = Awaited<ReturnType<typeof getV1ReportsStudentsId>>, TError = DtoErrorResponse>(
+ id: number,
+    params: undefined |  GetV1ReportsStudentsIdParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsStudentsId>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1ReportsStudentsId>>,
+          TError,
+          Awaited<ReturnType<typeof getV1ReportsStudentsId>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1ReportsStudentsId<TData = Awaited<ReturnType<typeof getV1ReportsStudentsId>>, TError = DtoErrorResponse>(
+ id: number,
+    params?: GetV1ReportsStudentsIdParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsStudentsId>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1ReportsStudentsId>>,
+          TError,
+          Awaited<ReturnType<typeof getV1ReportsStudentsId>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1ReportsStudentsId<TData = Awaited<ReturnType<typeof getV1ReportsStudentsId>>, TError = DtoErrorResponse>(
+ id: number,
+    params?: GetV1ReportsStudentsIdParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsStudentsId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Report by student
  */
 
-export function useGetV1ReportsStudentsId<
-	TData = Awaited<ReturnType<typeof getV1ReportsStudentsId>>,
-	TError = DtoErrorResponse,
->(
-	id: number,
-	params?: GetV1ReportsStudentsIdParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsStudentsId>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-} {
-	const queryOptions = getGetV1ReportsStudentsIdQueryOptions(
-		id,
-		params,
-		options,
-	);
+export function useGetV1ReportsStudentsId<TData = Awaited<ReturnType<typeof getV1ReportsStudentsId>>, TError = DtoErrorResponse>(
+ id: number,
+    params?: GetV1ReportsStudentsIdParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsStudentsId>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-		TData,
-		TError
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getGetV1ReportsStudentsIdQueryOptions(id,params,options)
 
-	return { ...query, queryKey: queryOptions.queryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
 }
 
+
+
+
+
+
 export type getV1ReportsTabunganResponse200 = {
-	data: GetV1ReportsTabungan200;
-	status: 200;
-};
+  data: GetV1ReportsTabungan200
+  status: 200
+}
 
 export type getV1ReportsTabunganResponse400 = {
-	data: DtoErrorResponse;
-	status: 400;
-};
+  data: DtoErrorResponse
+  status: 400
+}
 
 export type getV1ReportsTabunganResponse401 = {
-	data: DtoErrorResponse;
-	status: 401;
-};
+  data: DtoErrorResponse
+  status: 401
+}
 
 export type getV1ReportsTabunganResponse403 = {
-	data: DtoErrorResponse;
-	status: 403;
-};
+  data: DtoErrorResponse
+  status: 403
+}
 
 export type getV1ReportsTabunganResponse500 = {
-	data: DtoErrorResponse;
-	status: 500;
+  data: DtoErrorResponse
+  status: 500
+}
+
+export type getV1ReportsTabunganResponseSuccess = (getV1ReportsTabunganResponse200) & {
+  headers: Headers;
+};
+export type getV1ReportsTabunganResponseError = (getV1ReportsTabunganResponse400 | getV1ReportsTabunganResponse401 | getV1ReportsTabunganResponse403 | getV1ReportsTabunganResponse500) & {
+  headers: Headers;
 };
 
-export type getV1ReportsTabunganResponseSuccess =
-	getV1ReportsTabunganResponse200 & {
-		headers: Headers;
-	};
-export type getV1ReportsTabunganResponseError = (
-	| getV1ReportsTabunganResponse400
-	| getV1ReportsTabunganResponse401
-	| getV1ReportsTabunganResponse403
-	| getV1ReportsTabunganResponse500
-) & {
-	headers: Headers;
-};
+export type getV1ReportsTabunganResponse = (getV1ReportsTabunganResponseSuccess | getV1ReportsTabunganResponseError)
 
-export type getV1ReportsTabunganResponse =
-	| getV1ReportsTabunganResponseSuccess
-	| getV1ReportsTabunganResponseError;
+export const getGetV1ReportsTabunganUrl = (params: GetV1ReportsTabunganParams,) => {
+  const normalizedParams = new URLSearchParams();
 
-export const getGetV1ReportsTabunganUrl = (
-	params: GetV1ReportsTabunganParams,
-) => {
-	const normalizedParams = new URLSearchParams();
+  Object.entries(params || {}).forEach(([key, value]) => {
 
-	Object.entries(params || {}).forEach(([key, value]) => {
-		if (value !== undefined) {
-			normalizedParams.append(key, value === null ? "null" : value.toString());
-		}
-	});
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-	const stringifiedParams = normalizedParams.toString();
+  const stringifiedParams = normalizedParams.toString();
 
-	return stringifiedParams.length > 0
-		? `/v1/reports/tabungan?${stringifiedParams}`
-		: `/v1/reports/tabungan`;
-};
+  return stringifiedParams.length > 0 ? `/v1/reports/tabungan?${stringifiedParams}` : `/v1/reports/tabungan`
+}
 
 /**
  * Get savings transaction report with daily running balance, optionally filtered by type (general/mandatory)
  * @summary Savings report
  */
-export const getV1ReportsTabungan = async (
-	params: GetV1ReportsTabunganParams,
-	options?: RequestInit,
-): Promise<getV1ReportsTabunganResponse> => {
-	return customInstance<getV1ReportsTabunganResponse>(
-		getGetV1ReportsTabunganUrl(params),
-		{
-			...options,
-			method: "GET",
-		},
-	);
-};
+export const getV1ReportsTabungan = async (params: GetV1ReportsTabunganParams, options?: RequestInit): Promise<getV1ReportsTabunganResponse> => {
 
-export const getGetV1ReportsTabunganQueryKey = (
-	params?: GetV1ReportsTabunganParams,
+  return customInstance<getV1ReportsTabunganResponse>(getGetV1ReportsTabunganUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetV1ReportsTabunganQueryKey = (params?: GetV1ReportsTabunganParams,) => {
+    return [
+    `/v1/reports/tabungan`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetV1ReportsTabunganQueryOptions = <TData = Awaited<ReturnType<typeof getV1ReportsTabungan>>, TError = DtoErrorResponse>(params: GetV1ReportsTabunganParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsTabungan>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
-	return [`/v1/reports/tabungan`, ...(params ? [params] : [])] as const;
-};
 
-export const getGetV1ReportsTabunganQueryOptions = <
-	TData = Awaited<ReturnType<typeof getV1ReportsTabungan>>,
-	TError = DtoErrorResponse,
->(
-	params: GetV1ReportsTabunganParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsTabungan>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-) => {
-	const { query: queryOptions, request: requestOptions } = options ?? {};
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-	const queryKey =
-		queryOptions?.queryKey ?? getGetV1ReportsTabunganQueryKey(params);
+  const queryKey =  queryOptions?.queryKey ?? getGetV1ReportsTabunganQueryKey(params);
 
-	const queryFn: QueryFunction<
-		Awaited<ReturnType<typeof getV1ReportsTabungan>>
-	> = ({ signal }) =>
-		getV1ReportsTabungan(params, { signal, ...requestOptions });
 
-	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-		Awaited<ReturnType<typeof getV1ReportsTabungan>>,
-		TError,
-		TData
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
-};
 
-export type GetV1ReportsTabunganQueryResult = NonNullable<
-	Awaited<ReturnType<typeof getV1ReportsTabungan>>
->;
-export type GetV1ReportsTabunganQueryError = DtoErrorResponse;
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1ReportsTabungan>>> = ({ signal }) => getV1ReportsTabungan(params, { signal, ...requestOptions });
 
-export function useGetV1ReportsTabungan<
-	TData = Awaited<ReturnType<typeof getV1ReportsTabungan>>,
-	TError = DtoErrorResponse,
->(
-	params: GetV1ReportsTabunganParams,
-	options: {
-		query: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsTabungan>>,
-				TError,
-				TData
-			>
-		> &
-			Pick<
-				DefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1ReportsTabungan>>,
-					TError,
-					Awaited<ReturnType<typeof getV1ReportsTabungan>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1ReportsTabungan<
-	TData = Awaited<ReturnType<typeof getV1ReportsTabungan>>,
-	TError = DtoErrorResponse,
->(
-	params: GetV1ReportsTabunganParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsTabungan>>,
-				TError,
-				TData
-			>
-		> &
-			Pick<
-				UndefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1ReportsTabungan>>,
-					TError,
-					Awaited<ReturnType<typeof getV1ReportsTabungan>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1ReportsTabungan<
-	TData = Awaited<ReturnType<typeof getV1ReportsTabungan>>,
-	TError = DtoErrorResponse,
->(
-	params: GetV1ReportsTabunganParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsTabungan>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsTabungan>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetV1ReportsTabunganQueryResult = NonNullable<Awaited<ReturnType<typeof getV1ReportsTabungan>>>
+export type GetV1ReportsTabunganQueryError = DtoErrorResponse
+
+
+export function useGetV1ReportsTabungan<TData = Awaited<ReturnType<typeof getV1ReportsTabungan>>, TError = DtoErrorResponse>(
+ params: GetV1ReportsTabunganParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsTabungan>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1ReportsTabungan>>,
+          TError,
+          Awaited<ReturnType<typeof getV1ReportsTabungan>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1ReportsTabungan<TData = Awaited<ReturnType<typeof getV1ReportsTabungan>>, TError = DtoErrorResponse>(
+ params: GetV1ReportsTabunganParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsTabungan>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1ReportsTabungan>>,
+          TError,
+          Awaited<ReturnType<typeof getV1ReportsTabungan>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1ReportsTabungan<TData = Awaited<ReturnType<typeof getV1ReportsTabungan>>, TError = DtoErrorResponse>(
+ params: GetV1ReportsTabunganParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsTabungan>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Savings report
  */
 
-export function useGetV1ReportsTabungan<
-	TData = Awaited<ReturnType<typeof getV1ReportsTabungan>>,
-	TError = DtoErrorResponse,
->(
-	params: GetV1ReportsTabunganParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsTabungan>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-} {
-	const queryOptions = getGetV1ReportsTabunganQueryOptions(params, options);
+export function useGetV1ReportsTabungan<TData = Awaited<ReturnType<typeof getV1ReportsTabungan>>, TError = DtoErrorResponse>(
+ params: GetV1ReportsTabunganParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsTabungan>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-		TData,
-		TError
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getGetV1ReportsTabunganQueryOptions(params,options)
 
-	return { ...query, queryKey: queryOptions.queryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
 }
 
+
+
+
+
+
 export type getV1ReportsTransaksiPengeluaranResponse200 = {
-	data: GetV1ReportsTransaksiPengeluaran200;
-	status: 200;
-};
+  data: GetV1ReportsTransaksiPengeluaran200
+  status: 200
+}
 
 export type getV1ReportsTransaksiPengeluaranResponse400 = {
-	data: DtoErrorResponse;
-	status: 400;
-};
+  data: DtoErrorResponse
+  status: 400
+}
 
 export type getV1ReportsTransaksiPengeluaranResponse401 = {
-	data: DtoErrorResponse;
-	status: 401;
-};
+  data: DtoErrorResponse
+  status: 401
+}
 
 export type getV1ReportsTransaksiPengeluaranResponse403 = {
-	data: DtoErrorResponse;
-	status: 403;
-};
+  data: DtoErrorResponse
+  status: 403
+}
 
 export type getV1ReportsTransaksiPengeluaranResponse500 = {
-	data: DtoErrorResponse;
-	status: 500;
+  data: DtoErrorResponse
+  status: 500
+}
+
+export type getV1ReportsTransaksiPengeluaranResponseSuccess = (getV1ReportsTransaksiPengeluaranResponse200) & {
+  headers: Headers;
+};
+export type getV1ReportsTransaksiPengeluaranResponseError = (getV1ReportsTransaksiPengeluaranResponse400 | getV1ReportsTransaksiPengeluaranResponse401 | getV1ReportsTransaksiPengeluaranResponse403 | getV1ReportsTransaksiPengeluaranResponse500) & {
+  headers: Headers;
 };
 
-export type getV1ReportsTransaksiPengeluaranResponseSuccess =
-	getV1ReportsTransaksiPengeluaranResponse200 & {
-		headers: Headers;
-	};
-export type getV1ReportsTransaksiPengeluaranResponseError = (
-	| getV1ReportsTransaksiPengeluaranResponse400
-	| getV1ReportsTransaksiPengeluaranResponse401
-	| getV1ReportsTransaksiPengeluaranResponse403
-	| getV1ReportsTransaksiPengeluaranResponse500
-) & {
-	headers: Headers;
-};
+export type getV1ReportsTransaksiPengeluaranResponse = (getV1ReportsTransaksiPengeluaranResponseSuccess | getV1ReportsTransaksiPengeluaranResponseError)
 
-export type getV1ReportsTransaksiPengeluaranResponse =
-	| getV1ReportsTransaksiPengeluaranResponseSuccess
-	| getV1ReportsTransaksiPengeluaranResponseError;
+export const getGetV1ReportsTransaksiPengeluaranUrl = (params: GetV1ReportsTransaksiPengeluaranParams,) => {
+  const normalizedParams = new URLSearchParams();
 
-export const getGetV1ReportsTransaksiPengeluaranUrl = (
-	params: GetV1ReportsTransaksiPengeluaranParams,
-) => {
-	const normalizedParams = new URLSearchParams();
+  Object.entries(params || {}).forEach(([key, value]) => {
 
-	Object.entries(params || {}).forEach(([key, value]) => {
-		if (value !== undefined) {
-			normalizedParams.append(key, value === null ? "null" : value.toString());
-		}
-	});
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-	const stringifiedParams = normalizedParams.toString();
+  const stringifiedParams = normalizedParams.toString();
 
-	return stringifiedParams.length > 0
-		? `/v1/reports/transaksi-pengeluaran?${stringifiedParams}`
-		: `/v1/reports/transaksi-pengeluaran`;
-};
+  return stringifiedParams.length > 0 ? `/v1/reports/transaksi-pengeluaran?${stringifiedParams}` : `/v1/reports/transaksi-pengeluaran`
+}
 
 /**
  * Get list of all expense transactions for a month in block/card format
  * @summary Expense transaction report
  */
-export const getV1ReportsTransaksiPengeluaran = async (
-	params: GetV1ReportsTransaksiPengeluaranParams,
-	options?: RequestInit,
-): Promise<getV1ReportsTransaksiPengeluaranResponse> => {
-	return customInstance<getV1ReportsTransaksiPengeluaranResponse>(
-		getGetV1ReportsTransaksiPengeluaranUrl(params),
-		{
-			...options,
-			method: "GET",
-		},
-	);
-};
+export const getV1ReportsTransaksiPengeluaran = async (params: GetV1ReportsTransaksiPengeluaranParams, options?: RequestInit): Promise<getV1ReportsTransaksiPengeluaranResponse> => {
 
-export const getGetV1ReportsTransaksiPengeluaranQueryKey = (
-	params?: GetV1ReportsTransaksiPengeluaranParams,
+  return customInstance<getV1ReportsTransaksiPengeluaranResponse>(getGetV1ReportsTransaksiPengeluaranUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetV1ReportsTransaksiPengeluaranQueryKey = (params?: GetV1ReportsTransaksiPengeluaranParams,) => {
+    return [
+    `/v1/reports/transaksi-pengeluaran`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetV1ReportsTransaksiPengeluaranQueryOptions = <TData = Awaited<ReturnType<typeof getV1ReportsTransaksiPengeluaran>>, TError = DtoErrorResponse>(params: GetV1ReportsTransaksiPengeluaranParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsTransaksiPengeluaran>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
-	return [
-		`/v1/reports/transaksi-pengeluaran`,
-		...(params ? [params] : []),
-	] as const;
-};
 
-export const getGetV1ReportsTransaksiPengeluaranQueryOptions = <
-	TData = Awaited<ReturnType<typeof getV1ReportsTransaksiPengeluaran>>,
-	TError = DtoErrorResponse,
->(
-	params: GetV1ReportsTransaksiPengeluaranParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsTransaksiPengeluaran>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-) => {
-	const { query: queryOptions, request: requestOptions } = options ?? {};
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-	const queryKey =
-		queryOptions?.queryKey ??
-		getGetV1ReportsTransaksiPengeluaranQueryKey(params);
+  const queryKey =  queryOptions?.queryKey ?? getGetV1ReportsTransaksiPengeluaranQueryKey(params);
 
-	const queryFn: QueryFunction<
-		Awaited<ReturnType<typeof getV1ReportsTransaksiPengeluaran>>
-	> = ({ signal }) =>
-		getV1ReportsTransaksiPengeluaran(params, { signal, ...requestOptions });
 
-	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-		Awaited<ReturnType<typeof getV1ReportsTransaksiPengeluaran>>,
-		TError,
-		TData
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
-};
 
-export type GetV1ReportsTransaksiPengeluaranQueryResult = NonNullable<
-	Awaited<ReturnType<typeof getV1ReportsTransaksiPengeluaran>>
->;
-export type GetV1ReportsTransaksiPengeluaranQueryError = DtoErrorResponse;
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1ReportsTransaksiPengeluaran>>> = ({ signal }) => getV1ReportsTransaksiPengeluaran(params, { signal, ...requestOptions });
 
-export function useGetV1ReportsTransaksiPengeluaran<
-	TData = Awaited<ReturnType<typeof getV1ReportsTransaksiPengeluaran>>,
-	TError = DtoErrorResponse,
->(
-	params: GetV1ReportsTransaksiPengeluaranParams,
-	options: {
-		query: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsTransaksiPengeluaran>>,
-				TError,
-				TData
-			>
-		> &
-			Pick<
-				DefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1ReportsTransaksiPengeluaran>>,
-					TError,
-					Awaited<ReturnType<typeof getV1ReportsTransaksiPengeluaran>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1ReportsTransaksiPengeluaran<
-	TData = Awaited<ReturnType<typeof getV1ReportsTransaksiPengeluaran>>,
-	TError = DtoErrorResponse,
->(
-	params: GetV1ReportsTransaksiPengeluaranParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsTransaksiPengeluaran>>,
-				TError,
-				TData
-			>
-		> &
-			Pick<
-				UndefinedInitialDataOptions<
-					Awaited<ReturnType<typeof getV1ReportsTransaksiPengeluaran>>,
-					TError,
-					Awaited<ReturnType<typeof getV1ReportsTransaksiPengeluaran>>
-				>,
-				"initialData"
-			>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetV1ReportsTransaksiPengeluaran<
-	TData = Awaited<ReturnType<typeof getV1ReportsTransaksiPengeluaran>>,
-	TError = DtoErrorResponse,
->(
-	params: GetV1ReportsTransaksiPengeluaranParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsTransaksiPengeluaran>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-};
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsTransaksiPengeluaran>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetV1ReportsTransaksiPengeluaranQueryResult = NonNullable<Awaited<ReturnType<typeof getV1ReportsTransaksiPengeluaran>>>
+export type GetV1ReportsTransaksiPengeluaranQueryError = DtoErrorResponse
+
+
+export function useGetV1ReportsTransaksiPengeluaran<TData = Awaited<ReturnType<typeof getV1ReportsTransaksiPengeluaran>>, TError = DtoErrorResponse>(
+ params: GetV1ReportsTransaksiPengeluaranParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsTransaksiPengeluaran>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1ReportsTransaksiPengeluaran>>,
+          TError,
+          Awaited<ReturnType<typeof getV1ReportsTransaksiPengeluaran>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1ReportsTransaksiPengeluaran<TData = Awaited<ReturnType<typeof getV1ReportsTransaksiPengeluaran>>, TError = DtoErrorResponse>(
+ params: GetV1ReportsTransaksiPengeluaranParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsTransaksiPengeluaran>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getV1ReportsTransaksiPengeluaran>>,
+          TError,
+          Awaited<ReturnType<typeof getV1ReportsTransaksiPengeluaran>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetV1ReportsTransaksiPengeluaran<TData = Awaited<ReturnType<typeof getV1ReportsTransaksiPengeluaran>>, TError = DtoErrorResponse>(
+ params: GetV1ReportsTransaksiPengeluaranParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsTransaksiPengeluaran>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Expense transaction report
  */
 
-export function useGetV1ReportsTransaksiPengeluaran<
-	TData = Awaited<ReturnType<typeof getV1ReportsTransaksiPengeluaran>>,
-	TError = DtoErrorResponse,
->(
-	params: GetV1ReportsTransaksiPengeluaranParams,
-	options?: {
-		query?: Partial<
-			UseQueryOptions<
-				Awaited<ReturnType<typeof getV1ReportsTransaksiPengeluaran>>,
-				TError,
-				TData
-			>
-		>;
-		request?: SecondParameter<typeof customInstance>;
-	},
-	queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-	queryKey: DataTag<QueryKey, TData, TError>;
-} {
-	const queryOptions = getGetV1ReportsTransaksiPengeluaranQueryOptions(
-		params,
-		options,
-	);
+export function useGetV1ReportsTransaksiPengeluaran<TData = Awaited<ReturnType<typeof getV1ReportsTransaksiPengeluaran>>, TError = DtoErrorResponse>(
+ params: GetV1ReportsTransaksiPengeluaranParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getV1ReportsTransaksiPengeluaran>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-		TData,
-		TError
-	> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getGetV1ReportsTransaksiPengeluaranQueryOptions(params,options)
 
-	return { ...query, queryKey: queryOptions.queryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
 }
+
+
+
+
+
+

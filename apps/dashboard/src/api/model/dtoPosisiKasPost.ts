@@ -5,15 +5,15 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoPosisiKasExpense } from "./dtoPosisiKasExpense";
+import type { DtoPosisiKasExpense } from './dtoPosisiKasExpense';
 
 export interface DtoPosisiKasPost {
-	category?: string;
-	expense_details?: DtoPosisiKasExpense[];
-	name?: string;
-	penerimaan?: number;
-	pengeluaran?: number;
-	saldo_bulan?: number;
-	saldo_sampai?: number;
-	saldo_sebelum?: number;
+  category?: string;
+  expense_details?: DtoPosisiKasExpense[];
+  name?: string;
+  penerimaan?: number;
+  pengeluaran?: number;
+  saldo_bulan?: number;
+  saldo_sampai?: number;
+  saldo_sebelum?: number;
 }

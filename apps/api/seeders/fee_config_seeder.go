@@ -198,8 +198,7 @@ func buildFeeConfigItems() []feeItemDef {
 		{"kalender", "Kalender", 30000, 30000, 30000, "all"},
 		{"buku_kotak", "Buku Kotak", 30000, 30000, 0, "all"},
 		{"jilbab_field_trip", "Jilbab Field Trip", 40000, 40000, 40000, "P"},
-		{"lain_lain", "Lain-lain", 40000, 0, 40000, "all"},
-	}
+		}
 	for _, r := range regItems {
 		levelAmounts := map[string]float64{
 			"mutiara": r.mutiara,

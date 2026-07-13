@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { customInstance } from "#/api/mutator/custom-instance";
 import { getGetV1InvoicesQueryKey } from "#/api/endpoints/invoices/invoices";
+import { customInstance } from "#/api/mutator/custom-instance";
 
 export interface SavingsMandatorySyncResult {
 	total_students: number;

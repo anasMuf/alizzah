@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
-import { ChevronRight, Filter, Search } from "lucide-react";
+import { ChevronRight, Filter, RefreshCw, Search } from "lucide-react";
 import { useState } from "react";
 import { useDebounce } from "use-debounce";
 import { useGetV1ClassGroups } from "#/api/endpoints/class-groups/class-groups";
 import { useGetV1Invoices } from "#/api/endpoints/invoices/invoices";
-import { Badge, Button, Pagination } from "#/components/ui";
+import { useSyncSavingsMandatory } from "#/api/endpoints/invoices/invoice-sync-savings";
+import { Badge, Button, Pagination, useToast } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
 import { formatCurrency } from "../../../../utils/format";
 
@@ -15,6 +16,8 @@ export const Route = createFileRoute("/_authenticated/keuangan/tagihan/")({
 
 function TagihanListPage() {
 	const [activeAy] = useAtom(academicYearAtom);
+	const { addToast } = useToast();
+	const syncMutation = useSyncSavingsMandatory();
 
 	// Filters
 	const [search, setSearch] = useState("");
@@ -90,10 +93,38 @@ function TagihanListPage() {
 						Tagihan Siswa
 					</h2>
 					<p className="mt-1 text-sm text-gray-500">
-						Daftar semua tagihan siswa beserta status pembayarannya.
-					</p>
+							Daftar semua tagihan siswa beserta status pembayarannya.
+						</p>
+					</div>
+					<Button
+						variant="secondary"
+						size="sm"
+						disabled={syncMutation.isPending}
+						onClick={() => {
+							syncMutation.mutate(undefined, {
+								onSuccess: (result) => {
+									addToast({
+										variant: "success",
+										title: "Sinkronisasi Tabungan Wajib",
+										message: `${result.total_synced} invoice ditambahkan, ${result.total_skipped} dilewati.`,
+									});
+								},
+								onError: (err) => {
+									addToast({
+										variant: "error",
+										title: "Gagal",
+										message: err instanceof Error ? err.message : "Gagal sinkronisasi.",
+									});
+								},
+							});
+						}}
+					>
+						<RefreshCw
+							className={`w-4 h-4 mr-2 ${syncMutation.isPending ? "animate-spin" : ""}`}
+						/>
+						{syncMutation.isPending ? "Menyinkronkan..." : "Sync Tabungan Wajib"}
+					</Button>
 				</div>
-			</div>
 
 			{/* Filters */}
 			<div className="bg-white p-4 rounded-xl shadow-sm ring-1 ring-gray-900/5 space-y-4">

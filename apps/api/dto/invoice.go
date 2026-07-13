@@ -174,6 +174,21 @@ type ExtracurricularSyncResult struct {
 	Errors           []ExtracurricularSyncError `json:"errors,omitempty"`
 }
 
+// SavingsMandatorySyncResult is the result of savings mandatory item synchronization.
+type SavingsMandatorySyncResult struct {
+	TotalStudents int                         `json:"total_students"`
+	TotalInvoices int                         `json:"total_invoices"`
+	TotalSynced   int                         `json:"total_synced"`
+	TotalSkipped  int                         `json:"total_skipped"`
+	Errors        []SavingsMandatorySyncError `json:"errors,omitempty"`
+}
+
+type SavingsMandatorySyncError struct {
+	StudentID uint   `json:"student_id"`
+	InvoiceID uint   `json:"invoice_id,omitempty"`
+	Message   string `json:"message"`
+}
+
 type ExtracurricularSyncError struct {
 	StudentID         uint   `json:"student_id"`
 	ExtracurricularID uint   `json:"extracurricular_id"`

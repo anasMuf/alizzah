@@ -301,7 +301,7 @@ func SeedSampleTransactions(db *gorm.DB) {
 				})
 			}
 
-			// Berlian: tabungan wajib
+			// Tabungan Wajib
 			if level == "berlian" && hasEd {
 				tabUnitPrice := findFee("savings_mandatory", "tabungan_wajib", level)
 				tabAmount := tabUnitPrice * float64(ed.TotalMondays)
@@ -314,6 +314,19 @@ func SeedSampleTransactions(db *gorm.DB) {
 						Amount:      tabAmount,
 						Quantity:    &tabMondays,
 						UnitPrice:   &tabUnitPrice,
+						IsMandatory: true,
+					})
+				}
+			}
+
+			if level == "mutiara" {
+				tabAmount := findFee("savings_mandatory", "tabungan_wajib_mutiara", level)
+				if tabAmount > 0 {
+					totalAmount += tabAmount
+					items = append(items, model.InvoiceItem{
+						Name:        fmt.Sprintf("Tabungan Wajib %s", monthName(int(tm.Month))),
+						Category:    "savings_mandatory",
+						Amount:      tabAmount,
 						IsMandatory: true,
 					})
 				}

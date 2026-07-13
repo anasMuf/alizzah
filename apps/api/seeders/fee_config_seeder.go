@@ -20,26 +20,24 @@ type feeItemDef struct {
 }
 
 func SeedFeeConfigs(db *gorm.DB) {
-	var count int64
-	db.Model(&model.FeeConfig{}).Count(&count)
-	if count > 0 {
-		log.Println("Fee configs sudah ada, skip seeder")
-		return
-	}
-
 	var activeYear model.AcademicYear
 	if err := db.Where("is_active = ?", true).First(&activeYear).Error; err != nil {
 		log.Println("Gagal cari tahun ajaran aktif untuk fee config seeder:", err)
 		return
 	}
 
-	fc := model.FeeConfig{
-		AcademicYearID:   activeYear.ID,
-		SavingsAdminRate: 2.50,
-	}
-	if err := db.Create(&fc).Error; err != nil {
-		log.Println("Gagal membuat fee config:", err)
-		return
+	// Find or create fee config for active academic year
+	var fc model.FeeConfig
+	if err := db.Where("academic_year_id = ?", activeYear.ID).First(&fc).Error; err != nil {
+		fc = model.FeeConfig{
+			AcademicYearID:   activeYear.ID,
+			SavingsAdminRate: 2.50,
+		}
+		if err := db.Create(&fc).Error; err != nil {
+			log.Println("Gagal membuat fee config:", err)
+			return
+		}
+		log.Printf("Fee config baru dibuat untuk tahun ajaran aktif (ID: %d)", fc.ID)
 	}
 
 	koperasiItemKeys := map[string]bool{
@@ -63,7 +61,18 @@ func SeedFeeConfigs(db *gorm.DB) {
 	}
 
 	items := buildFeeConfigItems()
+	inserted := 0
 	for _, item := range items {
+		// Per-item idempotent: cek apakah item sudah ada berdasarkan composite key
+		var existing model.FeeConfigItem
+		err := db.Where(
+			"fee_config_id = ? AND item_key = ? AND level = ? AND gender = ?",
+			fc.ID, item.ItemKey, item.Level, item.Gender,
+		).First(&existing).Error
+		if err == nil {
+			continue // item sudah ada, skip
+		}
+
 		fci := model.FeeConfigItem{
 			FeeConfigID: fc.ID,
 			Category:    item.Category,
@@ -128,9 +137,15 @@ func SeedFeeConfigs(db *gorm.DB) {
 
 		if err := db.Create(&fci).Error; err != nil {
 			log.Printf("Gagal membuat fee item '%s' (level=%s): %v", item.Name, item.Level, err)
+		} else {
+			inserted++
 		}
 	}
-	log.Printf("Fee config seeder berhasil (%d items)", len(items))
+	if inserted > 0 {
+		log.Printf("Fee config seeder: %d item baru ditambahkan (total %d item dalam definisi)", inserted, len(items))
+	} else {
+		log.Printf("Fee config seeder: semua item sudah ada (%d item)", len(items))
+	}
 }
 
 func buildFeeConfigItems() []feeItemDef {
@@ -198,7 +213,7 @@ func buildFeeConfigItems() []feeItemDef {
 		{"kalender", "Kalender", 30000, 30000, 30000, "all"},
 		{"buku_kotak", "Buku Kotak", 30000, 30000, 0, "all"},
 		{"jilbab_field_trip", "Jilbab Field Trip", 40000, 40000, 40000, "P"},
-		}
+	}
 	for _, r := range regItems {
 		levelAmounts := map[string]float64{
 			"mutiara": r.mutiara,

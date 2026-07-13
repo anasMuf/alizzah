@@ -139,6 +139,7 @@ func (h *InvoiceHandler) Get(c echo.Context) error {
 // @Param        academic_year_id  query  int     false  "Filter by academic year ID"
 // @Param        type              query  string  false  "Filter by type"
 // @Param        status            query  string  false  "Filter by status"
+// @Param        show_all          query  bool    false  "Show all monthly invoices including future months"
 // @Success      200               {object}  dto.SuccessResponse{data=[]dto.InvoiceListResponse}
 // @Failure      400               {object}  dto.ErrorResponse
 // @Failure      401               {object}  dto.ErrorResponse
@@ -156,12 +157,14 @@ func (h *InvoiceHandler) GetByStudent(c echo.Context) error {
 	}
 
 	academicYearID, _ := strconv.Atoi(c.QueryParam("academic_year_id"))
+	showAll := c.QueryParam("show_all") == "true"
 
 	invoices, err := h.service.GetByStudentID(
 		uint(studentID),
 		c.QueryParam("type"),
 		c.QueryParam("status"),
 		uint(academicYearID),
+		showAll,
 	)
 	if err != nil {
 		status, code := utility.GetErrorStatusAndCode(err)

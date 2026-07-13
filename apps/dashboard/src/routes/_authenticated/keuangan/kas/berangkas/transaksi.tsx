@@ -327,9 +327,9 @@ function BerangkasTransaksiPage() {
 															className={`inline-flex items-center gap-1 font-semibold tabular-nums ${isCredit ? "text-red-600" : "text-green-600"}`}
 														>
 															{isCredit ? (
-																<ArrowUpRight className="h-4 w-4" />
-															) : (
 																<ArrowDownRight className="h-4 w-4" />
+															) : (
+																<ArrowUpRight className="h-4 w-4" />
 															)}
 															{isCredit ? "-" : "+"}
 															{formatCurrency(Number(tx.amount))}

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useGetV1InvoicesBatch } from "#/api/endpoints/invoices/invoice-batch";
 import { useGetV1StudentsIdInvoices } from "#/api/endpoints/invoices/invoices";
 import { CurrencyInput } from "#/components/ui";
@@ -31,10 +31,16 @@ export function InvoiceSelector({
 	onExcludeItems,
 	onIncludeItems,
 }: InvoiceSelectorProps) {
+	// Toggle untuk menampilkan semua tagihan bulanan (termasuk bulan depan)
+	const [showAllMonths, setShowAllMonths] = useState(false);
+
 	// Fetch invoice list
 	const { data: invoicesResp, isLoading } = useGetV1StudentsIdInvoices(
 		studentId,
-		{ academic_year_id: academicYearId },
+		{
+			academic_year_id: academicYearId,
+			...(showAllMonths ? ({ show_all: true } as any) : {}),
+		},
 		{ query: { enabled: !!studentId } },
 	);
 	const allInvoices = (invoicesResp?.data as any)?.data || [];
@@ -150,6 +156,17 @@ export function InvoiceSelector({
 
 	return (
 		<>
+			{/* Toggle: tampilkan semua bulan */}
+			<label className="flex items-center gap-2 text-xs text-gray-500 cursor-pointer select-none mb-2">
+				<input
+					type="checkbox"
+					className="h-3.5 w-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+					checked={showAllMonths}
+					onChange={(e) => setShowAllMonths(e.target.checked)}
+				/>
+				Tampilkan semua bulan (termasuk bulan depan)
+			</label>
+
 			{/* Invoice checkboxes */}
 			<div className="space-y-2">
 				{unpaidInvoices.map((inv: any) => {

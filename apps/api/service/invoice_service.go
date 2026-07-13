@@ -17,7 +17,7 @@ type InvoiceService interface {
 	GetAll(params dto.InvoiceQueryParams) ([]dto.InvoiceListResponse, *dto.Meta, error)
 	GetByID(id uint) (*dto.InvoiceDetailResponse, error)
 	GetBatch(ids []uint) ([]dto.InvoiceDetailResponse, error)
-	GetByStudentID(studentID uint, invoiceType, status string, academicYearID uint) ([]dto.InvoiceListResponse, error)
+	GetByStudentID(studentID uint, invoiceType, status string, academicYearID uint, showAll bool) ([]dto.InvoiceListResponse, error)
 	// Item management
 	AddItem(invoiceID uint, req dto.AddInvoiceItemRequest) (*dto.InvoiceItemResponse, error)
 	UpdateItem(invoiceID, itemID uint, req dto.UpdateInvoiceItemRequest) (*dto.InvoiceItemResponse, error)
@@ -113,8 +113,8 @@ func (s *invoiceService) GetByID(id uint) (*dto.InvoiceDetailResponse, error) {
 	return &resp, nil
 }
 
-func (s *invoiceService) GetByStudentID(studentID uint, invoiceType, status string, academicYearID uint) ([]dto.InvoiceListResponse, error) {
-	invoices, err := s.invoiceRepo.FindByStudentID(studentID, invoiceType, status, academicYearID)
+func (s *invoiceService) GetByStudentID(studentID uint, invoiceType, status string, academicYearID uint, showAll bool) ([]dto.InvoiceListResponse, error) {
+	invoices, err := s.invoiceRepo.FindByStudentID(studentID, invoiceType, status, academicYearID, showAll)
 	if err != nil {
 		return nil, err
 	}

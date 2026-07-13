@@ -1,7 +1,10 @@
+import { useQueryClient } from "@tanstack/react-query";
+import { Pencil } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useGetV1InvoicesBatch } from "#/api/endpoints/invoices/invoice-batch";
+import { usePutV1InvoicesIdItemsItemIdQuantity } from "#/api/endpoints/invoices/invoice-quantity";
 import { useGetV1StudentsIdInvoices } from "#/api/endpoints/invoices/invoices";
-import { CurrencyInput } from "#/components/ui";
+import { Button, CurrencyInput, SlideOver, useToast } from "#/components/ui";
 import { formatCurrency } from "../../../../../utils/format";
 
 interface InvoiceSelectorProps {
@@ -33,6 +36,11 @@ export function InvoiceSelector({
 }: InvoiceSelectorProps) {
 	// Toggle untuk menampilkan semua tagihan bulanan (termasuk bulan depan)
 	const [showAllMonths, setShowAllMonths] = useState(false);
+
+	// SlideOver untuk edit quantity item harian
+	const { addToast } = useToast();
+	const [qtyEditingItem, setQtyEditingItem] = useState<any>(null);
+	const [qtyValue, setQtyValue] = useState("");
 
 	// Fetch invoice list
 	const { data: invoicesResp, isLoading } = useGetV1StudentsIdInvoices(
@@ -98,6 +106,8 @@ export function InvoiceSelector({
 						name: item.name,
 						category: item.category,
 						sisa_tagihan: sisa,
+						quantity: item.quantity ?? 0,
+						unit_price: item.unit_price ?? 0,
 						is_dispensation: item.category === "dispensation",
 						is_locked: isLockedBySpp,
 					});
@@ -111,15 +121,57 @@ export function InvoiceSelector({
 		return items;
 	}, [invoiceDetails]);
 
+	// Quantity mutation untuk item harian/per-Senin
+	const queryClient = useQueryClient();
+	const qtyMutation = usePutV1InvoicesIdItemsItemIdQuantity({
+		mutation: {
+			onSuccess: () => {
+				addToast({
+					variant: "success",
+					title: "Berhasil",
+					message: "Jumlah hari/Senin berhasil diubah.",
+				});
+				setQtyEditingItem(null);
+				if (selectedInvoices.length > 0) {
+					queryClient.invalidateQueries({
+						queryKey: ["invoices-batch", selectedInvoices.join(",")],
+					});
+				}
+			},
+			onError: (err: any) => {
+				addToast({
+					variant: "error",
+					title: "Gagal",
+					message: err.message || "Gagal mengubah jumlah.",
+				});
+			},
+		},
+	});
+
+	const handleQtySave = () => {
+		if (!qtyEditingItem || !qtyValue || Number(qtyValue) < 1) return;
+		qtyMutation.mutate({
+			invoiceId: qtyEditingItem.invoice_id,
+			itemId: qtyEditingItem.id,
+			data: { quantity: Number(qtyValue) },
+		});
+	};
+
 	// Track seen item IDs so new items are excluded by default
 	const prevIdsRef = useRef<Set<number>>(new Set());
+
+	// Stabilize callbacks in refs agar tidak trigger effect re-run
+	const onAmountChangeRef = useRef(onAmountChange);
+	onAmountChangeRef.current = onAmountChange;
+	const onExcludeItemsRef = useRef(onExcludeItems);
+	onExcludeItemsRef.current = onExcludeItems;
 
 	// Auto-fill pay amounts + exclude new items by default
 	useEffect(() => {
 		if (invoiceItems.length > 0) {
 			// Auto-fill pay amounts for all items
 			invoiceItems.forEach((item) => {
-				onAmountChange(item.id, item.sisa_tagihan);
+				onAmountChangeRef.current(item.id, item.sisa_tagihan);
 			});
 
 			// Exclude items that just appeared (not seen before)
@@ -128,13 +180,13 @@ export function InvoiceSelector({
 				(item) => !prevIdsRef.current.has(item.id),
 			);
 			if (newItems.length > 0) {
-				onExcludeItems(newItems.map((item) => item.id));
+				onExcludeItemsRef.current(newItems.map((item) => item.id));
 			}
 			prevIdsRef.current = currentIds;
 		} else {
 			prevIdsRef.current.clear();
 		}
-	}, [invoiceItems, onAmountChange, onExcludeItems]);
+	}, [invoiceItems]);
 
 	if (isLoading) {
 		return (
@@ -265,12 +317,28 @@ export function InvoiceSelector({
 													</span>
 												)}
 											</span>
+
+											{/* Icon edit untuk item harian/per-Senin */}
+											{item.unit_price > 0 && item.quantity > 0 && (
+												<button
+													type="button"
+													onClick={() => {
+														setQtyEditingItem(item);
+														setQtyValue(String(item.quantity));
+													}}
+													className="text-gray-400 hover:text-indigo-600 transition-colors"
+													title={`${item.quantity} hari × ${formatCurrency(item.unit_price)} — klik untuk ubah`}
+												>
+													<Pencil className="w-3.5 h-3.5" />
+												</button>
+											)}
+
 											<span
 												className={`text-xs tabular-nums ${item.is_dispensation ? "text-green-600" : "text-gray-500"}`}
 											>
 												{formatCurrency(item.sisa_tagihan)}
 											</span>
-											<div className="w-32">
+											<div className="w-36">
 												{item.is_dispensation || item.is_locked ? (
 													<span
 														className={`block text-right text-xs font-medium tabular-nums ${item.is_dispensation ? "text-green-600" : "text-gray-900"}`}
@@ -280,12 +348,27 @@ export function InvoiceSelector({
 														)}
 													</span>
 												) : (
-													<CurrencyInput
-														className="block w-full rounded border-0 py-1 px-2 text-xs text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 text-right tabular-nums disabled:bg-gray-100 disabled:text-gray-400"
-														value={payAmounts[item.id] ?? 0}
-														onChange={(val) => onAmountChange(item.id, val)}
-														disabled={isExcluded}
-													/>
+													<div className="flex items-center gap-1">
+														<CurrencyInput
+															className="flex-1 rounded border-0 py-1 px-2 text-xs text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 text-right tabular-nums disabled:bg-gray-100 disabled:text-gray-400"
+															value={payAmounts[item.id] ?? 0}
+															onChange={(val) => onAmountChange(item.id, val)}
+															disabled={isExcluded}
+														/>
+														{/* Quick button: isi 1 hari */}
+														{item.unit_price > 0 && !isExcluded && (
+															<button
+																type="button"
+																onClick={() =>
+																	onAmountChange(item.id, item.unit_price)
+																}
+																className="text-[10px] text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-1 py-0.5 rounded font-medium transition-colors whitespace-nowrap"
+																title={`Isi 1 hari (${formatCurrency(item.unit_price)})`}
+															>
+																+1
+															</button>
+														)}
+													</div>
 												)}
 											</div>
 										</div>
@@ -295,6 +378,76 @@ export function InvoiceSelector({
 						</div>
 					);
 				})()}
+
+			{/* SlideOver: Edit jumlah hari/Senin */}
+			<SlideOver
+				isOpen={!!qtyEditingItem}
+				onClose={() => setQtyEditingItem(null)}
+				title={`Ubah Jumlah — ${qtyEditingItem?.name || ""}`}
+			>
+				<div className="space-y-4">
+					{qtyEditingItem && (
+						<>
+							<div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+								<div className="text-xs text-gray-500 mb-1">Tarif per hari</div>
+								<div className="text-sm font-semibold text-gray-900">
+									{formatCurrency(qtyEditingItem.unit_price)} / hari
+								</div>
+							</div>
+
+							<div>
+								<label className="block text-sm font-medium text-gray-700 mb-1">
+									Jumlah Hari
+								</label>
+								<input
+									type="number"
+									min={1}
+									value={qtyValue}
+									onChange={(e) => setQtyValue(e.target.value)}
+									className="block w-full rounded-md border-0 py-2 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
+									placeholder="Masukkan jumlah hari"
+								/>
+							</div>
+
+							{Number(qtyValue) > 0 && (
+								<div className="bg-indigo-50 rounded-md p-3 border border-indigo-200">
+									<div className="text-xs text-indigo-600 mb-1">
+										Total Tagihan
+									</div>
+									<div className="text-lg font-bold text-indigo-700">
+										{formatCurrency(
+											Number(qtyValue) * qtyEditingItem.unit_price,
+										)}
+									</div>
+									<div className="text-xs text-indigo-500 mt-0.5">
+										{formatCurrency(qtyEditingItem.unit_price)} &times;{" "}
+										{qtyValue} hari
+									</div>
+								</div>
+							)}
+
+							<div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+								<Button
+									variant="secondary"
+									onClick={() => setQtyEditingItem(null)}
+									disabled={qtyMutation.isPending}
+								>
+									Batal
+								</Button>
+								<Button
+									variant="primary"
+									onClick={handleQtySave}
+									disabled={
+										qtyMutation.isPending || !qtyValue || Number(qtyValue) < 1
+									}
+								>
+									{qtyMutation.isPending ? "Menyimpan..." : "Simpan"}
+								</Button>
+							</div>
+						</>
+					)}
+				</div>
+			</SlideOver>
 		</>
 	);
 }

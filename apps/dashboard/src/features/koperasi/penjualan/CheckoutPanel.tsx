@@ -1,7 +1,7 @@
 import { useAtom } from "jotai";
 import { useState } from "react";
 import { ApiError } from "#/api/mutator/custom-instance";
-import { Button, useToast } from "#/components/ui";
+import { Button, CurrencyInput, useToast } from "#/components/ui";
 import { academicYearAtom } from "#/store/global";
 import { formatCurrency } from "#/utils/format";
 import { type PaymentMethod, type SaleInput, useCreateSale } from "./api";
@@ -24,11 +24,11 @@ export function CheckoutPanel({ items, total, onSuccess }: CheckoutPanelProps) {
 	const [student, setStudent] = useState<PickedStudent | null>(null);
 	const [buyerName, setBuyerName] = useState("");
 	const [saleDate, setSaleDate] = useState(today());
-	const [paymentAmount, setPaymentAmount] = useState<number | "">(0);
+	const [paymentAmount, setPaymentAmount] = useState(0);
 	const [method, setMethod] = useState<PaymentMethod>("cash");
 	const [notes, setNotes] = useState("");
 
-	const payNum = typeof paymentAmount === "number" ? paymentAmount : 0;
+	const payNum = paymentAmount;
 	const remaining = total - payNum;
 	const hasOverStock = items.some((item) => item.quantity > item.stock);
 	const paymentInvalid = payNum < 0 || payNum > total;
@@ -179,30 +179,16 @@ export function CheckoutPanel({ items, total, onSuccess }: CheckoutPanelProps) {
 				>
 					Pembayaran
 				</label>
-				<div className="flex items-center gap-2">
-					<span className="text-sm text-gray-400 shrink-0">Rp</span>
-					<input
+				<div>
+					<CurrencyInput
 						id="pos-payment"
-						type="number"
-						min={0}
-						max={total}
-						step="any"
-						value={paymentAmount}
-						onChange={(e) => {
-							const val = e.target.value;
-							setPaymentAmount(val === "" ? "" : Number(val) || 0);
-						}}
-						onFocus={() => {
-							if (paymentAmount === 0) setPaymentAmount("");
-						}}
-						onBlur={() => {
-							if (paymentAmount === "") setPaymentAmount(0);
-						}}
-						className={`w-full rounded-lg border px-3 py-2 text-sm font-medium focus:ring-2 focus:outline-none transition-colors [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none ${
+						className={`w-full rounded-lg border px-3 py-2 text-sm font-medium focus:ring-2 focus:outline-none transition-colors ${
 							paymentInvalid
 								? "border-red-300 text-red-700 focus:border-red-500 focus:ring-red-200"
 								: "border-gray-200 text-gray-900 focus:border-indigo-500 focus:ring-indigo-500/20"
 						}`}
+						value={paymentAmount}
+						onChange={setPaymentAmount}
 					/>
 				</div>
 				{paymentInvalid && (

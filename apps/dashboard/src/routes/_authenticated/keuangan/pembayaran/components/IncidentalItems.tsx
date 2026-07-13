@@ -1,5 +1,6 @@
 import { Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { CurrencyInput } from "#/components/ui";
 import { formatCurrency } from "../../../../../utils/format";
 
 type IncidentalItem = {
@@ -17,8 +18,8 @@ interface IncidentalItemsProps {
 export function IncidentalItems({ items, onChange }: IncidentalItemsProps) {
 	const [nextId, setNextId] = useState(1);
 	const [name, setName] = useState("");
-	const [amount, setAmount] = useState("");
-	const [savingsAmount, setSavingsAmount] = useState("");
+	const [amount, setAmount] = useState(0);
+	const [savingsAmount, setSavingsAmount] = useState(0);
 
 	const suggestions = useMemo(() => {
 		const stored = localStorage.getItem("incidental_item_names");
@@ -37,28 +38,31 @@ export function IncidentalItems({ items, onChange }: IncidentalItemsProps) {
 	};
 
 	const addSavings = () => {
-		const amt = Number(savingsAmount);
-		if (amt <= 0) return;
+		if (savingsAmount <= 0) return;
 		onChange([
 			...items,
-			{ id: nextId, name: "Tabungan Umum", amount: amt, isSavings: true },
+			{
+				id: nextId,
+				name: "Tabungan Umum",
+				amount: savingsAmount,
+				isSavings: true,
+			},
 		]);
 		setNextId((n) => n + 1);
-		setSavingsAmount("");
+		setSavingsAmount(0);
 	};
 
 	const addIncidental = () => {
 		const n = name.trim();
-		const amt = Number(amount);
-		if (!n || amt <= 0) return;
+		if (!n || amount <= 0) return;
 		onChange([
 			...items,
-			{ id: nextId, name: n, amount: amt, isSavings: false },
+			{ id: nextId, name: n, amount: amount, isSavings: false },
 		]);
 		setNextId((n) => n + 1);
 		saveName(n);
 		setName("");
-		setAmount("");
+		setAmount(0);
 	};
 
 	const remove = (id: number) => {
@@ -72,56 +76,62 @@ export function IncidentalItems({ items, onChange }: IncidentalItemsProps) {
 			</p>
 
 			{/* Tabungan Umum */}
-			<div className="flex gap-2">
-				<input
-					type="number"
-					className="flex-1 rounded border-0 py-1.5 px-3 text-sm ring-1 ring-inset ring-green-300 focus:ring-2 focus:ring-green-600 text-right"
-					placeholder="Tab. Umum (Rp)"
-					value={savingsAmount}
-					onChange={(e) => setSavingsAmount(e.target.value)}
-					min={0}
-				/>
-				<button
-					type="button"
-					onClick={addSavings}
-					disabled={Number(savingsAmount) <= 0}
-					className="px-2 py-1.5 rounded bg-green-100 text-green-700 hover:bg-green-200 disabled:opacity-40 text-xs font-medium"
-				>
-					<Plus className="w-3.5 h-3.5" />
-				</button>
+			<div>
+				<label className="block text-xs font-medium text-gray-600 mb-1">
+					Tabungan Umum (Rp)
+				</label>
+				<div className="flex gap-2">
+					<CurrencyInput
+						className="flex-1 rounded border-0 py-1.5 px-3 text-sm ring-1 ring-inset ring-green-300 focus:ring-2 focus:ring-green-600 text-right"
+						placeholder="Nominal"
+						value={savingsAmount}
+						onChange={setSavingsAmount}
+					/>
+					<button
+						type="button"
+						onClick={addSavings}
+						disabled={savingsAmount <= 0}
+						className="px-2 py-1.5 rounded bg-green-100 text-green-700 hover:bg-green-200 disabled:opacity-40 text-xs font-medium self-end"
+					>
+						<Plus className="w-3.5 h-3.5" />
+					</button>
+				</div>
 			</div>
 
 			{/* Insidental */}
-			<div className="flex gap-2">
-				<input
-					list="incidental-suggestions"
-					type="text"
-					className="flex-1 rounded border-0 py-1.5 px-3 text-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
-					placeholder="Nama item"
-					value={name}
-					onChange={(e) => setName(e.target.value)}
-				/>
-				<datalist id="incidental-suggestions">
-					{suggestions.map((s) => (
-						<option key={s} value={s} />
-					))}
-				</datalist>
-				<input
-					type="number"
-					className="w-24 rounded border-0 py-1.5 px-2 text-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 text-right"
-					placeholder="Nominal"
-					value={amount}
-					onChange={(e) => setAmount(e.target.value)}
-					min={0}
-				/>
-				<button
-					type="button"
-					onClick={addIncidental}
-					disabled={!name.trim() || Number(amount) <= 0}
-					className="px-2 py-1.5 rounded bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-40 text-xs font-medium"
-				>
-					<Plus className="w-3.5 h-3.5" />
-				</button>
+			<div>
+				<label className="block text-xs font-medium text-gray-600 mb-1">
+					Item Tambahan
+				</label>
+				<div className="flex gap-2">
+					<input
+						list="incidental-suggestions"
+						type="text"
+						className="flex-1 rounded border-0 py-1.5 px-3 text-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+						placeholder="Nama item"
+						value={name}
+						onChange={(e) => setName(e.target.value)}
+					/>
+					<datalist id="incidental-suggestions">
+						{suggestions.map((s) => (
+							<option key={s} value={s} />
+						))}
+					</datalist>
+					<CurrencyInput
+						className="w-24 rounded border-0 py-1.5 px-2 text-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 text-right"
+						placeholder="Nominal"
+						value={amount}
+						onChange={setAmount}
+					/>
+					<button
+						type="button"
+						onClick={addIncidental}
+						disabled={!name.trim() || amount <= 0}
+						className="px-2 py-1.5 rounded bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-40 text-xs font-medium self-end"
+					>
+						<Plus className="w-3.5 h-3.5" />
+					</button>
+				</div>
 			</div>
 
 			{/* Added items */}

@@ -1,7 +1,13 @@
 import { useAtom } from "jotai";
 import { useEffect, useState } from "react";
 import { ApiError } from "#/api/mutator/custom-instance";
-import { Button, FormField, SlideOver, useToast } from "#/components/ui";
+import {
+	Button,
+	CurrencyFormField,
+	FormField,
+	SlideOver,
+	useToast,
+} from "#/components/ui";
 import { academicYearAtom } from "#/store/global";
 import { type Flow, type MiscInput, useCreateMisc } from "./api";
 
@@ -131,16 +137,12 @@ export function LainLainForm({ isOpen, onClose }: LainLainFormProps) {
 					required
 				/>
 
-				<FormField
+				<CurrencyFormField
 					id="amount"
-					name="amount"
-					type="number"
-					min={1}
-					step="any"
 					label="Nominal"
 					placeholder="0"
 					value={amount}
-					onChange={(e) => setAmount(Number(e.target.value) || 0)}
+					onChange={setAmount}
 					required
 				/>
 

@@ -1,6 +1,7 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useGetV1InvoicesBatch } from "#/api/endpoints/invoices/invoice-batch";
 import { useGetV1StudentsIdInvoices } from "#/api/endpoints/invoices/invoices";
+import { CurrencyInput } from "#/components/ui";
 import { formatCurrency } from "../../../../../utils/format";
 
 interface InvoiceSelectorProps {
@@ -12,7 +13,9 @@ interface InvoiceSelectorProps {
 	initialInvoiceId: number | null;
 	onToggleInvoice: (id: number) => void;
 	onToggleItem: (itemId: number) => void;
-	onAmountChange: (itemId: number, val: string) => void;
+	onAmountChange: (itemId: number, val: number) => void;
+	onExcludeItems: (ids: number[]) => void;
+	onIncludeItems: (ids: number[]) => void;
 }
 
 export function InvoiceSelector({
@@ -25,6 +28,8 @@ export function InvoiceSelector({
 	onToggleInvoice,
 	onToggleItem,
 	onAmountChange,
+	onExcludeItems,
+	onIncludeItems,
 }: InvoiceSelectorProps) {
 	// Fetch invoice list
 	const { data: invoicesResp, isLoading } = useGetV1StudentsIdInvoices(
@@ -100,14 +105,30 @@ export function InvoiceSelector({
 		return items;
 	}, [invoiceDetails]);
 
-	// Auto-fill pay amounts
+	// Track seen item IDs so new items are excluded by default
+	const prevIdsRef = useRef<Set<number>>(new Set());
+
+	// Auto-fill pay amounts + exclude new items by default
 	useEffect(() => {
 		if (invoiceItems.length > 0) {
+			// Auto-fill pay amounts for all items
 			invoiceItems.forEach((item) => {
-				onAmountChange(item.id, String(item.sisa_tagihan));
+				onAmountChange(item.id, item.sisa_tagihan);
 			});
+
+			// Exclude items that just appeared (not seen before)
+			const currentIds = new Set(invoiceItems.map((i) => i.id));
+			const newItems = invoiceItems.filter(
+				(item) => !prevIdsRef.current.has(item.id),
+			);
+			if (newItems.length > 0) {
+				onExcludeItems(newItems.map((item) => item.id));
+			}
+			prevIdsRef.current = currentIds;
+		} else {
+			prevIdsRef.current.clear();
 		}
-	}, [invoiceItems, onAmountChange]);
+	}, [invoiceItems, onAmountChange, onExcludeItems]);
 
 	if (isLoading) {
 		return (
@@ -165,79 +186,98 @@ export function InvoiceSelector({
 			</div>
 
 			{/* Item detail table */}
-			{invoiceItems.length > 0 && (
-				<div className="mt-3 border-t border-gray-200 pt-3">
-					<p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-						Detail Item
-					</p>
-					<div className="space-y-1">
-						{invoiceItems.map((item: any) => {
-							const checkable = !item.is_dispensation && !item.is_locked;
-							const isExcluded = excludedItems.includes(item.id);
-							return (
-								<div
-									key={item.id}
-									className={`flex items-center gap-2 py-1.5 px-2 rounded text-sm ${item.is_dispensation ? "bg-green-50" : ""} ${isExcluded ? "opacity-50" : ""}`}
-								>
-									{checkable ? (
-										<input
-											type="checkbox"
-											className="h-3.5 w-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
-											checked={!isExcluded}
-											onChange={() => onToggleItem(item.id)}
-											title={
-												isExcluded
-													? "Sertakan item ini"
-													: "Kecualikan dari pembayaran"
+			{invoiceItems.length > 0 &&
+				(() => {
+					const allExcluded =
+						invoiceItems.length > 0 &&
+						invoiceItems.every((item) => excludedItems.includes(item.id));
+					return (
+						<div className="mt-3 border-t border-gray-200 pt-3">
+							<div className="flex items-center justify-between mb-2">
+								<p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+									Detail Item
+								</p>
+								<label className="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer select-none">
+									<input
+										type="checkbox"
+										className="h-3.5 w-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+										checked={!allExcluded}
+										onChange={() => {
+											const ids = invoiceItems.map((i) => i.id);
+											if (allExcluded) {
+												onIncludeItems(ids);
+											} else {
+												onExcludeItems(ids);
 											}
-										/>
-									) : (
-										<span className="w-3.5" />
-									)}
-									<span
-										className={`flex-1 ${item.is_dispensation ? "text-green-700 italic text-xs" : "text-gray-800"} ${isExcluded ? "line-through" : ""}`}
-									>
-										{item.name}
-										{item.is_locked && (
-											<span className="ml-1 text-xs text-indigo-500">
-												(dispensasi)
-											</span>
-										)}
-									</span>
-									<span
-										className={`text-xs tabular-nums ${item.is_dispensation ? "text-green-600" : "text-gray-500"}`}
-									>
-										{formatCurrency(item.sisa_tagihan)}
-									</span>
-									<div className="w-24">
-										{item.is_dispensation || item.is_locked ? (
+										}}
+									/>
+									{allExcluded ? "Pilih Semua" : "Hapus Semua"}
+								</label>
+							</div>
+							<div className="space-y-1">
+								{invoiceItems.map((item: any) => {
+									const checkable = !item.is_dispensation && !item.is_locked;
+									const isExcluded = excludedItems.includes(item.id);
+									return (
+										<div
+											key={item.id}
+											className={`flex items-center gap-2 py-1.5 px-2 rounded text-sm ${item.is_dispensation ? "bg-green-50" : ""} ${isExcluded ? "opacity-50" : ""}`}
+										>
+											{checkable ? (
+												<input
+													type="checkbox"
+													className="h-3.5 w-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+													checked={!isExcluded}
+													onChange={() => onToggleItem(item.id)}
+													title={
+														isExcluded
+															? "Sertakan item ini"
+															: "Kecualikan dari pembayaran"
+													}
+												/>
+											) : (
+												<span className="w-3.5" />
+											)}
 											<span
-												className={`block text-right text-xs font-medium tabular-nums ${item.is_dispensation ? "text-green-600" : "text-gray-900"}`}
+												className={`flex-1 ${item.is_dispensation ? "text-green-700 italic text-xs" : "text-gray-800"} ${isExcluded ? "line-through" : ""}`}
 											>
-												{formatCurrency(
-													payAmounts[item.id] ?? item.sisa_tagihan,
+												{item.name}
+												{item.is_locked && (
+													<span className="ml-1 text-xs text-indigo-500">
+														(dispensasi)
+													</span>
 												)}
 											</span>
-										) : (
-											<input
-												type="number"
-												className="block w-full rounded border-0 py-1 px-2 text-xs text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 text-right tabular-nums disabled:bg-gray-100 disabled:text-gray-400"
-												value={payAmounts[item.id] ?? ""}
-												onChange={(e) =>
-													onAmountChange(item.id, e.target.value)
-												}
-												disabled={isExcluded}
-												max={item.sisa_tagihan}
-												min={0}
-											/>
-										)}
-									</div>
-								</div>
-							);
-						})}
-					</div>
-				</div>
-			)}
+											<span
+												className={`text-xs tabular-nums ${item.is_dispensation ? "text-green-600" : "text-gray-500"}`}
+											>
+												{formatCurrency(item.sisa_tagihan)}
+											</span>
+											<div className="w-32">
+												{item.is_dispensation || item.is_locked ? (
+													<span
+														className={`block text-right text-xs font-medium tabular-nums ${item.is_dispensation ? "text-green-600" : "text-gray-900"}`}
+													>
+														{formatCurrency(
+															payAmounts[item.id] ?? item.sisa_tagihan,
+														)}
+													</span>
+												) : (
+													<CurrencyInput
+														className="block w-full rounded border-0 py-1 px-2 text-xs text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 text-right tabular-nums disabled:bg-gray-100 disabled:text-gray-400"
+														value={payAmounts[item.id] ?? 0}
+														onChange={(val) => onAmountChange(item.id, val)}
+														disabled={isExcluded}
+													/>
+												)}
+											</div>
+										</div>
+									);
+								})}
+							</div>
+						</div>
+					);
+				})()}
 		</>
 	);
 }

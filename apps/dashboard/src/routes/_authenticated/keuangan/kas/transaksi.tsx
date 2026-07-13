@@ -6,8 +6,9 @@ import {
 	Calendar,
 	ChevronRight,
 	Filter,
+	Loader2,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useGetV1CashTransactions } from "#/api/endpoints/cash/cash";
 import { Button } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
@@ -17,6 +18,8 @@ export const Route = createFileRoute("/_authenticated/keuangan/kas/transaksi")({
 	component: KasTransaksiPage,
 });
 
+const PAGE_SIZE = 50;
+
 function KasTransaksiPage() {
 	const [activeAy] = useAtom(academicYearAtom);
 
@@ -25,12 +28,23 @@ function KasTransaksiPage() {
 	const [jenis, setJenis] = useState("");
 	const [tipe, setTipe] = useState("");
 	const [page, setPage] = useState(1);
+	const [allTxs, setAllTxs] = useState<any[]>([]);
 
-	const { data: txData, isLoading } = useGetV1CashTransactions(
+	// Reset accumulated data when filters change
+	const resetAndReload = useCallback(() => {
+		setAllTxs([]);
+		setPage(1);
+	}, []);
+
+	const {
+		data: txData,
+		isLoading,
+		isFetching,
+	} = useGetV1CashTransactions(
 		{
 			academic_year_id: activeAy?.id,
 			page,
-			limit: 30,
+			limit: PAGE_SIZE,
 			...(startDate ? { start_date: startDate } : {}),
 			...(endDate ? { end_date: endDate } : {}),
 			...(jenis ? { transaction_type: jenis } : {}),
@@ -41,20 +55,45 @@ function KasTransaksiPage() {
 
 	const transactions = (txData?.data as any)?.data || [];
 	const meta = (txData?.data as any)?.meta;
+	const totalItems = Number(meta?.total ?? 0);
+	const hasMore = allTxs.length < totalItems;
 
-	const { totalCredit, totalDebit } = useMemo(() => {
-		let credit = 0;
-		let debit = 0;
-		for (const tx of transactions) {
-			if (tx.transaction_type === "credit") credit += Number(tx.amount);
-			else debit += Number(tx.amount);
+	// Accumulate transactions across pages
+	useEffect(() => {
+		if (transactions.length > 0) {
+			setAllTxs((prev) => {
+				const existingIds = new Set(prev.map((t: any) => t.id));
+				const newTxs = transactions.filter((t: any) => !existingIds.has(t.id));
+				return [...prev, ...newTxs];
+			});
 		}
-		return { totalCredit: credit, totalDebit: debit };
 	}, [transactions]);
+
+	// Summary from metadata (covers all filtered data, not just current page)
+	const totalCredit = Number(meta?.total_credit ?? 0);
+	const totalDebit = Number(meta?.total_debit ?? 0);
+
+	// Infinite scroll sentinel
+	const sentinelRef = useRef<HTMLDivElement>(null);
+	useEffect(() => {
+		const el = sentinelRef.current;
+		if (!el || !hasMore || isFetching) return;
+
+		const observer = new IntersectionObserver(
+			(entries) => {
+				if (entries[0].isIntersecting && hasMore && !isFetching) {
+					setPage((p) => p + 1);
+				}
+			},
+			{ rootMargin: "200px" },
+		);
+		observer.observe(el);
+		return () => observer.disconnect();
+	}, [hasMore, isFetching]);
 
 	const groupedByDate = useMemo(() => {
 		const groups: Record<string, any[]> = {};
-		for (const tx of transactions) {
+		for (const tx of allTxs) {
 			const dateKey = (tx.transaction_date || tx.created_at || "").split(
 				"T",
 			)[0];
@@ -62,15 +101,22 @@ function KasTransaksiPage() {
 			groups[dateKey].push(tx);
 		}
 		return Object.entries(groups).sort(([a], [b]) => b.localeCompare(a));
-	}, [transactions]);
+	}, [allTxs]);
 
 	const handleReset = () => {
 		setStartDate("");
 		setEndDate("");
 		setJenis("");
 		setTipe("");
-		setPage(1);
+		resetAndReload();
 	};
+
+	const handleFilterChange = (setter: (v: string) => void, value: string) => {
+		setter(value);
+		resetAndReload();
+	};
+
+	const isFirstLoad = isLoading && allTxs.length === 0;
 
 	return (
 		<div className="space-y-6">
@@ -101,10 +147,7 @@ function KasTransaksiPage() {
 						<input
 							type="date"
 							value={startDate}
-							onChange={(e) => {
-								setStartDate(e.target.value);
-								setPage(1);
-							}}
+							onChange={(e) => handleFilterChange(setStartDate, e.target.value)}
 							className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						/>
 					</div>
@@ -116,10 +159,7 @@ function KasTransaksiPage() {
 						<input
 							type="date"
 							value={endDate}
-							onChange={(e) => {
-								setEndDate(e.target.value);
-								setPage(1);
-							}}
+							onChange={(e) => handleFilterChange(setEndDate, e.target.value)}
 							className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						/>
 					</div>
@@ -130,10 +170,7 @@ function KasTransaksiPage() {
 						</label>
 						<select
 							value={jenis}
-							onChange={(e) => {
-								setJenis(e.target.value);
-								setPage(1);
-							}}
+							onChange={(e) => handleFilterChange(setJenis, e.target.value)}
 							className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						>
 							<option value="">Semua</option>
@@ -148,16 +185,13 @@ function KasTransaksiPage() {
 						</label>
 						<select
 							value={tipe}
-							onChange={(e) => {
-								setTipe(e.target.value);
-								setPage(1);
-							}}
+							onChange={(e) => handleFilterChange(setTipe, e.target.value)}
 							className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						>
 							<option value="">Semua Tipe</option>
 							<option value="payment">Pembayaran</option>
 							<option value="expense">Pengeluaran</option>
-							<option value="transfer">Transfer</option>
+							<option value="transfer_to_vault">Transfer ke Brangkas</option>
 						</select>
 					</div>
 
@@ -202,39 +236,28 @@ function KasTransaksiPage() {
 					<table className="min-w-full divide-y divide-gray-300">
 						<thead className="bg-gray-50">
 							<tr>
-								<th
-									scope="col"
-									className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6 w-12"
-								>
+								<th className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6 w-12">
 									#
 								</th>
-								<th
-									scope="col"
-									className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
-								>
+								<th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
 									Waktu
 								</th>
-								<th
-									scope="col"
-									className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
-								>
+								<th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
 									Keterangan
 								</th>
-								<th
-									scope="col"
-									className="px-3 py-3.5 text-right text-sm font-semibold text-gray-900 pr-6"
-								>
+								<th className="px-3 py-3.5 text-right text-sm font-semibold text-gray-900 pr-6">
 									Nominal
 								</th>
 							</tr>
 						</thead>
 						<tbody className="divide-y divide-gray-200 bg-white">
-							{isLoading ? (
+							{isFirstLoad ? (
 								<tr>
 									<td
 										colSpan={4}
 										className="px-3 py-8 text-center text-sm text-gray-500"
 									>
+										<Loader2 className="h-5 w-5 animate-spin mx-auto mb-2" />
 										Memuat data transaksi...
 									</td>
 								</tr>
@@ -291,9 +314,9 @@ function KasTransaksiPage() {
 															className={`inline-flex items-center gap-1 font-semibold tabular-nums ${isCredit ? "text-green-600" : "text-red-600"}`}
 														>
 															{isCredit ? (
-																<ArrowUpRight className="h-4 w-4" />
-															) : (
 																<ArrowDownRight className="h-4 w-4" />
+															) : (
+																<ArrowUpRight className="h-4 w-4" />
 															)}
 															{isCredit ? "+" : "-"}
 															{formatCurrency(Number(tx.amount))}
@@ -309,70 +332,20 @@ function KasTransaksiPage() {
 					</table>
 				</div>
 
-				{/* Pagination */}
-				{meta && meta.total_pages > 1 && (
-					<div className="border-t border-gray-200 px-4 py-3 flex items-center justify-between sm:px-6">
-						<div className="flex flex-1 justify-between sm:hidden">
-							<Button
-								variant="secondary"
-								onClick={() => setPage((p) => Math.max(1, p - 1))}
-								disabled={page === 1}
-							>
-								Previous
-							</Button>
-							<Button
-								variant="secondary"
-								onClick={() => setPage((p) => p + 1)}
-								disabled={page >= meta.total_pages}
-							>
-								Next
-							</Button>
+				{/* Infinite scroll sentinel */}
+				<div ref={sentinelRef} className="py-4 text-center">
+					{isFetching && allTxs.length > 0 && (
+						<div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+							<Loader2 className="h-4 w-4 animate-spin" />
+							Memuat...
 						</div>
-						<div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-							<div>
-								<p className="text-sm text-gray-700">
-									Menampilkan{" "}
-									<span className="font-medium">{(page - 1) * 30 + 1}</span>{" "}
-									sampai{" "}
-									<span className="font-medium">
-										{Math.min(page * 30, meta.total_items)}
-									</span>{" "}
-									dari <span className="font-medium">{meta.total_items}</span>{" "}
-									transaksi
-								</p>
-							</div>
-							<div>
-								<nav
-									className="isolate inline-flex -space-x-px rounded-md shadow-sm"
-									aria-label="Pagination"
-								>
-									<button
-										onClick={() => setPage((p) => Math.max(1, p - 1))}
-										disabled={page === 1}
-										className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
-									>
-										<span className="sr-only">Previous</span>
-										<ChevronRight
-											className="h-5 w-5 rotate-180"
-											aria-hidden="true"
-										/>
-									</button>
-									<span className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300">
-										{page}
-									</span>
-									<button
-										onClick={() => setPage((p) => p + 1)}
-										disabled={page >= meta.total_pages}
-										className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
-									>
-										<span className="sr-only">Next</span>
-										<ChevronRight className="h-5 w-5" aria-hidden="true" />
-									</button>
-								</nav>
-							</div>
-						</div>
-					</div>
-				)}
+					)}
+					{!hasMore && allTxs.length > 0 && (
+						<p className="text-sm text-gray-400">
+							{allTxs.length} dari {totalItems} transaksi ditampilkan
+						</p>
+					)}
+				</div>
 			</div>
 		</div>
 	);

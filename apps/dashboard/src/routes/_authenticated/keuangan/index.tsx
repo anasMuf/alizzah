@@ -6,6 +6,7 @@ import {
 	ArrowUpRight,
 	ChevronRight,
 	FileText,
+	HelpCircle,
 	Loader2,
 	Plus,
 	Wallet,
@@ -53,6 +54,10 @@ function KeuanganOverviewPage() {
 	const saldoBerangkas = Number(vault?.balance || 0);
 	const pemasukanHariIni = Number(report?.income_summary?.total || 0);
 	const pengeluaranHariIni = Number(report?.expense_summary?.total || 0);
+	const incomeCategories: { category: string; amount: number }[] =
+		report?.income_summary?.by_category || [];
+	const expenseCategories: { category: string; amount: number }[] =
+		report?.expense_summary?.by_category || [];
 	// Total seluruh tunggakan (sum terfilter dari backend), bukan jumlah preview 5 baris.
 	const totalTunggakan = Number(
 		(unpaidData?.data as any)?.meta?.total_outstanding ?? 0,
@@ -105,7 +110,7 @@ function KeuanganOverviewPage() {
 
 			{/* Saldo Cards */}
 			<div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-				<div className="overflow-hidden rounded-lg bg-white shadow ring-1 ring-gray-900/5">
+				<div className="rounded-lg bg-white shadow ring-1 ring-gray-900/5">
 					<div className="p-5">
 						<div className="flex items-center">
 							<div className="flex-shrink-0">
@@ -117,8 +122,15 @@ function KeuanganOverviewPage() {
 										Saldo Kas (Laci)
 									</dt>
 									<dd>
-										<div className="text-lg font-medium text-gray-900">
+										<div className="text-lg font-medium text-gray-900 flex items-center gap-1.5">
 											{formatCurrency(saldoKas)}
+											<span className="relative group cursor-help">
+												<HelpCircle className="h-3.5 w-3.5 text-gray-300 hover:text-gray-500" />
+												<span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block w-56 bg-gray-800 text-white text-xs rounded-lg px-3 py-2 shadow-lg z-50">
+													Uang fisik di laci kasir. Terdiri dari pembayaran
+													tagihan tunai setelah dikurangi transfer ke brangkas.
+												</span>
+											</span>
 										</div>
 									</dd>
 								</dl>
@@ -137,7 +149,7 @@ function KeuanganOverviewPage() {
 					</div>
 				</div>
 
-				<div className="overflow-hidden rounded-lg bg-white shadow ring-1 ring-gray-900/5">
+				<div className="rounded-lg bg-white shadow ring-1 ring-gray-900/5">
 					<div className="p-5">
 						<div className="flex items-center">
 							<div className="flex-shrink-0">
@@ -149,8 +161,15 @@ function KeuanganOverviewPage() {
 										Saldo Brankas
 									</dt>
 									<dd>
-										<div className="text-lg font-medium text-gray-900">
+										<div className="text-lg font-medium text-gray-900 flex items-center gap-1.5">
 											{formatCurrency(saldoBerangkas)}
+											<span className="relative group cursor-help">
+												<HelpCircle className="h-3.5 w-3.5 text-gray-300 hover:text-gray-500" />
+												<span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block w-56 bg-gray-800 text-white text-xs rounded-lg px-3 py-2 shadow-lg z-50">
+													Uang di brangkas. Terdiri dari saldo tabungan siswa,
+													dikurangi penarikan tabungan.
+												</span>
+											</span>
 										</div>
 									</dd>
 								</dl>
@@ -169,7 +188,7 @@ function KeuanganOverviewPage() {
 					</div>
 				</div>
 
-				<div className="overflow-hidden rounded-lg bg-white shadow ring-1 ring-gray-900/5">
+				<div className="rounded-lg bg-white shadow ring-1 ring-gray-900/5">
 					<div className="p-5">
 						<div className="flex items-center">
 							<div className="flex-shrink-0">
@@ -207,7 +226,7 @@ function KeuanganOverviewPage() {
 
 			{/* Pemasukan & Pengeluaran Hari Ini */}
 			<div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-				<div className="overflow-hidden rounded-lg bg-white shadow ring-1 ring-gray-900/5 p-6 flex items-start">
+				<div className="rounded-lg bg-white shadow ring-1 ring-gray-900/5 p-6 flex items-start">
 					<div className="rounded-md bg-green-50 p-3 mr-4">
 						<ArrowDownRight
 							className="h-6 w-6 text-green-600"
@@ -218,16 +237,28 @@ function KeuanganOverviewPage() {
 						<h3 className="text-base font-semibold leading-6 text-gray-900">
 							Pemasukan Hari Ini
 						</h3>
-						<p className="mt-1 text-2xl font-bold tracking-tight text-gray-900">
+						<p className="mt-1 text-2xl font-bold tracking-tight text-gray-900 flex items-center gap-1.5">
 							{formatCurrency(pemasukanHariIni)}
-						</p>
-						<p className="text-sm text-gray-500">
-							dari {(report?.income_summary?.by_category || []).length || 0}{" "}
-							kategori pemasukan
+							<span className="relative group cursor-help">
+								<HelpCircle className="h-3.5 w-3.5 text-gray-300 hover:text-gray-500" />
+								<span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block w-64 bg-gray-800 text-white text-xs rounded-lg px-3 py-2 shadow-lg z-50">
+									Total pembayaran tagihan hari ini.
+									{incomeCategories.length > 0 && (
+										<div className="mt-1.5 pt-1.5 border-t border-gray-600 space-y-0.5">
+											{incomeCategories.map((c) => (
+												<div key={c.category} className="flex justify-between">
+													<span>{c.category}</span>
+													<span>{formatCurrency(c.amount)}</span>
+												</div>
+											))}
+										</div>
+									)}
+								</span>
+							</span>
 						</p>
 					</div>
 				</div>
-				<div className="overflow-hidden rounded-lg bg-white shadow ring-1 ring-gray-900/5 p-6 flex items-start">
+				<div className="rounded-lg bg-white shadow ring-1 ring-gray-900/5 p-6 flex items-start">
 					<div className="rounded-md bg-rose-50 p-3 mr-4">
 						<ArrowUpRight
 							className="h-6 w-6 text-rose-600"
@@ -238,12 +269,24 @@ function KeuanganOverviewPage() {
 						<h3 className="text-base font-semibold leading-6 text-gray-900">
 							Pengeluaran Hari Ini
 						</h3>
-						<p className="mt-1 text-2xl font-bold tracking-tight text-gray-900">
+						<p className="mt-1 text-2xl font-bold tracking-tight text-gray-900 flex items-center gap-1.5">
 							{formatCurrency(pengeluaranHariIni)}
-						</p>
-						<p className="text-sm text-gray-500">
-							dari {(report?.expense_summary?.by_category || []).length || 0}{" "}
-							kategori pengeluaran
+							<span className="relative group cursor-help">
+								<HelpCircle className="h-3.5 w-3.5 text-gray-300 hover:text-gray-500" />
+								<span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block w-64 bg-gray-800 text-white text-xs rounded-lg px-3 py-2 shadow-lg z-50">
+									Total pengeluaran hari ini.
+									{expenseCategories.length > 0 && (
+										<div className="mt-1.5 pt-1.5 border-t border-gray-600 space-y-0.5">
+											{expenseCategories.map((c) => (
+												<div key={c.category} className="flex justify-between">
+													<span>{c.category}</span>
+													<span>{formatCurrency(c.amount)}</span>
+												</div>
+											))}
+										</div>
+									)}
+								</span>
+							</span>
 						</p>
 					</div>
 				</div>
@@ -252,7 +295,7 @@ function KeuanganOverviewPage() {
 			{/* Tagihan Jatuh Tempo & Quick Actions */}
 			<div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
 				{/* Jatuh Tempo */}
-				<div className="lg:col-span-2 overflow-hidden rounded-lg bg-white shadow ring-1 ring-gray-900/5">
+				<div className="lg:col-span-2 rounded-lg bg-white shadow ring-1 ring-gray-900/5">
 					<div className="border-b border-gray-200 px-4 py-5 sm:px-6 flex justify-between items-center">
 						<h3 className="text-base font-semibold leading-6 text-gray-900">
 							Tagihan Jatuh Tempo Minggu Ini
@@ -301,7 +344,7 @@ function KeuanganOverviewPage() {
 				</div>
 
 				{/* Quick Actions */}
-				<div className="overflow-hidden rounded-lg bg-white shadow ring-1 ring-gray-900/5">
+				<div className="rounded-lg bg-white shadow ring-1 ring-gray-900/5">
 					<div className="border-b border-gray-200 px-4 py-5 sm:px-6">
 						<h3 className="text-base font-semibold leading-6 text-gray-900">
 							Aksi Cepat

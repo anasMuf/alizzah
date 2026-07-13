@@ -57,10 +57,18 @@ func (s *vaultService) GetTransactions(params dto.VaultTransactionQueryParams) (
 		responses[i] = mapVaultTransactionToResponse(t)
 	}
 
+	// Compute filtered totals (not just current page) for accurate summary display
+	totalCredit, totalDebit, sumErr := s.vaultRepo.SumFiltered(params)
+
 	meta := &dto.Meta{
 		Page:  params.Page,
 		Limit: params.Limit,
 		Total: total,
+	}
+
+	if sumErr == nil {
+		meta.TotalCredit = &totalCredit
+		meta.TotalDebit = &totalDebit
 	}
 
 	return responses, meta, nil

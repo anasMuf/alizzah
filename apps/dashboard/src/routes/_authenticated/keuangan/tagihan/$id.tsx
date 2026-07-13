@@ -3,7 +3,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import {
 	CalendarDays,
-	ChevronDown,
 	ChevronRight,
 	Edit2,
 	Plus,
@@ -77,13 +76,8 @@ function DetailTagihanPage() {
 	const [itemName, setItemName] = useState("");
 	const [itemAmount, setItemAmount] = useState("");
 	const [itemCategory, setItemCategory] = useState("incidental");
-	// F08-3: rincian item dikelompokkan per kategori; default tertutup,
-	// header menampilkan subtotal kategori, klik untuk membuka rincian.
-	const [expandedInvoiceCats, setExpandedInvoiceCats] = useState<
-		Record<string, boolean>
-	>({});
-	const toggleInvoiceCat = (cat: string) =>
-		setExpandedInvoiceCats((prev) => ({ ...prev, [cat]: !prev[cat] }));
+	// F08-3: rincian item ditampilkan datar — tiap item berdiri sendiri.
+	// Collapse dihapus karena registration & initial sekarang hanya 1 item summary.
 	const [selectedFeeItemId, setSelectedFeeItemId] = useState<string>("");
 	const [selectedFeeItem, setSelectedFeeItem] = useState<any>(null);
 	const [unitQuantity, setUnitQuantity] = useState("");
@@ -485,27 +479,6 @@ function DetailTagihanPage() {
 	const paidAmount = Number(invoice.paid_amount);
 	const sisa = totalAmount - paidAmount;
 
-	// F08-3: kelompokkan item tagihan per kategori untuk tampilan collapse.
-	const groupedInvoiceItems = ((invoice.items as any[]) || []).reduce(
-		(acc: Record<string, any[]>, it: any) => {
-			const c = it.category || "other";
-			if (!acc[c]) acc[c] = [];
-			acc[c].push(it);
-			return acc;
-		},
-		{} as Record<string, any[]>,
-	);
-
-	// F08-3: collapse rincian hanya untuk tagihan "bundel" (biaya awal,
-	// registrasi, wisuda) yang berisi banyak item satu jenis. Tagihan bulanan
-	// & insidental ditampilkan datar — tiap item sudah berdiri sendiri.
-	const collapseRincian = [
-		"initial",
-		"daycare_initial",
-		"registration",
-		"graduation",
-	].includes(invoice.type);
-
 	const renderItemRow = (item: any) => {
 		const itemTotal = Number(item.amount);
 		const itemPaid = Number(item.paid_amount);
@@ -742,52 +715,9 @@ function DetailTagihanPage() {
 								)}
 							</div>
 							<ul className="divide-y divide-gray-200">
-								{collapseRincian
-									? Object.entries(groupedInvoiceItems).map(
-											([cat, catItems]) => {
-												const subtotal = catItems.reduce(
-													(s: number, it: any) => s + Number(it.amount),
-													0,
-												);
-												const isCatOpen = expandedInvoiceCats[cat] ?? false;
-												return (
-													<li key={cat}>
-														<button
-															type="button"
-															onClick={() => toggleInvoiceCat(cat)}
-															className="w-full flex items-center justify-between gap-3 p-4 sm:px-6 text-left hover:bg-gray-50"
-														>
-															<div className="flex items-center gap-2">
-																{isCatOpen ? (
-																	<ChevronDown className="h-4 w-4 text-gray-400" />
-																) : (
-																	<ChevronRight className="h-4 w-4 text-gray-400" />
-																)}
-																<span className="text-sm font-semibold text-gray-900">
-																	{categoryLabels[cat] || cat}
-																</span>
-																<span className="text-xs text-gray-400">
-																	{catItems.length} item
-																</span>
-															</div>
-															<span className="text-sm font-bold text-gray-900 tabular-nums">
-																{formatCurrency(subtotal)}
-															</span>
-														</button>
-														{isCatOpen && (
-															<ul className="divide-y divide-gray-100">
-																{catItems.map((item: any) =>
-																	renderItemRow(item),
-																)}
-															</ul>
-														)}
-													</li>
-												);
-											},
-										)
-									: (invoice.items as any[])?.map((item: any) =>
-											renderItemRow(item),
-										)}
+								{(invoice.items as any[])?.map((item: any) =>
+									renderItemRow(item),
+								)}
 							</ul>
 						</div>
 					</div>

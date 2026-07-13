@@ -10,6 +10,8 @@ export interface DtoMeta {
 	limit?: number;
 	page?: number;
 	total?: number;
+	total_credit?: number;
+	total_debit?: number;
 	/** sum sisa tagihan terfilter; diisi pada daftar invoice */
 	total_outstanding?: number;
 }

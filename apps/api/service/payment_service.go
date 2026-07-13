@@ -294,6 +294,10 @@ func (s *paymentService) Create(createdBy uint, req dto.CreatePaymentRequest) (*
 			if err := s.txnWriter.WriteVaultCredit(req.AcademicYearID, paymentDate, req.SavingsDeposit, "savings_deposit", &result.ID, fmt.Sprintf("Setoran tabungan %s", student.FullName), createdBy, tx); err != nil {
 				return err
 			}
+			// Transfer dari kas ke brangkas agar uang tidak double-count
+			if err := s.txnWriter.WriteCashDebit(req.AcademicYearID, paymentDate, req.SavingsDeposit, "transfer_to_vault", &result.ID, fmt.Sprintf("Transfer ke brangkas: setoran %s", student.FullName), createdBy, tx); err != nil {
+				return err
+			}
 		}
 
 		// [G-Koperasi] Seam: deteksi item koperasi yang terbayar → catat penjualan + kas koperasi

@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { ChevronRight } from "lucide-react";
+import { useState } from "react";
 import { useGetV1StudentsIdInvoices } from "#/api/endpoints/invoices/invoices";
 import { useGetV1StudentsId } from "#/api/endpoints/students/students";
 import { Badge, Button } from "#/components/ui";
@@ -22,11 +23,14 @@ function TagihanSiswaPage() {
 	);
 	const student = (studentResp?.data as any)?.data;
 
+	const [showAllMonths, setShowAllMonths] = useState(false);
+
 	const { data: invoicesResp, isLoading: isInvoicesLoading } =
 		useGetV1StudentsIdInvoices(
 			Number(id),
 			{
 				academic_year_id: activeAy?.id,
+				...(showAllMonths ? ({ show_all: true } as any) : {}),
 			},
 			{ query: { enabled: !!activeAy?.id && !!id } },
 		);
@@ -104,6 +108,17 @@ function TagihanSiswaPage() {
 			</div>
 
 			<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden">
+				<div className="px-4 py-3 border-b border-gray-200 bg-gray-50/50">
+					<label className="flex items-center gap-2 text-xs text-gray-500 cursor-pointer select-none">
+						<input
+							type="checkbox"
+							className="h-3.5 w-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+							checked={showAllMonths}
+							onChange={(e) => setShowAllMonths(e.target.checked)}
+						/>
+						Tampilkan semua bulan (termasuk bulan depan)
+					</label>
+				</div>
 				<div className="overflow-x-auto">
 					<table className="min-w-full divide-y divide-gray-300">
 						<thead className="bg-gray-50">

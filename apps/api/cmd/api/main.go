@@ -170,6 +170,7 @@ func main() {
 	seeders.MigrateRolesToModules(db)          // RBAC by-modul: role-bundle lama -> admin + grant modul
 	seeders.ReplaceInvoiceItemsWithSummary(db) // Ganti invoice_items detail registrasi/biaya awal menjadi format summary
 	seeders.BackfillCashTransferToVault(db)    // Buat cash_transactions DEBIT untuk setoran tabungan yang belum ada transfer ke brangkas
+	seeders.SwapTransactionTypes(db)           // Swap credit↔debit: ubah perspektif bank statement → akuntansi sekolah
 
 	// Backfill flag is_koperasi — hanya relevan jika seam koperasi aktif
 	if isKoperasiSeamEnabled() {

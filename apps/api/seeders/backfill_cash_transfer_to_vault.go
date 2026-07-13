@@ -11,10 +11,14 @@ import (
 // BackfillCashTransferToVault membuat cash_transactions DEBIT untuk setiap
 // payment dengan savings_deposit > 0 yang belum memiliki entry transfer_to_vault.
 // Ini memperbaiki double-counting uang kas vs brangkas — setiap setoran tabungan
-// dari kas harus mengurangi saldo kas (debit) saat masuk ke brangkas.
+// dari kas harus mengurangi saldo kas (credit/keluar) saat masuk ke brangkas.
 func BackfillCashTransferToVault(db *gorm.DB) {
 	type paymentInfo struct {
-		Payment         model.Payment
+		ID              uint
+		AcademicYearID  uint
+		PaymentDate     time.Time
+		SavingsDeposit  float64
+		CreatedBy       uint
 		StudentName     string
 		CashCreditCount int64
 		CashDebitCount  int64
@@ -22,7 +26,7 @@ func BackfillCashTransferToVault(db *gorm.DB) {
 
 	var payments []paymentInfo
 	if err := db.Table("payments").
-		Select("payments.*, students.full_name AS student_name, (SELECT COUNT(*) FROM cash_transactions WHERE source_type = 'payment' AND source_id = payments.id) AS cash_credit_count, (SELECT COUNT(*) FROM cash_transactions WHERE source_type = 'transfer_to_vault' AND source_id = payments.id) AS cash_debit_count").
+		Select("payments.id, payments.academic_year_id, payments.payment_date, payments.savings_deposit, payments.created_by, students.full_name AS student_name, (SELECT COUNT(*) FROM cash_transactions WHERE source_type = 'payment' AND source_id = payments.id) AS cash_credit_count, (SELECT COUNT(*) FROM cash_transactions WHERE source_type = 'transfer_to_vault' AND source_id = payments.id) AS cash_debit_count").
 		Joins("JOIN students ON students.id = payments.student_id").
 		Where("payments.savings_deposit > 0 AND payments.source = 'cash'").
 		Find(&payments).Error; err != nil {
@@ -38,20 +42,20 @@ func BackfillCashTransferToVault(db *gorm.DB) {
 
 		desc := "Transfer ke brangkas: setoran " + p.StudentName
 		ct := model.CashTransaction{
-			AcademicYearID:  p.Payment.AcademicYearID,
-			TransactionDate: p.Payment.PaymentDate,
+			AcademicYearID:  p.AcademicYearID,
+			TransactionDate: p.PaymentDate,
 			TransactionType: "debit",
-			Amount:          p.Payment.SavingsDeposit,
+			Amount:          p.SavingsDeposit,
 			SourceType:      "transfer_to_vault",
-			SourceID:        &p.Payment.ID,
+			SourceID:        &p.ID,
 			Description:     desc,
-			CreatedBy:       p.Payment.CreatedBy,
+			CreatedBy:       p.CreatedBy,
 		}
 		ct.CreatedAt = time.Now()
 		ct.UpdatedAt = time.Now()
 
 		if err := db.Create(&ct).Error; err != nil {
-			log.Printf("[BackfillCashTransferToVault] Gagal buat cash debit payment %d: %v", p.Payment.ID, err)
+			log.Printf("[BackfillCashTransferToVault] Gagal buat cash debit payment %d: %v", p.ID, err)
 			continue
 		}
 		backfilled++

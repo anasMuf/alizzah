@@ -109,22 +109,22 @@ function KasPage() {
 													{t.description || "-"}
 												</td>
 												<td className="px-4 py-3">
-													<Badge variant={isCredit ? "success" : "secondary"}>
+													<Badge variant={isCredit ? "secondary" : "success"}>
 														{t.category || t.source_type}
 													</Badge>
 												</td>
 												<td
 													className={`px-4 py-3 text-sm text-right font-medium whitespace-nowrap ${
-														isCredit ? "text-emerald-600" : "text-rose-600"
+														isCredit ? "text-rose-600" : "text-emerald-600"
 													}`}
 												>
 													<span className="inline-flex items-center justify-end gap-1">
 														{isCredit ? (
-															<ArrowDownLeft className="h-3.5 w-3.5" />
-														) : (
 															<ArrowUpRight className="h-3.5 w-3.5" />
+														) : (
+															<ArrowDownLeft className="h-3.5 w-3.5" />
 														)}
-														{isCredit ? "+" : "−"}
+														{isCredit ? "−" : "+"}
 														{formatCurrency(t.amount)}
 													</span>
 												</td>

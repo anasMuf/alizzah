@@ -465,16 +465,16 @@ function DetailTabunganSiswaPage() {
 								className="relative flex justify-between gap-x-6 px-4 py-5 sm:px-6 hover:bg-gray-50"
 							>
 								<div className="flex gap-x-4 items-center">
-									{trx.transaction_type === "credit" ? (
+									{trx.transaction_type === "debit" ? (
 										<ArrowDownCircle className="h-8 w-8 flex-none text-green-500 bg-green-50 rounded-full" />
 									) : (
 										<ArrowUpCircle className="h-8 w-8 flex-none text-rose-500 bg-rose-50 rounded-full" />
 									)}
 									<div className="min-w-0 flex-auto">
 										<p className="text-sm font-semibold leading-6 text-gray-900">
-											{trx.transaction_type === "credit"
-												? "Setoran Masuk"
-												: "Penarikan Keluar"}
+											{trx.transaction_type === "debit"
+												? "Debit (Setoran Masuk)"
+												: "Credit (Penarikan Keluar)"}
 										</p>
 										<p className="mt-1 flex text-xs leading-5 text-gray-500">
 											{formatDate(trx.created_at)} &bull;{" "}
@@ -487,9 +487,9 @@ function DetailTabunganSiswaPage() {
 								</div>
 								<div className="flex items-center gap-x-4">
 									<div
-										className={`text-sm font-bold leading-6 ${trx.transaction_type === "credit" ? "text-green-600" : "text-rose-600"}`}
+										className={`text-sm font-bold leading-6 ${trx.transaction_type === "debit" ? "text-green-600" : "text-rose-600"}`}
 									>
-										{trx.transaction_type === "credit" ? "+" : "-"}
+										{trx.transaction_type === "debit" ? "+" : "-"}
 										{formatCurrency(Number(trx.amount))}
 									</div>
 								</div>

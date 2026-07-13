@@ -100,7 +100,7 @@ func (r *cashTransactionRepository) SumByDateRange(academicYearID uint, start, e
 	var res Result
 
 	query := r.db.Model(&model.CashTransaction{}).
-		Select("COALESCE(SUM(CASE WHEN transaction_type = 'credit' THEN amount ELSE 0 END), 0) as credit, COALESCE(SUM(CASE WHEN transaction_type = 'debit' THEN amount ELSE 0 END), 0) as debit")
+		Select("COALESCE(SUM(CASE WHEN transaction_type = 'debit' THEN amount ELSE 0 END), 0) as credit, COALESCE(SUM(CASE WHEN transaction_type = 'credit' THEN amount ELSE 0 END), 0) as debit")
 
 	if academicYearID != 0 {
 		query = query.Where("academic_year_id = ?", academicYearID)
@@ -126,7 +126,7 @@ func (r *cashTransactionRepository) SumFiltered(params dto.CashTransactionQueryP
 	var res Result
 
 	query := r.db.Model(&model.CashTransaction{}).
-		Select("COALESCE(SUM(CASE WHEN transaction_type = 'credit' THEN amount ELSE 0 END), 0) as credit, COALESCE(SUM(CASE WHEN transaction_type = 'debit' THEN amount ELSE 0 END), 0) as debit")
+		Select("COALESCE(SUM(CASE WHEN transaction_type = 'debit' THEN amount ELSE 0 END), 0) as credit, COALESCE(SUM(CASE WHEN transaction_type = 'credit' THEN amount ELSE 0 END), 0) as debit")
 
 	if params.AcademicYearID != 0 {
 		query = query.Where("academic_year_id = ?", params.AcademicYearID)
@@ -162,7 +162,7 @@ func (r *cashTransactionRepository) GetCurrentBalance(academicYearID uint) (floa
 	var res Result
 
 	query := r.db.Model(&model.CashTransaction{}).
-		Select("COALESCE(SUM(CASE WHEN transaction_type = 'credit' THEN amount ELSE 0 END), 0) as credit, COALESCE(SUM(CASE WHEN transaction_type = 'debit' THEN amount ELSE 0 END), 0) as debit")
+		Select("COALESCE(SUM(CASE WHEN transaction_type = 'debit' THEN amount ELSE 0 END), 0) as credit, COALESCE(SUM(CASE WHEN transaction_type = 'credit' THEN amount ELSE 0 END), 0) as debit")
 
 	if academicYearID != 0 {
 		query = query.Where("academic_year_id = ?", academicYearID)
@@ -183,7 +183,7 @@ func (r *cashTransactionRepository) GetCurrentBalanceWithTx(academicYearID uint,
 	var res Result
 
 	query := tx.Model(&model.CashTransaction{}).
-		Select("COALESCE(SUM(CASE WHEN transaction_type = 'credit' THEN amount ELSE 0 END), 0) as credit, COALESCE(SUM(CASE WHEN transaction_type = 'debit' THEN amount ELSE 0 END), 0) as debit")
+		Select("COALESCE(SUM(CASE WHEN transaction_type = 'debit' THEN amount ELSE 0 END), 0) as credit, COALESCE(SUM(CASE WHEN transaction_type = 'credit' THEN amount ELSE 0 END), 0) as debit")
 
 	if academicYearID != 0 {
 		query = query.Where("academic_year_id = ?", academicYearID)
@@ -204,7 +204,7 @@ func (r *cashTransactionRepository) GetBalanceUpToDate(academicYearID uint, date
 	var res Result
 
 	query := r.db.Model(&model.CashTransaction{}).
-		Select("COALESCE(SUM(CASE WHEN transaction_type = 'credit' THEN amount ELSE 0 END), 0) as credit, COALESCE(SUM(CASE WHEN transaction_type = 'debit' THEN amount ELSE 0 END), 0) as debit")
+		Select("COALESCE(SUM(CASE WHEN transaction_type = 'debit' THEN amount ELSE 0 END), 0) as credit, COALESCE(SUM(CASE WHEN transaction_type = 'credit' THEN amount ELSE 0 END), 0) as debit")
 
 	if academicYearID != 0 {
 		query = query.Where("academic_year_id = ?", academicYearID)

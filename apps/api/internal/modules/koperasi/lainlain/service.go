@@ -133,7 +133,7 @@ func (s *svc) recordSchoolExpense(tx *gorm.DB, academicYearID uint, date time.Ti
 	cashTxn := model.CashTransaction{
 		AcademicYearID:  academicYearID,
 		TransactionDate: date,
-		TransactionType: "debit",
+		TransactionType: "credit",
 		Amount:          amount,
 		SourceType:      "expense",
 		SourceID:        &expense.ID,
@@ -153,7 +153,7 @@ func (s *svc) recordSchoolIncome(tx *gorm.DB, academicYearID uint, date time.Tim
 	cashTxn := model.CashTransaction{
 		AcademicYearID:  academicYearID,
 		TransactionDate: date,
-		TransactionType: "credit",
+		TransactionType: "debit",
 		Amount:          amount,
 		SourceType:      "koperasi_income",
 		Description:     description,

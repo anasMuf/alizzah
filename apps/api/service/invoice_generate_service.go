@@ -35,6 +35,9 @@ type InvoiceGenerateService interface {
 	// RegenerateForStudent menghapus semua invoice (initial, registration, monthly)
 	// untuk student di tahun ajaran aktif lalu generate ulang dengan data terbaru.
 	RegenerateForStudent(studentID uint) error
+	// SyncSavingsMandatoryToMonthlyInvoices menambahkan item tabungan wajib
+	// (savings_mandatory) ke invoice bulanan yang belum memilikinya.
+	SyncSavingsMandatoryToMonthlyInvoices() (*dto.SavingsMandatorySyncResult, error)
 	// WithTx returns an instance whose write-transactions run within tx (as savepoints),
 	// so invoice generation can participate in a larger atomic operation.
 	WithTx(tx *gorm.DB) InvoiceGenerateService
@@ -1444,6 +1447,129 @@ func (s *invoiceGenerateService) ApplyDispensationToExistingInvoices(studentID, 
 	}
 
 	return nil
+}
+
+// SyncSavingsMandatoryToMonthlyInvoices menambahkan item tabungan wajib ke
+// invoice bulanan yang belum memilikinya. Berguna saat item fee config baru
+// ditambahkan (mis. tabungan_wajib_mutiara) ke database yang sudah memiliki
+// invoice existing.
+func (s *invoiceGenerateService) SyncSavingsMandatoryToMonthlyInvoices() (*dto.SavingsMandatorySyncResult, error) {
+	ay, err := s.acRepo.FindActive()
+	if err != nil {
+		return nil, fmt.Errorf("tahun ajaran aktif tidak ditemukan")
+	}
+
+	// Ambil semua enrollment aktif untuk level yang memiliki tabungan wajib
+	berlianEnrollments, _ := s.enrollmentRepo.FindAllActiveByLevel(ay.ID, "berlian")
+	mutiaraEnrollments, _ := s.enrollmentRepo.FindAllActiveByLevel(ay.ID, "mutiara")
+	allEnrollments := append(berlianEnrollments, mutiaraEnrollments...)
+
+	result := &dto.SavingsMandatorySyncResult{
+		TotalStudents: len(allEnrollments),
+	}
+
+	feeConfig, err := s.feeConfigRepo.FindByAcademicYearID(ay.ID)
+	if err != nil || feeConfig == nil {
+		return nil, fmt.Errorf("fee config tidak ditemukan untuk tahun ajaran aktif")
+	}
+
+	for _, enr := range allEnrollments {
+		invoices, err := s.invoiceRepo.FindMonthlyByStudentAcademicYear(enr.StudentID, ay.ID)
+		if err != nil {
+			result.Errors = append(result.Errors, dto.SavingsMandatorySyncError{
+				StudentID: enr.StudentID,
+				Message:   fmt.Sprintf("gagal mengambil invoice: %v", err),
+			})
+			continue
+		}
+
+		result.TotalInvoices += len(invoices)
+
+		for _, inv := range invoices {
+			// Cek apakah invoice ini sudah punya item savings_mandatory
+			existing, _ := s.invoiceItemRepo.FindByInvoiceAndCategory(inv.ID, "savings_mandatory")
+			if existing != nil && existing.ID != 0 {
+				result.TotalSkipped++
+				continue
+			}
+
+			// Jangan tambahkan item ke invoice yang sudah lunas — tidak adil
+			// untuk orang tua yang sudah membayar penuh sebelum item fee config ada.
+			if inv.Status == "paid" {
+				result.TotalSkipped++
+				continue
+			}
+
+			// Ambil item fee config savings_mandatory untuk level & gender siswa
+			mandatoryItems, _ := s.feeConfigItemRepo.FindByStudentForCategory(
+				feeConfig.ID, "savings_mandatory", enr.ClassGroup.Level, enr.Student.Gender,
+			)
+			if len(mandatoryItems) == 0 {
+				result.TotalSkipped++
+				continue
+			}
+
+			// Ambil effective days untuk perhitungan per_monday (berlian)
+			effectiveDays, _ := s.effectiveDayRepo.FindByClassGroupMonthYear(
+				enr.ClassGroupID, *inv.Month, *inv.Year,
+			)
+			if effectiveDays == nil || effectiveDays.ID == 0 {
+				effectiveDays, _ = s.effectiveDayRepo.FindByLevelMonthYear(
+					enr.ClassGroup.Level, *inv.Month, *inv.Year,
+				)
+			}
+
+			for _, item := range mandatoryItems {
+				amount := item.Amount
+				name := item.Name
+				var quantity *uint
+				var unitPrice *float64
+
+				if item.Unit == "per_monday" {
+					totalMondays := uint(0)
+					if effectiveDays != nil {
+						totalMondays = effectiveDays.TotalMondays
+						amount = item.Amount * float64(totalMondays)
+					}
+					quantity = &totalMondays
+					up := item.Amount
+					unitPrice = &up
+					name = fmt.Sprintf("%s (%d Senin)", item.Name, totalMondays)
+				}
+
+				newItem := &model.InvoiceItem{
+					InvoiceID:   inv.ID,
+					Name:        name,
+					Category:    "savings_mandatory",
+					Amount:      amount,
+					Quantity:    quantity,
+					UnitPrice:   unitPrice,
+					IsMandatory: true,
+				}
+				if err := s.invoiceItemRepo.Create(newItem); err != nil {
+					result.Errors = append(result.Errors, dto.SavingsMandatorySyncError{
+						StudentID: enr.StudentID,
+						InvoiceID: inv.ID,
+						Message:   fmt.Sprintf("gagal membuat item: %v", err),
+					})
+					continue
+				}
+			}
+
+			if err := s.recalculateInvoiceTotal(inv.ID); err != nil {
+				result.Errors = append(result.Errors, dto.SavingsMandatorySyncError{
+					StudentID: enr.StudentID,
+					InvoiceID: inv.ID,
+					Message:   fmt.Sprintf("gagal rekalkulasi total: %v", err),
+				})
+				continue
+			}
+
+			result.TotalSynced++
+		}
+	}
+
+	return result, nil
 }
 
 // RegenerateForStudent menghapus semua invoice (initial, registration, monthly)

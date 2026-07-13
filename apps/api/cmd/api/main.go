@@ -227,6 +227,19 @@ func main() {
 	dispensationRepo := repository.NewDispensationRepository(db)
 
 	invoiceGenService := service.NewInvoiceGenerateService(db, invoiceRepo, invoiceItemRepo, fcRepo, fcItemRepo, effectiveDayRepo, enrollmentRepo, extracurricularRepo, seRepo, ayRepo, daycareRepo, facilityRepo, sfRepo, dispensationRepo)
+
+	// Auto-sync: tambahkan item tabungan wajib ke invoice existing yang belum memilikinya.
+	// Aman dijalankan berulang kali (idempotent), hanya menyentuh invoice unpaid/partial.
+	// Di production, ini memastikan invoice mutiara & berlian mendapat item tabungan wajib
+	// setelah fee config item baru di-insert oleh seeder.
+	if syncResult, err := invoiceGenService.SyncSavingsMandatoryToMonthlyInvoices(); err != nil {
+		log.Printf("[startup] Sync tabungan wajib gagal (non-fatal): %v", err)
+	} else {
+		log.Printf("[startup] Sync tabungan wajib: %d siswa, %d invoice, %d synced, %d skipped, %d errors",
+			syncResult.TotalStudents, syncResult.TotalInvoices, syncResult.TotalSynced,
+			syncResult.TotalSkipped, len(syncResult.Errors))
+	}
+
 	invoiceService := service.NewInvoiceService(invoiceRepo, invoiceItemRepo, invoiceInstallmentRepo, paymentRepo)
 
 	// Batch 6: create transaction infrastructure first
@@ -313,7 +326,7 @@ func main() {
 	feeConfigHandler := handler.NewFeeConfigHandler(fcService)
 
 	// Batch 5
-	invoiceHandler := handler.NewInvoiceHandler(invoiceService)
+	invoiceHandler := handler.NewInvoiceHandler(invoiceService, invoiceGenService)
 
 	// Batch 6
 	paymentHandler := handler.NewPaymentHandler(paymentService)
@@ -482,6 +495,7 @@ func main() {
 	invoices := api.Group("/invoices", middleware.JWTAuth(tokenBlacklistRepo), guard.RequireModule(middleware.ModuleKeuangan))
 	invoices.GET("", invoiceHandler.List)
 	invoices.GET("/batch", invoiceHandler.Batch)
+	invoices.POST("/sync-savings-mandatory", invoiceHandler.SyncSavingsMandatoryInvoices)
 	invoices.GET("/:id", invoiceHandler.Get)
 	invoices.POST("/:id/items", invoiceHandler.AddItem)
 	invoices.PUT("/:id/items/:item_id", invoiceHandler.UpdateItem)

@@ -207,7 +207,10 @@ function PembayaranListPage() {
 												{getSourceBadge(payment.source)}
 											</td>
 											<td className="whitespace-nowrap px-3 py-4 text-sm font-bold text-gray-900">
-												{formatCurrency(Number(payment.total_amount) + Number(payment.savings_deposit || 0))}
+												{formatCurrency(
+													Number(payment.total_amount) +
+														Number(payment.savings_deposit || 0),
+												)}
 											</td>
 											<td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
 												<Link

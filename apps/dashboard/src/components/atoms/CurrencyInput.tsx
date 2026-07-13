@@ -1,3 +1,4 @@
+import type { InputHTMLAttributes } from "react";
 import {
 	forwardRef,
 	useCallback,
@@ -6,7 +7,6 @@ import {
 	useRef,
 	useState,
 } from "react";
-import type { InputHTMLAttributes } from "react";
 
 // ---------------------------------------------------------------------------
 // Format / Unformat
@@ -93,7 +93,19 @@ export interface CurrencyInputProps
 }
 
 export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
-	({ value, onChange, showSymbol = false, className = "", disabled, onFocus, onBlur, ...rest }, ref) => {
+	(
+		{
+			value,
+			onChange,
+			showSymbol = false,
+			className = "",
+			disabled,
+			onFocus,
+			onBlur,
+			...rest
+		},
+		ref,
+	) => {
 		const innerRef = useRef<HTMLInputElement>(null);
 
 		// Expose the internal ref to parent via forwarded ref
@@ -127,7 +139,10 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
 				const formatted = num === 0 ? "" : format(num, showSymbol);
 
 				// Calculate where cursor should land
-				const prevDigitsBeforeCursor = digitsBefore(raw, input.selectionStart ?? 0);
+				const prevDigitsBeforeCursor = digitsBefore(
+					raw,
+					input.selectionStart ?? 0,
+				);
 				const newCursor = cursorAfterFormat(formatted, prevDigitsBeforeCursor);
 
 				// Apply
@@ -202,17 +217,17 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
 				e.preventDefault();
 				const pasted = e.clipboardData.getData("text/plain");
 				const num = unformat(pasted);
-					const formatted = num === 0 ? "" : format(num, showSymbol);
-					setDisplay(formatted);
-					onChange(num);
-					requestAnimationFrame(() => {
-						if (innerRef.current) {
-							const len = innerRef.current.value.length;
-							innerRef.current.setSelectionRange(len, len);
-						}
-					});
-				},
-				[onChange, showSymbol],
+				const formatted = num === 0 ? "" : format(num, showSymbol);
+				setDisplay(formatted);
+				onChange(num);
+				requestAnimationFrame(() => {
+					if (innerRef.current) {
+						const len = innerRef.current.value.length;
+						innerRef.current.setSelectionRange(len, len);
+					}
+				});
+			},
+			[onChange, showSymbol],
 		);
 
 		// ------------------------------------------------------------------

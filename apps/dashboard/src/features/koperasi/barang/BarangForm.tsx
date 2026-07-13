@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import { ApiError } from "#/api/mutator/custom-instance";
-import { Button, CurrencyInput, FormField, Label, SlideOver, useToast } from "#/components/ui";
+import {
+	Button,
+	CurrencyInput,
+	FormField,
+	Label,
+	SlideOver,
+	useToast,
+} from "#/components/ui";
 import { MasterSelect } from "../master/MasterSelect";
 import {
 	type Product,
@@ -287,17 +294,13 @@ export function BarangForm({ isOpen, onClose, initialData }: BarangFormProps) {
 									aria-label="Harga modal"
 									className={inputClass}
 									value={v.cost_price}
-									onChange={(val) =>
-										updateRow(i, { cost_price: val })
-									}
+									onChange={(val) => updateRow(i, { cost_price: val })}
 								/>
 								<CurrencyInput
 									aria-label="Harga jual"
 									className={inputClass}
 									value={v.sale_price}
-									onChange={(val) =>
-										updateRow(i, { sale_price: val })
-									}
+									onChange={(val) => updateRow(i, { sale_price: val })}
 								/>
 								{v.id ? (
 									<span

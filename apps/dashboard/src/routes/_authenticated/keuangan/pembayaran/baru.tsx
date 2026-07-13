@@ -226,9 +226,7 @@ function KasirPembayaranPage() {
 
 		const totalSavingsDeposit =
 			tabunganUmumTotal +
-			(depositChange && cashReceived > totalPay
-				? cashReceived - totalPay
-				: 0);
+			(depositChange && cashReceived > totalPay ? cashReceived - totalPay : 0);
 		const customIncidentals = incidentalItems
 			.filter((i) => !i.isSavings)
 			.map((i) => ({ name: i.name, amount: i.amount }));

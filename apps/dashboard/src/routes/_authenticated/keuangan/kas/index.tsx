@@ -181,7 +181,7 @@ function KasBerangkasOverviewPage() {
 						<div className="space-y-3 mb-6">
 							<div className="flex items-center justify-between">
 								<div className="flex items-center gap-2 text-sm text-gray-600">
-									<ArrowUpRight className="h-4 w-4 text-green-500" />
+									<ArrowDownRight className="h-4 w-4 text-green-500" />
 									<span>Pemasukan hari ini</span>
 								</div>
 								<span className="text-sm font-medium text-green-600">
@@ -190,7 +190,7 @@ function KasBerangkasOverviewPage() {
 							</div>
 							<div className="flex items-center justify-between">
 								<div className="flex items-center gap-2 text-sm text-gray-600">
-									<ArrowDownRight className="h-4 w-4 text-red-500" />
+									<ArrowUpRight className="h-4 w-4 text-red-500" />
 									<span>Pengeluaran hari ini</span>
 								</div>
 								<span className="text-sm font-medium text-red-600">

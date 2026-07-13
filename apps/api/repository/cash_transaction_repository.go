@@ -15,6 +15,7 @@ type CashTransactionRepository interface {
 	SumByDate(academicYearID uint, date time.Time) (credit, debit float64, err error)
 	SumByDateRange(academicYearID uint, start, end time.Time) (credit, debit float64, err error)
 	SumByMonth(academicYearID uint, month, year uint) (credit, debit float64, err error)
+	SumFiltered(params dto.CashTransactionQueryParams) (credit, debit float64, err error)
 	GetCurrentBalance(academicYearID uint) (float64, error)
 	GetCurrentBalanceWithTx(academicYearID uint, tx *gorm.DB) (float64, error)
 	GetBalanceUpToDate(academicYearID uint, date time.Time) (float64, error)
@@ -113,6 +114,44 @@ func (r *cashTransactionRepository) SumByMonth(academicYearID uint, month, year 
 	start := time.Date(int(year), time.Month(month), 1, 0, 0, 0, 0, time.UTC)
 	end := start.AddDate(0, 1, -1).Add(23*time.Hour + 59*time.Minute + 59*time.Second)
 	return r.SumByDateRange(academicYearID, start, end)
+}
+
+// SumFiltered returns total credit and debit for all transactions matching the given filters
+// (not just the current page), using the same filter logic as FindAll.
+func (r *cashTransactionRepository) SumFiltered(params dto.CashTransactionQueryParams) (credit, debit float64, err error) {
+	type Result struct {
+		Credit float64
+		Debit  float64
+	}
+	var res Result
+
+	query := r.db.Model(&model.CashTransaction{}).
+		Select("COALESCE(SUM(CASE WHEN transaction_type = 'credit' THEN amount ELSE 0 END), 0) as credit, COALESCE(SUM(CASE WHEN transaction_type = 'debit' THEN amount ELSE 0 END), 0) as debit")
+
+	if params.AcademicYearID != 0 {
+		query = query.Where("academic_year_id = ?", params.AcademicYearID)
+	}
+	if params.TransactionType != "" {
+		query = query.Where("transaction_type = ?", params.TransactionType)
+	}
+	if params.SourceType != "" {
+		query = query.Where("source_type = ?", params.SourceType)
+	}
+	if params.StartDate != "" {
+		if d, err := time.Parse("2006-01-02", params.StartDate); err == nil {
+			start := time.Date(d.Year(), d.Month(), d.Day(), 0, 0, 0, 0, time.UTC)
+			query = query.Where("transaction_date >= ?", start)
+		}
+	}
+	if params.EndDate != "" {
+		if d, err := time.Parse("2006-01-02", params.EndDate); err == nil {
+			end := time.Date(d.Year(), d.Month(), d.Day(), 23, 59, 59, 0, time.UTC)
+			query = query.Where("transaction_date <= ?", end)
+		}
+	}
+
+	err = query.Scan(&res).Error
+	return res.Credit, res.Debit, err
 }
 
 func (r *cashTransactionRepository) GetCurrentBalance(academicYearID uint) (float64, error) {

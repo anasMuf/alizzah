@@ -70,10 +70,18 @@ func (s *cashService) GetTransactions(params dto.CashTransactionQueryParams) ([]
 		responses[i] = mapCashTransactionToResponse(t)
 	}
 
+	// Compute filtered totals (not just current page) for accurate summary display
+	totalCredit, totalDebit, sumErr := s.cashRepo.SumFiltered(params)
+
 	meta := &dto.Meta{
 		Page:  params.Page,
 		Limit: params.Limit,
 		Total: total,
+	}
+
+	if sumErr == nil {
+		meta.TotalCredit = &totalCredit
+		meta.TotalDebit = &totalDebit
 	}
 
 	return responses, meta, nil

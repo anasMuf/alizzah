@@ -2,7 +2,6 @@ import { Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import {
 	AlertCircle,
-	ArrowDownRight,
 	ArrowUpRight,
 	ChevronRight,
 	CreditCard,
@@ -11,12 +10,14 @@ import {
 	Plus,
 	TrendingDown,
 	Users,
+	Vault,
 	Wallet,
 } from "lucide-react";
 import { useGetV1CashBalance } from "#/api/endpoints/cash/cash";
 import { useGetV1Invoices } from "#/api/endpoints/invoices/invoices";
 import { useGetV1ReportsAnnual } from "#/api/endpoints/reports/reports";
 import { useGetV1Students } from "#/api/endpoints/students/students";
+import { useGetV1VaultBalance } from "#/api/endpoints/vault/vault";
 import { useAuth } from "#/features/auth/AuthContext";
 import { useAccess } from "#/features/auth/access";
 import { academicYearAtom } from "../../../store/global";
@@ -42,6 +43,12 @@ export function DashboardView() {
 		{ query: { enabled: enabled && isAdminKeuangan } },
 	);
 	const cash = (cashData?.data as any)?.data;
+
+	const { data: vaultData } = useGetV1VaultBalance(
+		{ academic_year_id: activeAy?.id },
+		{ query: { enabled: enabled && isAdminKeuangan } },
+	);
+	const vault = (vaultData?.data as any)?.data;
 
 	const { data: annualData, isLoading: annualLoading } = useGetV1ReportsAnnual(
 		{ academic_year_id: activeAy?.id! },
@@ -123,14 +130,13 @@ export function DashboardView() {
 									linkLabel="Lihat Kas"
 								/>
 								<StatCard
-									icon={ArrowDownRight}
-									iconBg="bg-green-50"
-									iconColor="text-green-600"
-									label="Total Pemasukan"
-									value={formatCurrency(
-										Number(annual?.income_summary?.total_paid || 0),
-									)}
-									sub={`dari ${formatCurrency(Number(annual?.income_summary?.total_billed || 0))} total tagihan`}
+									icon={Vault}
+									iconBg="bg-amber-50"
+									iconColor="text-amber-600"
+									label="Saldo Brangkas"
+									value={formatCurrency(Number(vault?.balance || 0))}
+									linkTo="/keuangan/kas/berangkas"
+									linkLabel="Lihat Brangkas"
 								/>
 								<StatCard
 									icon={ArrowUpRight}
@@ -143,20 +149,9 @@ export function DashboardView() {
 								/>
 							</>
 						)}
-
-						{!isAdminAdministrasi && !isAdminKeuangan && (
-							<StatCard
-								icon={FileText}
-								iconBg="bg-indigo-50"
-								iconColor="text-indigo-600"
-								label="Saldo Bersih"
-								value={formatCurrency(Number(annual?.net || 0))}
-								linkTo="/keuangan/laporan"
-								linkLabel="Lihat Laporan"
-							/>
-						)}
 					</div>
 
+					{/* Financial overview
 					{/* Financial overview for keuangan roles */}
 					{isAdminKeuangan && (
 						<div className="grid grid-cols-1 gap-5 lg:grid-cols-3">

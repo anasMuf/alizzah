@@ -355,19 +355,49 @@ export function InvoiceSelector({
 															onChange={(val) => onAmountChange(item.id, val)}
 															disabled={isExcluded}
 														/>
-														{/* Quick button: isi 1 hari */}
-														{item.unit_price > 0 && !isExcluded && (
-															<button
-																type="button"
-																onClick={() =>
-																	onAmountChange(item.id, item.unit_price)
-																}
-																className="text-[10px] text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-1 py-0.5 rounded font-medium transition-colors whitespace-nowrap"
-																title={`Isi 1 hari (${formatCurrency(item.unit_price)})`}
-															>
-																+1
-															</button>
-														)}
+														{/* Quick button: tambah 1 hari (akumulatif) */}
+														{item.unit_price > 0 &&
+															!isExcluded &&
+															(() => {
+																const current = payAmounts[item.id] ?? 0;
+																const next = current + item.unit_price;
+																const capped =
+																	next > item.sisa_tagihan
+																		? item.sisa_tagihan
+																		: next;
+																const prev = Math.max(
+																	current - item.unit_price,
+																	0,
+																);
+																const days = Math.round(
+																	current / item.unit_price,
+																);
+																return (
+																	<div className="flex flex-col gap-0.5">
+																		<button
+																			type="button"
+																			onClick={() =>
+																				onAmountChange(item.id, capped)
+																			}
+																			className="text-[10px] text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-1 py-0.5 rounded font-medium transition-colors whitespace-nowrap leading-none"
+																			title={`${days} hari — klik tambah 1 hari (${formatCurrency(item.unit_price)})`}
+																		>
+																			+1
+																		</button>
+																		<button
+																			type="button"
+																			onClick={() =>
+																				onAmountChange(item.id, prev)
+																			}
+																			disabled={current <= 0}
+																			className="text-[10px] text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-1 py-0.5 rounded font-medium transition-colors whitespace-nowrap leading-none disabled:opacity-30 disabled:cursor-not-allowed"
+																			title="Kurangi 1 hari"
+																		>
+																			-1
+																		</button>
+																	</div>
+																);
+															})()}
 													</div>
 												)}
 											</div>

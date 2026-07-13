@@ -1,4 +1,5 @@
 import { Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
+import { CurrencyInput } from "#/components/ui";
 import { formatCurrency } from "#/utils/format";
 
 export interface CartItemPembelian {
@@ -130,17 +131,13 @@ export function CartPembelian({
 									>
 										Harga Beli / pcs
 									</label>
-									<input
+									<CurrencyInput
 										id={`price-${item.variant_id}`}
-										type="number"
-										min={0}
-										step="any"
-										value={item.cost_price}
-										onChange={(e) => {
-											const val = Number.parseFloat(e.target.value) || 0;
-											onUpdatePrice(item.variant_id, Math.max(0, val));
-										}}
 										className="w-full rounded-md border border-gray-200 py-1.5 px-3 text-sm font-medium text-gray-900 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 focus:outline-none"
+										value={item.cost_price}
+										onChange={(val) =>
+											onUpdatePrice(item.variant_id, Math.max(0, val))
+										}
 									/>
 								</div>
 							</div>

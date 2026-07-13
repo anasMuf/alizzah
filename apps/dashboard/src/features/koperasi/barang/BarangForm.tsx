@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ApiError } from "#/api/mutator/custom-instance";
-import { Button, FormField, Label, SlideOver, useToast } from "#/components/ui";
+import { Button, CurrencyInput, FormField, Label, SlideOver, useToast } from "#/components/ui";
 import { MasterSelect } from "../master/MasterSelect";
 import {
 	type Product,
@@ -283,26 +283,20 @@ export function BarangForm({ isOpen, onClose, initialData }: BarangFormProps) {
 									value={v.name}
 									onChange={(e) => updateRow(i, { name: e.target.value })}
 								/>
-								<input
+								<CurrencyInput
 									aria-label="Harga modal"
-									type="number"
-									min={0}
-									step="any"
 									className={inputClass}
 									value={v.cost_price}
-									onChange={(e) =>
-										updateRow(i, { cost_price: Number(e.target.value) || 0 })
+									onChange={(val) =>
+										updateRow(i, { cost_price: val })
 									}
 								/>
-								<input
+								<CurrencyInput
 									aria-label="Harga jual"
-									type="number"
-									min={0}
-									step="any"
 									className={inputClass}
 									value={v.sale_price}
-									onChange={(e) =>
-										updateRow(i, { sale_price: Number(e.target.value) || 0 })
+									onChange={(val) =>
+										updateRow(i, { sale_price: val })
 									}
 								/>
 								{v.id ? (
@@ -349,36 +343,30 @@ export function BarangForm({ isOpen, onClose, initialData }: BarangFormProps) {
 						<div className="grid grid-cols-2 gap-4">
 							<div>
 								<Label htmlFor="cost_price">Harga Modal (HPP)</Label>
-								<input
+								<CurrencyInput
 									id="cost_price"
-									type="number"
-									min={0}
-									step="any"
 									className={`mt-2 ${inputClass}`}
 									placeholder="0"
 									value={single.cost_price}
-									onChange={(e) =>
+									onChange={(val) =>
 										setSingle({
 											...single,
-											cost_price: Number(e.target.value) || 0,
+											cost_price: val,
 										})
 									}
 								/>
 							</div>
 							<div>
 								<Label htmlFor="sale_price">Harga Jual</Label>
-								<input
+								<CurrencyInput
 									id="sale_price"
-									type="number"
-									min={0}
-									step="any"
 									className={`mt-2 ${inputClass}`}
 									placeholder="0"
 									value={single.sale_price}
-									onChange={(e) =>
+									onChange={(val) =>
 										setSingle({
 											...single,
-											sale_price: Number(e.target.value) || 0,
+											sale_price: val,
 										})
 									}
 								/>

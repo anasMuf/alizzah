@@ -41,13 +41,14 @@ type IncidentalItemReq struct {
 
 // Response
 type PaymentListResponse struct {
-	ID          uint                 `json:"id"`
-	Student     StudentBriefResponse `json:"student"`
-	PaymentDate string               `json:"payment_date"`
-	TotalAmount float64              `json:"total_amount"`
-	Source      string               `json:"source"`
-	CreatedBy   UserBriefResponse    `json:"created_by"`
-	CreatedAt   string               `json:"created_at"`
+	ID             uint                 `json:"id"`
+	Student        StudentBriefResponse `json:"student"`
+	PaymentDate    string               `json:"payment_date"`
+	TotalAmount    float64              `json:"total_amount"`
+	SavingsDeposit float64              `json:"savings_deposit"`
+	Source         string               `json:"source"`
+	CreatedBy      UserBriefResponse    `json:"created_by"`
+	CreatedAt      string               `json:"created_at"`
 }
 
 type PaymentDetailResponse struct {

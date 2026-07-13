@@ -1,5 +1,6 @@
 import { AlertCircle, FileText, Wallet } from "lucide-react";
 import { useMemo } from "react";
+import { CurrencyInput } from "#/components/ui";
 import { formatCurrency } from "../../../../../utils/format";
 
 interface PaymentSummaryProps {
@@ -10,11 +11,11 @@ interface PaymentSummaryProps {
 	savingsBalance: number;
 	totalPay: number;
 	source: "cash" | "savings";
-	cashReceived: string;
+	cashReceived: number;
 	depositChange: boolean;
 	notes: string;
 	onSourceChange: (s: "cash" | "savings") => void;
-	onCashReceivedChange: (v: string) => void;
+	onCashReceivedChange: (v: number) => void;
 	onDepositChangeChange: (v: boolean) => void;
 	onNotesChange: (v: string) => void;
 }
@@ -36,8 +37,7 @@ export function PaymentSummary({
 	onNotesChange,
 }: PaymentSummaryProps) {
 	const changeAmount = useMemo(() => {
-		const cash = Number(cashReceived) || 0;
-		return cash > totalPay ? cash - totalPay : 0;
+		return cashReceived > totalPay ? cashReceived - totalPay : 0;
 	}, [cashReceived, totalPay]);
 
 	return (
@@ -151,25 +151,24 @@ export function PaymentSummary({
 						<label className="block text-xs font-medium text-gray-700 mb-1">
 							Uang Diterima (Rp)
 						</label>
-						<input
-							type="number"
+						<CurrencyInput
 							className="block w-full rounded-lg border-0 py-2.5 px-4 text-lg font-bold text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 tabular-nums"
 							value={cashReceived}
-							onChange={(e) => onCashReceivedChange(e.target.value)}
+							onChange={onCashReceivedChange}
 							placeholder="0"
 						/>
 					</div>
-					{cashReceived !== "" && Number(cashReceived) < totalPay && (
+					{cashReceived > 0 && cashReceived < totalPay && (
 						<div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg p-3">
 							<AlertCircle className="h-4 w-4 text-amber-400 flex-shrink-0 mt-0.5" />
 							<p className="text-xs text-amber-700">
 								Uang diterima kurang{" "}
-								{formatCurrency(totalPay - Number(cashReceived))} dari total.
+								{formatCurrency(totalPay - cashReceived)} dari total.
 								Kurangi item atau tambah uang.
 							</p>
 						</div>
 					)}
-					{Number(cashReceived) >= totalPay && (
+					{cashReceived >= totalPay && (
 						<div className="bg-white rounded-lg border border-gray-200 p-3 space-y-2">
 							<div className="flex justify-between text-sm">
 								<span className="text-gray-500">Kembalian</span>

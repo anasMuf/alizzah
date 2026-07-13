@@ -1,7 +1,7 @@
 import { useAtom } from "jotai";
 import { useEffect, useState } from "react";
 import { ApiError } from "#/api/mutator/custom-instance";
-import { Button, FormField, SlideOver, useToast } from "#/components/ui";
+import { Button, CurrencyFormField, FormField, SlideOver, useToast } from "#/components/ui";
 import { academicYearAtom } from "#/store/global";
 import { formatCurrency } from "#/utils/format";
 import { useMembers } from "../anggota/api";
@@ -160,16 +160,12 @@ export function PinjamanForm({
 				/>
 
 				<div className="grid grid-cols-2 gap-4">
-					<FormField
+					<CurrencyFormField
 						id="principal"
-						name="principal"
-						type="number"
-						min={1}
-						step="any"
 						label="Pokok Pinjaman"
 						placeholder="0"
 						value={principal}
-						onChange={(e) => setPrincipal(Number(e.target.value) || 0)}
+						onChange={setPrincipal}
 						required
 					/>
 					<FormField

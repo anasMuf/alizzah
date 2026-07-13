@@ -6,11 +6,13 @@
 export * from "./atoms/Alert";
 export * from "./atoms/Badge";
 export * from "./atoms/Button";
+export * from "./atoms/CurrencyInput";
 export * from "./atoms/Input";
 export * from "./atoms/Label";
 
 // Molecules
 export * from "./molecules/ConfirmDialog";
+export * from "./molecules/CurrencyFormField";
 export * from "./molecules/EmptyState";
 export * from "./molecules/ErrorBoundary";
 export * from "./molecules/FormField";

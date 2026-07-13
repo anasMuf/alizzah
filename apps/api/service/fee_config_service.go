@@ -166,6 +166,11 @@ func (s *feeConfigService) CreateItem(feeConfigID uint, req dto.CreateFeeConfigI
 		KoperasiProductID: req.KoperasiProductID,
 	}
 
+	// Set is_active from request if provided, otherwise defaults to true (gorm default)
+	if req.IsActive != nil {
+		item.IsActive = *req.IsActive
+	}
+
 	if err := s.itemRepo.Create(item); err != nil {
 		return nil, err
 	}
@@ -201,6 +206,9 @@ func (s *feeConfigService) UpdateItem(feeConfigID, itemID uint, req dto.CreateFe
 	item.IsMandatory = req.IsMandatory
 	item.IsKoperasi = req.IsKoperasi
 	item.KoperasiProductID = req.KoperasiProductID
+	if req.IsActive != nil {
+		item.IsActive = *req.IsActive
+	}
 
 	if err := s.itemRepo.Update(item); err != nil {
 		return nil, err
@@ -337,5 +345,6 @@ func mapFeeConfigItemToResponse(item model.FeeConfigItem) *dto.FeeConfigItemResp
 		IsMandatory:       item.IsMandatory,
 		IsKoperasi:        item.IsKoperasi,
 		KoperasiProductID: item.KoperasiProductID,
+		IsActive:          item.IsActive,
 	}
 }

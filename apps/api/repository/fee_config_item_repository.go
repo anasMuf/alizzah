@@ -46,6 +46,9 @@ func (r *feeConfigItemRepository) FindByFeeConfigID(feeConfigID uint, params dto
 	if params.Gender != "" {
 		query = query.Where("gender = ?", params.Gender)
 	}
+	if params.IsActive != nil {
+		query = query.Where("is_active = ?", *params.IsActive)
+	}
 
 	err := query.Order("category ASC, name ASC").Find(&items).Error
 	return items, err
@@ -106,8 +109,8 @@ func (r *feeConfigItemRepository) IsUsedByInvoices(id uint) (bool, error) {
 func (r *feeConfigItemRepository) FindByStudentForCategory(feeConfigID uint, category, level, gender string) ([]model.FeeConfigItem, error) {
 	var items []model.FeeConfigItem
 	err := r.db.Where(
-		"fee_config_id = ? AND category = ? AND (level = 'all' OR level = ?) AND (gender = 'all' OR gender = ?)",
-		feeConfigID, category, level, gender,
+		"fee_config_id = ? AND category = ? AND is_active = ? AND (level = 'all' OR level = ?) AND (gender = 'all' OR gender = ?)",
+		feeConfigID, category, true, level, gender,
 	).Find(&items).Error
 	return items, err
 }
@@ -129,8 +132,8 @@ func (r *feeConfigItemRepository) FindByItemKeys(feeConfigID uint, itemKeys []st
 func (r *feeConfigItemRepository) FindMandatoryByStudent(feeConfigID uint, level, gender string) ([]model.FeeConfigItem, error) {
 	var items []model.FeeConfigItem
 	err := r.db.Where(
-		"fee_config_id = ? AND is_mandatory = ? AND (level = 'all' OR level = ?) AND (gender = 'all' OR gender = ?)",
-		feeConfigID, true, level, gender,
+		"fee_config_id = ? AND is_active = ? AND is_mandatory = ? AND (level = 'all' OR level = ?) AND (gender = 'all' OR gender = ?)",
+		feeConfigID, true, true, level, gender,
 	).Find(&items).Error
 	return items, err
 }

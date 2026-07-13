@@ -146,6 +146,22 @@ func SeedFeeConfigs(db *gorm.DB) {
 	} else {
 		log.Printf("Fee config seeder: semua item sudah ada (%d item)", len(items))
 	}
+
+	// Deactivate detail items for registration and initial (summary items are now active)
+	// Summary items have different item_keys (e.g., registrasi_mutiara_L), so they stay active.
+	// This runs every time the seeder runs (idempotent).
+	deactivatedCount := db.Model(&model.FeeConfigItem{}).
+		Where("fee_config_id = ? AND category IN ? AND is_active = ?", fc.ID, []string{"registration", "initial"}, true).
+		Where("item_key NOT IN ?", []string{
+			"registrasi_mutiara_L", "registrasi_mutiara_P",
+			"registrasi_intan_L", "registrasi_intan_P",
+			"registrasi_berlian_L", "registrasi_berlian_P",
+			"biaya_awal",
+		}).
+		Update("is_active", false).RowsAffected
+	if deactivatedCount > 0 {
+		log.Printf("Fee config seeder: %d item detail registration/initial dinonaktifkan", deactivatedCount)
+	}
 }
 
 func buildFeeConfigItems() []feeItemDef {
@@ -330,6 +346,31 @@ func buildFeeConfigItems() []feeItemDef {
 
 	// === Fasilitas ===
 	// === Fasilitas: fee item dibuat otomatis oleh facility seeder ===
+
+	// === Summary: Biaya Registrasi (per level × gender) ===
+	// Menggantikan item detail registration yang di-set is_active=false oleh seeder
+	type regSummary struct {
+		itemKey string
+		name    string
+		level   string
+		gender  string
+		amount  float64
+	}
+	regSummaries := []regSummary{
+		{"registrasi_mutiara_L", "Biaya Registrasi Mutiara (Laki-laki)", "mutiara", "L", 795000},
+		{"registrasi_mutiara_P", "Biaya Registrasi Mutiara (Perempuan)", "mutiara", "P", 835000},
+		{"registrasi_intan_L", "Biaya Registrasi Intan (Laki-laki)", "intan", "L", 925000},
+		{"registrasi_intan_P", "Biaya Registrasi Intan (Perempuan)", "intan", "P", 965000},
+		{"registrasi_berlian_L", "Biaya Registrasi Berlian (Laki-laki)", "berlian", "L", 785000},
+		{"registrasi_berlian_P", "Biaya Registrasi Berlian (Perempuan)", "berlian", "P", 825000},
+	}
+	for _, r := range regSummaries {
+		items = append(items, feeItemDef{"registration", r.itemKey, r.name, r.level, r.gender, r.amount, "fixed", false})
+	}
+
+	// === Summary: Biaya Awal Pendidikan (single item) ===
+	// Menggantikan 10 item detail initial yang di-set is_active=false oleh seeder
+	items = append(items, feeItemDef{"initial", "biaya_awal", "Biaya Awal Pendidikan", "all", "all", 2425000, "fixed", false})
 
 	return items
 }

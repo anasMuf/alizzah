@@ -11,6 +11,7 @@ export interface DtoFeeConfigItemResponse {
 	category?: string;
 	gender?: string;
 	id?: number;
+	is_active?: boolean;
 	is_koperasi?: boolean;
 	is_mandatory?: boolean;
 	item_key?: string;

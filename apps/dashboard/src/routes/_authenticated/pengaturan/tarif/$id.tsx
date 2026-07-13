@@ -110,7 +110,7 @@ function PengaturanTarifIdComponent() {
 
 	const { data: itemsResponse } = useGetV1FeeConfigsIdItems(
 		configId,
-		undefined,
+		{ is_active: "true" },
 		{ query: { enabled: !!configId } } as any,
 	);
 	const allItems: DtoFeeConfigItemResponse[] =
@@ -635,6 +635,8 @@ function ItemFormSlideOver({
 		unit: initialData?.unit || "fixed",
 		is_mandatory: initialData?.is_mandatory || false,
 		is_koperasi: (initialData as any)?.is_koperasi || false,
+		is_active:
+			initialData?.is_active !== undefined ? initialData.is_active : true,
 		koperasi_product_id: (initialData as any)?.koperasi_product_id || null,
 	});
 	const { data: products } = useProducts();
@@ -801,6 +803,15 @@ function ItemFormSlideOver({
 					</select>
 				</div>
 			)}
+			<label className="flex items-center gap-2 text-sm">
+				<input
+					type="checkbox"
+					checked={form.is_active}
+					onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
+					className="rounded"
+				/>
+				Aktif (tampil di tagihan)
+			</label>
 		</form>
 	);
 }

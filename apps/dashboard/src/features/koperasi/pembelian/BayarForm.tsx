@@ -1,12 +1,6 @@
 import { useEffect, useState } from "react";
 import { ApiError } from "#/api/mutator/custom-instance";
-import {
-	Button,
-	CurrencyFormField,
-	FormField,
-	SlideOver,
-	useToast,
-} from "#/components/ui";
+import { Button, CurrencyFormField, FormField, SlideOver, useToast } from "#/components/ui";
 import { formatCurrency } from "#/utils/format";
 import { type PaymentMethod, type Purchase, usePayPurchase } from "./api";
 

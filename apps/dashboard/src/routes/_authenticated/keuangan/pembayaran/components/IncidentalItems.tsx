@@ -41,12 +41,7 @@ export function IncidentalItems({ items, onChange }: IncidentalItemsProps) {
 		if (savingsAmount <= 0) return;
 		onChange([
 			...items,
-			{
-				id: nextId,
-				name: "Tabungan Umum",
-				amount: savingsAmount,
-				isSavings: true,
-			},
+			{ id: nextId, name: "Tabungan Umum", amount: savingsAmount, isSavings: true },
 		]);
 		setNextId((n) => n + 1);
 		setSavingsAmount(0);

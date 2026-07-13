@@ -1,13 +1,7 @@
 import { useAtom } from "jotai";
 import { useEffect, useState } from "react";
 import { ApiError } from "#/api/mutator/custom-instance";
-import {
-	Button,
-	CurrencyFormField,
-	FormField,
-	SlideOver,
-	useToast,
-} from "#/components/ui";
+import { Button, CurrencyFormField, FormField, SlideOver, useToast } from "#/components/ui";
 import { academicYearAtom } from "#/store/global";
 import { type Flow, type MiscInput, useCreateMisc } from "./api";
 

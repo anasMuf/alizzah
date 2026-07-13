@@ -112,13 +112,31 @@ func main() {
 			ON daily_closings (closing_date)`)
 
 	// Effective days: hapus FK constraint lama & buat partial indexes dual-mode
-	db.Exec(`ALTER TABLE effective_days DROP CONSTRAINT IF EXISTS fk_effective_days_class_group`)
+	if err := db.Exec(`ALTER TABLE effective_days DROP CONSTRAINT IF EXISTS fk_effective_days_class_group`).Error; err != nil {
+		log.Printf("Warning: gagal hapus FK constraint effective_days: %v", err)
+	}
+	// Hapus constraint lama (jika dibuat via ALTER TABLE ADD CONSTRAINT)
+	if err := db.Exec(`ALTER TABLE effective_days DROP CONSTRAINT IF EXISTS uq_effective_days`).Error; err != nil {
+		log.Printf("Warning: gagal hapus constraint uq_effective_days: %v", err)
+	}
+	if err := db.Exec(`ALTER TABLE effective_days DROP CONSTRAINT IF EXISTS uq_ed_cg_month_year`).Error; err != nil {
+		log.Printf("Warning: gagal hapus constraint uq_ed_cg_month_year: %v", err)
+	}
+	if err := db.Exec(`ALTER TABLE effective_days DROP CONSTRAINT IF EXISTS uq_ed_level_month_year`).Error; err != nil {
+		log.Printf("Warning: gagal hapus constraint uq_ed_level_month_year: %v", err)
+	}
+	// Hapus index lama (jika dibuat via CREATE INDEX)
 	db.Exec(`DROP INDEX IF EXISTS uq_effective_days`)
 	db.Exec(`DROP INDEX IF EXISTS uq_ed`)
 	db.Exec(`DROP INDEX IF EXISTS uq_ed_cg_month_year`)
 	db.Exec(`DROP INDEX IF EXISTS uq_ed_level_month_year`)
-	db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS uq_ed_cg ON effective_days (class_group_id, month, year) WHERE class_group_id > 0`)
-	db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS uq_ed_level ON effective_days (level, month, year) WHERE level != ''`)
+	// Buat partial unique index baru
+	if err := db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS uq_ed_cg ON effective_days (class_group_id, month, year) WHERE class_group_id > 0`).Error; err != nil {
+		log.Printf("ERROR: gagal buat index uq_ed_cg: %v", err)
+	}
+	if err := db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS uq_ed_level ON effective_days (level, month, year) WHERE level != ''`).Error; err != nil {
+		log.Printf("ERROR: gagal buat index uq_ed_level: %v", err)
+	}
 
 	// Extracurriculars: drop old composite index
 	db.Exec(`DROP INDEX IF EXISTS idx_extracurriculars_name`)
@@ -148,8 +166,9 @@ func main() {
 	seeders.SeedIncomeTransactions(db) // 10. Sample Penerimaan Dana Bantuan (depends on #2)
 
 	// Data migrations / fixes
-	seeders.FixClassGroupSchedules(db) // Fix schedule JSON format from old "groups" to "weekdays/weekend"
-	seeders.MigrateRolesToModules(db)  // RBAC by-modul: role-bundle lama -> admin + grant modul
+	seeders.FixClassGroupSchedules(db)         // Fix schedule JSON format from old "groups" to "weekdays/weekend"
+	seeders.MigrateRolesToModules(db)          // RBAC by-modul: role-bundle lama -> admin + grant modul
+	seeders.ReplaceInvoiceItemsWithSummary(db) // Ganti invoice_items detail registrasi/biaya awal menjadi format summary
 
 	// Backfill flag is_koperasi — hanya relevan jika seam koperasi aktif
 	if isKoperasiSeamEnabled() {

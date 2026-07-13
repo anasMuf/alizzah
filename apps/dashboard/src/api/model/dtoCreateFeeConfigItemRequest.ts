@@ -15,6 +15,7 @@ export interface DtoCreateFeeConfigItemRequest {
 	amount: number;
 	category: DtoCreateFeeConfigItemRequestCategory;
 	gender: DtoCreateFeeConfigItemRequestGender;
+	is_active?: boolean;
 	is_koperasi?: boolean;
 	is_mandatory?: boolean;
 	/** @maxLength 50 */

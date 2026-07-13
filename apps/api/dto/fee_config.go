@@ -20,16 +20,17 @@ type FeeConfigResponse struct {
 
 // FeeConfigItem
 type CreateFeeConfigItemRequest struct {
-	Category    string  `json:"category" validate:"required,oneof=initial registration monthly_spp monthly_infaq pasta calisan ekskul savings_mandatory daycare graduation facility"`
-	ItemKey     string  `json:"item_key" validate:"required,max=50"`
-	Name        string  `json:"name" validate:"required,max=100"`
-	Level       string  `json:"level" validate:"required,oneof=all mutiara intan berlian"`
-	Gender      string  `json:"gender" validate:"required,oneof=all L P"`
-	Amount      float64 `json:"amount" validate:"required,min=0"`
-	Unit        string  `json:"unit" validate:"required,oneof=fixed per_day per_monday percent"`
-	IsMandatory bool    `json:"is_mandatory"`
-	IsKoperasi  bool    `json:"is_koperasi"`
-	KoperasiProductID *uint `json:"koperasi_product_id,omitempty"`
+	Category          string  `json:"category" validate:"required,oneof=initial registration monthly_spp monthly_infaq pasta calisan ekskul savings_mandatory daycare graduation facility"`
+	ItemKey           string  `json:"item_key" validate:"required,max=50"`
+	Name              string  `json:"name" validate:"required,max=100"`
+	Level             string  `json:"level" validate:"required,oneof=all mutiara intan berlian"`
+	Gender            string  `json:"gender" validate:"required,oneof=all L P"`
+	Amount            float64 `json:"amount" validate:"required,min=0"`
+	Unit              string  `json:"unit" validate:"required,oneof=fixed per_day per_monday percent"`
+	IsMandatory       bool    `json:"is_mandatory"`
+	IsKoperasi        bool    `json:"is_koperasi"`
+	KoperasiProductID *uint   `json:"koperasi_product_id,omitempty"`
+	IsActive          *bool   `json:"is_active,omitempty"`
 }
 
 type FeeConfigItemResponse struct {
@@ -45,10 +46,12 @@ type FeeConfigItemResponse struct {
 	IsKoperasi          bool    `json:"is_koperasi"`
 	KoperasiProductID   *uint   `json:"koperasi_product_id,omitempty"`
 	KoperasiProductName string  `json:"koperasi_product_name,omitempty"`
+	IsActive            bool    `json:"is_active"`
 }
 
 type FeeConfigItemQueryParams struct {
 	Category string
 	Level    string
 	Gender   string
+	IsActive *bool // nil = all, true = only active, false = only inactive
 }

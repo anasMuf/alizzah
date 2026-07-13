@@ -19,4 +19,8 @@ export type GetV1FeeConfigsIdItemsParams = {
 	 * Filter by gender
 	 */
 	gender?: string;
+	/**
+	 * Filter by active status (default: true, "all" for all)
+	 */
+	is_active?: string;
 };

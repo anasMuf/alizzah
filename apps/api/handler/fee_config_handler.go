@@ -228,6 +228,22 @@ func (h *FeeConfigHandler) ListItems(c echo.Context) error {
 		Gender:   c.QueryParam("gender"),
 	}
 
+	// Parse is_active: default true (only active items), "all" = no filter, "false" = only inactive
+	isActiveParam := c.QueryParam("is_active")
+	switch isActiveParam {
+	case "":
+		active := true
+		params.IsActive = &active
+	case "all":
+		params.IsActive = nil
+	case "false":
+		inactive := false
+		params.IsActive = &inactive
+	default:
+		active := true
+		params.IsActive = &active
+	}
+
 	items, err := h.service.GetItems(uint(id), params)
 	if err != nil {
 		status, code := utility.GetErrorStatusAndCode(err)

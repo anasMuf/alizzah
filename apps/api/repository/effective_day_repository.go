@@ -3,9 +3,9 @@ package repository
 import (
 	"api/dto"
 	"api/model"
+	"errors"
 
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 type EffectiveDayRepository interface {
@@ -68,16 +68,33 @@ func (r *effectiveDayRepository) FindByLevelMonthYear(level string, month, year 
 }
 
 func (r *effectiveDayRepository) Upsert(ed *model.EffectiveDay) error {
-	// Build conflict columns based on mode
-	conflictCols := []clause.Column{{Name: "class_group_id"}, {Name: "month"}, {Name: "year"}}
-	if ed.Level != "" {
-		conflictCols = []clause.Column{{Name: "level"}, {Name: "month"}, {Name: "year"}}
-	}
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		var existing model.EffectiveDay
+		var err error
 
-	return r.db.Clauses(clause.OnConflict{
-		Columns:   conflictCols,
-		DoUpdates: clause.AssignmentColumns([]string{"academic_year_id", "total_days", "total_mondays", "created_by", "updated_at"}),
-	}).Create(ed).Error
+		// Cari record yang sudah ada berdasarkan mode (per-rombel atau per-jenjang)
+		if ed.Level != "" {
+			err = tx.Where("level = ? AND class_group_id = 0 AND month = ? AND year = ?", ed.Level, ed.Month, ed.Year).First(&existing).Error
+		} else {
+			err = tx.Where("class_group_id = ? AND month = ? AND year = ?", ed.ClassGroupID, ed.Month, ed.Year).First(&existing).Error
+		}
+
+		if err == nil {
+			// Update record yang sudah ada
+			existing.AcademicYearID = ed.AcademicYearID
+			existing.TotalDays = ed.TotalDays
+			existing.TotalMondays = ed.TotalMondays
+			existing.CreatedBy = ed.CreatedBy
+			return tx.Save(&existing).Error
+		}
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// Insert baru
+			return tx.Create(ed).Error
+		}
+
+		return err
+	})
 }
 
 func (r *effectiveDayRepository) Update(ed *model.EffectiveDay) error {

@@ -35,7 +35,11 @@ func NewEcho() *echo.Echo {
 
 	corsOrigins := strings.Split(os.Getenv("CORS_ALLOWED_ORIGINS"), ",")
 	if len(corsOrigins) == 1 && corsOrigins[0] == "" {
-		corsOrigins = []string{"http://localhost:3000", "http://localhost:5173"}
+		corsOrigins = []string{
+			"http://localhost:3000",
+			"http://localhost:5173",
+			"https://dashboard.alizzah.anaslabs.my.id",
+		}
 	}
 	e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
 		AllowOrigins: corsOrigins,

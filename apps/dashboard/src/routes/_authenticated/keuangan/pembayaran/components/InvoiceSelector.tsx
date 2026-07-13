@@ -18,19 +18,19 @@ interface InvoiceSelectorProps {
 	onIncludeItems: (ids: number[]) => void;
 }
 
-	export function InvoiceSelector({
-		studentId,
-		academicYearId,
-		selectedInvoices,
-		payAmounts,
-		excludedItems,
-		initialInvoiceId,
-		onToggleInvoice,
-		onToggleItem,
-		onAmountChange,
-		onExcludeItems,
-		onIncludeItems,
-	}: InvoiceSelectorProps) {
+export function InvoiceSelector({
+	studentId,
+	academicYearId,
+	selectedInvoices,
+	payAmounts,
+	excludedItems,
+	initialInvoiceId,
+	onToggleInvoice,
+	onToggleItem,
+	onAmountChange,
+	onExcludeItems,
+	onIncludeItems,
+}: InvoiceSelectorProps) {
 	// Fetch invoice list
 	const { data: invoicesResp, isLoading } = useGetV1StudentsIdInvoices(
 		studentId,
@@ -186,99 +186,98 @@ interface InvoiceSelectorProps {
 			</div>
 
 			{/* Item detail table */}
-			{invoiceItems.length > 0 && (() => {
+			{invoiceItems.length > 0 &&
+				(() => {
 					const allExcluded =
 						invoiceItems.length > 0 &&
 						invoiceItems.every((item) => excludedItems.includes(item.id));
 					return (
-					<div className="mt-3 border-t border-gray-200 pt-3">
-						<div className="flex items-center justify-between mb-2">
-							<p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-								Detail Item
-							</p>
-							<label className="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer select-none">
-								<input
-									type="checkbox"
-									className="h-3.5 w-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
-									checked={!allExcluded}
-									onChange={() => {
-										const ids = invoiceItems.map((i) => i.id);
-										if (allExcluded) {
-											onIncludeItems(ids);
-										} else {
-											onExcludeItems(ids);
-										}
-									}}
-								/>
-								{allExcluded ? "Pilih Semua" : "Hapus Semua"}
-							</label>
-						</div>
-					<div className="space-y-1">
-						{invoiceItems.map((item: any) => {
-							const checkable = !item.is_dispensation && !item.is_locked;
-							const isExcluded = excludedItems.includes(item.id);
-							return (
-								<div
-									key={item.id}
-									className={`flex items-center gap-2 py-1.5 px-2 rounded text-sm ${item.is_dispensation ? "bg-green-50" : ""} ${isExcluded ? "opacity-50" : ""}`}
-								>
-									{checkable ? (
-										<input
-											type="checkbox"
-											className="h-3.5 w-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
-											checked={!isExcluded}
-											onChange={() => onToggleItem(item.id)}
-											title={
-												isExcluded
-													? "Sertakan item ini"
-													: "Kecualikan dari pembayaran"
+						<div className="mt-3 border-t border-gray-200 pt-3">
+							<div className="flex items-center justify-between mb-2">
+								<p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+									Detail Item
+								</p>
+								<label className="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer select-none">
+									<input
+										type="checkbox"
+										className="h-3.5 w-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+										checked={!allExcluded}
+										onChange={() => {
+											const ids = invoiceItems.map((i) => i.id);
+											if (allExcluded) {
+												onIncludeItems(ids);
+											} else {
+												onExcludeItems(ids);
 											}
-										/>
-									) : (
-										<span className="w-3.5" />
-									)}
-									<span
-										className={`flex-1 ${item.is_dispensation ? "text-green-700 italic text-xs" : "text-gray-800"} ${isExcluded ? "line-through" : ""}`}
-									>
-										{item.name}
-										{item.is_locked && (
-											<span className="ml-1 text-xs text-indigo-500">
-												(dispensasi)
-											</span>
-										)}
-									</span>
-									<span
-										className={`text-xs tabular-nums ${item.is_dispensation ? "text-green-600" : "text-gray-500"}`}
-									>
-										{formatCurrency(item.sisa_tagihan)}
-									</span>
-									<div className="w-32">
-										{item.is_dispensation || item.is_locked ? (
+										}}
+									/>
+									{allExcluded ? "Pilih Semua" : "Hapus Semua"}
+								</label>
+							</div>
+							<div className="space-y-1">
+								{invoiceItems.map((item: any) => {
+									const checkable = !item.is_dispensation && !item.is_locked;
+									const isExcluded = excludedItems.includes(item.id);
+									return (
+										<div
+											key={item.id}
+											className={`flex items-center gap-2 py-1.5 px-2 rounded text-sm ${item.is_dispensation ? "bg-green-50" : ""} ${isExcluded ? "opacity-50" : ""}`}
+										>
+											{checkable ? (
+												<input
+													type="checkbox"
+													className="h-3.5 w-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+													checked={!isExcluded}
+													onChange={() => onToggleItem(item.id)}
+													title={
+														isExcluded
+															? "Sertakan item ini"
+															: "Kecualikan dari pembayaran"
+													}
+												/>
+											) : (
+												<span className="w-3.5" />
+											)}
 											<span
-												className={`block text-right text-xs font-medium tabular-nums ${item.is_dispensation ? "text-green-600" : "text-gray-900"}`}
+												className={`flex-1 ${item.is_dispensation ? "text-green-700 italic text-xs" : "text-gray-800"} ${isExcluded ? "line-through" : ""}`}
 											>
-												{formatCurrency(
-													payAmounts[item.id] ?? item.sisa_tagihan,
+												{item.name}
+												{item.is_locked && (
+													<span className="ml-1 text-xs text-indigo-500">
+														(dispensasi)
+													</span>
 												)}
 											</span>
-										) : (
-											<CurrencyInput
+											<span
+												className={`text-xs tabular-nums ${item.is_dispensation ? "text-green-600" : "text-gray-500"}`}
+											>
+												{formatCurrency(item.sisa_tagihan)}
+											</span>
+											<div className="w-32">
+												{item.is_dispensation || item.is_locked ? (
+													<span
+														className={`block text-right text-xs font-medium tabular-nums ${item.is_dispensation ? "text-green-600" : "text-gray-900"}`}
+													>
+														{formatCurrency(
+															payAmounts[item.id] ?? item.sisa_tagihan,
+														)}
+													</span>
+												) : (
+													<CurrencyInput
 														className="block w-full rounded border-0 py-1 px-2 text-xs text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 text-right tabular-nums disabled:bg-gray-100 disabled:text-gray-400"
 														value={payAmounts[item.id] ?? 0}
-														onChange={(val) =>
-															onAmountChange(item.id, val)
-														}
+														onChange={(val) => onAmountChange(item.id, val)}
 														disabled={isExcluded}
-																/>
-										)}
-									</div>
-								</div>
-							);
-						})}
-					</div>
-				</div>
-				);
-			})()}
+													/>
+												)}
+											</div>
+										</div>
+									);
+								})}
+							</div>
+						</div>
+					);
+				})()}
 		</>
 	);
 }

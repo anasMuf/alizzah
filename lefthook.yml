@@ -1,0 +1,11 @@
+# https://lefthook.dev/configuration/
+pre-commit:
+  parallel: true
+  commands:
+    biome-dashboard:
+      root: apps/dashboard
+      run: pnpm biome check --write --no-errors-on-unmatched --staged
+      stage_fixed: true
+      skip:
+        - merge
+        - rebase

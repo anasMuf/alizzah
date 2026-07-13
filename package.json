@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "lefthook": "^2.1.10",
     "nx": "^22.7.1"
   }
 }

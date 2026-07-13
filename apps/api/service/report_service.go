@@ -244,7 +244,7 @@ func (s *reportService) GetStudentReport(studentID uint, req dto.StudentReportRe
 	}
 
 	invoiceSummary, _ := s.reportRepo.GetInvoiceSummaryByStudent(studentID, academicYearID)
-	invoices, _ := s.invoiceRepo.FindByStudentID(studentID, "", "", academicYearID)
+	invoices, _ := s.invoiceRepo.FindByStudentID(studentID, "", "", academicYearID, false)
 	payments, _ := s.paymentRepo.FindByStudentID(studentID, dto.StudentPaymentQueryParams{})
 	savings, _ := s.savingsService.GetByStudentID(studentID)
 
@@ -252,7 +252,7 @@ func (s *reportService) GetStudentReport(studentID uint, req dto.StudentReportRe
 	for i, inv := range invoices {
 		items, _ := s.invoiceItemRepo.FindByInvoiceID(inv.ID)
 		period := utility.FormatInvoicePeriod(inv)
-		
+
 		itemResponses := make([]dto.InvoiceItemResponse, len(items))
 		for j, item := range items {
 			itemResponses[j] = dto.InvoiceItemResponse{
@@ -835,11 +835,11 @@ func (s *reportService) GetTabunganSiswaReport(studentID uint, req dto.TabunganS
 	var totalDebit, totalCredit float64
 
 	sourceTypeLabels := map[string]string{
-		"payment_deposit":        "Setoran via pembayaran",
-		"guardian_withdrawal":    "Penarikan oleh wali murid",
-		"payment_usage":          "Alokasi untuk pembayaran tagihan",
-		"graduation_allocation":  "Alokasi untuk wisuda",
-		"transfer_return":        "Pengembalian sisa tabungan wajib",
+		"payment_deposit":       "Setoran via pembayaran",
+		"guardian_withdrawal":   "Penarikan oleh wali murid",
+		"payment_usage":         "Alokasi untuk pembayaran tagihan",
+		"graduation_allocation": "Alokasi untuk wisuda",
+		"transfer_return":       "Pengembalian sisa tabungan wajib",
 	}
 
 	for _, txn := range txns {

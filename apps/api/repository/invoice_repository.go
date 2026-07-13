@@ -11,7 +11,7 @@ type InvoiceRepository interface {
 	FindAll(params dto.InvoiceQueryParams) ([]model.Invoice, int64, float64, error)
 	FindByID(id uint) (*model.Invoice, error)
 	FindByIDs(ids []uint) ([]model.Invoice, error)
-	FindByStudentID(studentID uint, invoiceType, status string, academicYearID uint) ([]model.Invoice, error)
+	FindByStudentID(studentID uint, invoiceType, status string, academicYearID uint, showAll bool) ([]model.Invoice, error)
 	FindMonthlyByStudent(studentID, month, year uint) (*model.Invoice, error)
 	Create(invoice *model.Invoice) error
 	Update(invoice *model.Invoice) error
@@ -143,7 +143,7 @@ func (r *invoiceRepository) FindByIDs(ids []uint) ([]model.Invoice, error) {
 	return invoices, err
 }
 
-func (r *invoiceRepository) FindByStudentID(studentID uint, invoiceType, status string, academicYearID uint) ([]model.Invoice, error) {
+func (r *invoiceRepository) FindByStudentID(studentID uint, invoiceType, status string, academicYearID uint, showAll bool) ([]model.Invoice, error) {
 	var invoices []model.Invoice
 	query := r.db.Preload("Student").Preload("AcademicYear").Where("student_id = ?", studentID)
 
@@ -158,7 +158,9 @@ func (r *invoiceRepository) FindByStudentID(studentID uint, invoiceType, status 
 	}
 
 	// Sembunyikan tagihan bulanan untuk bulan yang belum "berjalan" (clamp ke TA).
-	query = query.Where(monthlyVisibilityCond("invoices"))
+	if !showAll {
+		query = query.Where(monthlyVisibilityCond("invoices"))
+	}
 
 	err := query.Order("created_at DESC").Find(&invoices).Error
 	return invoices, err

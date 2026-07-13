@@ -137,7 +137,7 @@ function DetailPembayaranPage() {
 									Bukti Pembayaran
 								</h1>
 								<p className="text-sm text-gray-500">
-									Sekolah Islam Al-Izzah Purwokerto
+									PAUD UNGGULAN AL-IZZAH MOJOKERTO
 								</p>
 							</div>
 						</div>

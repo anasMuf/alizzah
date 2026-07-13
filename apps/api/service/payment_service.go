@@ -223,9 +223,14 @@ func (s *paymentService) Create(createdBy uint, req dto.CreatePaymentRequest) (*
 			}
 		}
 
-		// [F] Cash source → WriteCashCredit
-		if req.Source == "cash" && totalAmount > 0 {
-			if err := s.txnWriter.WriteCashCredit(req.AcademicYearID, paymentDate, totalAmount, "payment", &result.ID, fmt.Sprintf("Pembayaran %s", student.FullName), createdBy, tx); err != nil {
+		// [F] Cash source → WriteCashCredit (invoice items + savings deposit)
+		if req.Source == "cash" && (totalAmount > 0 || req.SavingsDeposit > 0) {
+			cashAmount := totalAmount + req.SavingsDeposit
+			desc := fmt.Sprintf("Pembayaran %s", student.FullName)
+			if totalAmount == 0 && req.SavingsDeposit > 0 {
+				desc = fmt.Sprintf("Setoran tabungan %s", student.FullName)
+			}
+			if err := s.txnWriter.WriteCashCredit(req.AcademicYearID, paymentDate, cashAmount, "payment", &result.ID, desc, createdBy, tx); err != nil {
 				return err
 			}
 		}
@@ -394,13 +399,14 @@ func mapPaymentStudentBrief(s model.Student) dto.StudentBriefResponse {
 
 func mapPaymentToListResponse(p model.Payment) dto.PaymentListResponse {
 	return dto.PaymentListResponse{
-		ID:      p.ID,
-		Student: mapPaymentStudentBrief(p.Student),
-		PaymentDate: p.PaymentDate.Format("2006-01-02"),
-		TotalAmount: p.TotalAmount,
-		Source:      p.Source,
-		CreatedBy:   dto.UserBriefResponse{ID: p.Creator.ID, FullName: p.Creator.FullName},
-		CreatedAt:   p.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		ID:             p.ID,
+		Student:        mapPaymentStudentBrief(p.Student),
+		PaymentDate:    p.PaymentDate.Format("2006-01-02"),
+		TotalAmount:    p.TotalAmount,
+		SavingsDeposit: p.SavingsDeposit,
+		Source:         p.Source,
+		CreatedBy:      dto.UserBriefResponse{ID: p.Creator.ID, FullName: p.Creator.FullName},
+		CreatedAt:      p.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 	}
 }
 

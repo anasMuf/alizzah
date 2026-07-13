@@ -74,6 +74,13 @@ function KasirPembayaranPage() {
 				? prev.filter((x) => x !== itemId)
 				: [...prev, itemId],
 		);
+	const excludeItems = (ids: number[]) =>
+		setExcludedItems((prev) => {
+			const newIds = ids.filter((id) => !prev.includes(id));
+			return newIds.length > 0 ? [...prev, ...newIds] : prev;
+		});
+	const includeItems = (ids: number[]) =>
+		setExcludedItems((prev) => prev.filter((id) => !ids.includes(id)));
 
 	// Incidental items
 	const [incidentalItems, setIncidentalItems] = useState<IncidentalItem[]>([]);
@@ -82,7 +89,7 @@ function KasirPembayaranPage() {
 	const [paymentSource, setPaymentSource] = useState<"cash" | "savings">(
 		"cash",
 	);
-	const [cashReceived, setCashReceived] = useState("");
+	const [cashReceived, setCashReceived] = useState(0);
 	const [depositChange, setDepositChange] = useState(false);
 	const [notes, setNotes] = useState("");
 
@@ -164,10 +171,15 @@ function KasirPembayaranPage() {
 		return invoiceTotal + incidentalTotal;
 	}, [payAmounts, incidentalItems, excludedItems]);
 
+	// Auto-fill cash received sesuai total
+	useEffect(() => {
+		setCashReceived(totalPay);
+	}, [totalPay]);
+
 	const canSubmit =
 		selectedStudent &&
-		totalPay > 0 &&
-		((paymentSource === "cash" && Number(cashReceived) >= totalPay) ||
+		(totalPay > 0 || tabunganUmumTotal > 0) &&
+		((paymentSource === "cash" && cashReceived >= totalPay) ||
 			(paymentSource === "savings" && savingsBalance >= totalPay));
 
 	// Mutation
@@ -203,7 +215,7 @@ function KasirPembayaranPage() {
 			});
 			return;
 		}
-		if (paymentSource === "cash" && Number(cashReceived) < totalPay) {
+		if (paymentSource === "cash" && cashReceived < totalPay) {
 			addToast({
 				variant: "error",
 				title: "Validasi",
@@ -214,9 +226,7 @@ function KasirPembayaranPage() {
 
 		const totalSavingsDeposit =
 			tabunganUmumTotal +
-			(depositChange && Number(cashReceived) > totalPay
-				? Number(cashReceived) - totalPay
-				: 0);
+			(depositChange && cashReceived > totalPay ? cashReceived - totalPay : 0);
 		const customIncidentals = incidentalItems
 			.filter((i) => !i.isSavings)
 			.map((i) => ({ name: i.name, amount: i.amount }));
@@ -260,7 +270,7 @@ function KasirPembayaranPage() {
 								setPayAmounts({});
 								setExcludedItems([]);
 								setIncidentalItems([]);
-								setCashReceived("");
+								setCashReceived(0);
 								setDepositChange(false);
 								setNotes("");
 								setPaymentSource("cash");
@@ -304,8 +314,10 @@ function KasirPembayaranPage() {
 									)
 								}
 								onAmountChange={(itemId, val) =>
-									setPayAmounts((prev) => ({ ...prev, [itemId]: Number(val) }))
+									setPayAmounts((prev) => ({ ...prev, [itemId]: val }))
 								}
+								onExcludeItems={excludeItems}
+								onIncludeItems={includeItems}
 							/>
 						</div>
 						<div className="flex-shrink-0 border-t border-gray-200 p-4 bg-gray-50">

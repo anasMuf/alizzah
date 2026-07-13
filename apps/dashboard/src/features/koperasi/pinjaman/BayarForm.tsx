@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { ApiError } from "#/api/mutator/custom-instance";
-import { Button, FormField, SlideOver, useToast } from "#/components/ui";
+import {
+	Button,
+	CurrencyFormField,
+	FormField,
+	SlideOver,
+	useToast,
+} from "#/components/ui";
 import { formatCurrency } from "#/utils/format";
 import { type Loan, type PaymentMethod, usePayLoan } from "./api";
 
@@ -90,15 +96,11 @@ export function BayarForm({ loan, isOpen, onClose }: BayarFormProps) {
 				<p className="rounded-md bg-gray-50 px-3 py-2 text-sm text-gray-700">
 					Sisa pinjaman: <strong>{formatCurrency(loan.remaining)}</strong>
 				</p>
-				<FormField
+				<CurrencyFormField
 					id="amount"
-					name="amount"
-					type="number"
-					min={1}
-					step="any"
 					label="Nominal Angsuran"
 					value={amount}
-					onChange={(e) => setAmount(Number(e.target.value) || 0)}
+					onChange={setAmount}
 					required
 				/>
 				<FormField

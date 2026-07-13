@@ -246,7 +246,7 @@ func (s *paymentService) Create(createdBy uint, req dto.CreatePaymentRequest) (*
 			}
 			stxn := &model.SavingsTransaction{
 				StudentSavingsID: savings.ID,
-				TransactionType:  "debit",
+				TransactionType:  "credit",
 				Amount:           totalAmount,
 				NetAmount:        totalAmount,
 				SourceType:       "payment_usage",
@@ -277,7 +277,7 @@ func (s *paymentService) Create(createdBy uint, req dto.CreatePaymentRequest) (*
 			}
 			stxn := &model.SavingsTransaction{
 				StudentSavingsID: savings.ID,
-				TransactionType:  "credit",
+				TransactionType:  "debit",
 				Amount:           req.SavingsDeposit,
 				NetAmount:        req.SavingsDeposit,
 				SourceType:       "payment_deposit",

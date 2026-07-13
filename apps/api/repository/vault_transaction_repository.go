@@ -85,7 +85,7 @@ func (r *vaultTransactionRepository) SumFiltered(params dto.VaultTransactionQuer
 	var res Result
 
 	query := r.db.Model(&model.VaultTransaction{}).
-		Select("COALESCE(SUM(CASE WHEN transaction_type = 'credit' THEN amount ELSE 0 END), 0) as credit, COALESCE(SUM(CASE WHEN transaction_type = 'debit' THEN amount ELSE 0 END), 0) as debit")
+		Select("COALESCE(SUM(CASE WHEN transaction_type = 'debit' THEN amount ELSE 0 END), 0) as credit, COALESCE(SUM(CASE WHEN transaction_type = 'credit' THEN amount ELSE 0 END), 0) as debit")
 
 	if params.AcademicYearID != 0 {
 		query = query.Where("academic_year_id = ?", params.AcademicYearID)
@@ -121,7 +121,7 @@ func (r *vaultTransactionRepository) GetCurrentBalance(academicYearID uint) (flo
 	var res Result
 
 	query := r.db.Model(&model.VaultTransaction{}).
-		Select("COALESCE(SUM(CASE WHEN transaction_type = 'credit' THEN amount ELSE 0 END), 0) as credit, COALESCE(SUM(CASE WHEN transaction_type = 'debit' THEN amount ELSE 0 END), 0) as debit")
+		Select("COALESCE(SUM(CASE WHEN transaction_type = 'debit' THEN amount ELSE 0 END), 0) as credit, COALESCE(SUM(CASE WHEN transaction_type = 'credit' THEN amount ELSE 0 END), 0) as debit")
 
 	if academicYearID != 0 {
 		query = query.Where("academic_year_id = ?", academicYearID)

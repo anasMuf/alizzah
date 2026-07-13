@@ -174,8 +174,8 @@ function KasTransaksiPage() {
 							className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						>
 							<option value="">Semua</option>
-							<option value="credit">Masuk</option>
-							<option value="debit">Keluar</option>
+							<option value="credit">Credit (Keluar)</option>
+							<option value="debit">Debit (Masuk)</option>
 						</select>
 					</div>
 
@@ -311,14 +311,14 @@ function KasTransaksiPage() {
 													</td>
 													<td className="whitespace-nowrap px-3 py-3 text-sm text-right pr-6">
 														<span
-															className={`inline-flex items-center gap-1 font-semibold tabular-nums ${isCredit ? "text-green-600" : "text-red-600"}`}
+															className={`inline-flex items-center gap-1 font-semibold tabular-nums ${isCredit ? "text-red-600" : "text-green-600"}`}
 														>
 															{isCredit ? (
 																<ArrowDownRight className="h-4 w-4" />
 															) : (
 																<ArrowUpRight className="h-4 w-4" />
 															)}
-															{isCredit ? "+" : "-"}
+															{isCredit ? "-" : "+"}
 															{formatCurrency(Number(tx.amount))}
 														</span>
 													</td>

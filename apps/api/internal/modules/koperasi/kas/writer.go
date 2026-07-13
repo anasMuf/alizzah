@@ -37,9 +37,9 @@ func (w *writer) write(ttype string, academicYearID uint, date time.Time, amount
 }
 
 func (w *writer) WriteCredit(academicYearID uint, date time.Time, amount float64, sourceType string, sourceID *uint, category, description string, createdBy uint, tx *gorm.DB) (uint, error) {
-	return w.write("credit", academicYearID, date, amount, sourceType, sourceID, category, description, createdBy, tx)
+	return w.write("debit", academicYearID, date, amount, sourceType, sourceID, category, description, createdBy, tx)
 }
 
 func (w *writer) WriteDebit(academicYearID uint, date time.Time, amount float64, sourceType string, sourceID *uint, category, description string, createdBy uint, tx *gorm.DB) (uint, error) {
-	return w.write("debit", academicYearID, date, amount, sourceType, sourceID, category, description, createdBy, tx)
+	return w.write("credit", academicYearID, date, amount, sourceType, sourceID, category, description, createdBy, tx)
 }

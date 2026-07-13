@@ -42,7 +42,7 @@ func NewRepository(db *gorm.DB) Repository { return &repo{db: db} }
 func (r *repo) MonthlyByCategory(ayID uint, start, end time.Time) ([]CategoryLine, error) {
 	var lines []CategoryLine
 	q := r.db.Table("koperasi_cash_transactions").
-		Select("category, COALESCE(SUM(CASE WHEN transaction_type='credit' THEN amount ELSE 0 END),0) as credit, COALESCE(SUM(CASE WHEN transaction_type='debit' THEN amount ELSE 0 END),0) as debit").
+		Select("category, COALESCE(SUM(CASE WHEN transaction_type='debit' THEN amount ELSE 0 END),0) as credit, COALESCE(SUM(CASE WHEN transaction_type='credit' THEN amount ELSE 0 END),0) as debit").
 		Where("transaction_date BETWEEN ? AND ?", start, end)
 	if ayID != 0 {
 		q = q.Where("academic_year_id = ?", ayID)

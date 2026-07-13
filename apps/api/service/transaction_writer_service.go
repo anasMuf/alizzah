@@ -25,24 +25,8 @@ func NewTransactionWriterService(cashRepo repository.CashTransactionRepository, 
 	return &transactionWriterService{cashRepo: cashRepo, vaultRepo: vaultRepo}
 }
 
+// WriteCashCredit: uang masuk ke kas = debit (perspektif akuntansi entitas)
 func (s *transactionWriterService) WriteCashCredit(academicYearID uint, date time.Time, amount float64, sourceType string, sourceID *uint, description string, createdBy uint, tx *gorm.DB) error {
-	ct := &model.CashTransaction{
-		AcademicYearID:  academicYearID,
-		TransactionDate: date,
-		TransactionType: "credit",
-		Amount:          amount,
-		SourceType:      sourceType,
-		SourceID:        sourceID,
-		Description:     description,
-		CreatedBy:       createdBy,
-	}
-	if tx != nil {
-		return s.cashRepo.CreateWithTx(ct, tx)
-	}
-	return s.cashRepo.Create(ct)
-}
-
-func (s *transactionWriterService) WriteCashDebit(academicYearID uint, date time.Time, amount float64, sourceType string, sourceID *uint, description string, createdBy uint, tx *gorm.DB) error {
 	ct := &model.CashTransaction{
 		AcademicYearID:  academicYearID,
 		TransactionDate: date,
@@ -59,11 +43,30 @@ func (s *transactionWriterService) WriteCashDebit(academicYearID uint, date time
 	return s.cashRepo.Create(ct)
 }
 
+// WriteCashDebit: uang keluar dari kas = credit (perspektif akuntansi entitas)
+func (s *transactionWriterService) WriteCashDebit(academicYearID uint, date time.Time, amount float64, sourceType string, sourceID *uint, description string, createdBy uint, tx *gorm.DB) error {
+	ct := &model.CashTransaction{
+		AcademicYearID:  academicYearID,
+		TransactionDate: date,
+		TransactionType: "credit",
+		Amount:          amount,
+		SourceType:      sourceType,
+		SourceID:        sourceID,
+		Description:     description,
+		CreatedBy:       createdBy,
+	}
+	if tx != nil {
+		return s.cashRepo.CreateWithTx(ct, tx)
+	}
+	return s.cashRepo.Create(ct)
+}
+
+// WriteVaultCredit: uang masuk ke brangkas = debit (perspektif akuntansi entitas)
 func (s *transactionWriterService) WriteVaultCredit(academicYearID uint, date time.Time, amount float64, sourceType string, sourceID *uint, description string, createdBy uint, tx *gorm.DB) error {
 	vt := &model.VaultTransaction{
 		AcademicYearID:  academicYearID,
 		TransactionDate: date,
-		TransactionType: "credit",
+		TransactionType: "debit",
 		Amount:          amount,
 		SourceType:      sourceType,
 		SourceID:        sourceID,
@@ -76,11 +79,12 @@ func (s *transactionWriterService) WriteVaultCredit(academicYearID uint, date ti
 	return s.vaultRepo.Create(vt)
 }
 
+// WriteVaultDebit: uang keluar dari brangkas = credit (perspektif akuntansi entitas)
 func (s *transactionWriterService) WriteVaultDebit(academicYearID uint, date time.Time, amount float64, sourceType string, sourceID *uint, description string, createdBy uint, tx *gorm.DB) error {
 	vt := &model.VaultTransaction{
 		AcademicYearID:  academicYearID,
 		TransactionDate: date,
-		TransactionType: "debit",
+		TransactionType: "credit",
 		Amount:          amount,
 		SourceType:      sourceType,
 		SourceID:        sourceID,

@@ -24,7 +24,7 @@ func (r *repository) GetBalance(academicYearID uint) (float64, error) {
 	type result struct{ Credit, Debit float64 }
 	var res result
 	q := r.db.Model(&CashTransaction{}).
-		Select("COALESCE(SUM(CASE WHEN transaction_type='credit' THEN amount ELSE 0 END),0) as credit, COALESCE(SUM(CASE WHEN transaction_type='debit' THEN amount ELSE 0 END),0) as debit")
+		Select("COALESCE(SUM(CASE WHEN transaction_type='debit' THEN amount ELSE 0 END),0) as credit, COALESCE(SUM(CASE WHEN transaction_type='credit' THEN amount ELSE 0 END),0) as debit")
 	if academicYearID != 0 {
 		q = q.Where("academic_year_id = ?", academicYearID)
 	}

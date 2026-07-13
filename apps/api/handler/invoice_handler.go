@@ -13,11 +13,12 @@ import (
 )
 
 type InvoiceHandler struct {
-	service service.InvoiceService
+	service    service.InvoiceService
+	invoiceGen service.InvoiceGenerateService
 }
 
-func NewInvoiceHandler(service service.InvoiceService) *InvoiceHandler {
-	return &InvoiceHandler{service: service}
+func NewInvoiceHandler(service service.InvoiceService, invoiceGen service.InvoiceGenerateService) *InvoiceHandler {
+	return &InvoiceHandler{service: service, invoiceGen: invoiceGen}
 }
 
 // List godoc
@@ -704,5 +705,42 @@ func (h *InvoiceHandler) Batch(c echo.Context) error {
 	return c.JSON(http.StatusOK, dto.SuccessResponse{
 		Message: "Berhasil mengambil invoice",
 		Data:    invoices,
+	})
+}
+
+// SyncSavingsMandatoryInvoices godoc
+// @Summary      Sync mandatory savings to monthly invoices
+// @Description  Add missing savings_mandatory (tabungan wajib) items to existing monthly invoices for berlian and mutiara students
+// @Tags         invoices
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Success      200  {object}  dto.SuccessResponse{data=dto.SavingsMandatorySyncResult}
+// @Failure      401  {object}  dto.ErrorResponse
+// @Failure      403  {object}  dto.ErrorResponse
+// @Failure      500  {object}  dto.ErrorResponse
+// @Router       /v1/invoices/sync-savings-mandatory [post]
+func (h *InvoiceHandler) SyncSavingsMandatoryInvoices(c echo.Context) error {
+	if h.invoiceGen == nil {
+		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+			Status:  http.StatusInternalServerError,
+			Code:    "INTERNAL_ERROR",
+			Message: "Invoice generate service tidak tersedia",
+		})
+	}
+
+	result, err := h.invoiceGen.SyncSavingsMandatoryToMonthlyInvoices()
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{
+			Status:  status,
+			Code:    code,
+			Message: err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "Sinkronisasi item tabungan wajib selesai",
+		Data:    result,
 	})
 }

@@ -346,7 +346,7 @@ var invoiceCategoryLabels = map[string]string{
 	"pasta":             "PASTA",
 	"calisan":           "Calisan",
 	"ekskul":            "Ekskul",
-	"savings_mandatory": "Tabungan Wajib Berlian",
+	"savings_mandatory": "Tabungan Wajib",
 	"daycare":           "Daycare",
 	"graduation":        "Wisuda",
 }

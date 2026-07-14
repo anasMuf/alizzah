@@ -99,7 +99,7 @@ function KasirPembayaranPage() {
 		{ query: { enabled: !!selectedStudent?.id } },
 	);
 	const savings = (savingsResp?.data as any)?.data;
-	const savingsBalance = savings?.general_balance || 0;
+	const savingsBalance = savings?.general?.balance || 0;
 
 	// Batch fetch invoice details for selected invoices (needed for PaymentSummary)
 	const { data: invoiceDetails = [] } = useGetV1InvoicesBatch(

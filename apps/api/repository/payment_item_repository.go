@@ -9,6 +9,7 @@ import (
 type PaymentItemRepository interface {
 	BulkCreate(items []model.PaymentItem) error
 	FindByPaymentID(paymentID uint) ([]model.PaymentItem, error)
+	DeleteByPaymentID(tx *gorm.DB, paymentID uint) error
 	WithTx(tx *gorm.DB) PaymentItemRepository
 }
 
@@ -35,4 +36,8 @@ func (r *paymentItemRepository) FindByPaymentID(paymentID uint) ([]model.Payment
 	var items []model.PaymentItem
 	err := r.db.Preload("InvoiceItem").Where("payment_id = ?", paymentID).Find(&items).Error
 	return items, err
+}
+
+func (r *paymentItemRepository) DeleteByPaymentID(tx *gorm.DB, paymentID uint) error {
+	return tx.Unscoped().Where("payment_id = ?", paymentID).Delete(&model.PaymentItem{}).Error
 }

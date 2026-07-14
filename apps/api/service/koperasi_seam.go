@@ -26,6 +26,7 @@ type KoperasiSeamService interface {
 	ProcessPaymentItems(tx *gorm.DB, paymentID uint, studentID uint,
 		academicYearID uint, paymentDate time.Time,
 		items []KoperasiPaymentItem, createdBy uint) error
+	ReversePaymentItems(tx *gorm.DB, paymentID uint) error
 }
 
 type koperasiSeamService struct {
@@ -65,6 +66,7 @@ func (s *koperasiSeamService) ProcessPaymentItems(tx *gorm.DB, paymentID uint, s
 	sale := &penjualan.Sale{
 		AcademicYearID: academicYearID,
 		StudentID:      &studentID,
+		PaymentID:      &paymentID,
 		BuyerName:      student.FullName,
 		SaleDate:       paymentDate,
 		TotalAmount:    totalAmount,
@@ -159,6 +161,61 @@ func (s *koperasiSeamService) ProcessPaymentItems(tx *gorm.DB, paymentID uint, s
 
 	if err := kopPaymentSvc.Record(tx, input); err != nil {
 		return fmt.Errorf("gagal mencatat pembayaran kas koperasi: %w", err)
+	}
+
+	return nil
+}
+
+// ReversePaymentItems membatalkan seluruh efek koperasi dari satu payment.
+// Mencakup: hapus sale items, kembalikan stok variant, hapus koperasi payments,
+// hapus koperasi cash transactions, hapus sales.
+func (s *koperasiSeamService) ReversePaymentItems(tx *gorm.DB, paymentID uint) error {
+	// 1. Cari semua Sale dengan payment_id = paymentID
+	var sales []penjualan.Sale
+	if err := tx.Where("payment_id = ?", paymentID).Find(&sales).Error; err != nil {
+		return fmt.Errorf("gagal mencari sale koperasi: %w", err)
+	}
+	if len(sales) == 0 {
+		return nil
+	}
+
+	for _, sale := range sales {
+		// 2. Ambil sale items untuk restore stok
+		var saleItems []penjualan.SaleItem
+		if err := tx.Where("sale_id = ?", sale.ID).Find(&saleItems).Error; err != nil {
+			return fmt.Errorf("gagal mengambil sale items: %w", err)
+		}
+
+		// 3. Kembalikan stok (+1) untuk setiap variant
+		for _, si := range saleItems {
+			if si.VariantID > 0 {
+				if err := s.barangRepo.AdjustVariantStockWithTx(tx, si.VariantID, 1); err != nil {
+					return fmt.Errorf("gagal mengembalikan stok varian %d: %w", si.VariantID, err)
+				}
+			}
+		}
+
+		// 4. Hapus sale items
+		if err := tx.Where("sale_id = ?", sale.ID).Delete(&penjualan.SaleItem{}).Error; err != nil {
+			return fmt.Errorf("gagal menghapus sale items: %w", err)
+		}
+
+		// 5. Hapus koperasi payment records (ref_type=sale, ref_id=sale.ID)
+		if err := tx.Where("ref_type = ? AND ref_id = ?", "sale", sale.ID).
+			Delete(&pembayaran.Payment{}).Error; err != nil {
+			return fmt.Errorf("gagal menghapus koperasi payment: %w", err)
+		}
+
+		// 6. Hapus koperasi cash transactions (source_type=sale_payment, source_id=sale.ID)
+		if err := tx.Where("source_type = ? AND source_id = ?", "sale_payment", sale.ID).
+			Delete(&kas.CashTransaction{}).Error; err != nil {
+			return fmt.Errorf("gagal menghapus koperasi cash txn: %w", err)
+		}
+
+		// 7. Hapus sale
+		if err := tx.Delete(&sale).Error; err != nil {
+			return fmt.Errorf("gagal menghapus sale koperasi: %w", err)
+		}
 	}
 
 	return nil

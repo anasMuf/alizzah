@@ -536,6 +536,8 @@ func main() {
 	payments.GET("", paymentHandler.List)
 	payments.POST("", paymentHandler.Create)
 	payments.GET("/:id", paymentHandler.Get)
+	payments.PUT("/:id", paymentHandler.Update)
+	payments.DELETE("/:id", paymentHandler.Delete)
 	students.GET("/:id/payments", paymentHandler.GetByStudent, guard.RequireModule(middleware.ModuleKeuangan))
 
 	// Batch 6: Savings (nested under students)

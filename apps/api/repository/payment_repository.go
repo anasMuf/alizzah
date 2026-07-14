@@ -14,6 +14,8 @@ type PaymentRepository interface {
 	FindByStudentID(studentID uint, params dto.StudentPaymentQueryParams) ([]model.Payment, error)
 	FindByInvoiceID(invoiceID uint) ([]model.Payment, error)
 	Create(payment *model.Payment) error
+	Delete(id uint) error
+	HardDelete(tx *gorm.DB, id uint) error
 	WithTx(tx *gorm.DB) PaymentRepository
 }
 
@@ -122,4 +124,12 @@ func (r *paymentRepository) FindByInvoiceID(invoiceID uint) ([]model.Payment, er
 
 func (r *paymentRepository) Create(payment *model.Payment) error {
 	return r.db.Create(payment).Error
+}
+
+func (r *paymentRepository) Delete(id uint) error {
+	return r.db.Delete(&model.Payment{}, id).Error
+}
+
+func (r *paymentRepository) HardDelete(tx *gorm.DB, id uint) error {
+	return tx.Unscoped().Delete(&model.Payment{}, id).Error
 }

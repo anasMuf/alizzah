@@ -7,7 +7,11 @@ import { useAtom } from "jotai";
 import { User } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useGetV1InvoicesBatch } from "#/api/endpoints/invoices/invoice-batch";
-import { usePostV1Payments } from "#/api/endpoints/payments/payments";
+import {
+	useGetV1PaymentsId,
+	usePostV1Payments,
+} from "#/api/endpoints/payments/payments";
+import { usePutV1PaymentsId } from "#/api/endpoints/payments/payments-manual";
 import { useGetV1StudentsIdSavings } from "#/api/endpoints/savings/savings";
 import { useGetV1StudentsId } from "#/api/endpoints/students/students";
 import { Button, useToast } from "#/components/ui";
@@ -32,6 +36,7 @@ export const Route = createFileRoute(
 	validateSearch: (search: Record<string, unknown>) => ({
 		student_id: search.student_id ? Number(search.student_id) : undefined,
 		invoice_id: search.invoice_id ? Number(search.invoice_id) : undefined,
+		...(search.edit_id ? { edit_id: Number(search.edit_id) } : {}),
 	}),
 });
 
@@ -45,6 +50,9 @@ function KasirPembayaranPage() {
 		: null;
 	const initialInvoiceId = (searchParams as any).invoice_id
 		? Number((searchParams as any).invoice_id)
+		: null;
+	const editId = (searchParams as any).edit_id
+		? Number((searchParams as any).edit_id)
 		: null;
 
 	const [activeAy] = useAtom(academicYearAtom);
@@ -62,11 +70,15 @@ function KasirPembayaranPage() {
 		}
 	}, [initialStudentResp, selectedStudent]);
 
-	// Invoices
+	// Edit mode: fetch old payment for pre-fill
+	const { data: editPaymentResp } = useGetV1PaymentsId(editId || 0, {
+		query: { enabled: !!editId },
+	});
+	const editPayment = (editPaymentResp?.data as any)?.data;
+
+	// Invoices — state MUST be declared before useEffect that uses them
 	const [selectedInvoices, setSelectedInvoices] = useState<number[]>([]);
 	const [payAmounts, setPayAmounts] = useState<Record<number, number>>({});
-	// F08-1: item yang di-uncheck (dikecualikan dari pembayaran). Nominalnya
-	// tetap tersimpan di payAmounts agar muncul lagi saat item dicentang ulang.
 	const [excludedItems, setExcludedItems] = useState<number[]>([]);
 	const toggleItem = (itemId: number) =>
 		setExcludedItems((prev) =>
@@ -89,9 +101,79 @@ function KasirPembayaranPage() {
 	const [paymentSource, setPaymentSource] = useState<"cash" | "savings">(
 		"cash",
 	);
+	const [paymentDate, setPaymentDate] = useState(
+		new Date().toISOString().split("T")[0],
+	);
+	const [notes, setNotes] = useState("");
+
+	// Pre-fill from edit payment
+	const [editPreFilled, setEditPreFilled] = useState(false);
+	useEffect(() => {
+		if (!editPayment || editPreFilled) return;
+
+		// Pre-fill student
+		if (editPayment.student) {
+			setSelectedStudent(editPayment.student);
+		}
+
+		// Pre-fill invoice items: separate regular vs incidental
+		const amounts: Record<number, number> = {};
+		const invIds = new Set<number>();
+		const incidentals: IncidentalItem[] = [];
+		let incidentalCounter = Date.now();
+
+		editPayment.items?.forEach((item: any) => {
+			if (item.category === "incidental") {
+				incidentals.push({
+					id: ++incidentalCounter,
+					name: item.invoice_item_name || "Item Insidental",
+					amount: Number(item.amount),
+					isSavings: false,
+				});
+			} else {
+				amounts[item.invoice_item_id] = Number(item.amount);
+				if (item.invoice_id) {
+					invIds.add(item.invoice_id);
+				}
+			}
+		});
+
+		// Add savings_deposit as incidental savings item
+		const savingsDep = Number(editPayment.savings_deposit || 0);
+		if (savingsDep > 0) {
+			incidentals.push({
+				id: ++incidentalCounter,
+				name: "Setoran Tabungan Umum",
+				amount: savingsDep,
+				isSavings: true,
+			});
+		}
+
+		setPayAmounts(amounts);
+		setSelectedInvoices(Array.from(invIds));
+		setIncidentalItems(incidentals);
+
+		// Set source
+		if (editPayment.source === "savings" || editPayment.source === "cash") {
+			setPaymentSource(editPayment.source);
+		}
+
+		// Preserve original payment date
+		if (editPayment.payment_date) {
+			setPaymentDate(editPayment.payment_date);
+		}
+
+		// Set notes
+		if (editPayment.notes) {
+			setNotes(editPayment.notes);
+		}
+
+		setEditPreFilled(true);
+	}, [editPayment, editPreFilled]);
+
+	// Payment form (continued)
 	const [cashReceived, setCashReceived] = useState(0);
 	const [depositChange, setDepositChange] = useState(false);
-	const [notes, setNotes] = useState("");
 
 	// Savings
 	const { data: savingsResp } = useGetV1StudentsIdSavings(
@@ -111,7 +193,11 @@ function KasirPembayaranPage() {
 		invoiceDetails.forEach((detail: any) => {
 			detail?.items?.forEach((item: any) => {
 				const sisa = Number(item.amount || 0) - Number(item.paid_amount || 0);
-				if (sisa > 0 || item.category === "dispensation") {
+				if (
+					sisa > 0 ||
+					item.category === "dispensation" ||
+					(payAmounts[item.id] ?? 0) > 0
+				) {
 					items.push({
 						id: item.id,
 						invoice_id: detail.id,
@@ -124,11 +210,15 @@ function KasirPembayaranPage() {
 			});
 		});
 		return items;
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [invoiceDetails]);
 
+	// Buang entri payAmounts
+	// Cleanup effect
 	// Buang entri payAmounts milik item yang sudah tidak ada di tagihan terpilih
-	// (mis. saat invoice di-uncheck) agar total bayar & payload submit tetap akurat.
+	// Hanya jalan setelah batch fetch selesai (invoiceDetails ada isinya)
 	useEffect(() => {
+		if (invoiceDetails.length === 0) return;
 		setPayAmounts((prev) => {
 			const validIds = new Set(invoiceItems.map((i) => i.id));
 			const next: Record<number, number> = {};
@@ -143,9 +233,9 @@ function KasirPembayaranPage() {
 			}
 			return changed ? next : prev;
 		});
-	}, [invoiceItems]);
+	}, [invoiceItems, invoiceDetails.length]);
 
-	// Pangkas excludedItems mengikuti item aktif (mis. saat invoice di-uncheck).
+	// Pangkas excludedItems mengikuti item aktif
 	useEffect(() => {
 		const validIds = new Set(invoiceItems.map((i) => i.id));
 		setExcludedItems((prev) => {
@@ -182,8 +272,8 @@ function KasirPembayaranPage() {
 		((paymentSource === "cash" && cashReceived >= totalPay) ||
 			(paymentSource === "savings" && savingsBalance >= totalPay));
 
-	// Mutation
-	const paymentMutation = usePostV1Payments({
+	// Create mutation
+	const createMutation = usePostV1Payments({
 		mutation: {
 			onSuccess: (res: any) => {
 				addToast({
@@ -205,6 +295,32 @@ function KasirPembayaranPage() {
 			},
 		},
 	});
+
+	// Update mutation
+	const updateMutation = usePutV1PaymentsId({
+		mutation: {
+			onSuccess: (res: any) => {
+				addToast({
+					variant: "success",
+					title: "Berhasil",
+					message: "Pembayaran berhasil diperbarui.",
+				});
+				navigate({
+					to: "/keuangan/pembayaran/$id",
+					params: { id: String(res.data?.data?.id) },
+				});
+			},
+			onError: (err: any) => {
+				addToast({
+					variant: "error",
+					title: "Gagal",
+					message: err.message || "Gagal memperbarui pembayaran.",
+				});
+			},
+		},
+	});
+
+	const isPending = createMutation.isPending || updateMutation.isPending;
 
 	const handleSubmit = () => {
 		if (paymentSource === "savings" && totalPay > savingsBalance) {
@@ -231,26 +347,32 @@ function KasirPembayaranPage() {
 			.filter((i) => !i.isSavings)
 			.map((i) => ({ name: i.name, amount: i.amount }));
 
-		paymentMutation.mutate({
-			data: {
-				academic_year_id: activeAy?.id || 1,
-				student_id: selectedStudent.id,
-				source: paymentSource,
-				payment_date: new Date().toISOString().split("T")[0],
-				items: Object.entries(payAmounts)
-					.filter(([id, amt]) => amt > 0 && !excludedItems.includes(Number(id)))
-					.map(([itemId, amt]) => ({
-						invoice_item_id: Number(itemId),
-						amount: amt,
-					})),
-				incidental_items:
-					customIncidentals.length > 0 ? customIncidentals : undefined,
-				notes: notes || undefined,
-				savings_deposit:
-					totalSavingsDeposit > 0 ? totalSavingsDeposit : undefined,
-			},
-		} as any);
+		const payload = {
+			academic_year_id: activeAy?.id || 1,
+			student_id: selectedStudent.id,
+			source: paymentSource,
+			payment_date: paymentDate,
+			items: Object.entries(payAmounts)
+				.filter(([id, amt]) => amt > 0 && !excludedItems.includes(Number(id)))
+				.map(([itemId, amt]) => ({
+					invoice_item_id: Number(itemId),
+					amount: amt,
+				})),
+			incidental_items:
+				customIncidentals.length > 0 ? customIncidentals : undefined,
+			notes: notes || undefined,
+			savings_deposit:
+				totalSavingsDeposit > 0 ? totalSavingsDeposit : undefined,
+		};
+
+		if (editId) {
+			updateMutation.mutate({ id: editId, data: payload } as any);
+		} else {
+			createMutation.mutate({ data: payload } as any);
+		}
 	};
+
+	const isEditMode = !!editId;
 
 	return (
 		<div className="h-full flex flex-col">
@@ -258,7 +380,7 @@ function KasirPembayaranPage() {
 			<div className="flex-shrink-0 bg-white border-b border-gray-200 px-6 py-3">
 				<div className="flex items-center gap-4">
 					<h2 className="text-lg font-bold text-gray-900 whitespace-nowrap">
-						Pembayaran
+						{isEditMode ? "Edit Pembayaran" : "Pembayaran"}
 					</h2>
 					<div className="flex-1 max-w-xl relative">
 						<StudentSearch
@@ -272,9 +394,11 @@ function KasirPembayaranPage() {
 								setIncidentalItems([]);
 								setCashReceived(0);
 								setDepositChange(false);
+								setPaymentDate(new Date().toISOString().split("T")[0]);
 								setNotes("");
 								setPaymentSource("cash");
 							}}
+							disabled={isEditMode}
 						/>
 					</div>
 				</div>
@@ -286,7 +410,9 @@ function KasirPembayaranPage() {
 					<div className="text-center">
 						<User className="w-16 h-16 text-gray-300 mx-auto mb-3" />
 						<p className="text-gray-500">
-							Cari dan pilih siswa untuk memulai pembayaran
+							{isEditMode
+								? "Memuat data pembayaran..."
+								: "Cari dan pilih siswa untuk memulai pembayaran"}
 						</p>
 					</div>
 				</div>
@@ -306,6 +432,7 @@ function KasirPembayaranPage() {
 								excludedItems={excludedItems}
 								onToggleItem={toggleItem}
 								initialInvoiceId={initialInvoiceId}
+								isEditMode={isEditMode}
 								onToggleInvoice={(id) =>
 									setSelectedInvoices((prev) =>
 										prev.includes(id)
@@ -351,11 +478,13 @@ function KasirPembayaranPage() {
 								variant="primary"
 								className="w-full justify-center py-3 text-base"
 								onClick={handleSubmit}
-								disabled={!canSubmit || paymentMutation.isPending}
+								disabled={!canSubmit || isPending}
 							>
-								{paymentMutation.isPending
+								{isPending
 									? "Memproses..."
-									: `Proses & Cetak Struk — ${formatCurrency(totalPay)}`}
+									: isEditMode
+										? `Simpan Perubahan — ${formatCurrency(totalPay)}`
+										: `Proses & Cetak Struk — ${formatCurrency(totalPay)}`}
 							</Button>
 						</div>
 					</div>

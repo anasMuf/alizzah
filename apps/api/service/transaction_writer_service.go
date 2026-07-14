@@ -14,6 +14,7 @@ type TransactionWriterService interface {
 	WriteVaultCredit(academicYearID uint, date time.Time, amount float64, sourceType string, sourceID *uint, description string, createdBy uint, tx *gorm.DB) error
 	WriteVaultDebit(academicYearID uint, date time.Time, amount float64, sourceType string, sourceID *uint, description string, createdBy uint, tx *gorm.DB) error
 	DeleteCashBySource(tx *gorm.DB, sourceType string, sourceID uint) error
+	DeleteVaultBySource(tx *gorm.DB, sourceType string, sourceID uint) error
 }
 
 type transactionWriterService struct {
@@ -99,4 +100,8 @@ func (s *transactionWriterService) WriteVaultDebit(academicYearID uint, date tim
 
 func (s *transactionWriterService) DeleteCashBySource(tx *gorm.DB, sourceType string, sourceID uint) error {
 	return s.cashRepo.DeleteBySource(tx, sourceType, sourceID)
+}
+
+func (s *transactionWriterService) DeleteVaultBySource(tx *gorm.DB, sourceType string, sourceID uint) error {
+	return s.vaultRepo.DeleteBySource(tx, sourceType, sourceID)
 }

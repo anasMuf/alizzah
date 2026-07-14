@@ -172,3 +172,87 @@ func (h *PaymentHandler) GetByStudent(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil mengambil pembayaran siswa", Data: payments})
 }
+
+// Update godoc
+// @Summary      Update payment
+// @Description  Membatalkan payment lama & membuat payment baru dengan data koreksi
+// @Tags         payments
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id       path      int                      true  "Payment ID"
+// @Param        request  body      dto.CreatePaymentRequest true  "Update payment request"
+// @Success      200      {object}  dto.SuccessResponse{data=dto.PaymentDetailResponse}
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      401      {object}  dto.ErrorResponse
+// @Failure      403      {object}  dto.ErrorResponse
+// @Failure      404      {object}  dto.ErrorResponse
+// @Failure      422      {object}  dto.ErrorResponse
+// @Failure      500      {object}  dto.ErrorResponse
+// @Router       /v1/payments/{id} [put]
+func (h *PaymentHandler) Update(c echo.Context) error {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: "ID tidak valid",
+		})
+	}
+
+	var req dto.CreatePaymentRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: err.Error(),
+		})
+	}
+	if err := c.Validate(req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status: http.StatusBadRequest, Code: "VALIDATION_ERROR", Message: err.Error(),
+		})
+	}
+
+	createdBy, err := middleware.GetUserID(c)
+	if err != nil {
+		return err
+	}
+
+	payment, err := h.service.Update(uint(id), createdBy, req)
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{Status: status, Code: code, Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "Pembayaran berhasil diperbarui", Data: payment,
+	})
+}
+
+// Delete godoc
+// @Summary      Delete payment
+// @Description  Membatalkan seluruh efek keuangan & menghapus payment
+// @Tags         payments
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id   path      int  true  "Payment ID"
+// @Success      200  {object}  dto.SuccessResponse
+// @Failure      400  {object}  dto.ErrorResponse
+// @Failure      401  {object}  dto.ErrorResponse
+// @Failure      403  {object}  dto.ErrorResponse
+// @Failure      404  {object}  dto.ErrorResponse
+// @Failure      500  {object}  dto.ErrorResponse
+// @Router       /v1/payments/{id} [delete]
+func (h *PaymentHandler) Delete(c echo.Context) error {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: "ID tidak valid",
+		})
+	}
+
+	if err := h.service.Delete(uint(id)); err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{Status: status, Code: code, Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Pembayaran berhasil dihapus"})
+}

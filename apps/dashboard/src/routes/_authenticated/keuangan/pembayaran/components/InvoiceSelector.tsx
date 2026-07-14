@@ -14,6 +14,7 @@ interface InvoiceSelectorProps {
 	payAmounts: Record<number, number>;
 	excludedItems: number[];
 	initialInvoiceId: number | null;
+	isEditMode?: boolean;
 	onToggleInvoice: (id: number) => void;
 	onToggleItem: (itemId: number) => void;
 	onAmountChange: (itemId: number, val: number) => void;
@@ -28,6 +29,7 @@ export function InvoiceSelector({
 	payAmounts,
 	excludedItems,
 	initialInvoiceId,
+	isEditMode = false,
 	onToggleInvoice,
 	onToggleItem,
 	onAmountChange,
@@ -42,6 +44,18 @@ export function InvoiceSelector({
 	const [qtyEditingItem, setQtyEditingItem] = useState<any>(null);
 	const [qtyValue, setQtyValue] = useState("");
 
+	// Track pre-filled invoice IDs (from edit mode) — always show these even if paid & unchecked
+	const preFilledIdsRef = useRef<Set<number>>(new Set());
+	useEffect(() => {
+		if (
+			isEditMode &&
+			selectedInvoices.length > 0 &&
+			preFilledIdsRef.current.size === 0
+		) {
+			preFilledIdsRef.current = new Set(selectedInvoices);
+		}
+	}, [isEditMode, selectedInvoices]);
+
 	// Fetch invoice list
 	const { data: invoicesResp, isLoading } = useGetV1StudentsIdInvoices(
 		studentId,
@@ -53,7 +67,10 @@ export function InvoiceSelector({
 	);
 	const allInvoices = (invoicesResp?.data as any)?.data || [];
 	const unpaidInvoices = allInvoices.filter(
-		(inv: any) => inv.status !== "paid",
+		(inv: any) =>
+			inv.status !== "paid" ||
+			selectedInvoices.includes(inv.id) ||
+			preFilledIdsRef.current.has(inv.id),
 	);
 
 	// Auto-select initial invoice
@@ -97,7 +114,11 @@ export function InvoiceSelector({
 		invoiceDetails.forEach((detail: any) => {
 			detail?.items?.forEach((item: any) => {
 				const sisa = Number(item.amount || 0) - Number(item.paid_amount || 0);
-				if (sisa > 0 || item.category === "dispensation") {
+				if (
+					sisa > 0 ||
+					item.category === "dispensation" ||
+					(payAmounts[item.id] ?? 0) > 0
+				) {
 					const isLockedBySpp =
 						item.category === "monthly_spp" && hasDispensation.has(detail.id);
 					items.push({
@@ -166,27 +187,25 @@ export function InvoiceSelector({
 	const onExcludeItemsRef = useRef(onExcludeItems);
 	onExcludeItemsRef.current = onExcludeItems;
 
-	// Auto-fill pay amounts + exclude new items by default
+	// Auto-fill pay amounts + exclude new items by default (skip during edit — values already pre-filled)
 	useEffect(() => {
-		if (invoiceItems.length > 0) {
-			// Auto-fill pay amounts for all items
-			invoiceItems.forEach((item) => {
-				onAmountChangeRef.current(item.id, item.sisa_tagihan);
-			});
+		if (isEditMode || invoiceItems.length === 0) return;
 
-			// Exclude items that just appeared (not seen before)
-			const currentIds = new Set(invoiceItems.map((i) => i.id));
-			const newItems = invoiceItems.filter(
-				(item) => !prevIdsRef.current.has(item.id),
-			);
-			if (newItems.length > 0) {
-				onExcludeItemsRef.current(newItems.map((item) => item.id));
-			}
-			prevIdsRef.current = currentIds;
-		} else {
-			prevIdsRef.current.clear();
+		// Auto-fill pay amounts for all items
+		invoiceItems.forEach((item) => {
+			onAmountChangeRef.current(item.id, item.sisa_tagihan);
+		});
+
+		// Exclude items that just appeared (not seen before)
+		const currentIds = new Set(invoiceItems.map((i) => i.id));
+		const newItems = invoiceItems.filter(
+			(item) => !prevIdsRef.current.has(item.id),
+		);
+		if (newItems.length > 0) {
+			onExcludeItemsRef.current(newItems.map((item) => item.id));
 		}
-	}, [invoiceItems]);
+		prevIdsRef.current = currentIds;
+	}, [invoiceItems, isEditMode]);
 
 	if (isLoading) {
 		return (
@@ -247,7 +266,9 @@ export function InvoiceSelector({
 												: "Lainnya"}
 							</span>
 							<span className="font-semibold text-rose-600 tabular-nums">
-								{formatCurrency(sisa)}
+								{formatCurrency(
+									isEditMode && sisa === 0 ? Number(inv.total_amount) : sisa,
+								)}
 							</span>
 						</label>
 					);
@@ -336,7 +357,11 @@ export function InvoiceSelector({
 											<span
 												className={`text-xs tabular-nums ${item.is_dispensation ? "text-green-600" : "text-gray-500"}`}
 											>
-												{formatCurrency(item.sisa_tagihan)}
+												{formatCurrency(
+													isEditMode && item.sisa_tagihan === 0
+														? (payAmounts[item.id] ?? item.sisa_tagihan)
+														: item.sisa_tagihan,
+												)}
 											</span>
 											<div className="w-36">
 												{item.is_dispensation || item.is_locked ? (

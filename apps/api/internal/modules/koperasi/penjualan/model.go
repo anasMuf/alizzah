@@ -12,6 +12,7 @@ type Sale struct {
 	model.PrimaryKey
 	AcademicYearID uint      `gorm:"not null;index" json:"academic_year_id"`
 	StudentID      *uint     `gorm:"index" json:"student_id"`
+	PaymentID      *uint     `gorm:"index" json:"payment_id"`
 	BuyerName      string    `gorm:"size:100" json:"buyer_name"`
 	SaleDate       time.Time `gorm:"type:date;not null" json:"sale_date"`
 	TotalAmount    float64   `gorm:"type:decimal(15,2);not null" json:"total_amount"`

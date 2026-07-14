@@ -244,14 +244,14 @@ function KeuanganOverviewPage() {
 								<span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block w-64 bg-gray-800 text-white text-xs rounded-lg px-3 py-2 shadow-lg z-50">
 									Total pembayaran tagihan hari ini.
 									{incomeCategories.length > 0 && (
-										<div className="mt-1.5 pt-1.5 border-t border-gray-600 space-y-0.5">
+										<span className="mt-1.5 pt-1.5 border-t border-gray-600 space-y-0.5 block">
 											{incomeCategories.map((c) => (
-												<div key={c.category} className="flex justify-between">
+												<span key={c.category} className="flex justify-between">
 													<span>{c.category}</span>
 													<span>{formatCurrency(c.amount)}</span>
-												</div>
+												</span>
 											))}
-										</div>
+										</span>
 									)}
 								</span>
 							</span>
@@ -276,14 +276,14 @@ function KeuanganOverviewPage() {
 								<span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block w-64 bg-gray-800 text-white text-xs rounded-lg px-3 py-2 shadow-lg z-50">
 									Total pengeluaran hari ini.
 									{expenseCategories.length > 0 && (
-										<div className="mt-1.5 pt-1.5 border-t border-gray-600 space-y-0.5">
+										<span className="mt-1.5 pt-1.5 border-t border-gray-600 space-y-0.5 block">
 											{expenseCategories.map((c) => (
-												<div key={c.category} className="flex justify-between">
+												<span key={c.category} className="flex justify-between">
 													<span>{c.category}</span>
 													<span>{formatCurrency(c.amount)}</span>
-												</div>
+												</span>
 											))}
-										</div>
+										</span>
 									)}
 								</span>
 							</span>

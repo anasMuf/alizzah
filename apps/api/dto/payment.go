@@ -67,6 +67,7 @@ type PaymentDetailResponse struct {
 type PaymentItemResponse struct {
 	ID              uint    `json:"id"`
 	InvoiceItemID   uint    `json:"invoice_item_id"`
+	InvoiceID       uint    `json:"invoice_id"`
 	InvoiceItemName string  `json:"invoice_item_name"`
 	Category        string  `json:"category"`
 	Amount          float64 `json:"amount"`

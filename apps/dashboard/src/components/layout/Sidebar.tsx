@@ -114,10 +114,10 @@ export function Sidebar({ isOpen }: SidebarProps) {
 									<NavLink to="/keuangan/tabungan" icon={PiggyBank}>
 										Tabungan
 									</NavLink>
-									<NavLink to="/keuangan/penerimaan" icon={TrendingUp}>
+									<NavLink to="/keuangan/penerimaan" icon={TrendingDown}>
 										Penerimaan
 									</NavLink>
-									<NavLink to="/keuangan/pengeluaran" icon={TrendingDown} exact>
+									<NavLink to="/keuangan/pengeluaran" icon={TrendingUp} exact>
 										Pengeluaran
 									</NavLink>
 									<NavLink

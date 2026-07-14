@@ -7,12 +7,14 @@ interface StudentSearchProps {
 	selectedStudent: any;
 	onSelect: (student: any) => void;
 	onClear: () => void;
+	disabled?: boolean;
 }
 
 export function StudentSearch({
 	selectedStudent,
 	onSelect,
 	onClear,
+	disabled = false,
 }: StudentSearchProps) {
 	const searchInputRef = useRef<HTMLInputElement>(null);
 	const [searchStudent, setSearchStudent] = useState("");
@@ -41,13 +43,15 @@ export function StudentSearch({
 						{selectedStudent.active_enrollment?.class_group?.name || "-"}
 					</span>
 				</div>
-				<button
-					type="button"
-					onClick={onClear}
-					className="text-gray-400 hover:text-gray-600"
-				>
-					<X className="w-4 h-4" />
-				</button>
+				{!disabled && (
+					<button
+						type="button"
+						onClick={onClear}
+						className="text-gray-400 hover:text-gray-600"
+					>
+						<X className="w-4 h-4" />
+					</button>
+				)}
 			</div>
 		);
 	}

@@ -1,13 +1,17 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
 	ArrowLeft,
 	ChevronRight,
 	Download,
+	Pencil,
 	Printer,
 	Receipt,
+	Trash2,
 } from "lucide-react";
+import { useState } from "react";
 import { useGetV1PaymentsId } from "#/api/endpoints/payments/payments";
-import { Button } from "#/components/ui";
+import { useDeleteV1PaymentsId } from "#/api/endpoints/payments/payments-manual";
+import { Button, ConfirmDialog, useToast } from "#/components/ui";
 import {
 	formatCurrency,
 	formatDate,
@@ -22,9 +26,33 @@ export const Route = createFileRoute("/_authenticated/keuangan/pembayaran/$id")(
 
 function DetailPembayaranPage() {
 	const { id } = Route.useParams();
+	const navigate = useNavigate();
+	const { addToast } = useToast();
 
 	const { data: paymentResp, isLoading } = useGetV1PaymentsId(Number(id));
 	const payment = (paymentResp?.data as any)?.data;
+
+	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+	const deleteMutation = useDeleteV1PaymentsId({
+		mutation: {
+			onSuccess: () => {
+				addToast({
+					variant: "success",
+					title: "Berhasil",
+					message: "Pembayaran berhasil dihapus.",
+				});
+				navigate({ to: "/keuangan/pembayaran" });
+			},
+			onError: (err: any) => {
+				addToast({
+					variant: "error",
+					title: "Gagal",
+					message: err.message || "Gagal menghapus pembayaran.",
+				});
+			},
+		},
+	});
 
 	if (isLoading)
 		return (
@@ -41,6 +69,22 @@ function DetailPembayaranPage() {
 
 	const handlePrint = () => {
 		window.print();
+	};
+
+	const handleEdit = () => {
+		navigate({
+			to: "/keuangan/pembayaran/baru",
+			search: {
+				student_id: undefined,
+				invoice_id: undefined,
+				edit_id: Number(id),
+			},
+		});
+	};
+
+	const handleDelete = () => {
+		setShowDeleteConfirm(false);
+		deleteMutation.mutate(Number(id));
 	};
 
 	return (
@@ -73,6 +117,16 @@ function DetailPembayaranPage() {
 				<div className="flex space-x-3">
 					<Button variant="secondary" onClick={handlePrint}>
 						<Printer className="w-4 h-4 mr-2" /> Cetak Struk
+					</Button>
+					<Button variant="secondary" onClick={handleEdit}>
+						<Pencil className="w-4 h-4 mr-2" /> Ubah
+					</Button>
+					<Button
+						variant="secondary"
+						onClick={() => setShowDeleteConfirm(true)}
+						className="!text-red-600 hover:!bg-red-50"
+					>
+						<Trash2 className="w-4 h-4 mr-2" /> Hapus
 					</Button>
 					<Button variant="primary">
 						<Download className="w-4 h-4 mr-2" /> Download PDF
@@ -256,6 +310,18 @@ function DetailPembayaranPage() {
 					<p>Simpan tanda terima ini sebagai bukti pembayaran yang sah.</p>
 				</div>
 			</div>
+
+			{/* Delete Confirmation Dialog */}
+			<ConfirmDialog
+				open={showDeleteConfirm}
+				title="Hapus Pembayaran"
+				description={`Yakin hapus pembayaran #${payment.id}? Seluruh catatan keuangan terkait (kas, tabungan, invoice) akan dikembalikan seperti semula.`}
+				confirmLabel="Ya, Hapus"
+				cancelLabel="Batal"
+				variant="danger"
+				onConfirm={handleDelete}
+				onCancel={() => setShowDeleteConfirm(false)}
+			/>
 		</div>
 	);
 }

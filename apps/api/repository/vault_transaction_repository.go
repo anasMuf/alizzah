@@ -14,6 +14,7 @@ type VaultTransactionRepository interface {
 	CreateWithTx(vt *model.VaultTransaction, db *gorm.DB) error
 	SumFiltered(params dto.VaultTransactionQueryParams) (credit, debit float64, err error)
 	GetCurrentBalance(academicYearID uint) (float64, error)
+	DeleteBySource(tx *gorm.DB, sourceType string, sourceID uint) error
 }
 
 type vaultTransactionRepository struct {
@@ -22,6 +23,11 @@ type vaultTransactionRepository struct {
 
 func NewVaultTransactionRepository(db *gorm.DB) VaultTransactionRepository {
 	return &vaultTransactionRepository{db: db}
+}
+
+func (r *vaultTransactionRepository) DeleteBySource(tx *gorm.DB, sourceType string, sourceID uint) error {
+	return tx.Where("source_type = ? AND source_id = ?", sourceType, sourceID).
+		Delete(&model.VaultTransaction{}).Error
 }
 
 func (r *vaultTransactionRepository) FindAll(params dto.VaultTransactionQueryParams) ([]model.VaultTransaction, int64, error) {

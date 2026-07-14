@@ -169,6 +169,7 @@ func main() {
 	seeders.FixClassGroupSchedules(db)         // Fix schedule JSON format from old "groups" to "weekdays/weekend"
 	seeders.MigrateRolesToModules(db)          // RBAC by-modul: role-bundle lama -> admin + grant modul
 	seeders.ReplaceInvoiceItemsWithSummary(db) // Ganti invoice_items detail registrasi/biaya awal menjadi format summary
+	seeders.ReplacePaymentItemsWithSummary(db) // Gabung payment_items detail jadi 1 summary per payment
 	seeders.BackfillCashTransferToVault(db)    // Buat cash_transactions DEBIT untuk setoran tabungan yang belum ada transfer ke brangkas
 	seeders.SwapTransactionTypes(db)           // Swap credit↔debit: ubah perspektif bank statement → akuntansi sekolah
 

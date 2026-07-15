@@ -4,7 +4,7 @@ import { ChevronRight, Save } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useGetV1ExpenseCategories } from "#/api/endpoints/expense-categories/expense-categories";
 import { usePostV1Expenses } from "#/api/endpoints/expenses/expenses";
-import { Alert, Button, useToast } from "#/components/ui";
+import { Alert, Button, CurrencyInput, useToast } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
 
 export const Route = createFileRoute(
@@ -23,7 +23,7 @@ function CatatPengeluaranPage() {
 	const [expenseDate, setExpenseDate] = useState(today);
 	const [parentCategoryId, setParentCategoryId] = useState("");
 	const [subCategoryId, setSubCategoryId] = useState("");
-	const [amount, setAmount] = useState("");
+	const [amount, setAmount] = useState(0);
 	const [description, setDescription] = useState("");
 	const [_receiptFile, setReceiptFile] = useState("");
 	const [formError, setFormError] = useState("");
@@ -85,8 +85,7 @@ function CatatPengeluaranPage() {
 		if (!parentCategoryId) errors.parent_category = "Kategori wajib dipilih.";
 		if (!subCategoryId)
 			errors.expense_category_id = "Sub-kategori wajib dipilih.";
-		if (!amount || Number(amount) <= 0)
-			errors.amount = "Nominal harus lebih dari 0.";
+		if (amount <= 0) errors.amount = "Nominal harus lebih dari 0.";
 		if (!description.trim()) errors.description = "Keterangan wajib diisi.";
 
 		setFieldErrors(errors);
@@ -109,7 +108,7 @@ function CatatPengeluaranPage() {
 				academic_year_id: activeAy.id,
 				expense_category_id: Number(subCategoryId),
 				expense_date: expenseDate,
-				amount: Number(amount),
+				amount,
 				description: description.trim(),
 				receipt_url: undefined,
 			},
@@ -266,26 +265,21 @@ function CatatPengeluaranPage() {
 							>
 								Nominal <span className="text-red-500">*</span>
 							</label>
-							<div className="relative mt-2 rounded-md shadow-sm">
-								<div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-									<span className="text-gray-500 sm:text-sm">Rp</span>
-								</div>
-								<input
+							<div className="mt-2">
+								<CurrencyInput
 									id="amount"
-									type="number"
-									min="1"
-									step="1"
 									value={amount}
-									onChange={(e) => {
-										setAmount(e.target.value);
+									onChange={(val) => {
+										setAmount(val);
 										setFieldErrors((prev) => {
 											const n = { ...prev };
 											delete n.amount;
 											return n;
 										});
 									}}
+									showSymbol
 									placeholder="0"
-									className={`block w-full sm:w-64 rounded-md border-0 py-1.5 pl-10 pr-3 text-gray-900 ring-1 ring-inset ${fieldErrors.amount ? "ring-red-300 focus:ring-red-500" : "ring-gray-300 focus:ring-indigo-600"} placeholder:text-gray-400 focus:ring-2 focus:ring-inset sm:text-sm sm:leading-6`}
+									className={`sm:w-64 ${fieldErrors.amount ? "ring-1 ring-red-500" : ""}`}
 								/>
 							</div>
 							{fieldErrors.amount && (

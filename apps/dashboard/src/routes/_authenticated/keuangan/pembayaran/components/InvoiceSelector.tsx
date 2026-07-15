@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { Pencil } from "lucide-react";
+import { ChevronDown, Pencil } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useGetV1InvoicesBatch } from "#/api/endpoints/invoices/invoice-batch";
 import { usePutV1InvoicesIdItemsItemIdQuantity } from "#/api/endpoints/invoices/invoice-quantity";
@@ -72,6 +72,13 @@ export function InvoiceSelector({
 			selectedInvoices.includes(inv.id) ||
 			preFilledIdsRef.current.has(inv.id),
 	);
+	const paidInvoices = allInvoices.filter(
+		(inv: any) =>
+			inv.status === "paid" &&
+			!selectedInvoices.includes(inv.id) &&
+			!preFilledIdsRef.current.has(inv.id),
+	);
+	const [showPaidHistory, setShowPaidHistory] = useState(false);
 
 	// Auto-select initial invoice
 	useEffect(() => {
@@ -219,8 +226,54 @@ export function InvoiceSelector({
 
 	if (unpaidInvoices.length === 0) {
 		return (
-			<div className="bg-green-50 p-3 rounded-md text-sm text-green-700">
-				Tidak ada tagihan tertunggak.
+			<div className="space-y-4">
+				<div className="bg-green-50 p-3 rounded-md text-sm text-green-700">
+					Tidak ada tagihan tertunggak.
+				</div>
+				{paidInvoices.length > 0 && (
+					<div className="border border-gray-200 rounded-lg overflow-hidden">
+						<button
+							type="button"
+							onClick={() => setShowPaidHistory(!showPaidHistory)}
+							className="w-full flex items-center justify-between px-3 py-2.5 bg-gray-50 hover:bg-gray-100 transition-colors text-sm"
+						>
+							<span className="font-medium text-gray-700">
+								Riwayat Tagihan Terbayar ({paidInvoices.length})
+							</span>
+							<ChevronDown
+								className={`w-4 h-4 text-gray-400 transition-transform ${showPaidHistory ? "rotate-180" : ""}`}
+							/>
+						</button>
+						{showPaidHistory && (
+							<div className="divide-y divide-gray-100">
+								{paidInvoices.map((inv: any) => (
+									<div
+										key={inv.id}
+										className="flex items-center px-3 py-2.5 text-sm"
+									>
+										<span className="flex-1 text-gray-600">
+											{inv.type === "monthly"
+												? `Bulanan ${inv.month}/${inv.year}`
+												: inv.type === "registration"
+													? "Registrasi"
+													: inv.type === "initial"
+														? "Biaya Awal"
+														: inv.type === "daycare_initial"
+															? "Biaya Awal Daycare"
+															: "Lainnya"}
+										</span>
+										<span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full font-medium">
+											Lunas
+										</span>
+										<span className="ml-2 font-semibold text-gray-900 tabular-nums">
+											{formatCurrency(Number(inv.total_amount))}
+										</span>
+									</div>
+								))}
+							</div>
+						)}
+					</div>
+				)}
 			</div>
 		);
 	}
@@ -274,6 +327,52 @@ export function InvoiceSelector({
 					);
 				})}
 			</div>
+
+			{/* Paid invoices history */}
+			{paidInvoices.length > 0 && (
+				<div className="mt-4 border border-gray-200 rounded-lg overflow-hidden">
+					<button
+						type="button"
+						onClick={() => setShowPaidHistory(!showPaidHistory)}
+						className="w-full flex items-center justify-between px-3 py-2.5 bg-gray-50 hover:bg-gray-100 transition-colors text-sm"
+					>
+						<span className="font-medium text-gray-700">
+							Riwayat Tagihan Terbayar ({paidInvoices.length})
+						</span>
+						<ChevronDown
+							className={`w-4 h-4 text-gray-400 transition-transform ${showPaidHistory ? "rotate-180" : ""}`}
+						/>
+					</button>
+					{showPaidHistory && (
+						<div className="divide-y divide-gray-100">
+							{paidInvoices.map((inv: any) => (
+								<div
+									key={inv.id}
+									className="flex items-center px-3 py-2.5 text-sm"
+								>
+									<span className="flex-1 text-gray-600">
+										{inv.type === "monthly"
+											? `Bulanan ${inv.month}/${inv.year}`
+											: inv.type === "registration"
+												? "Registrasi"
+												: inv.type === "initial"
+													? "Biaya Awal"
+													: inv.type === "daycare_initial"
+														? "Biaya Awal Daycare"
+														: "Lainnya"}
+									</span>
+									<span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full font-medium">
+										Lunas
+									</span>
+									<span className="ml-2 font-semibold text-gray-900 tabular-nums">
+										{formatCurrency(Number(inv.total_amount))}
+									</span>
+								</div>
+							))}
+						</div>
+					)}
+				</div>
+			)}
 
 			{/* Item detail table */}
 			{invoiceItems.length > 0 &&

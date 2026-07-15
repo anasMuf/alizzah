@@ -972,22 +972,39 @@ func (s *invoiceGenerateService) addDaycareItemToInvoice(invoiceID uint, name st
 // upsertDaycareAttendanceItem handles attendance-based daycare items.
 // Keeps paid items untouched. Deletes old unpaid items, creates one new unpaid
 // item with the remaining amount (total - totalPaid).
-func (s *invoiceGenerateService) upsertDaycareAttendanceItem(invoiceID uint, namePrefix string, name string, amount float64, quantity *uint, unitPrice *float64) error {
+// itemCategory allows distinguishing SPD ("daycare") from konsumsi ("daycare_meal").
+func (s *invoiceGenerateService) upsertDaycareAttendanceItem(invoiceID uint, namePrefix string, name string, amount float64, quantity *uint, unitPrice *float64, itemCategory string) error {
 	items, _ := s.invoiceItemRepo.FindByInvoiceID(invoiceID)
 
 	var totalPaidAmount float64
 	var totalPaidQty uint
 
+	// Determine which categories to clean up: the target category, plus
+	// the legacy "daycare" category when writing "daycare_meal" (migration).
+	matchCategories := []string{itemCategory}
+	if itemCategory == "daycare_meal" {
+		matchCategories = append(matchCategories, "daycare")
+	}
+
 	for _, item := range items {
-		if item.Category == "daycare" && strings.HasPrefix(item.Name, namePrefix) {
-			totalPaidAmount += item.PaidAmount
-			if item.Quantity != nil && item.PaidAmount > 0 {
-				totalPaidQty += *item.Quantity
+		matched := false
+		for _, mc := range matchCategories {
+			if item.Category == mc && strings.HasPrefix(item.Name, namePrefix) {
+				matched = true
+				break
 			}
-			// Hapus item unpaid (akan diganti dengan yg baru)
-			if item.PaidAmount == 0 {
-				s.invoiceItemRepo.Delete(item.ID)
-			}
+		}
+		if !matched {
+			continue
+		}
+
+		totalPaidAmount += item.PaidAmount
+		if item.Quantity != nil && item.PaidAmount > 0 {
+			totalPaidQty += *item.Quantity
+		}
+		// Hapus item unpaid (akan diganti dengan yg baru)
+		if item.PaidAmount == 0 {
+			s.invoiceItemRepo.Delete(item.ID)
 		}
 	}
 
@@ -1009,7 +1026,7 @@ func (s *invoiceGenerateService) upsertDaycareAttendanceItem(invoiceID uint, nam
 	}
 
 	return s.invoiceItemRepo.Create(&model.InvoiceItem{
-		InvoiceID: invoiceID, Name: itemName, Category: "daycare",
+		InvoiceID: invoiceID, Name: itemName, Category: itemCategory,
 		Amount: unpaidAmount, Quantity: &unpaidQty, UnitPrice: unitPrice,
 	})
 }
@@ -1162,7 +1179,7 @@ func (s *invoiceGenerateService) GenerateDaycareMonthlyInvoices(params dto.Gener
 			qty := uint(count)
 			name := fmt.Sprintf("%s (%d hari)", spdItem.Name, count)
 			log.Printf("[Daycare SPD] Regular: tambah item %s = %d x %.0f = %.0f", name, count, dailyRate, dailyRate*float64(count))
-			if err := s.upsertDaycareAttendanceItem(invoice.ID, spdItem.Name, name, dailyRate*float64(count), &qty, &dailyRate); err != nil {
+			if err := s.upsertDaycareAttendanceItem(invoice.ID, spdItem.Name, name, dailyRate*float64(count), &qty, &dailyRate, "daycare"); err != nil {
 				return err
 			}
 		}
@@ -1176,7 +1193,7 @@ func (s *invoiceGenerateService) GenerateDaycareMonthlyInvoices(params dto.Gener
 			qty := uint(mealDays)
 			name := fmt.Sprintf("%s (%d hari)", mealItem.Name, mealDays)
 			log.Printf("[Daycare SPD] Meal: %d hari x %.0f = %.0f", mealDays, dailyRate, dailyRate*float64(mealDays))
-			if err := s.upsertDaycareAttendanceItem(invoice.ID, mealItem.Name, name, dailyRate*float64(mealDays), &qty, &dailyRate); err != nil {
+			if err := s.upsertDaycareAttendanceItem(invoice.ID, mealItem.Name, name, dailyRate*float64(mealDays), &qty, &dailyRate, "daycare_meal"); err != nil {
 				return err
 			}
 		}
@@ -1190,7 +1207,7 @@ func (s *invoiceGenerateService) GenerateDaycareMonthlyInvoices(params dto.Gener
 			qty := uint(tpqDays)
 			name := fmt.Sprintf("%s (%d hari)", tpqItem.Name, tpqDays)
 			log.Printf("[Daycare SPD] TPQ: %d hari x %.0f = %.0f", tpqDays, dailyRate, dailyRate*float64(tpqDays))
-			if err := s.upsertDaycareAttendanceItem(invoice.ID, tpqItem.Name, name, dailyRate*float64(tpqDays), &qty, &dailyRate); err != nil {
+			if err := s.upsertDaycareAttendanceItem(invoice.ID, tpqItem.Name, name, dailyRate*float64(tpqDays), &qty, &dailyRate, "daycare_meal"); err != nil {
 				return err
 			}
 		}
@@ -1223,16 +1240,18 @@ func (s *invoiceGenerateService) applyDispensationToInvoice(invoice *model.Invoi
 	}
 
 	for _, cat := range categories {
-		// 1. Remove old unpaid dispensation items for this category scope
-		//    SPP dispensations only target SPP → we keep them if only daycare changes.
-		//    For simplicity, remove ALL unpaid dispensation items and re-apply all.
-		//    (Items that are already paid stay untouched.)
+		// Map dispensation fee_category to the invoice item category it affects.
+		// "daycare" dispensation only targets konsumsi ("daycare_meal"), not SPD.
+		itemCat := cat
+		if cat == "daycare" {
+			itemCat = "daycare_meal"
+		}
 
 		// 2. Calculate the base amount for this category
 		baseAmount := float64(0)
 		attendanceDays := uint(0)
 		for _, item := range items {
-			if item.Category == cat {
+			if item.Category == itemCat {
 				baseAmount += item.Amount
 				if item.Quantity != nil {
 					attendanceDays += *item.Quantity
@@ -1356,13 +1375,15 @@ func (s *invoiceGenerateService) RemoveDaycareFromFutureInvoices(studentID uint,
 	}
 
 	for _, inv := range invoices {
-		deleted, err := s.invoiceItemRepo.DeleteUnpaidByInvoiceAndCategory(inv.ID, "daycare")
-		if err != nil {
-			return err
-		}
-		if deleted > 0 {
-			if err := s.recalculateInvoiceTotal(inv.ID); err != nil {
+		for _, cat := range []string{"daycare", "daycare_meal"} {
+			deleted, err := s.invoiceItemRepo.DeleteUnpaidByInvoiceAndCategory(inv.ID, cat)
+			if err != nil {
 				return err
+			}
+			if deleted > 0 {
+				if err := s.recalculateInvoiceTotal(inv.ID); err != nil {
+					return err
+				}
 			}
 		}
 	}

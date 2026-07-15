@@ -580,14 +580,20 @@ function PengaturanTarifIdComponent() {
 					initialData={editingItem}
 					defaultCategory={formCategory}
 					onSave={(data) => {
+						const payload = {
+							...data,
+							start_month: data.start_month
+								? Number(data.start_month)
+								: undefined,
+						};
 						if (editingItem) {
 							updateItemMutation.mutate({
 								id: configId,
 								itemId: editingItem.id as number,
-								data,
+								data: payload,
 							});
 						} else {
-							createItemMutation.mutate({ id: configId, data });
+							createItemMutation.mutate({ id: configId, data: payload });
 						}
 					}}
 				/>
@@ -638,6 +644,7 @@ function ItemFormSlideOver({
 		is_active:
 			initialData?.is_active !== undefined ? initialData.is_active : true,
 		koperasi_product_id: (initialData as any)?.koperasi_product_id || null,
+		start_month: (initialData as any)?.start_month || "",
 	});
 	const { data: products } = useProducts();
 
@@ -768,6 +775,28 @@ function ItemFormSlideOver({
 				/>
 				Wajib (auto masuk tagihan)
 			</label>
+			{form.is_mandatory && (
+				<div>
+					<label className="block text-sm font-medium text-gray-700 mb-1">
+						Mulai Bulan (opsional)
+					</label>
+					<select
+						value={form.start_month}
+						onChange={(e) => setForm({ ...form, start_month: e.target.value })}
+						className="block w-full sm:w-40 rounded-md border-gray-300 text-sm"
+					>
+						<option value="">-- Semua Bulan --</option>
+						{[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+							<option key={m} value={m}>
+								{m}
+							</option>
+						))}
+					</select>
+					<p className="text-xs text-gray-500 mt-1">
+						Jika diisi, item wajib hanya muncul mulai bulan tersebut.
+					</p>
+				</div>
+			)}
 			<label className="flex items-center gap-2 text-sm">
 				<input
 					type="checkbox"

@@ -19,6 +19,7 @@ type ReportRepository interface {
 	// Posisi Kas
 	SumPenerimaanByInvoiceCategory(academicYearID uint, startDate, endDate time.Time) (map[string]float64, error)
 	SumPengeluaranByInvoiceCategory(academicYearID uint, startDate, endDate time.Time) (map[string][]dto.PosisiKasExpense, error)
+	SumIncomeTransactionsByCategory(academicYearID uint, startDate, endDate time.Time) (map[string]float64, error)
 
 	// Transaksi Pengeluaran
 	FindExpensesForMonth(academicYearID uint, startDate, endDate time.Time) ([]model.Expense, error)
@@ -236,31 +237,77 @@ func (r *reportRepository) SumPengeluaranByInvoiceCategory(academicYearID uint, 
 	return result, err
 }
 
-// DailyPenerimaan: penerimaan per hari, optionally filtered by invoice category
+// SumIncomeTransactionsByCategory: total income_transactions grouped by category
+func (r *reportRepository) SumIncomeTransactionsByCategory(academicYearID uint, startDate, endDate time.Time) (map[string]float64, error) {
+	type row struct {
+		Category string
+		Total    float64
+	}
+	var rows []row
+
+	err := r.db.Table("income_transactions").
+		Select("category, SUM(amount) as total").
+		Where("academic_year_id = ? AND transaction_date BETWEEN ? AND ?", academicYearID, startDate, endDate).
+		Group("category").
+		Scan(&rows).Error
+
+	result := make(map[string]float64)
+	for _, row := range rows {
+		result[row.Category] = row.Total
+	}
+	return result, err
+}
+
+// DailyPenerimaan: penerimaan per hari (invoice payments + income transactions), optionally filtered by category
 func (r *reportRepository) DailyPenerimaan(academicYearID uint, startDate, endDate time.Time, category string) (map[string]float64, error) {
 	type row struct {
 		Date  time.Time
 		Total float64
 	}
-	var rows []row
-
-	query := r.db.Table("payment_items pi").
-		Select("p.payment_date as date, SUM(pi.amount) as total").
-		Joins("JOIN invoice_items ii ON ii.id = pi.invoice_item_id").
-		Joins("JOIN payments p ON p.id = pi.payment_id").
-		Where("p.academic_year_id = ? AND p.payment_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
-
-	if category != "" {
-		query = query.Where("ii.category = ?", category)
-	}
-
-	err := query.Group("p.payment_date").Scan(&rows).Error
 
 	result := make(map[string]float64)
-	for _, r := range rows {
-		result[r.Date.Format("2006-01-02")] = r.Total
+
+	// Invoice payments
+	{
+		var rows []row
+		query := r.db.Table("payment_items pi").
+			Select("p.payment_date as date, SUM(pi.amount) as total").
+			Joins("JOIN invoice_items ii ON ii.id = pi.invoice_item_id").
+			Joins("JOIN payments p ON p.id = pi.payment_id").
+			Where("p.academic_year_id = ? AND p.payment_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
+
+		if category != "" {
+			query = query.Where("ii.category = ?", category)
+		}
+
+		if err := query.Group("p.payment_date").Scan(&rows).Error; err != nil {
+			return nil, err
+		}
+		for _, row := range rows {
+			result[row.Date.Format("2006-01-02")] += row.Total
+		}
 	}
-	return result, err
+
+	// Income transactions
+	{
+		var rows []row
+		query := r.db.Table("income_transactions").
+			Select("transaction_date as date, SUM(amount) as total").
+			Where("academic_year_id = ? AND transaction_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
+
+		if category != "" {
+			query = query.Where("category = ?", category)
+		}
+
+		if err := query.Group("transaction_date").Scan(&rows).Error; err != nil {
+			return nil, err
+		}
+		for _, row := range rows {
+			result[row.Date.Format("2006-01-02")] += row.Total
+		}
+	}
+
+	return result, nil
 }
 
 // DailyPengeluaran: pengeluaran per hari, optionally filtered by parent expense_category invoice_category
@@ -294,10 +341,11 @@ func (r *reportRepository) DailyPengeluaran(academicYearID uint, startDate, endD
 	return result, err
 }
 
-// SumPenerimaan: total penerimaan in range, optionally filtered by category
+// SumPenerimaan: total penerimaan in range (invoice payments + income transactions), optionally filtered by category
 func (r *reportRepository) SumPenerimaan(academicYearID uint, startDate, endDate time.Time, category string) (float64, error) {
 	var total float64
 
+	// Invoice payments
 	query := r.db.Table("payment_items pi").
 		Select("COALESCE(SUM(pi.amount), 0)").
 		Joins("JOIN invoice_items ii ON ii.id = pi.invoice_item_id").
@@ -308,8 +356,25 @@ func (r *reportRepository) SumPenerimaan(academicYearID uint, startDate, endDate
 		query = query.Where("ii.category = ?", category)
 	}
 
-	err := query.Scan(&total).Error
-	return total, err
+	if err := query.Scan(&total).Error; err != nil {
+		return 0, err
+	}
+
+	// Income transactions
+	var incomeTotal float64
+	incomeQuery := r.db.Table("income_transactions").
+		Select("COALESCE(SUM(amount), 0)").
+		Where("academic_year_id = ? AND transaction_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
+
+	if category != "" {
+		incomeQuery = incomeQuery.Where("category = ?", category)
+	}
+
+	if err := incomeQuery.Scan(&incomeTotal).Error; err != nil {
+		return 0, err
+	}
+
+	return total + incomeTotal, nil
 }
 
 // SumPengeluaran: total pengeluaran in range, optionally filtered by parent category

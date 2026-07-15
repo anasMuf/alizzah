@@ -17,7 +17,7 @@ func BackfillExpenseCategoryLainLain(db *gorm.DB) {
 		return
 	}
 
-	lainLain := model.ExpenseCategory{Name: "Lain-lain"}
+	lainLain := model.ExpenseCategory{Name: "Lain-lain", InvoiceCategory: "lainnya"}
 	if err := db.Create(&lainLain).Error; err != nil {
 		log.Printf("[BackfillLainLain] Gagal membuat kategori Lain-lain: %v", err)
 		return

@@ -15,6 +15,7 @@ type EffectiveDayRepository interface {
 	FindByLevelMonthYear(level string, month, year uint) (*model.EffectiveDay, error)
 	Upsert(ed *model.EffectiveDay) error
 	Update(ed *model.EffectiveDay) error
+	DeleteByClassGroupMonthYear(classGroupID, month, year uint) error
 }
 
 type effectiveDayRepository struct {
@@ -99,4 +100,8 @@ func (r *effectiveDayRepository) Upsert(ed *model.EffectiveDay) error {
 
 func (r *effectiveDayRepository) Update(ed *model.EffectiveDay) error {
 	return r.db.Save(ed).Error
+}
+
+func (r *effectiveDayRepository) DeleteByClassGroupMonthYear(classGroupID, month, year uint) error {
+	return r.db.Where("class_group_id = ? AND month = ? AND year = ?", classGroupID, month, year).Delete(&model.EffectiveDay{}).Error
 }

@@ -501,30 +501,38 @@ func (s *invoiceGenerateService) GenerateDaycareInitial(params dto.GenerateIniti
 }
 
 func (s *invoiceGenerateService) RecalculateInfaqHarian(classGroupID, month, year uint) error {
+	log.Printf("[RecalculateInfaqHarian] START classGroupID=%d month=%d year=%d", classGroupID, month, year)
 	// Cek per rombel dulu, fallback ke per jenjang
 	effectiveDays, _ := s.effectiveDayRepo.FindByClassGroupMonthYear(classGroupID, month, year)
 	if effectiveDays == nil || effectiveDays.ID == 0 {
 		var level string
 		s.db.Table("class_groups").Select("level").Where("id = ?", classGroupID).Scan(&level)
+		log.Printf("[RecalculateInfaqHarian] no per-rombel ED, fallback level=%s", level)
 		if level != "" {
 			effectiveDays, _ = s.effectiveDayRepo.FindByLevelMonthYear(level, month, year)
 		}
 	}
 	if effectiveDays == nil || effectiveDays.ID == 0 {
+		log.Printf("[RecalculateInfaqHarian] no effective days found, abort")
 		return nil // no effective days at all
 	}
+	log.Printf("[RecalculateInfaqHarian] effectiveDays found: id=%d totalDays=%d totalMondays=%d", effectiveDays.ID, effectiveDays.TotalDays, effectiveDays.TotalMondays)
 
 	// Get all active students in this class group
 	enrollments, err := s.enrollmentRepo.FindActiveByClassGroupID(classGroupID)
 	if err != nil {
+		log.Printf("[RecalculateInfaqHarian] error FindActiveByClassGroupID: %v", err)
 		return err
 	}
+	log.Printf("[RecalculateInfaqHarian] found %d active enrollments", len(enrollments))
 
 	for _, enrollment := range enrollments {
 		invoice, err := s.invoiceRepo.FindMonthlyByStudent(enrollment.StudentID, month, year)
 		if err != nil {
+			log.Printf("[RecalculateInfaqHarian] studentID=%d no monthly invoice for month=%d year=%d: %v", enrollment.StudentID, month, year, err)
 			continue // no monthly invoice for this student yet
 		}
+		log.Printf("[RecalculateInfaqHarian] studentID=%d invoiceID=%d found, items count will be processed", enrollment.StudentID, invoice.ID)
 
 		// Bungkus update per-invoice dalam transaksi agar atomic
 		err = s.db.Transaction(func(tx *gorm.DB) error {
@@ -532,16 +540,19 @@ func (s *invoiceGenerateService) RecalculateInfaqHarian(classGroupID, month, yea
 
 			items, err := txItemRepo.FindByInvoiceID(invoice.ID)
 			if err != nil {
+				log.Printf("[RecalculateInfaqHarian] error FindByInvoiceID invoiceID=%d: %v", invoice.ID, err)
 				return err
 			}
+			log.Printf("[RecalculateInfaqHarian] invoiceID=%d has %d items", invoice.ID, len(items))
 
 			needsRecalc := false
 			for _, item := range items {
 				if item.Category == "monthly_infaq" {
-					// Skip item yang sudah di-override manual per siswa
-					if item.Quantity != nil && *item.Quantity != effectiveDays.TotalDays {
-						continue
-					}
+					log.Printf("[RecalculateInfaqHarian] processing monthly_infaq item id=%d name=%s quantity=%v", item.ID, item.Name, item.Quantity)
+					// Catatan: override manual quantity saat ini tidak ditracking secara eksplisit.
+					// RecalculateInfaqHarian dipanggil khusus saat hari efektif berubah,
+					// jadi semua item harus diupdate. Jika nanti perlu tracking manual override,
+					// tambahkan kolom is_quantity_overridden di invoice_items.
 
 					feeConfig, _ := s.feeConfigRepo.FindByAcademicYearID(invoice.AcademicYearID)
 					if feeConfig == nil {
@@ -555,6 +566,7 @@ func (s *invoiceGenerateService) RecalculateInfaqHarian(classGroupID, month, yea
 					newAmount := infaqFeeItems[0].Amount * float64(effectiveDays.TotalDays)
 					newQuantity := effectiveDays.TotalDays
 					unitPrice := infaqFeeItems[0].Amount
+					log.Printf("[RecalculateInfaqHarian] will update item %d: quantity %d->%d, amount %.0f->%.0f", item.ID, item.Quantity, newQuantity, item.Amount, newAmount)
 
 					if item.PaidAmount == 0 {
 						item.Amount = newAmount
@@ -575,9 +587,6 @@ func (s *invoiceGenerateService) RecalculateInfaqHarian(classGroupID, month, yea
 				}
 
 				if item.Category == "savings_mandatory" && enrollment.ClassGroup.Level == "berlian" {
-					if item.Quantity != nil && *item.Quantity != effectiveDays.TotalMondays {
-						continue
-					}
 
 					feeConfig, _ := s.feeConfigRepo.FindByAcademicYearID(invoice.AcademicYearID)
 					if feeConfig == nil {
@@ -611,15 +620,19 @@ func (s *invoiceGenerateService) RecalculateInfaqHarian(classGroupID, month, yea
 			}
 
 			if needsRecalc {
+				log.Printf("[RecalculateInfaqHarian] recalculating total for invoiceID=%d", invoice.ID)
 				return s.recalculateInvoiceTotalWithTx(tx, invoice.ID)
 			}
+			log.Printf("[RecalculateInfaqHarian] no recalc needed for invoiceID=%d", invoice.ID)
 			return nil
 		})
 		if err != nil {
+			log.Printf("[RecalculateInfaqHarian] transaction error for studentID=%d: %v", enrollment.StudentID, err)
 			continue // log error silently, lanjut ke siswa berikutnya
 		}
 	}
 
+	log.Printf("[RecalculateInfaqHarian] DONE classGroupID=%d month=%d year=%d", classGroupID, month, year)
 	return nil
 }
 

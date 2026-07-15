@@ -124,19 +124,68 @@ func (s *invoiceGenerateService) GenerateInitial(params dto.GenerateInitialInvoi
 	}
 
 	return s.db.Transaction(func(tx *gorm.DB) error {
+		initialAmount := utility.SumFeeConfigItems(items)
+		var dispensationItems []model.InvoiceItem
+
+		// Apply initial dispensations
+		if s.dispensationRepo != nil {
+			now := time.Now()
+			month := uint(now.Month())
+			year := uint(now.Year())
+			dispensations, _ := s.dispensationRepo.FindActiveForStudentMonth(
+				params.StudentID, params.AcademicYearID, month, year, "initial",
+			)
+			if len(dispensations) > 0 {
+				totalDiscount := CalculateTotalDiscount(initialAmount, dispensations)
+				remainingDiscount := totalDiscount
+				for _, d := range dispensations {
+					discountForThis := float64(0)
+					if d.DiscountType == "percent" {
+						discountForThis = initialAmount * d.DiscountValue / 100
+					} else {
+						discountForThis = d.DiscountValue
+					}
+					if discountForThis > remainingDiscount {
+						discountForThis = remainingDiscount
+					}
+					remainingDiscount -= discountForThis
+					if discountForThis > 0 {
+						label := fmt.Sprintf("Dispensasi: %s", d.Reason)
+						if d.DiscountType == "percent" {
+							label = fmt.Sprintf("Dispensasi: %s (%.0f%%)", d.Reason, d.DiscountValue)
+						}
+						dispensationItems = append(dispensationItems, model.InvoiceItem{
+							Name:     label,
+							Category: "dispensation",
+							Amount:   -discountForThis,
+						})
+					}
+				}
+			}
+		}
+
+		totalAmount := initialAmount
+		for _, di := range dispensationItems {
+			totalAmount += di.Amount
+		}
+
 		invoice := &model.Invoice{
 			StudentID:      params.StudentID,
 			AcademicYearID: params.AcademicYearID,
 			Type:           "initial",
 			Status:         "unpaid",
-			TotalAmount:    utility.SumFeeConfigItems(items),
+			TotalAmount:    totalAmount,
 		}
 		if err := s.invoiceRepo.WithTx(tx).Create(invoice); err != nil {
 			return err
 		}
-		return s.invoiceItemRepo.WithTx(tx).BulkCreate(
-			utility.MapFeeItemsToInvoiceItems(invoice.ID, items),
-		)
+
+		allItems := utility.MapFeeItemsToInvoiceItems(invoice.ID, items)
+		for i := range dispensationItems {
+			dispensationItems[i].InvoiceID = invoice.ID
+			allItems = append(allItems, dispensationItems[i])
+		}
+		return s.invoiceItemRepo.WithTx(tx).BulkCreate(allItems)
 	})
 }
 
@@ -250,6 +299,10 @@ func (s *invoiceGenerateService) GenerateMonthly(params dto.GenerateMonthlyInvoi
 	// Item wajib otomatis (is_mandatory=true di fee config): Calisan, Aslin, dll
 	mandatoryExtras, _ := s.feeConfigItemRepo.FindMandatoryByStudent(feeConfig.ID, params.Level, params.Gender)
 	for _, item := range mandatoryExtras {
+		// Skip jika item punya start_month dan bulan ini belum mencapai start_month
+		if item.StartMonth != nil && params.Month < *item.StartMonth {
+			continue
+		}
 		invoiceItems = append(invoiceItems, model.InvoiceItem{
 			Name:        item.Name,
 			Category:    item.Category,
@@ -1143,7 +1196,126 @@ func (s *invoiceGenerateService) GenerateDaycareMonthlyInvoices(params dto.Gener
 		}
 	}
 
+	// Recalculate + apply daycare dispensations
+	if err := s.recalculateInvoiceTotal(invoice.ID); err != nil {
+		return err
+	}
+	if err := s.applyDispensationToInvoice(invoice, "daycare"); err != nil {
+		log.Printf("[Daycare SPD] Gagal apply dispensasi: %v", err)
+	}
 	return s.recalculateInvoiceTotal(invoice.ID)
+}
+
+// applyDispensationToInvoice removes old unpaid dispensation items for the given
+// fee categories and re-applies active dispensations. For "daycare" the fixed
+// discount value is multiplied by total attendance days (Quantity sum).
+func (s *invoiceGenerateService) applyDispensationToInvoice(invoice *model.Invoice, categories ...string) error {
+	if s.dispensationRepo == nil || invoice.Month == nil || invoice.Year == nil {
+		return nil
+	}
+
+	month := *invoice.Month
+	year := *invoice.Year
+
+	items, err := s.invoiceItemRepo.FindByInvoiceID(invoice.ID)
+	if err != nil {
+		return err
+	}
+
+	for _, cat := range categories {
+		// 1. Remove old unpaid dispensation items for this category scope
+		//    SPP dispensations only target SPP → we keep them if only daycare changes.
+		//    For simplicity, remove ALL unpaid dispensation items and re-apply all.
+		//    (Items that are already paid stay untouched.)
+
+		// 2. Calculate the base amount for this category
+		baseAmount := float64(0)
+		attendanceDays := uint(0)
+		for _, item := range items {
+			if item.Category == cat {
+				baseAmount += item.Amount
+				if item.Quantity != nil {
+					attendanceDays += *item.Quantity
+				}
+			}
+		}
+
+		if baseAmount <= 0 {
+			continue
+		}
+
+		// 3. Find active dispensations for this month + category
+		dispensations, _ := s.dispensationRepo.FindActiveForStudentMonth(
+			invoice.StudentID, invoice.AcademicYearID, month, year, cat,
+		)
+
+		if len(dispensations) == 0 {
+			continue
+		}
+
+		// 4. Calculate total discount
+		var totalDiscount float64
+		for _, d := range dispensations {
+			var disc float64
+			if d.DiscountType == "percent" {
+				disc = baseAmount * d.DiscountValue / 100
+			} else {
+				// Fixed: for daycare, multiply by attendance days; for SPP/initial, flat
+				if cat == "daycare" && attendanceDays > 0 {
+					disc = d.DiscountValue * float64(attendanceDays)
+				} else {
+					disc = d.DiscountValue
+				}
+			}
+			totalDiscount += disc
+		}
+		if totalDiscount > baseAmount {
+			totalDiscount = baseAmount
+		}
+
+		// 5. Create dispensation line items (one per dispensation record)
+		remainingDiscount := totalDiscount
+		var newItems []model.InvoiceItem
+		for _, d := range dispensations {
+			discountForThis := float64(0)
+			if d.DiscountType == "percent" {
+				discountForThis = baseAmount * d.DiscountValue / 100
+			} else {
+				if cat == "daycare" && attendanceDays > 0 {
+					discountForThis = d.DiscountValue * float64(attendanceDays)
+				} else {
+					discountForThis = d.DiscountValue
+				}
+			}
+			if discountForThis > remainingDiscount {
+				discountForThis = remainingDiscount
+			}
+			remainingDiscount -= discountForThis
+
+			if discountForThis > 0 {
+				label := fmt.Sprintf("Dispensasi: %s", d.Reason)
+				if d.DiscountType == "percent" {
+					label = fmt.Sprintf("Dispensasi: %s (%.0f%%)", d.Reason, d.DiscountValue)
+				}
+				newItems = append(newItems, model.InvoiceItem{
+					InvoiceID:   invoice.ID,
+					Name:        label,
+					Category:    "dispensation",
+					Amount:      -discountForThis,
+					IsMandatory: true,
+					Notes:       d.Notes,
+				})
+			}
+		}
+
+		for i := range newItems {
+			if err := s.invoiceItemRepo.Create(&newItems[i]); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 // GenerateDaycareMonthlyBulk generates SPD for all active daycare students in a given month.
@@ -1364,7 +1536,8 @@ func (s *invoiceGenerateService) RemoveFacilityFromFutureInvoices(studentID, fac
 
 // ApplyDispensationToExistingInvoices recalculates dispensation items on all
 // unpaid/partial monthly invoices for the student in the given academic year.
-// It removes old dispensation items and re-applies based on current active dispensations.
+// It removes old unpaid dispensation items and re-applies based on current
+// active dispensations for all supported categories (monthly_spp, daycare).
 func (s *invoiceGenerateService) ApplyDispensationToExistingInvoices(studentID, academicYearID uint) error {
 	if s.dispensationRepo == nil {
 		return nil
@@ -1380,80 +1553,21 @@ func (s *invoiceGenerateService) ApplyDispensationToExistingInvoices(studentID, 
 		if inv.Status == "paid" {
 			continue // skip fully paid invoices
 		}
-		month := uint(0)
-		year := uint(0)
-		if inv.Month != nil {
-			month = *inv.Month
-		}
-		if inv.Year != nil {
-			year = *inv.Year
-		}
-		if month == 0 || year == 0 {
+		if inv.Month == nil || inv.Year == nil {
 			continue
 		}
 
+		// Remove existing unpaid dispensation items
 		items, _ := s.invoiceItemRepo.FindByInvoiceID(inv.ID)
-
-		// 1. Remove existing dispensation items that haven't been paid
 		for _, item := range items {
 			if item.Category == "dispensation" && item.PaidAmount == 0 {
 				s.invoiceItemRepo.Delete(item.ID)
 			}
 		}
 
-		// 2. Calculate SPP amount (original, without dispensation)
-		sppAmount := float64(0)
-		for _, item := range items {
-			if item.Category == "monthly_spp" {
-				sppAmount += item.Amount
-			}
-		}
-		if sppAmount <= 0 {
-			s.recalculateInvoiceTotal(inv.ID)
-			continue
-		}
-
-		// 3. Find active dispensations for this month
-		dispensations, _ := s.dispensationRepo.FindActiveForStudentMonth(
-			studentID, academicYearID, month, year, "monthly_spp",
-		)
-
-		if len(dispensations) == 0 {
-			s.recalculateInvoiceTotal(inv.ID)
-			continue
-		}
-
-		// 4. Apply dispensation items
-		totalDiscount := CalculateTotalDiscount(sppAmount, dispensations)
-		remainingDiscount := totalDiscount
-
-		for _, d := range dispensations {
-			discountForThis := float64(0)
-			if d.DiscountType == "percent" {
-				discountForThis = sppAmount * d.DiscountValue / 100
-			} else {
-				discountForThis = d.DiscountValue
-			}
-			if discountForThis > remainingDiscount {
-				discountForThis = remainingDiscount
-			}
-			remainingDiscount -= discountForThis
-
-			if discountForThis > 0 {
-				label := fmt.Sprintf("Dispensasi: %s", d.Reason)
-				if d.DiscountType == "percent" {
-					label = fmt.Sprintf("Dispensasi: %s (%.0f%%)", d.Reason, d.DiscountValue)
-				}
-				newItem := &model.InvoiceItem{
-					InvoiceID:   inv.ID,
-					Name:        label,
-					Category:    "dispensation",
-					Amount:      -discountForThis,
-					IsMandatory: true,
-					Notes:       d.Notes,
-				}
-				s.invoiceItemRepo.Create(newItem)
-			}
+		// Re-apply dispensations for all relevant categories
+		if err := s.applyDispensationToInvoice(&inv, "monthly_spp", "daycare"); err != nil {
+			log.Printf("[Dispensasi] Gagal apply ke invoice %d: %v", inv.ID, err)
 		}
 
 		s.recalculateInvoiceTotal(inv.ID)

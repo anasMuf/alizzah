@@ -8,6 +8,8 @@ import (
 	"gorm.io/gorm"
 )
 
+func uintPtr(v uint) *uint { return &v }
+
 type feeItemDef struct {
 	Category    string
 	ItemKey     string
@@ -16,7 +18,8 @@ type feeItemDef struct {
 	Gender      string
 	Amount      float64
 	Unit        string
-	IsMandatory bool // true = otomatis masuk tagihan per jenjang
+	IsMandatory bool  // true = otomatis masuk tagihan per jenjang
+	StartMonth  *uint // opsional: mandatory item baru muncul mulai bulan ini
 }
 
 func SeedFeeConfigs(db *gorm.DB) {
@@ -83,6 +86,7 @@ func SeedFeeConfigs(db *gorm.DB) {
 			Amount:      item.Amount,
 			Unit:        item.Unit,
 			IsMandatory: item.IsMandatory,
+			StartMonth:  item.StartMonth,
 		}
 
 		if os.Getenv("KOPERASI_SEAM_ENABLED") == "true" && koperasiItemKeys[item.ItemKey] {
@@ -169,17 +173,17 @@ func buildFeeConfigItems() []feeItemDef {
 
 	// === SPP (monthly_spp) — semester 1 (Jul-Des) & semester 2 (Jan-Jun) ===
 	items = append(items,
-		feeItemDef{"monthly_spp", "spp_kb_sem1", "SPP KB (Sem 1)", "mutiara", "all", 150000, "fixed", false},
-		feeItemDef{"monthly_spp", "spp_kb_sem2", "SPP KB (Sem 2)", "mutiara", "all", 175000, "fixed", false},
-		feeItemDef{"monthly_spp", "spp_tk_sem1", "SPP TK (Sem 1)", "intan", "all", 150000, "fixed", false},
-		feeItemDef{"monthly_spp", "spp_tk_sem2", "SPP TK (Sem 2)", "intan", "all", 175000, "fixed", false},
-		feeItemDef{"monthly_spp", "spp_tk_sem1", "SPP TK (Sem 1)", "berlian", "all", 150000, "fixed", false},
-		feeItemDef{"monthly_spp", "spp_tk_sem2", "SPP TK (Sem 2)", "berlian", "all", 175000, "fixed", false},
+		feeItemDef{"monthly_spp", "spp_kb_sem1", "SPP KB (Sem 1)", "mutiara", "all", 150000, "fixed", false, nil},
+		feeItemDef{"monthly_spp", "spp_kb_sem2", "SPP KB (Sem 2)", "mutiara", "all", 175000, "fixed", false, nil},
+		feeItemDef{"monthly_spp", "spp_tk_sem1", "SPP TK (Sem 1)", "intan", "all", 150000, "fixed", false, nil},
+		feeItemDef{"monthly_spp", "spp_tk_sem2", "SPP TK (Sem 2)", "intan", "all", 175000, "fixed", false, nil},
+		feeItemDef{"monthly_spp", "spp_tk_sem1", "SPP TK (Sem 1)", "berlian", "all", 150000, "fixed", false, nil},
+		feeItemDef{"monthly_spp", "spp_tk_sem2", "SPP TK (Sem 2)", "berlian", "all", 175000, "fixed", false, nil},
 	)
 
 	// === Infaq Harian (monthly_infaq) ===
 	items = append(items,
-		feeItemDef{"monthly_infaq", "infaq_harian", "Infaq Harian", "all", "all", 6000, "per_day", false},
+		feeItemDef{"monthly_infaq", "infaq_harian", "Infaq Harian", "all", "all", 6000, "per_day", false, nil},
 	)
 
 	// === Biaya Awal (initial) ===
@@ -200,7 +204,7 @@ func buildFeeConfigItems() []feeItemDef {
 		{"biaya_psikotes", "Psikotes IQ", 150000},
 	}
 	for _, it := range initialItems {
-		items = append(items, feeItemDef{"initial", it.key, it.name, "all", "all", it.amount, "fixed", false})
+		items = append(items, feeItemDef{"initial", it.key, it.name, "all", "all", it.amount, "fixed", false, nil})
 	}
 
 	// === Biaya Registrasi (registration) — per jenjang ===
@@ -238,64 +242,65 @@ func buildFeeConfigItems() []feeItemDef {
 		}
 		for level, amount := range levelAmounts {
 			if amount > 0 {
-				items = append(items, feeItemDef{"registration", r.key, r.name, level, r.gender, amount, "fixed", false})
+				items = append(items, feeItemDef{"registration", r.key, r.name, level, r.gender, amount, "fixed", false, nil})
 			}
 		}
 	}
 
 	// === Pasta (unified: calisan + ekskul + pasta) ===
 	type pastaItem struct {
-		key       string
-		name      string
-		level     string
-		amount    float64
-		mandatory bool
+		key        string
+		name       string
+		level      string
+		amount     float64
+		mandatory  bool
+		startMonth *uint
 	}
 	pastaItems := []pastaItem{
-		{"pasta_aslin", "Aslin (Asah Literasi Numerasi)", "intan", 25000, true},
-		{"pasta_aslin", "Aslin (Asah Literasi Numerasi)", "berlian", 25000, true},
-		{"pasta_calisan", "Calisan (Baca Tulis Al Qur'an)", "mutiara", 50000, false},
-		{"pasta_calisan", "Calisan (Baca Tulis Al Qur'an)", "intan", 50000, false},
-		{"pasta_calisan", "Calisan (Baca Tulis Al Qur'an)", "berlian", 50000, false},
-		{"pasta_robotika", "Robotika", "intan", 100000, false},
-		{"pasta_robotika", "Robotika", "berlian", 100000, false},
-		{"pasta_sempoa", "Sempoa Kids", "intan", 50000, false},
-		{"pasta_sempoa", "Sempoa Kids", "berlian", 50000, false},
-		{"pasta_laptop", "Laptop Kids", "intan", 100000, false},
-		{"pasta_laptop", "Laptop Kids", "berlian", 100000, false},
-		{"pasta_tilawah", "Tilawah & Tahfidz Surat Pendek", "intan", 50000, false},
-		{"pasta_tilawah", "Tilawah & Tahfidz Surat Pendek", "berlian", 50000, false},
-		{"pasta_taekwondo", "Taekwondo", "intan", 50000, false},
-		{"pasta_taekwondo", "Taekwondo", "berlian", 50000, false},
-		{"pasta_menari", "Menari & Fashion Show", "mutiara", 50000, false},
-		{"pasta_menari", "Menari & Fashion Show", "intan", 50000, false},
-		{"pasta_menari", "Menari & Fashion Show", "berlian", 50000, false},
-		{"pasta_melukis", "Melukis & Mewarnai", "mutiara", 50000, false},
-		{"pasta_melukis", "Melukis & Mewarnai", "intan", 50000, false},
-		{"pasta_melukis", "Melukis & Mewarnai", "berlian", 50000, false},
-		{"pasta_menyanyi", "Menyanyi", "mutiara", 50000, false},
-		{"pasta_menyanyi", "Menyanyi", "intan", 50000, false},
-		{"pasta_menyanyi", "Menyanyi", "berlian", 50000, false},
-		{"pasta_keyboard", "Musik Keyboard", "intan", 50000, false},
-		{"pasta_keyboard", "Musik Keyboard", "berlian", 50000, false},
+		{"pasta_aslin", "Aslin (Asah Literasi Numerasi)", "intan", 25000, true, uintPtr(8)},
+		{"pasta_aslin", "Aslin (Asah Literasi Numerasi)", "berlian", 25000, true, uintPtr(8)},
+		{"pasta_calisan", "Calisan (Baca Tulis Al Qur'an)", "mutiara", 50000, false, nil},
+		{"pasta_calisan", "Calisan (Baca Tulis Al Qur'an)", "intan", 50000, false, nil},
+		{"pasta_calisan", "Calisan (Baca Tulis Al Qur'an)", "berlian", 50000, false, nil},
+		{"pasta_robotika", "Robotika", "intan", 100000, false, nil},
+		{"pasta_robotika", "Robotika", "berlian", 100000, false, nil},
+		{"pasta_sempoa", "Sempoa Kids", "intan", 50000, false, nil},
+		{"pasta_sempoa", "Sempoa Kids", "berlian", 50000, false, nil},
+		{"pasta_laptop", "Laptop Kids", "intan", 100000, false, nil},
+		{"pasta_laptop", "Laptop Kids", "berlian", 100000, false, nil},
+		{"pasta_tilawah", "Tilawah & Tahfidz Surat Pendek", "intan", 50000, false, nil},
+		{"pasta_tilawah", "Tilawah & Tahfidz Surat Pendek", "berlian", 50000, false, nil},
+		{"pasta_taekwondo", "Taekwondo", "intan", 50000, false, nil},
+		{"pasta_taekwondo", "Taekwondo", "berlian", 50000, false, nil},
+		{"pasta_menari", "Menari & Fashion Show", "mutiara", 50000, false, nil},
+		{"pasta_menari", "Menari & Fashion Show", "intan", 50000, false, nil},
+		{"pasta_menari", "Menari & Fashion Show", "berlian", 50000, false, nil},
+		{"pasta_melukis", "Melukis & Mewarnai", "mutiara", 50000, false, nil},
+		{"pasta_melukis", "Melukis & Mewarnai", "intan", 50000, false, nil},
+		{"pasta_melukis", "Melukis & Mewarnai", "berlian", 50000, false, nil},
+		{"pasta_menyanyi", "Menyanyi", "mutiara", 50000, false, nil},
+		{"pasta_menyanyi", "Menyanyi", "intan", 50000, false, nil},
+		{"pasta_menyanyi", "Menyanyi", "berlian", 50000, false, nil},
+		{"pasta_keyboard", "Musik Keyboard", "intan", 50000, false, nil},
+		{"pasta_keyboard", "Musik Keyboard", "berlian", 50000, false, nil},
 	}
 	for _, p := range pastaItems {
-		items = append(items, feeItemDef{"pasta", p.key, p.name, p.level, "all", p.amount, "fixed", p.mandatory})
+		items = append(items, feeItemDef{"pasta", p.key, p.name, p.level, "all", p.amount, "fixed", p.mandatory, p.startMonth})
 	}
 
 	// === Tabungan Wajib Berlian ===
 	items = append(items,
-		feeItemDef{"savings_mandatory", "tabungan_wajib", "Tabungan Wajib Berlian", "berlian", "all", 15000, "per_monday", false},
+		feeItemDef{"savings_mandatory", "tabungan_wajib", "Tabungan Wajib Berlian", "berlian", "all", 15000, "per_monday", false, nil},
 	)
 
 	// === Tabungan Wajib Mutiara ===
 	items = append(items,
-		feeItemDef{"savings_mandatory", "tabungan_wajib_mutiara", "Tabungan Wajib Mutiara", "mutiara", "all", 10000, "fixed", false},
+		feeItemDef{"savings_mandatory", "tabungan_wajib_mutiara", "Tabungan Wajib Mutiara", "mutiara", "all", 10000, "fixed", false, nil},
 	)
 
 	// === Daycare ===
 	// Biaya Awal (hanya Premium)
-	items = append(items, feeItemDef{"daycare", "daycare_premium_initial", "Biaya Awal Daycare Premium", "all", "all", 400000, "fixed", false})
+	items = append(items, feeItemDef{"daycare", "daycare_premium_initial", "Biaya Awal Daycare Premium", "all", "all", 400000, "fixed", false, nil})
 
 	// SPD Premium (flat bulanan)
 	daycareSPD := []struct {
@@ -311,7 +316,7 @@ func buildFeeConfigItems() []feeItemDef {
 		{"daycare_premium_1013_under3_spd", "SPD Premium 10-13 <3th", 300000},
 	}
 	for _, d := range daycareSPD {
-		items = append(items, feeItemDef{"daycare", d.key, d.name, "all", "all", d.amount, "fixed", false})
+		items = append(items, feeItemDef{"daycare", d.key, d.name, "all", "all", d.amount, "fixed", false, nil})
 	}
 
 	// SPD Regular (per hari, × kehadiran)
@@ -328,20 +333,20 @@ func buildFeeConfigItems() []feeItemDef {
 		{"daycare_regular_1013_under3_daily", "SPD Regular 10-13 <3th", 15000},
 	}
 	for _, d := range daycareDaily {
-		items = append(items, feeItemDef{"daycare", d.key, d.name, "all", "all", d.amount, "per_day", false})
+		items = append(items, feeItemDef{"daycare", d.key, d.name, "all", "all", d.amount, "per_day", false, nil})
 	}
 
 	// Konsumsi & TPQ
 	items = append(items,
-		feeItemDef{"daycare", "daycare_premium_meal", "Paket Konsumsi Premium", "all", "all", 400000, "fixed", false},
-		feeItemDef{"daycare", "daycare_regular_meal", "Paket Konsumsi Regular", "all", "all", 20000, "per_day", false},
-		feeItemDef{"daycare", "daycare_premium_tpq", "Lanjut TPQ Premium", "all", "all", 80000, "fixed", false},
-		feeItemDef{"daycare", "daycare_regular_tpq", "Lanjut TPQ Regular", "all", "all", 4000, "per_day", false},
+		feeItemDef{"daycare", "daycare_premium_meal", "Paket Konsumsi Premium", "all", "all", 400000, "fixed", false, nil},
+		feeItemDef{"daycare", "daycare_regular_meal", "Paket Konsumsi Regular", "all", "all", 20000, "per_day", false, nil},
+		feeItemDef{"daycare", "daycare_premium_tpq", "Lanjut TPQ Premium", "all", "all", 80000, "fixed", false, nil},
+		feeItemDef{"daycare", "daycare_regular_tpq", "Lanjut TPQ Regular", "all", "all", 4000, "per_day", false, nil},
 	)
 
 	// === Wisuda (placeholder) ===
 	items = append(items,
-		feeItemDef{"graduation", "biaya_wisuda", "Biaya Wisuda", "berlian", "all", 0, "fixed", false},
+		feeItemDef{"graduation", "biaya_wisuda", "Biaya Wisuda", "berlian", "all", 0, "fixed", false, nil},
 	)
 
 	// === Fasilitas ===
@@ -365,12 +370,12 @@ func buildFeeConfigItems() []feeItemDef {
 		{"registrasi_berlian_P", "Biaya Registrasi Berlian (Perempuan)", "berlian", "P", 825000},
 	}
 	for _, r := range regSummaries {
-		items = append(items, feeItemDef{"registration", r.itemKey, r.name, r.level, r.gender, r.amount, "fixed", false})
+		items = append(items, feeItemDef{"registration", r.itemKey, r.name, r.level, r.gender, r.amount, "fixed", false, nil})
 	}
 
 	// === Summary: Biaya Awal Pendidikan (single item) ===
 	// Menggantikan 10 item detail initial yang di-set is_active=false oleh seeder
-	items = append(items, feeItemDef{"initial", "biaya_awal", "Biaya Awal Pendidikan", "all", "all", 2425000, "fixed", false})
+	items = append(items, feeItemDef{"initial", "biaya_awal", "Biaya Awal Pendidikan", "all", "all", 2425000, "fixed", false, nil})
 
 	return items
 }

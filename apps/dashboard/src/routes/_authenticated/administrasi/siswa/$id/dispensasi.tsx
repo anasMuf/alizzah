@@ -63,6 +63,7 @@ function SiswaDispensasiPage() {
 	const [deletingItem, setDeletingItem] = useState<any>(null);
 
 	// Form state
+	const [feeCategory, setFeeCategory] = useState<string>("monthly_spp");
 	const [discountType, setDiscountType] = useState<"percent" | "fixed">(
 		"percent",
 	);
@@ -154,6 +155,7 @@ function SiswaDispensasiPage() {
 
 	const openCreate = () => {
 		setEditingItem(null);
+		setFeeCategory("monthly_spp");
 		setDiscountType("percent");
 		setDiscountValue("");
 		setIsPermanent(true);
@@ -168,6 +170,7 @@ function SiswaDispensasiPage() {
 
 	const openEdit = (d: any) => {
 		setEditingItem(d);
+		setFeeCategory(d.fee_category);
 		setDiscountType(d.discount_type);
 		setDiscountValue(d.discount_value.toString());
 		setIsPermanent(d.is_permanent);
@@ -201,7 +204,7 @@ function SiswaDispensasiPage() {
 		} else {
 			const data: any = {
 				academic_year_id: activeAy?.id || 0,
-				fee_category: "monthly_spp",
+				fee_category: feeCategory,
 				discount_type: discountType,
 				discount_value: Number(discountValue),
 				is_permanent: isPermanent,
@@ -239,7 +242,7 @@ function SiswaDispensasiPage() {
 			{activeDispensations.length > 0 && (
 				<div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
 					<p className="text-sm text-indigo-800 font-medium">
-						{activeDispensations.length} dispensasi aktif untuk item SPP
+						{activeDispensations.length} dispensasi aktif
 					</p>
 					<div className="mt-1 text-xs text-indigo-600 space-x-3">
 						{activeDispensations.map((d: any) => (
@@ -291,14 +294,26 @@ function SiswaDispensasiPage() {
 											<>
 												<Percent className="w-3.5 h-3.5 text-indigo-500" />
 												<span className="font-medium text-indigo-700">
-													{d.discount_value}% SPP
+													{d.discount_value}%{" "}
+													{d.fee_category === "monthly_spp"
+														? "SPP"
+														: d.fee_category === "initial"
+															? "Biaya Awal"
+															: "Konsumsi"}
 												</span>
 											</>
 										) : (
 											<>
 												<DollarSign className="w-3.5 h-3.5 text-green-500" />
 												<span className="font-medium text-green-700">
-													{formatCurrency(d.discount_value)} SPP
+													{formatCurrency(d.discount_value)}{" "}
+													{d.fee_category === "monthly_spp"
+														? "SPP"
+														: d.fee_category === "initial"
+															? "Biaya Awal"
+															: d.fee_category === "daycare"
+																? "/hari daycare"
+																: ""}
 												</span>
 											</>
 										)}
@@ -357,17 +372,21 @@ function SiswaDispensasiPage() {
 			>
 				<form onSubmit={handleSubmit} className="flex h-full flex-col bg-white">
 					<div className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 space-y-6">
-						{/* Jenis tagihan — locked to SPP */}
+						{/* Jenis tagihan */}
 						<div>
 							<label className="block text-sm font-medium text-gray-900 mb-2">
 								Jenis Tagihan
 							</label>
-							<input
-								type="text"
-								value="SPP Bulanan"
-								disabled
-								className="block w-full rounded-md border-0 py-1.5 px-3 bg-gray-100 text-gray-500 ring-1 ring-inset ring-gray-300 sm:text-sm"
-							/>
+							<select
+								value={feeCategory}
+								onChange={(e) => setFeeCategory(e.target.value)}
+								disabled={!!editingItem}
+								className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 sm:text-sm disabled:bg-gray-100 disabled:text-gray-500"
+							>
+								<option value="monthly_spp">SPP Bulanan</option>
+								<option value="initial">Biaya Awal Pendidikan</option>
+								<option value="daycare">Konsumsi Daycare</option>
+							</select>
 						</div>
 
 						{/* Tipe potongan */}

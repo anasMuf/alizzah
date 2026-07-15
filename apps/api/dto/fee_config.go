@@ -30,6 +30,7 @@ type CreateFeeConfigItemRequest struct {
 	IsMandatory       bool    `json:"is_mandatory"`
 	IsKoperasi        bool    `json:"is_koperasi"`
 	KoperasiProductID *uint   `json:"koperasi_product_id,omitempty"`
+	StartMonth        *uint   `json:"start_month" validate:"omitempty,min=1,max=12"`
 	IsActive          *bool   `json:"is_active,omitempty"`
 }
 
@@ -46,6 +47,7 @@ type FeeConfigItemResponse struct {
 	IsKoperasi          bool    `json:"is_koperasi"`
 	KoperasiProductID   *uint   `json:"koperasi_product_id,omitempty"`
 	KoperasiProductName string  `json:"koperasi_product_name,omitempty"`
+	StartMonth          *uint   `json:"start_month,omitempty"`
 	IsActive            bool    `json:"is_active"`
 }
 

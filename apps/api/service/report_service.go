@@ -349,6 +349,7 @@ var invoiceCategoryLabels = map[string]string{
 	"savings_mandatory": "Tabungan Wajib",
 	"daycare":           "Daycare",
 	"graduation":        "Wisuda",
+	"lainnya":           "Lain-lain",
 }
 
 // invoiceCategoryOrder defines display order for posisi kas report
@@ -363,6 +364,7 @@ var invoiceCategoryOrder = []string{
 	"savings_mandatory",
 	"daycare",
 	"graduation",
+	"lainnya",
 }
 
 func (s *reportService) GetPosisiKas(req dto.PosisiKasRequest) (*dto.PosisiKasResponse, error) {
@@ -377,10 +379,19 @@ func (s *reportService) GetPosisiKas(req dto.PosisiKasRequest) (*dto.PosisiKasRe
 	endOfMonth := startOfMonth.AddDate(0, 1, -1)
 	endOfPrevMonth := startOfMonth.AddDate(0, 0, -1)
 
-	// Penerimaan bulan ini per category
+	// Penerimaan bulan ini per category (dari invoice payment)
 	penerimaanBulan, err := s.reportRepo.SumPenerimaanByInvoiceCategory(academicYearID, startOfMonth, endOfMonth)
 	if err != nil {
 		return nil, err
+	}
+
+	// Gabung penerimaan dari income_transactions (Dana BOS, Donasi, Hibah, Lainnya)
+	incomeBulan, err := s.reportRepo.SumIncomeTransactionsByCategory(academicYearID, startOfMonth, endOfMonth)
+	if err != nil {
+		return nil, err
+	}
+	for cat, amount := range incomeBulan {
+		penerimaanBulan[cat] += amount
 	}
 
 	// Pengeluaran bulan ini per category (with details)
@@ -393,6 +404,14 @@ func (s *reportService) GetPosisiKas(req dto.PosisiKasRequest) (*dto.PosisiKasRe
 	penerimaanSebelum, err := s.reportRepo.SumPenerimaanByInvoiceCategory(academicYearID, ay.StartDate, endOfPrevMonth)
 	if err != nil {
 		return nil, err
+	}
+
+	incomeSebelum, err := s.reportRepo.SumIncomeTransactionsByCategory(academicYearID, ay.StartDate, endOfPrevMonth)
+	if err != nil {
+		return nil, err
+	}
+	for cat, amount := range incomeSebelum {
+		penerimaanSebelum[cat] += amount
 	}
 
 	pengeluaranSebelumRaw, err := s.reportRepo.SumPengeluaranByInvoiceCategory(academicYearID, ay.StartDate, endOfPrevMonth)

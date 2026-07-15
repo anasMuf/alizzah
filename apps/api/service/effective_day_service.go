@@ -5,6 +5,7 @@ import (
 	"api/model"
 	"api/repository"
 	"errors"
+	"log"
 
 	"gorm.io/gorm"
 )
@@ -115,15 +116,29 @@ func (s *effectiveDayService) UpsertLevel(level string, createdBy uint, req dto.
 	savedEd, _ := s.effectiveDayRepo.FindByLevelMonthYear(level, req.Month, req.Year)
 
 	// Recalculate infaq for all class groups of this level
+	// Hapus dulu per-rombel effective days agar fallback ke jenjang berfungsi
 	if s.invoiceGen != nil {
 		cgs, err := s.classGroupRepo.FindAll(dto.ClassGroupQueryParams{})
 		if err == nil {
+			log.Printf("[UpsertLevel] found %d total class groups, filtering for level=%s", len(cgs), level)
+			count := 0
 			for _, cg := range cgs {
 				if cg.Level == level {
+					// Hapus per-rombel ED agar recalculate pakai nilai jenjang
+					if delErr := s.effectiveDayRepo.DeleteByClassGroupMonthYear(cg.ID, req.Month, req.Year); delErr != nil {
+						log.Printf("[UpsertLevel] warning: gagal hapus per-rombel ED classGroupID=%d: %v", cg.ID, delErr)
+					}
+					log.Printf("[UpsertLevel] spawning RecalculateInfaqHarian for classGroupID=%d month=%d year=%d", cg.ID, req.Month, req.Year)
 					go s.invoiceGen.RecalculateInfaqHarian(cg.ID, req.Month, req.Year)
+					count++
 				}
 			}
+			log.Printf("[UpsertLevel] spawned %d RecalculateInfaqHarian goroutines", count)
+		} else {
+			log.Printf("[UpsertLevel] error FindAll class groups: %v", err)
 		}
+	} else {
+		log.Printf("[UpsertLevel] invoiceGen is nil, skipping recalculate")
 	}
 
 	return mapEffectiveDayToResponse(*savedEd), nil

@@ -15,6 +15,7 @@ var defaultExpenseCategories = []struct {
 	{"Biaya Awal", "initial", []string{"Infaq Sarpras", "Infaq APE", "Biaya Psikotes IQ", "Koperasi"}},
 	{"Biaya Registrasi", "registration", []string{"Biaya MPLS", "Buku PK Karakter", "Alat Belajar", "Iuran Kegiatan Kecamatan/Kabupaten", "Administrasi LPP", "Kalender", "Koperasi"}},
 	{"SPP", "monthly_spp", []string{"Gaji Guru"}},
+	{"Lain-lain", "", []string{"ATK", "Transportasi", "Listrik & Air", "Internet & Telepon", "Pemeliharaan", "Lain-lain"}},
 }
 
 func SeedExpenseCategories(db *gorm.DB) {

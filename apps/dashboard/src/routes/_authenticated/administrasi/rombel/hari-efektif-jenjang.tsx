@@ -1,8 +1,9 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { Calendar, ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { Button } from "#/components/ui";
+import { Button, useToast } from "#/components/ui";
 import { academicYearAtom } from "#/store/global";
 
 export const Route = createFileRoute(
@@ -37,6 +38,8 @@ const MONTH_NAMES = [
 
 function HariEfektifJenjangPage() {
 	const [activeAy] = useAtom(academicYearAtom);
+	const queryClient = useQueryClient();
+	const { addToast } = useToast();
 	const year = new Date().getFullYear();
 
 	const [effectiveDays, setEffectiveDays] = useState<
@@ -130,6 +133,17 @@ function HariEfektifJenjangPage() {
 			if (!res.ok) throw new Error("Gagal menyimpan");
 			setEditing(null);
 			loadData();
+			addToast({
+				variant: "success",
+				title: "Berhasil",
+				message:
+					"Hari efektif berhasil disimpan. Invoice akan diperbarui otomatis.",
+			});
+			// Invalidate invoice queries agar tagihan ikut ter-refresh
+			// Backend recalculate berjalan async, beri jeda sebentar
+			setTimeout(() => {
+				queryClient.invalidateQueries({ queryKey: ["/v1/invoices"] });
+			}, 500);
 		} catch (e: any) {
 			alert(e.message);
 		}

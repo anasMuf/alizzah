@@ -67,6 +67,10 @@ export function EffectiveDayForm({
 				queryClient.invalidateQueries({
 					queryKey: getGetV1ClassGroupsIdEffectiveDaysQueryKey(classGroupId),
 				});
+				// Backend recalculate berjalan async, invalidate invoice queries setelah jeda
+				setTimeout(() => {
+					queryClient.invalidateQueries({ queryKey: ["/v1/invoices"] });
+				}, 500);
 				onClose();
 			},
 			onError: (error: Error) => {
@@ -88,6 +92,10 @@ export function EffectiveDayForm({
 				queryClient.invalidateQueries({
 					queryKey: getGetV1ClassGroupsIdEffectiveDaysQueryKey(classGroupId),
 				});
+				// Backend recalculate berjalan async, invalidate invoice queries setelah jeda
+				setTimeout(() => {
+					queryClient.invalidateQueries({ queryKey: ["/v1/invoices"] });
+				}, 500);
 				onClose();
 			},
 			onError: (error: Error) => {

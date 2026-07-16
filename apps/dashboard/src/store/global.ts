@@ -5,6 +5,7 @@ export interface AcademicYear {
 	id: number;
 	name: string;
 	is_active: boolean;
+	start_date: string;
 }
 
 // Atom untuk menyimpan Tahun Ajaran yang sedang dipilih

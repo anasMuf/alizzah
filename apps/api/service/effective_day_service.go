@@ -17,6 +17,8 @@ type EffectiveDayService interface {
 	// Per-jenjang
 	GetByLevel(level string, params dto.EffectiveDayQueryParams) ([]dto.EffectiveDayResponse, error)
 	UpsertLevel(level string, createdBy uint, req dto.UpsertEffectiveDayRequest) (*dto.EffectiveDayResponse, error)
+	// Grid unified
+	GetGrid(academicYearID uint) (*dto.EffectiveDayGridResponse, error)
 }
 
 type effectiveDayService struct {
@@ -170,6 +172,65 @@ func (s *effectiveDayService) Update(classGroupID, edID uint, req dto.UpsertEffe
 	}
 
 	return mapEffectiveDayToResponse(*savedEd), nil
+}
+
+// GetGrid returns unified grid data: level defaults + class group overrides for one academic year.
+func (s *effectiveDayService) GetGrid(academicYearID uint) (*dto.EffectiveDayGridResponse, error) {
+	// Load all class groups
+	cgs, err := s.classGroupRepo.FindAll(dto.ClassGroupQueryParams{AcademicYearID: academicYearID})
+	if err != nil {
+		return nil, err
+	}
+
+	// Level rows: load per-jenjang effective days for all 3 levels
+	levels := []string{"mutiara", "intan", "berlian"}
+	levelRows := make([]dto.EffectiveDayLevelRow, 0, 3)
+
+	for _, lvl := range levels {
+		eds, err := s.effectiveDayRepo.FindByLevel(lvl, dto.EffectiveDayQueryParams{AcademicYearID: academicYearID})
+		if err != nil {
+			return nil, err
+		}
+		row := dto.EffectiveDayLevelRow{
+			Level:  lvl,
+			Months: make(map[uint]dto.EffectiveDayMonthCell),
+		}
+		for _, ed := range eds {
+			row.Months[ed.Month] = dto.EffectiveDayMonthCell{
+				TotalDays:    ed.TotalDays,
+				TotalMondays: ed.TotalMondays,
+			}
+		}
+		levelRows = append(levelRows, row)
+	}
+
+	// Class group rows: per-rombel effective days, nil if not overridden
+	cgRows := make([]dto.EffectiveDayClassGroupRow, 0, len(cgs))
+	for _, cg := range cgs {
+		eds, err := s.effectiveDayRepo.FindByClassGroup(cg.ID, dto.EffectiveDayQueryParams{AcademicYearID: academicYearID})
+		if err != nil {
+			return nil, err
+		}
+		row := dto.EffectiveDayClassGroupRow{
+			ID:     cg.ID,
+			Name:   cg.Name,
+			Level:  cg.Level,
+			Months: make(map[uint]*dto.EffectiveDayMonthCell),
+		}
+		// Pre-fill all months with nil (no override)
+		for _, ed := range eds {
+			row.Months[ed.Month] = &dto.EffectiveDayMonthCell{
+				TotalDays:    ed.TotalDays,
+				TotalMondays: ed.TotalMondays,
+			}
+		}
+		cgRows = append(cgRows, row)
+	}
+
+	return &dto.EffectiveDayGridResponse{
+		Levels:      levelRows,
+		ClassGroups: cgRows,
+	}, nil
 }
 
 func mapEffectiveDayToResponse(ed model.EffectiveDay) *dto.EffectiveDayResponse {

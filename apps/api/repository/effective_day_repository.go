@@ -73,20 +73,23 @@ func (r *effectiveDayRepository) Upsert(ed *model.EffectiveDay) error {
 		var existing model.EffectiveDay
 		var err error
 
-		// Cari record yang sudah ada berdasarkan mode (per-rombel atau per-jenjang)
+		// Cari record yang sudah ada (termasuk soft-deleted) berdasarkan mode (per-rombel atau per-jenjang)
 		if ed.Level != "" {
-			err = tx.Where("level = ? AND class_group_id = 0 AND month = ? AND year = ?", ed.Level, ed.Month, ed.Year).First(&existing).Error
+			err = tx.Unscoped().Where("level = ? AND class_group_id = 0 AND month = ? AND year = ?", ed.Level, ed.Month, ed.Year).First(&existing).Error
 		} else {
-			err = tx.Where("class_group_id = ? AND month = ? AND year = ?", ed.ClassGroupID, ed.Month, ed.Year).First(&existing).Error
+			err = tx.Unscoped().Where("class_group_id = ? AND month = ? AND year = ?", ed.ClassGroupID, ed.Month, ed.Year).First(&existing).Error
 		}
 
 		if err == nil {
-			// Update record yang sudah ada
+			// Restore jika sebelumnya soft-deleted, lalu update
+			if existing.DeletedAt.Valid {
+				tx.Unscoped().Model(&existing).Update("deleted_at", nil)
+			}
 			existing.AcademicYearID = ed.AcademicYearID
 			existing.TotalDays = ed.TotalDays
 			existing.TotalMondays = ed.TotalMondays
 			existing.CreatedBy = ed.CreatedBy
-			return tx.Save(&existing).Error
+			return tx.Unscoped().Save(&existing).Error
 		}
 
 		if errors.Is(err, gorm.ErrRecordNotFound) {

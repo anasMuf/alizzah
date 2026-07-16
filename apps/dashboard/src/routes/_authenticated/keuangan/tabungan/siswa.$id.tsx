@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
 	ArrowDownCircle,
 	ArrowUpCircle,
@@ -7,7 +7,7 @@ import {
 	ChevronRight,
 	Printer,
 } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
 	type TabunganSiswaRow,
 	useGetReportsTabunganSiswa,
@@ -25,12 +25,34 @@ export const Route = createFileRoute(
 	"/_authenticated/keuangan/tabungan/siswa/$id",
 )({
 	component: DetailTabunganSiswaPage,
+	validateSearch: (search: Record<string, unknown>) => ({
+		page: (typeof search.page === "number"
+			? search.page
+			: typeof search.page === "string"
+				? Number.parseInt(search.page, 10) || 1
+				: undefined) as number | undefined,
+	}),
 });
 
 function DetailTabunganSiswaPage() {
 	const { id } = Route.useParams();
 	const queryClient = useQueryClient();
 	const { addToast } = useToast();
+	const navigate = useNavigate();
+
+	const searchParams = Route.useSearch();
+	const page = searchParams.page ?? 1;
+
+	const updateSearch = useCallback(
+		(updates: Partial<typeof searchParams>) => {
+			navigate({
+				from: Route.fullPath,
+				search: { ...searchParams, ...updates } as typeof searchParams,
+				replace: true,
+			});
+		},
+		[navigate, searchParams],
+	);
 
 	const { data: studentResp, isLoading: isStudentLoading } = useGetV1StudentsId(
 		Number(id),
@@ -43,7 +65,6 @@ function DetailTabunganSiswaPage() {
 		});
 	const savings = (savingsResp?.data as any)?.data;
 
-	const [page, setPage] = useState(1);
 	const { data: transactionsResp, isLoading: isTransactionsLoading } =
 		useGetV1StudentsIdSavingsTransactions(
 			Number(id),
@@ -63,10 +84,13 @@ function DetailTabunganSiswaPage() {
 				addToast({
 					variant: "success",
 					title: "Berhasil",
-					message: "Penarikan tabungan berhasil dicatat.",
+					message: "Penarikan saldo berhasil diproses.",
 				});
 				queryClient.invalidateQueries({
-					queryKey: [`/v1/students/${id}/savings`],
+					queryKey: ["/v1/students", id, "savings"],
+				});
+				queryClient.invalidateQueries({
+					queryKey: ["/v1/students", id, "savings/transactions"],
 				});
 				setIsWithdrawOpen(false);
 				setWithdrawAmount("");
@@ -154,7 +178,11 @@ function DetailTabunganSiswaPage() {
 			<nav className="flex" aria-label="Breadcrumb">
 				<ol className="flex items-center space-x-2 text-sm text-gray-500">
 					<li>
-						<Link to="/keuangan/tabungan" className="hover:text-gray-900">
+						<Link
+							to="/keuangan/tabungan"
+							search={{} as any}
+							className="hover:text-gray-900"
+						>
 							Tabungan
 						</Link>
 					</li>
@@ -503,14 +531,14 @@ function DetailTabunganSiswaPage() {
 						<div className="flex flex-1 justify-between sm:hidden">
 							<Button
 								variant="secondary"
-								onClick={() => setPage((p) => Math.max(1, p - 1))}
+								onClick={() => updateSearch({ page: Math.max(1, page - 1) })}
 								disabled={page === 1}
 							>
 								Previous
 							</Button>
 							<Button
 								variant="secondary"
-								onClick={() => setPage((p) => p + 1)}
+								onClick={() => updateSearch({ page: page + 1 })}
 								disabled={page >= meta.total_pages}
 							>
 								Next
@@ -535,7 +563,9 @@ function DetailTabunganSiswaPage() {
 									aria-label="Pagination"
 								>
 									<button
-										onClick={() => setPage((p) => Math.max(1, p - 1))}
+										onClick={() =>
+											updateSearch({ page: Math.max(1, page - 1) })
+										}
 										disabled={page === 1}
 										className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
 									>
@@ -549,7 +579,7 @@ function DetailTabunganSiswaPage() {
 										{page}
 									</span>
 									<button
-										onClick={() => setPage((p) => p + 1)}
+										onClick={() => updateSearch({ page: page + 1 })}
 										disabled={page >= meta.total_pages}
 										className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
 									>

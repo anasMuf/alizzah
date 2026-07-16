@@ -1,7 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { ChevronRight, Search, Wallet } from "lucide-react";
-import { useState } from "react";
+import { useCallback } from "react";
 import { useDebounce } from "use-debounce";
 import { useGetV1ClassGroups } from "#/api/endpoints/class-groups/class-groups";
 import { useGetV1Students } from "#/api/endpoints/students/students";
@@ -10,24 +10,53 @@ import { academicYearAtom } from "../../../../store/global";
 
 export const Route = createFileRoute("/_authenticated/keuangan/tabungan/")({
 	component: TabunganListPage,
+	validateSearch: (search: Record<string, unknown>) => {
+		const asNum = (v: unknown) =>
+			typeof v === "number"
+				? v
+				: typeof v === "string" && v !== ""
+					? Number(v)
+					: undefined;
+		return {
+			search: typeof search.search === "string" ? search.search : undefined,
+			class_group_id: asNum(search.class_group_id),
+			page: (typeof search.page === "number"
+				? search.page
+				: typeof search.page === "string"
+					? Number.parseInt(search.page, 10) || 1
+					: undefined) as number | undefined,
+		};
+	},
 });
 
 function TabunganListPage() {
 	const [activeAy] = useAtom(academicYearAtom);
+	const navigate = useNavigate();
 
-	const [search, setSearch] = useState("");
+	const searchParams = Route.useSearch();
+	const search = searchParams.search ?? "";
+	const class_group_id = searchParams.class_group_id;
+	const page = searchParams.page ?? 1;
+
 	const [debouncedSearch] = useDebounce(search, 500);
-	const [selectedClassGroup, setSelectedClassGroup] = useState("");
-	const [page, setPage] = useState(1);
+
+	const updateSearch = useCallback(
+		(updates: Partial<typeof searchParams>) => {
+			navigate({
+				from: Route.fullPath,
+				search: { ...searchParams, ...updates } as typeof searchParams,
+				replace: true,
+			});
+		},
+		[navigate, searchParams],
+	);
 
 	const { data: studentsResp, isLoading } = useGetV1Students(
 		{
 			page,
 			limit: 20,
 			search: debouncedSearch,
-			class_group_id: selectedClassGroup
-				? Number(selectedClassGroup)
-				: undefined,
+			class_group_id: class_group_id ? class_group_id : undefined,
 		},
 		{ query: { enabled: true } },
 	);
@@ -67,7 +96,9 @@ function TabunganListPage() {
 							className="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
 							placeholder="Cari nama atau NISN..."
 							value={search}
-							onChange={(e) => setSearch(e.target.value)}
+							onChange={(e) =>
+								updateSearch({ search: e.target.value, page: 1 })
+							}
 						/>
 					</div>
 				</div>
@@ -77,8 +108,15 @@ function TabunganListPage() {
 						Filter Rombel
 					</label>
 					<select
-						value={selectedClassGroup}
-						onChange={(e) => setSelectedClassGroup(e.target.value)}
+						value={class_group_id ?? ""}
+						onChange={(e) =>
+							updateSearch({
+								class_group_id: e.target.value
+									? Number(e.target.value)
+									: undefined,
+								page: 1,
+							})
+						}
 						className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 					>
 						<option value="">Semua Rombel</option>
@@ -158,6 +196,7 @@ function TabunganListPage() {
 											<Link
 												to="/keuangan/tabungan/siswa/$id"
 												params={{ id: student.id.toString() }}
+												search={{} as any}
 												className="inline-flex items-center text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
 											>
 												Lihat Tabungan <ChevronRight className="w-4 h-4 ml-1" />
@@ -176,7 +215,7 @@ function TabunganListPage() {
 						page={page}
 						limit={20}
 						total={meta.total}
-						onPageChange={setPage}
+						onPageChange={(newPage) => updateSearch({ page: newPage })}
 					/>
 				)}
 			</div>

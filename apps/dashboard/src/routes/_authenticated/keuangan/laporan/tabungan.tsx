@@ -1,6 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ChevronRight, Printer } from "lucide-react";
-import { useState } from "react";
+import { useCallback } from "react";
 import type { TabunganReportRow } from "#/api/endpoints/reports/tabungan";
 import { useGetReportsTabungan } from "#/api/endpoints/reports/tabungan";
 import { Alert, Button } from "#/components/ui";
@@ -9,6 +9,19 @@ export const Route = createFileRoute(
 	"/_authenticated/keuangan/laporan/tabungan",
 )({
 	component: LaporanTabunganPage,
+	validateSearch: (search: Record<string, unknown>) => {
+		const asNum = (v: unknown) =>
+			typeof v === "number"
+				? v
+				: typeof v === "string" && v !== ""
+					? Number(v)
+					: undefined;
+		return {
+			month: asNum(search.month),
+			year: asNum(search.year),
+			type: typeof search.type === "string" ? search.type : undefined,
+		};
+	},
 });
 
 const MONTH_NAMES = [
@@ -54,10 +67,23 @@ function formatDateID(dateStr: string): string {
 
 function LaporanTabunganPage() {
 	const now = new Date();
+	const navigate = useNavigate();
+	const searchParams = Route.useSearch();
 
-	const [month, setMonth] = useState(now.getMonth() + 1);
-	const [year, setYear] = useState(now.getFullYear());
-	const [type, setType] = useState("");
+	const month = searchParams.month ?? now.getMonth() + 1;
+	const year = searchParams.year ?? now.getFullYear();
+	const type = searchParams.type ?? "";
+
+	const updateSearch = useCallback(
+		(updates: Partial<typeof searchParams>) => {
+			navigate({
+				from: Route.fullPath,
+				search: { ...searchParams, ...updates } as typeof searchParams,
+				replace: true,
+			});
+		},
+		[navigate, searchParams],
+	);
 
 	const {
 		data: reportData,
@@ -79,7 +105,9 @@ function LaporanTabunganPage() {
 	const yearOptions = Array.from({ length: 3 }, (_, i) => currentYear - i);
 
 	const isDefault =
-		month === now.getMonth() + 1 && year === now.getFullYear() && !type;
+		searchParams.month === undefined &&
+		searchParams.year === undefined &&
+		searchParams.type === undefined;
 
 	return (
 		<div className="space-y-6">
@@ -138,7 +166,11 @@ function LaporanTabunganPage() {
 						</label>
 						<select
 							value={type}
-							onChange={(e) => setType(e.target.value)}
+							onChange={(e) =>
+								updateSearch({
+									type: e.target.value || undefined,
+								})
+							}
 							className="block w-full sm:w-52 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						>
 							{TYPE_OPTIONS.map((opt) => (
@@ -154,7 +186,7 @@ function LaporanTabunganPage() {
 						</label>
 						<select
 							value={month}
-							onChange={(e) => setMonth(Number(e.target.value))}
+							onChange={(e) => updateSearch({ month: Number(e.target.value) })}
 							className="block w-full sm:w-40 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						>
 							{MONTH_NAMES.map((name, idx) => (
@@ -170,7 +202,7 @@ function LaporanTabunganPage() {
 						</label>
 						<select
 							value={year}
-							onChange={(e) => setYear(Number(e.target.value))}
+							onChange={(e) => updateSearch({ year: Number(e.target.value) })}
 							className="block w-full sm:w-28 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						>
 							{yearOptions.map((y) => (
@@ -184,9 +216,11 @@ function LaporanTabunganPage() {
 						<button
 							type="button"
 							onClick={() => {
-								setMonth(now.getMonth() + 1);
-								setYear(now.getFullYear());
-								setType("");
+								updateSearch({
+									month: undefined,
+									year: undefined,
+									type: undefined,
+								});
 							}}
 							className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
 						>

@@ -42,7 +42,7 @@ function DetailPembayaranPage() {
 					title: "Berhasil",
 					message: "Pembayaran berhasil dihapus.",
 				});
-				navigate({ to: "/keuangan/pembayaran" });
+				navigate({ to: "/keuangan/pembayaran", search: {} as any });
 			},
 			onError: (err: any) => {
 				addToast({
@@ -93,7 +93,11 @@ function DetailPembayaranPage() {
 			<nav className="flex print:hidden" aria-label="Breadcrumb">
 				<ol className="flex items-center space-x-2 text-sm text-gray-500">
 					<li>
-						<Link to="/keuangan/pembayaran" className="hover:text-gray-900">
+						<Link
+							to="/keuangan/pembayaran"
+							search={{} as any}
+							className="hover:text-gray-900"
+						>
 							Pembayaran
 						</Link>
 					</li>
@@ -109,6 +113,7 @@ function DetailPembayaranPage() {
 				<div>
 					<Link
 						to="/keuangan/pembayaran"
+						search={{} as any}
 						className="text-sm font-medium text-indigo-600 hover:text-indigo-500 flex items-center"
 					>
 						<ArrowLeft className="w-4 h-4 mr-1" /> Kembali ke Daftar

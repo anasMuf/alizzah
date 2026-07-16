@@ -607,7 +607,11 @@ function DetailTagihanPage() {
 				<nav className="flex" aria-label="Breadcrumb">
 					<ol className="flex items-center space-x-2 text-sm text-gray-500">
 						<li>
-							<Link to="/keuangan/tagihan" className="hover:text-gray-900">
+							<Link
+								to="/keuangan/tagihan"
+								search={{} as any}
+								className="hover:text-gray-900"
+							>
 								Tagihan
 							</Link>
 						</li>

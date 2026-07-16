@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import {
 	ArrowDownRight,
@@ -17,6 +17,17 @@ import { formatCurrency, formatDate } from "../../../../../utils/format";
 export const Route = createFileRoute(
 	"/_authenticated/keuangan/kas/berangkas/transaksi",
 )({
+	validateSearch: (search: Record<string, unknown>) => ({
+		start_date: search.start_date as string | undefined,
+		end_date: search.end_date as string | undefined,
+		jenis: search.jenis as string | undefined,
+		tipe: search.tipe as string | undefined,
+		page: (typeof search.page === "number"
+			? search.page
+			: typeof search.page === "string"
+				? Number.parseInt(search.page, 10) || 1
+				: undefined) as number | undefined,
+	}),
 	component: BerangkasTransaksiPage,
 });
 
@@ -31,18 +42,45 @@ const PAGE_SIZE = 50;
 
 function BerangkasTransaksiPage() {
 	const [activeAy] = useAtom(academicYearAtom);
+	const searchParams = Route.useSearch();
+	const navigate = useNavigate();
 
-	const [startDate, setStartDate] = useState("");
-	const [endDate, setEndDate] = useState("");
-	const [jenis, setJenis] = useState("");
-	const [tipe, setTipe] = useState("");
-	const [page, setPage] = useState(1);
+	const startDate = searchParams.start_date ?? "";
+	const endDate = searchParams.end_date ?? "";
+	const jenis = searchParams.jenis ?? "";
+	const tipe = searchParams.tipe ?? "";
+	const page = searchParams.page ?? 1;
 	const [allTxs, setAllTxs] = useState<any[]>([]);
 
-	const resetAndReload = useCallback(() => {
+	const updateSearch = useCallback(
+		(updates: Partial<typeof searchParams>) => {
+			navigate({
+				from: Route.fullPath,
+				search: { ...searchParams, ...updates } as typeof searchParams,
+				replace: true,
+			});
+		},
+		[navigate, searchParams],
+	);
+
+	const handleFilterChange = useCallback(
+		(updates: Partial<typeof searchParams>) => {
+			setAllTxs([]);
+			updateSearch({ ...updates, page: 1 });
+		},
+		[updateSearch],
+	);
+
+	const handleReset = useCallback(() => {
 		setAllTxs([]);
-		setPage(1);
-	}, []);
+		updateSearch({
+			start_date: undefined,
+			end_date: undefined,
+			jenis: undefined,
+			tipe: undefined,
+			page: 1,
+		});
+	}, [updateSearch]);
 
 	const {
 		data: txData,
@@ -87,14 +125,14 @@ function BerangkasTransaksiPage() {
 		const observer = new IntersectionObserver(
 			(entries) => {
 				if (entries[0].isIntersecting && hasMore && !isFetching) {
-					setPage((p) => p + 1);
+					updateSearch({ page: page + 1 });
 				}
 			},
 			{ rootMargin: "200px" },
 		);
 		observer.observe(el);
 		return () => observer.disconnect();
-	}, [hasMore, isFetching]);
+	}, [hasMore, isFetching, updateSearch, page]);
 
 	const groupedByDate = useMemo(() => {
 		const groups: Record<string, any[]> = {};
@@ -107,19 +145,6 @@ function BerangkasTransaksiPage() {
 		}
 		return Object.entries(groups).sort(([a], [b]) => b.localeCompare(a));
 	}, [allTxs]);
-
-	const handleReset = () => {
-		setStartDate("");
-		setEndDate("");
-		setJenis("");
-		setTipe("");
-		resetAndReload();
-	};
-
-	const handleFilterChange = (setter: (v: string) => void, value: string) => {
-		setter(value);
-		resetAndReload();
-	};
 
 	const isFirstLoad = isLoading && allTxs.length === 0;
 
@@ -152,7 +177,9 @@ function BerangkasTransaksiPage() {
 						<input
 							type="date"
 							value={startDate}
-							onChange={(e) => handleFilterChange(setStartDate, e.target.value)}
+							onChange={(e) =>
+								handleFilterChange({ start_date: e.target.value })
+							}
 							className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						/>
 					</div>
@@ -164,7 +191,7 @@ function BerangkasTransaksiPage() {
 						<input
 							type="date"
 							value={endDate}
-							onChange={(e) => handleFilterChange(setEndDate, e.target.value)}
+							onChange={(e) => handleFilterChange({ end_date: e.target.value })}
 							className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						/>
 					</div>
@@ -175,7 +202,7 @@ function BerangkasTransaksiPage() {
 						</label>
 						<select
 							value={jenis}
-							onChange={(e) => handleFilterChange(setJenis, e.target.value)}
+							onChange={(e) => handleFilterChange({ jenis: e.target.value })}
 							className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						>
 							<option value="">Semua</option>
@@ -190,7 +217,7 @@ function BerangkasTransaksiPage() {
 						</label>
 						<select
 							value={tipe}
-							onChange={(e) => handleFilterChange(setTipe, e.target.value)}
+							onChange={(e) => handleFilterChange({ tipe: e.target.value })}
 							className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						>
 							<option value="">Semua Tipe</option>

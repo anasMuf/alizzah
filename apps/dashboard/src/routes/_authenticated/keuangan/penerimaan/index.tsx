@@ -1,8 +1,8 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
 	getGetV1IncomeTransactionsQueryKey,
 	useDeleteV1IncomeTransactionsId,
@@ -22,6 +22,17 @@ import { formatCurrency, formatDate } from "../../../../utils/format";
 
 export const Route = createFileRoute("/_authenticated/keuangan/penerimaan/")({
 	component: PenerimaanListPage,
+	validateSearch: (search: Record<string, unknown>) => ({
+		category: typeof search.category === "string" ? search.category : undefined,
+		date_from:
+			typeof search.date_from === "string" ? search.date_from : undefined,
+		date_to: typeof search.date_to === "string" ? search.date_to : undefined,
+		page: (typeof search.page === "number"
+			? search.page
+			: typeof search.page === "string"
+				? Number.parseInt(search.page, 10) || 1
+				: undefined) as number | undefined,
+	}),
 });
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -53,12 +64,26 @@ function PenerimaanListPage() {
 	const [activeAy] = useAtom(academicYearAtom);
 	const queryClient = useQueryClient();
 	const { addToast } = useToast();
+	const navigate = useNavigate();
 
-	const [selectedCategory, setSelectedCategory] = useState("");
-	const [dateFrom, setDateFrom] = useState("");
-	const [dateTo, setDateTo] = useState("");
-	const [page, setPage] = useState(1);
+	const searchParams = Route.useSearch();
+	const category = searchParams.category ?? "";
+	const date_from = searchParams.date_from ?? "";
+	const date_to = searchParams.date_to ?? "";
+	const page = searchParams.page ?? 1;
+
 	const [deletingItem, setDeletingItem] = useState<any>(null);
+
+	const updateSearch = useCallback(
+		(updates: Partial<typeof searchParams>) => {
+			navigate({
+				from: Route.fullPath,
+				search: { ...searchParams, ...updates } as typeof searchParams,
+				replace: true,
+			});
+		},
+		[navigate, searchParams],
+	);
 
 	const {
 		data: listData,
@@ -69,9 +94,9 @@ function PenerimaanListPage() {
 			page,
 			limit: 20,
 			academic_year_id: activeAy?.id,
-			...(selectedCategory ? { category: selectedCategory } : {}),
-			...(dateFrom ? { start_date: dateFrom } : {}),
-			...(dateTo ? { end_date: dateTo } : {}),
+			...(category ? { category } : {}),
+			...(date_from ? { start_date: date_from } : {}),
+			...(date_to ? { end_date: date_to } : {}),
 		},
 		{ query: { enabled: !!activeAy?.id } },
 	);
@@ -137,10 +162,9 @@ function PenerimaanListPage() {
 							Kategori
 						</label>
 						<select
-							value={selectedCategory}
+							value={category}
 							onChange={(e) => {
-								setSelectedCategory(e.target.value);
-								setPage(1);
+								updateSearch({ category: e.target.value, page: 1 });
 							}}
 							className="block w-full sm:w-44 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						>
@@ -157,10 +181,9 @@ function PenerimaanListPage() {
 						</label>
 						<input
 							type="date"
-							value={dateFrom}
+							value={date_from}
 							onChange={(e) => {
-								setDateFrom(e.target.value);
-								setPage(1);
+								updateSearch({ date_from: e.target.value, page: 1 });
 							}}
 							className="block w-full sm:w-40 rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						/>
@@ -171,22 +194,22 @@ function PenerimaanListPage() {
 						</label>
 						<input
 							type="date"
-							value={dateTo}
+							value={date_to}
 							onChange={(e) => {
-								setDateTo(e.target.value);
-								setPage(1);
+								updateSearch({ date_to: e.target.value, page: 1 });
 							}}
 							className="block w-full sm:w-40 rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						/>
 					</div>
-					{(selectedCategory || dateFrom || dateTo) && (
+					{(category || date_from || date_to) && (
 						<button
 							type="button"
 							onClick={() => {
-								setSelectedCategory("");
-								setDateFrom("");
-								setDateTo("");
-								setPage(1);
+								navigate({
+									from: Route.fullPath,
+									search: {} as typeof searchParams,
+									replace: true,
+								});
 							}}
 							className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
 						>
@@ -315,7 +338,7 @@ function PenerimaanListPage() {
 									page={meta.page}
 									limit={meta.limit}
 									total={meta.total}
-									onPageChange={setPage}
+									onPageChange={(newPage) => updateSearch({ page: newPage })}
 								/>
 							</div>
 						)}

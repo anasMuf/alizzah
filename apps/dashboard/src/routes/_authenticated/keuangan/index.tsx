@@ -89,6 +89,7 @@ function KeuanganOverviewPage() {
 				<div className="mt-4 sm:ml-4 sm:mt-0 flex gap-2">
 					<Link
 						to="/keuangan/pengeluaran"
+						search={{} as any}
 						className="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
 					>
 						<Plus
@@ -215,9 +216,11 @@ function KeuanganOverviewPage() {
 						<div className="text-sm">
 							<Link
 								to="/keuangan/tagihan"
+								search={{} as any}
 								className="font-medium text-indigo-700 hover:text-indigo-900 flex items-center"
 							>
-								Lihat Tagihan <ChevronRight className="h-4 w-4 ml-1" />
+								Lihat Tagihan Lihat Tagihan{" "}
+								<ChevronRight className="h-4 w-4 ml-1" />
 							</Link>
 						</div>
 					</div>
@@ -302,6 +305,7 @@ function KeuanganOverviewPage() {
 						</h3>
 						<Link
 							to="/keuangan/tagihan"
+							search={{} as any}
 							className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
 						>
 							Lihat semua &rarr;
@@ -361,6 +365,7 @@ function KeuanganOverviewPage() {
 						</Link>
 						<Link
 							to="/keuangan/pengeluaran"
+							search={{} as any}
 							className="group flex w-full items-center rounded-md bg-gray-50 px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-100"
 						>
 							<Plus className="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500" />

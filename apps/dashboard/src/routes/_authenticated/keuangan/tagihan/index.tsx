@@ -1,7 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { ChevronRight, Filter, RefreshCw, Search } from "lucide-react";
-import { useState } from "react";
+import { useCallback } from "react";
 import { useDebounce } from "use-debounce";
 import { useGetV1ClassGroups } from "#/api/endpoints/class-groups/class-groups";
 import { useSyncSavingsMandatory } from "#/api/endpoints/invoices/invoice-sync-savings";
@@ -12,21 +12,56 @@ import { formatCurrency } from "../../../../utils/format";
 
 export const Route = createFileRoute("/_authenticated/keuangan/tagihan/")({
 	component: TagihanListPage,
+	validateSearch: (search: Record<string, unknown>) => {
+		const asNum = (v: unknown) =>
+			typeof v === "number"
+				? v
+				: typeof v === "string" && v !== ""
+					? Number(v)
+					: undefined;
+		return {
+			search: typeof search.search === "string" ? search.search : undefined,
+			type: typeof search.type === "string" ? search.type : undefined,
+			status: typeof search.status === "string" ? search.status : undefined,
+			class_group_id: asNum(search.class_group_id),
+			month: asNum(search.month),
+			page: (typeof search.page === "number"
+				? search.page
+				: typeof search.page === "string"
+					? Number.parseInt(search.page, 10) || 1
+					: undefined) as number | undefined,
+		};
+	},
 });
 
 function TagihanListPage() {
 	const [activeAy] = useAtom(academicYearAtom);
 	const { addToast } = useToast();
 	const syncMutation = useSyncSavingsMandatory();
+	const navigate = useNavigate();
 
-	// Filters
-	const [search, setSearch] = useState("");
+	// Filters from URL search params (survive refresh & navigation)
+	const searchParams = Route.useSearch();
+	const search = searchParams.search ?? "";
+	const type = searchParams.type ?? "";
+	const status = searchParams.status ?? "";
+	const class_group_id = searchParams.class_group_id;
+	const month = searchParams.month;
+	const page = searchParams.page ?? 1;
+
 	const [debouncedSearch] = useDebounce(search, 500);
-	const [selectedType, setSelectedType] = useState("");
-	const [selectedStatus, setSelectedStatus] = useState("");
-	const [selectedClassGroup, setSelectedClassGroup] = useState("");
-	const [selectedMonth, setSelectedMonth] = useState("");
-	const [page, setPage] = useState(1);
+
+	// Helper to update search params in the URL
+	const updateSearch = useCallback(
+		(updates: Partial<typeof searchParams>) => {
+			navigate({
+				from: Route.fullPath,
+				search: { ...searchParams, ...updates } as typeof searchParams,
+				replace: true,
+			});
+		},
+		[navigate, searchParams],
+	);
 
 	// Fetch data
 	const { data: invoicesData, isLoading } = useGetV1Invoices(
@@ -35,12 +70,10 @@ function TagihanListPage() {
 			limit: 20,
 			academic_year_id: activeAy?.id,
 			...(debouncedSearch ? { search: debouncedSearch } : {}),
-			...(selectedType ? { type: selectedType } : {}),
-			...(selectedStatus ? { status: selectedStatus } : {}),
-			...(selectedClassGroup
-				? { class_group_id: Number(selectedClassGroup) }
-				: {}),
-			...(selectedMonth ? { month: Number(selectedMonth) } : {}),
+			...(type ? { type } : {}),
+			...(status ? { status } : {}),
+			...(class_group_id ? { class_group_id } : {}),
+			...(month ? { month } : {}),
 		},
 		{ query: { enabled: !!activeAy?.id } },
 	);
@@ -54,12 +87,11 @@ function TagihanListPage() {
 	const meta = (invoicesData?.data as any)?.meta;
 
 	const handleReset = () => {
-		setSearch("");
-		setSelectedType("");
-		setSelectedStatus("");
-		setSelectedClassGroup("");
-		setSelectedMonth("");
-		setPage(1);
+		navigate({
+			from: Route.fullPath,
+			search: {} as typeof searchParams,
+			replace: true,
+		});
 	};
 
 	const getStatusBadge = (status: string, sisa: number) => {
@@ -147,7 +179,9 @@ function TagihanListPage() {
 								className="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
 								placeholder="Cari siswa..."
 								value={search}
-								onChange={(e) => setSearch(e.target.value)}
+								onChange={(e) =>
+									updateSearch({ search: e.target.value, page: 1 })
+								}
 							/>
 						</div>
 					</div>
@@ -161,8 +195,15 @@ function TagihanListPage() {
 						</label>
 						<select
 							id="classgroup-select"
-							value={selectedClassGroup}
-							onChange={(e) => setSelectedClassGroup(e.target.value)}
+							value={class_group_id ?? ""}
+							onChange={(e) =>
+								updateSearch({
+									class_group_id: e.target.value
+										? Number(e.target.value)
+										: undefined,
+									page: 1,
+								})
+							}
 							className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						>
 							<option value="">Semua Rombel</option>
@@ -183,8 +224,8 @@ function TagihanListPage() {
 						</label>
 						<select
 							id="type-select"
-							value={selectedType}
-							onChange={(e) => setSelectedType(e.target.value)}
+							value={type}
+							onChange={(e) => updateSearch({ type: e.target.value, page: 1 })}
 							className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						>
 							<option value="">Semua Jenis</option>
@@ -205,8 +246,10 @@ function TagihanListPage() {
 						</label>
 						<select
 							id="status-select"
-							value={selectedStatus}
-							onChange={(e) => setSelectedStatus(e.target.value)}
+							value={status}
+							onChange={(e) =>
+								updateSearch({ status: e.target.value, page: 1 })
+							}
 							className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						>
 							<option value="">Semua Status</option>
@@ -220,8 +263,13 @@ function TagihanListPage() {
 							Bulan
 						</label>
 						<select
-							value={selectedMonth}
-							onChange={(e) => setSelectedMonth(e.target.value)}
+							value={month ?? ""}
+							onChange={(e) =>
+								updateSearch({
+									month: e.target.value ? Number(e.target.value) : undefined,
+									page: 1,
+								})
+							}
 							className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						>
 							<option value="">Semua Bulan</option>
@@ -371,7 +419,7 @@ function TagihanListPage() {
 						page={page}
 						limit={20}
 						total={meta.total}
-						onPageChange={setPage}
+						onPageChange={(newPage) => updateSearch({ page: newPage })}
 					/>
 				)}
 			</div>

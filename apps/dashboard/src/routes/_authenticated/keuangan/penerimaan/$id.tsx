@@ -56,7 +56,7 @@ function PenerimaanDetailPage() {
 				});
 				queryClient.invalidateQueries({ queryKey: ["/v1/cash/balance"] });
 				queryClient.invalidateQueries({ queryKey: ["/v1/cash/transactions"] });
-				navigate({ to: "/keuangan/penerimaan" });
+				navigate({ to: "/keuangan/penerimaan", search: {} as any });
 			},
 			onError: (err: any) => {
 				addToast({
@@ -87,6 +87,7 @@ function PenerimaanDetailPage() {
 			<nav className="flex items-center text-sm text-gray-500">
 				<Link
 					to="/keuangan/penerimaan"
+					search={{} as any}
 					className="hover:text-indigo-600 transition-colors"
 				>
 					Penerimaan
@@ -101,7 +102,9 @@ function PenerimaanDetailPage() {
 				</h2>
 				<Button
 					variant="secondary"
-					onClick={() => navigate({ to: "/keuangan/penerimaan" })}
+					onClick={() =>
+						navigate({ to: "/keuangan/penerimaan", search: {} as any })
+					}
 				>
 					<ArrowLeft className="w-4 h-4 mr-2" /> Kembali
 				</Button>

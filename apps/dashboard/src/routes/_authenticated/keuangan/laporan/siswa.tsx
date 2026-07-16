@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import {
 	AlertTriangle,
@@ -20,21 +20,45 @@ import { formatCurrency, formatDate } from "../../../../utils/format";
 
 export const Route = createFileRoute("/_authenticated/keuangan/laporan/siswa")({
 	component: RekapSiswaPage,
-	validateSearch: (search: Record<string, unknown>) => ({
-		studentId: search.studentId ? Number(search.studentId) : undefined,
-	}),
+	validateSearch: (search: Record<string, unknown>) => {
+		const asNum = (v: unknown) =>
+			typeof v === "number"
+				? v
+				: typeof v === "string" && v !== ""
+					? Number(v)
+					: undefined;
+		return {
+			studentId: asNum(search.studentId),
+			allTA: typeof search.allTA === "string" ? search.allTA : undefined,
+			page: (typeof search.page === "number"
+				? search.page
+				: typeof search.page === "string"
+					? Number.parseInt(search.page, 10) || 1
+					: undefined) as number | undefined,
+		};
+	},
 });
 
 function RekapSiswaPage() {
 	const [activeAy] = useAtom(academicYearAtom);
-	const { studentId: preSelectedId } = Route.useSearch();
+	const navigate = useNavigate();
+	const searchParams = Route.useSearch();
+
+	const selectedStudentId = searchParams.studentId ?? 0;
+	const allTA = searchParams.allTA === "true";
+	const updateSearch = useCallback(
+		(updates: Partial<typeof searchParams>) => {
+			navigate({
+				from: Route.fullPath,
+				search: { ...searchParams, ...updates } as typeof searchParams,
+				replace: true,
+			});
+		},
+		[navigate, searchParams],
+	);
 
 	const [searchQuery, setSearchQuery] = useState("");
 	const [debouncedQuery, setDebouncedQuery] = useState("");
-	const [selectedStudentId, setSelectedStudentId] = useState<number>(
-		preSelectedId || 0,
-	);
-	const [allTA, setAllTA] = useState(false);
 	const [expandedInvoices, setExpandedInvoices] = useState<Set<number>>(
 		new Set(),
 	);
@@ -48,13 +72,6 @@ function RekapSiswaPage() {
 		}, 300);
 		return () => clearTimeout(debounceRef.current);
 	}, [searchQuery]);
-
-	// Pre-select from URL param
-	useEffect(() => {
-		if (preSelectedId) {
-			setSelectedStudentId(preSelectedId);
-		}
-	}, [preSelectedId]);
 
 	const { data: studentsData, isLoading: studentsLoading } = useGetV1Students(
 		{
@@ -95,12 +112,15 @@ function RekapSiswaPage() {
 	const payments: any[] = report?.payment_history || [];
 	const savings = report?.savings;
 
-	const handleSelectStudent = useCallback((id: number) => {
-		setSelectedStudentId(id);
-		setSearchQuery("");
-		setDebouncedQuery("");
-		setExpandedInvoices(new Set());
-	}, []);
+	const handleSelectStudent = useCallback(
+		(id: number) => {
+			updateSearch({ studentId: id });
+			setSearchQuery("");
+			setDebouncedQuery("");
+			setExpandedInvoices(new Set());
+		},
+		[updateSearch],
+	);
 
 	const toggleInvoice = (id: number) => {
 		setExpandedInvoices((prev) => {
@@ -208,7 +228,7 @@ function RekapSiswaPage() {
 								value={searchQuery}
 								onChange={(e) => {
 									setSearchQuery(e.target.value);
-									if (selectedStudentId) setSelectedStudentId(0);
+									if (selectedStudentId) updateSearch({ studentId: undefined });
 								}}
 								placeholder="Ketik nama siswa..."
 								className="block w-full rounded-md border-0 py-1.5 pl-9 pr-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
@@ -274,7 +294,11 @@ function RekapSiswaPage() {
 								<input
 									type="checkbox"
 									checked={allTA}
-									onChange={(e) => setAllTA(e.target.checked)}
+									onChange={(e) =>
+										updateSearch({
+											allTA: e.target.checked ? "true" : undefined,
+										})
+									}
 									className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
 								/>
 								Semua TA

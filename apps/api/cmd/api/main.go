@@ -472,6 +472,9 @@ func main() {
 	levels.GET("/:level/effective-days", effectiveDayHandler.ListLevel)
 	levels.PUT("/:level/effective-days", effectiveDayHandler.UpsertLevel)
 
+	// Effective days unified grid
+	api.GET("/effective-days/grid", effectiveDayHandler.Grid, middleware.JWTAuth(tokenBlacklistRepo), guard.RequireModule(middleware.ModuleAdministrasi))
+
 	// Extracurriculars
 	extracurriculars := api.Group("/extracurriculars", middleware.JWTAuth(tokenBlacklistRepo), guard.RequireModule(middleware.ModuleAdministrasi))
 	extracurriculars.POST("/sync-invoices", seHandler.SyncInvoices)

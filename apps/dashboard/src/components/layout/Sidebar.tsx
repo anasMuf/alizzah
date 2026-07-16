@@ -73,8 +73,14 @@ export function Sidebar({ isOpen }: SidebarProps) {
 							<NavLink to="/administrasi/tahun-ajaran" icon={Calendar}>
 								Tahun Ajaran
 							</NavLink>
-							<NavLink to="/administrasi/rombel" icon={Layers}>
+							<NavLink to="/administrasi/rombel" icon={Layers} exact>
 								Rombel
+							</NavLink>
+							<NavLink
+								to="/administrasi/rombel/hari-efektif-grid"
+								icon={Calendar}
+							>
+								Grid Hari Efektif
 							</NavLink>
 							<NavLink to="/administrasi/siswa" icon={Users}>
 								Siswa

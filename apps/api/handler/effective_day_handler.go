@@ -293,3 +293,39 @@ func (h *EffectiveDayHandler) UpsertLevel(c echo.Context) error {
 		Data:    ed,
 	})
 }
+
+// Grid godoc
+// @Summary      Unified effective days grid
+// @Description  Returns level defaults and class group overrides in a single grid response
+// @Tags         effective-days
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        academic_year_id query int true "Academic Year ID"
+// @Success      200 {object} dto.SuccessResponse{data=dto.EffectiveDayGridResponse}
+// @Router       /v1/effective-days/grid [get]
+func (h *EffectiveDayHandler) Grid(c echo.Context) error {
+	ayID, err := strconv.Atoi(c.QueryParam("academic_year_id"))
+	if err != nil || ayID == 0 {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status:  http.StatusBadRequest,
+			Code:    "BAD_REQUEST",
+			Message: "academic_year_id wajib diisi",
+		})
+	}
+
+	grid, err := h.effectiveDayService.GetGrid(uint(ayID))
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{
+			Status:  status,
+			Code:    code,
+			Message: err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "Data grid hari efektif",
+		Data:    grid,
+	})
+}

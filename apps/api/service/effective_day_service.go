@@ -117,18 +117,32 @@ func (s *effectiveDayService) UpsertLevel(level string, createdBy uint, req dto.
 
 	savedEd, _ := s.effectiveDayRepo.FindByLevelMonthYear(level, req.Month, req.Year)
 
-	// Recalculate infaq for all class groups of this level
-	// Hapus dulu per-rombel effective days agar fallback ke jenjang berfungsi
+	// Recalculate infaq for all class groups of this level.
+	// Reset per-rombel overrides: jika reset_mode diset, hanya reset field tersebut.
 	if s.invoiceGen != nil {
 		cgs, err := s.classGroupRepo.FindAll(dto.ClassGroupQueryParams{})
 		if err == nil {
-			log.Printf("[UpsertLevel] found %d total class groups, filtering for level=%s", len(cgs), level)
+			log.Printf("[UpsertLevel] found %d total class groups, filtering for level=%s reset_mode=%s", len(cgs), level, req.ResetMode)
 			count := 0
 			for _, cg := range cgs {
 				if cg.Level == level {
-					// Hapus per-rombel ED agar recalculate pakai nilai jenjang
-					if delErr := s.effectiveDayRepo.DeleteByClassGroupMonthYear(cg.ID, req.Month, req.Year); delErr != nil {
-						log.Printf("[UpsertLevel] warning: gagal hapus per-rombel ED classGroupID=%d: %v", cg.ID, delErr)
+					existing, _ := s.effectiveDayRepo.FindByClassGroupMonthYear(cg.ID, req.Month, req.Year)
+					if req.ResetMode == "" {
+						// Reset both: hapus seluruh override
+						s.effectiveDayRepo.DeleteByClassGroupMonthYear(cg.ID, req.Month, req.Year)
+					} else if existing != nil && existing.ID != 0 {
+						// Partial reset: update hanya field yang direset, pertahankan field lain
+						if req.ResetMode == "days" {
+							existing.TotalDays = req.TotalDays
+						} else if req.ResetMode == "mondays" {
+							existing.TotalMondays = req.TotalMondays
+						}
+						// Jika setelah update, kedua field sama dengan level → hapus override
+						if existing.TotalDays == req.TotalDays && existing.TotalMondays == req.TotalMondays {
+							s.effectiveDayRepo.DeleteByClassGroupMonthYear(cg.ID, req.Month, req.Year)
+						} else {
+							s.effectiveDayRepo.Update(existing)
+						}
 					}
 					log.Printf("[UpsertLevel] spawning RecalculateInfaqHarian for classGroupID=%d month=%d year=%d", cg.ID, req.Month, req.Year)
 					go s.invoiceGen.RecalculateInfaqHarian(cg.ID, req.Month, req.Year)

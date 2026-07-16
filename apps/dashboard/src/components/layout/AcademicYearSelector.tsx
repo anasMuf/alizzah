@@ -11,6 +11,7 @@ export function AcademicYearSelector() {
 		id: ay.id as number,
 		name: ay.name as string,
 		is_active: ay.is_active as boolean,
+		start_date: ay.start_date as string,
 	}));
 
 	// Set default ke tahun ajaran aktif saat pertama kali data dimuat

@@ -8,7 +8,7 @@ import {
 	Clock,
 	Pencil,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button, useToast } from "#/components/ui";
 import { academicYearAtom } from "#/store/global";
 
@@ -72,25 +72,27 @@ function getAuthHeaders() {
 	};
 }
 
-const monthsList = [
-	{ month: 7, year: 2026 },
-	{ month: 8, year: 2026 },
-	{ month: 9, year: 2026 },
-	{ month: 10, year: 2026 },
-	{ month: 11, year: 2026 },
-	{ month: 12, year: 2026 },
-	{ month: 1, year: 2027 },
-	{ month: 2, year: 2027 },
-	{ month: 3, year: 2027 },
-	{ month: 4, year: 2027 },
-	{ month: 5, year: 2027 },
-	{ month: 6, year: 2027 },
-];
+function generateMonthsList(
+	startDate: string,
+): { month: number; year: number }[] {
+	const list: { month: number; year: number }[] = [];
+	const start = new Date(startDate);
+	for (let i = 0; i < 12; i++) {
+		const d = new Date(start.getFullYear(), start.getMonth() + i, 1);
+		list.push({ month: d.getMonth() + 1, year: d.getFullYear() });
+	}
+	return list;
+}
 
 function HariEfektifGridPage() {
 	const [activeAy] = useAtom(academicYearAtom);
 	const queryClient = useQueryClient();
 	const { addToast } = useToast();
+
+	const monthsList = useMemo(
+		() => (activeAy?.start_date ? generateMonthsList(activeAy.start_date) : []),
+		[activeAy?.start_date],
+	);
 
 	const [data, setData] = useState<GridData | null>(null);
 	const [loading, setLoading] = useState(true);
@@ -112,6 +114,7 @@ function HariEfektifGridPage() {
 		totalDays: number;
 		totalMondays: number;
 		affectedCount: number;
+		resetMode: string;
 	} | null>(null);
 
 	const loadData = useCallback(async () => {
@@ -213,6 +216,7 @@ function HariEfektifGridPage() {
 					totalMondays:
 						mode === "mondays" ? val : (existing?.total_mondays ?? 0),
 					affectedCount: affectedCGs.length,
+					resetMode: mode,
 				});
 				setEditing(null);
 				setSaving(false);
@@ -229,6 +233,7 @@ function HariEfektifGridPage() {
 				mode === "mondays"
 					? val
 					: (getLevelValue(editing.level, editing.month)?.total_mondays ?? 0),
+				mode,
 			);
 			if (!levelOk) {
 				setEditing(null);
@@ -304,17 +309,20 @@ function HariEfektifGridPage() {
 		year: number,
 		totalDays: number,
 		totalMondays: number,
+		resetMode: string = "",
 	): Promise<boolean> => {
+		const body: Record<string, unknown> = {
+			academic_year_id: activeAy!.id,
+			month,
+			year,
+			total_days: totalDays,
+			total_mondays: totalMondays,
+		};
+		if (resetMode) body.reset_mode = resetMode;
 		const res = await fetch(`${API_URL}/v1/levels/${level}/effective-days`, {
 			method: "PUT",
 			headers: getAuthHeaders(),
-			body: JSON.stringify({
-				academic_year_id: activeAy!.id,
-				month,
-				year,
-				total_days: totalDays,
-				total_mondays: totalMondays,
-			}),
+			body: JSON.stringify(body),
 		});
 		if (!res.ok) {
 			const err = await res
@@ -339,6 +347,7 @@ function HariEfektifGridPage() {
 			pendingLevelEdit.year,
 			pendingLevelEdit.totalDays,
 			pendingLevelEdit.totalMondays,
+			pendingLevelEdit.resetMode,
 		);
 		setPendingLevelEdit(null);
 		setSaving(false);
@@ -461,6 +470,7 @@ function HariEfektifGridPage() {
 										isCollapsed={isCollapsed}
 										onToggle={() => toggleCollapse(lv.value)}
 										classGroups={cgs}
+										monthsList={monthsList}
 										mode={mode}
 										isOverridden={isOverridden}
 										getDisplayValue={getDisplayValue}
@@ -538,6 +548,7 @@ function LevelGroup({
 	isCollapsed,
 	onToggle,
 	classGroups,
+	monthsList,
 	mode,
 	isOverridden,
 	getDisplayValue,
@@ -554,6 +565,7 @@ function LevelGroup({
 	isCollapsed: boolean;
 	onToggle: () => void;
 	classGroups: CGRow[];
+	monthsList: { month: number; year: number }[];
 	mode: "days" | "mondays";
 	isOverridden: (cg: CGRow, month: number) => boolean;
 	getDisplayValue: (cg: CGRow, month: number) => string;

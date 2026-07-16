@@ -52,7 +52,7 @@ function PenerimaanBaruPage() {
 				// Invalidate kas balance & transactions agar saldo kas langsung ter-update
 				queryClient.invalidateQueries({ queryKey: ["/v1/cash/balance"] });
 				queryClient.invalidateQueries({ queryKey: ["/v1/cash/transactions"] });
-				navigate({ to: "/keuangan/penerimaan" });
+				navigate({ to: "/keuangan/penerimaan", search: {} as any });
 			},
 			onError: (err: any) => {
 				addToast({
@@ -86,6 +86,7 @@ function PenerimaanBaruPage() {
 			<nav className="flex items-center text-sm text-gray-500">
 				<Link
 					to="/keuangan/penerimaan"
+					search={{} as any}
 					className="hover:text-indigo-600 transition-colors"
 				>
 					Penerimaan
@@ -189,7 +190,7 @@ function PenerimaanBaruPage() {
 
 				{/* Actions */}
 				<div className="flex items-center justify-end gap-x-4 border-t border-gray-200 px-4 py-4 sm:px-8">
-					<Link to="/keuangan/penerimaan">
+					<Link to="/keuangan/penerimaan" search={{} as any}>
 						<Button type="button" variant="secondary">
 							Batal
 						</Button>

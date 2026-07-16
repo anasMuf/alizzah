@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import {
 	CalendarCheck,
@@ -10,7 +10,7 @@ import {
 	ShieldX,
 	UserCircle,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
 	getGetV1DaycareEnrollmentsQueryKey,
 	useGetV1DaycareEnrollments,
@@ -41,6 +41,14 @@ const AGE_LABELS: Record<string, string> = { kbtk: "KB-TK", under3: "< 3 th" };
 
 export const Route = createFileRoute("/_authenticated/administrasi/daycare/")({
 	component: DaycareIndexPage,
+	validateSearch: (params: Record<string, unknown>) => ({
+		page: (typeof params.page === "number"
+			? params.page
+			: typeof params.page === "string"
+				? Number.parseInt(params.page, 10) || 1
+				: undefined) as number | undefined,
+		search: typeof params.search === "string" ? params.search : undefined,
+	}),
 });
 
 function DaycareIndexPage() {
@@ -73,10 +81,30 @@ function EnrollmentTab() {
 	const [activeAy] = useAtom(academicYearAtom);
 	const queryClient = useQueryClient();
 	const { addToast } = useToast();
-	const [page, setPage] = useState(1);
+	const navigate = useNavigate();
+	const searchParams = Route.useSearch();
+
+	const page = searchParams.page ?? 1;
 	const limit = 10;
-	const [search, setSearch] = useState("");
-	const [searchInput, setSearchInput] = useState("");
+	const searchInput = searchParams.search ?? "";
+
+	const [debouncedSearch, setDebouncedSearch] = useState(searchInput);
+	useEffect(() => {
+		const timer = setTimeout(() => setDebouncedSearch(searchInput), 300);
+		return () => clearTimeout(timer);
+	}, [searchInput]);
+
+	const updateSearch = useCallback(
+		(updates: Record<string, unknown>) => {
+			navigate({
+				from: Route.fullPath,
+				search: { ...searchParams, ...updates } as typeof searchParams,
+				replace: true,
+			});
+		},
+		[navigate, searchParams],
+	);
+
 	const [isDeactivateOpen, setIsDeactivateOpen] = useState(false);
 	const [enrollmentToDeactivate, setEnrollmentToDeactivate] =
 		useState<any>(null);
@@ -87,7 +115,12 @@ function EnrollmentTab() {
 		isLoading,
 		isError,
 	} = useGetV1DaycareEnrollments(
-		{ academic_year_id: activeAy?.id as any, page, limit, search },
+		{
+			academic_year_id: activeAy?.id as any,
+			page,
+			limit,
+			search: debouncedSearch,
+		},
 		{ query: { enabled: !!activeAy?.id, keepPreviousData: true } as any },
 	);
 	const enrollments = (response?.data as any)?.data || [];
@@ -187,13 +220,7 @@ function EnrollmentTab() {
 			</div>
 
 			<div className="bg-white p-4 rounded-xl shadow-sm ring-1 ring-gray-900/5 flex gap-4">
-				<form
-					onSubmit={(e) => {
-						e.preventDefault();
-						setSearch(searchInput);
-					}}
-					className="relative w-full sm:max-w-xs"
-				>
+				<div className="relative w-full sm:max-w-xs">
 					<div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
 						<Search className="h-4 w-4 text-gray-400" />
 					</div>
@@ -202,9 +229,9 @@ function EnrollmentTab() {
 						className="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 ring-1 ring-gray-300 text-sm"
 						placeholder="Cari nama..."
 						value={searchInput}
-						onChange={(e) => setSearchInput(e.target.value)}
+						onChange={(e) => updateSearch({ search: e.target.value, page: 1 })}
 					/>
-				</form>
+				</div>
 			</div>
 
 			{isLoading ? (
@@ -302,7 +329,7 @@ function EnrollmentTab() {
 						<div className="flex justify-between px-4 py-3 border-t">
 							<button
 								disabled={page === 1}
-								onClick={() => setPage(page - 1)}
+								onClick={() => updateSearch({ page: page - 1 })}
 								className="text-sm text-indigo-600 disabled:text-gray-300"
 							>
 								&laquo; Prev
@@ -312,7 +339,7 @@ function EnrollmentTab() {
 							</span>
 							<button
 								disabled={page === meta.total_pages}
-								onClick={() => setPage(page + 1)}
+								onClick={() => updateSearch({ page: page + 1 })}
 								className="text-sm text-indigo-600 disabled:text-gray-300"
 							>
 								Next &raquo;

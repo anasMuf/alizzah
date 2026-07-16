@@ -376,6 +376,7 @@ function LaporanBulananPage() {
 							<div className="px-6 py-3 border-t border-gray-200 print:hidden">
 								<Link
 									to="/keuangan/laporan/kelas"
+									search={{} as any}
 									className="text-sm font-medium text-indigo-600 hover:text-indigo-500 inline-flex items-center"
 								>
 									Lihat Rekap Per Kelas

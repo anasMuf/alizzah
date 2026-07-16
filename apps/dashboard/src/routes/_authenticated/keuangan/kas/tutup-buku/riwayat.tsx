@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import {
 	AlertTriangle,
@@ -9,7 +9,7 @@ import {
 	Filter,
 	Lock,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { useGetV1DailyClosings } from "#/api/endpoints/daily-closings/daily-closings";
 import { Badge, Button } from "#/components/ui";
 import { academicYearAtom } from "../../../../../store/global";
@@ -18,6 +18,16 @@ import { formatCurrency, formatDate } from "../../../../../utils/format";
 export const Route = createFileRoute(
 	"/_authenticated/keuangan/kas/tutup-buku/riwayat",
 )({
+	validateSearch: (search: Record<string, unknown>) => ({
+		month: search.month as string | undefined,
+		year: search.year as string | undefined,
+		status: search.status as string | undefined,
+		page: (typeof search.page === "number"
+			? search.page
+			: typeof search.page === "string"
+				? Number.parseInt(search.page, 10) || 1
+				: undefined) as number | undefined,
+	}),
 	component: RiwayatTutupBukuPage,
 });
 
@@ -44,14 +54,35 @@ function getMonthOptions() {
 
 function RiwayatTutupBukuPage() {
 	const [activeAy] = useAtom(academicYearAtom);
+	const searchParams = Route.useSearch();
+	const navigate = useNavigate();
 
-	const now = new Date();
-	const [month, setMonth] = useState(
-		String(now.getMonth() + 1).padStart(2, "0"),
+	const month =
+		searchParams.month ?? String(new Date().getMonth() + 1).padStart(2, "0");
+	const year = searchParams.year ?? String(new Date().getFullYear());
+	const status = searchParams.status ?? "";
+	const page = searchParams.page ?? 1;
+
+	const updateSearch = useCallback(
+		(updates: Partial<typeof searchParams>) => {
+			navigate({
+				from: Route.fullPath,
+				search: { ...searchParams, ...updates } as typeof searchParams,
+				replace: true,
+			});
+		},
+		[navigate, searchParams],
 	);
-	const [year, setYear] = useState(String(now.getFullYear()));
-	const [status, setStatus] = useState("");
-	const [page, setPage] = useState(1);
+
+	const handleReset = useCallback(() => {
+		const n = new Date();
+		updateSearch({
+			month: String(n.getMonth() + 1).padStart(2, "0"),
+			year: String(n.getFullYear()),
+			status: undefined,
+			page: 1,
+		});
+	}, [updateSearch]);
 
 	const startDate = `${year}-${month}-01`;
 	const endDate = useMemo(() => {
@@ -87,14 +118,6 @@ function RiwayatTutupBukuPage() {
 		return { confirmedCount: confirmed, pendingCount: pending };
 	}, [closingsList]);
 
-	const handleReset = () => {
-		const n = new Date();
-		setMonth(String(n.getMonth() + 1).padStart(2, "0"));
-		setYear(String(n.getFullYear()));
-		setStatus("");
-		setPage(1);
-	};
-
 	const currentYear = new Date().getFullYear();
 	const yearOptions = Array.from({ length: 3 }, (_, i) => currentYear - i);
 
@@ -128,10 +151,7 @@ function RiwayatTutupBukuPage() {
 						</label>
 						<select
 							value={month}
-							onChange={(e) => {
-								setMonth(e.target.value);
-								setPage(1);
-							}}
+							onChange={(e) => updateSearch({ month: e.target.value, page: 1 })}
 							className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						>
 							{getMonthOptions().map((m) => (
@@ -148,10 +168,7 @@ function RiwayatTutupBukuPage() {
 						</label>
 						<select
 							value={year}
-							onChange={(e) => {
-								setYear(e.target.value);
-								setPage(1);
-							}}
+							onChange={(e) => updateSearch({ year: e.target.value, page: 1 })}
 							className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						>
 							{yearOptions.map((y) => (
@@ -168,10 +185,9 @@ function RiwayatTutupBukuPage() {
 						</label>
 						<select
 							value={status}
-							onChange={(e) => {
-								setStatus(e.target.value);
-								setPage(1);
-							}}
+							onChange={(e) =>
+								updateSearch({ status: e.target.value, page: 1 })
+							}
 							className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						>
 							<option value="">Semua Status</option>
@@ -355,14 +371,14 @@ function RiwayatTutupBukuPage() {
 						<div className="flex flex-1 justify-between sm:hidden">
 							<Button
 								variant="secondary"
-								onClick={() => setPage((p) => Math.max(1, p - 1))}
+								onClick={() => updateSearch({ page: Math.max(1, page - 1) })}
 								disabled={page === 1}
 							>
 								Previous
 							</Button>
 							<Button
 								variant="secondary"
-								onClick={() => setPage((p) => p + 1)}
+								onClick={() => updateSearch({ page: page + 1 })}
 								disabled={page >= meta.total_pages}
 							>
 								Next
@@ -388,7 +404,9 @@ function RiwayatTutupBukuPage() {
 								>
 									<button
 										type="button"
-										onClick={() => setPage((p) => Math.max(1, p - 1))}
+										onClick={() =>
+											updateSearch({ page: Math.max(1, page - 1) })
+										}
 										disabled={page === 1}
 										className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
 									>
@@ -403,7 +421,7 @@ function RiwayatTutupBukuPage() {
 									</span>
 									<button
 										type="button"
-										onClick={() => setPage((p) => p + 1)}
+										onClick={() => updateSearch({ page: page + 1 })}
 										disabled={page >= meta.total_pages}
 										className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
 									>

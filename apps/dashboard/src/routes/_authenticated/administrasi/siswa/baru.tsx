@@ -142,6 +142,7 @@ function SiswaBaruPage() {
 					<li>
 						<Link
 							to="/administrasi/siswa"
+							search={{} as any}
 							className="text-gray-400 hover:text-gray-500"
 						>
 							Administrasi
@@ -155,6 +156,7 @@ function SiswaBaruPage() {
 							/>
 							<Link
 								to="/administrasi/siswa"
+								search={{} as any}
 								className="ml-2 text-sm font-medium text-gray-500 hover:text-gray-700"
 							>
 								Siswa
@@ -431,7 +433,7 @@ function SiswaBaruPage() {
 				</div>
 
 				<div className="flex items-center justify-end gap-x-6 pb-8">
-					<Link to="/administrasi/siswa">
+					<Link to="/administrasi/siswa" search={{} as any}>
 						<Button type="button" variant="ghost">
 							Batal
 						</Button>

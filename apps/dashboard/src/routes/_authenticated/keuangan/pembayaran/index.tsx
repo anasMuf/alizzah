@@ -1,7 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { ChevronRight, Filter, Plus, Receipt } from "lucide-react";
-import { useState } from "react";
+import { useCallback } from "react";
 import { useGetV1Payments } from "#/api/endpoints/payments/payments";
 import type { DtoPaymentListResponse } from "#/api/model/dtoPaymentListResponse";
 import { Badge, Button, Pagination } from "#/components/ui";
@@ -11,16 +11,39 @@ import { formatCurrency, formatDate } from "../../../../utils/format";
 
 export const Route = createFileRoute("/_authenticated/keuangan/pembayaran/")({
 	component: PembayaranListPage,
+	validateSearch: (search: Record<string, unknown>) => ({
+		source: typeof search.source === "string" ? search.source : undefined,
+		start_date:
+			typeof search.start_date === "string" ? search.start_date : undefined,
+		end_date: typeof search.end_date === "string" ? search.end_date : undefined,
+		page: (typeof search.page === "number"
+			? search.page
+			: typeof search.page === "string"
+				? Number.parseInt(search.page, 10) || 1
+				: undefined) as number | undefined,
+	}),
 });
 
 function PembayaranListPage() {
 	const [activeAy] = useAtom(academicYearAtom);
+	const navigate = useNavigate();
 
-	// Filters
-	const [selectedSource, setSelectedSource] = useState("");
-	const [startDate, setStartDate] = useState("");
-	const [endDate, setEndDate] = useState("");
-	const [page, setPage] = useState(1);
+	const searchParams = Route.useSearch();
+	const source = searchParams.source ?? "";
+	const start_date = searchParams.start_date ?? "";
+	const end_date = searchParams.end_date ?? "";
+	const page = searchParams.page ?? 1;
+
+	const updateSearch = useCallback(
+		(updates: Partial<typeof searchParams>) => {
+			navigate({
+				from: Route.fullPath,
+				search: { ...searchParams, ...updates } as typeof searchParams,
+				replace: true,
+			});
+		},
+		[navigate, searchParams],
+	);
 
 	// Fetch data
 	const { data: paymentsData, isLoading } = useGetV1Payments(
@@ -28,9 +51,9 @@ function PembayaranListPage() {
 			page,
 			limit: 20,
 			academic_year_id: activeAy?.id,
-			...(selectedSource ? { source: selectedSource } : {}),
-			...(startDate ? { start_date: startDate } : {}),
-			...(endDate ? { end_date: endDate } : {}),
+			...(source ? { source } : {}),
+			...(start_date ? { start_date } : {}),
+			...(end_date ? { end_date } : {}),
 		},
 		{ query: { enabled: !!activeAy?.id } },
 	);
@@ -39,10 +62,11 @@ function PembayaranListPage() {
 	const meta = extractMeta(paymentsData);
 
 	const handleReset = () => {
-		setSelectedSource("");
-		setStartDate("");
-		setEndDate("");
-		setPage(1);
+		navigate({
+			from: Route.fullPath,
+			search: {} as typeof searchParams,
+			replace: true,
+		});
 	};
 
 	const getSourceBadge = (source: string) => {
@@ -85,8 +109,10 @@ function PembayaranListPage() {
 							Sumber Dana
 						</label>
 						<select
-							value={selectedSource}
-							onChange={(e) => setSelectedSource(e.target.value)}
+							value={source}
+							onChange={(e) =>
+								updateSearch({ source: e.target.value, page: 1 })
+							}
 							className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						>
 							<option value="">Semua Sumber</option>
@@ -102,8 +128,10 @@ function PembayaranListPage() {
 						<input
 							type="date"
 							className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
-							value={startDate}
-							onChange={(e) => setStartDate(e.target.value)}
+							value={start_date}
+							onChange={(e) =>
+								updateSearch({ start_date: e.target.value, page: 1 })
+							}
 						/>
 					</div>
 
@@ -114,8 +142,10 @@ function PembayaranListPage() {
 						<input
 							type="date"
 							className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
-							value={endDate}
-							onChange={(e) => setEndDate(e.target.value)}
+							value={end_date}
+							onChange={(e) =>
+								updateSearch({ end_date: e.target.value, page: 1 })
+							}
 						/>
 					</div>
 
@@ -235,7 +265,7 @@ function PembayaranListPage() {
 						page={page}
 						limit={20}
 						total={meta.total}
-						onPageChange={setPage}
+						onPageChange={(newPage) => updateSearch({ page: newPage })}
 					/>
 				)}
 			</div>

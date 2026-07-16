@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Edit, Plus, Search, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
 	getGetV1ExtracurricularsQueryKey,
 	useDeleteV1ExtracurricularsId,
@@ -13,13 +13,29 @@ import { EkskulForm } from "../../../features/administrasi/components/EkskulForm
 
 export const Route = createFileRoute("/_authenticated/administrasi/ekskul")({
 	component: EkskulPage,
+	validateSearch: (params: Record<string, unknown>) => ({
+		search: typeof params.search === "string" ? params.search : undefined,
+	}),
 });
 
 function EkskulPage() {
 	const queryClient = useQueryClient();
 	const { addToast } = useToast();
+	const navigate = useNavigate();
+	const searchParams = Route.useSearch();
 
-	const [search, setSearch] = useState("");
+	const search = searchParams.search ?? "";
+
+	const updateSearch = useCallback(
+		(updates: Record<string, unknown>) => {
+			navigate({
+				from: Route.fullPath,
+				search: { ...searchParams, ...updates } as typeof searchParams,
+				replace: true,
+			});
+		},
+		[navigate, searchParams],
+	);
 
 	const [isFormOpen, setIsFormOpen] = useState(false);
 	const [selectedEkskul, setSelectedEkskul] =
@@ -111,7 +127,7 @@ function EkskulPage() {
 							className="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
 							placeholder="Cari nama kegiatan..."
 							value={search}
-							onChange={(e) => setSearch(e.target.value)}
+							onChange={(e) => updateSearch({ search: e.target.value })}
 						/>
 					</div>
 					<div className="flex gap-2"></div>

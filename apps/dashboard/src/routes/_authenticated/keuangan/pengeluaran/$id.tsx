@@ -126,7 +126,7 @@ function PengeluaranDetailPage() {
 					title: "Berhasil",
 					message: "Pengeluaran berhasil dihapus.",
 				});
-				navigate({ to: "/keuangan/pengeluaran" });
+				navigate({ to: "/keuangan/pengeluaran", search: {} as any });
 			},
 			onError: (error: Error) => {
 				const msg =
@@ -188,7 +188,7 @@ function PengeluaranDetailPage() {
 				title="Pengeluaran tidak ditemukan"
 				description="Data pengeluaran dengan ID ini tidak ditemukan."
 				action={
-					<Link to="/keuangan/pengeluaran">
+					<Link to="/keuangan/pengeluaran" search={{} as any}>
 						<Button variant="secondary">Kembali ke Daftar</Button>
 					</Link>
 				}
@@ -209,6 +209,7 @@ function PengeluaranDetailPage() {
 			<div>
 				<Link
 					to="/keuangan/pengeluaran"
+					search={{} as any}
 					className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-4"
 				>
 					<ArrowLeft className="h-4 w-4" />

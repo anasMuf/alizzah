@@ -1,7 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { ChevronRight, Printer } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { useGetV1ClassGroups } from "#/api/endpoints/class-groups/class-groups";
 import { useGetV1ReportsClassGroupsId } from "#/api/endpoints/reports/reports";
 import { Alert, Badge, Button } from "#/components/ui";
@@ -10,6 +10,20 @@ import { formatCurrency } from "../../../../utils/format";
 
 export const Route = createFileRoute("/_authenticated/keuangan/laporan/kelas")({
 	component: RekapKelasPage,
+	validateSearch: (search: Record<string, unknown>) => {
+		const asNum = (v: unknown) =>
+			typeof v === "number"
+				? v
+				: typeof v === "string" && v !== ""
+					? Number(v)
+					: undefined;
+		return {
+			class_id: asNum(search.class_id),
+			month: asNum(search.month),
+			year: asNum(search.year),
+			status: search.status as string | undefined,
+		};
+	},
 });
 
 const MONTH_NAMES = [
@@ -30,11 +44,24 @@ const MONTH_NAMES = [
 function RekapKelasPage() {
 	const [activeAy] = useAtom(academicYearAtom);
 	const now = new Date();
+	const navigate = useNavigate();
+	const searchParams = Route.useSearch();
 
-	const [classId, setClassId] = useState("");
-	const [month, setMonth] = useState(now.getMonth() + 1);
-	const [year, setYear] = useState(now.getFullYear());
-	const [statusFilter, setStatusFilter] = useState("");
+	const classId = searchParams.class_id;
+	const month = searchParams.month ?? now.getMonth() + 1;
+	const year = searchParams.year ?? now.getFullYear();
+	const statusFilter = searchParams.status ?? "";
+
+	const updateSearch = useCallback(
+		(updates: Partial<typeof searchParams>) => {
+			navigate({
+				from: Route.fullPath,
+				search: { ...searchParams, ...updates } as typeof searchParams,
+				replace: true,
+			});
+		},
+		[navigate, searchParams],
+	);
 
 	const { data: classGroupsData } = useGetV1ClassGroups(
 		{ academic_year_id: activeAy?.id },
@@ -42,7 +69,7 @@ function RekapKelasPage() {
 	);
 	const classGroups: any[] = (classGroupsData?.data as any)?.data || [];
 
-	const classIdNum = Number(classId);
+	const classIdNum = classId ?? 0;
 	const shouldFetch = classIdNum > 0 && !!activeAy?.id;
 
 	const {
@@ -87,13 +114,18 @@ function RekapKelasPage() {
 	}, [classGroups]);
 
 	const isDefault =
-		!classId && month === now.getMonth() + 1 && year === now.getFullYear();
+		searchParams.class_id === undefined &&
+		searchParams.month === undefined &&
+		searchParams.year === undefined &&
+		searchParams.status === undefined;
 
 	const handleReset = () => {
-		setClassId("");
-		setMonth(now.getMonth() + 1);
-		setYear(now.getFullYear());
-		setStatusFilter("");
+		updateSearch({
+			class_id: undefined,
+			month: undefined,
+			year: undefined,
+			status: undefined,
+		});
 	};
 
 	const statusBadge = (status: string) => {
@@ -162,10 +194,12 @@ function RekapKelasPage() {
 							Rombel <span className="text-red-500">*</span>
 						</label>
 						<select
-							value={classId}
+							value={classId ?? ""}
 							onChange={(e) => {
-								setClassId(e.target.value);
-								setStatusFilter("");
+								updateSearch({
+									class_id: e.target.value ? Number(e.target.value) : undefined,
+									status: undefined,
+								});
 							}}
 							className="block w-full sm:w-48 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						>
@@ -190,7 +224,7 @@ function RekapKelasPage() {
 						</label>
 						<select
 							value={month}
-							onChange={(e) => setMonth(Number(e.target.value))}
+							onChange={(e) => updateSearch({ month: Number(e.target.value) })}
 							className="block w-full sm:w-36 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						>
 							{MONTH_NAMES.map((name, idx) => (
@@ -206,7 +240,7 @@ function RekapKelasPage() {
 						</label>
 						<select
 							value={year}
-							onChange={(e) => setYear(Number(e.target.value))}
+							onChange={(e) => updateSearch({ year: Number(e.target.value) })}
 							className="block w-full sm:w-24 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						>
 							{yearOptions.map((y) => (
@@ -300,7 +334,7 @@ function RekapKelasPage() {
 							<button
 								key={val}
 								type="button"
-								onClick={() => setStatusFilter(val)}
+								onClick={() => updateSearch({ status: val || undefined })}
 								className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
 									statusFilter === val
 										? "bg-indigo-100 text-indigo-700"
@@ -349,7 +383,11 @@ function RekapKelasPage() {
 												<td className="whitespace-nowrap px-3 py-3 text-sm">
 													<Link
 														to="/keuangan/laporan/siswa"
-														search={{ studentId: student.student_id }}
+														search={{
+															studentId: student.student_id,
+															allTA: undefined,
+															page: undefined,
+														}}
 														className="text-indigo-600 hover:text-indigo-500 font-medium"
 													>
 														{student.student_name}

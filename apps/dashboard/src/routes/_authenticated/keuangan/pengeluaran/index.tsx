@@ -1,7 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { ChevronRight, Filter, Plus, Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { useGetV1ExpenseCategories } from "#/api/endpoints/expense-categories/expense-categories";
 import { useGetV1Expenses } from "#/api/endpoints/expenses/expenses";
 import { Alert, Button, EmptyState } from "#/components/ui";
@@ -10,16 +10,42 @@ import { formatCurrency, formatDate } from "../../../../utils/format";
 
 export const Route = createFileRoute("/_authenticated/keuangan/pengeluaran/")({
 	component: PengeluaranListPage,
+	validateSearch: (search: Record<string, unknown>) => ({
+		search: typeof search.search === "string" ? search.search : undefined,
+		category_id:
+			typeof search.category_id === "string" ? search.category_id : undefined,
+		date_from:
+			typeof search.date_from === "string" ? search.date_from : undefined,
+		date_to: typeof search.date_to === "string" ? search.date_to : undefined,
+		page: (typeof search.page === "number"
+			? search.page
+			: typeof search.page === "string"
+				? Number.parseInt(search.page, 10) || 1
+				: undefined) as number | undefined,
+	}),
 });
 
 function PengeluaranListPage() {
 	const [activeAy] = useAtom(academicYearAtom);
+	const navigate = useNavigate();
 
-	const [search, setSearch] = useState("");
-	const [selectedCategory, setSelectedCategory] = useState("");
-	const [dateFrom, setDateFrom] = useState("");
-	const [dateTo, setDateTo] = useState("");
-	const [page, setPage] = useState(1);
+	const searchParams = Route.useSearch();
+	const search = searchParams.search ?? "";
+	const category_id = searchParams.category_id ?? "";
+	const date_from = searchParams.date_from ?? "";
+	const date_to = searchParams.date_to ?? "";
+	const page = searchParams.page ?? 1;
+
+	const updateSearch = useCallback(
+		(updates: Partial<typeof searchParams>) => {
+			navigate({
+				from: Route.fullPath,
+				search: { ...searchParams, ...updates } as typeof searchParams,
+				replace: true,
+			});
+		},
+		[navigate, searchParams],
+	);
 
 	const {
 		data: expensesData,
@@ -30,11 +56,9 @@ function PengeluaranListPage() {
 			page,
 			limit: 20,
 			academic_year_id: activeAy?.id,
-			...(selectedCategory
-				? { expense_category_id: Number(selectedCategory) }
-				: {}),
-			...(dateFrom ? { start_date: dateFrom } : {}),
-			...(dateTo ? { end_date: dateTo } : {}),
+			...(category_id ? { expense_category_id: Number(category_id) } : {}),
+			...(date_from ? { start_date: date_from } : {}),
+			...(date_to ? { end_date: date_to } : {}),
 		},
 		{ query: { enabled: !!activeAy?.id } },
 	);
@@ -74,11 +98,11 @@ function PengeluaranListPage() {
 	}, [filteredExpenses]);
 
 	const handleReset = () => {
-		setSearch("");
-		setSelectedCategory("");
-		setDateFrom("");
-		setDateTo("");
-		setPage(1);
+		navigate({
+			from: Route.fullPath,
+			search: {} as typeof searchParams,
+			replace: true,
+		});
 	};
 
 	const getCategoryLabel = (expense: any) => {
@@ -135,7 +159,9 @@ function PengeluaranListPage() {
 								className="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
 								placeholder="Cari keterangan..."
 								value={search}
-								onChange={(e) => setSearch(e.target.value)}
+								onChange={(e) =>
+									updateSearch({ search: e.target.value, page: 1 })
+								}
 							/>
 						</div>
 					</div>
@@ -145,10 +171,9 @@ function PengeluaranListPage() {
 							Kategori
 						</label>
 						<select
-							value={selectedCategory}
+							value={category_id}
 							onChange={(e) => {
-								setSelectedCategory(e.target.value);
-								setPage(1);
+								updateSearch({ category_id: e.target.value, page: 1 });
 							}}
 							className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						>
@@ -171,10 +196,9 @@ function PengeluaranListPage() {
 						</label>
 						<input
 							type="date"
-							value={dateFrom}
+							value={date_from}
 							onChange={(e) => {
-								setDateFrom(e.target.value);
-								setPage(1);
+								updateSearch({ date_from: e.target.value, page: 1 });
 							}}
 							className="block w-full rounded-md border-0 py-1.5 pl-3 pr-3 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						/>
@@ -186,10 +210,9 @@ function PengeluaranListPage() {
 						</label>
 						<input
 							type="date"
-							value={dateTo}
+							value={date_to}
 							onChange={(e) => {
-								setDateTo(e.target.value);
-								setPage(1);
+								updateSearch({ date_to: e.target.value, page: 1 });
 							}}
 							className="block w-full rounded-md border-0 py-1.5 pl-3 pr-3 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						/>
@@ -342,14 +365,14 @@ function PengeluaranListPage() {
 							<div className="flex flex-1 justify-between sm:hidden">
 								<Button
 									variant="secondary"
-									onClick={() => setPage((p) => Math.max(1, p - 1))}
+									onClick={() => updateSearch({ page: Math.max(1, page - 1) })}
 									disabled={page === 1}
 								>
 									Previous
 								</Button>
 								<Button
 									variant="secondary"
-									onClick={() => setPage((p) => p + 1)}
+									onClick={() => updateSearch({ page: page + 1 })}
 									disabled={page >= meta.total_pages}
 								>
 									Next
@@ -374,7 +397,9 @@ function PengeluaranListPage() {
 										aria-label="Pagination"
 									>
 										<button
-											onClick={() => setPage((p) => Math.max(1, p - 1))}
+											onClick={() =>
+												updateSearch({ page: Math.max(1, page - 1) })
+											}
 											disabled={page === 1}
 											className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
 										>
@@ -388,7 +413,7 @@ function PengeluaranListPage() {
 											{page}
 										</span>
 										<button
-											onClick={() => setPage((p) => p + 1)}
+											onClick={() => updateSearch({ page: page + 1 })}
 											disabled={page >= meta.total_pages}
 											className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
 										>

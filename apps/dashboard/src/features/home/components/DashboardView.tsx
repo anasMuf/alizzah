@@ -170,6 +170,7 @@ export function DashboardView() {
 									</div>
 									<Link
 										to="/keuangan/tagihan"
+										search={{} as any}
 										className="text-sm font-medium text-indigo-600 hover:text-indigo-500 flex items-center"
 									>
 										Semua <ChevronRight className="h-4 w-4 ml-1" />

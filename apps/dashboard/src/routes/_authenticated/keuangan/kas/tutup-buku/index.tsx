@@ -459,6 +459,7 @@ function TutupBukuPage() {
 			<div className="flex justify-end">
 				<Link
 					to="/keuangan/kas/tutup-buku/riwayat"
+					search={{} as any}
 					className="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-500 transition-colors"
 				>
 					Lihat Riwayat Tutup Buku

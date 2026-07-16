@@ -219,6 +219,7 @@ function KasBerangkasOverviewPage() {
 						<div className="flex flex-col gap-2 border-t border-gray-100 pt-4">
 							<Link
 								to="/keuangan/kas/transaksi"
+								search={{} as any}
 								className="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-500"
 							>
 								Lihat Riwayat Transaksi
@@ -270,6 +271,7 @@ function KasBerangkasOverviewPage() {
 						<div className="border-t border-gray-100 pt-4">
 							<Link
 								to="/keuangan/kas/berangkas/transaksi"
+								search={{} as any}
 								className="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-500"
 							>
 								Lihat Riwayat Transaksi Berangkas

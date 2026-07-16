@@ -94,7 +94,11 @@ function SiswaKeuanganPage() {
 					</p>
 
 					<div className="mt-auto pt-6 relative z-10">
-						<Link to="/keuangan/tabungan/siswa/$id" params={{ id }}>
+						<Link
+							to="/keuangan/tabungan/siswa/$id"
+							params={{ id }}
+							search={{} as any}
+						>
 							<Button
 								variant="secondary"
 								className="w-full text-green-700 border-green-200 hover:bg-green-50 hover:border-green-300"

@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import {
 	GraduationCap,
@@ -9,7 +9,7 @@ import {
 	UserCircle,
 	X,
 } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { useGetV1ClassGroups } from "#/api/endpoints/class-groups/class-groups";
 import { usePostV1StudentsIdEnrollments } from "#/api/endpoints/student-enrollments/enroll";
 import { useGetV1Students } from "#/api/endpoints/students/students";
@@ -26,19 +26,55 @@ import { academicYearAtom } from "../../../../store/global";
 
 export const Route = createFileRoute("/_authenticated/administrasi/siswa/")({
 	component: SiswaIndexPage,
+	validateSearch: (params: Record<string, unknown>) => {
+		const parseClassGroupId = (v: unknown) => {
+			if (typeof v === "number") return v;
+			if (typeof v === "string" && v === "__none__") return "__none__";
+			if (typeof v === "string" && v !== "") return Number(v);
+			return undefined;
+		};
+		return {
+			page: (typeof params.page === "number"
+				? params.page
+				: typeof params.page === "string"
+					? Number.parseInt(params.page, 10) || 1
+					: undefined) as number | undefined,
+			search: typeof params.search === "string" ? params.search : undefined,
+			status: typeof params.status === "string" ? params.status : undefined,
+			class_group_id: parseClassGroupId(params.class_group_id),
+		};
+	},
 });
 
 function SiswaIndexPage() {
 	const [activeAy] = useAtom(academicYearAtom);
 	const { addToast } = useToast();
 	const queryClient = useQueryClient();
+	const navigate = useNavigate();
+	const searchParams = Route.useSearch();
 
-	const [page, setPage] = useState(1);
+	const page = searchParams.page ?? 1;
 	const limit = 10;
-	const [search, setSearch] = useState("");
-	const [searchInput, setSearchInput] = useState("");
-	const [statusFilter, setStatusFilter] = useState("");
-	const [classGroupFilter, setClassGroupFilter] = useState("");
+	const searchInput = searchParams.search ?? "";
+	const statusFilter = searchParams.status ?? "";
+	const classGroupFilter = searchParams.class_group_id;
+
+	const [debouncedSearch, setDebouncedSearch] = useState(searchInput);
+	useEffect(() => {
+		const timer = setTimeout(() => setDebouncedSearch(searchInput), 300);
+		return () => clearTimeout(timer);
+	}, [searchInput]);
+
+	const updateSearch = useCallback(
+		(updates: Record<string, unknown>) => {
+			navigate({
+				from: Route.fullPath,
+				search: { ...searchParams, ...updates } as typeof searchParams,
+				replace: true,
+			});
+		},
+		[navigate, searchParams],
+	);
 
 	const { data: cgResponse } = useGetV1ClassGroups(
 		{ academic_year_id: activeAy?.id as any },
@@ -55,14 +91,12 @@ function SiswaIndexPage() {
 			academic_year_id: activeAy?.id as any,
 			page,
 			limit,
-			search,
+			search: debouncedSearch,
 			status: statusFilter,
 			...(classGroupFilter === "__none__"
 				? { no_class_group: true }
 				: {
-						class_group_id: classGroupFilter
-							? Number(classGroupFilter)
-							: undefined,
+						class_group_id: classGroupFilter as number | undefined,
 					}),
 		},
 		{ query: { enabled: !!activeAy?.id, keepPreviousData: true } as any },
@@ -254,9 +288,7 @@ function SiswaIndexPage() {
 							placeholder="Cari siswa..."
 							value={searchInput}
 							onChange={(e) => {
-								setSearchInput(e.target.value);
-								setSearch(e.target.value);
-								setPage(1);
+								updateSearch({ search: e.target.value, page: 1 });
 							}}
 						/>
 					</div>
@@ -265,8 +297,7 @@ function SiswaIndexPage() {
 							className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
 							value={statusFilter}
 							onChange={(e) => {
-								setStatusFilter(e.target.value);
-								setPage(1);
+								updateSearch({ status: e.target.value, page: 1 });
 							}}
 						>
 							<option value="">Semua Status</option>
@@ -277,10 +308,18 @@ function SiswaIndexPage() {
 						</select>
 						<select
 							className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
-							value={classGroupFilter}
+							value={classGroupFilter ?? ""}
 							onChange={(e) => {
-								setClassGroupFilter(e.target.value);
-								setPage(1);
+								const val = e.target.value;
+								updateSearch({
+									class_group_id:
+										val === ""
+											? undefined
+											: val === "__none__"
+												? ("__none__" as any)
+												: Number(val),
+									page: 1,
+								});
 							}}
 						>
 							<option value="">Semua Rombel</option>
@@ -434,7 +473,7 @@ function SiswaIndexPage() {
 							page={page}
 							limit={limit}
 							total={meta.total}
-							onPageChange={setPage}
+							onPageChange={(n) => updateSearch({ page: n })}
 						/>
 					)}
 				</div>

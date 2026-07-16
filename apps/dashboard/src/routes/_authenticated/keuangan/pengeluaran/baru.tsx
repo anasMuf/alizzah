@@ -48,7 +48,7 @@ function CatatPengeluaranPage() {
 					title: "Berhasil",
 					message: "Pengeluaran berhasil dicatat.",
 				});
-				navigate({ to: "/keuangan/pengeluaran" });
+				navigate({ to: "/keuangan/pengeluaran", search: {} as any });
 			},
 			onError: (err: any) => {
 				const status = err?.status || err?.response?.status;
@@ -133,7 +133,11 @@ function CatatPengeluaranPage() {
 					className="flex items-center text-sm text-gray-500 mb-2"
 					aria-label="Breadcrumb"
 				>
-					<Link to="/keuangan/pengeluaran" className="hover:text-indigo-600">
+					<Link
+						to="/keuangan/pengeluaran"
+						search={{} as any}
+						className="hover:text-indigo-600"
+					>
 						Pengeluaran
 					</Link>
 					<ChevronRight className="w-4 h-4 mx-1" />
@@ -346,7 +350,7 @@ function CatatPengeluaranPage() {
 					</div>
 
 					<div className="flex items-center justify-end gap-x-3 border-t border-gray-200 px-4 py-4 sm:px-8">
-						<Link to="/keuangan/pengeluaran">
+						<Link to="/keuangan/pengeluaran" search={{} as any}>
 							<Button type="button" variant="secondary">
 								Batal
 							</Button>

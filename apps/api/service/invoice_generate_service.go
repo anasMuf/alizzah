@@ -627,6 +627,7 @@ func (s *invoiceGenerateService) RecalculateInfaqHarian(classGroupID, month, yea
 						item.UnitPrice = &unitPrice
 						item.Name = fmt.Sprintf("%s (%d hari)", infaqFeeItems[0].Name, effectiveDays.TotalDays)
 						item.Notes = ""
+						item.Status = "unpaid"
 						txItemRepo.Update(&item)
 						needsRecalc = true
 					} else if newAmount >= item.PaidAmount {
@@ -634,6 +635,12 @@ func (s *invoiceGenerateService) RecalculateInfaqHarian(classGroupID, month, yea
 						item.Quantity = &newQuantity
 						item.UnitPrice = &unitPrice
 						item.Name = fmt.Sprintf("%s (%d hari)", infaqFeeItems[0].Name, effectiveDays.TotalDays)
+						// Recalculate status berdasarkan paid_amount vs amount baru
+						if item.PaidAmount >= newAmount {
+							item.Status = "paid"
+						} else {
+							item.Status = "partial"
+						}
 						txItemRepo.Update(&item)
 						needsRecalc = true
 					}
@@ -659,6 +666,7 @@ func (s *invoiceGenerateService) RecalculateInfaqHarian(classGroupID, month, yea
 						item.Quantity = &newQuantity
 						item.UnitPrice = &unitPrice
 						item.Name = fmt.Sprintf("%s (%d Senin)", mandatoryItems[0].Name, effectiveDays.TotalMondays)
+						item.Status = "unpaid"
 						txItemRepo.Update(&item)
 						needsRecalc = true
 					} else if newAmount >= item.PaidAmount {
@@ -666,6 +674,12 @@ func (s *invoiceGenerateService) RecalculateInfaqHarian(classGroupID, month, yea
 						item.Quantity = &newQuantity
 						item.UnitPrice = &unitPrice
 						item.Name = fmt.Sprintf("%s (%d Senin)", mandatoryItems[0].Name, effectiveDays.TotalMondays)
+						// Recalculate status berdasarkan paid_amount vs amount baru
+						if item.PaidAmount >= newAmount {
+							item.Status = "paid"
+						} else {
+							item.Status = "partial"
+						}
 						txItemRepo.Update(&item)
 						needsRecalc = true
 					}

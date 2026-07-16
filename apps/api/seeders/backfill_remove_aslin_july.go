@@ -84,8 +84,9 @@ func BackfillRemoveAslinFromJuly(db *gorm.DB) {
 	recalculated := 0
 	for invID := range invoiceIDs {
 		// Hitung total amount dan paid_amount dari item yang tersisa
+		// Gunakan db.Model() agar GORM otomatis memfilter soft-deleted rows (deleted_at IS NULL)
 		var total, paid float64
-		db.Table("invoice_items").
+		db.Model(&model.InvoiceItem{}).
 			Where("invoice_id = ?", invID).
 			Select("COALESCE(SUM(amount), 0), COALESCE(SUM(paid_amount), 0)").
 			Row().Scan(&total, &paid)

@@ -121,10 +121,13 @@ export function InvoiceSelector({
 		invoiceDetails.forEach((detail: any) => {
 			detail?.items?.forEach((item: any) => {
 				const sisa = Number(item.amount || 0) - Number(item.paid_amount || 0);
+				// Tampilkan item jika: masih ada sisa, dispensasi, sudah ada nilai bayar,
+				// atau invoice belum lunas (agar user bisa melihat item yg sudah lunas)
 				if (
 					sisa > 0 ||
 					item.category === "dispensation" ||
-					(payAmounts[item.id] ?? 0) > 0
+					(payAmounts[item.id] ?? 0) > 0 ||
+					detail.status !== "paid"
 				) {
 					const isLockedBySpp =
 						item.category === "monthly_spp" && hasDispensation.has(detail.id);

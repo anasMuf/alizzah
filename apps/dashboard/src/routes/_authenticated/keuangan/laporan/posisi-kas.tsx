@@ -6,6 +6,7 @@ import type { PosisiKasPost } from "#/api/endpoints/reports/posisi-kas";
 import { useGetReportsPosisiKas } from "#/api/endpoints/reports/posisi-kas";
 import { Alert, Button } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
+import { openPrintWindow } from "../../../../utils/print";
 
 export const Route = createFileRoute(
 	"/_authenticated/keuangan/laporan/posisi-kas",
@@ -73,10 +74,102 @@ function LaporanPosisiKasPage() {
 	const isCurrentMonth =
 		month === now.getMonth() + 1 && year === now.getFullYear();
 
+	function handlePrint() {
+		const esc = (s: string) =>
+			s
+				.replace(/&/g, "&amp;")
+				.replace(/</g, "&lt;")
+				.replace(/>/g, "&gt;")
+				.replace(/"/g, "&quot;");
+
+		const html = `
+<div class="mb-4">
+	<h2 class="text-lg font-bold mb-2">Laporan Posisi Kas — ${esc(MONTH_NAMES[month - 1])} ${year}</h2>
+	<p class="text-sm text-gray">TA ${esc(report?.academic_year || activeAy?.name || "-")}</p>
+</div>
+
+<table>
+	<thead>
+		<tr>
+			<th>Nama Pos</th>
+			<th class="text-right">Saldo Sebelum</th>
+			<th class="text-right">Penerimaan</th>
+			<th class="text-right">Pengeluaran</th>
+			<th class="text-right">Saldo</th>
+			<th class="text-right">Saldo Sampai</th>
+		</tr>
+	</thead>
+	<tbody>
+		${
+			posts.length > 0
+				? posts
+						.map((post) => {
+							const details = post.expense_details || [];
+							let rows = `
+		<tr>
+			<td class="font-bold">${esc(post.name)}</td>
+			<td class="text-right ${post.saldo_sebelum < 0 ? "text-red" : ""}">${esc(formatRupiah(post.saldo_sebelum))}</td>
+			<td class="text-right">${esc(formatRupiah(post.penerimaan))}</td>
+			<td class="text-right">${esc(formatRupiah(post.pengeluaran))}</td>
+			<td class="text-right ${post.saldo_bulan < 0 ? "text-red" : ""}">${esc(formatRupiah(post.saldo_bulan))}</td>
+			<td class="text-right ${post.saldo_sampai < 0 ? "text-red" : ""}">${esc(formatRupiah(post.saldo_sampai))}</td>
+		</tr>`;
+
+							if (details.length > 0) {
+								rows += details
+									.map(
+										(detail) => `
+		<tr>
+			<td class="text-gray"><span class="text-gray">&middot;</span> ${esc(detail.name)}</td>
+			<td class="text-right"></td>
+			<td class="text-right"></td>
+			<td class="text-right">${esc(formatRupiah(detail.amount))}</td>
+			<td class="text-right"></td>
+			<td class="text-right"></td>
+		</tr>`,
+									)
+									.join("");
+							} else {
+								rows += `
+		<tr>
+			<td class="text-gray"><span class="text-gray">&middot;</span> (belum ada pengeluaran)</td>
+			<td class="text-right" colspan="5"></td>
+		</tr>`;
+							}
+
+							return rows;
+						})
+						.join("")
+				: `
+		<tr>
+			<td colspan="6" class="text-center text-gray py-3">Belum ada data untuk periode ini.</td>
+		</tr>`
+		}
+		${
+			grandTotal
+				? `
+		<tr class="font-bold border-t-foot bg-gray-50">
+			<td>Grand Total</td>
+			<td class="text-right">${esc(formatRupiah(grandTotal.saldo_sebelum))}</td>
+			<td class="text-right">${esc(formatRupiah(grandTotal.penerimaan))}</td>
+			<td class="text-right">${esc(formatRupiah(grandTotal.pengeluaran))}</td>
+			<td class="text-right ${grandTotal.saldo_bulan < 0 ? "text-red" : ""}">${esc(formatRupiah(grandTotal.saldo_bulan))}</td>
+			<td class="text-right ${grandTotal.saldo_sampai < 0 ? "text-red" : ""}">${esc(formatRupiah(grandTotal.saldo_sampai))}</td>
+		</tr>`
+				: ""
+		}
+	</tbody>
+</table>`;
+
+		openPrintWindow(html, {
+			title: `Posisi Kas - ${MONTH_NAMES[month - 1]} ${year}`,
+		});
+	}
+
 	return (
 		<div className="space-y-6">
 			{/* Header */}
-			<div className="flex items-start justify-between print:hidden">
+			<div className="flex items-start justify-between">
 				<div>
 					<nav className="flex items-center text-sm text-gray-500 mb-2">
 						<Link
@@ -96,31 +189,15 @@ function LaporanPosisiKasPage() {
 					</p>
 				</div>
 				{report && (
-					<Button
-						variant="secondary"
-						onClick={() => window.print()}
-						className="print:hidden"
-					>
+					<Button variant="secondary" onClick={handlePrint}>
 						<Printer className="w-4 h-4 mr-2" />
 						Cetak
 					</Button>
 				)}
 			</div>
 
-			{/* Print Header */}
-			<div className="hidden print:block border-b border-gray-300 pb-4 mb-6">
-				<h1 className="text-lg font-bold text-center">PAUD AL-IZZAH</h1>
-				<p className="text-sm text-gray-600 text-center">Laporan Posisi Kas</p>
-				<div className="mt-2 text-sm text-gray-700 space-y-0.5">
-					<p>
-						Periode: {MONTH_NAMES[month - 1]} {year}
-					</p>
-					<p>TA: {report?.academic_year || activeAy?.name || "-"}</p>
-				</div>
-			</div>
-
 			{/* Filter — auto-fetch */}
-			<div className="bg-white p-4 rounded-xl shadow-sm ring-1 ring-gray-900/5 print:hidden">
+			<div className="bg-white p-4 rounded-xl shadow-sm ring-1 ring-gray-900/5">
 				<div className="flex flex-wrap gap-4 items-end">
 					<div>
 						<label className="block text-sm font-medium leading-6 text-gray-900 mb-1">

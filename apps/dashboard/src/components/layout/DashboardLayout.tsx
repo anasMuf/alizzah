@@ -17,7 +17,7 @@ export function DashboardLayout() {
 	const isFullBleed = FULL_BLEED_ROUTES.some((r) => currentPath.startsWith(r));
 
 	return (
-		<div className="flex h-screen overflow-hidden bg-gray-50 print:block print:h-auto print:overflow-visible print:bg-white">
+		<div className="flex h-screen overflow-hidden bg-gray-50">
 			{/* Mobile overlay */}
 			{isSidebarOpen && (
 				<div
@@ -28,11 +28,11 @@ export function DashboardLayout() {
 
 			<Sidebar isOpen={isSidebarOpen} />
 
-			<div className="flex flex-1 flex-col overflow-hidden print:overflow-visible">
+			<div className="flex flex-1 flex-col overflow-hidden">
 				<Topbar onMenuClick={() => setIsSidebarOpen(true)} />
 
 				<main
-					className={`flex-1 overflow-x-hidden bg-gray-50 print:overflow-visible print:bg-white print:p-0 ${isFullBleed ? "overflow-hidden" : "overflow-y-auto p-4 sm:p-6 lg:p-8"}`}
+					className={`flex-1 overflow-x-hidden bg-gray-50 ${isFullBleed ? "overflow-hidden" : "overflow-y-auto p-4 sm:p-6 lg:p-8"}`}
 				>
 					<Outlet />
 				</main>

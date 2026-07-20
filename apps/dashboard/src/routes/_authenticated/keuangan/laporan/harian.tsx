@@ -14,6 +14,7 @@ import { useGetV1ReportsDaily } from "#/api/endpoints/reports/reports";
 import { Alert, Badge, Button } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
 import { formatCurrency, formatDate } from "../../../../utils/format";
+import { openPrintWindow } from "../../../../utils/print";
 
 export const Route = createFileRoute("/_authenticated/keuangan/laporan/harian")(
 	{
@@ -50,10 +51,113 @@ function LaporanHarianPage() {
 	const vault = report?.vault;
 	const closing = report?.daily_closing;
 
+	const handlePrint = () => {
+		const esc = (s: string) =>
+			s
+				.replace(/&/g, "&amp;")
+				.replace(/</g, "&lt;")
+				.replace(/>/g, "&gt;")
+				.replace(/"/g, "&quot;");
+
+		const fmt = (n: number) => esc(formatCurrency(n));
+
+		let c = "";
+
+		// Title & meta
+		c += `<h2 class="text-lg font-bold mb-2">Laporan Harian</h2>`;
+		c += `<p class="text-gray mb-2">Tanggal: ${esc(formatDate(date))}</p>`;
+		c += `<p class="text-gray mb-4">TA ${esc(activeAy?.name || "-")}</p>`;
+
+		// Income & Expense grid
+		c += `<div class="grid-2 mb-4">`;
+
+		// Income
+		c += `<div class="border p-4 rounded">`;
+		c += `<p class="uppercase text-sm text-gray letter-spacing mb-2">Pemasukan</p>`;
+		c += `<p class="text-lg font-bold text-green mb-4">${fmt(Number(income?.total || 0))}</p>`;
+		if (income?.by_category && income.by_category.length > 0) {
+			c += `<p class="text-sm text-gray font-bold mb-1">Per Kategori:</p>`;
+			c += `<table><tbody>`;
+			income.by_category.forEach((cat: any) => {
+				const name = cat.sub_category
+					? `${esc(cat.category)} &gt; ${esc(cat.sub_category)}`
+					: esc(cat.category);
+				c += `<tr><td>${name}</td><td class="text-right font-bold font-mono">${fmt(Number(cat.amount || 0))}</td></tr>`;
+			});
+			c += `</tbody></table>`;
+		} else {
+			c += `<p class="text-sm text-gray">Tidak ada pemasukan pada tanggal ini.</p>`;
+		}
+		c += `</div>`;
+
+		// Expense
+		c += `<div class="border p-4 rounded">`;
+		c += `<p class="uppercase text-sm text-gray letter-spacing mb-2">Pengeluaran</p>`;
+		c += `<p class="text-lg font-bold text-red mb-4">${fmt(Number(expense?.total || 0))}</p>`;
+		if (expense?.by_category && expense.by_category.length > 0) {
+			c += `<p class="text-sm text-gray font-bold mb-1">Per Kategori:</p>`;
+			c += `<table><tbody>`;
+			expense.by_category.forEach((cat: any) => {
+				const name = cat.sub_category
+					? `${esc(cat.category)} &gt; ${esc(cat.sub_category)}`
+					: esc(cat.category);
+				c += `<tr><td>${name}</td><td class="text-right font-bold font-mono">${fmt(Number(cat.amount || 0))}</td></tr>`;
+			});
+			c += `</tbody></table>`;
+		} else {
+			c += `<p class="text-sm text-gray">Tidak ada pengeluaran pada tanggal ini.</p>`;
+		}
+		c += `</div>`;
+
+		c += `</div>`; // close grid-2
+
+		// Cash Summary
+		c += `<div class="border p-4 rounded mb-4">`;
+		c += `<p class="uppercase text-sm text-gray letter-spacing mb-2">Ringkasan Kas</p>`;
+		c += `<table><tbody>`;
+		c += `<tr><td>Saldo Awal (kemarin)</td><td class="text-right font-bold font-mono">${fmt(Number(cash?.opening_balance || 0))}</td></tr>`;
+		c += `<tr><td class="text-green">+ Total Pemasukan</td><td class="text-right font-bold font-mono text-green">${fmt(Number(cash?.total_credit || 0))}</td></tr>`;
+		c += `<tr><td class="text-red">- Total Pengeluaran</td><td class="text-right font-bold font-mono text-red">${fmt(Number(cash?.total_debit || 0))}</td></tr>`;
+		c += `<tr class="border-t"><td class="font-bold">= Saldo Kas Akhir</td><td class="text-right font-bold font-mono text-base">${fmt(Number(cash?.closing_balance || 0))}</td></tr>`;
+		c += `<tr><td>Saldo Berangkas</td><td class="text-right font-bold font-mono">${fmt(Number(vault?.balance || 0))}</td></tr>`;
+		c += `</tbody></table>`;
+		c += `</div>`;
+
+		// Daily Closing
+		c += `<div class="border p-4 rounded mb-4">`;
+		c += `<p class="uppercase text-sm text-gray letter-spacing mb-2">Tutup Buku Harian</p>`;
+		if (closing) {
+			if (closing.is_confirmed) {
+				c += `<p class="mb-2"><span class="badge badge-success">Dikonfirmasi</span></p>`;
+			} else {
+				c += `<p class="mb-2"><span class="badge badge-warning">Menunggu Konfirmasi</span></p>`;
+			}
+			c += `<table><tbody>`;
+			c += `<tr><td>Kas Fisik</td><td class="text-right font-bold font-mono">${fmt(Number(closing.physical_cash_amount || 0))}</td></tr>`;
+			c += `<tr><td>Kas Sistem</td><td class="text-right font-bold font-mono">${fmt(Number(closing.system_cash_amount || 0))}</td></tr>`;
+			const diff = Number(closing.difference || 0);
+			c += `<tr><td>Selisih</td><td class="text-right font-bold font-mono ${diff === 0 ? "text-green" : "text-amber"}">${diff === 0 ? "&#10003; " : "&#9888; "}${fmt(diff)}</td></tr>`;
+			if (closing.notes) {
+				c += `<tr><td>Catatan</td><td>${esc(closing.notes)}</td></tr>`;
+			}
+			c += `</tbody></table>`;
+		} else {
+			c += `<div class="bg-amber-50 border rounded p-4">`;
+			c += `<p class="text-sm">Tutup buku belum dilakukan untuk tanggal ini.</p>`;
+			c += `</div>`;
+		}
+		c += `</div>`;
+
+		openPrintWindow(c, {
+			title: "Laporan Harian",
+			subtitle: `Tanggal: ${formatDate(date)}`,
+		});
+	};
+
 	return (
 		<div className="space-y-6">
 			{/* Header */}
-			<div className="flex items-start justify-between print:hidden">
+			<div className="flex items-start justify-between">
 				<div>
 					<nav className="flex items-center text-sm text-gray-500 mb-2">
 						<Link
@@ -73,30 +177,15 @@ function LaporanHarianPage() {
 					</p>
 				</div>
 				{report && (
-					<Button
-						variant="secondary"
-						onClick={() => window.print()}
-						className="print:hidden"
-					>
+					<Button variant="secondary" onClick={handlePrint}>
 						<Printer className="w-4 h-4 mr-2" />
 						Cetak
 					</Button>
 				)}
 			</div>
 
-			{/* Print Header */}
-			<div className="hidden print:block border-b border-gray-300 pb-4 mb-6">
-				<h1 className="text-lg font-bold">ALIZZAH MANAJEMEN</h1>
-				<p className="text-sm text-gray-600">Laporan Keuangan</p>
-				<div className="mt-2 text-sm text-gray-700 space-y-0.5">
-					<p>Jenis: Laporan Harian</p>
-					<p>Periode: {date ? formatDate(date) : "-"}</p>
-					<p>TA: {activeAy?.name || "-"}</p>
-				</div>
-			</div>
-
 			{/* Filter — always visible */}
-			<div className="bg-white p-4 rounded-xl shadow-sm ring-1 ring-gray-900/5 print:hidden">
+			<div className="bg-white p-4 rounded-xl shadow-sm ring-1 ring-gray-900/5">
 				<div className="flex flex-wrap gap-4 items-end">
 					<div>
 						<label className="block text-sm font-medium leading-6 text-gray-900 mb-1">
@@ -335,7 +424,7 @@ function LaporanHarianPage() {
 										</p>
 										<Link
 											to="/keuangan/kas/tutup-buku"
-											className="mt-1 inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-500 print:hidden"
+											className="mt-1 inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-500"
 										>
 											Ke Tutup Buku
 											<ArrowUpRight className="ml-1 h-3.5 w-3.5" />

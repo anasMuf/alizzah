@@ -6,6 +6,7 @@ import type { SaldoRow } from "#/api/endpoints/reports/saldo";
 import { useGetReportsSaldo } from "#/api/endpoints/reports/saldo";
 import { Alert, Button } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
+import { openPrintWindow } from "../../../../utils/print";
 
 export const Route = createFileRoute("/_authenticated/keuangan/laporan/saldo")({
 	component: LaporanSaldoPage,
@@ -122,10 +123,94 @@ function LaporanSaldoPage() {
 		searchParams.year === undefined &&
 		searchParams.category === undefined;
 
+	function handlePrint() {
+		const esc = (s: string) =>
+			s
+				.replace(/&/g, "&amp;")
+				.replace(/</g, "&lt;")
+				.replace(/>/g, "&gt;")
+				.replace(/"/g, "&quot;");
+
+		const html = `
+<div class="mb-4">
+	<h2 class="text-lg font-bold mb-2">Laporan Saldo — ${esc(report?.post_name || "-")}</h2>
+	<p class="text-sm text-gray">${esc(MONTH_NAMES[month - 1])} ${year} &middot; TA ${esc(report?.academic_year || activeAy?.name || "-")}</p>
+	${report?.post_list && report.post_list.length > 0 ? `<p class="text-sm text-gray mt-2">Pos: ${esc(report.post_list.join(", "))}</p>` : ""}
+</div>
+
+<table>
+	<thead>
+		<tr>
+			<th>No.</th>
+			<th>Tanggal</th>
+			<th class="text-right">Jumlah Penerimaan</th>
+			<th class="text-right">Jumlah Pengeluaran</th>
+			<th class="text-right">Selisih</th>
+			<th class="text-right">Saldo</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr class="bg-gray-50">
+			<td></td>
+			<td class="text-gray">Saldo Sebelum ${esc(MONTH_NAMES[month - 1])} ${year}</td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td class="text-right font-bold ${report.saldo_sebelum < 0 ? "text-red" : ""}">${esc(formatRupiah(report.saldo_sebelum))}</td>
+		</tr>
+		${
+			rows.length > 0
+				? rows
+						.map(
+							(row, idx) => `
+		<tr>
+			<td>${idx + 1}.</td>
+			<td>${esc(formatDateID(row.date))}</td>
+			<td class="text-right">${row.penerimaan ? esc(formatRupiah(row.penerimaan)) : ""}</td>
+			<td class="text-right">${row.pengeluaran ? esc(formatRupiah(row.pengeluaran)) : ""}</td>
+			<td class="text-right ${row.selisih < 0 ? "text-red" : ""}">${row.selisih !== 0 ? esc(formatRupiah(row.selisih)) : ""}</td>
+			<td class="text-right ${row.saldo < 0 ? "text-red" : ""}">${esc(formatRupiah(row.saldo))}</td>
+		</tr>`,
+						)
+						.join("")
+				: `
+		<tr>
+			<td colspan="6" class="text-center text-gray py-3">Tidak ada transaksi pada bulan ini.</td>
+		</tr>`
+		}
+		${
+			report.total_bulan
+				? `
+		<tr class="bg-gray-50 border-t-foot font-bold">
+			<td></td>
+			<td>Jumlah Bulan ${esc(MONTH_NAMES[month - 1])} ${year}</td>
+			<td class="text-right">${esc(formatRupiah(report.total_bulan.penerimaan))}</td>
+			<td class="text-right">${esc(formatRupiah(report.total_bulan.pengeluaran))}</td>
+			<td class="text-right ${report.total_bulan.selisih < 0 ? "text-red" : ""}">${esc(formatRupiah(report.total_bulan.selisih))}</td>
+			<td></td>
+		</tr>`
+				: ""
+		}
+		<tr class="bg-gray-50 border-t-foot font-bold">
+			<td></td>
+			<td>Saldo Akhir ${esc(MONTH_NAMES[month - 1])} ${year}</td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td class="text-right ${report.saldo_akhir < 0 ? "text-red" : ""}">${esc(formatRupiah(report.saldo_akhir))}</td>
+		</tr>
+	</tbody>
+</table>`;
+
+		openPrintWindow(html, {
+			title: `Saldo - ${report?.post_name || ""}`,
+		});
+	}
+
 	return (
 		<div className="space-y-6">
 			{/* Header */}
-			<div className="flex items-start justify-between print:hidden">
+			<div className="flex items-start justify-between">
 				<div>
 					<nav className="flex items-center text-sm text-gray-500 mb-2">
 						<Link
@@ -155,35 +240,15 @@ function LaporanSaldoPage() {
 					)}
 				</div>
 				{report && (
-					<Button
-						variant="secondary"
-						onClick={() => window.print()}
-						className="print:hidden"
-					>
+					<Button variant="secondary" onClick={handlePrint}>
 						<Printer className="w-4 h-4 mr-2" />
 						Cetak
 					</Button>
 				)}
 			</div>
 
-			{/* Print Header */}
-			<div className="hidden print:block border-b border-gray-300 pb-4 mb-6">
-				<h1 className="text-lg font-bold text-center">PAUD AL-IZZAH</h1>
-				<p className="text-sm text-gray-600 text-center">
-					Laporan Saldo{" "}
-					{isSemuaPos ? "Semua Pos" : `Per Pos — ${report?.post_name || ""}`}
-				</p>
-				<div className="mt-2 text-sm text-gray-700 space-y-0.5">
-					<p>
-						Periode: {MONTH_NAMES[month - 1]} {year}
-					</p>
-					<p>Pos: {report?.post_name || "-"}</p>
-					<p>TA: {report?.academic_year || activeAy?.name || "-"}</p>
-				</div>
-			</div>
-
 			{/* Filter — auto-fetch */}
-			<div className="bg-white p-4 rounded-xl shadow-sm ring-1 ring-gray-900/5 print:hidden">
+			<div className="bg-white p-4 rounded-xl shadow-sm ring-1 ring-gray-900/5">
 				<div className="flex flex-wrap gap-4 items-end">
 					<div>
 						<label className="block text-sm font-medium leading-6 text-gray-900 mb-1">

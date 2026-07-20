@@ -33,49 +33,7 @@ body {
   }
 }
 
-/* Print Styles */
-@media print {
-  @page {
-    margin: 10mm;
-    size: A4;
-  }
-
-  /* === Invoice pages (tagihan, pembayaran): hide everything except .print-invoice === */
-  body:has(.print-invoice) #app * {
-    visibility: hidden;
-  }
-
-  .print-invoice,
-  .print-invoice * {
-    visibility: visible !important;
-    display: block !important;
-  }
-
-  .print-invoice {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    padding: 20mm;
-  }
-
-  .print-invoice table,
-  .print-invoice thead,
-  .print-invoice tbody,
-  .print-invoice tfoot,
-  .print-invoice tr,
-  .print-invoice th,
-  .print-invoice td {
-    display: revert !important;
-  }
-
-  .print-invoice .grid {
-    display: grid !important;
-  }
-
-  /* === Report / general pages: clean layout for print === */
-  body:not(:has(.print-invoice)) .print-no-shadow {
-    box-shadow: none !important;
-    --tw-ring-shadow: none !important;
-  }
-}
+/* ===== Print via openPrintWindow() =====
+   Semua fitur cetak sekarang menggunakan openPrintWindow() dari utils/print.ts
+   yang membuka jendela baru dengan HTML dan CSS mandiri.
+   Tidak diperlukan @media print styles di sini. */

@@ -47,7 +47,7 @@ export function Sidebar({ isOpen }: SidebarProps) {
 	return (
 		<aside
 			className={twMerge(
-				"fixed inset-y-0 left-0 z-50 w-64 transform flex flex-col overflow-hidden bg-white border-r border-gray-200 transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 print:hidden",
+				"fixed inset-y-0 left-0 z-50 w-64 transform flex flex-col overflow-hidden bg-white border-r border-gray-200 transition-transform duration-300 ease-in-out lg:static lg:translate-x-0",
 				isOpen ? "translate-x-0" : "-translate-x-full",
 			)}
 		>

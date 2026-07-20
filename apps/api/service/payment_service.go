@@ -366,7 +366,7 @@ func (s *paymentService) createInTx(tx *gorm.DB, createdBy uint, req dto.CreateP
 					ExpenseCategoryID: kopCategory.ID,
 					ExpenseDate:       paymentDate,
 					Amount:            koperasiTotal,
-					Description:       fmt.Sprintf("Transfer porsi Koperasi via Pembayaran %s", student.FullName),
+					Description:       fmt.Sprintf("Koperasi via Pembayaran #%d — %s", result.ID, student.FullName),
 					CreatedBy:         createdBy,
 				}
 				if err := tx.Create(&expense).Error; err != nil {
@@ -375,7 +375,7 @@ func (s *paymentService) createInTx(tx *gorm.DB, createdBy uint, req dto.CreateP
 
 				// Catat pengeluaran di cash_transactions dengan source_type "expense"
 				// agar sinkron dengan record expenses di atas
-				desc := fmt.Sprintf("Transfer porsi Koperasi via Pembayaran %s", student.FullName)
+				desc := fmt.Sprintf("Koperasi via Pembayaran #%d — %s", result.ID, student.FullName)
 				if req.Source == "cash" {
 					if err := s.txnWriter.WriteCashDebit(req.AcademicYearID, paymentDate, koperasiTotal, "expense", &expense.ID, desc, createdBy, tx); err != nil {
 						return nil, err
@@ -479,16 +479,16 @@ func (s *paymentService) reversePayment(tx *gorm.DB, paymentID uint) error {
 		return fmt.Errorf("gagal hapus cash transfer_to_vault: %w", err)
 	}
 
-	// 5b. DELETE EXPENSE KOPERASI — hapus cash/vault txn expense terkait & record expense
+	// 5b. DELETE EXPENSE KOPERASI — hapus expense yg dibuat saat pembayaran ini
+	// Expense dibuat dengan description: "Koperasi via Pembayaran #<paymentID> — ..."
+	paymentIDStr := fmt.Sprintf("#%d", paymentID)
 	var expenseIDs []uint
-	tx.Model(&model.CashTransaction{}).Where("source_type = ? AND description LIKE ?",
-		"expense", fmt.Sprintf("%%Pembayaran%%")).Pluck("source_id", &expenseIDs)
-	tx.Where("source_type = ? AND description LIKE ?", "expense",
-		fmt.Sprintf("%%Pembayaran%%")).Delete(&model.CashTransaction{})
-	tx.Where("source_type = ? AND description LIKE ?", "expense",
-		fmt.Sprintf("%%Pembayaran%%")).Delete(&model.VaultTransaction{})
+	tx.Model(&model.Expense{}).Where("description LIKE ?",
+		fmt.Sprintf("Koperasi via Pembayaran %s%%", paymentIDStr)).Pluck("id", &expenseIDs)
 	for _, eid := range expenseIDs {
-		tx.Delete(&model.Expense{}, eid)
+		tx.Where("source_type = ? AND source_id = ?", "expense", eid).Delete(&model.CashTransaction{})
+		tx.Where("source_type = ? AND source_id = ?", "expense", eid).Delete(&model.VaultTransaction{})
+		tx.Unscoped().Delete(&model.Expense{}, eid)
 	}
 
 	// 6. DELETE VAULT TRANSACTIONS
@@ -557,7 +557,8 @@ func (s *paymentService) Update(id uint, createdBy uint, req dto.CreatePaymentRe
 
 // Delete membatalkan seluruh efek keuangan payment lalu menghapusnya.
 func (s *paymentService) Delete(id uint) error {
-	_, err := s.paymentRepo.FindByID(id)
+	// Gunakan Unscoped agar bisa menemukan payment yg mungkin terlanjur soft-deleted
+	_, err := s.paymentRepo.FindByIDUnscoped(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errors.New("Pembayaran tidak ditemukan")

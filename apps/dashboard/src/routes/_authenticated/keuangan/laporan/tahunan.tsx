@@ -5,6 +5,7 @@ import { useGetV1ReportsAnnual } from "#/api/endpoints/reports/reports";
 import { Alert, Button } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
 import { formatCurrency } from "../../../../utils/format";
+import { openPrintWindow } from "../../../../utils/print";
 
 export const Route = createFileRoute(
 	"/_authenticated/keuangan/laporan/tahunan",
@@ -49,10 +50,93 @@ function LaporanTahunanPage() {
 	const totalNet =
 		Number(income?.total_paid || 0) - Number(expense?.total || 0);
 
+	function handlePrint() {
+		const esc = (s: string) =>
+			s
+				.replace(/&/g, "&amp;")
+				.replace(/</g, "&lt;")
+				.replace(/>/g, "&gt;")
+				.replace(/"/g, "&quot;");
+
+		const html = `
+<div class="mb-4">
+	<h2 class="text-lg font-bold mb-2">Laporan Tahunan — TA ${esc(activeAy?.name || "-")}</h2>
+</div>
+
+<div class="grid-3 mb-4">
+	<div class="border rounded p-4">
+		<p class="text-sm text-gray uppercase letter-spacing">Total Tagihan</p>
+		<p class="text-xl font-bold mt-2">${esc(formatCurrency(Number(income?.total_billed || 0)))}</p>
+		<div class="mt-2">
+			<span class="text-sm text-green">Terbayar: ${esc(formatCurrency(Number(income?.total_paid || 0)))}</span>
+			<span class="text-sm text-red ml-4">Sisa: ${esc(formatCurrency(Number(income?.total_unpaid || 0)))}</span>
+		</div>
+	</div>
+	<div class="border rounded p-4">
+		<p class="text-sm text-gray uppercase letter-spacing">Total Pengeluaran</p>
+		<p class="text-xl font-bold text-red mt-2">${esc(formatCurrency(Number(expense?.total || 0)))}</p>
+	</div>
+	<div class="border rounded p-4">
+		<p class="text-sm text-gray uppercase letter-spacing">Net (Masuk - Keluar)</p>
+		<p class="text-xl font-bold mt-2 ${Number(report.net || totalNet) >= 0 ? "text-green" : "text-red"}">${esc(formatCurrency(Number(report.net ?? totalNet)))}</p>
+	</div>
+</div>
+
+<div class="grid-2 mb-4">
+	<div class="border rounded p-4">
+		<p class="text-sm text-gray uppercase letter-spacing">Saldo Kas</p>
+		<p class="text-xl font-bold mt-2">${esc(formatCurrency(Number(report.cash_balance || 0)))}</p>
+	</div>
+	<div class="border rounded p-4">
+		<p class="text-sm text-gray uppercase letter-spacing">Saldo Berangkas</p>
+		<p class="text-xl font-bold mt-2">${esc(formatCurrency(Number(report.vault_balance || 0)))}</p>
+	</div>
+</div>
+
+<p class="text-sm font-bold uppercase letter-spacing mb-2">Breakdown per Bulan</p>
+<table>
+	<thead>
+		<tr>
+			<th>Bulan</th>
+			<th class="text-right">Pemasukan</th>
+			<th class="text-right">Pengeluaran</th>
+			<th class="text-right">Net</th>
+		</tr>
+	</thead>
+	<tbody>
+		${
+			months.length > 0
+				? months
+						.map((m: any) => {
+							const inc = Number(m.income || 0);
+							const exp = Number(m.expense || 0);
+							const net = inc - exp;
+							return `
+		<tr>
+			<td>${esc(MONTH_NAMES_SHORT[m.month] || String(m.month))} ${esc(String(m.year))}</td>
+			<td class="text-right text-green">${esc(formatCurrency(inc))}</td>
+			<td class="text-right text-red">${esc(formatCurrency(exp))}</td>
+			<td class="text-right font-bold ${net >= 0 ? "" : "text-red"}">${esc(formatCurrency(net))}</td>
+		</tr>`;
+						})
+						.join("")
+				: `
+		<tr>
+			<td colspan="4" class="text-center text-gray">Belum ada data untuk tahun ajaran ini.</td>
+		</tr>`
+		}
+	</tbody>
+</table>`;
+
+		openPrintWindow(html, {
+			title: `Laporan Tahunan - TA ${activeAy?.name || ""}`,
+		});
+	}
+
 	return (
 		<div className="space-y-6">
 			{/* Header */}
-			<div className="flex items-start justify-between print:hidden">
+			<div className="flex items-start justify-between">
 				<div>
 					<nav className="flex items-center text-sm text-gray-500 mb-2">
 						<Link
@@ -69,29 +153,15 @@ function LaporanTahunanPage() {
 					</h2>
 				</div>
 				{report && (
-					<Button
-						variant="secondary"
-						onClick={() => window.print()}
-						className="print:hidden"
-					>
+					<Button variant="secondary" onClick={handlePrint}>
 						<Printer className="w-4 h-4 mr-2" />
 						Cetak
 					</Button>
 				)}
 			</div>
 
-			{/* Print Header */}
-			<div className="hidden print:block border-b border-gray-300 pb-4 mb-6">
-				<h1 className="text-lg font-bold">ALIZZAH MANAJEMEN</h1>
-				<p className="text-sm text-gray-600">Laporan Keuangan</p>
-				<div className="mt-2 text-sm text-gray-700 space-y-0.5">
-					<p>Jenis: Laporan Tahunan</p>
-					<p>TA: {activeAy?.name || "-"}</p>
-				</div>
-			</div>
-
 			{/* Filter — TA is read-only from global state */}
-			<div className="bg-white p-4 rounded-xl shadow-sm ring-1 ring-gray-900/5 print:hidden">
+			<div className="bg-white p-4 rounded-xl shadow-sm ring-1 ring-gray-900/5">
 				<div className="flex flex-wrap gap-4 items-end">
 					<div>
 						<label className="block text-sm font-medium leading-6 text-gray-900 mb-1">

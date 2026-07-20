@@ -6,6 +6,7 @@ import type { TransaksiPengeluaranBlock } from "#/api/endpoints/reports/transaks
 import { useGetReportsTransaksiPengeluaran } from "#/api/endpoints/reports/transaksi-pengeluaran";
 import { Alert, Button } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
+import { openPrintWindow } from "../../../../utils/print";
 
 export const Route = createFileRoute(
 	"/_authenticated/keuangan/laporan/pengeluaran",
@@ -89,10 +90,95 @@ function LaporanPengeluaranPage() {
 	const isCurrentMonth =
 		month === now.getMonth() + 1 && year === now.getFullYear();
 
+	function handlePrint() {
+		const esc = (s: string) =>
+			s
+				.replace(/&/g, "&amp;")
+				.replace(/</g, "&lt;")
+				.replace(/>/g, "&gt;")
+				.replace(/"/g, "&quot;");
+
+		const html = `
+<div class="mb-4">
+	<h2 class="text-lg font-bold mb-2">Transaksi Pengeluaran — ${esc(MONTH_NAMES[month - 1])} ${year}</h2>
+	<p class="text-sm text-gray">TA ${esc(report?.academic_year || activeAy?.name || "-")}</p>
+</div>
+
+${
+	transactions.length > 0
+		? transactions
+				.map((txn) => {
+					const sourceLabel = txn.source === "transfer" ? "TRANSFER" : "TUNAI";
+					return `
+<div class="break-inside-avoid border rounded mb-4">
+	<div class="p-4 bg-gray-50 border-b">
+		<div class="grid-2 text-sm">
+			<div class="space-y-1">
+				<div><span class="text-gray">Cara Transaksi</span> <span class="font-bold">: ${esc(sourceLabel)}</span></div>
+				<div><span class="text-gray">Keterangan</span> <span>: ${esc(txn.description)}</span></div>
+				<div><span class="text-gray">Terbilang</span> <span class="text-gray">: ${esc(txn.total_terbilang)}</span></div>
+			</div>
+			<div class="space-y-1 text-right">
+				<div><span class="text-gray">Tgl. Transaksi :</span> <span class="font-bold">${esc(formatDateID(txn.transaction_date))}</span></div>
+				<div><span class="text-gray">Petugas :</span> <span>${esc(txn.created_by_name)}</span></div>
+			</div>
+		</div>
+	</div>
+	<div class="p-4">
+		<p class="text-sm text-gray uppercase letter-spacing mb-2">Dengan rincian transaksi sebagai berikut :</p>
+		<table>
+			<thead>
+				<tr class="text-sm text-gray uppercase">
+					<th>No</th>
+					<th>Pos</th>
+					<th>Deskripsi</th>
+					<th class="text-right">Nominal (Rp.)</th>
+				</tr>
+			</thead>
+			<tbody>
+				${txn.items
+					.map(
+						(item) => `
+				<tr>
+					<td>${item.no}.</td>
+					<td class="font-bold">${esc(item.category_name)}</td>
+					<td>${esc(item.description)}</td>
+					<td class="text-right">${esc(formatRupiah(item.amount))}</td>
+				</tr>`,
+					)
+					.join("")}
+			</tbody>
+		</table>
+	</div>
+	<div class="p-4 bg-gray-50 border-t flex justify-between items-center text-sm">
+		<span class="text-gray text-sm">Waktu Komputer : ${esc(formatDateTimeID(txn.created_at))}</span>
+		<span class="font-bold">Jumlah Rp. ${esc(formatRupiah(txn.total_amount))}</span>
+	</div>
+</div>`;
+				})
+				.join("")
+		: `
+<div class="text-center text-gray py-4">Tidak ada transaksi pengeluaran pada bulan ini.</div>`
+}
+
+	<table class="border-t-foot">
+		<tfoot>
+			<tr>
+				<td class="font-bold">Grand Total Pengeluaran ${esc(MONTH_NAMES[month - 1])} ${year}</td>
+				<td class="text-right font-bold text-lg">Rp. ${esc(formatRupiah(report.grand_total))}</td>
+			</tr>
+		</tfoot>
+	</table>`;
+
+		openPrintWindow(html, {
+			title: `Pengeluaran - ${MONTH_NAMES[month - 1]} ${year}`,
+		});
+	}
+
 	return (
 		<div className="space-y-6">
 			{/* Header */}
-			<div className="flex items-start justify-between print:hidden">
+			<div className="flex items-start justify-between">
 				<div>
 					<nav className="flex items-center text-sm text-gray-500 mb-2">
 						<Link
@@ -114,33 +200,15 @@ function LaporanPengeluaranPage() {
 					</p>
 				</div>
 				{report && (
-					<Button
-						variant="secondary"
-						onClick={() => window.print()}
-						className="print:hidden"
-					>
+					<Button variant="secondary" onClick={handlePrint}>
 						<Printer className="w-4 h-4 mr-2" />
 						Cetak
 					</Button>
 				)}
 			</div>
 
-			{/* Print Header */}
-			<div className="hidden print:block border-b border-gray-300 pb-4 mb-6">
-				<h1 className="text-lg font-bold text-center">PAUD AL-IZZAH</h1>
-				<p className="text-sm text-gray-600 text-center">
-					Laporan Transaksi Pengeluaran
-				</p>
-				<div className="mt-2 text-sm text-gray-700 space-y-0.5">
-					<p>
-						Periode: {MONTH_NAMES[month - 1]} {year}
-					</p>
-					<p>TA: {report?.academic_year || activeAy?.name || "-"}</p>
-				</div>
-			</div>
-
 			{/* Filter — auto-fetch */}
-			<div className="bg-white p-4 rounded-xl shadow-sm ring-1 ring-gray-900/5 print:hidden">
+			<div className="bg-white p-4 rounded-xl shadow-sm ring-1 ring-gray-900/5">
 				<div className="flex flex-wrap gap-4 items-end">
 					<div>
 						<label className="block text-sm font-medium leading-6 text-gray-900 mb-1">
@@ -248,7 +316,7 @@ function TransactionCard({ txn }: { txn: TransaksiPengeluaranBlock }) {
 	const sourceLabel = txn.source === "transfer" ? "TRANSFER" : "TUNAI";
 
 	return (
-		<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden print:break-inside-avoid">
+		<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden">
 			{/* Header */}
 			<div className="px-6 py-4 border-b border-gray-200 bg-gray-50/50">
 				<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">

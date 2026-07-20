@@ -9,7 +9,7 @@ import {
 	Printer,
 	Trash2,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
 	useGetV1FeeConfigs,
 	useGetV1FeeConfigsIdItems,
@@ -34,6 +34,7 @@ import {
 import { useProducts } from "#/features/koperasi/barang/api";
 import { academicYearAtom } from "../../../../store/global";
 import { formatCurrency, formatDate } from "../../../../utils/format";
+import { openPrintWindow } from "../../../../utils/print";
 
 export const Route = createFileRoute("/_authenticated/keuangan/tagihan/$id")({
 	component: DetailTagihanPage,
@@ -85,6 +86,10 @@ function DetailTagihanPage() {
 		number | undefined
 	>(undefined);
 	const { data: products } = useProducts();
+
+	// Sync guard — mencegah double-submit dalam <1ms sebelum isPending mutation berubah
+	const saveGuard = useRef(false);
+	const installmentGuard = useRef(false);
 
 	// Fetch fee config and items for dropdown
 	const { data: feeConfigsResp } = useGetV1FeeConfigs();
@@ -190,6 +195,7 @@ function DetailTagihanPage() {
 	const addItemMutation = usePostV1InvoicesIdItems({
 		mutation: {
 			onSuccess: () => {
+				saveGuard.current = false;
 				addToast({
 					variant: "success",
 					title: "Berhasil",
@@ -199,6 +205,7 @@ function DetailTagihanPage() {
 				setIsAddItemOpen(false);
 			},
 			onError: (err: any) => {
+				saveGuard.current = false;
 				addToast({
 					variant: "error",
 					title: "Gagal",
@@ -211,6 +218,7 @@ function DetailTagihanPage() {
 	const editItemMutation = usePutV1InvoicesIdItemsItemId({
 		mutation: {
 			onSuccess: () => {
+				saveGuard.current = false;
 				addToast({
 					variant: "success",
 					title: "Berhasil",
@@ -220,6 +228,7 @@ function DetailTagihanPage() {
 				setEditingItem(null);
 			},
 			onError: (err: any) => {
+				saveGuard.current = false;
 				addToast({
 					variant: "error",
 					title: "Gagal",
@@ -274,6 +283,7 @@ function DetailTagihanPage() {
 	const installmentsMutation = usePostV1InvoicesIdInstallments({
 		mutation: {
 			onSuccess: () => {
+				installmentGuard.current = false;
 				addToast({
 					variant: "success",
 					title: "Berhasil",
@@ -285,6 +295,7 @@ function DetailTagihanPage() {
 				setIsInstallmentOpen(false);
 			},
 			onError: (err: any) => {
+				installmentGuard.current = false;
 				addToast({
 					variant: "error",
 					title: "Gagal",
@@ -371,6 +382,8 @@ function DetailTagihanPage() {
 
 	const handleSaveItem = (e: React.FormEvent) => {
 		e.preventDefault();
+		if (saveGuard.current) return;
+		saveGuard.current = true;
 		if (editingItem) {
 			// Jika item punya quantity (per_day/per_monday), gunakan endpoint quantity
 			if (editingItem.quantity != null && editingItem.unit_price != null) {
@@ -435,6 +448,8 @@ function DetailTagihanPage() {
 
 	const handleSaveInstallments = (e: React.FormEvent) => {
 		e.preventDefault();
+		if (installmentGuard.current) return;
+		installmentGuard.current = true;
 		const totalInst = installmentItems.reduce(
 			(acc, curr) => acc + Number(curr.amount),
 			0,
@@ -599,331 +614,338 @@ function DetailTagihanPage() {
 			? `Juli ${invoice.year}` // Using dummy month text, in real app need array
 			: invoice.academic_year?.name;
 
+	const handlePrint = () => {
+		const itemRows =
+			invoice.items
+				?.map(
+					(item: any, idx: number) => `
+				<tr>
+					<td>${idx + 1}</td>
+					<td>${item.name}</td>
+					<td class="text-right">${formatCurrency(Number(item.amount))}</td>
+					<td class="text-right">${formatCurrency(Number(item.paid_amount))}</td>
+					<td class="text-right">${formatCurrency(Number(item.amount) - Number(item.paid_amount))}</td>
+				</tr>`,
+				)
+				.join("") || "";
+
+		const statusText =
+			invoice.status === "paid"
+				? "Lunas"
+				: invoice.status === "partial"
+					? "Sebagian Dibayar"
+					: "Belum Lunas";
+
+		const content = `
+		<table class="mb-4">
+			<thead>
+				<tr>
+					<th>Nama Siswa</th>
+					<th>Jenis Kelamin</th>
+					<th>Rombel</th>
+					<th>Jenis Tagihan</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><strong>${invoice.student?.full_name || "-"}</strong></td>
+					<td>${invoice.student?.gender === "L" ? "Laki-laki" : invoice.student?.gender === "P" ? "Perempuan" : "-"}</td>
+					<td>${invoice.student?.active_enrollment?.class_group?.name || "-"}${invoice.student?.active_enrollment?.class_group?.level ? ` (${invoice.student.active_enrollment.class_group.level})` : ""}</td>
+					<td>${translateType(invoice.type)}</td>
+				</tr>
+			</tbody>
+		</table>
+
+		<table class="mb-4">
+			<thead>
+				<tr>
+					<th>Tahun Ajaran</th>
+					<th>Periode</th>
+					<th>Status</th>
+					<th>No. Tagihan</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>${invoice.academic_year?.name || "-"}</td>
+					<td>${periodeStr || "-"}</td>
+					<td>${statusText}</td>
+					<td class="font-mono">#${invoice.id}</td>
+				</tr>
+			</tbody>
+		</table>
+
+		<table class="mb-4">
+			<thead>
+				<tr>
+					<th>Total Tagihan</th>
+					<th>Sudah Dibayar</th>
+					<th>Sisa Tunggakan</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td class="text-lg font-bold">${formatCurrency(totalAmount)}</td>
+					<td class="text-lg font-bold">${formatCurrency(paidAmount)}</td>
+					<td class="text-lg font-bold text-amber">${formatCurrency(sisa)}</td>
+				</tr>
+			</tbody>
+		</table>
+
+		<h3 class="text-sm font-bold uppercase letter-spacing mb-2">Rincian Item Tagihan</h3>
+		<table>
+			<thead>
+				<tr>
+					<th>No</th>
+					<th>Item</th>
+					<th class="text-right">Nominal</th>
+					<th class="text-right">Dibayar</th>
+					<th class="text-right">Sisa</th>
+				</tr>
+			</thead>
+			<tbody>
+				${itemRows}
+			</tbody>
+			<tfoot>
+				<tr class="border-t-foot">
+					<td colspan="2" class="text-right">Total</td>
+					<td class="text-right">${formatCurrency(totalAmount)}</td>
+					<td class="text-right">${formatCurrency(paidAmount)}</td>
+					<td class="text-right">${formatCurrency(sisa)}</td>
+				</tr>
+			</tfoot>
+		</table>`;
+
+		openPrintWindow(content, {
+			title: `Tagihan #${invoice.id} — ${invoice.student?.full_name}`,
+			subtitle: "Detail Tagihan Siswa",
+		});
+	};
+
 	return (
 		<div className="space-y-6 max-w-7xl mx-auto pb-12">
-			{/* Screen-only content — hidden when printing (print uses .print-invoice below) */}
-			<div className="contents print:hidden">
-				{/* Breadcrumb */}
-				<nav className="flex" aria-label="Breadcrumb">
-					<ol className="flex items-center space-x-2 text-sm text-gray-500">
-						<li>
-							<Link
-								to="/keuangan/tagihan"
-								search={{} as any}
-								className="hover:text-gray-900"
-							>
-								Tagihan
-							</Link>
-						</li>
-						<li>
-							<ChevronRight className="h-4 w-4" />
-						</li>
-						<li>
-							<Link
-								to="/keuangan/tagihan/siswa/$id"
-								params={{ id: invoice.student?.id.toString() }}
-								className="hover:text-gray-900"
-							>
-								{invoice.student?.full_name}
-							</Link>
-						</li>
-						<li>
-							<ChevronRight className="h-4 w-4" />
-						</li>
-						<li className="font-medium text-gray-900">Detail #{invoice.id}</li>
-					</ol>
-				</nav>
-
-				<div className="border-b border-gray-200 pb-5">
-					<h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:tracking-tight">
-						Tagihan {translateType(invoice.type)} &mdash; {periodeStr}
-					</h2>
-					<p className="mt-1 text-sm text-gray-500">
-						Siswa:{" "}
-						<span className="font-semibold text-gray-900">
-							{invoice.student?.full_name}
-						</span>{" "}
-						&bull;{" "}
-						{invoice.student?.active_enrollment?.class_group?.name ||
-							"Tanpa Rombel"}
-					</p>
-				</div>
-
-				{/* Summary Box */}
-				<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 mb-6">
-					<div>
-						<div className="text-sm text-gray-500 mb-1">Status Pembayaran</div>
-						<div className="text-xl">{getStatusText(invoice.status)}</div>
-
-						<div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-x-8 gap-y-2">
-							<div>
-								<div className="text-sm text-gray-500">Total Tagihan</div>
-								<div className="text-lg font-semibold text-gray-900">
-									{formatCurrency(totalAmount)}
-								</div>
-							</div>
-							<div>
-								<div className="text-sm text-gray-500">Sudah Dibayar</div>
-								<div className="text-lg font-semibold text-gray-900">
-									{formatCurrency(paidAmount)}
-								</div>
-							</div>
-							<div>
-								<div className="text-sm font-medium text-amber-600">
-									Sisa Tunggakan
-								</div>
-								<div className="text-lg font-bold text-amber-600">
-									{formatCurrency(sisa)}
-								</div>
-							</div>
-						</div>
-					</div>
-
-					<div className="flex flex-col sm:flex-row gap-3">
-						<Button variant="secondary" onClick={() => window.print()}>
-							<Printer className="w-4 h-4 mr-2" /> Cetak Tagihan
-						</Button>
+			{/* Breadcrumb */}
+			<nav className="flex" aria-label="Breadcrumb">
+				<ol className="flex items-center space-x-2 text-sm text-gray-500">
+					<li>
 						<Link
-							to="/keuangan/pembayaran/baru"
-							search={{
-								student_id: invoice.student?.id,
-								invoice_id: invoice.id,
-							}}
+							to="/keuangan/tagihan"
+							search={{} as any}
+							className="hover:text-gray-900"
 						>
-							<Button variant="primary" disabled={invoice.status === "paid"}>
-								+ Catat Pembayaran
-							</Button>
+							Tagihan
 						</Link>
+					</li>
+					<li>
+						<ChevronRight className="h-4 w-4" />
+					</li>
+					<li>
+						<Link
+							to="/keuangan/tagihan/siswa/$id"
+							params={{ id: invoice.student?.id.toString() }}
+							className="hover:text-gray-900"
+						>
+							{invoice.student?.full_name}
+						</Link>
+					</li>
+					<li>
+						<ChevronRight className="h-4 w-4" />
+					</li>
+					<li className="font-medium text-gray-900">Detail #{invoice.id}</li>
+				</ol>
+			</nav>
+
+			<div className="border-b border-gray-200 pb-5">
+				<h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:tracking-tight">
+					Tagihan {translateType(invoice.type)} &mdash; {periodeStr}
+				</h2>
+				<p className="mt-1 text-sm text-gray-500">
+					Siswa:{" "}
+					<span className="font-semibold text-gray-900">
+						{invoice.student?.full_name}
+					</span>{" "}
+					&bull;{" "}
+					{invoice.student?.active_enrollment?.class_group?.name ||
+						"Tanpa Rombel"}
+				</p>
+			</div>
+
+			{/* Summary Box */}
+			<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 mb-6">
+				<div>
+					<div className="text-sm text-gray-500 mb-1">Status Pembayaran</div>
+					<div className="text-xl">{getStatusText(invoice.status)}</div>
+
+					<div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-x-8 gap-y-2">
+						<div>
+							<div className="text-sm text-gray-500">Total Tagihan</div>
+							<div className="text-lg font-semibold text-gray-900">
+								{formatCurrency(totalAmount)}
+							</div>
+						</div>
+						<div>
+							<div className="text-sm text-gray-500">Sudah Dibayar</div>
+							<div className="text-lg font-semibold text-gray-900">
+								{formatCurrency(paidAmount)}
+							</div>
+						</div>
+						<div>
+							<div className="text-sm font-medium text-amber-600">
+								Sisa Tunggakan
+							</div>
+							<div className="text-lg font-bold text-amber-600">
+								{formatCurrency(sisa)}
+							</div>
+						</div>
 					</div>
 				</div>
 
-				{/* Columns */}
-				<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-					{/* Left Col: Items */}
-					<div
-						className={`space-y-6 ${isRegistration ? "lg:col-span-2" : "lg:col-span-3"}`}
+				<div className="flex flex-col sm:flex-row gap-3">
+					<Button variant="secondary" onClick={handlePrint}>
+						<Printer className="w-4 h-4 mr-2" /> Cetak Tagihan
+					</Button>
+					<Link
+						to="/keuangan/pembayaran/baru"
+						search={{
+							student_id: invoice.student?.id,
+							invoice_id: invoice.id,
+						}}
 					>
-						<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden">
-							<div className="px-4 py-5 sm:px-6 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-								<h3 className="text-base font-semibold leading-6 text-gray-900">
-									Rincian Item Tagihan
-								</h3>
-								{invoice.status !== "paid" && (
-									<Button
-										variant="secondary"
-										size="sm"
-										onClick={handleOpenAddItem}
-									>
-										<Plus className="w-4 h-4 mr-1" /> Tambah Item
-									</Button>
-								)}
-							</div>
-							<ul className="divide-y divide-gray-200">
-								{(invoice.items as any[])?.map((item: any) =>
-									renderItemRow(item),
-								)}
-							</ul>
-						</div>
-					</div>
-
-					{/* Right Col: Installments (if registration) and Payment History */}
-					<div className="space-y-6 lg:col-span-1">
-						{isRegistration && (
-							<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden">
-								<div className="px-4 py-5 sm:px-6 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-									<h3 className="text-base font-semibold leading-6 text-gray-900 flex items-center">
-										<CalendarDays className="w-4 h-4 mr-2" /> Jadwal Cicilan
-									</h3>
-									<Button
-										variant="ghost"
-										size="sm"
-										onClick={handleOpenInstallments}
-									>
-										Atur
-									</Button>
-								</div>
-								<div className="p-4 sm:px-6">
-									{installments.length === 0 ? (
-										<p className="text-sm text-gray-500 italic">
-											Belum ada jadwal cicilan.
-										</p>
-									) : (
-										<div className="space-y-4">
-											{installments.map((inst: any) => (
-												<div
-													key={inst.id}
-													className="flex justify-between border-b border-gray-100 pb-2 last:border-0 last:pb-0"
-												>
-													<div>
-														<p className="text-sm font-medium text-gray-900">
-															Cicilan {inst.installment_number}
-														</p>
-														<p className="text-xs text-gray-500">
-															{formatDate(inst.due_date)}
-														</p>
-													</div>
-													<p className="text-sm font-semibold text-gray-900">
-														{formatCurrency(Number(inst.amount))}
-													</p>
-												</div>
-											))}
-										</div>
-									)}
-								</div>
-							</div>
-						)}
-
-						{/* Payment History */}
-						<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden">
-							<div className="px-4 py-5 sm:px-6 border-b border-gray-200 bg-gray-50">
-								<h3 className="text-base font-semibold leading-6 text-gray-900">
-									Riwayat Pembayaran
-								</h3>
-							</div>
-							{invoice.payments && invoice.payments.length > 0 ? (
-								<table className="min-w-full divide-y divide-gray-300">
-									<thead className="bg-gray-50">
-										<tr>
-											<th className="py-3 pl-6 pr-3 text-left text-sm font-semibold text-gray-900">
-												Tanggal
-											</th>
-											<th className="px-3 py-3 text-left text-sm font-semibold text-gray-900">
-												Sumber
-											</th>
-											<th className="px-3 py-3 text-left text-sm font-semibold text-gray-900">
-												Petugas
-											</th>
-											<th className="px-3 py-3 text-right text-sm font-semibold text-gray-900 pr-6">
-												Nominal
-											</th>
-										</tr>
-									</thead>
-									<tbody className="divide-y divide-gray-100">
-										{invoice.payments.map((p: any) => (
-											<tr key={p.id} className="hover:bg-gray-50">
-												<td className="py-3 pl-6 pr-3 text-sm text-gray-900">
-													{formatDate(p.payment_date)}
-												</td>
-												<td className="px-3 py-3 text-sm text-gray-500">
-													{p.source === "cash" ? "Tunai (Kas)" : "Tabungan"}
-												</td>
-												<td className="px-3 py-3 text-sm text-gray-500">
-													{p.created_by?.full_name || "-"}
-												</td>
-												<td className="px-3 py-3 text-sm text-right font-medium text-gray-900 pr-6 tabular-nums">
-													{formatCurrency(Number(p.amount))}
-												</td>
-											</tr>
-										))}
-									</tbody>
-								</table>
-							) : (
-								<div className="p-4 sm:px-6">
-									<p className="text-sm text-gray-500 italic">
-										Belum ada pembayaran untuk tagihan ini.
-									</p>
-								</div>
-							)}
-						</div>
-					</div>
+						<Button variant="primary" disabled={invoice.status === "paid"}>
+							+ Catat Pembayaran
+						</Button>
+					</Link>
 				</div>
 			</div>
-			{/* end screen-only content */}
 
-			{/* Printable Invoice - hidden on screen, shown on print */}
-			<div className="hidden print:block print-invoice">
-				<div className="text-center mb-6 border-b-2 border-gray-800 pb-4">
-					<h1 className="text-xl font-bold">ALIZZAH SCHOOL</h1>
-					<p className="text-sm text-gray-600">Detail Tagihan Siswa</p>
-				</div>
-				<div className="mb-4 text-sm">
-					<div className="grid grid-cols-2 gap-2">
-						<div>
-							<span className="text-gray-600">Nama Siswa:</span>{" "}
-							<strong>{invoice.student?.full_name}</strong>
+			{/* Columns */}
+			<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+				{/* Left Col: Items */}
+				<div
+					className={`space-y-6 ${isRegistration ? "lg:col-span-2" : "lg:col-span-3"}`}
+				>
+					<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden">
+						<div className="px-4 py-5 sm:px-6 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+							<h3 className="text-base font-semibold leading-6 text-gray-900">
+								Rincian Item Tagihan
+							</h3>
+							{invoice.status !== "paid" && (
+								<Button
+									variant="secondary"
+									size="sm"
+									onClick={handleOpenAddItem}
+								>
+									<Plus className="w-4 h-4 mr-1" /> Tambah Item
+								</Button>
+							)}
 						</div>
-						<div>
-							<span className="text-gray-600">Rombel:</span>{" "}
-							<strong>
-								{invoice.student?.active_enrollment?.class_group?.name || "-"}
-							</strong>
-						</div>
-						<div>
-							<span className="text-gray-600">Jenis Tagihan:</span>{" "}
-							<strong>{translateType(invoice.type)}</strong>
-						</div>
-						<div>
-							<span className="text-gray-600">Periode:</span>{" "}
-							<strong>{periodeStr}</strong>
-						</div>
-						<div>
-							<span className="text-gray-600">Status:</span>{" "}
-							<strong>
-								{invoice.status === "paid"
-									? "Lunas"
-									: invoice.status === "partial"
-										? "Sebagian Dibayar"
-										: "Belum Lunas"}
-							</strong>
-						</div>
-						<div>
-							<span className="text-gray-600">Tanggal Cetak:</span>{" "}
-							<strong>
-								{new Date().toLocaleDateString("id-ID", {
-									day: "numeric",
-									month: "long",
-									year: "numeric",
-								})}
-							</strong>
-						</div>
+						<ul className="divide-y divide-gray-200">
+							{(invoice.items as any[])?.map((item: any) =>
+								renderItemRow(item),
+							)}
+						</ul>
 					</div>
 				</div>
-				<table className="w-full text-sm border-collapse mb-4">
-					<thead>
-						<tr className="border-b-2 border-gray-800">
-							<th className="text-left py-2 pr-2">No</th>
-							<th className="text-left py-2 px-2">Item</th>
-							<th className="text-right py-2 px-2">Nominal</th>
-							<th className="text-right py-2 px-2">Dibayar</th>
-							<th className="text-right py-2 pl-2">Sisa</th>
-						</tr>
-					</thead>
-					<tbody>
-						{invoice.items?.map((item: any, idx: number) => (
-							<tr key={item.id} className="border-b border-gray-300">
-								<td className="py-1.5 pr-2">{idx + 1}</td>
-								<td className="py-1.5 px-2">{item.name}</td>
-								<td className="py-1.5 px-2 text-right">
-									{formatCurrency(Number(item.amount))}
-								</td>
-								<td className="py-1.5 px-2 text-right">
-									{formatCurrency(Number(item.paid_amount))}
-								</td>
-								<td className="py-1.5 pl-2 text-right">
-									{formatCurrency(
-										Number(item.amount) - Number(item.paid_amount),
-									)}
-								</td>
-							</tr>
-						))}
-					</tbody>
-					<tfoot>
-						<tr className="border-t-2 border-gray-800 font-bold">
-							<td colSpan={2} className="py-2 text-right">
-								Total
-							</td>
-							<td className="py-2 px-2 text-right">
-								{formatCurrency(totalAmount)}
-							</td>
-							<td className="py-2 px-2 text-right">
-								{formatCurrency(paidAmount)}
-							</td>
-							<td className="py-2 pl-2 text-right">{formatCurrency(sisa)}</td>
-						</tr>
-					</tfoot>
-				</table>
-				<div className="mt-8 text-sm text-gray-500 text-center">
-					<p>Dokumen ini dicetak secara otomatis oleh sistem Alizzah School.</p>
+
+				{/* Right Col: Installments (if registration) and Payment History */}
+				<div className="space-y-6 lg:col-span-1">
+					{isRegistration && (
+						<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden">
+							<div className="px-4 py-5 sm:px-6 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+								<h3 className="text-base font-semibold leading-6 text-gray-900 flex items-center">
+									<CalendarDays className="w-4 h-4 mr-2" /> Jadwal Cicilan
+								</h3>
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={handleOpenInstallments}
+								>
+									Atur
+								</Button>
+							</div>
+							<div className="p-4 sm:px-6">
+								{installments.length === 0 ? (
+									<p className="text-sm text-gray-500 italic">
+										Belum ada jadwal cicilan.
+									</p>
+								) : (
+									<div className="space-y-4">
+										{installments.map((inst: any) => (
+											<div
+												key={inst.id}
+												className="flex justify-between border-b border-gray-100 pb-2 last:border-0 last:pb-0"
+											>
+												<div>
+													<p className="text-sm font-medium text-gray-900">
+														Cicilan {inst.installment_number}
+													</p>
+													<p className="text-xs text-gray-500">
+														{formatDate(inst.due_date)}
+													</p>
+												</div>
+												<p className="text-sm font-semibold text-gray-900">
+													{formatCurrency(Number(inst.amount))}
+												</p>
+											</div>
+										))}
+									</div>
+								)}
+							</div>
+						</div>
+					)}
+
+					{/* Payment History */}
+					<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden">
+						<div className="px-4 py-5 sm:px-6 border-b border-gray-200 bg-gray-50">
+							<h3 className="text-base font-semibold leading-6 text-gray-900">
+								Riwayat Pembayaran
+							</h3>
+						</div>
+						{invoice.payments && invoice.payments.length > 0 ? (
+							<table className="min-w-full divide-y divide-gray-300">
+								<thead className="bg-gray-50">
+									<tr>
+										<th className="py-3 pl-6 pr-3 text-left text-sm font-semibold text-gray-900">
+											Tanggal
+										</th>
+										<th className="px-3 py-3 text-left text-sm font-semibold text-gray-900">
+											Sumber
+										</th>
+										<th className="px-3 py-3 text-left text-sm font-semibold text-gray-900">
+											Petugas
+										</th>
+										<th className="px-3 py-3 text-right text-sm font-semibold text-gray-900 pr-6">
+											Nominal
+										</th>
+									</tr>
+								</thead>
+								<tbody className="divide-y divide-gray-100">
+									{invoice.payments.map((p: any) => (
+										<tr key={p.id} className="hover:bg-gray-50">
+											<td className="py-3 pl-6 pr-3 text-sm text-gray-900">
+												{formatDate(p.payment_date)}
+											</td>
+											<td className="px-3 py-3 text-sm text-gray-500">
+												{p.source === "cash" ? "Tunai (Kas)" : "Tabungan"}
+											</td>
+											<td className="px-3 py-3 text-sm text-gray-500">
+												{p.created_by?.full_name || "-"}
+											</td>
+											<td className="px-3 py-3 text-sm text-right font-medium text-gray-900 pr-6 tabular-nums">
+												{formatCurrency(Number(p.amount))}
+											</td>
+										</tr>
+									))}
+								</tbody>
+							</table>
+						) : (
+							<div className="p-4 sm:px-6">
+								<p className="text-sm text-gray-500 italic">
+									Belum ada pembayaran untuk tagihan ini.
+								</p>
+							</div>
+						)}
+					</div>
 				</div>
 			</div>
 
@@ -1281,6 +1303,7 @@ function DetailTagihanPage() {
 							type="submit"
 							variant="primary"
 							disabled={
+								saveGuard.current ||
 								addItemMutation.isPending ||
 								editItemMutation.isPending ||
 								!canSubmit
@@ -1394,7 +1417,9 @@ function DetailTagihanPage() {
 						<Button
 							type="submit"
 							variant="primary"
-							disabled={installmentsMutation.isPending}
+							disabled={
+								installmentGuard.current || installmentsMutation.isPending
+							}
 						>
 							Simpan Jadwal
 						</Button>

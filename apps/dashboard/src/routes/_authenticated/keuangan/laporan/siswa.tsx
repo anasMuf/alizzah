@@ -17,6 +17,7 @@ import { useGetV1Students } from "#/api/endpoints/students/students";
 import { Alert, Badge, Button } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
 import { formatCurrency, formatDate } from "../../../../utils/format";
+import { openPrintWindow } from "../../../../utils/print";
 
 export const Route = createFileRoute("/_authenticated/keuangan/laporan/siswa")({
 	component: RekapSiswaPage,
@@ -170,10 +171,168 @@ function RekapSiswaPage() {
 
 	const showSearchResults = debouncedQuery.length >= 2 && !selectedStudentId;
 
+	const handlePrint = () => {
+		let html = "";
+
+		// Student profile
+		html += `<table class="mb-4">
+			<thead><tr>
+				<th>Nama Siswa</th>
+				<th>Jenis Kelamin</th>
+				<th>Rombel</th>
+				<th>Tahun Ajaran</th>
+			</tr></thead>
+			<tbody><tr>
+				<td class="font-bold">${student?.full_name || "-"}</td>
+				<td>${student?.gender === "L" ? "Laki-laki" : student?.gender === "P" ? "Perempuan" : "-"}</td>
+				<td>${student?.active_enrollment?.class_group?.name || "Tanpa Rombel"}${student?.active_enrollment?.class_group?.level ? ` (${student.active_enrollment.class_group.level})` : ""}</td>
+				<td>${allTA ? "Semua" : activeAy?.name || "-"}</td>
+			</tr></tbody>
+		</table>`;
+
+		// Summary
+		html += `<table class="mb-4">
+			<thead><tr>
+				<th>Total Tagihan</th>
+				<th>Sudah Dibayar</th>
+				<th>Sisa Tunggakan</th>
+			</tr></thead>
+			<tbody><tr>
+				<td class="text-lg font-bold">${formatCurrency(Number(invoiceSummary?.total_billed || 0))}</td>
+				<td class="text-lg font-bold text-green">${formatCurrency(Number(invoiceSummary?.total_paid || 0))}</td>
+				<td class="text-lg font-bold text-red">${formatCurrency(Number(invoiceSummary?.total_unpaid || 0))}</td>
+			</tr></tbody>
+		</table>`;
+
+		// Savings
+		if (savings && (savings.general || savings.mandatory)) {
+			html += `<table class="mb-4">
+				<thead><tr>
+					${savings.general ? `<th>Tabungan Umum</th>` : ""}
+					${savings.mandatory ? `<th>Tabungan Wajib</th>` : ""}
+				</tr></thead>
+				<tbody><tr>
+					${savings.general ? `<td class="text-lg font-bold">${formatCurrency(Number(savings.general.balance || 0))}</td>` : ""}
+					${savings.mandatory ? `<td class="text-lg font-bold">${formatCurrency(Number(savings.mandatory.balance || 0))}</td>` : ""}
+				</tr></tbody>
+			</table>`;
+		}
+
+		// Invoice list (all expanded)
+		if (invoices.length > 0) {
+			html += `<p class="text-sm font-bold text-gray uppercase letter-spacing mb-2">Rincian Tagihan</p>`;
+			for (const inv of invoices) {
+				const items: any[] = inv.items || [];
+				const statusLabel =
+					inv.status === "paid"
+						? "Lunas"
+						: inv.status === "partial"
+							? "Sebagian"
+							: "Belum";
+				const statusClass =
+					inv.status === "paid"
+						? "badge-success"
+						: inv.status === "partial"
+							? "badge-warning"
+							: "badge-danger";
+				const typeLabel =
+					inv.type === "monthly"
+						? `Tagihan Bulanan — ${inv.period}`
+						: inv.type === "registration"
+							? `Tagihan Registrasi — ${inv.period}`
+							: `Tagihan ${inv.type} — ${inv.period}`;
+
+				html += `<div class="border rounded p-3 mb-2 break-inside-avoid">
+					<div class="mb-2">
+						<p class="font-bold text-base">${typeLabel}</p>
+						<span class="badge ${statusClass} mr-2">${statusLabel}</span>
+						<span class="text-sm text-gray">Total: ${formatCurrency(Number(inv.total_amount || 0))}</span>
+					</div>`;
+
+				if (items.length > 0) {
+					html += `<table>
+						<thead><tr>
+							<th>Item</th>
+							<th class="text-right">Jumlah</th>
+							<th class="text-right">Status</th>
+						</tr></thead>
+						<tbody>`;
+					for (const item of items) {
+						const itemStatus =
+							item.status === "paid"
+								? "Lunas"
+								: item.status === "partial"
+									? "Sebagian"
+									: "Belum";
+						const remaining =
+							item.status === "partial"
+								? ` (Sisa ${formatCurrency(Number(item.amount || 0) - Number(item.paid_amount || 0))})`
+								: "";
+						html += `<tr>
+							<td>${item.name || "-"}</td>
+							<td class="text-right">${formatCurrency(Number(item.amount || 0))}</td>
+							<td class="text-right">${itemStatus}${remaining}</td>
+						</tr>`;
+					}
+					html += `</tbody></table>`;
+				}
+
+				html += `</div>`;
+			}
+		} else {
+			html += `<div class="rounded border p-4 text-center text-sm text-gray">Siswa ini belum memiliki tagihan.</div>`;
+		}
+
+		// Payment history
+		html += `<p class="text-sm font-bold text-gray uppercase letter-spacing mt-4 mb-2">Riwayat Pembayaran</p>`;
+		if (payments.length > 0) {
+			html += `<table>
+				<thead><tr>
+					<th>Tanggal</th>
+					<th>Keterangan</th>
+					<th>Sumber</th>
+					<th class="text-right">Nominal</th>
+				</tr></thead>
+				<tbody>`;
+			for (const p of payments) {
+				const ta = Number(p.total_amount || 0);
+				const sd = Number(p.savings_deposit || 0);
+				const desc =
+					ta > 0 && sd > 0
+						? "Tagihan + Setoran Tabungan"
+						: ta > 0
+							? "Pembayaran Tagihan"
+							: sd > 0
+								? "Setoran Tabungan Umum"
+								: "-";
+				const sourceLabel =
+					p.source === "cash"
+						? "Tunai"
+						: p.source === "savings"
+							? "Tabungan"
+							: p.source || "-";
+				html += `<tr>
+					<td>${formatDate(p.payment_date)}</td>
+					<td>${desc}</td>
+					<td>${sourceLabel}</td>
+					<td class="text-right">${formatCurrency(ta + sd)}</td>
+				</tr>`;
+			}
+			html += `</tbody></table>`;
+		} else {
+			html += `<div class="text-center text-sm text-gray py-3">Belum ada riwayat pembayaran.</div>`;
+		}
+
+		openPrintWindow(html, {
+			title: "Rekap Siswa",
+			subtitle: student?.full_name,
+		});
+	};
+
 	return (
 		<div className="space-y-6">
 			{/* Header */}
-			<div className="flex items-start justify-between print:hidden">
+			<div className="flex items-start justify-between">
 				<div>
 					<nav className="flex items-center text-sm text-gray-500 mb-2">
 						<Link
@@ -190,30 +349,15 @@ function RekapSiswaPage() {
 					</h2>
 				</div>
 				{report && (
-					<Button
-						variant="secondary"
-						onClick={() => window.print()}
-						className="print:hidden"
-					>
+					<Button variant="secondary" onClick={handlePrint}>
 						<Printer className="w-4 h-4 mr-2" />
 						Cetak
 					</Button>
 				)}
 			</div>
 
-			{/* Print Header */}
-			<div className="hidden print:block border-b border-gray-300 pb-4 mb-6">
-				<h1 className="text-lg font-bold">ALIZZAH MANAJEMEN</h1>
-				<p className="text-sm text-gray-600">Laporan Keuangan</p>
-				<div className="mt-2 text-sm text-gray-700 space-y-0.5">
-					<p>Jenis: Rekap per Siswa</p>
-					<p>Siswa: {student?.full_name || "-"}</p>
-					<p>TA: {allTA ? "Semua" : activeAy?.name || "-"}</p>
-				</div>
-			</div>
-
 			{/* Search & TA toggle */}
-			<div className="bg-white p-4 rounded-xl shadow-sm ring-1 ring-gray-900/5 print:hidden">
+			<div className="bg-white p-4 rounded-xl shadow-sm ring-1 ring-gray-900/5">
 				<div className="flex flex-wrap gap-4 items-end">
 					<div className="relative flex-1 min-w-[240px] max-w-md">
 						<label className="block text-sm font-medium leading-6 text-gray-900 mb-1">
@@ -505,6 +649,9 @@ function RekapSiswaPage() {
 											Tanggal
 										</th>
 										<th className="px-3 py-3 text-left text-sm font-semibold text-gray-900">
+											Keterangan
+										</th>
+										<th className="px-3 py-3 text-left text-sm font-semibold text-gray-900">
 											Sumber
 										</th>
 										<th className="px-3 py-3 text-right text-sm font-semibold text-gray-900 pr-6">
@@ -514,23 +661,42 @@ function RekapSiswaPage() {
 								</thead>
 								<tbody className="divide-y divide-gray-200 bg-white">
 									{payments.length > 0 ? (
-										payments.map((p: any) => (
-											<tr key={p.id}>
-												<td className="whitespace-nowrap py-3 pl-6 pr-3 text-sm text-gray-900">
-													{formatDate(p.payment_date)}
-												</td>
-												<td className="whitespace-nowrap px-3 py-3 text-sm text-gray-500">
-													{p.source || "-"}
-												</td>
-												<td className="whitespace-nowrap px-3 py-3 text-sm text-right tabular-nums font-medium text-gray-900 pr-6">
-													{formatCurrency(Number(p.total_amount || 0))}
-												</td>
-											</tr>
-										))
+										payments.map((p: any) => {
+											const ta = Number(p.total_amount || 0);
+											const sd = Number(p.savings_deposit || 0);
+											const desc =
+												ta > 0 && sd > 0
+													? "Tagihan + Setoran Tabungan"
+													: ta > 0
+														? "Pembayaran Tagihan"
+														: sd > 0
+															? "Setoran Tabungan Umum"
+															: "-";
+											return (
+												<tr key={p.id}>
+													<td className="whitespace-nowrap py-3 pl-6 pr-3 text-sm text-gray-900">
+														{formatDate(p.payment_date)}
+													</td>
+													<td className="whitespace-nowrap px-3 py-3 text-sm text-gray-700">
+														{desc}
+													</td>
+													<td className="whitespace-nowrap px-3 py-3 text-sm text-gray-500">
+														{p.source === "cash"
+															? "Tunai"
+															: p.source === "savings"
+																? "Tabungan"
+																: p.source || "-"}
+													</td>
+													<td className="whitespace-nowrap px-3 py-3 text-sm text-right tabular-nums font-medium text-gray-900 pr-6">
+														{formatCurrency(ta + sd)}
+													</td>
+												</tr>
+											);
+										})
 									) : (
 										<tr>
 											<td
-												colSpan={3}
+												colSpan={4}
 												className="px-6 py-8 text-center text-sm text-gray-500"
 											>
 												Belum ada riwayat pembayaran.

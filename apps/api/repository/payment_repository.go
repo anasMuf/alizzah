@@ -11,6 +11,7 @@ import (
 type PaymentRepository interface {
 	FindAll(params dto.PaymentQueryParams) ([]model.Payment, int64, error)
 	FindByID(id uint) (*model.Payment, error)
+	FindByIDUnscoped(id uint) (*model.Payment, error)
 	FindByStudentID(studentID uint, params dto.StudentPaymentQueryParams) ([]model.Payment, error)
 	FindByInvoiceID(invoiceID uint) ([]model.Payment, error)
 	Create(payment *model.Payment) error
@@ -86,9 +87,19 @@ func (r *paymentRepository) FindByID(id uint) (*model.Payment, error) {
 	return &payment, err
 }
 
+// FindByIDUnscoped sama seperti FindByID tapi mengabaikan soft-delete (deleted_at)
+func (r *paymentRepository) FindByIDUnscoped(id uint) (*model.Payment, error) {
+	var payment model.Payment
+	err := r.db.Unscoped().Preload("Student").
+		Preload("Student.Enrollments", "status = ?", "active").
+		Preload("Student.Enrollments.ClassGroup").
+		Preload("Creator").Preload("Items").Preload("Items.InvoiceItem").First(&payment, id).Error
+	return &payment, err
+}
+
 func (r *paymentRepository) FindByStudentID(studentID uint, params dto.StudentPaymentQueryParams) ([]model.Payment, error) {
 	var payments []model.Payment
-	query := r.db.Preload("Student").Preload("Creator").Where("student_id = ?", studentID)
+	query := r.db.Preload("Student.Enrollments.ClassGroup").Preload("Creator").Where("student_id = ?", studentID)
 
 	if params.AcademicYearID != 0 {
 		query = query.Where("academic_year_id = ?", params.AcademicYearID)

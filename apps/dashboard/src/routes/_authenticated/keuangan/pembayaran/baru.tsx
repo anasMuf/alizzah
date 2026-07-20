@@ -5,7 +5,7 @@ import {
 } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { User } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useGetV1InvoicesBatch } from "#/api/endpoints/invoices/invoice-batch";
 import {
 	useGetV1PaymentsId,
@@ -272,10 +272,14 @@ function KasirPembayaranPage() {
 		((paymentSource === "cash" && cashReceived >= totalPay) ||
 			(paymentSource === "savings" && savingsBalance >= totalPay));
 
+	// Sync guard — cegah double-submit dalam <1ms
+	const submitGuard = useRef(false);
+
 	// Create mutation
 	const createMutation = usePostV1Payments({
 		mutation: {
 			onSuccess: (res: any) => {
+				submitGuard.current = false;
 				addToast({
 					variant: "success",
 					title: "Berhasil",
@@ -287,6 +291,7 @@ function KasirPembayaranPage() {
 				});
 			},
 			onError: (err: any) => {
+				submitGuard.current = false;
 				addToast({
 					variant: "error",
 					title: "Gagal",
@@ -300,6 +305,7 @@ function KasirPembayaranPage() {
 	const updateMutation = usePutV1PaymentsId({
 		mutation: {
 			onSuccess: (res: any) => {
+				submitGuard.current = false;
 				addToast({
 					variant: "success",
 					title: "Berhasil",
@@ -311,6 +317,7 @@ function KasirPembayaranPage() {
 				});
 			},
 			onError: (err: any) => {
+				submitGuard.current = false;
 				addToast({
 					variant: "error",
 					title: "Gagal",
@@ -323,6 +330,8 @@ function KasirPembayaranPage() {
 	const isPending = createMutation.isPending || updateMutation.isPending;
 
 	const handleSubmit = () => {
+		if (submitGuard.current) return;
+		submitGuard.current = true;
 		if (paymentSource === "savings" && totalPay > savingsBalance) {
 			addToast({
 				variant: "error",
@@ -478,7 +487,7 @@ function KasirPembayaranPage() {
 								variant="primary"
 								className="w-full justify-center py-3 text-base"
 								onClick={handleSubmit}
-								disabled={!canSubmit || isPending}
+								disabled={!canSubmit || submitGuard.current || isPending}
 							>
 								{isPending
 									? "Memproses..."

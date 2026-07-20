@@ -16,9 +16,10 @@ type Student struct {
 	BaseModelTimeAt
 
 	// Relations
-	Guardians        []Guardian        `gorm:"many2many:student_guardians;" json:"guardians,omitempty"`
-	StudentGuardians []StudentGuardian `gorm:"foreignKey:StudentID" json:"-"`
-	Enrollments      []StudentEnrollment `gorm:"foreignKey:StudentID" json:"-"`
+	Guardians        []Guardian             `gorm:"many2many:student_guardians;" json:"guardians,omitempty"`
+	StudentGuardians []StudentGuardian      `gorm:"foreignKey:StudentID" json:"-"`
+	Enrollments      []StudentEnrollment    `gorm:"foreignKey:StudentID" json:"-"`
+	Exceptionality   *StudentExceptionality `gorm:"foreignKey:StudentID" json:"exceptionality,omitempty"`
 }
 
 func (Student) TableName() string {

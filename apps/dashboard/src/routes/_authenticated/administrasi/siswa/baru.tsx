@@ -31,6 +31,8 @@ function SiswaBaruPage() {
 		gender: "L",
 		religion: "Islam",
 		is_daycare_only: false,
+		is_exceptional: false,
+		exceptionality_description: "",
 	});
 
 	const [guardians, setGuardians] = useState<DtoCreateGuardianInline[]>([
@@ -129,7 +131,14 @@ function SiswaBaruPage() {
 			// API expects custom datetime, append time to date
 			birth_date: `${studentData.birth_date}T00:00:00Z`,
 			guardians: guardians.filter((g) => g.full_name.trim() !== ""),
-		};
+		} as any;
+
+		// Attach exceptionality if enabled
+		if (studentData.is_exceptional) {
+			(payload as any).exceptionality = {
+				description: studentData.exceptionality_description,
+			};
+		}
 
 		createMutation.mutate({ data: payload });
 	};
@@ -303,6 +312,41 @@ function SiswaBaruPage() {
 										</span>
 									</div>
 								</label>
+							</div>
+
+							<div className="sm:col-span-6">
+								<label className="flex items-start gap-3 cursor-pointer p-4 border rounded-lg bg-amber-50 hover:bg-amber-100 transition-colors">
+									<div className="flex h-6 items-center">
+										<input
+											type="checkbox"
+											name="is_exceptional"
+											checked={studentData.is_exceptional}
+											onChange={handleStudentChange}
+											className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-600"
+										/>
+									</div>
+									<div>
+										<span className="font-medium text-gray-900 block">
+											Siswa Berkebutuhan Khusus (ABK)
+										</span>
+										<span className="text-sm text-gray-500">
+											Centang jika siswa adalah Anak Berkebutuhan Khusus.
+											Tagihan SPP bulanan akan dikalikan 2× lipat.
+										</span>
+									</div>
+								</label>
+								{studentData.is_exceptional && (
+									<div className="mt-3 ml-10">
+										<FormField
+											id="exceptionality_description"
+											name="exceptionality_description"
+											label="Catatan (opsional)"
+											placeholder="Misal: Autisme ringan, Tunanetra, dll."
+											value={studentData.exceptionality_description}
+											onChange={handleStudentChange}
+										/>
+									</div>
+								)}
 							</div>
 						</div>
 					</div>

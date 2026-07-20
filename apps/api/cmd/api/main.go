@@ -83,6 +83,8 @@ func main() {
 		&model.StudentFacility{},
 		// Dispensations
 		&model.Dispensation{},
+		// Student exceptionalities (ABK)
+		&model.StudentExceptionality{},
 		// Token blacklist
 		&model.TokenBlacklist{},
 		// RBAC by-modul: grant akses modul per-user
@@ -250,7 +252,10 @@ func main() {
 	// Dispensation repo (needed before invoiceGenService)
 	dispensationRepo := repository.NewDispensationRepository(db)
 
-	invoiceGenService := service.NewInvoiceGenerateService(db, invoiceRepo, invoiceItemRepo, fcRepo, fcItemRepo, effectiveDayRepo, enrollmentRepo, extracurricularRepo, seRepo, ayRepo, daycareRepo, facilityRepo, sfRepo, dispensationRepo)
+	// Student exceptionality repo
+	exceptionalityRepo := repository.NewStudentExceptionalityRepository(db)
+
+	invoiceGenService := service.NewInvoiceGenerateService(db, invoiceRepo, invoiceItemRepo, fcRepo, fcItemRepo, effectiveDayRepo, enrollmentRepo, extracurricularRepo, seRepo, ayRepo, daycareRepo, facilityRepo, sfRepo, dispensationRepo, exceptionalityRepo)
 
 	// Auto-sync: tambahkan item tabungan wajib ke invoice existing yang belum memilikinya.
 	// Aman dijalankan berulang kali (idempotent), hanya menyentuh invoice unpaid/partial.
@@ -295,7 +300,7 @@ func main() {
 	reportService := service.NewReportService(reportRepo, ayRepo, cashTxnRepo, vaultTxnRepo, dailyClosingRepo, studentRepo, invoiceRepo, invoiceItemRepo, paymentRepo, savingsService, classGroupRepo, savingsTxnRepo)
 
 	// Batch 3 (updated with Batch 5+6 dependencies)
-	studentService := service.NewStudentService(db, studentRepo, enrollmentRepo, classGroupRepo, invoiceRepo, extracurricularRepo, seRepo, fcRepo, fcItemRepo, savingsService, invoiceGenService)
+	studentService := service.NewStudentService(db, studentRepo, enrollmentRepo, classGroupRepo, invoiceRepo, extracurricularRepo, seRepo, fcRepo, fcItemRepo, savingsService, invoiceGenService, exceptionalityRepo)
 	enrollmentService := service.NewStudentEnrollmentService(db, enrollmentRepo, studentRepo, classGroupRepo, extracurricularRepo, seRepo, fcRepo, fcItemRepo, invoiceGenService, savingsService)
 	effectiveDayService := service.NewEffectiveDayService(effectiveDayRepo, classGroupRepo, invoiceGenService)
 	extracurricularService := service.NewExtracurricularService(db, extracurricularRepo, fcRepo, fcItemRepo)

@@ -58,6 +58,7 @@ type invoiceGenerateService struct {
 	facilityRepo        repository.FacilityRepository
 	sfRepo              repository.StudentFacilityRepository
 	dispensationRepo    repository.DispensationRepository
+	exceptionalityRepo  repository.StudentExceptionalityRepository
 }
 
 func NewInvoiceGenerateService(
@@ -75,6 +76,7 @@ func NewInvoiceGenerateService(
 	facilityRepo repository.FacilityRepository,
 	sfRepo repository.StudentFacilityRepository,
 	dispensationRepo repository.DispensationRepository,
+	exceptionalityRepo repository.StudentExceptionalityRepository,
 ) InvoiceGenerateService {
 	return &invoiceGenerateService{
 		db:                  db,
@@ -91,6 +93,7 @@ func NewInvoiceGenerateService(
 		facilityRepo:        facilityRepo,
 		sfRepo:              sfRepo,
 		dispensationRepo:    dispensationRepo,
+		exceptionalityRepo:  exceptionalityRepo,
 	}
 }
 
@@ -249,6 +252,13 @@ func (s *invoiceGenerateService) GenerateMonthly(params dto.GenerateMonthlyInvoi
 
 	var invoiceItems []model.InvoiceItem
 
+	// Cek apakah siswa exceptional (ABK) — SPP akan dikalikan 2
+	isExceptional := false
+	if s.exceptionalityRepo != nil {
+		_, err := s.exceptionalityRepo.FindActiveByStudentID(params.StudentID)
+		isExceptional = err == nil
+	}
+
 	// SPP — pilih item berdasarkan semester: sem1 (Jul-Des) vs sem2 (Jan-Jun)
 	// Item dengan suffix _sem1/_sem2 difilter per semester; item tanpa suffix
 	// (format lama) tetap dipakai untuk backward compatibility.
@@ -263,10 +273,16 @@ func (s *invoiceGenerateService) GenerateMonthly(params dto.GenerateMonthlyInvoi
 		if hasSemesterSuffix && !strings.HasSuffix(keyLower, "_"+sppSemester) {
 			continue
 		}
+		amount := item.Amount
+		name := item.Name
+		if isExceptional {
+			amount = amount * 2
+			name = name + " (ABK)"
+		}
 		invoiceItems = append(invoiceItems, model.InvoiceItem{
-			Name:        item.Name,
+			Name:        name,
 			Category:    item.Category,
-			Amount:      item.Amount,
+			Amount:      amount,
 			IsMandatory: true,
 		})
 	}

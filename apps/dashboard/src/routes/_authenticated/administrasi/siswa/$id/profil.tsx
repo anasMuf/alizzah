@@ -47,8 +47,14 @@ function ProfilSiswaPage() {
 		gender: "L" as "L" | "P",
 		religion: "",
 		is_daycare_only: false,
+		is_exceptional: false,
+		exceptionality_description: "",
 	});
 	const [editErrors, setEditErrors] = useState<Record<string, string>>({});
+	const [isExceptionalityConfirmOpen, setIsExceptionalityConfirmOpen] =
+		useState(false);
+	const [pendingExceptionalityChange, setPendingExceptionalityChange] =
+		useState<boolean | null>(null);
 
 	// Add guardian form state
 	const [isAddGuardianOpen, setIsAddGuardianOpen] = useState(false);
@@ -80,6 +86,8 @@ function ProfilSiswaPage() {
 			gender: student.gender || "L",
 			religion: student.religion || "",
 			is_daycare_only: student.is_daycare_only || false,
+			is_exceptional: student.exceptionality?.is_exceptional || false,
+			exceptionality_description: student.exceptionality?.description || "",
 		});
 		setEditErrors({});
 		setIsEditOpen(true);
@@ -119,17 +127,41 @@ function ProfilSiswaPage() {
 			setEditErrors(errors);
 			return;
 		}
-		updateMutation.mutate({
-			id: studentId,
-			data: {
-				full_name: editForm.full_name,
-				birth_place: editForm.birth_place,
-				birth_date: editForm.birth_date,
-				gender: editForm.gender,
-				religion: editForm.religion || undefined,
-				is_daycare_only: editForm.is_daycare_only,
-			},
-		});
+
+		const wasExceptional = student.exceptionality?.is_exceptional || false;
+		const isNowExceptional = editForm.is_exceptional;
+
+		// Jika status ABK berubah, tampilkan konfirmasi dulu
+		if (wasExceptional !== isNowExceptional && !isExceptionalityConfirmOpen) {
+			setPendingExceptionalityChange(isNowExceptional);
+			setIsExceptionalityConfirmOpen(true);
+			return;
+		}
+
+		doSubmitEdit();
+	};
+
+	const doSubmitEdit = () => {
+		const payload: any = {
+			full_name: editForm.full_name,
+			birth_place: editForm.birth_place,
+			birth_date: editForm.birth_date,
+			gender: editForm.gender,
+			religion: editForm.religion || undefined,
+			is_daycare_only: editForm.is_daycare_only,
+		};
+
+		// Attach exceptionality — always send to keep in sync
+		if (editForm.is_exceptional) {
+			payload.exceptionality = {
+				description: editForm.exceptionality_description,
+			};
+		} else {
+			payload.exceptionality = { is_active: false };
+		}
+
+		updateMutation.mutate({ id: studentId, data: payload });
+		setIsExceptionalityConfirmOpen(false);
 	};
 
 	// --- Add Guardian --- //
@@ -322,6 +354,23 @@ function ProfilSiswaPage() {
 								{student.gender === "L" ? "Laki-laki" : "Perempuan"}
 							</dd>
 						</div>
+						{student.exceptionality?.is_exceptional && (
+							<div className="sm:col-span-1">
+								<dt className="text-sm font-medium text-gray-500">
+									Kebutuhan Khusus
+								</dt>
+								<dd className="mt-1 text-sm">
+									<span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
+										ABK (Anak Berkebutuhan Khusus)
+									</span>
+									{student.exceptionality?.description && (
+										<p className="mt-1 text-gray-500">
+											{student.exceptionality.description}
+										</p>
+									)}
+								</dd>
+							</div>
+						)}
 						<div className="sm:col-span-1">
 							<dt className="text-sm font-medium text-gray-500">
 								Tanggal Terdaftar
@@ -448,6 +497,47 @@ function ProfilSiswaPage() {
 							className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
 						/>
 						<Label htmlFor="edit-daycare">Daycare Only</Label>
+					</div>
+
+					<div className="border-t pt-4 mt-4">
+						<div className="flex items-center gap-2">
+							<input
+								type="checkbox"
+								id="edit-exceptional"
+								checked={editForm.is_exceptional}
+								onChange={(e) =>
+									setEditForm({
+										...editForm,
+										is_exceptional: e.target.checked,
+									})
+								}
+								className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-600"
+							/>
+							<Label htmlFor="edit-exceptional">
+								Siswa Berkebutuhan Khusus (ABK)
+							</Label>
+						</div>
+						<p className="mt-1 ml-6 text-xs text-gray-500">
+							Tagihan SPP bulanan akan dikalikan 2× lipat.
+						</p>
+						{editForm.is_exceptional && (
+							<div className="mt-3 ml-6">
+								<Label htmlFor="edit-exceptional-desc">
+									Catatan (opsional)
+								</Label>
+								<Input
+									id="edit-exceptional-desc"
+									value={editForm.exceptionality_description}
+									onChange={(e) =>
+										setEditForm({
+											...editForm,
+											exceptionality_description: e.target.value,
+										})
+									}
+									placeholder="Misal: Autisme ringan"
+								/>
+							</div>
+						)}
 					</div>
 				</form>
 			</SlideOver>
@@ -663,6 +753,24 @@ function ProfilSiswaPage() {
 					Anda yakin ingin menghapus data wali murid{" "}
 					<strong>{guardianToDelete?.full_name}</strong>?
 				</p>
+			</ConfirmDialog>
+
+			<ConfirmDialog
+				open={isExceptionalityConfirmOpen}
+				onCancel={() => setIsExceptionalityConfirmOpen(false)}
+				onConfirm={doSubmitEdit}
+				title={
+					pendingExceptionalityChange
+						? "Aktifkan Status ABK"
+						: "Nonaktifkan Status ABK"
+				}
+			>
+				<p>
+					{pendingExceptionalityChange
+						? "Tagihan SPP bulan ini (belum lunas) akan direcalculate dengan pengali 2× lipat dan bulan-bulan berikutnya akan otomatis dikalikan 2×."
+						: "Tagihan SPP bulan ini (belum lunas) akan direcalculate kembali ke normal dan bulan-bulan berikutnya akan kembali normal."}
+				</p>
+				<p className="mt-2 text-sm text-gray-500">Lanjutkan?</p>
 			</ConfirmDialog>
 		</div>
 	);

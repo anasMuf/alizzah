@@ -40,6 +40,7 @@ type studentService struct {
 	feeConfigItemRepo   repository.FeeConfigItemRepository
 	savingsService      SavingsService
 	invoiceGen          InvoiceGenerateService
+	exceptionalityRepo  repository.StudentExceptionalityRepository
 }
 
 func NewStudentService(
@@ -54,6 +55,7 @@ func NewStudentService(
 	feeConfigItemRepo repository.FeeConfigItemRepository,
 	savingsService SavingsService,
 	invoiceGen InvoiceGenerateService,
+	exceptionalityRepo repository.StudentExceptionalityRepository,
 ) StudentService {
 	return &studentService{
 		db:                  db,
@@ -67,6 +69,7 @@ func NewStudentService(
 		feeConfigItemRepo:   feeConfigItemRepo,
 		savingsService:      savingsService,
 		invoiceGen:          invoiceGen,
+		exceptionalityRepo:  exceptionalityRepo,
 	}
 }
 
@@ -110,6 +113,14 @@ func (s *studentService) GetByID(id uint) (*dto.StudentDetailResponse, error) {
 			return nil, errors.New("Siswa tidak ditemukan")
 		}
 		return nil, err
+	}
+
+	// Preload exceptionality
+	if s.exceptionalityRepo != nil {
+		se, err := s.exceptionalityRepo.FindActiveByStudentID(id)
+		if err == nil {
+			student.Exceptionality = se
+		}
 	}
 
 	resp := mapStudentToDetailResponse(*student)
@@ -227,6 +238,22 @@ func (s *studentService) Create(createdBy uint, req dto.CreateStudentRequest) (*
 	err = s.db.Transaction(func(tx *gorm.DB) error {
 		if err := s.studentRepo.WithTx(tx).Create(student); err != nil {
 			return err
+		}
+
+		// Handle exceptionality (ABK) — insert jika dikirim
+		if req.Exceptionality != nil && s.exceptionalityRepo != nil {
+			isActive := true
+			if req.Exceptionality.IsActive != nil {
+				isActive = *req.Exceptionality.IsActive
+			}
+			se := &model.StudentExceptionality{
+				StudentID:   student.ID,
+				Description: req.Exceptionality.Description,
+				IsActive:    isActive,
+			}
+			if err := s.exceptionalityRepo.WithTx(tx).Upsert(se); err != nil {
+				return err
+			}
 		}
 
 		if !wantEnrollment {
@@ -375,18 +402,49 @@ func (s *studentService) Update(id uint, req dto.UpdateStudentRequest) (*dto.Stu
 	student.Religion = req.Religion
 	student.IsDaycareOnly = req.IsDaycareOnly
 
+	// Track perubahan status exceptionality sebelum update
+	wasExceptional := false
+	if s.exceptionalityRepo != nil {
+		_, err := s.exceptionalityRepo.FindActiveByStudentID(id)
+		wasExceptional = err == nil
+	}
+
 	if err := s.studentRepo.Update(student); err != nil {
 		return nil, err
 	}
 
-	if oldGender != student.Gender && s.invoiceGen != nil {
-		go func(sid uint) {
-			if err := s.invoiceGen.RegenerateForStudent(sid); err != nil {
-				log.Printf("Auto-regen invoice gagal untuk student %d: %v", sid, err)
-			} else {
-				log.Printf("Auto-regen invoice berhasil untuk student %d (gender berubah)", sid)
+	// Handle exceptionality (ABK)
+	exceptionalityChanged := false
+	if s.exceptionalityRepo != nil && req.Exceptionality != nil {
+		isActive := true
+		if req.Exceptionality.IsActive != nil {
+			isActive = *req.Exceptionality.IsActive
+		}
+		if isActive {
+			se := &model.StudentExceptionality{
+				StudentID:   id,
+				Description: req.Exceptionality.Description,
+				IsActive:    true,
 			}
-		}(student.ID)
+			if err := s.exceptionalityRepo.Upsert(se); err != nil {
+				return nil, err
+			}
+		} else {
+			if err := s.exceptionalityRepo.Deactivate(id); err != nil {
+				return nil, err
+			}
+		}
+		exceptionalityChanged = wasExceptional != isActive
+	}
+
+	// Recalculate tagihan jika gender berubah ATAU exceptionality berubah
+	recalculateNeeded := (oldGender != student.Gender) || exceptionalityChanged
+	if recalculateNeeded && s.invoiceGen != nil {
+		if err := s.invoiceGen.RegenerateForStudent(student.ID); err != nil {
+			log.Printf("Auto-regen invoice gagal untuk student %d: %v", student.ID, err)
+		} else {
+			log.Printf("Auto-regen invoice berhasil untuk student %d (gender/exceptionality berubah)", student.ID)
+		}
 	}
 
 	return mapStudentToDetailResponse(*student), nil
@@ -536,7 +594,7 @@ func mapStudentToDetailResponse(st model.Student) *dto.StudentDetailResponse {
 		photoUrl = &st.PhotoURL
 	}
 
-	return &dto.StudentDetailResponse{
+	resp := &dto.StudentDetailResponse{
 		ID:            st.ID,
 		FullName:      st.FullName,
 		Gender:        st.Gender,
@@ -549,6 +607,15 @@ func mapStudentToDetailResponse(st model.Student) *dto.StudentDetailResponse {
 		Guardians:     gBriefs,
 		CreatedAt:     st.CreatedAt.Format(time.RFC3339),
 	}
+
+	if st.Exceptionality != nil && st.Exceptionality.IsActive {
+		resp.Exceptionality = &dto.ExceptionalityResponse{
+			IsExceptional: true,
+			Description:   st.Exceptionality.Description,
+		}
+	}
+
+	return resp
 }
 
 func (s *studentService) mapEnrollmentToBrief(enr *model.StudentEnrollment) *dto.EnrollmentBriefResponse {

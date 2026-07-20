@@ -7,7 +7,7 @@ import {
 	ChevronRight,
 	Printer,
 } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
 	type TabunganSiswaRow,
 	useGetReportsTabunganSiswa,
@@ -20,6 +20,7 @@ import {
 import { useGetV1StudentsId } from "#/api/endpoints/students/students";
 import { Button, FormField, SlideOver, useToast } from "#/components/ui";
 import { formatCurrency, formatDate } from "../../../../utils/format";
+import { openPrintWindow } from "../../../../utils/print";
 
 export const Route = createFileRoute(
 	"/_authenticated/keuangan/tabungan/siswa/$id",
@@ -78,9 +79,13 @@ function DetailTabunganSiswaPage() {
 	const [withdrawAmount, setWithdrawAmount] = useState("");
 	const [withdrawNotes, setWithdrawNotes] = useState("");
 
+	// Sync guard — cegah double-submit
+	const withdrawGuard = useRef(false);
+
 	const withdrawMutation = usePostV1StudentsIdSavingsWithdrawals({
 		mutation: {
 			onSuccess: () => {
+				withdrawGuard.current = false;
 				addToast({
 					variant: "success",
 					title: "Berhasil",
@@ -97,6 +102,7 @@ function DetailTabunganSiswaPage() {
 				setWithdrawNotes("");
 			},
 			onError: (err: any) => {
+				withdrawGuard.current = false;
 				addToast({
 					variant: "error",
 					title: "Gagal",
@@ -131,7 +137,93 @@ function DetailTabunganSiswaPage() {
 	};
 
 	const handlePrint = () => {
-		window.print();
+		if (!printReport) return;
+
+		const esc = (s: string) =>
+			s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+		const rowsHtml = printRows
+			.map(
+				(row: TabunganSiswaRow, idx: number) => `
+				<tr>
+					<td>${idx + 1}.</td>
+					<td>${formatDate(row.date)}</td>
+					<td>${esc(row.description)}</td>
+					<td class="text-right">${row.debit ? formatCurrency(row.debit) : ""}</td>
+					<td class="text-right">${row.credit ? formatCurrency(row.credit) : ""}</td>
+					<td class="text-right">${formatCurrency(row.saldo)}</td>
+				</tr>`,
+			)
+			.join("");
+
+		const totalRow =
+			printRows.length > 0
+				? `
+			<tr class="bg-gray-50 border-t-foot font-bold">
+				<td colspan="3">Total</td>
+				<td class="text-right">${formatCurrency(printReport.total_debit)}</td>
+				<td class="text-right">${formatCurrency(printReport.total_credit)}</td>
+				<td></td>
+			</tr>`
+				: "";
+
+		const emptyRow =
+			printRows.length === 0
+				? `<tr><td colspan="6" class="text-center py-6 text-gray">Tidak ada transaksi pada periode ini.</td></tr>`
+				: "";
+
+		const content = `
+		<table class="mb-4">
+			<thead>
+				<tr>
+					<th>Nama Siswa</th>
+					<th>Jenis Kelamin</th>
+					<th>Rombel</th>
+					<th>Periode</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><strong>${esc(printReport.student.full_name)}</strong></td>
+					<td>${student?.gender === "L" ? "Laki-laki" : student?.gender === "P" ? "Perempuan" : "-"}</td>
+					<td>${esc(printReport.student.class_group || student?.active_enrollment?.class_group?.name || "-")}${student?.active_enrollment?.class_group?.level ? ` (${student.active_enrollment.class_group.level})` : ""}</td>
+					<td>${esc(printReport.period.start_date)} — ${esc(printReport.period.end_date)}</td>
+				</tr>
+			</tbody>
+		</table>
+
+		<table>
+			<thead>
+				<tr>
+					<th>No.</th>
+					<th>Tanggal</th>
+					<th>Keterangan</th>
+					<th class="text-right">Debit</th>
+					<th class="text-right">Kredit</th>
+					<th class="text-right">Saldo</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr class="bg-gray-50">
+					<td colspan="3" class="text-gray"><em>Saldo Awal</em></td>
+					<td></td><td></td>
+					<td class="text-right font-bold">${formatCurrency(printReport.saldo_awal)}</td>
+				</tr>
+				${rowsHtml}
+				${emptyRow}
+				${totalRow}
+				<tr class="bg-gray-100 border-t font-bold">
+					<td colspan="3">Saldo Akhir</td>
+					<td></td><td></td>
+					<td class="text-right">${formatCurrency(printReport.saldo_akhir)}</td>
+				</tr>
+			</tbody>
+		</table>`;
+
+		openPrintWindow(content, {
+			title: `Laporan Tabungan — ${printReport.student.full_name}`,
+			subtitle: "Laporan Tabungan Umum Per Siswa",
+		});
 	};
 
 	const handleClosePrint = () => {
@@ -143,6 +235,8 @@ function DetailTabunganSiswaPage() {
 
 	const handleWithdraw = (e: React.FormEvent) => {
 		e.preventDefault();
+		if (withdrawGuard.current) return;
+		withdrawGuard.current = true;
 		if (Number(withdrawAmount) > (savings?.general?.balance || 0)) {
 			addToast({
 				variant: "error",
@@ -193,7 +287,7 @@ function DetailTabunganSiswaPage() {
 				</ol>
 			</nav>
 
-			<div className="border-b border-gray-200 pb-5 flex items-start justify-between print:hidden">
+			<div className="border-b border-gray-200 pb-5 flex items-start justify-between">
 				<div>
 					<h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:tracking-tight flex items-center">
 						Detail Tabungan: {student.full_name}
@@ -214,7 +308,7 @@ function DetailTabunganSiswaPage() {
 
 			{/* Print Filter */}
 			{showPrintFilter && (
-				<div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 print:hidden">
+				<div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
 					<div className="flex flex-wrap gap-4 items-end">
 						<div>
 							<label className="block text-sm font-medium text-gray-900 mb-1">
@@ -266,23 +360,7 @@ function DetailTabunganSiswaPage() {
 			{/* Print Preview Table (visible on screen when generated, and used for print) */}
 			{printReport && showPrintFilter && (
 				<div className="print-report-container">
-					{/* Print Header — only visible when printing */}
-					<div className="hidden print:block border-b border-gray-300 pb-4 mb-4">
-						<h1 className="text-lg font-bold text-center">PAUD AL-IZZAH</h1>
-						<p className="text-sm text-gray-600 text-center">
-							Laporan Tabungan Umum Per Siswa
-						</p>
-						<div className="mt-2 text-sm text-gray-700 space-y-0.5">
-							<p>Nama: {printReport.student.full_name}</p>
-							<p>Rombel: {printReport.student.class_group || "-"}</p>
-							<p>
-								Periode: {printReport.period.start_date} —{" "}
-								{printReport.period.end_date}
-							</p>
-						</div>
-					</div>
-
-					<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden print:shadow-none print:ring-0">
+					<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden">
 						<div className="overflow-x-auto">
 							<table className="min-w-full divide-y divide-gray-300">
 								<thead className="bg-gray-50">
@@ -390,19 +468,14 @@ function DetailTabunganSiswaPage() {
 					</div>
 
 					{/* Print footer */}
-					<div className="hidden print:block mt-6 text-xs text-gray-500 text-center">
-						<p>
-							Dokumen ini dicetak secara otomatis oleh sistem Alizzah School.
-						</p>
-					</div>
 				</div>
 			)}
 
 			{isPrintLoading && showPrintFilter && (
-				<div className="animate-pulse h-48 bg-gray-200 rounded-xl print:hidden" />
+				<div className="animate-pulse h-48 bg-gray-200 rounded-xl" />
 			)}
 
-			<div className="grid grid-cols-1 md:grid-cols-2 gap-6 print:hidden">
+			<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 				{/* Tabungan Umum */}
 				<div className="overflow-hidden rounded-lg bg-white shadow ring-1 ring-gray-900/5">
 					<div className="p-6">
@@ -470,7 +543,7 @@ function DetailTabunganSiswaPage() {
 			</div>
 
 			{/* Riwayat Transaksi */}
-			<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden mt-8 print:hidden">
+			<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden mt-8">
 				<div className="px-4 py-5 sm:px-6 border-b border-gray-200">
 					<h3 className="text-base font-semibold leading-6 text-gray-900">
 						Riwayat Mutasi Tabungan
@@ -500,9 +573,7 @@ function DetailTabunganSiswaPage() {
 									)}
 									<div className="min-w-0 flex-auto">
 										<p className="text-sm font-semibold leading-6 text-gray-900">
-											{trx.transaction_type === "debit"
-												? "Debit (Setoran Masuk)"
-												: "Credit (Penarikan Keluar)"}
+											{trx.transaction_type === "debit" ? "Debit" : "Kredit"}
 										</p>
 										<p className="mt-1 flex text-xs leading-5 text-gray-500">
 											{formatDate(trx.created_at)} &bull;{" "}
@@ -653,6 +724,7 @@ function DetailTabunganSiswaPage() {
 							type="submit"
 							variant="primary"
 							disabled={
+								withdrawGuard.current ||
 								withdrawMutation.isPending ||
 								!withdrawAmount ||
 								Number(withdrawAmount) > (savings?.general?.balance || 0)

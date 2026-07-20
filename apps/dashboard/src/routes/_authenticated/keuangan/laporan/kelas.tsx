@@ -7,6 +7,7 @@ import { useGetV1ReportsClassGroupsId } from "#/api/endpoints/reports/reports";
 import { Alert, Badge, Button } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
 import { formatCurrency } from "../../../../utils/format";
+import { openPrintWindow } from "../../../../utils/print";
 
 export const Route = createFileRoute("/_authenticated/keuangan/laporan/kelas")({
 	component: RekapKelasPage,
@@ -139,10 +140,77 @@ function RekapKelasPage() {
 		}
 	};
 
+	const handlePrint = () => {
+		let html = "";
+
+		// Class summary
+		html += `<table class="mb-4">
+			<thead><tr>
+				<th>Jumlah Siswa</th>
+				<th>Total Tagihan</th>
+				<th>Total Terbayar</th>
+				<th>Total Tunggakan</th>
+				<th>Tingkat Kepatuhan</th>
+			</tr></thead>
+			<tbody><tr>
+				<td class="text-lg font-bold">${summary?.total_students || 0}</td>
+				<td class="text-lg font-bold">${formatCurrency(Number(summary?.total_billed || 0))}</td>
+				<td class="text-lg font-bold text-green">${formatCurrency(Number(summary?.total_paid || 0))}</td>
+				<td class="text-lg font-bold text-red">${formatCurrency(Number(summary?.total_unpaid || 0))}</td>
+				<td class="text-lg font-bold">${summary?.payment_rate || "0%"}</td>
+			</tr></tbody>
+		</table>`;
+
+		// Student table
+		html += `<table>
+			<thead><tr>
+				<th>#</th>
+				<th>Nama</th>
+				<th class="text-right">Tagihan</th>
+				<th class="text-right">Dibayar</th>
+				<th class="text-center">Status</th>
+			</tr></thead>
+			<tbody>`;
+
+		if (students.length > 0) {
+			for (let i = 0; i < students.length; i++) {
+				const s = students[i];
+				const statusLabel =
+					s.invoice_status === "paid"
+						? "Lunas"
+						: s.invoice_status === "partial"
+							? "Sebagian"
+							: "Belum";
+				const statusClass =
+					s.invoice_status === "paid"
+						? "badge-success"
+						: s.invoice_status === "partial"
+							? "badge-warning"
+							: "badge-danger";
+				html += `<tr>
+					<td>${i + 1}</td>
+					<td>${s.student_name || "-"}</td>
+					<td class="text-right">${formatCurrency(Number(s.total_amount || 0))}</td>
+					<td class="text-right">${formatCurrency(Number(s.paid_amount || 0))}</td>
+					<td class="text-center"><span class="badge ${statusClass}">${statusLabel}</span></td>
+				</tr>`;
+			}
+		} else {
+			html += `<tr><td colspan="5" class="text-center text-sm text-gray py-3">Tidak ada siswa di rombel ini.</td></tr>`;
+		}
+
+		html += `</tbody></table>`;
+
+		openPrintWindow(html, {
+			title: "Rekap per Kelas",
+			subtitle: `${classGroup?.name || ""} — ${MONTH_NAMES[month - 1]} ${year}`,
+		});
+	};
+
 	return (
 		<div className="space-y-6">
 			{/* Header */}
-			<div className="flex items-start justify-between print:hidden">
+			<div className="flex items-start justify-between">
 				<div>
 					<nav className="flex items-center text-sm text-gray-500 mb-2">
 						<Link
@@ -161,33 +229,15 @@ function RekapKelasPage() {
 					</h2>
 				</div>
 				{report && (
-					<Button
-						variant="secondary"
-						onClick={() => window.print()}
-						className="print:hidden"
-					>
+					<Button variant="secondary" onClick={handlePrint}>
 						<Printer className="w-4 h-4 mr-2" />
 						Cetak
 					</Button>
 				)}
 			</div>
 
-			{/* Print Header */}
-			<div className="hidden print:block border-b border-gray-300 pb-4 mb-6">
-				<h1 className="text-lg font-bold">ALIZZAH MANAJEMEN</h1>
-				<p className="text-sm text-gray-600">Laporan Keuangan</p>
-				<div className="mt-2 text-sm text-gray-700 space-y-0.5">
-					<p>Jenis: Rekap per Kelas</p>
-					<p>Kelas: {classGroup?.name || "-"}</p>
-					<p>
-						Periode: {MONTH_NAMES[month - 1]} {year}
-					</p>
-					<p>TA: {activeAy?.name || "-"}</p>
-				</div>
-			</div>
-
 			{/* Filter — auto-fetch when class is selected */}
-			<div className="bg-white p-4 rounded-xl shadow-sm ring-1 ring-gray-900/5 print:hidden">
+			<div className="bg-white p-4 rounded-xl shadow-sm ring-1 ring-gray-900/5">
 				<div className="flex flex-wrap gap-4 items-end">
 					<div>
 						<label className="block text-sm font-medium leading-6 text-gray-900 mb-1">
@@ -328,7 +378,7 @@ function RekapKelasPage() {
 					</div>
 
 					{/* Status filter */}
-					<div className="flex items-center gap-2 print:hidden">
+					<div className="flex items-center gap-2">
 						<span className="text-sm text-gray-500">Filter:</span>
 						{["", "unpaid", "paid"].map((val) => (
 							<button

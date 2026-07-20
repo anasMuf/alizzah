@@ -151,12 +151,21 @@ func (s *invoiceService) AddItem(invoiceID uint, req dto.AddInvoiceItemRequest) 
 		return nil, errors.New("Tidak bisa menambahkan item ke invoice yang sudah lunas")
 	}
 
+	// Cek duplikat — item dengan nama & kategori sama tidak boleh dobel
+	exists, err := s.itemRepo.ExistsByNameAndCategory(invoiceID, req.Name, req.Category)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
+		return nil, fmt.Errorf("Item '%s' sudah ada di invoice ini. Gunakan edit untuk mengubah nominal.", req.Name)
+	}
+
 	item := &model.InvoiceItem{
 		InvoiceID:   invoiceID,
 		Name:        req.Name,
 		Category:    req.Category,
 		Amount:      req.Amount,
-		IsMandatory: false, // Item manual selalu non-mandatory
+		IsMandatory: false,
 	}
 
 	if err := s.itemRepo.Create(item); err != nil {

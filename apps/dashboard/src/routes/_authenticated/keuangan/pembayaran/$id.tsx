@@ -17,6 +17,7 @@ import {
 	formatDate,
 	formatDateTime,
 } from "../../../../utils/format";
+import { openPrintWindow } from "../../../../utils/print";
 
 export const Route = createFileRoute("/_authenticated/keuangan/pembayaran/$id")(
 	{
@@ -68,7 +69,119 @@ function DetailPembayaranPage() {
 		);
 
 	const handlePrint = () => {
-		window.print();
+		const itemsRows = payment.items?.length
+			? payment.items
+					.map(
+						(item: any) => `
+				<tr>
+					<td class="py-2">${item.invoice_item_name || "Pembayaran Tagihan"}</td>
+					<td class="text-right">${formatCurrency(Number(item.amount))}</td>
+				</tr>`,
+					)
+					.join("")
+			: `<tr><td class="py-2" colspan="2">Tidak ada rincian item.</td></tr>`;
+
+		const savingsRow =
+			Number(payment.savings_deposit) > 0
+				? `
+		<tr class="bg-green-50">
+			<td class="py-2 text-green font-bold">Setoran Tabungan Umum</td>
+			<td class="text-right text-green font-bold">${formatCurrency(Number(payment.savings_deposit))}</td>
+		</tr>`
+				: "";
+
+		const savingsSubtotal =
+			Number(payment.savings_deposit) > 0
+				? `
+		<tr>
+			<td class="text-right text-gray py-2">Subtotal Tagihan</td>
+			<td class="text-right">${formatCurrency(Number(payment.total_amount))}</td>
+		</tr>
+		<tr>
+			<td class="text-right text-gray py-2">Setoran Tabungan</td>
+			<td class="text-right">${formatCurrency(Number(payment.savings_deposit))}</td>
+		</tr>`
+				: "";
+
+		const notesSection = payment.notes
+			? `
+		<div class="p-4 bg-gray-50 rounded border mb-4">
+			<div class="font-bold mb-1 text-sm">Catatan Tambahan</div>
+			<p class="text-sm">${payment.notes}</p>
+		</div>`
+			: "";
+
+		const content = `
+		<table class="mb-4">
+			<thead>
+				<tr>
+					<th>Nama Siswa</th>
+					<th>Jenis Kelamin</th>
+					<th>Rombel</th>
+					<th>No. Referensi</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><strong>${payment.student?.full_name || "-"}</strong></td>
+					<td>${payment.student?.gender === "L" ? "Laki-laki" : payment.student?.gender === "P" ? "Perempuan" : "-"}</td>
+					<td>${payment.student?.active_enrollment?.class_group?.name || "Tanpa Rombel"}${payment.student?.active_enrollment?.class_group?.level ? ` (${payment.student.active_enrollment.class_group.level})` : ""}</td>
+					<td class="font-mono">#${payment.id}</td>
+				</tr>
+			</tbody>
+		</table>
+
+		<table class="mb-4">
+			<thead>
+				<tr>
+					<th>Tanggal Bayar</th>
+					<th>Metode Bayar</th>
+					<th>Petugas</th>
+					<th></th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>${formatDate(payment.payment_date || payment.created_at)}</td>
+					<td>${payment.source === "savings" ? "Tabungan Umum" : "Uang Tunai (Kas)"}</td>
+					<td>${payment.created_by?.full_name || "Sistem"}</td>
+					<td></td>
+				</tr>
+			</tbody>
+		</table>
+
+		<h2 class="text-sm font-bold uppercase letter-spacing mb-2">Rincian Pembayaran</h2>
+		<table>
+			<thead>
+				<tr>
+					<th>Deskripsi Tagihan</th>
+					<th class="text-right">Jumlah (Rp)</th>
+				</tr>
+			</thead>
+			<tbody>
+				${itemsRows}
+				${savingsRow}
+			</tbody>
+			<tfoot>
+				${savingsSubtotal}
+				<tr class="border-t-foot">
+					<td class="text-right py-3 text-lg">Total Pembayaran</td>
+					<td class="text-right py-3 text-lg font-bold">${formatCurrency(Number(payment.total_amount) + Number(payment.savings_deposit || 0))}</td>
+				</tr>
+			</tfoot>
+		</table>
+
+		${notesSection}
+
+		<div class="mt-8 text-center text-gray text-sm">
+			<p>Terima kasih atas pembayaran yang telah dilakukan.</p>
+			<p>Simpan tanda terima ini sebagai bukti pembayaran yang sah.</p>
+		</div>`;
+
+		openPrintWindow(content, {
+			title: `Struk Pembayaran #${payment.id}`,
+			subtitle: "Bukti Pembayaran",
+		});
 	};
 
 	const handleEdit = () => {
@@ -88,9 +201,9 @@ function DetailPembayaranPage() {
 	};
 
 	return (
-		<div className="space-y-6 max-w-4xl mx-auto pb-12 print:max-w-none print:m-0 print:p-0">
-			{/* Breadcrumb - Hidden on print */}
-			<nav className="flex print:hidden" aria-label="Breadcrumb">
+		<div className="space-y-6 max-w-4xl mx-auto pb-12">
+			{/* Breadcrumb */}
+			<nav className="flex" aria-label="Breadcrumb">
 				<ol className="flex items-center space-x-2 text-sm text-gray-500">
 					<li>
 						<Link
@@ -108,8 +221,8 @@ function DetailPembayaranPage() {
 				</ol>
 			</nav>
 
-			{/* Header Actions - Hidden on print */}
-			<div className="flex justify-between items-center print:hidden">
+			{/* Header Actions */}
+			<div className="flex justify-between items-center">
 				<div>
 					<Link
 						to="/keuangan/pembayaran"
@@ -139,8 +252,8 @@ function DetailPembayaranPage() {
 				</div>
 			</div>
 
-			{/* Print Area Container */}
-			<div className="print-invoice bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-8 print:shadow-none print:ring-0 print:p-0">
+			{/* Preview Area */}
+			<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-8">
 				{/* Receipt Header */}
 				<div className="border-b border-gray-200 pb-6 mb-6">
 					<div className="flex justify-between items-start">
@@ -180,11 +293,18 @@ function DetailPembayaranPage() {
 								{payment.student?.full_name}
 							</p>
 							<p>
-								{payment.student?.nisn ? `NISN: ${payment.student.nisn}` : "-"}
+								{payment.student?.gender === "L"
+									? "Laki-laki"
+									: payment.student?.gender === "P"
+										? "Perempuan"
+										: "-"}
 							</p>
 							<p>
 								{payment.student?.active_enrollment?.class_group?.name ||
 									"Tanpa Rombel"}
+								{payment.student?.active_enrollment?.class_group?.level
+									? ` (${payment.student.active_enrollment.class_group.level})`
+									: ""}
 							</p>
 						</div>
 					</div>

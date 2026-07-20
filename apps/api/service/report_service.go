@@ -276,19 +276,24 @@ func (s *reportService) GetStudentReport(studentID uint, req dto.StudentReportRe
 
 	paymentResponses := make([]dto.PaymentListResponse, len(payments))
 	for i, p := range payments {
+		var createdBy dto.UserBriefResponse
+		if p.Creator.ID != 0 {
+			createdBy = dto.UserBriefResponse{ID: p.Creator.ID, FullName: p.Creator.FullName}
+		}
 		paymentResponses[i] = dto.PaymentListResponse{
-			ID:          p.ID,
-			PaymentDate: p.PaymentDate.Format("2006-01-02"),
-			TotalAmount: p.TotalAmount,
-			Source:      p.Source,
+			ID:             p.ID,
+			Student:        mapPaymentStudentBrief(p.Student),
+			PaymentDate:    p.PaymentDate.Format("2006-01-02"),
+			TotalAmount:    p.TotalAmount,
+			SavingsDeposit: p.SavingsDeposit,
+			Source:         p.Source,
+			CreatedBy:      createdBy,
+			CreatedAt:      p.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		}
 	}
 
 	return &dto.StudentReportResponse{
-		Student: dto.StudentBriefResponse{
-			ID:       student.ID,
-			FullName: student.FullName,
-		},
+		Student:        mapPaymentStudentBrief(*student),
 		Savings:        *savings,
 		InvoiceSummary: *invoiceSummary,
 		Invoices:       invoicesForReport,
@@ -721,7 +726,8 @@ func (s *reportService) GetTabunganReport(req dto.TabunganReportRequest) (*dto.T
 	beginningOfTime := ay.StartDate
 	endOfPrevMonth := startOfMonth.AddDate(0, 0, -1)
 
-	// Saldo sebelum
+	// Saldo sebelum = sum debits (masuk/setoran) - sum credits (keluar/penarikan)
+	// DB "debit" type = money IN, DB "credit" type = money OUT
 	creditSebelum, err := s.reportRepo.SumSavingsCredit(beginningOfTime, endOfPrevMonth, savingsType)
 	if err != nil {
 		return nil, err
@@ -730,7 +736,7 @@ func (s *reportService) GetTabunganReport(req dto.TabunganReportRequest) (*dto.T
 	if err != nil {
 		return nil, err
 	}
-	saldoSebelum := creditSebelum - debitSebelum
+	saldoSebelum := debitSebelum - creditSebelum
 
 	// Daily data
 	dailyCredit, err := s.reportRepo.DailySavingsCredit(startOfMonth, endOfMonth, savingsType)
@@ -757,22 +763,24 @@ func (s *reportService) GetTabunganReport(req dto.TabunganReportRequest) (*dto.T
 	sort.Strings(dates)
 
 	// Build rows
+	// DB "debit" = money IN (setoran)  → DTO "Penerimaan"
+	// DB "credit" = money OUT (penarikan) → DTO "Pengeluaran"
 	var rows []dto.TabunganReportRow
 	runningBalance := saldoSebelum
-	var totalCredit, totalDebit float64
+	var totalPenerimaan, totalPengeluaran float64
 
 	for _, d := range dates {
-		credit := dailyCredit[d]
-		debit := dailyDebit[d]
-		selisih := credit - debit
+		penerimaan := dailyDebit[d]   // DB debit = money IN
+		pengeluaran := dailyCredit[d] // DB credit = money OUT
+		selisih := penerimaan - pengeluaran
 		runningBalance += selisih
-		totalCredit += credit
-		totalDebit += debit
+		totalPenerimaan += penerimaan
+		totalPengeluaran += pengeluaran
 
 		rows = append(rows, dto.TabunganReportRow{
 			Date:        d,
-			Penerimaan:  credit,
-			Pengeluaran: debit,
+			Penerimaan:  penerimaan,
+			Pengeluaran: pengeluaran,
 			Selisih:     selisih,
 			Saldo:       runningBalance,
 		})
@@ -795,9 +803,9 @@ func (s *reportService) GetTabunganReport(req dto.TabunganReportRequest) (*dto.T
 		SaldoSebelum: saldoSebelum,
 		Rows:         rows,
 		TotalBulan: dto.SaldoTotalBulan{
-			Penerimaan:  totalCredit,
-			Pengeluaran: totalDebit,
-			Selisih:     totalCredit - totalDebit,
+			Penerimaan:  totalPenerimaan,
+			Pengeluaran: totalPengeluaran,
+			Selisih:     totalPenerimaan - totalPengeluaran,
 		},
 		SaldoAkhir: runningBalance,
 	}, nil
@@ -838,10 +846,11 @@ func (s *reportService) GetTabunganSiswaReport(studentID uint, req dto.TabunganS
 		}
 	}
 
-	// Saldo awal = sum credits - sum debits before startDate
+	// Saldo awal = sum debits (masuk) - sum credits (keluar) before startDate
+	// DB "debit" type = money IN (setoran), DB "credit" type = money OUT (penarikan/pakai)
 	creditBefore, _ := s.savingsTxnRepo.SumCreditByStudentBefore(studentID, startDate)
 	debitBefore, _ := s.savingsTxnRepo.SumDebitByStudentBefore(studentID, startDate)
-	saldoAwal := creditBefore - debitBefore
+	saldoAwal := debitBefore - creditBefore
 
 	// Get all transactions in period
 	txns, err := s.savingsTxnRepo.FindAllByStudentID(studentID, startDate, endDate)
@@ -865,12 +874,14 @@ func (s *reportService) GetTabunganSiswaReport(studentID uint, req dto.TabunganS
 	for _, txn := range txns {
 		debit := float64(0)
 		credit := float64(0)
+		// DB "credit" type = money OUT (pakai/penarikan)  → DTO "credit" = keluar
+		// DB "debit"  type = money IN  (setoran)          → DTO "debit"  = masuk
 		if txn.TransactionType == "credit" {
-			debit = txn.NetAmount
-			totalDebit += debit
-		} else {
 			credit = txn.NetAmount
 			totalCredit += credit
+		} else {
+			debit = txn.NetAmount
+			totalDebit += debit
 		}
 		runningBalance += debit - credit
 

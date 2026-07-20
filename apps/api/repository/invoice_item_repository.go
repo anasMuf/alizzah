@@ -11,6 +11,7 @@ type InvoiceItemRepository interface {
 	FindByID(id uint) (*model.InvoiceItem, error)
 	FindUnpaidByInvoiceID(invoiceID uint) ([]model.InvoiceItem, error)
 	FindByInvoiceAndCategory(invoiceID uint, category string) (*model.InvoiceItem, error)
+	ExistsByNameAndCategory(invoiceID uint, name, category string) (bool, error)
 	Create(item *model.InvoiceItem) error
 	BulkCreate(items []model.InvoiceItem) error
 	Update(item *model.InvoiceItem) error
@@ -56,6 +57,14 @@ func (r *invoiceItemRepository) FindByInvoiceAndCategory(invoiceID uint, categor
 	var item model.InvoiceItem
 	err := r.db.Where("invoice_id = ? AND category = ?", invoiceID, category).First(&item).Error
 	return &item, err
+}
+
+func (r *invoiceItemRepository) ExistsByNameAndCategory(invoiceID uint, name, category string) (bool, error) {
+	var count int64
+	err := r.db.Model(&model.InvoiceItem{}).
+		Where("invoice_id = ? AND name = ? AND category = ?", invoiceID, name, category).
+		Count(&count).Error
+	return count > 0, err
 }
 
 func (r *invoiceItemRepository) Create(item *model.InvoiceItem) error {

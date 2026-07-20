@@ -6,6 +6,7 @@ import { useGetV1ReportsMonthly } from "#/api/endpoints/reports/reports";
 import { Alert, Button } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
 import { formatCurrency } from "../../../../utils/format";
+import { openPrintWindow } from "../../../../utils/print";
 
 export const Route = createFileRoute(
 	"/_authenticated/keuangan/laporan/bulanan",
@@ -57,10 +58,166 @@ function LaporanBulananPage() {
 	const cash = report?.cash;
 	const arrears: any[] = report?.arrears_by_class || [];
 
+	function handlePrint() {
+		if (!report) return;
+
+		const esc = (s: string) =>
+			s
+				.replace(/&/g, "&amp;")
+				.replace(/</g, "&lt;")
+				.replace(/>/g, "&gt;")
+				.replace(/"/g, "&quot;");
+
+		const content = `
+<div class="mb-6">
+	<h2 class="text-xl font-bold">Laporan Bulanan &mdash; ${esc(MONTH_NAMES[month - 1])} ${year}</h2>
+	<p class="text-gray mt-2">TA ${esc(activeAy?.name || "-")}</p>
+</div>
+
+<h3 class="text-base font-bold uppercase letter-spacing mb-2">Ringkasan Pemasukan</h3>
+<table>
+	<thead>
+		<tr>
+			<th>Kategori</th>
+			<th class="text-right">Tagihan</th>
+			<th class="text-right">Realisasi</th>
+			<th class="text-right">Selisih</th>
+		</tr>
+	</thead>
+	<tbody>
+		${
+			income?.by_category && income.by_category.length > 0
+				? income.by_category
+						.map((cat: any) => {
+							const billed = Number(cat.billed || 0);
+							const paid = Number(cat.paid || 0);
+							const diff = paid - billed;
+							return `
+		<tr>
+			<td>${esc(cat.category)}</td>
+			<td class="text-right">${formatCurrency(billed)}</td>
+			<td class="text-right">${formatCurrency(paid)}</td>
+			<td class="text-right ${diff < 0 ? "text-red" : "text-green"}">${formatCurrency(diff)}</td>
+		</tr>`;
+						})
+						.join("")
+				: `
+		<tr>
+			<td colspan="4" class="text-center text-gray">Belum ada data pemasukan untuk bulan ini.</td>
+		</tr>`
+		}
+		${
+			income?.by_category && income.by_category.length > 0
+				? `
+		<tr class="bg-gray-50 font-bold">
+			<td class="border-t-foot">TOTAL</td>
+			<td class="text-right border-t-foot">${formatCurrency(Number(income.total_billed || 0))}</td>
+			<td class="text-right border-t-foot">${formatCurrency(Number(income.total_paid || 0))}</td>
+			<td class="text-right border-t-foot ${Number(income.total_unpaid || 0) > 0 ? "text-red" : "text-green"}">${formatCurrency(Number(income.total_paid || 0) - Number(income.total_billed || 0))}</td>
+		</tr>`
+				: ""
+		}
+	</tbody>
+</table>
+
+<h3 class="text-base font-bold uppercase letter-spacing mb-2 mt-8">Ringkasan Pengeluaran</h3>
+<table>
+	<thead>
+		<tr>
+			<th>Kategori</th>
+			<th class="text-right">Total</th>
+		</tr>
+	</thead>
+	<tbody>
+		${
+			expense?.by_category && expense.by_category.length > 0
+				? expense.by_category
+						.map(
+							(cat: any) => `
+		<tr>
+			<td>${esc(cat.sub_category ? `${cat.category} > ${cat.sub_category}` : cat.category)}</td>
+			<td class="text-right">${formatCurrency(Number(cat.amount || 0))}</td>
+		</tr>`,
+						)
+						.join("")
+				: `
+		<tr>
+			<td colspan="2" class="text-center text-gray">Belum ada pengeluaran untuk bulan ini.</td>
+		</tr>`
+		}
+		${
+			expense?.by_category && expense.by_category.length > 0
+				? `
+		<tr class="bg-gray-50 font-bold">
+			<td class="border-t-foot">TOTAL</td>
+			<td class="text-right border-t-foot">${formatCurrency(Number(expense.total || 0))}</td>
+		</tr>`
+				: ""
+		}
+	</tbody>
+</table>
+
+<h3 class="text-base font-bold uppercase letter-spacing mb-2 mt-8">Tunggakan per Kelas</h3>
+<table>
+	<thead>
+		<tr>
+			<th>Kelas</th>
+			<th class="text-right">Total Tunggakan</th>
+			<th class="text-right">Jumlah Siswa</th>
+		</tr>
+	</thead>
+	<tbody>
+		${
+			arrears.length > 0
+				? arrears
+						.map(
+							(cls: any) => `
+		<tr>
+			<td>${esc(cls.class_group_name)}</td>
+			<td class="text-right text-red">${formatCurrency(Number(cls.total_unpaid || 0))}</td>
+			<td class="text-right text-gray">${cls.student_count} siswa</td>
+		</tr>`,
+						)
+						.join("")
+				: `
+		<tr>
+			<td colspan="3" class="text-center text-gray">Tidak ada tunggakan pada bulan ini.</td>
+		</tr>`
+		}
+	</tbody>
+</table>
+
+<h3 class="text-base font-bold uppercase letter-spacing mb-2 mt-8">Ringkasan Kas</h3>
+<div class="space-y-2">
+	<div class="border-b py-2">
+		<span class="text-gray">Saldo Awal Bulan</span>
+		<span style="float:right" class="text-right font-bold">${formatCurrency(Number(cash?.opening_balance || 0))}</span>
+	</div>
+	<div class="border-b py-2">
+		<span class="text-green">+ Total Penerimaan</span>
+		<span style="float:right" class="text-right font-bold text-green">${formatCurrency(Number(cash?.total_income || 0))}</span>
+	</div>
+	<div class="border-b py-2">
+		<span class="text-red">- Total Pengeluaran</span>
+		<span style="float:right" class="text-right font-bold text-red">${formatCurrency(Number(cash?.total_expense || 0))}</span>
+	</div>
+	<div class="py-2">
+		<span>= Saldo Akhir Bulan</span>
+		<span style="float:right" class="text-right font-bold">${formatCurrency(Number(cash?.closing_balance || 0))}</span>
+	</div>
+</div>
+`;
+
+		openPrintWindow(content, {
+			title: "Laporan Bulanan",
+			subtitle: `Periode: ${MONTH_NAMES[month - 1]} ${year}`,
+		});
+	}
+
 	return (
 		<div className="space-y-6">
 			{/* Header */}
-			<div className="flex items-start justify-between print:hidden">
+			<div className="flex items-start justify-between">
 				<div>
 					<nav className="flex items-center text-sm text-gray-500 mb-2">
 						<Link
@@ -80,32 +237,15 @@ function LaporanBulananPage() {
 					</p>
 				</div>
 				{report && (
-					<Button
-						variant="secondary"
-						onClick={() => window.print()}
-						className="print:hidden"
-					>
+					<Button variant="secondary" onClick={handlePrint}>
 						<Printer className="w-4 h-4 mr-2" />
 						Cetak
 					</Button>
 				)}
 			</div>
 
-			{/* Print Header */}
-			<div className="hidden print:block border-b border-gray-300 pb-4 mb-6">
-				<h1 className="text-lg font-bold">ALIZZAH MANAJEMEN</h1>
-				<p className="text-sm text-gray-600">Laporan Keuangan</p>
-				<div className="mt-2 text-sm text-gray-700 space-y-0.5">
-					<p>Jenis: Laporan Bulanan</p>
-					<p>
-						Periode: {MONTH_NAMES[month - 1]} {year}
-					</p>
-					<p>TA: {activeAy?.name || "-"}</p>
-				</div>
-			</div>
-
 			{/* Filter */}
-			<div className="bg-white p-4 rounded-xl shadow-sm ring-1 ring-gray-900/5 print:hidden">
+			<div className="bg-white p-4 rounded-xl shadow-sm ring-1 ring-gray-900/5">
 				<div className="flex flex-wrap gap-4 items-end">
 					<div>
 						<label className="block text-sm font-medium leading-6 text-gray-900 mb-1">
@@ -373,7 +513,7 @@ function LaporanBulananPage() {
 							</table>
 						</div>
 						{arrears.length > 0 && (
-							<div className="px-6 py-3 border-t border-gray-200 print:hidden">
+							<div className="px-6 py-3 border-t border-gray-200">
 								<Link
 									to="/keuangan/laporan/kelas"
 									search={{} as any}

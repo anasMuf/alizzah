@@ -2,13 +2,16 @@ import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { ChevronRight, Search, UserCircle } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
 	getGetV1DaycareEnrollmentsQueryKey,
 	usePostV1DaycareEnrollments,
 } from "#/api/endpoints/daycare-enrollments/daycare-enrollments";
 import { getGetV1StudentsIdInvoicesQueryKey } from "#/api/endpoints/invoices/invoices";
-import { useGetV1Students } from "#/api/endpoints/students/students";
+import {
+	useGetV1Students,
+	useGetV1StudentsId,
+} from "#/api/endpoints/students/students";
 import type { DtoCreateDaycareEnrollmentRequest } from "#/api/model";
 import { ApiError } from "#/api/mutator/custom-instance";
 import { Button, FormField, useToast } from "#/components/ui";
@@ -34,9 +37,19 @@ export const Route = createFileRoute(
 	"/_authenticated/administrasi/daycare/baru",
 )({
 	component: DaycareBaruPage,
+	validateSearch: (params: Record<string, unknown>) => ({
+		student_id:
+			typeof params.student_id === "number"
+				? params.student_id
+				: typeof params.student_id === "string"
+					? Number.parseInt(params.student_id, 10) || undefined
+					: undefined,
+	}),
 });
 
 function DaycareBaruPage() {
+	const search = Route.useSearch();
+	const prefilledStudentId = search.student_id;
 	const [activeAy] = useAtom(academicYearAtom);
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
@@ -58,6 +71,22 @@ function DaycareBaruPage() {
 	);
 
 	const searchResults = (searchResponse?.data as any)?.data || [];
+
+	// Auto-select student jika ada student_id dari query param (shortcut dari tambah siswa)
+	const { data: prefilledStudent } = useGetV1StudentsId(prefilledStudentId!, {
+		query: { enabled: !!prefilledStudentId },
+	} as any);
+
+	useEffect(() => {
+		if (prefilledStudent) {
+			const s = (prefilledStudent as any)?.data?.data;
+			if (s) {
+				setSelectedStudent(s);
+				// Pre-fill student search field with the name
+				setStudentSearch(s.full_name || "");
+			}
+		}
+	}, [prefilledStudent]);
 
 	const createMutation = usePostV1DaycareEnrollments({
 		mutation: {

@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { MapPin, Phone, Star, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { usePostV1Guardians } from "#/api/endpoints/guardians/guardians";
@@ -325,9 +325,19 @@ function ProfilSiswaPage() {
 					<h3 className="text-base font-semibold leading-6 text-gray-900">
 						Informasi Pribadi
 					</h3>
-					<Button variant="secondary" size="sm" onClick={openEditForm}>
-						Edit Data
-					</Button>
+					<div className="flex gap-2">
+						<Link
+							to="/administrasi/daycare/baru"
+							search={{ student_id: studentId } as any}
+						>
+							<Button variant="primary" size="sm">
+								Daftarkan Daycare
+							</Button>
+						</Link>
+						<Button variant="secondary" size="sm" onClick={openEditForm}>
+							Edit Data
+						</Button>
+					</div>
 				</div>
 				<div className="px-4 py-5 sm:p-6">
 					<dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-8">

@@ -13,16 +13,12 @@ export interface DtoUpsertEffectiveDayRequest {
 	 * @maximum 12
 	 */
 	month: number;
-	/**
-	 * @minimum 0
-	 * @maximum 31
-	 */
-	total_days: number;
-	/**
-	 * @minimum 0
-	 * @maximum 5
-	 */
-	total_mondays: number;
+	/** "days" | "mondays" | "" = both */
+	reset_mode?: string;
+	/** @maximum 31 */
+	total_days?: number;
+	/** @maximum 5 */
+	total_mondays?: number;
 	/** @minimum 2020 */
 	year: number;
 }

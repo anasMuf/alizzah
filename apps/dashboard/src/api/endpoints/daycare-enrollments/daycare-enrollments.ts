@@ -25,19 +25,25 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
 	DtoCreateDaycareEnrollmentRequest,
 	DtoErrorResponse,
+	DtoGenerateDaycareMonthlyBulkRequest,
 	DtoGenerateDaycareMonthlyRequest,
 	DtoSuccessResponse,
 	DtoUpdateDaycareStatusRequest,
 	DtoUpsertDaycareAttendanceRequest,
+	DtoUpsertDaycareMonthlyAttendanceRequest,
 	GetV1DaycareAttendance200,
 	GetV1DaycareAttendanceParams,
 	GetV1DaycareEnrollments200,
 	GetV1DaycareEnrollmentsId200,
+	GetV1DaycareEnrollmentsMonthlyAttendance200,
+	GetV1DaycareEnrollmentsMonthlyAttendanceParams,
 	GetV1DaycareEnrollmentsParams,
 	PostV1DaycareEnrollments201,
+	PostV1DaycareEnrollmentsGenerateMonthlyBulk200,
 	PostV1DaycareEnrollmentsSyncInvoices200,
 	PutV1DaycareAttendance200,
 	PutV1DaycareEnrollmentsId200,
+	PutV1DaycareEnrollmentsMonthlyAttendance200,
 } from "../../model";
 
 import { customInstance } from "../../mutator/custom-instance";
@@ -545,6 +551,434 @@ export const usePostV1DaycareEnrollmentsGenerateMonthly = <
 > => {
 	return useMutation(
 		getPostV1DaycareEnrollmentsGenerateMonthlyMutationOptions(options),
+		queryClient,
+	);
+};
+export type postV1DaycareEnrollmentsGenerateMonthlyBulkResponse200 = {
+	data: PostV1DaycareEnrollmentsGenerateMonthlyBulk200;
+	status: 200;
+};
+
+export type postV1DaycareEnrollmentsGenerateMonthlyBulkResponseSuccess =
+	postV1DaycareEnrollmentsGenerateMonthlyBulkResponse200 & {
+		headers: Headers;
+	};
+
+export type postV1DaycareEnrollmentsGenerateMonthlyBulkResponse =
+	postV1DaycareEnrollmentsGenerateMonthlyBulkResponseSuccess;
+
+export const getPostV1DaycareEnrollmentsGenerateMonthlyBulkUrl = () => {
+	return `/v1/daycare-enrollments/generate-monthly-bulk`;
+};
+
+/**
+ * Generate SPD for all active daycare students in a given month
+ * @summary Generate monthly SPD for all active daycare students
+ */
+export const postV1DaycareEnrollmentsGenerateMonthlyBulk = async (
+	dtoGenerateDaycareMonthlyBulkRequest: DtoGenerateDaycareMonthlyBulkRequest,
+	options?: RequestInit,
+): Promise<postV1DaycareEnrollmentsGenerateMonthlyBulkResponse> => {
+	return customInstance<postV1DaycareEnrollmentsGenerateMonthlyBulkResponse>(
+		getPostV1DaycareEnrollmentsGenerateMonthlyBulkUrl(),
+		{
+			...options,
+			method: "POST",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(dtoGenerateDaycareMonthlyBulkRequest),
+		},
+	);
+};
+
+export const getPostV1DaycareEnrollmentsGenerateMonthlyBulkMutationOptions = <
+	TError = unknown,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1DaycareEnrollmentsGenerateMonthlyBulk>>,
+		TError,
+		{ data: DtoGenerateDaycareMonthlyBulkRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1DaycareEnrollmentsGenerateMonthlyBulk>>,
+	TError,
+	{ data: DtoGenerateDaycareMonthlyBulkRequest },
+	TContext
+> => {
+	const mutationKey = ["postV1DaycareEnrollmentsGenerateMonthlyBulk"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1DaycareEnrollmentsGenerateMonthlyBulk>>,
+		{ data: DtoGenerateDaycareMonthlyBulkRequest }
+	> = (props) => {
+		const { data } = props ?? {};
+
+		return postV1DaycareEnrollmentsGenerateMonthlyBulk(data, requestOptions);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type PostV1DaycareEnrollmentsGenerateMonthlyBulkMutationResult =
+	NonNullable<
+		Awaited<ReturnType<typeof postV1DaycareEnrollmentsGenerateMonthlyBulk>>
+	>;
+export type PostV1DaycareEnrollmentsGenerateMonthlyBulkMutationBody =
+	DtoGenerateDaycareMonthlyBulkRequest;
+export type PostV1DaycareEnrollmentsGenerateMonthlyBulkMutationError = unknown;
+
+/**
+ * @summary Generate monthly SPD for all active daycare students
+ */
+export const usePostV1DaycareEnrollmentsGenerateMonthlyBulk = <
+	TError = unknown,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1DaycareEnrollmentsGenerateMonthlyBulk>>,
+			TError,
+			{ data: DtoGenerateDaycareMonthlyBulkRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1DaycareEnrollmentsGenerateMonthlyBulk>>,
+	TError,
+	{ data: DtoGenerateDaycareMonthlyBulkRequest },
+	TContext
+> => {
+	return useMutation(
+		getPostV1DaycareEnrollmentsGenerateMonthlyBulkMutationOptions(options),
+		queryClient,
+	);
+};
+export type getV1DaycareEnrollmentsMonthlyAttendanceResponse200 = {
+	data: GetV1DaycareEnrollmentsMonthlyAttendance200;
+	status: 200;
+};
+
+export type getV1DaycareEnrollmentsMonthlyAttendanceResponseSuccess =
+	getV1DaycareEnrollmentsMonthlyAttendanceResponse200 & {
+		headers: Headers;
+	};
+
+export type getV1DaycareEnrollmentsMonthlyAttendanceResponse =
+	getV1DaycareEnrollmentsMonthlyAttendanceResponseSuccess;
+
+export const getGetV1DaycareEnrollmentsMonthlyAttendanceUrl = (
+	params: GetV1DaycareEnrollmentsMonthlyAttendanceParams,
+) => {
+	const normalizedParams = new URLSearchParams();
+
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(key, value === null ? "null" : value.toString());
+		}
+	});
+
+	const stringifiedParams = normalizedParams.toString();
+
+	return stringifiedParams.length > 0
+		? `/v1/daycare-enrollments/monthly-attendance?${stringifiedParams}`
+		: `/v1/daycare-enrollments/monthly-attendance`;
+};
+
+/**
+ * Get monthly attendance for a daycare student, or all students for a given month
+ * @summary Get daycare monthly attendance
+ */
+export const getV1DaycareEnrollmentsMonthlyAttendance = async (
+	params: GetV1DaycareEnrollmentsMonthlyAttendanceParams,
+	options?: RequestInit,
+): Promise<getV1DaycareEnrollmentsMonthlyAttendanceResponse> => {
+	return customInstance<getV1DaycareEnrollmentsMonthlyAttendanceResponse>(
+		getGetV1DaycareEnrollmentsMonthlyAttendanceUrl(params),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
+
+export const getGetV1DaycareEnrollmentsMonthlyAttendanceQueryKey = (
+	params?: GetV1DaycareEnrollmentsMonthlyAttendanceParams,
+) => {
+	return [
+		`/v1/daycare-enrollments/monthly-attendance`,
+		...(params ? [params] : []),
+	] as const;
+};
+
+export const getGetV1DaycareEnrollmentsMonthlyAttendanceQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1DaycareEnrollmentsMonthlyAttendance>>,
+	TError = unknown,
+>(
+	params: GetV1DaycareEnrollmentsMonthlyAttendanceParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1DaycareEnrollmentsMonthlyAttendance>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
+
+	const queryKey =
+		queryOptions?.queryKey ??
+		getGetV1DaycareEnrollmentsMonthlyAttendanceQueryKey(params);
+
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1DaycareEnrollmentsMonthlyAttendance>>
+	> = ({ signal }) =>
+		getV1DaycareEnrollmentsMonthlyAttendance(params, {
+			signal,
+			...requestOptions,
+		});
+
+	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1DaycareEnrollmentsMonthlyAttendance>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetV1DaycareEnrollmentsMonthlyAttendanceQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1DaycareEnrollmentsMonthlyAttendance>>
+>;
+export type GetV1DaycareEnrollmentsMonthlyAttendanceQueryError = unknown;
+
+export function useGetV1DaycareEnrollmentsMonthlyAttendance<
+	TData = Awaited<ReturnType<typeof getV1DaycareEnrollmentsMonthlyAttendance>>,
+	TError = unknown,
+>(
+	params: GetV1DaycareEnrollmentsMonthlyAttendanceParams,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1DaycareEnrollmentsMonthlyAttendance>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1DaycareEnrollmentsMonthlyAttendance>>,
+					TError,
+					Awaited<ReturnType<typeof getV1DaycareEnrollmentsMonthlyAttendance>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1DaycareEnrollmentsMonthlyAttendance<
+	TData = Awaited<ReturnType<typeof getV1DaycareEnrollmentsMonthlyAttendance>>,
+	TError = unknown,
+>(
+	params: GetV1DaycareEnrollmentsMonthlyAttendanceParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1DaycareEnrollmentsMonthlyAttendance>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1DaycareEnrollmentsMonthlyAttendance>>,
+					TError,
+					Awaited<ReturnType<typeof getV1DaycareEnrollmentsMonthlyAttendance>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1DaycareEnrollmentsMonthlyAttendance<
+	TData = Awaited<ReturnType<typeof getV1DaycareEnrollmentsMonthlyAttendance>>,
+	TError = unknown,
+>(
+	params: GetV1DaycareEnrollmentsMonthlyAttendanceParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1DaycareEnrollmentsMonthlyAttendance>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get daycare monthly attendance
+ */
+
+export function useGetV1DaycareEnrollmentsMonthlyAttendance<
+	TData = Awaited<ReturnType<typeof getV1DaycareEnrollmentsMonthlyAttendance>>,
+	TError = unknown,
+>(
+	params: GetV1DaycareEnrollmentsMonthlyAttendanceParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1DaycareEnrollmentsMonthlyAttendance>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1DaycareEnrollmentsMonthlyAttendanceQueryOptions(
+		params,
+		options,
+	);
+
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+	return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export type putV1DaycareEnrollmentsMonthlyAttendanceResponse200 = {
+	data: PutV1DaycareEnrollmentsMonthlyAttendance200;
+	status: 200;
+};
+
+export type putV1DaycareEnrollmentsMonthlyAttendanceResponseSuccess =
+	putV1DaycareEnrollmentsMonthlyAttendanceResponse200 & {
+		headers: Headers;
+	};
+
+export type putV1DaycareEnrollmentsMonthlyAttendanceResponse =
+	putV1DaycareEnrollmentsMonthlyAttendanceResponseSuccess;
+
+export const getPutV1DaycareEnrollmentsMonthlyAttendanceUrl = () => {
+	return `/v1/daycare-enrollments/monthly-attendance`;
+};
+
+/**
+ * Create or update monthly attendance (SPD days + meal days) for a daycare student
+ * @summary Upsert daycare monthly attendance
+ */
+export const putV1DaycareEnrollmentsMonthlyAttendance = async (
+	dtoUpsertDaycareMonthlyAttendanceRequest: DtoUpsertDaycareMonthlyAttendanceRequest,
+	options?: RequestInit,
+): Promise<putV1DaycareEnrollmentsMonthlyAttendanceResponse> => {
+	return customInstance<putV1DaycareEnrollmentsMonthlyAttendanceResponse>(
+		getPutV1DaycareEnrollmentsMonthlyAttendanceUrl(),
+		{
+			...options,
+			method: "PUT",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(dtoUpsertDaycareMonthlyAttendanceRequest),
+		},
+	);
+};
+
+export const getPutV1DaycareEnrollmentsMonthlyAttendanceMutationOptions = <
+	TError = unknown,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof putV1DaycareEnrollmentsMonthlyAttendance>>,
+		TError,
+		{ data: DtoUpsertDaycareMonthlyAttendanceRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof putV1DaycareEnrollmentsMonthlyAttendance>>,
+	TError,
+	{ data: DtoUpsertDaycareMonthlyAttendanceRequest },
+	TContext
+> => {
+	const mutationKey = ["putV1DaycareEnrollmentsMonthlyAttendance"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof putV1DaycareEnrollmentsMonthlyAttendance>>,
+		{ data: DtoUpsertDaycareMonthlyAttendanceRequest }
+	> = (props) => {
+		const { data } = props ?? {};
+
+		return putV1DaycareEnrollmentsMonthlyAttendance(data, requestOptions);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type PutV1DaycareEnrollmentsMonthlyAttendanceMutationResult =
+	NonNullable<
+		Awaited<ReturnType<typeof putV1DaycareEnrollmentsMonthlyAttendance>>
+	>;
+export type PutV1DaycareEnrollmentsMonthlyAttendanceMutationBody =
+	DtoUpsertDaycareMonthlyAttendanceRequest;
+export type PutV1DaycareEnrollmentsMonthlyAttendanceMutationError = unknown;
+
+/**
+ * @summary Upsert daycare monthly attendance
+ */
+export const usePutV1DaycareEnrollmentsMonthlyAttendance = <
+	TError = unknown,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof putV1DaycareEnrollmentsMonthlyAttendance>>,
+			TError,
+			{ data: DtoUpsertDaycareMonthlyAttendanceRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof putV1DaycareEnrollmentsMonthlyAttendance>>,
+	TError,
+	{ data: DtoUpsertDaycareMonthlyAttendanceRequest },
+	TContext
+> => {
+	return useMutation(
+		getPutV1DaycareEnrollmentsMonthlyAttendanceMutationOptions(options),
 		queryClient,
 	);
 };

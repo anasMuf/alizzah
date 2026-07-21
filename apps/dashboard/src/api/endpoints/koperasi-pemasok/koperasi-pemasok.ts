@@ -27,7 +27,7 @@ import type {
 	GetV1KoperasiSuppliers200,
 	GetV1KoperasiSuppliersId200,
 	GetV1KoperasiSuppliersParams,
-	PemasokCreateRequest,
+	InternalModulesKoperasiPemasokCreateRequest,
 	PostV1KoperasiSuppliers201,
 	PutV1KoperasiSuppliersId200,
 } from "../../model";
@@ -254,7 +254,7 @@ export const getPostV1KoperasiSuppliersUrl = () => {
  * @summary Tambah pemasok
  */
 export const postV1KoperasiSuppliers = async (
-	pemasokCreateRequest: PemasokCreateRequest,
+	internalModulesKoperasiPemasokCreateRequest: InternalModulesKoperasiPemasokCreateRequest,
 	options?: RequestInit,
 ): Promise<postV1KoperasiSuppliersResponse> => {
 	return customInstance<postV1KoperasiSuppliersResponse>(
@@ -263,7 +263,7 @@ export const postV1KoperasiSuppliers = async (
 			...options,
 			method: "POST",
 			headers: { "Content-Type": "application/json", ...options?.headers },
-			body: JSON.stringify(pemasokCreateRequest),
+			body: JSON.stringify(internalModulesKoperasiPemasokCreateRequest),
 		},
 	);
 };
@@ -275,14 +275,14 @@ export const getPostV1KoperasiSuppliersMutationOptions = <
 	mutation?: UseMutationOptions<
 		Awaited<ReturnType<typeof postV1KoperasiSuppliers>>,
 		TError,
-		{ data: PemasokCreateRequest },
+		{ data: InternalModulesKoperasiPemasokCreateRequest },
 		TContext
 	>;
 	request?: SecondParameter<typeof customInstance>;
 }): UseMutationOptions<
 	Awaited<ReturnType<typeof postV1KoperasiSuppliers>>,
 	TError,
-	{ data: PemasokCreateRequest },
+	{ data: InternalModulesKoperasiPemasokCreateRequest },
 	TContext
 > => {
 	const mutationKey = ["postV1KoperasiSuppliers"];
@@ -296,7 +296,7 @@ export const getPostV1KoperasiSuppliersMutationOptions = <
 
 	const mutationFn: MutationFunction<
 		Awaited<ReturnType<typeof postV1KoperasiSuppliers>>,
-		{ data: PemasokCreateRequest }
+		{ data: InternalModulesKoperasiPemasokCreateRequest }
 	> = (props) => {
 		const { data } = props ?? {};
 
@@ -309,7 +309,8 @@ export const getPostV1KoperasiSuppliersMutationOptions = <
 export type PostV1KoperasiSuppliersMutationResult = NonNullable<
 	Awaited<ReturnType<typeof postV1KoperasiSuppliers>>
 >;
-export type PostV1KoperasiSuppliersMutationBody = PemasokCreateRequest;
+export type PostV1KoperasiSuppliersMutationBody =
+	InternalModulesKoperasiPemasokCreateRequest;
 export type PostV1KoperasiSuppliersMutationError = unknown;
 
 /**
@@ -323,7 +324,7 @@ export const usePostV1KoperasiSuppliers = <
 		mutation?: UseMutationOptions<
 			Awaited<ReturnType<typeof postV1KoperasiSuppliers>>,
 			TError,
-			{ data: PemasokCreateRequest },
+			{ data: InternalModulesKoperasiPemasokCreateRequest },
 			TContext
 		>;
 		request?: SecondParameter<typeof customInstance>;
@@ -332,7 +333,7 @@ export const usePostV1KoperasiSuppliers = <
 ): UseMutationResult<
 	Awaited<ReturnType<typeof postV1KoperasiSuppliers>>,
 	TError,
-	{ data: PemasokCreateRequest },
+	{ data: InternalModulesKoperasiPemasokCreateRequest },
 	TContext
 > => {
 	return useMutation(
@@ -548,7 +549,7 @@ export const getPutV1KoperasiSuppliersIdUrl = (id: number) => {
  */
 export const putV1KoperasiSuppliersId = async (
 	id: number,
-	pemasokCreateRequest: PemasokCreateRequest,
+	internalModulesKoperasiPemasokCreateRequest: InternalModulesKoperasiPemasokCreateRequest,
 	options?: RequestInit,
 ): Promise<putV1KoperasiSuppliersIdResponse> => {
 	return customInstance<putV1KoperasiSuppliersIdResponse>(
@@ -557,7 +558,7 @@ export const putV1KoperasiSuppliersId = async (
 			...options,
 			method: "PUT",
 			headers: { "Content-Type": "application/json", ...options?.headers },
-			body: JSON.stringify(pemasokCreateRequest),
+			body: JSON.stringify(internalModulesKoperasiPemasokCreateRequest),
 		},
 	);
 };
@@ -569,14 +570,14 @@ export const getPutV1KoperasiSuppliersIdMutationOptions = <
 	mutation?: UseMutationOptions<
 		Awaited<ReturnType<typeof putV1KoperasiSuppliersId>>,
 		TError,
-		{ id: number; data: PemasokCreateRequest },
+		{ id: number; data: InternalModulesKoperasiPemasokCreateRequest },
 		TContext
 	>;
 	request?: SecondParameter<typeof customInstance>;
 }): UseMutationOptions<
 	Awaited<ReturnType<typeof putV1KoperasiSuppliersId>>,
 	TError,
-	{ id: number; data: PemasokCreateRequest },
+	{ id: number; data: InternalModulesKoperasiPemasokCreateRequest },
 	TContext
 > => {
 	const mutationKey = ["putV1KoperasiSuppliersId"];
@@ -590,7 +591,7 @@ export const getPutV1KoperasiSuppliersIdMutationOptions = <
 
 	const mutationFn: MutationFunction<
 		Awaited<ReturnType<typeof putV1KoperasiSuppliersId>>,
-		{ id: number; data: PemasokCreateRequest }
+		{ id: number; data: InternalModulesKoperasiPemasokCreateRequest }
 	> = (props) => {
 		const { id, data } = props ?? {};
 
@@ -603,7 +604,8 @@ export const getPutV1KoperasiSuppliersIdMutationOptions = <
 export type PutV1KoperasiSuppliersIdMutationResult = NonNullable<
 	Awaited<ReturnType<typeof putV1KoperasiSuppliersId>>
 >;
-export type PutV1KoperasiSuppliersIdMutationBody = PemasokCreateRequest;
+export type PutV1KoperasiSuppliersIdMutationBody =
+	InternalModulesKoperasiPemasokCreateRequest;
 export type PutV1KoperasiSuppliersIdMutationError = unknown;
 
 /**
@@ -617,7 +619,7 @@ export const usePutV1KoperasiSuppliersId = <
 		mutation?: UseMutationOptions<
 			Awaited<ReturnType<typeof putV1KoperasiSuppliersId>>,
 			TError,
-			{ id: number; data: PemasokCreateRequest },
+			{ id: number; data: InternalModulesKoperasiPemasokCreateRequest },
 			TContext
 		>;
 		request?: SecondParameter<typeof customInstance>;
@@ -626,7 +628,7 @@ export const usePutV1KoperasiSuppliersId = <
 ): UseMutationResult<
 	Awaited<ReturnType<typeof putV1KoperasiSuppliersId>>,
 	TError,
-	{ id: number; data: PemasokCreateRequest },
+	{ id: number; data: InternalModulesKoperasiPemasokCreateRequest },
 	TContext
 > => {
 	return useMutation(

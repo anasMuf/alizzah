@@ -11,4 +11,6 @@ export type DtoCreateDispensationRequestFeeCategory =
 
 export const DtoCreateDispensationRequestFeeCategory = {
 	monthly_spp: "monthly_spp",
+	initial: "initial",
+	daycare: "daycare",
 } as const;

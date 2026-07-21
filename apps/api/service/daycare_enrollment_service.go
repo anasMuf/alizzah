@@ -20,26 +20,32 @@ type DaycareEnrollmentService interface {
 	Create(createdBy uint, req dto.CreateDaycareEnrollmentRequest) (*dto.DaycareEnrollmentResponse, error)
 	Update(id uint, req dto.CreateDaycareEnrollmentRequest) (*dto.DaycareEnrollmentResponse, error)
 	UpdateStatus(id uint, req dto.UpdateDaycareStatusRequest) error
-	// Attendance
+	// Attendance (daily - kept for backward compat)
 	UpsertAttendance(createdBy uint, req dto.UpsertDaycareAttendanceRequest) (*dto.DaycareAttendanceResponse, error)
 	GetAttendance(studentID, month, year uint) ([]dto.DaycareAttendanceResponse, error)
+	// Monthly Attendance
+	UpsertMonthlyAttendance(createdBy uint, req dto.UpsertDaycareMonthlyAttendanceRequest) (*dto.DaycareMonthlyAttendanceResponse, error)
+	GetMonthlyAttendance(studentID, month, year uint) (*dto.DaycareMonthlyAttendanceResponse, error)
+	GetAllMonthlyAttendance(month, year uint, academicYearID uint) ([]dto.DaycareMonthlyAttendanceResponse, error)
 }
 
 type daycareEnrollmentService struct {
-	db          *gorm.DB
-	daycareRepo repository.DaycareEnrollmentRepository
-	studentRepo repository.StudentRepository
-	acRepo      repository.AcademicYearRepository
-	invoiceGen  InvoiceGenerateService
+	db             *gorm.DB
+	daycareRepo    repository.DaycareEnrollmentRepository
+	studentRepo    repository.StudentRepository
+	acRepo         repository.AcademicYearRepository
+	monthlyAttRepo repository.DaycareMonthlyAttendanceRepository
+	invoiceGen     InvoiceGenerateService
 }
 
-func NewDaycareEnrollmentService(db *gorm.DB, daycareRepo repository.DaycareEnrollmentRepository, studentRepo repository.StudentRepository, acRepo repository.AcademicYearRepository, invoiceGen InvoiceGenerateService) DaycareEnrollmentService {
+func NewDaycareEnrollmentService(db *gorm.DB, daycareRepo repository.DaycareEnrollmentRepository, studentRepo repository.StudentRepository, acRepo repository.AcademicYearRepository, monthlyAttRepo repository.DaycareMonthlyAttendanceRepository, invoiceGen InvoiceGenerateService) DaycareEnrollmentService {
 	return &daycareEnrollmentService{
-		db:          db,
-		daycareRepo: daycareRepo,
-		studentRepo: studentRepo,
-		acRepo:      acRepo,
-		invoiceGen:  invoiceGen,
+		db:             db,
+		daycareRepo:    daycareRepo,
+		studentRepo:    studentRepo,
+		acRepo:         acRepo,
+		monthlyAttRepo: monthlyAttRepo,
+		invoiceGen:     invoiceGen,
 	}
 }
 
@@ -277,6 +283,91 @@ func (s *daycareEnrollmentService) GetAttendance(studentID, month, year uint) ([
 		})
 	}
 	return resp, nil
+}
+
+// ─── Monthly Attendance ──────────────────────────────────────
+
+func (s *daycareEnrollmentService) UpsertMonthlyAttendance(createdBy uint, req dto.UpsertDaycareMonthlyAttendanceRequest) (*dto.DaycareMonthlyAttendanceResponse, error) {
+	att := &model.DaycareMonthlyAttendance{
+		StudentID:      req.StudentID,
+		AcademicYearID: req.AcademicYearID,
+		Month:          req.Month,
+		Year:           req.Year,
+		SPDDays:        req.SPDDays,
+		MealDays:       req.MealDays,
+		CreatedBy:      createdBy,
+	}
+
+	if err := s.monthlyAttRepo.Upsert(att); err != nil {
+		return nil, err
+	}
+
+	// Fetch the saved record to get the ID
+	saved, err := s.monthlyAttRepo.FindByStudentMonthYear(req.StudentID, req.Month, req.Year)
+	if err != nil {
+		return nil, fmt.Errorf("gagal mengambil data kehadiran bulanan: %w", err)
+	}
+
+	// Auto-generate invoice setelah simpan kehadiran bulanan
+	if s.invoiceGen != nil {
+		genErr := s.invoiceGen.GenerateDaycareMonthlyInvoices(dto.GenerateDaycareMonthlyParams{
+			StudentID:      req.StudentID,
+			AcademicYearID: req.AcademicYearID,
+			Month:          req.Month,
+			Year:           req.Year,
+			CreatedBy:      createdBy,
+		})
+		if genErr != nil {
+			log.Printf("[Daycare SPD] Auto-generate gagal untuk student=%d bulan=%d/%d: %v", req.StudentID, req.Month, req.Year, genErr)
+		}
+	}
+
+	return mapMonthlyAttendanceToResponse(*saved), nil
+}
+
+func (s *daycareEnrollmentService) GetMonthlyAttendance(studentID, month, year uint) (*dto.DaycareMonthlyAttendanceResponse, error) {
+	att, err := s.monthlyAttRepo.FindByStudentMonthYear(studentID, month, year)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil // not found = no data yet, not an error
+		}
+		return nil, err
+	}
+	return mapMonthlyAttendanceToResponse(*att), nil
+}
+
+func (s *daycareEnrollmentService) GetAllMonthlyAttendance(month, year uint, academicYearID uint) ([]dto.DaycareMonthlyAttendanceResponse, error) {
+	var atts []model.DaycareMonthlyAttendance
+	query := s.db.Where("month = ? AND year = ?", month, year)
+	if academicYearID != 0 {
+		query = query.Where("academic_year_id = ?", academicYearID)
+	}
+	if err := query.Preload("Student").Find(&atts).Error; err != nil {
+		return nil, err
+	}
+
+	var resp []dto.DaycareMonthlyAttendanceResponse
+	for _, a := range atts {
+		resp = append(resp, *mapMonthlyAttendanceToResponse(a))
+	}
+	return resp, nil
+}
+
+func mapMonthlyAttendanceToResponse(a model.DaycareMonthlyAttendance) *dto.DaycareMonthlyAttendanceResponse {
+	studentName := ""
+	if a.Student.ID != 0 {
+		studentName = a.Student.FullName
+	}
+	return &dto.DaycareMonthlyAttendanceResponse{
+		ID:             a.ID,
+		StudentID:      a.StudentID,
+		StudentName:    studentName,
+		AcademicYearID: a.AcademicYearID,
+		Month:          a.Month,
+		Year:           a.Year,
+		SPDDays:        a.SPDDays,
+		MealDays:       a.MealDays,
+	}
 }
 
 func mapDaycareEnrollmentToResponse(de model.DaycareEnrollment) *dto.DaycareEnrollmentResponse {

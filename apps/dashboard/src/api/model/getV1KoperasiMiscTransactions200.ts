@@ -6,8 +6,8 @@
  * OpenAPI spec version: 1.0
  */
 import type { DtoPaginatedResponse } from "./dtoPaginatedResponse";
-import type { LainlainResponse } from "./lainlainResponse";
+import type { InternalModulesKoperasiLainlainResponse } from "./internalModulesKoperasiLainlainResponse";
 
 export type GetV1KoperasiMiscTransactions200 = DtoPaginatedResponse & {
-	data?: LainlainResponse[];
+	data?: InternalModulesKoperasiLainlainResponse[];
 };

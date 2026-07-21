@@ -6,8 +6,8 @@
  * OpenAPI spec version: 1.0
  */
 import type { DtoPaginatedResponse } from "./dtoPaginatedResponse";
-import type { PembelianResponse } from "./pembelianResponse";
+import type { InternalModulesKoperasiPembelianResponse } from "./internalModulesKoperasiPembelianResponse";
 
 export type GetV1KoperasiPurchases200 = DtoPaginatedResponse & {
-	data?: PembelianResponse[];
+	data?: InternalModulesKoperasiPembelianResponse[];
 };

@@ -9,6 +9,7 @@ import type { DtoCreateGuardianInline } from "./dtoCreateGuardianInline";
 import type { DtoCreateStudentRequestEnrollmentStatus } from "./dtoCreateStudentRequestEnrollmentStatus";
 import type { DtoCreateStudentRequestEnrollmentType } from "./dtoCreateStudentRequestEnrollmentType";
 import type { DtoCreateStudentRequestGender } from "./dtoCreateStudentRequestGender";
+import type { DtoExceptionalityRequest } from "./dtoExceptionalityRequest";
 
 export interface DtoCreateStudentRequest {
 	academic_year_id?: number;
@@ -19,6 +20,8 @@ export interface DtoCreateStudentRequest {
 	class_group_id?: number;
 	enrollment_status?: DtoCreateStudentRequestEnrollmentStatus;
 	enrollment_type?: DtoCreateStudentRequestEnrollmentType;
+	/** Optional: tandai siswa sebagai ABK (Anak Berkebutuhan Khusus) */
+	exceptionality?: DtoExceptionalityRequest;
 	/**
 	 * @minLength 3
 	 * @maxLength 100

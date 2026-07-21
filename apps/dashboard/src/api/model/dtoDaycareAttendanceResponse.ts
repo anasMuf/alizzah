@@ -11,4 +11,6 @@ export interface DtoDaycareAttendanceResponse {
 	id?: number;
 	student_id?: number;
 	time_slot?: string;
+	with_meal?: boolean;
+	with_tpq?: boolean;
 }

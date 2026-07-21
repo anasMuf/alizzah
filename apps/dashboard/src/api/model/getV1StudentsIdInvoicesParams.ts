@@ -19,4 +19,8 @@ export type GetV1StudentsIdInvoicesParams = {
 	 * Filter by status
 	 */
 	status?: string;
+	/**
+	 * Show all monthly invoices including future months
+	 */
+	show_all?: boolean;
 };

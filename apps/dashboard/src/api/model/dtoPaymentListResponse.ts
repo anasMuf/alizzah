@@ -13,6 +13,7 @@ export interface DtoPaymentListResponse {
 	created_by?: DtoUserBriefResponse;
 	id?: number;
 	payment_date?: string;
+	savings_deposit?: number;
 	source?: string;
 	student?: DtoStudentBriefResponse;
 	total_amount?: number;

@@ -26,7 +26,7 @@ import type {
 	GetV1KoperasiMiscTransactions200,
 	GetV1KoperasiMiscTransactionsId200,
 	GetV1KoperasiMiscTransactionsParams,
-	LainlainCreateRequest,
+	InternalModulesKoperasiLainlainCreateRequest,
 	PostV1KoperasiMiscTransactions201,
 } from "../../model";
 
@@ -258,7 +258,7 @@ export const getPostV1KoperasiMiscTransactionsUrl = () => {
  * @summary Catat transaksi lain-lain (pemasukan/pengeluaran)
  */
 export const postV1KoperasiMiscTransactions = async (
-	lainlainCreateRequest: LainlainCreateRequest,
+	internalModulesKoperasiLainlainCreateRequest: InternalModulesKoperasiLainlainCreateRequest,
 	options?: RequestInit,
 ): Promise<postV1KoperasiMiscTransactionsResponse> => {
 	return customInstance<postV1KoperasiMiscTransactionsResponse>(
@@ -267,7 +267,7 @@ export const postV1KoperasiMiscTransactions = async (
 			...options,
 			method: "POST",
 			headers: { "Content-Type": "application/json", ...options?.headers },
-			body: JSON.stringify(lainlainCreateRequest),
+			body: JSON.stringify(internalModulesKoperasiLainlainCreateRequest),
 		},
 	);
 };
@@ -279,14 +279,14 @@ export const getPostV1KoperasiMiscTransactionsMutationOptions = <
 	mutation?: UseMutationOptions<
 		Awaited<ReturnType<typeof postV1KoperasiMiscTransactions>>,
 		TError,
-		{ data: LainlainCreateRequest },
+		{ data: InternalModulesKoperasiLainlainCreateRequest },
 		TContext
 	>;
 	request?: SecondParameter<typeof customInstance>;
 }): UseMutationOptions<
 	Awaited<ReturnType<typeof postV1KoperasiMiscTransactions>>,
 	TError,
-	{ data: LainlainCreateRequest },
+	{ data: InternalModulesKoperasiLainlainCreateRequest },
 	TContext
 > => {
 	const mutationKey = ["postV1KoperasiMiscTransactions"];
@@ -300,7 +300,7 @@ export const getPostV1KoperasiMiscTransactionsMutationOptions = <
 
 	const mutationFn: MutationFunction<
 		Awaited<ReturnType<typeof postV1KoperasiMiscTransactions>>,
-		{ data: LainlainCreateRequest }
+		{ data: InternalModulesKoperasiLainlainCreateRequest }
 	> = (props) => {
 		const { data } = props ?? {};
 
@@ -313,7 +313,8 @@ export const getPostV1KoperasiMiscTransactionsMutationOptions = <
 export type PostV1KoperasiMiscTransactionsMutationResult = NonNullable<
 	Awaited<ReturnType<typeof postV1KoperasiMiscTransactions>>
 >;
-export type PostV1KoperasiMiscTransactionsMutationBody = LainlainCreateRequest;
+export type PostV1KoperasiMiscTransactionsMutationBody =
+	InternalModulesKoperasiLainlainCreateRequest;
 export type PostV1KoperasiMiscTransactionsMutationError = unknown;
 
 /**
@@ -327,7 +328,7 @@ export const usePostV1KoperasiMiscTransactions = <
 		mutation?: UseMutationOptions<
 			Awaited<ReturnType<typeof postV1KoperasiMiscTransactions>>,
 			TError,
-			{ data: LainlainCreateRequest },
+			{ data: InternalModulesKoperasiLainlainCreateRequest },
 			TContext
 		>;
 		request?: SecondParameter<typeof customInstance>;
@@ -336,7 +337,7 @@ export const usePostV1KoperasiMiscTransactions = <
 ): UseMutationResult<
 	Awaited<ReturnType<typeof postV1KoperasiMiscTransactions>>,
 	TError,
-	{ data: LainlainCreateRequest },
+	{ data: InternalModulesKoperasiLainlainCreateRequest },
 	TContext
 > => {
 	return useMutation(

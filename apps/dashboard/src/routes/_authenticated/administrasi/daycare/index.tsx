@@ -10,7 +10,7 @@ import {
 	ShieldX,
 	UserCircle,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	getGetV1DaycareEnrollmentsQueryKey,
 	useGetV1DaycareEnrollments,
@@ -376,6 +376,8 @@ function AttendanceTab() {
 		Record<number, { spdDays: number; mealDays: number }>
 	>({});
 	const [saving, setSaving] = useState(false);
+	// Track whether we've already loaded data for the current month/year
+	const lastSynced = useRef<{ month: number; year: number } | null>(null);
 
 	const { data: resp, isLoading } = useGetV1DaycareEnrollments(
 		{ academic_year_id: activeAy?.id as any, status: "active", limit: 100 },
@@ -393,19 +395,23 @@ function AttendanceTab() {
 		{ query: { enabled: !!activeAy?.id } } as any,
 	);
 
-	// Sync monthly attendance data into local state when it loads
+	// Sync monthly attendance data into local state on initial load or month/year change
 	useEffect(() => {
 		if (!monthlyData) return;
+		// Skip if already synced for this month/year (prevents overwriting user input)
+		if (
+			lastSynced.current?.month === month &&
+			lastSynced.current?.year === year
+		)
+			return;
+
 		const responseData = (monthlyData as any)?.data;
 		const items = responseData?.data || [];
-		// Ensure items is an array
 		const itemsList = Array.isArray(items) ? items : [];
 		const newAtt: Record<number, { spdDays: number; mealDays: number }> = {};
-		// Initialize from enrollment list
 		for (const enr of enrollments) {
 			newAtt[enr.student.id] = { spdDays: 0, mealDays: 0 };
 		}
-		// Merge saved data
 		for (const item of itemsList) {
 			if (item.student_id) {
 				newAtt[item.student_id] = {
@@ -415,8 +421,9 @@ function AttendanceTab() {
 			}
 		}
 		setMonthlyAtt(newAtt);
-		setOriginalAtt({ ...newAtt }); // track baseline for change detection
-	}, [monthlyData, enrollments]);
+		setOriginalAtt({ ...newAtt });
+		lastSynced.current = { month, year };
+	}, [monthlyData, enrollments, month, year]);
 
 	const upsertMutation = usePutV1DaycareEnrollmentsMonthlyAttendance({
 		mutation: {

@@ -302,12 +302,6 @@ func (s *daycareEnrollmentService) UpsertMonthlyAttendance(createdBy uint, req d
 		return nil, err
 	}
 
-	// Fetch the saved record to get the ID
-	saved, err := s.monthlyAttRepo.FindByStudentMonthYear(req.StudentID, req.Month, req.Year)
-	if err != nil {
-		return nil, fmt.Errorf("gagal mengambil data kehadiran bulanan: %w", err)
-	}
-
 	// Auto-generate invoice setelah simpan kehadiran bulanan
 	if s.invoiceGen != nil {
 		genErr := s.invoiceGen.GenerateDaycareMonthlyInvoices(dto.GenerateDaycareMonthlyParams{
@@ -322,7 +316,7 @@ func (s *daycareEnrollmentService) UpsertMonthlyAttendance(createdBy uint, req d
 		}
 	}
 
-	return mapMonthlyAttendanceToResponse(*saved), nil
+	return mapMonthlyAttendanceToResponse(*att), nil
 }
 
 func (s *daycareEnrollmentService) GetMonthlyAttendance(studentID, month, year uint) (*dto.DaycareMonthlyAttendanceResponse, error) {

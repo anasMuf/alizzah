@@ -10,4 +10,6 @@ export interface DtoVaultBalanceResponse {
 	balance?: number;
 	total_savings_general?: number;
 	total_savings_mandatory?: number;
+	total_savings_mandatory_berlian?: number;
+	total_savings_mandatory_mutiara?: number;
 }

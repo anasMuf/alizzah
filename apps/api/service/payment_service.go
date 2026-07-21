@@ -139,6 +139,7 @@ func (s *paymentService) Create(createdBy uint, req dto.CreatePaymentRequest) (*
 func (s *paymentService) createInTx(tx *gorm.DB, createdBy uint, req dto.CreatePaymentRequest, student *model.Student, paymentDate time.Time) (*model.Payment, error) {
 	// [A] Validate and collect invoice items
 	totalAmount := float64(0)
+	mandatorySavingsAmount := float64(0)
 	invoiceIDs := map[uint]bool{}
 	var paymentItems []model.PaymentItem
 
@@ -152,6 +153,9 @@ func (s *paymentService) createInTx(tx *gorm.DB, createdBy uint, req dto.CreateP
 			return nil, fmt.Errorf("Jumlah pembayaran item '%s' melebihi sisa tagihan (sisa: %.0f)", invoiceItem.Name, remaining)
 		}
 		totalAmount += item.Amount
+		if invoiceItem.Category == "savings_mandatory" {
+			mandatorySavingsAmount += item.Amount
+		}
 		invoiceIDs[invoiceItem.InvoiceID] = true
 		paymentItems = append(paymentItems, model.PaymentItem{
 			InvoiceItemID: item.InvoiceItemID,
@@ -279,8 +283,8 @@ func (s *paymentService) createInTx(tx *gorm.DB, createdBy uint, req dto.CreateP
 		if err := s.savingsTxnRepo.CreateWithTx(stxn, tx); err != nil {
 			return nil, err
 		}
-		if err := s.savingsRepo.DebitBalance(tx, savings.ID, totalAmount); err != nil {
-			return nil, fmt.Errorf("gagal mendebit tabungan: %w", err)
+		if err := s.savingsRepo.SubtractBalance(tx, savings.ID, totalAmount); err != nil {
+			return nil, fmt.Errorf("gagal mengurangi saldo tabungan: %w", err)
 		}
 		if err := s.txnWriter.WriteVaultDebit(req.AcademicYearID, paymentDate, totalAmount, "savings_withdrawal", &result.ID, fmt.Sprintf("Penggunaan tabungan %s", student.FullName), createdBy, tx); err != nil {
 			return nil, err
@@ -310,8 +314,8 @@ func (s *paymentService) createInTx(tx *gorm.DB, createdBy uint, req dto.CreateP
 		if err := s.savingsTxnRepo.CreateWithTx(stxn, tx); err != nil {
 			return nil, err
 		}
-		if err := s.savingsRepo.CreditBalance(tx, savings.ID, req.SavingsDeposit); err != nil {
-			return nil, fmt.Errorf("gagal mengkredit tabungan: %w", err)
+		if err := s.savingsRepo.AddBalance(tx, savings.ID, req.SavingsDeposit); err != nil {
+			return nil, fmt.Errorf("gagal menambah saldo tabungan: %w", err)
 		}
 		if err := s.txnWriter.WriteVaultCredit(req.AcademicYearID, paymentDate, req.SavingsDeposit, "savings_deposit", &result.ID, fmt.Sprintf("Setoran tabungan %s", student.FullName), createdBy, tx); err != nil {
 			return nil, err
@@ -319,6 +323,43 @@ func (s *paymentService) createInTx(tx *gorm.DB, createdBy uint, req dto.CreateP
 		// Transfer dari kas ke brangkas agar uang tidak double-count
 		if err := s.txnWriter.WriteCashDebit(req.AcademicYearID, paymentDate, req.SavingsDeposit, "transfer_to_vault", &result.ID, fmt.Sprintf("Transfer ke brangkas: setoran %s", student.FullName), createdBy, tx); err != nil {
 			return nil, err
+		}
+	}
+
+	// [I] Credit mandatory savings for savings_mandatory invoice items
+	if mandatorySavingsAmount > 0 {
+		mandatorySavings, err := s.savingsRepo.FindByStudentAndTypeForUpdate(tx, req.StudentID, "mandatory")
+		if err != nil {
+			// Create if not exists (for students whose savings haven't been initialized)
+			mandatorySavings = &model.StudentSavings{StudentID: req.StudentID, Type: "mandatory", Balance: 0}
+			if err := s.savingsRepo.WithTx(tx).Create(mandatorySavings); err != nil {
+				return nil, fmt.Errorf("gagal membuat tabungan wajib: %w", err)
+			}
+		}
+		mstxn := &model.SavingsTransaction{
+			StudentSavingsID: mandatorySavings.ID,
+			TransactionType:  "debit",
+			Amount:           mandatorySavingsAmount,
+			NetAmount:        mandatorySavingsAmount,
+			SourceType:       "payment_mandatory",
+			SourceID:         &result.ID,
+			Notes:            "Setoran tabungan wajib dari pembayaran",
+			CreatedBy:        createdBy,
+		}
+		if err := s.savingsTxnRepo.CreateWithTx(mstxn, tx); err != nil {
+			return nil, err
+		}
+		if err := s.savingsRepo.AddBalance(tx, mandatorySavings.ID, mandatorySavingsAmount); err != nil {
+			return nil, fmt.Errorf("gagal menambah saldo tabungan wajib: %w", err)
+		}
+		if err := s.txnWriter.WriteVaultCredit(req.AcademicYearID, paymentDate, mandatorySavingsAmount, "savings_deposit", &result.ID, fmt.Sprintf("Setoran tabungan wajib %s", student.FullName), createdBy, tx); err != nil {
+			return nil, err
+		}
+		// Transfer dari kas ke brangkas (hanya untuk source cash) agar uang tidak double-count
+		if req.Source == "cash" {
+			if err := s.txnWriter.WriteCashDebit(req.AcademicYearID, paymentDate, mandatorySavingsAmount, "transfer_to_vault", &result.ID, fmt.Sprintf("Transfer ke brangkas: tabungan wajib %s", student.FullName), createdBy, tx); err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -452,7 +493,7 @@ func (s *paymentService) reversePayment(tx *gorm.DB, paymentID uint) error {
 	// 4. REVERSE SAVINGS — balikkan balance + hapus savings_transactions
 	var savingsTxns []model.SavingsTransaction
 	tx.Where("source_id = ? AND source_type IN ?", paymentID,
-		[]string{"payment_usage", "payment_deposit"}).Find(&savingsTxns)
+		[]string{"payment_usage", "payment_deposit", "payment_mandatory"}).Find(&savingsTxns)
 	for _, st := range savingsTxns {
 		var sv model.StudentSavings
 		if err := tx.First(&sv, st.StudentSavingsID).Error; err != nil {
@@ -469,7 +510,7 @@ func (s *paymentService) reversePayment(tx *gorm.DB, paymentID uint) error {
 		tx.Save(&sv)
 	}
 	tx.Where("source_id = ? AND source_type IN ?", paymentID,
-		[]string{"payment_usage", "payment_deposit"}).Delete(&model.SavingsTransaction{})
+		[]string{"payment_usage", "payment_deposit", "payment_mandatory"}).Delete(&model.SavingsTransaction{})
 
 	// 5. DELETE CASH TRANSACTIONS
 	if err := s.txnWriter.DeleteCashBySource(tx, "payment", paymentID); err != nil {

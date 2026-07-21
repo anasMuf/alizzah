@@ -36,9 +36,11 @@ type TransferToCashRequest struct {
 
 // Vault
 type VaultBalanceResponse struct {
-	Balance               float64 `json:"balance"`
-	TotalSavingsGeneral   float64 `json:"total_savings_general"`
-	TotalSavingsMandatory float64 `json:"total_savings_mandatory"`
+	Balance                      float64 `json:"balance"`
+	TotalSavingsGeneral          float64 `json:"total_savings_general"`
+	TotalSavingsMandatory        float64 `json:"total_savings_mandatory"`
+	TotalSavingsMandatoryBerlian float64 `json:"total_savings_mandatory_berlian"`
+	TotalSavingsMandatoryMutiara float64 `json:"total_savings_mandatory_mutiara"`
 }
 
 type VaultTransactionResponse struct {

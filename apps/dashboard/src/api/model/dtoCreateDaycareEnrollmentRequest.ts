@@ -16,6 +16,4 @@ export interface DtoCreateDaycareEnrollmentRequest {
 	start_date: string;
 	student_id: number;
 	time_slot: DtoCreateDaycareEnrollmentRequestTimeSlot;
-	with_meal?: boolean;
-	with_tpq?: boolean;
 }

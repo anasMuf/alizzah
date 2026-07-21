@@ -24,5 +24,10 @@ export interface DtoCreateFeeConfigItemRequest {
 	level: DtoCreateFeeConfigItemRequestLevel;
 	/** @maxLength 100 */
 	name: string;
+	/**
+	 * @minimum 1
+	 * @maximum 12
+	 */
+	start_month?: number;
 	unit: DtoCreateFeeConfigItemRequestUnit;
 }

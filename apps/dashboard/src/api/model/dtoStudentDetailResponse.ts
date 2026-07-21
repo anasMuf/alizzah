@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0
  */
 import type { DtoEnrollmentBriefResponse } from "./dtoEnrollmentBriefResponse";
+import type { DtoExceptionalityResponse } from "./dtoExceptionalityResponse";
 import type { DtoFinancialSummaryResponse } from "./dtoFinancialSummaryResponse";
 import type { DtoGuardianBriefResponse } from "./dtoGuardianBriefResponse";
 
@@ -14,6 +15,7 @@ export interface DtoStudentDetailResponse {
 	birth_date?: string;
 	birth_place?: string;
 	created_at?: string;
+	exceptionality?: DtoExceptionalityResponse;
 	financial_summary?: DtoFinancialSummaryResponse;
 	full_name?: string;
 	gender?: string;

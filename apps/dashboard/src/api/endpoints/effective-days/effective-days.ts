@@ -27,6 +27,8 @@ import type {
 	DtoUpsertEffectiveDayRequest,
 	GetV1ClassGroupsIdEffectiveDays200,
 	GetV1ClassGroupsIdEffectiveDaysParams,
+	GetV1EffectiveDaysGrid200,
+	GetV1EffectiveDaysGridParams,
 	GetV1LevelsLevelEffectiveDays200,
 	GetV1LevelsLevelEffectiveDaysParams,
 	PostV1ClassGroupsIdEffectiveDays200,
@@ -574,6 +576,204 @@ export const usePutV1ClassGroupsIdEffectiveDaysEdId = <
 		queryClient,
 	);
 };
+export type getV1EffectiveDaysGridResponse200 = {
+	data: GetV1EffectiveDaysGrid200;
+	status: 200;
+};
+
+export type getV1EffectiveDaysGridResponseSuccess =
+	getV1EffectiveDaysGridResponse200 & {
+		headers: Headers;
+	};
+
+export type getV1EffectiveDaysGridResponse =
+	getV1EffectiveDaysGridResponseSuccess;
+
+export const getGetV1EffectiveDaysGridUrl = (
+	params: GetV1EffectiveDaysGridParams,
+) => {
+	const normalizedParams = new URLSearchParams();
+
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(key, value === null ? "null" : value.toString());
+		}
+	});
+
+	const stringifiedParams = normalizedParams.toString();
+
+	return stringifiedParams.length > 0
+		? `/v1/effective-days/grid?${stringifiedParams}`
+		: `/v1/effective-days/grid`;
+};
+
+/**
+ * Returns level defaults and class group overrides in a single grid response
+ * @summary Unified effective days grid
+ */
+export const getV1EffectiveDaysGrid = async (
+	params: GetV1EffectiveDaysGridParams,
+	options?: RequestInit,
+): Promise<getV1EffectiveDaysGridResponse> => {
+	return customInstance<getV1EffectiveDaysGridResponse>(
+		getGetV1EffectiveDaysGridUrl(params),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
+
+export const getGetV1EffectiveDaysGridQueryKey = (
+	params?: GetV1EffectiveDaysGridParams,
+) => {
+	return [`/v1/effective-days/grid`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetV1EffectiveDaysGridQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1EffectiveDaysGrid>>,
+	TError = unknown,
+>(
+	params: GetV1EffectiveDaysGridParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1EffectiveDaysGrid>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
+
+	const queryKey =
+		queryOptions?.queryKey ?? getGetV1EffectiveDaysGridQueryKey(params);
+
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1EffectiveDaysGrid>>
+	> = ({ signal }) =>
+		getV1EffectiveDaysGrid(params, { signal, ...requestOptions });
+
+	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1EffectiveDaysGrid>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetV1EffectiveDaysGridQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1EffectiveDaysGrid>>
+>;
+export type GetV1EffectiveDaysGridQueryError = unknown;
+
+export function useGetV1EffectiveDaysGrid<
+	TData = Awaited<ReturnType<typeof getV1EffectiveDaysGrid>>,
+	TError = unknown,
+>(
+	params: GetV1EffectiveDaysGridParams,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1EffectiveDaysGrid>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1EffectiveDaysGrid>>,
+					TError,
+					Awaited<ReturnType<typeof getV1EffectiveDaysGrid>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1EffectiveDaysGrid<
+	TData = Awaited<ReturnType<typeof getV1EffectiveDaysGrid>>,
+	TError = unknown,
+>(
+	params: GetV1EffectiveDaysGridParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1EffectiveDaysGrid>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1EffectiveDaysGrid>>,
+					TError,
+					Awaited<ReturnType<typeof getV1EffectiveDaysGrid>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1EffectiveDaysGrid<
+	TData = Awaited<ReturnType<typeof getV1EffectiveDaysGrid>>,
+	TError = unknown,
+>(
+	params: GetV1EffectiveDaysGridParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1EffectiveDaysGrid>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Unified effective days grid
+ */
+
+export function useGetV1EffectiveDaysGrid<
+	TData = Awaited<ReturnType<typeof getV1EffectiveDaysGrid>>,
+	TError = unknown,
+>(
+	params: GetV1EffectiveDaysGridParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1EffectiveDaysGrid>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1EffectiveDaysGridQueryOptions(params, options);
+
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+	return { ...query, queryKey: queryOptions.queryKey };
+}
+
 export type getV1LevelsLevelEffectiveDaysResponse200 = {
 	data: GetV1LevelsLevelEffectiveDays200;
 	status: 200;

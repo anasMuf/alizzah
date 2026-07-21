@@ -58,6 +58,7 @@ func main() {
 		&model.StudentAcademicEvent{},
 		&model.DaycareEnrollment{},
 		&model.DaycareAttendance{},
+		&model.DaycareMonthlyAttendance{},
 		// Batch 4
 		&model.FeeConfig{},
 		&model.FeeConfigItem{},
@@ -211,6 +212,7 @@ func main() {
 	seRepo := repository.NewStudentExtracurricularRepository(db)
 	eventRepo := repository.NewStudentAcademicEventRepository(db)
 	daycareRepo := repository.NewDaycareEnrollmentRepository(db)
+	daycareMonthlyAttRepo := repository.NewDaycareMonthlyAttendanceRepository(db)
 
 	// Batch 4
 	fcRepo := repository.NewFeeConfigRepository(db)
@@ -257,7 +259,7 @@ func main() {
 	// Student exceptionality repo
 	exceptionalityRepo := repository.NewStudentExceptionalityRepository(db)
 
-	invoiceGenService := service.NewInvoiceGenerateService(db, invoiceRepo, invoiceItemRepo, fcRepo, fcItemRepo, effectiveDayRepo, enrollmentRepo, extracurricularRepo, seRepo, ayRepo, daycareRepo, facilityRepo, sfRepo, dispensationRepo, exceptionalityRepo)
+	invoiceGenService := service.NewInvoiceGenerateService(db, invoiceRepo, invoiceItemRepo, fcRepo, fcItemRepo, effectiveDayRepo, enrollmentRepo, extracurricularRepo, seRepo, ayRepo, daycareRepo, facilityRepo, sfRepo, dispensationRepo, exceptionalityRepo, daycareMonthlyAttRepo)
 
 	// Auto-sync: tambahkan item tabungan wajib ke invoice existing yang belum memilikinya.
 	// Aman dijalankan berulang kali (idempotent), hanya menyentuh invoice unpaid/partial.
@@ -308,7 +310,7 @@ func main() {
 	extracurricularService := service.NewExtracurricularService(db, extracurricularRepo, fcRepo, fcItemRepo)
 	seService := service.NewStudentExtracurricularService(seRepo, studentRepo, extracurricularRepo, ayRepo, invoiceGenService)
 	eventService := service.NewStudentAcademicEventService(eventRepo, studentRepo)
-	daycareService := service.NewDaycareEnrollmentService(db, daycareRepo, studentRepo, ayRepo, invoiceGenService)
+	daycareService := service.NewDaycareEnrollmentService(db, daycareRepo, studentRepo, ayRepo, daycareMonthlyAttRepo, invoiceGenService)
 
 	// Batch 4
 	fcService := service.NewFeeConfigService(fcRepo, fcItemRepo, ayRepo, extracurricularRepo)
@@ -504,6 +506,10 @@ func main() {
 	// Daycare Attendance
 	daycare.GET("/attendance", daycareHandler.GetAttendance)
 	daycare.PUT("/attendance", daycareHandler.UpsertAttendance)
+
+	// Daycare Monthly Attendance
+	daycare.GET("/monthly-attendance", daycareHandler.GetMonthlyAttendance)
+	daycare.PUT("/monthly-attendance", daycareHandler.UpsertMonthlyAttendance)
 
 	// Batch 4: Academic Events
 	events := api.Group("/academic-events", middleware.JWTAuth(tokenBlacklistRepo), guard.RequireModule(middleware.ModuleAdministrasi))

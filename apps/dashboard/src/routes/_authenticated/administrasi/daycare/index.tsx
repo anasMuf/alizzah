@@ -10,11 +10,14 @@ import {
 	ShieldX,
 	UserCircle,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	getGetV1DaycareEnrollmentsQueryKey,
 	useGetV1DaycareEnrollments,
+	useGetV1DaycareEnrollmentsMonthlyAttendance,
 	usePatchV1DaycareEnrollmentsIdStatus,
+	usePostV1DaycareEnrollmentsGenerateMonthlyBulk,
+	usePutV1DaycareEnrollmentsMonthlyAttendance,
 } from "#/api/endpoints/daycare-enrollments/daycare-enrollments";
 import {
 	Badge,
@@ -24,9 +27,6 @@ import {
 	useToast,
 } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
-
-const API_URL = import.meta.env.VITE_API_URL || "";
-const TOKEN_KEY = "alizzah_token";
 
 const CATEGORY_LABELS: Record<string, string> = {
 	premium: "Premium",
@@ -68,7 +68,7 @@ function DaycareIndexPage() {
 					className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${tab === "attendance" ? "border-indigo-600 text-indigo-700" : "border-transparent text-gray-500 hover:text-gray-700"}`}
 				>
 					<CalendarCheck className="h-4 w-4 inline mr-1.5" />
-					Absensi Hari Ini
+					Kehadiran Bulanan
 				</button>
 			</div>
 			{tab === "enrollment" ? <EnrollmentTab /> : <AttendanceTab />}
@@ -109,6 +109,8 @@ function EnrollmentTab() {
 	const [enrollmentToDeactivate, setEnrollmentToDeactivate] =
 		useState<any>(null);
 	const [generatingBulkSpd, setGeneratingBulkSpd] = useState(false);
+
+	const bulkSpdMutation = usePostV1DaycareEnrollmentsGenerateMonthlyBulk();
 
 	const {
 		data: response,
@@ -156,28 +158,17 @@ function EnrollmentTab() {
 		const now = new Date();
 		setGeneratingBulkSpd(true);
 		try {
-			const token = localStorage.getItem(TOKEN_KEY);
-			const res = await fetch(
-				`${API_URL}/v1/daycare-enrollments/generate-monthly-bulk`,
-				{
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						Authorization: `Bearer ${token}`,
-					},
-					body: JSON.stringify({
-						academic_year_id: activeAy.id,
-						month: now.getMonth() + 1,
-						year: now.getFullYear(),
-					}),
+			const result = await bulkSpdMutation.mutateAsync({
+				data: {
+					academic_year_id: activeAy.id,
+					month: now.getMonth() + 1,
+					year: now.getFullYear(),
 				},
-			);
-			const json = await res.json();
-			if (!res.ok) throw new Error(json.message || "Gagal generate SPD");
+			});
 			addToast({
 				variant: "success",
 				title: "Berhasil",
-				message: json.message || "SPD berhasil digenerate.",
+				message: (result as any)?.message || "SPD berhasil digenerate.",
 			});
 			queryClient.invalidateQueries({
 				queryKey: getGetV1DaycareEnrollmentsQueryKey(),
@@ -210,7 +201,7 @@ function EnrollmentTab() {
 						/>
 						{generatingBulkSpd ? "Generate..." : "Generate SPD Bulanan"}
 					</Button>
-					<Link to="/administrasi/daycare/baru">
+					<Link to="/administrasi/daycare/baru" search={{} as any}>
 						<Button className="flex items-center gap-2">
 							<Plus className="h-4 w-4" />
 							Pendaftaran Baru
@@ -375,11 +366,18 @@ function EnrollmentTab() {
 function AttendanceTab() {
 	const [activeAy] = useAtom(academicYearAtom);
 	const { addToast } = useToast();
-	const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
-	const [attendance, setAttendance] = useState<
-		Record<number, { timeSlot: string; withMeal: boolean; withTpq: boolean }>
+	const [month, setMonth] = useState(new Date().getMonth() + 1);
+	const [year, setYear] = useState(new Date().getFullYear());
+	const [monthlyAtt, setMonthlyAtt] = useState<
+		Record<number, { spdDays: number; mealDays: number }>
+	>({});
+	// Track original saved values to detect changes
+	const [originalAtt, setOriginalAtt] = useState<
+		Record<number, { spdDays: number; mealDays: number }>
 	>({});
 	const [saving, setSaving] = useState(false);
+	// Track whether we've already loaded data for the current month/year
+	const lastSynced = useRef<{ month: number; year: number } | null>(null);
 
 	const { data: resp, isLoading } = useGetV1DaycareEnrollments(
 		{ academic_year_id: activeAy?.id as any, status: "active", limit: 100 },
@@ -387,84 +385,157 @@ function AttendanceTab() {
 	);
 	const enrollments = (resp?.data as any)?.data || [];
 
-	// Load existing attendance for this date
+	// Load monthly attendance for all students using Orval hook
+	const { data: monthlyData } = useGetV1DaycareEnrollmentsMonthlyAttendance(
+		{
+			month,
+			year,
+			academic_year_id: activeAy?.id,
+		} as any,
+		{ query: { enabled: !!activeAy?.id } } as any,
+	);
+
+	// Sync monthly attendance data into local state on initial load or month/year change
 	useEffect(() => {
-		const loadAttendance = async () => {
-			const token = localStorage.getItem(TOKEN_KEY);
-			const newAtt: Record<
-				number,
-				{ timeSlot: string; withMeal: boolean; withTpq: boolean }
-			> = {};
-			for (const enr of enrollments) {
-				newAtt[enr.student.id] = {
-					timeSlot: "",
-					withMeal: false,
-					withTpq: false,
+		if (!monthlyData) return;
+		// Skip if already synced for this month/year (prevents overwriting user input)
+		if (
+			lastSynced.current?.month === month &&
+			lastSynced.current?.year === year
+		)
+			return;
+
+		const responseData = (monthlyData as any)?.data;
+		const items = responseData?.data || [];
+		const itemsList = Array.isArray(items) ? items : [];
+		const newAtt: Record<number, { spdDays: number; mealDays: number }> = {};
+		for (const enr of enrollments) {
+			newAtt[enr.student.id] = { spdDays: 0, mealDays: 0 };
+		}
+		for (const item of itemsList) {
+			if (item.student_id) {
+				newAtt[item.student_id] = {
+					spdDays: item.spd_days || 0,
+					mealDays: item.meal_days || 0,
 				};
 			}
-			try {
-				const [year, month] = date.split("-");
-				for (const enr of enrollments) {
-					const res = await fetch(
-						`${API_URL}/v1/daycare-enrollments/attendance?student_id=${enr.student.id}&month=${parseInt(month)}&year=${parseInt(year)}`,
-						{ headers: { Authorization: `Bearer ${token}` } },
-					);
-					if (res.ok) {
-						const json = await res.json();
-						const items = json.data || [];
-						const today = items.find((a: any) => a.date === date);
-						if (today)
-							newAtt[enr.student.id] = {
-								timeSlot: today.time_slot || "",
-								withMeal: today.with_meal || false,
-								withTpq: today.with_tpq || false,
-							};
-					}
-				}
-			} catch {}
-			setAttendance(newAtt);
-		};
-		if (enrollments.length > 0) loadAttendance();
-	}, [enrollments, date]);
+		}
+		setMonthlyAtt(newAtt);
+		setOriginalAtt({ ...newAtt });
+		lastSynced.current = { month, year };
+	}, [monthlyData, enrollments, month, year]);
+
+	const upsertMutation = usePutV1DaycareEnrollmentsMonthlyAttendance({
+		mutation: {
+			onSuccess: () => {
+				// handled per-batch in handleSave
+			},
+			onError: (error: any) => {
+				addToast({
+					variant: "error",
+					title: "Gagal",
+					message: error?.message || "Gagal menyimpan kehadiran bulanan.",
+				});
+			},
+		},
+	});
 
 	const handleSave = async () => {
 		setSaving(true);
-		const token = localStorage.getItem(TOKEN_KEY);
+		// Hanya kirim siswa yang datanya berubah dari original
+		const changed = enrollments.filter((enr: any) => {
+			const curr = monthlyAtt[enr.student.id];
+			const orig = originalAtt[enr.student.id];
+			if (!curr) return false;
+			if (!orig) return curr.spdDays > 0 || curr.mealDays > 0; // new entry
+			return curr.spdDays !== orig.spdDays || curr.mealDays !== orig.mealDays;
+		});
+
+		if (changed.length === 0) {
+			addToast({
+				variant: "info" as any,
+				title: "Info",
+				message: "Tidak ada perubahan data.",
+			});
+			setSaving(false);
+			return;
+		}
+
 		try {
-			for (const enr of enrollments) {
-				const a = attendance[enr.student.id];
+			const errors: string[] = [];
+			for (const enr of changed) {
+				const a = monthlyAtt[enr.student.id];
 				if (!a) continue;
-				await fetch(`${API_URL}/v1/daycare-enrollments/attendance`, {
-					method: "PUT",
-					headers: {
-						"Content-Type": "application/json",
-						Authorization: `Bearer ${token}`,
-					},
-					body: JSON.stringify({
-						student_id: enr.student.id,
-						academic_year_id: activeAy?.id,
-						date,
-						time_slot: a.timeSlot,
-						with_meal: a.withMeal,
-						with_tpq: a.withTpq,
-					}),
+				try {
+					await upsertMutation.mutateAsync({
+						data: {
+							student_id: enr.student.id,
+							academic_year_id: activeAy!.id,
+							month,
+							year,
+							spd_days: a.spdDays,
+							meal_days: a.mealDays,
+						},
+					});
+				} catch (e: any) {
+					errors.push(`${enr.student.full_name}: ${e?.message || "gagal"}`);
+				}
+			}
+			// Update baseline after successful save
+			setOriginalAtt((prev) => {
+				const updated = { ...prev };
+				for (const enr of changed) {
+					updated[enr.student.id] = { ...monthlyAtt[enr.student.id] };
+				}
+				return updated;
+			});
+			const successCount = changed.length - errors.length;
+			if (errors.length > 0) {
+				addToast({
+					variant: "error",
+					title: "Sebagian gagal",
+					message: `${successCount} berhasil, ${errors.length} gagal: ${errors.slice(0, 3).join("; ")}`,
+				});
+			} else {
+				addToast({
+					variant: "success",
+					title: "Berhasil",
+					message: `${successCount} siswa disimpan & SPD berhasil digenerate.`,
 				});
 			}
-			addToast({
-				variant: "success",
-				title: "Berhasil",
-				message: "Absensi disimpan.",
-			});
-		} catch {
-			addToast({
-				variant: "error",
-				title: "Gagal",
-				message: "Gagal menyimpan absensi.",
-			});
 		} finally {
 			setSaving(false);
 		}
 	};
+
+	const handleMonthChange = (direction: number) => {
+		let newMonth = month + direction;
+		let newYear = year;
+		if (newMonth > 12) {
+			newMonth = 1;
+			newYear++;
+		} else if (newMonth < 1) {
+			newMonth = 12;
+			newYear--;
+		}
+		setMonth(newMonth);
+		setYear(newYear);
+	};
+
+	const monthNames = [
+		"Januari",
+		"Februari",
+		"Maret",
+		"April",
+		"Mei",
+		"Juni",
+		"Juli",
+		"Agustus",
+		"September",
+		"Oktober",
+		"November",
+		"Desember",
+	];
 
 	if (isLoading)
 		return <div className="h-64 animate-pulse bg-white rounded-xl" />;
@@ -472,21 +543,36 @@ function AttendanceTab() {
 	return (
 		<div className="space-y-4">
 			<div>
-				<h1 className="text-2xl font-bold text-gray-900">Absensi Daycare</h1>
+				<h1 className="text-2xl font-bold text-gray-900">
+					Kehadiran Bulanan Daycare
+				</h1>
 				<p className="text-sm text-gray-500">
-					Catat kehadiran harian siswa daycare.
+					Input jumlah hari SPD dan konsumsi per bulan. Data ini digunakan untuk
+					generate tagihan.
 				</p>
 			</div>
 
 			<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-4">
-				<div className="flex items-center gap-4 mb-4">
-					<label className="text-sm font-medium text-gray-700">Tanggal:</label>
-					<input
-						type="date"
-						value={date}
-						onChange={(e) => setDate(e.target.value)}
-						className="rounded-md border-gray-300 text-sm"
-					/>
+				{/* Month/Year selector */}
+				<div className="flex items-center gap-3 mb-4">
+					<label className="text-sm font-medium text-gray-700">Bulan:</label>
+					<button
+						type="button"
+						onClick={() => handleMonthChange(-1)}
+						className="px-2 py-1 text-gray-500 hover:text-gray-700 border rounded"
+					>
+						◀
+					</button>
+					<span className="text-sm font-semibold text-gray-900 min-w-[140px] text-center">
+						{monthNames[month - 1]} {year}
+					</span>
+					<button
+						type="button"
+						onClick={() => handleMonthChange(1)}
+						className="px-2 py-1 text-gray-500 hover:text-gray-700 border rounded"
+					>
+						▶
+					</button>
 				</div>
 
 				{enrollments.length === 0 ? (
@@ -495,100 +581,94 @@ function AttendanceTab() {
 					</p>
 				) : (
 					<>
+						{/* Header */}
+						<div className="grid grid-cols-12 gap-2 text-xs font-medium text-gray-500 border-b pb-2 mb-2">
+							<div className="col-span-4">Nama Siswa</div>
+							<div className="col-span-2">Kategori</div>
+							<div className="col-span-2">Hari SPD</div>
+							<div className="col-span-2">Hari Konsumsi</div>
+						</div>
+
 						<div className="space-y-2 max-h-96 overflow-y-auto">
 							{enrollments.map((enr: any) => {
-								const a = attendance[enr.student.id];
-								const isPresent = a && a.timeSlot !== "";
+								const a = monthlyAtt[enr.student.id];
+								const isPremium = enr.category === "premium";
 								return (
 									<div
 										key={enr.student.id}
-										className="flex items-center gap-2 py-2 border-b border-gray-100 flex-wrap"
+										className="grid grid-cols-12 gap-2 items-center py-2 border-b border-gray-100"
 									>
-										<input
-											type="checkbox"
-											checked={isPresent}
-											onChange={(e) => {
-												setAttendance((prev) => ({
-													...prev,
-													[enr.student.id]: {
-														timeSlot: e.target.checked
-															? enr.time_slot || "07-15"
-															: "",
-														withMeal: false,
-														withTpq: false,
-													},
-												}));
-											}}
-											className="h-4 w-4 rounded border-gray-300 text-indigo-600"
-										/>
-										<span className="flex-1 text-sm font-medium text-gray-900 min-w-[120px]">
-											{enr.student.full_name}
-										</span>
-										<span className="text-xs text-gray-400">
-											{CATEGORY_LABELS[enr.category]}
-										</span>
-										{isPresent && (
-											<>
-												<select
-													value={a.timeSlot}
-													onChange={(e) =>
-														setAttendance((prev) => ({
+										<div className="col-span-4">
+											<span className="text-sm font-medium text-gray-900">
+												{enr.student.full_name}
+											</span>
+										</div>
+										<div className="col-span-2">
+											<span className="text-xs text-gray-500">
+												{CATEGORY_LABELS[enr.category]}
+											</span>
+										</div>
+										<div className="col-span-2">
+											{isPremium ? (
+												<span className="text-xs text-gray-400">Flat</span>
+											) : (
+												<input
+													type="number"
+													min={0}
+													max={30}
+													value={a?.spdDays ?? 0}
+													onChange={(e) => {
+														const val = Math.min(
+															30,
+															Math.max(0, Number.parseInt(e.target.value) || 0),
+														);
+														setMonthlyAtt((prev) => ({
 															...prev,
 															[enr.student.id]: {
-																...prev[enr.student.id],
-																timeSlot: e.target.value,
+																...(prev[enr.student.id] || {
+																	spdDays: 0,
+																	mealDays: 0,
+																}),
+																spdDays: val,
 															},
-														}))
-													}
-													className="rounded-md border-gray-300 text-xs py-0.5"
-												>
-													<option value="07-15">07-15</option>
-													<option value="10-15">10-15</option>
-													<option value="10-13">10-13</option>
-												</select>
-												<label className="flex items-center gap-1 text-xs cursor-pointer">
-													<input
-														type="checkbox"
-														checked={a.withMeal}
-														onChange={(e) =>
-															setAttendance((prev) => ({
-																...prev,
-																[enr.student.id]: {
-																	...prev[enr.student.id],
-																	withMeal: e.target.checked,
-																},
-															}))
-														}
-														className="h-3 w-3 rounded border-gray-300 text-indigo-600"
-													/>
-													Konsumsi
-												</label>
-												<label className="flex items-center gap-1 text-xs cursor-pointer">
-													<input
-														type="checkbox"
-														checked={a.withTpq}
-														onChange={(e) =>
-															setAttendance((prev) => ({
-																...prev,
-																[enr.student.id]: {
-																	...prev[enr.student.id],
-																	withTpq: e.target.checked,
-																},
-															}))
-														}
-														className="h-3 w-3 rounded border-gray-300 text-indigo-600"
-													/>
-													TPQ
-												</label>
-											</>
-										)}
+														}));
+													}}
+													className="w-16 rounded-md border-gray-300 text-sm text-center"
+												/>
+											)}
+										</div>
+										<div className="col-span-2">
+											<input
+												type="number"
+												min={0}
+												max={30}
+												value={a?.mealDays ?? 0}
+												onChange={(e) => {
+													const val = Math.min(
+														30,
+														Math.max(0, Number.parseInt(e.target.value) || 0),
+													);
+													setMonthlyAtt((prev) => ({
+														...prev,
+														[enr.student.id]: {
+															...(prev[enr.student.id] || {
+																spdDays: 0,
+																mealDays: 0,
+															}),
+															mealDays: val,
+														},
+													}));
+												}}
+												className="w-16 rounded-md border-gray-300 text-sm text-center"
+											/>
+										</div>
 									</div>
 								);
 							})}
 						</div>
 						<div className="mt-4">
 							<Button onClick={handleSave} disabled={saving} className="w-full">
-								{saving ? "Menyimpan..." : "Simpan Absensi"}
+								{saving ? "Menyimpan..." : "Simpan Kehadiran Bulanan"}
 							</Button>
 						</div>
 					</>

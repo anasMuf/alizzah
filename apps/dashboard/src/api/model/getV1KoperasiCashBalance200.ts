@@ -6,8 +6,8 @@
  * OpenAPI spec version: 1.0
  */
 import type { DtoSuccessResponse } from "./dtoSuccessResponse";
-import type { KasBalanceResponse } from "./kasBalanceResponse";
+import type { InternalModulesKoperasiKasBalanceResponse } from "./internalModulesKoperasiKasBalanceResponse";
 
 export type GetV1KoperasiCashBalance200 = DtoSuccessResponse & {
-	data?: KasBalanceResponse;
+	data?: InternalModulesKoperasiKasBalanceResponse;
 };

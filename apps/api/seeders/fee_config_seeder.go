@@ -336,13 +336,12 @@ func buildFeeConfigItems() []feeItemDef {
 		items = append(items, feeItemDef{"daycare", d.key, d.name, "all", "all", d.amount, "per_day", false, nil})
 	}
 
-	// Konsumsi & TPQ
+	// Konsumsi (semua kategori pakai tarif harian)
 	items = append(items,
-		feeItemDef{"daycare", "daycare_premium_meal", "Paket Konsumsi Premium", "all", "all", 400000, "fixed", false, nil},
-		feeItemDef{"daycare", "daycare_regular_meal", "Paket Konsumsi Regular", "all", "all", 20000, "per_day", false, nil},
-		feeItemDef{"daycare", "daycare_premium_tpq", "Lanjut TPQ Premium", "all", "all", 80000, "fixed", false, nil},
-		feeItemDef{"daycare", "daycare_regular_tpq", "Lanjut TPQ Regular", "all", "all", 4000, "per_day", false, nil},
+		feeItemDef{"daycare", "daycare_regular_meal", "Paket Konsumsi", "all", "all", 20000, "per_day", false, nil},
 	)
+
+	// TPQ & premium meal flat sudah dihapus dari kalkulasi tagihan
 
 	// === Wisuda (placeholder) ===
 	items = append(items,

@@ -5,9 +5,9 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { BarangResponse } from "./barangResponse";
 import type { DtoSuccessResponse } from "./dtoSuccessResponse";
+import type { InternalModulesKoperasiBarangResponse } from "./internalModulesKoperasiBarangResponse";
 
 export type GetV1KoperasiProductsId200 = DtoSuccessResponse & {
-	data?: BarangResponse;
+	data?: InternalModulesKoperasiBarangResponse;
 };

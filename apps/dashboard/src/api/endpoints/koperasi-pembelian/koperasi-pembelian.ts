@@ -26,8 +26,8 @@ import type {
 	GetV1KoperasiPurchases200,
 	GetV1KoperasiPurchasesId200,
 	GetV1KoperasiPurchasesParams,
-	PembelianCreateRequest,
-	PembelianPaymentRequest,
+	InternalModulesKoperasiPembelianCreateRequest,
+	InternalModulesKoperasiPembelianPaymentRequest,
 	PostV1KoperasiPurchases201,
 	PostV1KoperasiPurchasesIdPayments200,
 } from "../../model";
@@ -254,7 +254,7 @@ export const getPostV1KoperasiPurchasesUrl = () => {
  * @summary Catat pembelian/restock
  */
 export const postV1KoperasiPurchases = async (
-	pembelianCreateRequest: PembelianCreateRequest,
+	internalModulesKoperasiPembelianCreateRequest: InternalModulesKoperasiPembelianCreateRequest,
 	options?: RequestInit,
 ): Promise<postV1KoperasiPurchasesResponse> => {
 	return customInstance<postV1KoperasiPurchasesResponse>(
@@ -263,7 +263,7 @@ export const postV1KoperasiPurchases = async (
 			...options,
 			method: "POST",
 			headers: { "Content-Type": "application/json", ...options?.headers },
-			body: JSON.stringify(pembelianCreateRequest),
+			body: JSON.stringify(internalModulesKoperasiPembelianCreateRequest),
 		},
 	);
 };
@@ -275,14 +275,14 @@ export const getPostV1KoperasiPurchasesMutationOptions = <
 	mutation?: UseMutationOptions<
 		Awaited<ReturnType<typeof postV1KoperasiPurchases>>,
 		TError,
-		{ data: PembelianCreateRequest },
+		{ data: InternalModulesKoperasiPembelianCreateRequest },
 		TContext
 	>;
 	request?: SecondParameter<typeof customInstance>;
 }): UseMutationOptions<
 	Awaited<ReturnType<typeof postV1KoperasiPurchases>>,
 	TError,
-	{ data: PembelianCreateRequest },
+	{ data: InternalModulesKoperasiPembelianCreateRequest },
 	TContext
 > => {
 	const mutationKey = ["postV1KoperasiPurchases"];
@@ -296,7 +296,7 @@ export const getPostV1KoperasiPurchasesMutationOptions = <
 
 	const mutationFn: MutationFunction<
 		Awaited<ReturnType<typeof postV1KoperasiPurchases>>,
-		{ data: PembelianCreateRequest }
+		{ data: InternalModulesKoperasiPembelianCreateRequest }
 	> = (props) => {
 		const { data } = props ?? {};
 
@@ -309,7 +309,8 @@ export const getPostV1KoperasiPurchasesMutationOptions = <
 export type PostV1KoperasiPurchasesMutationResult = NonNullable<
 	Awaited<ReturnType<typeof postV1KoperasiPurchases>>
 >;
-export type PostV1KoperasiPurchasesMutationBody = PembelianCreateRequest;
+export type PostV1KoperasiPurchasesMutationBody =
+	InternalModulesKoperasiPembelianCreateRequest;
 export type PostV1KoperasiPurchasesMutationError = unknown;
 
 /**
@@ -323,7 +324,7 @@ export const usePostV1KoperasiPurchases = <
 		mutation?: UseMutationOptions<
 			Awaited<ReturnType<typeof postV1KoperasiPurchases>>,
 			TError,
-			{ data: PembelianCreateRequest },
+			{ data: InternalModulesKoperasiPembelianCreateRequest },
 			TContext
 		>;
 		request?: SecondParameter<typeof customInstance>;
@@ -332,7 +333,7 @@ export const usePostV1KoperasiPurchases = <
 ): UseMutationResult<
 	Awaited<ReturnType<typeof postV1KoperasiPurchases>>,
 	TError,
-	{ data: PembelianCreateRequest },
+	{ data: InternalModulesKoperasiPembelianCreateRequest },
 	TContext
 > => {
 	return useMutation(
@@ -548,7 +549,7 @@ export const getPostV1KoperasiPurchasesIdPaymentsUrl = (id: number) => {
  */
 export const postV1KoperasiPurchasesIdPayments = async (
 	id: number,
-	pembelianPaymentRequest: PembelianPaymentRequest,
+	internalModulesKoperasiPembelianPaymentRequest: InternalModulesKoperasiPembelianPaymentRequest,
 	options?: RequestInit,
 ): Promise<postV1KoperasiPurchasesIdPaymentsResponse> => {
 	return customInstance<postV1KoperasiPurchasesIdPaymentsResponse>(
@@ -557,7 +558,7 @@ export const postV1KoperasiPurchasesIdPayments = async (
 			...options,
 			method: "POST",
 			headers: { "Content-Type": "application/json", ...options?.headers },
-			body: JSON.stringify(pembelianPaymentRequest),
+			body: JSON.stringify(internalModulesKoperasiPembelianPaymentRequest),
 		},
 	);
 };
@@ -569,14 +570,14 @@ export const getPostV1KoperasiPurchasesIdPaymentsMutationOptions = <
 	mutation?: UseMutationOptions<
 		Awaited<ReturnType<typeof postV1KoperasiPurchasesIdPayments>>,
 		TError,
-		{ id: number; data: PembelianPaymentRequest },
+		{ id: number; data: InternalModulesKoperasiPembelianPaymentRequest },
 		TContext
 	>;
 	request?: SecondParameter<typeof customInstance>;
 }): UseMutationOptions<
 	Awaited<ReturnType<typeof postV1KoperasiPurchasesIdPayments>>,
 	TError,
-	{ id: number; data: PembelianPaymentRequest },
+	{ id: number; data: InternalModulesKoperasiPembelianPaymentRequest },
 	TContext
 > => {
 	const mutationKey = ["postV1KoperasiPurchasesIdPayments"];
@@ -590,7 +591,7 @@ export const getPostV1KoperasiPurchasesIdPaymentsMutationOptions = <
 
 	const mutationFn: MutationFunction<
 		Awaited<ReturnType<typeof postV1KoperasiPurchasesIdPayments>>,
-		{ id: number; data: PembelianPaymentRequest }
+		{ id: number; data: InternalModulesKoperasiPembelianPaymentRequest }
 	> = (props) => {
 		const { id, data } = props ?? {};
 
@@ -604,7 +605,7 @@ export type PostV1KoperasiPurchasesIdPaymentsMutationResult = NonNullable<
 	Awaited<ReturnType<typeof postV1KoperasiPurchasesIdPayments>>
 >;
 export type PostV1KoperasiPurchasesIdPaymentsMutationBody =
-	PembelianPaymentRequest;
+	InternalModulesKoperasiPembelianPaymentRequest;
 export type PostV1KoperasiPurchasesIdPaymentsMutationError = unknown;
 
 /**
@@ -618,7 +619,7 @@ export const usePostV1KoperasiPurchasesIdPayments = <
 		mutation?: UseMutationOptions<
 			Awaited<ReturnType<typeof postV1KoperasiPurchasesIdPayments>>,
 			TError,
-			{ id: number; data: PembelianPaymentRequest },
+			{ id: number; data: InternalModulesKoperasiPembelianPaymentRequest },
 			TContext
 		>;
 		request?: SecondParameter<typeof customInstance>;
@@ -627,7 +628,7 @@ export const usePostV1KoperasiPurchasesIdPayments = <
 ): UseMutationResult<
 	Awaited<ReturnType<typeof postV1KoperasiPurchasesIdPayments>>,
 	TError,
-	{ id: number; data: PembelianPaymentRequest },
+	{ id: number; data: InternalModulesKoperasiPembelianPaymentRequest },
 	TContext
 > => {
 	return useMutation(

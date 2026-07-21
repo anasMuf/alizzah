@@ -6,8 +6,8 @@
  * OpenAPI spec version: 1.0
  */
 import type { DtoSuccessResponse } from "./dtoSuccessResponse";
-import type { PinjamanSummaryItem } from "./pinjamanSummaryItem";
+import type { InternalModulesKoperasiPinjamanSummaryItem } from "./internalModulesKoperasiPinjamanSummaryItem";
 
 export type GetV1KoperasiLoansSummary200 = DtoSuccessResponse & {
-	data?: PinjamanSummaryItem[];
+	data?: InternalModulesKoperasiPinjamanSummaryItem[];
 };

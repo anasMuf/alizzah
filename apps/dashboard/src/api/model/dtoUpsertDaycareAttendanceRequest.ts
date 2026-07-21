@@ -12,4 +12,8 @@ export interface DtoUpsertDaycareAttendanceRequest {
 	student_id: number;
 	/** empty = absent */
 	time_slot?: string;
+	/** hadir + paket konsumsi */
+	with_meal?: boolean;
+	/** hadir + lanjut TPQ */
+	with_tpq?: boolean;
 }

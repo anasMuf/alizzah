@@ -6,8 +6,8 @@
  * OpenAPI spec version: 1.0
  */
 import type { DtoPaginatedResponse } from "./dtoPaginatedResponse";
-import type { PinjamanResponse } from "./pinjamanResponse";
+import type { InternalModulesKoperasiPinjamanResponse } from "./internalModulesKoperasiPinjamanResponse";
 
 export type GetV1KoperasiLoans200 = DtoPaginatedResponse & {
-	data?: PinjamanResponse[];
+	data?: InternalModulesKoperasiPinjamanResponse[];
 };

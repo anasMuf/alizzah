@@ -25,12 +25,14 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
 	DtoCreatePaymentRequest,
 	DtoErrorResponse,
+	DtoSuccessResponse,
 	GetV1Payments200,
 	GetV1PaymentsId200,
 	GetV1PaymentsParams,
 	GetV1StudentsIdPayments200,
 	GetV1StudentsIdPaymentsParams,
 	PostV1Payments201,
+	PutV1PaymentsId200,
 } from "../../model";
 
 import { customInstance } from "../../mutator/custom-instance";
@@ -580,6 +582,290 @@ export function useGetV1PaymentsId<
 	return { ...query, queryKey: queryOptions.queryKey };
 }
 
+export type putV1PaymentsIdResponse200 = {
+	data: PutV1PaymentsId200;
+	status: 200;
+};
+
+export type putV1PaymentsIdResponse400 = {
+	data: DtoErrorResponse;
+	status: 400;
+};
+
+export type putV1PaymentsIdResponse401 = {
+	data: DtoErrorResponse;
+	status: 401;
+};
+
+export type putV1PaymentsIdResponse403 = {
+	data: DtoErrorResponse;
+	status: 403;
+};
+
+export type putV1PaymentsIdResponse404 = {
+	data: DtoErrorResponse;
+	status: 404;
+};
+
+export type putV1PaymentsIdResponse422 = {
+	data: DtoErrorResponse;
+	status: 422;
+};
+
+export type putV1PaymentsIdResponse500 = {
+	data: DtoErrorResponse;
+	status: 500;
+};
+
+export type putV1PaymentsIdResponseSuccess = putV1PaymentsIdResponse200 & {
+	headers: Headers;
+};
+export type putV1PaymentsIdResponseError = (
+	| putV1PaymentsIdResponse400
+	| putV1PaymentsIdResponse401
+	| putV1PaymentsIdResponse403
+	| putV1PaymentsIdResponse404
+	| putV1PaymentsIdResponse422
+	| putV1PaymentsIdResponse500
+) & {
+	headers: Headers;
+};
+
+export type putV1PaymentsIdResponse =
+	| putV1PaymentsIdResponseSuccess
+	| putV1PaymentsIdResponseError;
+
+export const getPutV1PaymentsIdUrl = (id: number) => {
+	return `/v1/payments/${id}`;
+};
+
+/**
+ * Membatalkan payment lama & membuat payment baru dengan data koreksi
+ * @summary Update payment
+ */
+export const putV1PaymentsId = async (
+	id: number,
+	dtoCreatePaymentRequest: DtoCreatePaymentRequest,
+	options?: RequestInit,
+): Promise<putV1PaymentsIdResponse> => {
+	return customInstance<putV1PaymentsIdResponse>(getPutV1PaymentsIdUrl(id), {
+		...options,
+		method: "PUT",
+		headers: { "Content-Type": "application/json", ...options?.headers },
+		body: JSON.stringify(dtoCreatePaymentRequest),
+	});
+};
+
+export const getPutV1PaymentsIdMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof putV1PaymentsId>>,
+		TError,
+		{ id: number; data: DtoCreatePaymentRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof putV1PaymentsId>>,
+	TError,
+	{ id: number; data: DtoCreatePaymentRequest },
+	TContext
+> => {
+	const mutationKey = ["putV1PaymentsId"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof putV1PaymentsId>>,
+		{ id: number; data: DtoCreatePaymentRequest }
+	> = (props) => {
+		const { id, data } = props ?? {};
+
+		return putV1PaymentsId(id, data, requestOptions);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type PutV1PaymentsIdMutationResult = NonNullable<
+	Awaited<ReturnType<typeof putV1PaymentsId>>
+>;
+export type PutV1PaymentsIdMutationBody = DtoCreatePaymentRequest;
+export type PutV1PaymentsIdMutationError = DtoErrorResponse;
+
+/**
+ * @summary Update payment
+ */
+export const usePutV1PaymentsId = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof putV1PaymentsId>>,
+			TError,
+			{ id: number; data: DtoCreatePaymentRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof putV1PaymentsId>>,
+	TError,
+	{ id: number; data: DtoCreatePaymentRequest },
+	TContext
+> => {
+	return useMutation(getPutV1PaymentsIdMutationOptions(options), queryClient);
+};
+export type deleteV1PaymentsIdResponse200 = {
+	data: DtoSuccessResponse;
+	status: 200;
+};
+
+export type deleteV1PaymentsIdResponse400 = {
+	data: DtoErrorResponse;
+	status: 400;
+};
+
+export type deleteV1PaymentsIdResponse401 = {
+	data: DtoErrorResponse;
+	status: 401;
+};
+
+export type deleteV1PaymentsIdResponse403 = {
+	data: DtoErrorResponse;
+	status: 403;
+};
+
+export type deleteV1PaymentsIdResponse404 = {
+	data: DtoErrorResponse;
+	status: 404;
+};
+
+export type deleteV1PaymentsIdResponse500 = {
+	data: DtoErrorResponse;
+	status: 500;
+};
+
+export type deleteV1PaymentsIdResponseSuccess =
+	deleteV1PaymentsIdResponse200 & {
+		headers: Headers;
+	};
+export type deleteV1PaymentsIdResponseError = (
+	| deleteV1PaymentsIdResponse400
+	| deleteV1PaymentsIdResponse401
+	| deleteV1PaymentsIdResponse403
+	| deleteV1PaymentsIdResponse404
+	| deleteV1PaymentsIdResponse500
+) & {
+	headers: Headers;
+};
+
+export type deleteV1PaymentsIdResponse =
+	| deleteV1PaymentsIdResponseSuccess
+	| deleteV1PaymentsIdResponseError;
+
+export const getDeleteV1PaymentsIdUrl = (id: number) => {
+	return `/v1/payments/${id}`;
+};
+
+/**
+ * Membatalkan seluruh efek keuangan & menghapus payment
+ * @summary Delete payment
+ */
+export const deleteV1PaymentsId = async (
+	id: number,
+	options?: RequestInit,
+): Promise<deleteV1PaymentsIdResponse> => {
+	return customInstance<deleteV1PaymentsIdResponse>(
+		getDeleteV1PaymentsIdUrl(id),
+		{
+			...options,
+			method: "DELETE",
+		},
+	);
+};
+
+export const getDeleteV1PaymentsIdMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof deleteV1PaymentsId>>,
+		TError,
+		{ id: number },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof deleteV1PaymentsId>>,
+	TError,
+	{ id: number },
+	TContext
+> => {
+	const mutationKey = ["deleteV1PaymentsId"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof deleteV1PaymentsId>>,
+		{ id: number }
+	> = (props) => {
+		const { id } = props ?? {};
+
+		return deleteV1PaymentsId(id, requestOptions);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteV1PaymentsIdMutationResult = NonNullable<
+	Awaited<ReturnType<typeof deleteV1PaymentsId>>
+>;
+
+export type DeleteV1PaymentsIdMutationError = DtoErrorResponse;
+
+/**
+ * @summary Delete payment
+ */
+export const useDeleteV1PaymentsId = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof deleteV1PaymentsId>>,
+			TError,
+			{ id: number },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof deleteV1PaymentsId>>,
+	TError,
+	{ id: number },
+	TContext
+> => {
+	return useMutation(
+		getDeleteV1PaymentsIdMutationOptions(options),
+		queryClient,
+	);
+};
 export type getV1StudentsIdPaymentsResponse200 = {
 	data: GetV1StudentsIdPayments200;
 	status: 200;

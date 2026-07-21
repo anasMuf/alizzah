@@ -40,6 +40,7 @@ import type {
 	GetV1StudentsIdInvoicesParams,
 	PostV1InvoicesIdInstallments201,
 	PostV1InvoicesIdItems201,
+	PostV1InvoicesSyncSavingsMandatory200,
 	PutV1InvoicesIdInstallmentsInstId200,
 	PutV1InvoicesIdItemsItemId200,
 	PutV1InvoicesIdItemsItemIdQuantity200,
@@ -458,6 +459,132 @@ export function useGetV1InvoicesBatch<
 	return { ...query, queryKey: queryOptions.queryKey };
 }
 
+export type postV1InvoicesSyncSavingsMandatoryResponse200 = {
+	data: PostV1InvoicesSyncSavingsMandatory200;
+	status: 200;
+};
+
+export type postV1InvoicesSyncSavingsMandatoryResponse401 = {
+	data: DtoErrorResponse;
+	status: 401;
+};
+
+export type postV1InvoicesSyncSavingsMandatoryResponse403 = {
+	data: DtoErrorResponse;
+	status: 403;
+};
+
+export type postV1InvoicesSyncSavingsMandatoryResponse500 = {
+	data: DtoErrorResponse;
+	status: 500;
+};
+
+export type postV1InvoicesSyncSavingsMandatoryResponseSuccess =
+	postV1InvoicesSyncSavingsMandatoryResponse200 & {
+		headers: Headers;
+	};
+export type postV1InvoicesSyncSavingsMandatoryResponseError = (
+	| postV1InvoicesSyncSavingsMandatoryResponse401
+	| postV1InvoicesSyncSavingsMandatoryResponse403
+	| postV1InvoicesSyncSavingsMandatoryResponse500
+) & {
+	headers: Headers;
+};
+
+export type postV1InvoicesSyncSavingsMandatoryResponse =
+	| postV1InvoicesSyncSavingsMandatoryResponseSuccess
+	| postV1InvoicesSyncSavingsMandatoryResponseError;
+
+export const getPostV1InvoicesSyncSavingsMandatoryUrl = () => {
+	return `/v1/invoices/sync-savings-mandatory`;
+};
+
+/**
+ * Add missing savings_mandatory (tabungan wajib) items to existing monthly invoices for berlian and mutiara students
+ * @summary Sync mandatory savings to monthly invoices
+ */
+export const postV1InvoicesSyncSavingsMandatory = async (
+	options?: RequestInit,
+): Promise<postV1InvoicesSyncSavingsMandatoryResponse> => {
+	return customInstance<postV1InvoicesSyncSavingsMandatoryResponse>(
+		getPostV1InvoicesSyncSavingsMandatoryUrl(),
+		{
+			...options,
+			method: "POST",
+		},
+	);
+};
+
+export const getPostV1InvoicesSyncSavingsMandatoryMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1InvoicesSyncSavingsMandatory>>,
+		TError,
+		void,
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1InvoicesSyncSavingsMandatory>>,
+	TError,
+	void,
+	TContext
+> => {
+	const mutationKey = ["postV1InvoicesSyncSavingsMandatory"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1InvoicesSyncSavingsMandatory>>,
+		void
+	> = () => {
+		return postV1InvoicesSyncSavingsMandatory(requestOptions);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type PostV1InvoicesSyncSavingsMandatoryMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1InvoicesSyncSavingsMandatory>>
+>;
+
+export type PostV1InvoicesSyncSavingsMandatoryMutationError = DtoErrorResponse;
+
+/**
+ * @summary Sync mandatory savings to monthly invoices
+ */
+export const usePostV1InvoicesSyncSavingsMandatory = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1InvoicesSyncSavingsMandatory>>,
+			TError,
+			void,
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1InvoicesSyncSavingsMandatory>>,
+	TError,
+	void,
+	TContext
+> => {
+	return useMutation(
+		getPostV1InvoicesSyncSavingsMandatoryMutationOptions(options),
+		queryClient,
+	);
+};
 export type getV1InvoicesIdResponse200 = {
 	data: GetV1InvoicesId200;
 	status: 200;

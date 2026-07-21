@@ -10,6 +10,7 @@ export interface DtoPaymentItemResponse {
 	amount?: number;
 	category?: string;
 	id?: number;
+	invoice_id?: number;
 	invoice_item_id?: number;
 	invoice_item_name?: string;
 }

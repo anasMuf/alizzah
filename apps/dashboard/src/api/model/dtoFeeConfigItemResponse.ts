@@ -19,5 +19,6 @@ export interface DtoFeeConfigItemResponse {
 	koperasi_product_name?: string;
 	level?: string;
 	name?: string;
+	start_month?: number;
 	unit?: string;
 }

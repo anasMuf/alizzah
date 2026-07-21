@@ -31,6 +31,7 @@ function SiswaBaruPage() {
 		gender: "L",
 		religion: "Islam",
 		is_daycare_only: false,
+		register_daycare: false,
 		is_exceptional: false,
 		exceptionality_description: "",
 	});
@@ -48,16 +49,26 @@ function SiswaBaruPage() {
 	const createMutation = usePostV1Students({
 		mutation: {
 			onSuccess: (res) => {
+				const newId = (res as any).data.data.id.toString();
 				addToast({
 					variant: "success",
 					title: "Berhasil",
-					message: "Siswa berhasil ditambahkan.",
+					message: studentData.register_daycare
+						? "Siswa berhasil ditambahkan. Lanjut ke pendaftaran daycare."
+						: "Siswa berhasil ditambahkan.",
 				});
 				queryClient.invalidateQueries({ queryKey: getGetV1StudentsQueryKey() });
-				navigate({
-					to: "/administrasi/siswa/$id/profil",
-					params: { id: (res as any).data.data.id.toString() },
-				});
+				if (studentData.register_daycare) {
+					navigate({
+						to: "/administrasi/daycare/baru",
+						search: { student_id: Number(newId) } as any,
+					});
+				} else {
+					navigate({
+						to: "/administrasi/siswa/$id/profil",
+						params: { id: newId },
+					});
+				}
 			},
 			onError: (error: Error) => {
 				const msg =
@@ -125,8 +136,9 @@ function SiswaBaruPage() {
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 
+		const { register_daycare, ...studentFields } = studentData as any;
 		const payload: DtoCreateStudentRequest = {
-			...studentData,
+			...studentFields,
 			gender: studentData.gender as any,
 			// API expects custom datetime, append time to date
 			birth_date: `${studentData.birth_date}T00:00:00Z`,
@@ -291,7 +303,30 @@ function SiswaBaruPage() {
 								</select>
 							</div>
 
-							<div className="sm:col-span-6 mt-4">
+							<div className="sm:col-span-6 mt-4 space-y-3">
+								{/* Shortcut: langsung daftar daycare setelah simpan */}
+								<label className="flex items-start gap-3 cursor-pointer p-4 border rounded-lg bg-indigo-50 hover:bg-indigo-100 transition-colors">
+									<div className="flex h-6 items-center">
+										<input
+											type="checkbox"
+											name="register_daycare"
+											checked={studentData.register_daycare}
+											onChange={handleStudentChange}
+											className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+										/>
+									</div>
+									<div>
+										<span className="font-medium text-gray-900 block">
+											Lanjut Pendaftaran Daycare
+										</span>
+										<span className="text-sm text-gray-500">
+											Setelah simpan, langsung diarahkan ke form pendaftaran
+											daycare dengan siswa ini sudah terpilih.
+										</span>
+									</div>
+								</label>
+
+								{/* Flag siswa daycare only (tidak otomatis lanjut daycare) */}
 								<label className="flex items-start gap-3 cursor-pointer p-4 border rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
 									<div className="flex h-6 items-center">
 										<input
@@ -487,7 +522,11 @@ function SiswaBaruPage() {
 						variant="primary"
 						disabled={createMutation.isPending}
 					>
-						{createMutation.isPending ? "Menyimpan..." : "Simpan Siswa"}
+						{createMutation.isPending
+							? "Menyimpan..."
+							: studentData.register_daycare
+								? "Simpan & Lanjut Daycare"
+								: "Simpan Siswa"}
 					</Button>
 				</div>
 			</form>

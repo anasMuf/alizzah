@@ -19,6 +19,4 @@ export interface DtoDaycareEnrollmentResponse {
 	status?: string;
 	student?: DtoStudentBriefResponse;
 	time_slot?: string;
-	with_meal?: boolean;
-	with_tpq?: boolean;
 }

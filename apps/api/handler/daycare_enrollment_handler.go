@@ -473,3 +473,87 @@ func (h *DaycareEnrollmentHandler) GetAttendance(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Data absensi", Data: result})
 }
+
+// ─── Monthly Attendance ──────────────────────────────────────
+
+// UpsertMonthlyAttendance godoc
+// @Summary      Upsert daycare monthly attendance
+// @Description  Create or update monthly attendance (SPD days + meal days) for a daycare student
+// @Tags         daycare-enrollments
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        request  body  dto.UpsertDaycareMonthlyAttendanceRequest  true  "Monthly attendance data"
+// @Success      200      {object}  dto.SuccessResponse{data=dto.DaycareMonthlyAttendanceResponse}
+// @Router       /v1/daycare-enrollments/monthly-attendance [put]
+func (h *DaycareEnrollmentHandler) UpsertMonthlyAttendance(c echo.Context) error {
+	var req dto.UpsertDaycareMonthlyAttendanceRequest
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Format request tidak valid")
+	}
+	if err := c.Validate(req); err != nil {
+		return err
+	}
+
+	userID := middleware.GetCurrentUserID(c)
+	result, err := h.daycareService.UpsertMonthlyAttendance(userID, req)
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{Status: status, Code: code, Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Kehadiran bulanan disimpan", Data: result})
+}
+
+// GetMonthlyAttendance godoc
+// @Summary      Get daycare monthly attendance
+// @Description  Get monthly attendance for a daycare student, or all students for a given month
+// @Tags         daycare-enrollments
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        student_id       query   int  false  "Student ID (optional, omit for all)"
+// @Param        academic_year_id query   int  false  "Academic Year ID"
+// @Param        month            query   int  true   "Month (1-12)"
+// @Param        year             query   int  true   "Year"
+// @Success      200  {object}  dto.SuccessResponse{data=interface{}}
+// @Router       /v1/daycare-enrollments/monthly-attendance [get]
+func (h *DaycareEnrollmentHandler) GetMonthlyAttendance(c echo.Context) error {
+	sidStr := c.QueryParam("student_id")
+	month, err := strconv.Atoi(c.QueryParam("month"))
+	if err != nil || month < 1 || month > 12 {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status: http.StatusBadRequest, Code: "BAD_REQUEST",
+			Message: "Parameter month wajib diisi (1-12)",
+		})
+	}
+	year, err := strconv.Atoi(c.QueryParam("year"))
+	if err != nil || year < 2000 {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status: http.StatusBadRequest, Code: "BAD_REQUEST",
+			Message: "Parameter year wajib diisi",
+		})
+	}
+	sid, _ := strconv.Atoi(sidStr)
+
+	// Jika student_id diberikan, return single record
+	if sidStr != "" && sid > 0 {
+		result, err := h.daycareService.GetMonthlyAttendance(uint(sid), uint(month), uint(year))
+		if err != nil {
+			status, code := utility.GetErrorStatusAndCode(err)
+			return c.JSON(status, dto.ErrorResponse{Status: status, Code: code, Message: err.Error()})
+		}
+		return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Data kehadiran bulanan", Data: result})
+	}
+
+	// Otherwise return all students for this month
+	ayIDStr := c.QueryParam("academic_year_id")
+	ayID, _ := strconv.Atoi(ayIDStr)
+	result, err := h.daycareService.GetAllMonthlyAttendance(uint(month), uint(year), uint(ayID))
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{Status: status, Code: code, Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Data kehadiran bulanan", Data: result})
+}

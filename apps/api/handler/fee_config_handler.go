@@ -205,6 +205,7 @@ func (h *FeeConfigHandler) Update(c echo.Context) error {
 // @Param        category  query  string  false  "Filter by category"
 // @Param        level     query  string  false  "Filter by level"
 // @Param        gender    query  string  false  "Filter by gender"
+// @Param        is_active query  string  false  "Filter by active status (true, false, all)"
 // @Success      200       {object}  dto.SuccessResponse{data=[]dto.FeeConfigItemResponse}
 // @Failure      400       {object}  dto.ErrorResponse
 // @Failure      401       {object}  dto.ErrorResponse

@@ -5,12 +5,14 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
+import type { DtoExceptionalityRequest } from "./dtoExceptionalityRequest";
 import type { DtoUpdateStudentRequestGender } from "./dtoUpdateStudentRequestGender";
 
 export interface DtoUpdateStudentRequest {
 	birth_date: string;
 	/** @maxLength 100 */
 	birth_place: string;
+	exceptionality?: DtoExceptionalityRequest;
 	/**
 	 * @minLength 3
 	 * @maxLength 100

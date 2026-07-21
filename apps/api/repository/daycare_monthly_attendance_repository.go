@@ -22,7 +22,7 @@ func NewDaycareMonthlyAttendanceRepository(db *gorm.DB) DaycareMonthlyAttendance
 
 func (r *daycareMonthlyAttendanceRepository) FindByStudentMonthYear(studentID uint, month uint, year uint) (*model.DaycareMonthlyAttendance, error) {
 	var att model.DaycareMonthlyAttendance
-	err := r.db.Where("student_id = ? AND month = ? AND year = ?", studentID, month, year).First(&att).Error
+	err := r.db.Preload("Student").Where("student_id = ? AND month = ? AND year = ?", studentID, month, year).First(&att).Error
 	if err != nil {
 		return nil, err
 	}

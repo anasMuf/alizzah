@@ -462,19 +462,24 @@ function AttendanceTab() {
 		}
 
 		try {
+			const errors: string[] = [];
 			for (const enr of changed) {
 				const a = monthlyAtt[enr.student.id];
 				if (!a) continue;
-				await upsertMutation.mutateAsync({
-					data: {
-						student_id: enr.student.id,
-						academic_year_id: activeAy!.id,
-						month,
-						year,
-						spd_days: a.spdDays,
-						meal_days: a.mealDays,
-					},
-				});
+				try {
+					await upsertMutation.mutateAsync({
+						data: {
+							student_id: enr.student.id,
+							academic_year_id: activeAy!.id,
+							month,
+							year,
+							spd_days: a.spdDays,
+							meal_days: a.mealDays,
+						},
+					});
+				} catch (e: any) {
+					errors.push(`${enr.student.full_name}: ${e?.message || "gagal"}`);
+				}
 			}
 			// Update baseline after successful save
 			setOriginalAtt((prev) => {
@@ -484,13 +489,20 @@ function AttendanceTab() {
 				}
 				return updated;
 			});
-			addToast({
-				variant: "success",
-				title: "Berhasil",
-				message: `${changed.length} siswa disimpan & SPD berhasil digenerate.`,
-			});
-		} catch {
-			// Error handled per-mutation
+			const successCount = changed.length - errors.length;
+			if (errors.length > 0) {
+				addToast({
+					variant: "error",
+					title: "Sebagian gagal",
+					message: `${successCount} berhasil, ${errors.length} gagal: ${errors.slice(0, 3).join("; ")}`,
+				});
+			} else {
+				addToast({
+					variant: "success",
+					title: "Berhasil",
+					message: `${successCount} siswa disimpan & SPD berhasil digenerate.`,
+				});
+			}
 		} finally {
 			setSaving(false);
 		}

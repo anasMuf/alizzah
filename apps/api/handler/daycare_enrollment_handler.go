@@ -520,8 +520,20 @@ func (h *DaycareEnrollmentHandler) UpsertMonthlyAttendance(c echo.Context) error
 // @Router       /v1/daycare-enrollments/monthly-attendance [get]
 func (h *DaycareEnrollmentHandler) GetMonthlyAttendance(c echo.Context) error {
 	sidStr := c.QueryParam("student_id")
-	month, _ := strconv.Atoi(c.QueryParam("month"))
-	year, _ := strconv.Atoi(c.QueryParam("year"))
+	month, err := strconv.Atoi(c.QueryParam("month"))
+	if err != nil || month < 1 || month > 12 {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status: http.StatusBadRequest, Code: "BAD_REQUEST",
+			Message: "Parameter month wajib diisi (1-12)",
+		})
+	}
+	year, err := strconv.Atoi(c.QueryParam("year"))
+	if err != nil || year < 2000 {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status: http.StatusBadRequest, Code: "BAD_REQUEST",
+			Message: "Parameter year wajib diisi",
+		})
+	}
 	sid, _ := strconv.Atoi(sidStr)
 
 	// Jika student_id diberikan, return single record

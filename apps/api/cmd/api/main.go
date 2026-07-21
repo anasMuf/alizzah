@@ -176,6 +176,7 @@ func main() {
 	seeders.SwapTransactionTypes(db)            // Swap credit↔debit: ubah perspektif bank statement → akuntansi sekolah
 	seeders.BackfillExpenseCategoryLainLain(db) // Pastikan kategori Lain-lain tersedia
 	seeders.BackfillRemoveAslinFromJuly(db)     // Hapus item Aslin dari invoice Juli (start_month=8)
+	seeders.BackfillMandatorySavingsDeposit(db) // Setoran tabungan wajib untuk payment historical
 
 	// Backfill flag is_koperasi — hanya relevan jika seam koperasi aktif
 	if isKoperasiSeamEnabled() {

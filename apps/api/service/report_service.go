@@ -865,6 +865,7 @@ func (s *reportService) GetTabunganSiswaReport(studentID uint, req dto.TabunganS
 
 	sourceTypeLabels := map[string]string{
 		"payment_deposit":       "Setoran via pembayaran",
+		"payment_mandatory":     "Setoran tabungan wajib dari pembayaran",
 		"guardian_withdrawal":   "Penarikan oleh wali murid",
 		"payment_usage":         "Alokasi untuk pembayaran tagihan",
 		"graduation_allocation": "Alokasi untuk wisuda",

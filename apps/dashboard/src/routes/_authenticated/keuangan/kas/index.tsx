@@ -77,7 +77,12 @@ function KasBerangkasOverviewPage() {
 
 	const vaultBalance = Number(vault?.balance || 0);
 	const savingsGeneral = Number(vault?.total_savings_general || 0);
-	const savingsMandatory = Number(vault?.total_savings_mandatory || 0);
+	const savingsMandatoryBerlian = Number(
+		vault?.total_savings_mandatory_berlian || 0,
+	);
+	const savingsMandatoryMutiara = Number(
+		vault?.total_savings_mandatory_mutiara || 0,
+	);
 
 	const parsedAmount = Number(transferAmount.replace(/\D/g, "")) || 0;
 	const isAmountValid = parsedAmount > 0 && parsedAmount <= cashBalance;
@@ -263,7 +268,15 @@ function KasBerangkasOverviewPage() {
 									Tab. Wajib (Berlian)
 								</span>
 								<span className="text-sm font-medium text-gray-900">
-									{formatCurrency(savingsMandatory)}
+									{formatCurrency(savingsMandatoryBerlian)}
+								</span>
+							</div>
+							<div className="flex items-center justify-between">
+								<span className="text-sm text-gray-600">
+									Tab. Wajib (Mutiara)
+								</span>
+								<span className="text-sm font-medium text-gray-900">
+									{formatCurrency(savingsMandatoryMutiara)}
 								</span>
 							</div>
 						</div>

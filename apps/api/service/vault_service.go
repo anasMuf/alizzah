@@ -38,11 +38,21 @@ func (s *vaultService) GetBalance(academicYearID uint) (*dto.VaultBalanceRespons
 	if err != nil {
 		return nil, fmt.Errorf("gagal membaca total tabungan wajib: %w", err)
 	}
+	totalMandatoryBerlian, err := s.savingsRepo.SumBalanceByTypeAndLevel(academicYearID, "mandatory", "berlian")
+	if err != nil {
+		return nil, fmt.Errorf("gagal membaca total tabungan wajib berlian: %w", err)
+	}
+	totalMandatoryMutiara, err := s.savingsRepo.SumBalanceByTypeAndLevel(academicYearID, "mandatory", "mutiara")
+	if err != nil {
+		return nil, fmt.Errorf("gagal membaca total tabungan wajib mutiara: %w", err)
+	}
 
 	return &dto.VaultBalanceResponse{
-		Balance:               balance,
-		TotalSavingsGeneral:   totalGeneral,
-		TotalSavingsMandatory: totalMandatory,
+		Balance:                      balance,
+		TotalSavingsGeneral:          totalGeneral,
+		TotalSavingsMandatory:        totalMandatory,
+		TotalSavingsMandatoryBerlian: totalMandatoryBerlian,
+		TotalSavingsMandatoryMutiara: totalMandatoryMutiara,
 	}, nil
 }
 

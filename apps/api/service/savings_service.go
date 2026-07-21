@@ -145,7 +145,7 @@ func (s *savingsService) GuardianWithdrawal(studentID, createdBy uint, req dto.S
 		// Buat SavingsTransaction record
 		stxn := &model.SavingsTransaction{
 			StudentSavingsID: savings.ID,
-			TransactionType:  "debit",
+			TransactionType:  "credit",
 			Amount:           req.Amount,
 			AdminFee:         adminFee,
 			NetAmount:        netAmount,
@@ -158,7 +158,7 @@ func (s *savingsService) GuardianWithdrawal(studentID, createdBy uint, req dto.S
 		}
 
 		// Layer 2: Optimistic locking — UPDATE balance hanya jika cukup
-		if err := s.savingsRepo.DebitBalance(tx, savings.ID, req.Amount); err != nil {
+		if err := s.savingsRepo.SubtractBalance(tx, savings.ID, req.Amount); err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return errors.New("Saldo tidak mencukupi atau terjadi transaksi bersamaan")
 			}
@@ -210,7 +210,7 @@ func (s *savingsService) DebitMandatory(studentID uint, amount float64, sourceTy
 
 	stxn := &model.SavingsTransaction{
 		StudentSavingsID: savings.ID,
-		TransactionType:  "debit",
+		TransactionType:  "credit",
 		Amount:           amount,
 		NetAmount:        amount,
 		SourceType:       sourceType,
@@ -222,7 +222,7 @@ func (s *savingsService) DebitMandatory(studentID uint, amount float64, sourceTy
 		return err
 	}
 
-	if err := s.savingsRepo.DebitBalance(tx, savings.ID, amount); err != nil {
+	if err := s.savingsRepo.SubtractBalance(tx, savings.ID, amount); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errors.New("Saldo tabungan wajib tidak mencukupi")
 		}
@@ -251,5 +251,5 @@ func (s *savingsService) CreditGeneral(studentID uint, amount float64, sourceTyp
 		return err
 	}
 
-	return s.savingsRepo.CreditBalance(tx, savings.ID, amount)
+	return s.savingsRepo.AddBalance(tx, savings.ID, amount)
 }

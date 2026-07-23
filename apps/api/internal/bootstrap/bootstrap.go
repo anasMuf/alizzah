@@ -47,6 +47,7 @@ func NewEcho() *echo.Echo {
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
 	}))
 	e.Use(echoMiddleware.Recover())
+	e.Use(echoMiddleware.BodyLimit("10M"))
 	e.Use(middleware.MiddlewareLogging)
 
 	e.GET("/swagger/*", echoSwagger.WrapHandler)

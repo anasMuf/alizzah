@@ -84,45 +84,29 @@ func SeedSampleTransactions(db *gorm.DB) {
 	db.Find(&allExtracurriculars)
 
 	exByName := make(map[string]model.Extracurricular)
-	var pastaAllLevel []model.Extracurricular
 	for _, ex := range allExtracurriculars {
 		exByName[ex.Name] = ex
-		if ex.Type == "pasta" && ex.Levels == "" {
-			pastaAllLevel = append(pastaAllLevel, ex)
-		}
 	}
 
+	var totalSERecords int
 	rng := rand.New(rand.NewSource(42))
 	taStartDate := activeYear.StartDate
-
-	var totalSERecords int
 	for _, enr := range enrollments {
 		level := enr.ClassGroup.Level
 
-		// Wajib: Aslin untuk Intan & Berlian
+		// Wajib: Aslin untuk Intan & Berlian — mulai bulan Agustus (start_month=8)
 		if level == "intan" || level == "berlian" {
 			if ex, ok := exByName["Aslin (Asah Literasi Numerasi)"]; ok {
+				aslinStart := time.Date(taStartDate.Year(), 8, 1, 0, 0, 0, 0, time.UTC)
 				db.Create(&model.StudentExtracurricular{
 					StudentID: enr.StudentID, ExtracurricularID: ex.ID,
-					AcademicYearID: activeYear.ID, StartDate: taStartDate,
+					AcademicYearID: activeYear.ID, StartDate: aslinStart,
 				})
 				totalSERecords++
 			}
 		}
 
-		// Opsional: ~40% siswa ikut 1-2 pasta random (all-level, sesuai jenjang)
-		if rng.Float64() < 0.40 && len(pastaAllLevel) > 0 {
-			numPasta := 1 + rng.Intn(2)
-			perm := rng.Perm(len(pastaAllLevel))
-			for i := 0; i < numPasta && i < len(perm); i++ {
-				pasta := pastaAllLevel[perm[i]]
-				db.Create(&model.StudentExtracurricular{
-					StudentID: enr.StudentID, ExtracurricularID: pasta.ID,
-					AcademicYearID: activeYear.ID, StartDate: taStartDate,
-				})
-				totalSERecords++
-			}
-		}
+		// Opsional: pasta random TIDAK di-seed — enrollment opsional hanya via UI
 	}
 	log.Printf("  → %d student extracurricular enrollments", totalSERecords)
 

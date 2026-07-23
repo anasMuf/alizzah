@@ -110,6 +110,11 @@ func main() {
 		ON student_enrollments (student_id, academic_year_id)
 		WHERE status = 'active'`)
 
+	// Partial unique index: satu siswa hanya boleh punya satu enrollment pasta aktif per tahun ajaran
+	db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS uq_active_extracurricular_per_year
+		ON student_extracurriculars (student_id, extracurricular_id, academic_year_id)
+		WHERE end_date IS NULL`)
+
 	// Unique constraint: satu tanggal hanya boleh ada satu tutup buku
 	db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS uq_daily_closing_date
 			ON daily_closings (closing_date)`)
@@ -308,7 +313,7 @@ func main() {
 	enrollmentService := service.NewStudentEnrollmentService(db, enrollmentRepo, studentRepo, classGroupRepo, extracurricularRepo, seRepo, fcRepo, fcItemRepo, invoiceGenService, savingsService)
 	effectiveDayService := service.NewEffectiveDayService(effectiveDayRepo, classGroupRepo, invoiceGenService)
 	extracurricularService := service.NewExtracurricularService(db, extracurricularRepo, fcRepo, fcItemRepo)
-	seService := service.NewStudentExtracurricularService(seRepo, studentRepo, extracurricularRepo, ayRepo, invoiceGenService)
+	seService := service.NewStudentExtracurricularService(db, seRepo, studentRepo, extracurricularRepo, ayRepo, invoiceGenService)
 	eventService := service.NewStudentAcademicEventService(eventRepo, studentRepo)
 	daycareService := service.NewDaycareEnrollmentService(db, daycareRepo, studentRepo, ayRepo, daycareMonthlyAttRepo, invoiceGenService)
 

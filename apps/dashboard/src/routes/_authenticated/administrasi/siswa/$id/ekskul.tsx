@@ -162,11 +162,18 @@ function SiswaEkskulPage() {
 	const isMandatoryType = (type: string) =>
 		type === "calisan" || type === "ekskul";
 
-	const mandatoryItems = studentEkskuls.filter((se: any) =>
-		isMandatoryType(se.extracurricular?.type),
+	const isMandatoryPasta = (name: string) =>
+		name === "Aslin (Asah Literasi Numerasi)";
+
+	const mandatoryItems = studentEkskuls.filter(
+		(se: any) =>
+			isMandatoryType(se.extracurricular?.type) ||
+			isMandatoryPasta(se.extracurricular?.name),
 	);
 	const optionalItems = studentEkskuls.filter(
-		(se: any) => !isMandatoryType(se.extracurricular?.type),
+		(se: any) =>
+			!isMandatoryType(se.extracurricular?.type) &&
+			!isMandatoryPasta(se.extracurricular?.name),
 	);
 
 	const getEkskulTypeBadge = (type: string) => {
@@ -192,12 +199,15 @@ function SiswaEkskulPage() {
 		});
 	};
 
-	// Form dropdown: only show pasta (optional) items, exclude already-enrolled
+	// Form dropdown: only show pasta (optional) items, exclude already-enrolled + mandatory (Aslin)
 	const enrolledIds = studentEkskuls
 		.filter((se: any) => !se.end_date)
 		.map((se: any) => se.extracurricular?.id);
 	const availablePasta = allEkskuls.filter(
-		(e: any) => e.type === "pasta" && !enrolledIds.includes(e.id),
+		(e: any) =>
+			e.type === "pasta" &&
+			!enrolledIds.includes(e.id) &&
+			!isMandatoryPasta(e.name),
 	);
 
 	return (
@@ -213,8 +223,8 @@ function SiswaEkskulPage() {
 									Kegiatan Wajib
 								</h3>
 								<p className="mt-0.5 text-sm text-gray-500">
-									Calisan dan Ekskul yang otomatis terdaftar sesuai jenjang
-									siswa.
+									Aslin dan pasta wajib lainnya yang otomatis terdaftar sesuai
+									jenjang.
 								</p>
 							</div>
 						</div>

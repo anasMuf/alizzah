@@ -7,6 +7,7 @@ import (
 	"api/utility"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -20,15 +21,17 @@ type StudentExtracurricularService interface {
 }
 
 type studentExtracurricularService struct {
-	seRepo          repository.StudentExtracurricularRepository
-	studentRepo     repository.StudentRepository
-	exRepo          repository.ExtracurricularRepository
-	acRepo          repository.AcademicYearRepository
-	invoiceGen      InvoiceGenerateService
+	db          *gorm.DB
+	seRepo      repository.StudentExtracurricularRepository
+	studentRepo repository.StudentRepository
+	exRepo      repository.ExtracurricularRepository
+	acRepo      repository.AcademicYearRepository
+	invoiceGen  InvoiceGenerateService
 }
 
-func NewStudentExtracurricularService(seRepo repository.StudentExtracurricularRepository, studentRepo repository.StudentRepository, exRepo repository.ExtracurricularRepository, acRepo repository.AcademicYearRepository, invoiceGen InvoiceGenerateService) StudentExtracurricularService {
+func NewStudentExtracurricularService(db *gorm.DB, seRepo repository.StudentExtracurricularRepository, studentRepo repository.StudentRepository, exRepo repository.ExtracurricularRepository, acRepo repository.AcademicYearRepository, invoiceGen InvoiceGenerateService) StudentExtracurricularService {
 	return &studentExtracurricularService{
+		db:          db,
 		seRepo:      seRepo,
 		studentRepo: studentRepo,
 		exRepo:      exRepo,
@@ -79,7 +82,7 @@ func (s *studentExtracurricularService) Enroll(studentID uint, req dto.EnrollExt
 		return nil, errors.New("Siswa sudah terdaftar di ekstrakurikuler ini untuk tahun ajaran tersebut")
 	}
 
-	startDate, err := utility.ParseDate( req.StartDate)
+	startDate, err := utility.ParseDate(req.StartDate)
 	if err != nil {
 		return nil, errors.New("Format start_date tidak valid (YYYY-MM-DD)")
 	}
@@ -91,13 +94,27 @@ func (s *studentExtracurricularService) Enroll(studentID uint, req dto.EnrollExt
 		StartDate:         startDate,
 	}
 
-	if err := s.seRepo.Create(se); err != nil {
-		return nil, err
+	// 1. Buat enrollment dalam transaksi — unique constraint di DB bertindak
+	//    sebagai safety net terhadap concurrent request yang lolos AlreadyEnrolled.
+	txErr := s.db.Transaction(func(tx *gorm.DB) error {
+		if err := s.seRepo.WithTx(tx).Create(se); err != nil {
+			if strings.Contains(err.Error(), "duplicate key") || strings.Contains(err.Error(), "uq_active_extracurricular") {
+				return errors.New("Siswa sudah terdaftar di ekstrakurikuler ini untuk tahun ajaran tersebut")
+			}
+			return fmt.Errorf("gagal membuat enrollment: %w", err)
+		}
+		return nil
+	})
+	if txErr != nil {
+		return nil, txErr
 	}
 
-	// Tambahkan item tagihan pasta/calisan/ekskul ke semua invoice bulanan (dari start_date sampai akhir TA)
+	// 2. Generate item tagihan — dijalankan SETELAH commit agar record enrollment
+	//    sudah visible bagi repo non-transaksional di dalam AddExtracurricularToMonthlyRange.
 	if s.invoiceGen != nil {
-		go s.invoiceGen.AddExtracurricularToMonthlyRange(studentID, req.ExtracurricularID, req.AcademicYearID)
+		if err := s.invoiceGen.AddExtracurricularToMonthlyRange(studentID, req.ExtracurricularID, req.AcademicYearID); err != nil {
+			return nil, fmt.Errorf("enrollment berhasil, tapi gagal generate tagihan: %w", err)
+		}
 	}
 
 	savedSe, err := s.seRepo.FindByID(se.ID)
@@ -113,7 +130,7 @@ func (s *studentExtracurricularService) Update(studentID, seID uint, req dto.Upd
 		return nil, errors.New("Data pendaftaran ekstrakurikuler tidak ditemukan")
 	}
 
-	endDate, err := utility.ParseDate( req.EndDate)
+	endDate, err := utility.ParseDate(req.EndDate)
 	if err != nil {
 		return nil, errors.New("Format end_date tidak valid (YYYY-MM-DD)")
 	}
@@ -138,13 +155,15 @@ func (s *studentExtracurricularService) Unenroll(studentID, seID uint) error {
 
 	now := time.Now()
 	se.EndDate = &now
+
+	// Unenrollment harus selalu berhasil. Invoice cleanup bersifat best-effort —
+	// jika gagal, admin bisa menjalankan ulang sync endpoint.
 	if err := s.seRepo.Update(se); err != nil {
-		return err
+		return fmt.Errorf("gagal mencabut pendaftaran: %w", err)
 	}
 
-	// Hapus item tagihan ekskul dari semua invoice bulan ini ke depan yang belum dibayar
 	if s.invoiceGen != nil {
-		go s.invoiceGen.RemoveExtracurricularFromFutureInvoices(studentID, se.ExtracurricularID, se.AcademicYearID)
+		_ = s.invoiceGen.RemoveExtracurricularFromFutureInvoices(studentID, se.ExtracurricularID, se.AcademicYearID)
 	}
 
 	return nil

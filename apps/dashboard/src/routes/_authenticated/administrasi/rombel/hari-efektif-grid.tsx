@@ -114,7 +114,7 @@ function HariEfektifGridPage() {
 			const res = await customInstance(
 				`/v1/effective-days/grid?academic_year_id=${activeAy.id}`,
 			);
-			setData((res as any).data);
+			setData(((res as any)?.data as any)?.data);
 		} catch (e) {
 			console.error("Failed to load grid", e);
 		}

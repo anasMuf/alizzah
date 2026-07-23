@@ -12,6 +12,9 @@ func RequireRoles(roles ...string) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			claims := GetCurrentUser(c)
+			if claims == nil {
+				return echo.NewHTTPError(http.StatusUnauthorized, "Token tidak valid")
+			}
 			for _, role := range roles {
 				if claims.Role == role {
 					return next(c)

@@ -1,21 +1,25 @@
-import { useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import {
 	type postV1UsersResponse,
 	usePostV1Users,
 } from "#/api/endpoints/users/users";
 import { ApiError } from "#/api/mutator/custom-instance";
 import { Button, FormField, useToast } from "#/components/ui";
+import {
+	type RegisterFormData,
+	registerSchema,
+} from "../../../utils/validation";
 
 export function RegisterForm({ onSuccess }: { onSuccess: () => void }) {
 	const { addToast } = useToast();
-	const [formData, setFormData] = useState({
-		full_name: "",
-		username: "",
-		email: "",
-		password: "",
-		phone: "",
-		address: "",
-		role: "parent" as any,
+
+	const {
+		register,
+		handleSubmit,
+		formState: { errors },
+	} = useForm<RegisterFormData>({
+		resolver: zodResolver(registerSchema),
 	});
 
 	const registerMutation = usePostV1Users({
@@ -46,79 +50,63 @@ export function RegisterForm({ onSuccess }: { onSuccess: () => void }) {
 		},
 	});
 
-	const handleSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-		registerMutation.mutate({ data: formData });
-	};
-
-	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		setFormData({ ...formData, [e.target.name]: e.target.value });
+	const onSubmit = (data: RegisterFormData) => {
+		// role="parent" not in DtoCreateUserRequestRole enum but accepted by API for registration
+		registerMutation.mutate({
+			data: { ...data, role: "parent" } as any,
+		});
 	};
 
 	return (
-		<form onSubmit={handleSubmit} className="space-y-6">
+		<form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
 			<div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
 				<FormField
 					id="full_name"
-					name="full_name"
 					type="text"
 					label="Full Name"
-					onChange={handleChange}
-					required
-					maxLength={100}
-					minLength={3}
+					error={errors.full_name?.message}
+					{...register("full_name")}
 				/>
 				<FormField
 					id="username"
-					name="username"
 					type="text"
 					label="Username"
-					onChange={handleChange}
-					required
-					maxLength={50}
-					minLength={3}
+					error={errors.username?.message}
+					{...register("username")}
 				/>
 			</div>
 
 			<FormField
 				id="email"
-				name="email"
 				type="email"
 				label="Email address"
-				onChange={handleChange}
-				required
-				maxLength={100}
+				error={errors.email?.message}
+				{...register("email")}
 			/>
 
 			<div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
 				<FormField
 					id="phone"
-					name="phone"
 					type="tel"
 					label="Phone"
-					onChange={handleChange}
-					required
-					maxLength={15}
+					error={errors.phone?.message}
+					{...register("phone")}
 				/>
 				<FormField
 					id="address"
-					name="address"
 					type="text"
 					label="Address"
-					onChange={handleChange}
-					required
+					error={errors.address?.message}
+					{...register("address")}
 				/>
 			</div>
 
 			<FormField
 				id="password"
-				name="password"
 				type="password"
 				label="Password"
-				onChange={handleChange}
-				required
-				minLength={6}
-				maxLength={100}
+				error={errors.password?.message}
+				{...register("password")}
 			/>
 
 			<Button

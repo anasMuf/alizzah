@@ -9,6 +9,17 @@ export const loginSchema = z.object({
 
 export type LoginFormData = z.infer<typeof loginSchema>;
 
+export const registerSchema = z.object({
+	full_name: z.string().min(3, "Nama minimal 3 karakter").max(100),
+	username: z.string().min(3, "Username minimal 3 karakter").max(50),
+	email: z.string().email("Format email tidak valid").max(100),
+	password: z.string().min(6, "Password minimal 6 karakter").max(100),
+	phone: z.string().min(5, "Nomor telepon tidak valid").max(15),
+	address: z.string().min(1, "Alamat wajib diisi"),
+});
+
+export type RegisterFormData = z.infer<typeof registerSchema>;
+
 // ─── Payment ────────────────────────────────────────────────────────────
 
 export const paymentItemSchema = z.object({

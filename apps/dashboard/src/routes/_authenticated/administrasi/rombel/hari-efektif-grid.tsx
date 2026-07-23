@@ -9,6 +9,7 @@ import {
 	Pencil,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { customInstance } from "#/api/mutator/custom-instance";
 import { Button, useToast } from "#/components/ui";
 import { academicYearAtom } from "#/store/global";
 
@@ -17,9 +18,6 @@ export const Route = createFileRoute(
 )({
 	component: HariEfektifGridPage,
 });
-
-const API_URL = import.meta.env.VITE_API_URL || "";
-const TOKEN_KEY = "alizzah_token";
 
 const LEVELS = [
 	{ value: "mutiara", label: "Mutiara (KB)" },
@@ -63,14 +61,6 @@ type GridData = {
 	levels: LevelRow[];
 	class_groups: CGRow[];
 };
-
-function getAuthHeaders() {
-	const token = localStorage.getItem(TOKEN_KEY);
-	return {
-		"Content-Type": "application/json",
-		Authorization: `Bearer ${token}`,
-	};
-}
 
 function generateMonthsList(
 	startDate: string,
@@ -121,14 +111,10 @@ function HariEfektifGridPage() {
 		if (!activeAy?.id) return;
 		setLoading(true);
 		try {
-			const res = await fetch(
-				`${API_URL}/v1/effective-days/grid?academic_year_id=${activeAy.id}`,
-				{ headers: getAuthHeaders() },
+			const res = await customInstance(
+				`/v1/effective-days/grid?academic_year_id=${activeAy.id}`,
 			);
-			if (res.ok) {
-				const json = await res.json();
-				setData(json.data);
-			}
+			setData((res as any).data);
 		} catch (e) {
 			console.error("Failed to load grid", e);
 		}
@@ -246,42 +232,39 @@ function HariEfektifGridPage() {
 				data!.class_groups.find((cg) => cg.id === editing.cgId)!,
 				editing.month,
 			);
-			const cgRes = await fetch(
-				`${API_URL}/v1/class-groups/${editing.cgId}/effective-days`,
-				{
-					method: "POST",
-					headers: getAuthHeaders(),
-					body: JSON.stringify({
-						academic_year_id: activeAy.id,
-						month: editing.month,
-						year: editing.year,
-						total_days:
-							mode === "days"
-								? val
-								: (existing?.total_days ??
-									getLevelValue(
-										data!.class_groups.find((cg) => cg.id === editing.cgId)!
-											.level,
-										editing.month,
-									)?.total_days ??
-									0),
-						total_mondays:
-							mode === "mondays"
-								? val
-								: (existing?.total_mondays ??
-									getLevelValue(
-										data!.class_groups.find((cg) => cg.id === editing.cgId)!
-											.level,
-										editing.month,
-									)?.total_mondays ??
-									0),
-					}),
-				},
-			);
-			if (!cgRes.ok) {
-				const err = await cgRes
-					.json()
-					.catch(() => ({ message: "Gagal menyimpan" }));
+			try {
+				await customInstance(
+					`/v1/class-groups/${editing.cgId}/effective-days`,
+					{
+						method: "POST",
+						body: JSON.stringify({
+							academic_year_id: activeAy.id,
+							month: editing.month,
+							year: editing.year,
+							total_days:
+								mode === "days"
+									? val
+									: (existing?.total_days ??
+										getLevelValue(
+											data!.class_groups.find((cg) => cg.id === editing.cgId)!
+												.level,
+											editing.month,
+										)?.total_days ??
+										0),
+							total_mondays:
+								mode === "mondays"
+									? val
+									: (existing?.total_mondays ??
+										getLevelValue(
+											data!.class_groups.find((cg) => cg.id === editing.cgId)!
+												.level,
+											editing.month,
+										)?.total_mondays ??
+										0),
+						}),
+					},
+				);
+			} catch (err: any) {
 				addToast({
 					variant: "error",
 					title: "Gagal",
@@ -319,15 +302,13 @@ function HariEfektifGridPage() {
 			total_mondays: totalMondays,
 		};
 		if (resetMode) body.reset_mode = resetMode;
-		const res = await fetch(`${API_URL}/v1/levels/${level}/effective-days`, {
-			method: "PUT",
-			headers: getAuthHeaders(),
-			body: JSON.stringify(body),
-		});
-		if (!res.ok) {
-			const err = await res
-				.json()
-				.catch(() => ({ message: "Gagal menyimpan" }));
+		try {
+			await customInstance(`/v1/levels/${level}/effective-days`, {
+				method: "PUT",
+				body: JSON.stringify(body),
+			});
+			return true;
+		} catch (err: any) {
 			addToast({
 				variant: "error",
 				title: "Gagal",
@@ -335,7 +316,6 @@ function HariEfektifGridPage() {
 			});
 			return false;
 		}
-		return true;
 	};
 
 	const confirmLevelEdit = async () => {

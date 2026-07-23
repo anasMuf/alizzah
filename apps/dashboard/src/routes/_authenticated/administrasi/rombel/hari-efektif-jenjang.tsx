@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { Calendar, ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { customInstance } from "#/api/mutator/custom-instance";
 import { Button, useToast } from "#/components/ui";
 import { academicYearAtom } from "#/store/global";
 
@@ -11,9 +12,6 @@ export const Route = createFileRoute(
 )({
 	component: HariEfektifJenjangPage,
 });
-
-const API_URL = import.meta.env.VITE_API_URL || "";
-const TOKEN_KEY = "alizzah_token";
 
 const LEVELS = [
 	{ value: "mutiara", label: "Mutiara (KB)" },
@@ -69,25 +67,20 @@ function HariEfektifJenjangPage() {
 	const loadData = async () => {
 		if (!activeAy?.id) return;
 		setLoading(true);
-		const token = localStorage.getItem(TOKEN_KEY);
 		const newData: Record<string, Record<number, any>> = {};
 
 		for (const level of LEVELS) {
 			try {
-				const res = await fetch(
-					`${API_URL}/v1/levels/${level.value}/effective-days?academic_year_id=${activeAy.id}`,
-					{ headers: { Authorization: `Bearer ${token}` } },
+				const res: any = await customInstance(
+					`/v1/levels/${level.value}/effective-days?academic_year_id=${activeAy.id}`,
 				);
-				if (res.ok) {
-					const json = await res.json();
-					const items = json.data || [];
-					newData[level.value] = {};
-					for (const item of items) {
-						if (!newData[level.value][item.month]) {
-							newData[level.value][item.month] = {};
-						}
-						newData[level.value][item.month][item.year] = item;
+				const items = res.data?.data || res.data || [];
+				newData[level.value] = {};
+				for (const item of items) {
+					if (!newData[level.value][item.month]) {
+						newData[level.value][item.month] = {};
 					}
+					newData[level.value][item.month][item.year] = item;
 				}
 			} catch {}
 		}
@@ -109,7 +102,6 @@ function HariEfektifJenjangPage() {
 	const handleSave = async () => {
 		if (!editing) return;
 		const { level, month, year } = editing;
-		const token = localStorage.getItem(TOKEN_KEY);
 		const form = document.getElementById("ed-form") as HTMLFormElement;
 		const formData = new FormData(form);
 
@@ -122,15 +114,10 @@ function HariEfektifJenjangPage() {
 		};
 
 		try {
-			const res = await fetch(`${API_URL}/v1/levels/${level}/effective-days`, {
+			await customInstance(`/v1/levels/${level}/effective-days`, {
 				method: "PUT",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
-				},
 				body: JSON.stringify(body),
 			});
-			if (!res.ok) throw new Error("Gagal menyimpan");
 			setEditing(null);
 			loadData();
 			addToast({

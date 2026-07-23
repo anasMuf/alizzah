@@ -13,7 +13,7 @@ RUN npm install -g pnpm@10
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/api/package.json apps/api/package.json
 COPY apps/dashboard/package.json apps/dashboard/package.json
-RUN pnpm install --frozen-lockfile
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store pnpm install --frozen-lockfile
 
 # Sumber dashboard, lalu build
 COPY apps/dashboard apps/dashboard

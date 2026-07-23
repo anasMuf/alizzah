@@ -395,9 +395,9 @@ func main() {
 	// =====================
 	api := bootstrap.APIGroup(e)
 
-	// Rate limiting: 1 req/detik untuk login (anti brute-force)
+	// Rate limiting: 1 req/detik untuk login (anti brute-force), burst 3
 	auth := api.Group("/auth")
-	auth.POST("/login", authHandler.Login, middleware.RateLimiter(1, 5))
+	auth.POST("/login", authHandler.Login, middleware.RateLimiter(1, 3))
 
 	// Auth — protected
 	authProtected := api.Group("/auth", middleware.JWTAuth(tokenBlacklistRepo), middleware.RateLimiter(20, 40))

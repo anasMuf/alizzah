@@ -24,9 +24,10 @@ func SeedUsers(db *gorm.DB) {
 	// fallback "password123" untuk dev/lokal.
 	seedPassword := os.Getenv("SEED_ADMIN_PASSWORD")
 	if seedPassword == "" {
+		log.Println("⚠️  PERINGATAN: SEED_ADMIN_PASSWORD tidak diset, menggunakan fallback 'password123'. Pastikan env variable diset di production!")
 		seedPassword = "password123"
 	}
-	hash, err := bcrypt.GenerateFromPassword([]byte(seedPassword), bcrypt.DefaultCost)
+	hash, err := bcrypt.GenerateFromPassword([]byte(seedPassword), 12)
 	if err != nil {
 		log.Println("Gagal hash password seeder:", err)
 		return

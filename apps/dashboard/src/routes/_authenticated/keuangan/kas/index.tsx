@@ -88,7 +88,22 @@ function KasBerangkasOverviewPage() {
 	const isAmountValid = parsedAmount > 0 && parsedAmount <= cashBalance;
 
 	const handleTransferSubmit = () => {
-		if (!isAmountValid) return;
+		if (!parsedAmount || parsedAmount <= 0) {
+			addToast({
+				variant: "error",
+				title: "Validasi",
+				message: "Jumlah transfer harus lebih dari 0",
+			});
+			return;
+		}
+		if (parsedAmount > cashBalance) {
+			addToast({
+				variant: "error",
+				title: "Validasi",
+				message: "Jumlah transfer melebihi saldo kas",
+			});
+			return;
+		}
 
 		transferMutation.mutate(
 			{

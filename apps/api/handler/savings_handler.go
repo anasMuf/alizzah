@@ -73,8 +73,7 @@ func (h *SavingsHandler) GetTransactions(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: "ID siswa tidak valid"})
 	}
 
-	page, _ := strconv.Atoi(c.QueryParam("page"))
-	limit, _ := strconv.Atoi(c.QueryParam("limit"))
+	page, limit := utility.ParsePagination(c)
 
 	params := dto.SavingsTransactionQueryParams{
 		Type:      c.QueryParam("type"),

@@ -6,13 +6,15 @@ WORKDIR /src
 
 # Unduh dependency dulu agar layer ini ter-cache selama go.mod/go.sum tak berubah
 COPY go.mod go.sum ./
-RUN go mod download
+RUN --mount=type=cache,target=/go/pkg/mod go mod download
 
 # Salin sumber & build binari statis (tanpa CGO → image runtime bisa minimal).
 # Dua binary dari satu codebase (modular monolith multi-binary): school-api
 # (akademik+keuangan) dan koperasi-api. Lihat docs/architecture/adr-002.
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/api ./cmd/api \
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg/mod \
+    CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/api ./cmd/api \
  && CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/koperasi ./cmd/koperasi
 
 # ---- runtime ----

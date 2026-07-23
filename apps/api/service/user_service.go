@@ -44,13 +44,19 @@ func (s *userService) GetAll(params dto.UserQueryParams) ([]dto.UserResponse, *d
 		return nil, nil, err
 	}
 
+	// Batch-fetch modules untuk semua user dalam 1 query (hindari N+1)
+	userIDs := make([]uint, len(users))
+	for i, user := range users {
+		userIDs[i] = user.ID
+	}
+	modsMap, err := s.userModuleRepo.ListByUserIDs(userIDs)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	responses := make([]dto.UserResponse, len(users))
 	for i, user := range users {
-		mods, err := s.userModuleRepo.ListByUser(user.ID)
-		if err != nil {
-			return nil, nil, err
-		}
-		responses[i] = mapUserToResponse(user, mods)
+		responses[i] = mapUserToResponse(user, modsMap[user.ID])
 	}
 
 	meta := &dto.Meta{
@@ -86,8 +92,8 @@ func (s *userService) Create(req dto.CreateUserRequest) (*dto.UserResponse, erro
 		return nil, errors.New("Email sudah digunakan")
 	}
 
-	// Hash password
-	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	// Hash password with cost 12 (higher than DefaultCost=10 for better brute-force resistance)
+	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), 12)
 	if err != nil {
 		return nil, errors.New("Gagal memproses password")
 	}
@@ -135,7 +141,7 @@ func (s *userService) Update(id uint, req dto.UpdateUserRequest) (*dto.UserRespo
 
 	// Only update password if provided
 	if req.Password != "" {
-		hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+		hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), 12)
 		if err != nil {
 			return nil, errors.New("Gagal memproses password")
 		}

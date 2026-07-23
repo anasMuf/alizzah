@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { GraduationCap, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { useGetV1StudentsIdEnrollments } from "#/api/endpoints/student-enrollments/student-enrollments";
+import { customInstance } from "#/api/mutator/custom-instance";
 import { Badge, Button } from "#/components/ui";
 
 export const Route = createFileRoute(
@@ -20,8 +21,6 @@ const ENROLLMENT_TYPE_LABELS: Record<string, string> = {
 	class_change: "Pindah Rombel",
 	retained: "Tinggal Kelas",
 };
-
-const API_URL = import.meta.env.VITE_API_URL || "";
 
 function SiswaAkademikPage() {
 	const { id } = Route.useParams();
@@ -41,19 +40,10 @@ function SiswaAkademikPage() {
 	const handleChangeType = async (enrollmentId: number, newType: string) => {
 		setChangingType(enrollmentId);
 		try {
-			const token = localStorage.getItem("alizzah_token");
-			const res = await fetch(`${API_URL}/v1/enrollments/${enrollmentId}`, {
+			await customInstance(`/v1/enrollments/${enrollmentId}`, {
 				method: "PUT",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
-				},
 				body: JSON.stringify({ enrollment_type: newType }),
 			});
-			if (!res.ok) {
-				const err = await res.json();
-				throw new Error(err.message || "Gagal mengupdate tipe enrollment");
-			}
 			queryClient.invalidateQueries({
 				queryKey: [`/v1/students/${studentId}/enrollments`],
 			});
@@ -67,20 +57,9 @@ function SiswaAkademikPage() {
 	const handleRegenerate = async () => {
 		setRegenerating(true);
 		try {
-			const token = localStorage.getItem("alizzah_token");
-			const res = await fetch(
-				`${API_URL}/v1/students/${studentId}/regenerate-invoices`,
-				{
-					method: "POST",
-					headers: {
-						Authorization: `Bearer ${token}`,
-					},
-				},
-			);
-			if (!res.ok) {
-				const err = await res.json();
-				throw new Error(err.message || "Gagal meregenerate invoice");
-			}
+			await customInstance(`/v1/students/${studentId}/regenerate-invoices`, {
+				method: "POST",
+			});
 			setConfirmRegen(false);
 			alert("Invoice berhasil diregenerate. Silakan refresh halaman keuangan.");
 		} catch (err: any) {

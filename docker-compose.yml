@@ -21,6 +21,11 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    shm_size: 128m
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     networks: [appnet]
     # Tidak publish port — DB internal saja.
 
@@ -50,6 +55,10 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     networks: [appnet]
 
   # Binary koperasi (cmd/koperasi) — image sama, entrypoint berbeda.
@@ -80,6 +89,10 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     networks: [appnet]
 
   dashboard:
@@ -92,6 +105,10 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256M
     networks: [appnet]
 
 volumes:

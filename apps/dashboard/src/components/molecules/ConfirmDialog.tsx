@@ -1,4 +1,4 @@
-import { type ReactNode, useCallback, useEffect } from "react";
+import { type ReactNode, useCallback, useEffect, useRef } from "react";
 import { Button } from "../atoms/Button";
 
 interface ConfirmDialogProps {
@@ -24,6 +24,9 @@ export function ConfirmDialog({
 	onConfirm,
 	onCancel,
 }: ConfirmDialogProps) {
+	const dialogRef = useRef<HTMLDivElement>(null);
+	const previousFocus = useRef<HTMLElement | null>(null);
+
 	// Handle ESC key
 	const handleKeyDown = useCallback(
 		(e: KeyboardEvent) => {
@@ -36,15 +39,24 @@ export function ConfirmDialog({
 
 	useEffect(() => {
 		if (open) {
+			// Save current focus to restore on close
+			previousFocus.current = document.activeElement as HTMLElement | null;
 			document.addEventListener("keydown", handleKeyDown);
-			// Prevent body scroll when dialog is open
 			document.body.style.overflow = "hidden";
+			// Move focus into dialog
+			requestAnimationFrame(() => {
+				dialogRef.current?.focus();
+			});
+		} else {
+			// Restore focus to trigger element
+			previousFocus.current?.focus();
+			previousFocus.current = null;
 		}
 		return () => {
 			document.removeEventListener("keydown", handleKeyDown);
 			document.body.style.overflow = "";
 		};
-	}, [open, handleKeyDown]);
+	}, [open, handleKeyDown, onCancel]);
 
 	if (!open) return null;
 
@@ -64,7 +76,9 @@ export function ConfirmDialog({
 			<div className="flex min-h-full items-center justify-center p-4">
 				{/* Dialog panel */}
 				<div
-					className="relative w-full max-w-lg rounded-lg bg-white shadow-xl sm:w-md"
+					ref={dialogRef}
+					tabIndex={-1}
+					className="relative w-full max-w-lg rounded-lg bg-white shadow-xl sm:w-md outline-none"
 					onClick={(e) => e.stopPropagation()}
 				>
 					<div className="px-4 pt-5 pb-4 sm:p-6 sm:pb-4">

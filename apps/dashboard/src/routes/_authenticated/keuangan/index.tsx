@@ -219,8 +219,7 @@ function KeuanganOverviewPage() {
 								search={{} as any}
 								className="font-medium text-indigo-700 hover:text-indigo-900 flex items-center"
 							>
-								Lihat Tagihan Lihat Tagihan{" "}
-								<ChevronRight className="h-4 w-4 ml-1" />
+								Lihat Tagihan <ChevronRight className="h-4 w-4 ml-1" />
 							</Link>
 						</div>
 					</div>

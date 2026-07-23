@@ -1,5 +1,5 @@
 import { useAtom } from "jotai";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useGetV1AcademicYears } from "#/api/endpoints/academic-years/academic-years";
 import { academicYearAtom } from "../../store/global";
 
@@ -7,27 +7,25 @@ export function AcademicYearSelector() {
 	const [academicYear, setAcademicYear] = useAtom(academicYearAtom);
 
 	const { data: resp } = useGetV1AcademicYears();
-	const academicYears = ((resp?.data as any)?.data || []).map((ay: any) => ({
-		id: ay.id as number,
-		name: ay.name as string,
-		is_active: ay.is_active as boolean,
-		start_date: ay.start_date as string,
-	}));
+	const academicYears = useMemo(() => {
+		const items = ((resp?.data as any)?.data || []) as any[];
+		return items.map((ay: any) => ({
+			id: ay.id as number,
+			name: ay.name as string,
+			is_active: ay.is_active as boolean,
+			start_date: ay.start_date as string,
+		}));
+	}, [resp?.data]);
 
 	// Set default ke tahun ajaran aktif saat pertama kali data dimuat
+	const hasItems = academicYears.length > 0;
 	useEffect(() => {
-		if (!academicYear && academicYears.length > 0) {
+		if (!academicYear && hasItems) {
 			const active =
-				academicYears.find((ay: any) => ay.is_active) || academicYears[0];
+				academicYears.find((ay) => ay.is_active) || academicYears[0];
 			setAcademicYear(active);
 		}
-	}, [
-		academicYears.length,
-		academicYears.find,
-		academicYears[0],
-		academicYear,
-		setAcademicYear,
-	]);
+	}, [hasItems, academicYear, setAcademicYear]);
 
 	return (
 		<div>

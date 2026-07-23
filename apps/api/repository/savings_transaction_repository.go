@@ -10,6 +10,8 @@ import (
 
 type SavingsTransactionRepository interface {
 	FindByStudentSavingsID(savingsID uint, params dto.SavingsTransactionQueryParams) ([]model.SavingsTransaction, int64, error)
+	// FindBySavingsIDs batch version — single query for multiple savings accounts.
+	FindBySavingsIDs(savingsIDs []uint, params dto.SavingsTransactionQueryParams) ([]model.SavingsTransaction, error)
 	FindAllByStudentID(studentID uint, startDate, endDate time.Time) ([]model.SavingsTransaction, error)
 	SumCreditByStudentBefore(studentID uint, before time.Time) (float64, error)
 	SumDebitByStudentBefore(studentID uint, before time.Time) (float64, error)
@@ -56,6 +58,29 @@ func (r *savingsTransactionRepository) FindByStudentSavingsID(savingsID uint, pa
 
 	err := query.Order("created_at DESC").Offset((page - 1) * limit).Limit(limit).Find(&txns).Error
 	return txns, total, err
+}
+
+// FindBySavingsIDs batch-fetches transactions for multiple savings accounts.
+func (r *savingsTransactionRepository) FindBySavingsIDs(savingsIDs []uint, params dto.SavingsTransactionQueryParams) ([]model.SavingsTransaction, error) {
+	if len(savingsIDs) == 0 {
+		return nil, nil
+	}
+	var txns []model.SavingsTransaction
+	query := r.db.Model(&model.SavingsTransaction{}).Where("student_savings_id IN ?", savingsIDs)
+
+	if params.StartDate != "" {
+		if d, err := time.Parse("2006-01-02", params.StartDate); err == nil {
+			query = query.Where("created_at >= ?", d)
+		}
+	}
+	if params.EndDate != "" {
+		if d, err := time.Parse("2006-01-02", params.EndDate); err == nil {
+			query = query.Where("created_at <= ?", d.Add(24*time.Hour))
+		}
+	}
+
+	err := query.Order("created_at DESC").Find(&txns).Error
+	return txns, err
 }
 
 func (r *savingsTransactionRepository) FindAllByStudentID(studentID uint, startDate, endDate time.Time) ([]model.SavingsTransaction, error) {

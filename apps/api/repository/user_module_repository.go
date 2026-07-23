@@ -10,6 +10,8 @@ import (
 type UserModuleRepository interface {
 	// ListByUser mengembalikan daftar modul yang di-grant ke user (urut a-z).
 	ListByUser(userID uint) ([]string, error)
+	// ListByUserIDs batch version — returns map[userID][]modules.
+	ListByUserIDs(userIDs []uint) (map[uint][]string, error)
 	// ReplaceForUser mengganti seluruh grant user dengan set baru (delete-then-insert).
 	ReplaceForUser(userID uint, modules []string) error
 	// HasAnyModule = true bila user punya minimal satu dari modules yang diminta.
@@ -31,6 +33,30 @@ func (r *userModuleRepository) ListByUser(userID uint) ([]string, error) {
 		Order("module ASC").
 		Pluck("module", &modules).Error
 	return modules, err
+}
+
+// ListByUserIDs batch-fetches modules for multiple users in a single query.
+func (r *userModuleRepository) ListByUserIDs(userIDs []uint) (map[uint][]string, error) {
+	if len(userIDs) == 0 {
+		return map[uint][]string{}, nil
+	}
+	type row struct {
+		UserID uint   `gorm:"column:user_id"`
+		Module string `gorm:"column:module"`
+	}
+	var rows []row
+	err := r.db.Model(&model.UserModule{}).
+		Where("user_id IN ?", userIDs).
+		Order("module ASC").
+		Find(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[uint][]string, len(userIDs))
+	for _, r := range rows {
+		result[r.UserID] = append(result[r.UserID], r.Module)
+	}
+	return result, nil
 }
 
 func (r *userModuleRepository) ReplaceForUser(userID uint, modules []string) error {

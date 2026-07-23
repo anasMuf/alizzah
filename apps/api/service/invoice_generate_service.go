@@ -749,10 +749,17 @@ func (s *invoiceGenerateService) AddExtracurricularToMonthlyRange(studentID, ext
 		return nil
 	}
 
+	// Get student's level for per-level fee item filtering
+	level := ""
+	enr, _ := s.enrollmentRepo.FindActiveByStudentID(studentID)
+	if enr != nil {
+		level = enr.ClassGroup.Level
+	}
+
 	months := utility.MonthRangeFromDate(se.StartDate, ay.EndDate)
 
 	for _, m := range months {
-		if err := s.addExtracurricularItemToMonthly(studentID, academicYearID, m.Month, m.Year, feeItems); err != nil {
+		if err := s.addExtracurricularItemToMonthly(studentID, academicYearID, m.Month, m.Year, level, feeItems); err != nil {
 			return err
 		}
 	}
@@ -760,23 +767,33 @@ func (s *invoiceGenerateService) AddExtracurricularToMonthlyRange(studentID, ext
 	return nil
 }
 
-func (s *invoiceGenerateService) addExtracurricularItemToMonthly(studentID, academicYearID, month, year uint, feeItems []model.FeeConfigItem) error {
+func (s *invoiceGenerateService) addExtracurricularItemToMonthly(studentID, academicYearID, month, year uint, level string, feeItems []model.FeeConfigItem) error {
 	invoice, err := s.invoiceRepo.FindMonthlyByStudent(studentID, month, year)
 	if err != nil {
-		return nil // no monthly invoice for this month yet, skip
+		return fmt.Errorf("monthly invoice not found for student %d month %d/%d", studentID, month, year)
 	}
 
-	// Check idempotency: if any of these fee items already exist on this invoice, skip
+	// Check idempotency: skip fee items that already exist on this invoice.
+	// Use a set keyed by name+category + append after each create so that
+	// fee items with identical name (per-level variants) don't duplicate.
 	existingItems, _ := s.invoiceItemRepo.FindByInvoiceID(invoice.ID)
+	existingKeys := make(map[string]bool)
+	for _, existing := range existingItems {
+		existingKeys[existing.Name+"|"+existing.Category] = true
+	}
 	for _, feeItem := range feeItems {
-		alreadyExists := false
-		for _, existing := range existingItems {
-			if existing.Name == feeItem.Name && existing.Category == feeItem.Category {
-				alreadyExists = true
-				break
-			}
+		key := feeItem.Name + "|" + feeItem.Category
+		if existingKeys[key] {
+			continue
 		}
-		if alreadyExists {
+
+		// Skip jika level fee item tidak cocok dengan level siswa
+		if level != "" && feeItem.Level != "all" && feeItem.Level != level {
+			continue
+		}
+
+		// Skip jika item punya start_month dan bulan ini belum mencapai start_month
+		if feeItem.StartMonth != nil && month < *feeItem.StartMonth {
 			continue
 		}
 
@@ -790,6 +807,7 @@ func (s *invoiceGenerateService) addExtracurricularItemToMonthly(studentID, acad
 		if err := s.invoiceItemRepo.Create(item); err != nil {
 			return err
 		}
+		existingKeys[key] = true // prevent subsequent fee items with same name from duplicating
 	}
 
 	return s.recalculateInvoiceTotal(invoice.ID)
@@ -1563,18 +1581,18 @@ func (s *invoiceGenerateService) AddFacilityToMonthlyRange(studentID, facilityID
 		}
 
 		existingItems, _ := s.invoiceItemRepo.FindByInvoiceID(invoice.ID)
-		for _, feeItem := range feeItems {
-			alreadyExists := false
-			for _, existing := range existingItems {
-				if existing.Category == "facility" && strings.Contains(existing.Name, facility.Name) {
-					alreadyExists = true
-					break
-				}
+		facilityExists := false
+		for _, existing := range existingItems {
+			if existing.Category == "facility" && strings.Contains(existing.Name, facility.Name) {
+				facilityExists = true
+				break
 			}
-			if alreadyExists {
-				continue
-			}
+		}
+		if facilityExists {
+			continue
+		}
 
+		for _, feeItem := range feeItems {
 			amount := feeItem.Amount
 			itemName := feeItem.Name
 			var qty *uint

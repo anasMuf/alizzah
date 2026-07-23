@@ -2,10 +2,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { getGetV1ExtracurricularsQueryKey } from "#/api/endpoints/extracurriculars/extracurriculars";
 import type { DtoExtracurricularResponse } from "#/api/model";
+import { customInstance } from "#/api/mutator/custom-instance";
 import { Button, FormField, SlideOver, useToast } from "#/components/ui";
-
-const API_URL = import.meta.env.VITE_API_URL || "";
-const TOKEN_KEY = "alizzah_token";
 
 const LEVELS = [
 	{ value: "mutiara", label: "Mutiara (KB)" },
@@ -51,27 +49,18 @@ export function EkskulForm({ isOpen, onClose, initialData }: EkskulFormProps) {
 		e.preventDefault();
 		setSaving(true);
 
-		const token = localStorage.getItem(TOKEN_KEY);
 		const levelsStr = selectedLevels.sort().join(",");
 
 		try {
 			const method = isEditing ? "PUT" : "POST";
 			const url = isEditing
-				? `${API_URL}/v1/extracurriculars/${initialData!.id}`
-				: `${API_URL}/v1/extracurriculars`;
+				? `/v1/extracurriculars/${initialData!.id}`
+				: "/v1/extracurriculars";
 
-			const res = await fetch(url, {
+			await customInstance(url, {
 				method,
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
-				},
 				body: JSON.stringify({ name, type: "pasta", levels: levelsStr }),
 			});
-			if (!res.ok) {
-				const err = await res.json();
-				throw new Error(err.message || "Gagal menyimpan");
-			}
 
 			addToast({
 				variant: "success",

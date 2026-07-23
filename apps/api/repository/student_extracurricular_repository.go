@@ -12,6 +12,7 @@ type StudentExtracurricularRepository interface {
 	FindByID(id uint) (*model.StudentExtracurricular, error)
 	FindActiveByStudentID(studentID, academicYearID uint) ([]model.StudentExtracurricular, error)
 	FindActiveByStudentAndExtracurricular(studentID, extracurricularID, academicYearID uint) (*model.StudentExtracurricular, error)
+	FindActiveByExtracurricularID(extracurricularID, academicYearID uint) ([]model.StudentExtracurricular, error)
 	FindAllActiveByAcademicYear(academicYearID uint) ([]model.StudentExtracurricular, error)
 	Create(se *model.StudentExtracurricular) error
 	Update(se *model.StudentExtracurricular) error
@@ -68,6 +69,15 @@ func (r *studentExtracurricularRepository) FindActiveByStudentAndExtracurricular
 		return nil, err
 	}
 	return &se, nil
+}
+
+func (r *studentExtracurricularRepository) FindActiveByExtracurricularID(extracurricularID, academicYearID uint) ([]model.StudentExtracurricular, error) {
+	var ses []model.StudentExtracurricular
+	err := r.db.Preload("Student").
+		Where("extracurricular_id = ? AND academic_year_id = ? AND end_date IS NULL", extracurricularID, academicYearID).
+		Order("start_date DESC").
+		Find(&ses).Error
+	return ses, err
 }
 
 func (r *studentExtracurricularRepository) FindAllActiveByAcademicYear(academicYearID uint) ([]model.StudentExtracurricular, error) {

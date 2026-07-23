@@ -248,6 +248,97 @@ func (h *StudentExtracurricularHandler) Unenroll(c echo.Context) error {
 	})
 }
 
+// GetStudentsByExtracurricular godoc
+// @Summary      Get students in an extracurricular
+// @Description  Get list of students enrolled in a specific extracurricular
+// @Tags         student-extracurriculars
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id                path   int  true   "Extracurricular ID"
+// @Param        academic_year_id  query  int  true   "Academic Year ID"
+// @Success      200  {object}  dto.SuccessResponse{data=dto.ExtracurricularExportItem}
+// @Failure      400  {object}  dto.ErrorResponse
+// @Failure      401  {object}  dto.ErrorResponse
+// @Failure      403  {object}  dto.ErrorResponse
+// @Failure      404  {object}  dto.ErrorResponse
+// @Failure      500  {object}  dto.ErrorResponse
+// @Router       /v1/extracurriculars/{id}/students [get]
+func (h *StudentExtracurricularHandler) GetStudentsByExtracurricular(c echo.Context) error {
+	exID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status:  http.StatusBadRequest,
+			Code:    "BAD_REQUEST",
+			Message: "ID ekstrakurikuler tidak valid",
+		})
+	}
+
+	ayID, err := strconv.Atoi(c.QueryParam("academic_year_id"))
+	if err != nil || ayID <= 0 {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status:  http.StatusBadRequest,
+			Code:    "BAD_REQUEST",
+			Message: "academic_year_id wajib diisi",
+		})
+	}
+
+	item, err := h.seService.GetStudentsByExtracurricular(uint(exID), uint(ayID))
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{
+			Status:  status,
+			Code:    code,
+			Message: err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "Berhasil mengambil data siswa",
+		Data:    item,
+	})
+}
+
+// Export godoc
+// @Summary      Export extracurriculars with students
+// @Description  Get all extracurriculars with their enrolled students for Excel export
+// @Tags         student-extracurriculars
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        academic_year_id  query   int  true   "Academic Year ID"
+// @Success      200  {object}  dto.SuccessResponse{data=[]dto.ExtracurricularExportItem}
+// @Failure      400  {object}  dto.ErrorResponse
+// @Failure      401  {object}  dto.ErrorResponse
+// @Failure      403  {object}  dto.ErrorResponse
+// @Failure      500  {object}  dto.ErrorResponse
+// @Router       /v1/extracurriculars/export [get]
+func (h *StudentExtracurricularHandler) Export(c echo.Context) error {
+	ayID, err := strconv.Atoi(c.QueryParam("academic_year_id"))
+	if err != nil || ayID <= 0 {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status:  http.StatusBadRequest,
+			Code:    "BAD_REQUEST",
+			Message: "academic_year_id wajib diisi",
+		})
+	}
+
+	items, err := h.seService.ExportByAcademicYear(uint(ayID))
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{
+			Status:  status,
+			Code:    code,
+			Message: err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "Berhasil mengambil data export",
+		Data:    items,
+	})
+}
+
 // SyncInvoices godoc
 // @Summary      Sync extracurricular monthly invoices
 // @Description  Generate missing monthly invoice items for all active extracurricular enrollments

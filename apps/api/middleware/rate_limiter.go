@@ -32,30 +32,20 @@ func RateLimiter(rps float64, burst int) echo.MiddlewareFunc {
 	)
 
 	// Background cleanup goroutine — evicts clients idle longer than maxIdle.
-	stopCleanup := make(chan struct{})
 	go func() {
 		ticker := time.NewTicker(rateLimiterCleanupInterval)
 		defer ticker.Stop()
-		for {
-			select {
-			case <-ticker.C:
-				mu.Lock()
-				cutoff := time.Now().Add(-rateLimiterMaxIdle)
-				for ip, c := range clients {
-					if c.lastSeen.Before(cutoff) {
-						delete(clients, ip)
-					}
+		for range ticker.C {
+			mu.Lock()
+			cutoff := time.Now().Add(-rateLimiterMaxIdle)
+			for ip, c := range clients {
+				if c.lastSeen.Before(cutoff) {
+					delete(clients, ip)
 				}
-				mu.Unlock()
-			case <-stopCleanup:
-				return
 			}
+			mu.Unlock()
 		}
 	}()
-
-	// Ensure the cleanup goroutine is stoppable (not strictly necessary for
-	// long-running servers, but good hygiene for tests).
-	_ = stopCleanup
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {

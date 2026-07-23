@@ -49,13 +49,18 @@ func JWTAuth(blacklistRepo repository.TokenBlacklistRepository) echo.MiddlewareF
 			// Cek blacklist sebelum parse JWT (lebih cepat tolak token yang sudah logout)
 			if blacklistRepo != nil {
 				tokenHash := HashToken(tokenString)
-				if blacklisted, _ := blacklistRepo.Exists(tokenHash); blacklisted {
+				blacklisted, err := blacklistRepo.Exists(tokenHash)
+				if err != nil {
+					c.Logger().Errorf("gagal cek token blacklist: %v", err)
+					return echo.NewHTTPError(http.StatusInternalServerError, "Gagal verifikasi token")
+				}
+				if blacklisted {
 					return echo.NewHTTPError(http.StatusUnauthorized, "Token sudah tidak berlaku (logout)")
 				}
 			}
 
 			token, err := jwt.ParseWithClaims(tokenString, &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
-				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				if token.Method.Alg() != "HS256" {
 					return nil, echo.NewHTTPError(http.StatusUnauthorized, "Invalid signing method")
 				}
 				return getJWTSecret(), nil
@@ -79,14 +84,30 @@ func JWTAuth(blacklistRepo repository.TokenBlacklistRepository) echo.MiddlewareF
 }
 
 // GetCurrentUser extracts JWTClaims from the Echo context.
+// Returns nil if context has no valid JWT token (middleware not yet applied).
 func GetCurrentUser(c echo.Context) *JWTClaims {
-	token := c.Get("user").(*jwt.Token)
-	return token.Claims.(*JWTClaims)
+	userVal := c.Get("user")
+	if userVal == nil {
+		return nil
+	}
+	token, ok := userVal.(*jwt.Token)
+	if !ok {
+		return nil
+	}
+	claims, ok := token.Claims.(*JWTClaims)
+	if !ok {
+		return nil
+	}
+	return claims
 }
 
 // GetCurrentUserID extracts the user ID from the Echo context.
+// Returns 0 if context has no valid JWT token.
 func GetCurrentUserID(c echo.Context) uint {
 	claims := GetCurrentUser(c)
+	if claims == nil {
+		return 0
+	}
 	return claims.UserID
 }
 

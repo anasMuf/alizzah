@@ -39,6 +39,9 @@ func (g *ModuleGuard) RequireModule(modules ...string) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			claims := GetCurrentUser(c)
+			if claims == nil {
+				return echo.NewHTTPError(http.StatusUnauthorized, "Token tidak valid")
+			}
 			if claims.Role == RoleSuperadmin {
 				return next(c)
 			}

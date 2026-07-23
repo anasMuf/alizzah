@@ -273,9 +273,13 @@ func SeedSampleTransactions(db *gorm.DB) {
 				Notes:       infaqNotes,
 			})
 
-			// Item wajib otomatis (is_mandatory=true di fee config): Calisan, Aslin, dll
+			// Item wajib otomatis (is_mandatory=true di fee config): Aslin, dll
 			mandatoryExtras := findMandatoryFeeItems(level, enr.Student.Gender)
 			for _, mi := range mandatoryExtras {
+				// Skip jika item punya start_month dan bulan ini belum mencapai start_month
+				if mi.StartMonth != nil && tm.Month < *mi.StartMonth {
+					continue
+				}
 				totalAmount += mi.Amount
 				items = append(items, model.InvoiceItem{
 					Name:        mi.Name,

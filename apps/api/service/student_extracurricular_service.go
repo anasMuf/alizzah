@@ -18,25 +18,29 @@ type StudentExtracurricularService interface {
 	Enroll(studentID uint, req dto.EnrollExtracurricularRequest) (*dto.StudentExtracurricularResponse, error)
 	Update(studentID, seID uint, req dto.UpdateStudentExtracurricularRequest) (*dto.StudentExtracurricularResponse, error)
 	Unenroll(studentID, seID uint) error
+	ExportByAcademicYear(academicYearID uint) ([]dto.ExtracurricularExportItem, error)
+	GetStudentsByExtracurricular(extracurricularID, academicYearID uint) (*dto.ExtracurricularExportItem, error)
 }
 
 type studentExtracurricularService struct {
-	db          *gorm.DB
-	seRepo      repository.StudentExtracurricularRepository
-	studentRepo repository.StudentRepository
-	exRepo      repository.ExtracurricularRepository
-	acRepo      repository.AcademicYearRepository
-	invoiceGen  InvoiceGenerateService
+	db             *gorm.DB
+	seRepo         repository.StudentExtracurricularRepository
+	studentRepo    repository.StudentRepository
+	exRepo         repository.ExtracurricularRepository
+	acRepo         repository.AcademicYearRepository
+	enrollmentRepo repository.StudentEnrollmentRepository
+	invoiceGen     InvoiceGenerateService
 }
 
-func NewStudentExtracurricularService(db *gorm.DB, seRepo repository.StudentExtracurricularRepository, studentRepo repository.StudentRepository, exRepo repository.ExtracurricularRepository, acRepo repository.AcademicYearRepository, invoiceGen InvoiceGenerateService) StudentExtracurricularService {
+func NewStudentExtracurricularService(db *gorm.DB, seRepo repository.StudentExtracurricularRepository, studentRepo repository.StudentRepository, exRepo repository.ExtracurricularRepository, acRepo repository.AcademicYearRepository, enrollmentRepo repository.StudentEnrollmentRepository, invoiceGen InvoiceGenerateService) StudentExtracurricularService {
 	return &studentExtracurricularService{
-		db:          db,
-		seRepo:      seRepo,
-		studentRepo: studentRepo,
-		exRepo:      exRepo,
-		acRepo:      acRepo,
-		invoiceGen:  invoiceGen,
+		db:             db,
+		seRepo:         seRepo,
+		studentRepo:    studentRepo,
+		exRepo:         exRepo,
+		acRepo:         acRepo,
+		enrollmentRepo: enrollmentRepo,
+		invoiceGen:     invoiceGen,
 	}
 }
 
@@ -167,6 +171,123 @@ func (s *studentExtracurricularService) Unenroll(studentID, seID uint) error {
 	}
 
 	return nil
+}
+
+// GetStudentsByExtracurricular returns one extracurricular with its enrolled students.
+func (s *studentExtracurricularService) GetStudentsByExtracurricular(extracurricularID, academicYearID uint) (*dto.ExtracurricularExportItem, error) {
+	ex, err := s.exRepo.FindByID(extracurricularID)
+	if err != nil {
+		return nil, errors.New("Ekstrakurikuler tidak ditemukan")
+	}
+
+	ses, err := s.seRepo.FindActiveByExtracurricularID(extracurricularID, academicYearID)
+	if err != nil {
+		return nil, fmt.Errorf("gagal mengambil data siswa: %w", err)
+	}
+
+	// Get class group lookup
+	enrollments, err := s.enrollmentRepo.FindAllActiveByAcademicYear(academicYearID)
+	if err != nil {
+		return nil, fmt.Errorf("gagal mengambil data rombel: %w", err)
+	}
+	classGroupByStudent := make(map[uint]string)
+	classGroupLevelByStudent := make(map[uint]string)
+	for _, enr := range enrollments {
+		classGroupByStudent[enr.StudentID] = enr.ClassGroup.Name
+		classGroupLevelByStudent[enr.StudentID] = enr.ClassGroup.Level
+	}
+
+	students := make([]dto.ExtracurricularExportStudent, 0, len(ses))
+	for _, se := range ses {
+		bd := ""
+		if !se.Student.BirthDate.IsZero() {
+			bd = se.Student.BirthDate.Format("2006-01-02")
+		}
+		students = append(students, dto.ExtracurricularExportStudent{
+			ID:              se.Student.ID,
+			FullName:        se.Student.FullName,
+			Gender:          se.Student.Gender,
+			BirthPlace:      se.Student.BirthPlace,
+			BirthDate:       bd,
+			Status:          se.Student.Status,
+			ClassGroupName:  classGroupByStudent[se.StudentID],
+			ClassGroupLevel: classGroupLevelByStudent[se.StudentID],
+		})
+	}
+
+	return &dto.ExtracurricularExportItem{
+		ExtracurricularID:   ex.ID,
+		ExtracurricularName: ex.Name,
+		Students:            students,
+	}, nil
+}
+
+// ExportByAcademicYear returns all extracurriculars with their enrolled students
+// for the given academic year. Used by the Excel export feature.
+func (s *studentExtracurricularService) ExportByAcademicYear(academicYearID uint) ([]dto.ExtracurricularExportItem, error) {
+	// 1. Get all active SE records (preloads Student + Extracurricular)
+	ses, err := s.seRepo.FindAllActiveByAcademicYear(academicYearID)
+	if err != nil {
+		return nil, fmt.Errorf("gagal mengambil data ekskul: %w", err)
+	}
+
+	// 2. Get all active enrollments for class group lookup
+	enrollments, err := s.enrollmentRepo.FindAllActiveByAcademicYear(academicYearID)
+	if err != nil {
+		return nil, fmt.Errorf("gagal mengambil data rombel: %w", err)
+	}
+	classGroupByStudent := make(map[uint]string)
+	classGroupLevelByStudent := make(map[uint]string)
+	for _, enr := range enrollments {
+		classGroupByStudent[enr.StudentID] = enr.ClassGroup.Name
+		classGroupLevelByStudent[enr.StudentID] = enr.ClassGroup.Level
+	}
+
+	// 3. Group by extracurricular
+	byEx := make(map[uint][]dto.ExtracurricularExportStudent)
+	exNames := make(map[uint]string)
+
+	for _, se := range ses {
+		exNames[se.ExtracurricularID] = se.Extracurricular.Name
+		bd := ""
+		if !se.Student.BirthDate.IsZero() {
+			bd = se.Student.BirthDate.Format("2006-01-02")
+		}
+		byEx[se.ExtracurricularID] = append(byEx[se.ExtracurricularID], dto.ExtracurricularExportStudent{
+			ID:              se.Student.ID,
+			FullName:        se.Student.FullName,
+			Gender:          se.Student.Gender,
+			BirthPlace:      se.Student.BirthPlace,
+			BirthDate:       bd,
+			Status:          se.Student.Status,
+			ClassGroupName:  classGroupByStudent[se.StudentID],
+			ClassGroupLevel: classGroupLevelByStudent[se.StudentID],
+		})
+	}
+
+	// 4. Build response sorted by extracurricular name
+	exIDs := make([]uint, 0, len(byEx))
+	for id := range byEx {
+		exIDs = append(exIDs, id)
+	}
+	for i := 0; i < len(exIDs); i++ {
+		for j := i + 1; j < len(exIDs); j++ {
+			if strings.ToLower(exNames[exIDs[i]]) > strings.ToLower(exNames[exIDs[j]]) {
+				exIDs[i], exIDs[j] = exIDs[j], exIDs[i]
+			}
+		}
+	}
+
+	result := make([]dto.ExtracurricularExportItem, 0, len(exIDs))
+	for _, id := range exIDs {
+		result = append(result, dto.ExtracurricularExportItem{
+			ExtracurricularID:   id,
+			ExtracurricularName: exNames[id],
+			Students:            byEx[id],
+		})
+	}
+
+	return result, nil
 }
 
 func mapStudentExtracurricularToResponse(se model.StudentExtracurricular) *dto.StudentExtracurricularResponse {

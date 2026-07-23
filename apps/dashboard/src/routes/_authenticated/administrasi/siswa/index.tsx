@@ -2,7 +2,9 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import {
+	Download,
 	GraduationCap,
+	Loader2,
 	Plus,
 	Search,
 	Upload,
@@ -22,6 +24,13 @@ import {
 	SlideOver,
 	useToast,
 } from "#/components/ui";
+import {
+	downloadExcel,
+	type ExcelSheet,
+	formatDateId,
+	formatGender,
+	formatStatus,
+} from "#/utils/excel";
 import { academicYearAtom } from "../../../../store/global";
 
 export const Route = createFileRoute("/_authenticated/administrasi/siswa/")({
@@ -58,6 +67,8 @@ function SiswaIndexPage() {
 	const searchInput = searchParams.search ?? "";
 	const statusFilter = searchParams.status ?? "";
 	const classGroupFilter = searchParams.class_group_id;
+
+	const [exporting, setExporting] = useState(false);
 
 	const [debouncedSearch, setDebouncedSearch] = useState(searchInput);
 	useEffect(() => {
@@ -252,6 +263,126 @@ function SiswaIndexPage() {
 
 	const isPending = enrollMutation.isPending || batchMutation.isPending;
 
+	// ─── Excel Export ──────────────────────────────────────────────────
+	const handleExportExcel = async () => {
+		setExporting(true);
+		try {
+			// Fetch all students (large limit to get everything)
+			const allRes = await customInstance<any>(
+				`/v1/students?limit=10000&academic_year_id=${activeAy?.id ?? ""}&search=${encodeURIComponent(debouncedSearch)}&status=${encodeURIComponent(statusFilter)}${classGroupFilter ? `&class_group_id=${classGroupFilter === "__none__" ? "" : classGroupFilter}&no_class_group=${classGroupFilter === "__none__"}` : ""}`,
+			);
+			const allStudents: any[] = (allRes as any).data?.data ?? [];
+
+			// Also fetch class groups for sheet names
+			const cgRes = await customInstance<any>(
+				`/v1/class-groups?academic_year_id=${activeAy?.id ?? ""}&limit=100`,
+			);
+			const allClassGroups: any[] = (cgRes as any).data?.data ?? [];
+
+			// Build class group lookup
+			const cgMap = new Map<number, string>();
+			for (const cg of allClassGroups) {
+				cgMap.set(cg.id, cg.name);
+			}
+
+			// Common columns for all sheets
+			const columns = [
+				{ header: "No", key: "_no", width: 5 },
+				{ header: "Nama Lengkap", key: "full_name", width: 30 },
+				{
+					header: "Jenis Kelamin",
+					key: "gender",
+					width: 15,
+					format: formatGender,
+				},
+				{ header: "Tempat Lahir", key: "birth_place", width: 20 },
+				{
+					header: "Tanggal Lahir",
+					key: "birth_date",
+					width: 20,
+					format: formatDateId,
+				},
+				{ header: "Agama", key: "religion", width: 15 },
+				{ header: "Rombel", key: "class_group_name", width: 20 },
+				{ header: "Status", key: "status", width: 15, format: formatStatus },
+			];
+
+			// Enrich students with class group name
+			const enriched = allStudents.map((s: any) => ({
+				...s,
+				class_group_name:
+					s.active_enrollment?.class_group?.name ?? "Belum ada rombel",
+				class_group_id: s.active_enrollment?.class_group?.id ?? null,
+			}));
+
+			// Build sheets
+			const sheets: ExcelSheet[] = [];
+
+			// Sheet 1: All students
+			sheets.push({
+				name: "Semua Siswa",
+				columns,
+				data: enriched.map((s: any, i: number) => ({ ...s, _no: i + 1 })),
+			});
+
+			// Group by class group (rombel)
+			const byClassGroup = new Map<number | string, any[]>();
+			const unassigned: any[] = [];
+
+			for (const s of enriched) {
+				const cgId = s.class_group_id;
+				if (cgId && cgMap.has(cgId)) {
+					if (!byClassGroup.has(cgId)) byClassGroup.set(cgId, []);
+					byClassGroup.get(cgId)!.push(s);
+				} else {
+					unassigned.push(s);
+				}
+			}
+
+			// One sheet per class group — urut berdasarkan nama (TK A, TK B, 1A, 1B, ...)
+			const sortedClassGroups = [...byClassGroup.entries()].sort((a, b) => {
+				const nameA = cgMap.get(a[0] as number) ?? "";
+				const nameB = cgMap.get(b[0] as number) ?? "";
+				return nameA.localeCompare(nameB, "id", { numeric: true });
+			});
+			for (const [cgId, students] of sortedClassGroups) {
+				const cgName = cgMap.get(cgId as number) ?? `Rombel ${cgId}`;
+				sheets.push({
+					name: cgName,
+					columns,
+					data: students.map((s: any, i: number) => ({ ...s, _no: i + 1 })),
+				});
+			}
+
+			// Unassigned students sheet (if any)
+			if (unassigned.length > 0) {
+				sheets.push({
+					name: "Belum Ada Rombel",
+					columns,
+					data: unassigned.map((s: any, i: number) => ({ ...s, _no: i + 1 })),
+				});
+			}
+
+			const ayName = activeAy?.name ?? "semua-tahun";
+			const filename = `Data-Siswa-${ayName.replace(/\s+/g, "-")}`;
+			await downloadExcel(sheets, filename);
+
+			addToast({
+				variant: "success",
+				title: "Berhasil",
+				message: `Data ${allStudents.length} siswa berhasil diexport ke Excel.`,
+			});
+		} catch (err: any) {
+			addToast({
+				variant: "error",
+				title: "Gagal Export",
+				message: err.message ?? "Terjadi kesalahan saat export data.",
+			});
+		} finally {
+			setExporting(false);
+		}
+	};
+
 	return (
 		<div className="space-y-6">
 			<div className="sm:flex sm:items-center sm:justify-between">
@@ -262,6 +393,18 @@ function SiswaIndexPage() {
 					</p>
 				</div>
 				<div className="mt-4 sm:mt-0 flex gap-3">
+					<Button
+						variant="secondary"
+						onClick={handleExportExcel}
+						disabled={exporting}
+					>
+						{exporting ? (
+							<Loader2 className="h-4 w-4 animate-spin" />
+						) : (
+							<Download className="h-4 w-4" />
+						)}{" "}
+						Export
+					</Button>
 					<Link to="/administrasi/siswa/import">
 						<Button variant="secondary">
 							<Upload className="h-4 w-4" /> Import

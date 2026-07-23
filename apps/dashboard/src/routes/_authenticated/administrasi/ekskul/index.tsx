@@ -1,6 +1,15 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Edit, Plus, Search, Trash2 } from "lucide-react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useAtom } from "jotai";
+import {
+	Download,
+	Edit,
+	Loader2,
+	Plus,
+	Search,
+	Trash2,
+	Users,
+} from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import {
 	getGetV1ExtracurricularsQueryKey,
@@ -8,10 +17,19 @@ import {
 	useGetV1Extracurriculars,
 } from "#/api/endpoints/extracurriculars/extracurriculars";
 import type { DtoExtracurricularResponse } from "#/api/model";
+import { customInstance } from "#/api/mutator/custom-instance";
 import { Button, ConfirmDialog, EmptyState, useToast } from "#/components/ui";
-import { EkskulForm } from "../../../features/administrasi/components/EkskulForm";
+import { academicYearAtom } from "#/store/global";
+import {
+	downloadExcel,
+	type ExcelSheet,
+	formatDateId,
+	formatGender,
+	formatStatus,
+} from "#/utils/excel";
+import { EkskulForm } from "../../../../features/administrasi/components/EkskulForm";
 
-export const Route = createFileRoute("/_authenticated/administrasi/ekskul")({
+export const Route = createFileRoute("/_authenticated/administrasi/ekskul/")({
 	component: EkskulPage,
 	validateSearch: (params: Record<string, unknown>) => ({
 		search: typeof params.search === "string" ? params.search : undefined,
@@ -23,6 +41,7 @@ function EkskulPage() {
 	const { addToast } = useToast();
 	const navigate = useNavigate();
 	const searchParams = Route.useSearch();
+	const [activeAy] = useAtom(academicYearAtom);
 
 	const search = searchParams.search ?? "";
 
@@ -81,6 +100,97 @@ function EkskulPage() {
 		});
 	}, [ekskuls, search]);
 
+	const [exporting, setExporting] = useState(false);
+
+	// ─── Excel Export ──────────────────────────────────────────────────
+	const handleExportExcel = async () => {
+		if (!activeAy?.id) {
+			addToast({
+				variant: "error",
+				title: "Gagal",
+				message: "Pilih tahun ajaran terlebih dahulu.",
+			});
+			return;
+		}
+		setExporting(true);
+		try {
+			const res = await customInstance<any>(
+				`/v1/extracurriculars/export?academic_year_id=${activeAy.id}`,
+			);
+			const items: any[] = (res as any).data?.data ?? [];
+
+			const studentColumns = [
+				{ header: "No", key: "_no", width: 5 },
+				{ header: "Nama Lengkap", key: "full_name", width: 30 },
+				{
+					header: "Jenis Kelamin",
+					key: "gender",
+					width: 15,
+					format: formatGender,
+				},
+				{ header: "Tempat Lahir", key: "birth_place", width: 20 },
+				{
+					header: "Tanggal Lahir",
+					key: "birth_date",
+					width: 20,
+					format: formatDateId,
+				},
+				{ header: "Jenjang", key: "class_group_level", width: 12 },
+				{ header: "Rombel", key: "class_group_name", width: 20 },
+				{ header: "Status", key: "status", width: 15, format: formatStatus },
+			];
+
+			const sheets: ExcelSheet[] = [];
+
+			// Sheet 1: Ringkasan semua pasta + jumlah siswa
+			const summaryData = items.map((item: any, i: number) => ({
+				_no: i + 1,
+				extracurricular_name: item.extracurricular_name,
+				student_count: item.students?.length ?? 0,
+			}));
+			sheets.push({
+				name: "Semua Pasta",
+				columns: [
+					{ header: "No", key: "_no", width: 5 },
+					{ header: "Nama Pasta", key: "extracurricular_name", width: 35 },
+					{ header: "Jumlah Siswa", key: "student_count", width: 15 },
+				],
+				data: summaryData,
+			});
+
+			// Sheet per pasta: daftar siswa
+			for (const item of items) {
+				const students = (item.students || []).map((s: any, i: number) => ({
+					...s,
+					_no: i + 1,
+				}));
+				sheets.push({
+					name: item.extracurricular_name,
+					columns: studentColumns,
+					data: students,
+				});
+			}
+
+			const ayName = activeAy?.name ?? "semua-tahun";
+			const filename = `Data-Pasta-${ayName.replace(/\s+/g, "-")}`;
+			await downloadExcel(sheets, filename);
+
+			addToast({
+				variant: "success",
+				title: "Berhasil",
+				message: `Data ${items.length} pasta berhasil diexport ke Excel.`,
+			});
+		} catch (err: any) {
+			addToast({
+				variant: "error",
+				title: "Gagal Export",
+				message: err.message ?? "Terjadi kesalahan saat export data.",
+			});
+		} finally {
+			setExporting(false);
+		}
+	};
+
 	const handleEdit = (ekskul: DtoExtracurricularResponse) => {
 		setSelectedEkskul(ekskul);
 		setIsFormOpen(true);
@@ -102,7 +212,19 @@ function EkskulPage() {
 						Kelola data kegiatan pasta siswa.
 					</p>
 				</div>
-				<div className="mt-4 sm:ml-4 sm:mt-0">
+				<div className="mt-4 sm:ml-4 sm:mt-0 flex gap-3">
+					<Button
+						variant="secondary"
+						onClick={handleExportExcel}
+						disabled={exporting}
+					>
+						{exporting ? (
+							<Loader2 className="h-4 w-4 animate-spin" />
+						) : (
+							<Download className="h-4 w-4" />
+						)}{" "}
+						Export
+					</Button>
 					<Button
 						onClick={() => {
 							setSelectedEkskul(null);
@@ -169,14 +291,21 @@ function EkskulPage() {
 										</button>
 									</div>
 								</div>
-								<h3 className="text-lg font-bold text-gray-900 mt-2">
-									{ekskul.name}
-									{ekskul.is_mandatory && (
-										<span className="ml-2 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-											Wajib
-										</span>
-									)}
-								</h3>
+								<Link
+									to="/administrasi/ekskul/$id"
+									params={{ id: String(ekskul.id) }}
+									search={{} as any}
+									className="block group"
+								>
+									<h3 className="text-lg font-bold text-gray-900 mt-2 group-hover:text-indigo-600 transition-colors">
+										{ekskul.name}
+										{ekskul.is_mandatory && (
+											<span className="ml-2 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+												Wajib
+											</span>
+										)}
+									</h3>
+								</Link>
 								<div className="mt-1 flex items-center gap-1">
 									{ekskul.levels || "" ? (
 										(ekskul.levels as string).split(",").map((lv: string) => (
@@ -196,6 +325,17 @@ function EkskulPage() {
 											Semua Jenjang
 										</span>
 									)}
+								</div>
+								<div className="mt-3 pt-3 border-t border-gray-100">
+									<Link
+										to="/administrasi/ekskul/$id"
+										params={{ id: String(ekskul.id) }}
+										search={{} as any}
+										className="inline-flex items-center gap-1 text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+									>
+										<Users className="h-4 w-4" />
+										Lihat Siswa
+									</Link>
 								</div>
 							</div>
 						</div>

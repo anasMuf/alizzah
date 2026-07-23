@@ -313,7 +313,7 @@ func main() {
 	enrollmentService := service.NewStudentEnrollmentService(db, enrollmentRepo, studentRepo, classGroupRepo, extracurricularRepo, seRepo, fcRepo, fcItemRepo, invoiceGenService, savingsService)
 	effectiveDayService := service.NewEffectiveDayService(effectiveDayRepo, classGroupRepo, invoiceGenService)
 	extracurricularService := service.NewExtracurricularService(db, extracurricularRepo, fcRepo, fcItemRepo)
-	seService := service.NewStudentExtracurricularService(db, seRepo, studentRepo, extracurricularRepo, ayRepo, invoiceGenService)
+	seService := service.NewStudentExtracurricularService(db, seRepo, studentRepo, extracurricularRepo, ayRepo, enrollmentRepo, invoiceGenService)
 	eventService := service.NewStudentAcademicEventService(eventRepo, studentRepo)
 	daycareService := service.NewDaycareEnrollmentService(db, daycareRepo, studentRepo, ayRepo, daycareMonthlyAttRepo, invoiceGenService)
 
@@ -492,6 +492,8 @@ func main() {
 	// Extracurriculars
 	extracurriculars := api.Group("/extracurriculars", middleware.JWTAuth(tokenBlacklistRepo), guard.RequireModule(middleware.ModuleAdministrasi))
 	extracurriculars.POST("/sync-invoices", seHandler.SyncInvoices)
+	extracurriculars.GET("/export", seHandler.Export)
+	extracurriculars.GET("/:id/students", seHandler.GetStudentsByExtracurricular)
 	extracurriculars.GET("", extracurricularHandler.List)
 	extracurriculars.POST("", extracurricularHandler.Create)
 	extracurriculars.PUT("/:id", extracurricularHandler.Update)

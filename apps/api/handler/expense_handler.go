@@ -38,8 +38,7 @@ func NewExpenseHandler(service service.ExpenseService) *ExpenseHandler {
 // @Failure      500                  {object}  dto.ErrorResponse
 // @Router       /v1/expenses [get]
 func (h *ExpenseHandler) List(c echo.Context) error {
-	page, _ := strconv.Atoi(c.QueryParam("page"))
-	limit, _ := strconv.Atoi(c.QueryParam("limit"))
+	page, limit := utility.ParsePagination(c)
 	academicYearID, _ := strconv.Atoi(c.QueryParam("academic_year_id"))
 	categoryID, _ := strconv.Atoi(c.QueryParam("expense_category_id"))
 

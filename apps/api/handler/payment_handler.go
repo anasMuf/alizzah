@@ -39,8 +39,7 @@ func NewPaymentHandler(service service.PaymentService) *PaymentHandler {
 // @Failure      500               {object}  dto.ErrorResponse
 // @Router       /v1/payments [get]
 func (h *PaymentHandler) List(c echo.Context) error {
-	page, _ := strconv.Atoi(c.QueryParam("page"))
-	limit, _ := strconv.Atoi(c.QueryParam("limit"))
+	page, limit := utility.ParsePagination(c)
 	studentID, _ := strconv.Atoi(c.QueryParam("student_id"))
 	academicYearID, _ := strconv.Atoi(c.QueryParam("academic_year_id"))
 

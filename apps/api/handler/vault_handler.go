@@ -62,8 +62,7 @@ func (h *VaultHandler) GetBalance(c echo.Context) error {
 // @Failure      500               {object}  dto.ErrorResponse
 // @Router       /v1/vault/transactions [get]
 func (h *VaultHandler) GetTransactions(c echo.Context) error {
-	page, _ := strconv.Atoi(c.QueryParam("page"))
-	limit, _ := strconv.Atoi(c.QueryParam("limit"))
+	page, limit := utility.ParsePagination(c)
 	academicYearID, _ := strconv.Atoi(c.QueryParam("academic_year_id"))
 
 	params := dto.VaultTransactionQueryParams{

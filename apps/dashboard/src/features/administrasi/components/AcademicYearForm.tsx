@@ -98,6 +98,32 @@ export function AcademicYearForm({
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
+
+		if (!formData.name.trim()) {
+			addToast({
+				variant: "error",
+				title: "Validasi",
+				message: "Nama tahun ajaran wajib diisi",
+			});
+			return;
+		}
+		if (!formData.start_date || !formData.end_date) {
+			addToast({
+				variant: "error",
+				title: "Validasi",
+				message: "Tanggal mulai dan selesai wajib diisi",
+			});
+			return;
+		}
+		if (formData.end_date <= formData.start_date) {
+			addToast({
+				variant: "error",
+				title: "Validasi",
+				message: "Tanggal selesai harus setelah tanggal mulai",
+			});
+			return;
+		}
+
 		if (isEditing && initialData) {
 			updateMutation.mutate({
 				id: initialData?.id || 0,

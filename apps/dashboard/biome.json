@@ -32,12 +32,12 @@
 				"useSemanticElements": "off",
 				"noSvgWithoutTitle": "off",
 				"noRedundantRoles": "off",
-				"useButtonType": "off",
+				"useButtonType": "warn",
 				"noAutofocus": "off"
 			},
 			"suspicious": {
 				"noExplicitAny": "off",
-				"noArrayIndexKey": "off",
+				"noArrayIndexKey": "warn",
 				"noNonNullAssertedOptionalChain": "off",
 				"noGlobalIsNan": "off"
 			},
@@ -46,7 +46,7 @@
 				"useTemplate": "off"
 			},
 			"correctness": {
-				"useExhaustiveDependencies": "off",
+				"useExhaustiveDependencies": "warn",
 				"useParseIntRadix": "off"
 			},
 			"complexity": {

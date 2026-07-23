@@ -79,39 +79,47 @@ func (s *savingsService) GetTransactions(studentID uint, params dto.SavingsTrans
 		return nil, nil, err
 	}
 
-	var allTxns []dto.SavingsTransactionResponse
-	var total int64
-
+	// Build map savingsID → type + filter list
+	savingsTypeMap := make(map[uint]string, len(savingsList))
+	savingsIDs := make([]uint, 0, len(savingsList))
 	for _, sv := range savingsList {
 		if params.Type != "" && sv.Type != params.Type {
 			continue
 		}
-		txns, count, err := s.txnRepo.FindByStudentSavingsID(sv.ID, params)
-		if err != nil {
-			return nil, nil, err
+		savingsIDs = append(savingsIDs, sv.ID)
+		savingsTypeMap[sv.ID] = sv.Type
+	}
+
+	if len(savingsIDs) == 0 {
+		return []dto.SavingsTransactionResponse{}, &dto.Meta{Page: 1, Limit: 20, Total: 0}, nil
+	}
+
+	// Single batch query instead of N+1
+	txns, err := s.txnRepo.FindBySavingsIDs(savingsIDs, params)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	allTxns := make([]dto.SavingsTransactionResponse, 0, len(txns))
+	for _, t := range txns {
+		resp := dto.SavingsTransactionResponse{
+			ID:              t.ID,
+			SavingsType:     savingsTypeMap[t.StudentSavingsID],
+			TransactionType: t.TransactionType,
+			Amount:          t.Amount,
+			AdminFee:        t.AdminFee,
+			NetAmount:       t.NetAmount,
+			SourceType:      t.SourceType,
+			CreatedAt:       t.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		}
-		total += count
-		for _, t := range txns {
-			resp := dto.SavingsTransactionResponse{
-				ID:              t.ID,
-				SavingsType:     sv.Type,
-				TransactionType: t.TransactionType,
-				Amount:          t.Amount,
-				AdminFee:        t.AdminFee,
-				NetAmount:       t.NetAmount,
-				SourceType:      t.SourceType,
-				CreatedAt:       t.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-			}
-			if t.Notes != "" {
-				resp.Notes = &t.Notes
-			}
-			allTxns = append(allTxns, resp)
+		if t.Notes != "" {
+			resp.Notes = &t.Notes
 		}
+		allTxns = append(allTxns, resp)
 	}
 
 	page, limit := utility.NormalizePagination(params.Page, params.Limit)
-
-	meta := &dto.Meta{Page: page, Limit: limit, Total: total}
+	meta := &dto.Meta{Page: page, Limit: limit, Total: int64(len(allTxns))}
 	return allTxns, meta, nil
 }
 

@@ -142,6 +142,12 @@ func main() {
 	if err := db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS uq_ed_cg ON effective_days (class_group_id, month, year) WHERE class_group_id > 0`).Error; err != nil {
 		log.Printf("ERROR: gagal buat index uq_ed_cg: %v", err)
 	}
+	// Composite indexes for payment/reversal lookups — mempercepat
+	// query WHERE source_type = ? AND source_id = ? pada tabel transaksi.
+	db.Exec(`CREATE INDEX IF NOT EXISTS idx_cash_source ON cash_transactions(source_type, source_id)`)
+	db.Exec(`CREATE INDEX IF NOT EXISTS idx_vault_source ON vault_transactions(source_type, source_id)`)
+	db.Exec(`CREATE INDEX IF NOT EXISTS idx_savings_source ON savings_transactions(source_type, source_id)`)
+
 	if err := db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS uq_ed_level ON effective_days (level, month, year) WHERE level != ''`).Error; err != nil {
 		log.Printf("ERROR: gagal buat index uq_ed_level: %v", err)
 	}

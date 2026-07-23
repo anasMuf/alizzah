@@ -43,20 +43,12 @@ func NewInvoiceHandler(service service.InvoiceService, invoiceGen service.Invoic
 // @Failure      500               {object}  dto.ErrorResponse
 // @Router       /v1/invoices [get]
 func (h *InvoiceHandler) List(c echo.Context) error {
-	page, _ := strconv.Atoi(c.QueryParam("page"))
-	limit, _ := strconv.Atoi(c.QueryParam("limit"))
+	page, limit := utility.ParsePagination(c)
 	studentID, _ := strconv.Atoi(c.QueryParam("student_id"))
 	academicYearID, _ := strconv.Atoi(c.QueryParam("academic_year_id"))
 	month, _ := strconv.Atoi(c.QueryParam("month"))
 	year, _ := strconv.Atoi(c.QueryParam("year"))
 	classGroupID, _ := strconv.Atoi(c.QueryParam("class_group_id"))
-
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 {
-		limit = 20
-	}
 
 	params := dto.InvoiceQueryParams{
 		StudentID:      uint(studentID),

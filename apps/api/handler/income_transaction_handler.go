@@ -38,8 +38,7 @@ func NewIncomeTransactionHandler(service service.IncomeTransactionService) *Inco
 // @Failure      500               {object}  dto.ErrorResponse
 // @Router       /v1/income-transactions [get]
 func (h *IncomeTransactionHandler) List(c echo.Context) error {
-	page, _ := strconv.Atoi(c.QueryParam("page"))
-	limit, _ := strconv.Atoi(c.QueryParam("limit"))
+	page, limit := utility.ParsePagination(c)
 	academicYearID, _ := strconv.Atoi(c.QueryParam("academic_year_id"))
 
 	params := dto.IncomeTransactionQueryParams{

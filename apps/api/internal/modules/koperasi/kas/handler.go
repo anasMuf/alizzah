@@ -58,8 +58,7 @@ func (h *Handler) Balance(c echo.Context) error {
 // @Success 200 {object} dto.PaginatedResponse{data=[]kas.TransactionResponse}
 // @Router /v1/koperasi/cash/transactions [get]
 func (h *Handler) Transactions(c echo.Context) error {
-	page, _ := strconv.Atoi(c.QueryParam("page"))
-	limit, _ := strconv.Atoi(c.QueryParam("limit"))
+	page, limit := utility.ParsePagination(c)
 	ayID, _ := strconv.Atoi(c.QueryParam("academic_year_id"))
 	p := QueryParams{
 		AcademicYearID:  uint(ayID),

@@ -1,7 +1,11 @@
 import { X } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { twMerge } from "tailwind-merge";
 import { Button } from "../atoms/Button";
+
+// Focusable element selector for focus trapping
+const FOCUSABLE =
+	'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 interface SlideOverProps {
 	isOpen: boolean;
@@ -22,23 +26,47 @@ export function SlideOver({
 }: SlideOverProps) {
 	const panelRef = useRef<HTMLDivElement>(null);
 
-	// Close on Escape key
-	useEffect(() => {
-		const handleKeyDown = (e: KeyboardEvent) => {
-			if (e.key === "Escape" && isOpen) {
+	// Close on Escape + focus trapping (Tab cycling within panel)
+	const handleKeyDown = useCallback(
+		(e: KeyboardEvent) => {
+			if (e.key === "Escape") {
 				onClose();
+				return;
 			}
-		};
-		window.addEventListener("keydown", handleKeyDown);
-		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [isOpen, onClose]);
+			if (e.key === "Tab" && panelRef.current) {
+				const focusable = panelRef.current.querySelectorAll(FOCUSABLE);
+				const first = focusable[0] as HTMLElement | undefined;
+				const last = focusable[focusable.length - 1] as HTMLElement | undefined;
+				if (!first || !last) return;
+				if (e.shiftKey && document.activeElement === first) {
+					e.preventDefault();
+					last.focus();
+				} else if (!e.shiftKey && document.activeElement === last) {
+					e.preventDefault();
+					first.focus();
+				}
+			}
+		},
+		[onClose],
+	);
 
-	// Trap focus
 	useEffect(() => {
-		if (isOpen && panelRef.current) {
-			panelRef.current.focus();
+		if (isOpen) {
+			window.addEventListener("keydown", handleKeyDown);
+			// Focus the first focusable element inside the panel
+			requestAnimationFrame(() => {
+				if (panelRef.current) {
+					const first = panelRef.current.querySelector(
+						FOCUSABLE,
+					) as HTMLElement | null;
+					first?.focus();
+				}
+			});
 		}
-	}, [isOpen]);
+		return () => {
+			window.removeEventListener("keydown", handleKeyDown);
+		};
+	}, [isOpen, handleKeyDown]);
 
 	// Prevent background scroll
 	useEffect(() => {

@@ -9,3 +9,9 @@ pre-commit:
       skip:
         - merge
         - rebase
+    go-vet:
+      root: apps/api
+      run: go vet ./...
+      skip:
+        - merge
+        - rebase

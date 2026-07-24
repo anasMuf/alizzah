@@ -1334,12 +1334,18 @@ func (s *invoiceGenerateService) GenerateDaycareMonthlyInvoices(params dto.Gener
 // fee categories and re-applies active dispensations. For "daycare" the fixed
 // discount value is multiplied by total attendance days (Quantity sum).
 func (s *invoiceGenerateService) applyDispensationToInvoice(invoice *model.Invoice, categories ...string) error {
-	if s.dispensationRepo == nil || invoice.Month == nil || invoice.Year == nil {
+	if s.dispensationRepo == nil {
 		return nil
 	}
 
-	month := *invoice.Month
-	year := *invoice.Year
+	// Gunakan bulan/tahun saat ini sebagai fallback untuk invoice non-bulanan
+	// (initial, registration) yang tidak memiliki Month/Year.
+	month := uint(time.Now().Month())
+	year := uint(time.Now().Year())
+	if invoice.Month != nil && invoice.Year != nil {
+		month = *invoice.Month
+		year = *invoice.Year
+	}
 
 	items, err := s.invoiceItemRepo.FindByInvoiceID(invoice.ID)
 	if err != nil {
@@ -1696,6 +1702,28 @@ func (s *invoiceGenerateService) ApplyDispensationToExistingInvoices(studentID, 
 		// Re-apply dispensations for all relevant categories
 		if err := s.applyDispensationToInvoice(&inv, "monthly_spp", "daycare"); err != nil {
 			log.Printf("[Dispensasi] Gagal apply ke invoice %d: %v", inv.ID, err)
+		}
+
+		s.recalculateInvoiceTotal(inv.ID)
+	}
+
+	// Also apply to initial invoices (biaya awal pendidikan) — one-time, non-monthly
+	initialInvoices, _ := s.invoiceRepo.FindByStudentID(studentID, "initial", "", academicYearID, true)
+	for _, inv := range initialInvoices {
+		if inv.Status == "paid" {
+			continue // skip fully paid invoices
+		}
+
+		// Remove existing unpaid dispensation items
+		items, _ := s.invoiceItemRepo.FindByInvoiceID(inv.ID)
+		for _, item := range items {
+			if item.Category == "dispensation" && item.PaidAmount == 0 {
+				s.invoiceItemRepo.Delete(item.ID)
+			}
+		}
+
+		if err := s.applyDispensationToInvoice(&inv, "initial"); err != nil {
+			log.Printf("[Dispensasi] Gagal apply ke invoice initial %d: %v", inv.ID, err)
 		}
 
 		s.recalculateInvoiceTotal(inv.ID)

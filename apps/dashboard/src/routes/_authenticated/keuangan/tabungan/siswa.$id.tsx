@@ -233,6 +233,8 @@ function DetailTabunganSiswaPage() {
 		setPrintEndDate("");
 	};
 
+	const handleCloseWithdraw = useCallback(() => setIsWithdrawOpen(false), []);
+
 	const handleWithdraw = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (withdrawGuard.current) return;
@@ -666,7 +668,7 @@ function DetailTabunganSiswaPage() {
 
 			<SlideOver
 				isOpen={isWithdrawOpen}
-				onClose={() => setIsWithdrawOpen(false)}
+				onClose={handleCloseWithdraw}
 				title="Tarik Saldo Tabungan"
 			>
 				<form
@@ -716,7 +718,7 @@ function DetailTabunganSiswaPage() {
 						<Button
 							type="button"
 							variant="secondary"
-							onClick={() => setIsWithdrawOpen(false)}
+							onClick={handleCloseWithdraw}
 						>
 							Batal
 						</Button>

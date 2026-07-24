@@ -51,22 +51,26 @@ export function SlideOver({
 	);
 
 	useEffect(() => {
-		if (isOpen) {
-			window.addEventListener("keydown", handleKeyDown);
-			// Focus the first focusable element inside the panel
-			requestAnimationFrame(() => {
-				if (panelRef.current) {
-					const first = panelRef.current.querySelector(
-						FOCUSABLE,
-					) as HTMLElement | null;
-					first?.focus();
-				}
-			});
-		}
+		if (!isOpen) return;
+		window.addEventListener("keydown", handleKeyDown);
 		return () => {
 			window.removeEventListener("keydown", handleKeyDown);
 		};
 	}, [isOpen, handleKeyDown]);
+
+	// Auto-focus first element only when the panel opens (not on every re-render)
+	useEffect(() => {
+		if (!isOpen) return;
+		requestAnimationFrame(() => {
+			if (panelRef.current) {
+				const first = panelRef.current.querySelector(
+					FOCUSABLE,
+				) as HTMLElement | null;
+				first?.focus();
+			}
+		});
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [isOpen]);
 
 	// Prevent background scroll
 	useEffect(() => {

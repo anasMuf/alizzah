@@ -24,9 +24,13 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 
 import type {
 	DtoErrorResponse,
+	DtoSuccessResponse,
 	GetV1Backups200,
 	PostV1Backups201,
 	PostV1BackupsParams,
+	PostV1BackupsPreview200,
+	PostV1BackupsPreviewBody,
+	PostV1BackupsRestoreBody,
 } from "../../model";
 
 import { customInstance } from "../../mutator/custom-instance";
@@ -334,6 +338,292 @@ export const usePostV1Backups = <TError = DtoErrorResponse, TContext = unknown>(
 	TContext
 > => {
 	return useMutation(getPostV1BackupsMutationOptions(options), queryClient);
+};
+export type postV1BackupsPreviewResponse200 = {
+	data: PostV1BackupsPreview200;
+	status: 200;
+};
+
+export type postV1BackupsPreviewResponse400 = {
+	data: DtoErrorResponse;
+	status: 400;
+};
+
+export type postV1BackupsPreviewResponse401 = {
+	data: DtoErrorResponse;
+	status: 401;
+};
+
+export type postV1BackupsPreviewResponse403 = {
+	data: DtoErrorResponse;
+	status: 403;
+};
+
+export type postV1BackupsPreviewResponse500 = {
+	data: DtoErrorResponse;
+	status: 500;
+};
+
+export type postV1BackupsPreviewResponseSuccess =
+	postV1BackupsPreviewResponse200 & {
+		headers: Headers;
+	};
+export type postV1BackupsPreviewResponseError = (
+	| postV1BackupsPreviewResponse400
+	| postV1BackupsPreviewResponse401
+	| postV1BackupsPreviewResponse403
+	| postV1BackupsPreviewResponse500
+) & {
+	headers: Headers;
+};
+
+export type postV1BackupsPreviewResponse =
+	| postV1BackupsPreviewResponseSuccess
+	| postV1BackupsPreviewResponseError;
+
+export const getPostV1BackupsPreviewUrl = () => {
+	return `/v1/backups/preview`;
+};
+
+/**
+ * Upload file backup (.dump/.sql) untuk melihat daftar tabel dan schema yang akan direstore.
+ * @summary Preview isi file backup
+ */
+export const postV1BackupsPreview = async (
+	postV1BackupsPreviewBody?: PostV1BackupsPreviewBody,
+	options?: RequestInit,
+): Promise<postV1BackupsPreviewResponse> => {
+	const formData = new FormData();
+	if (postV1BackupsPreviewBody?.file !== undefined) {
+		formData.append(`file`, postV1BackupsPreviewBody.file);
+	}
+
+	return customInstance<postV1BackupsPreviewResponse>(
+		getPostV1BackupsPreviewUrl(),
+		{
+			...options,
+			method: "POST",
+			body: formData,
+		},
+	);
+};
+
+export const getPostV1BackupsPreviewMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1BackupsPreview>>,
+		TError,
+		{ data?: PostV1BackupsPreviewBody },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1BackupsPreview>>,
+	TError,
+	{ data?: PostV1BackupsPreviewBody },
+	TContext
+> => {
+	const mutationKey = ["postV1BackupsPreview"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1BackupsPreview>>,
+		{ data?: PostV1BackupsPreviewBody }
+	> = (props) => {
+		const { data } = props ?? {};
+
+		return postV1BackupsPreview(data, requestOptions);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type PostV1BackupsPreviewMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1BackupsPreview>>
+>;
+export type PostV1BackupsPreviewMutationBody =
+	| PostV1BackupsPreviewBody
+	| undefined;
+export type PostV1BackupsPreviewMutationError = DtoErrorResponse;
+
+/**
+ * @summary Preview isi file backup
+ */
+export const usePostV1BackupsPreview = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1BackupsPreview>>,
+			TError,
+			{ data?: PostV1BackupsPreviewBody },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1BackupsPreview>>,
+	TError,
+	{ data?: PostV1BackupsPreviewBody },
+	TContext
+> => {
+	return useMutation(
+		getPostV1BackupsPreviewMutationOptions(options),
+		queryClient,
+	);
+};
+export type postV1BackupsRestoreResponse200 = {
+	data: DtoSuccessResponse;
+	status: 200;
+};
+
+export type postV1BackupsRestoreResponse400 = {
+	data: DtoErrorResponse;
+	status: 400;
+};
+
+export type postV1BackupsRestoreResponse401 = {
+	data: DtoErrorResponse;
+	status: 401;
+};
+
+export type postV1BackupsRestoreResponse403 = {
+	data: DtoErrorResponse;
+	status: 403;
+};
+
+export type postV1BackupsRestoreResponse500 = {
+	data: DtoErrorResponse;
+	status: 500;
+};
+
+export type postV1BackupsRestoreResponseSuccess =
+	postV1BackupsRestoreResponse200 & {
+		headers: Headers;
+	};
+export type postV1BackupsRestoreResponseError = (
+	| postV1BackupsRestoreResponse400
+	| postV1BackupsRestoreResponse401
+	| postV1BackupsRestoreResponse403
+	| postV1BackupsRestoreResponse500
+) & {
+	headers: Headers;
+};
+
+export type postV1BackupsRestoreResponse =
+	| postV1BackupsRestoreResponseSuccess
+	| postV1BackupsRestoreResponseError;
+
+export const getPostV1BackupsRestoreUrl = () => {
+	return `/v1/backups/restore`;
+};
+
+/**
+ * Upload file backup (.dump/.sql), drop database, create ulang, import. Hanya superadmin + APP_ENV=local.
+ * @summary Restore database dari file backup
+ */
+export const postV1BackupsRestore = async (
+	postV1BackupsRestoreBody?: PostV1BackupsRestoreBody,
+	options?: RequestInit,
+): Promise<postV1BackupsRestoreResponse> => {
+	const formData = new FormData();
+	if (postV1BackupsRestoreBody?.file !== undefined) {
+		formData.append(`file`, postV1BackupsRestoreBody.file);
+	}
+
+	return customInstance<postV1BackupsRestoreResponse>(
+		getPostV1BackupsRestoreUrl(),
+		{
+			...options,
+			method: "POST",
+			body: formData,
+		},
+	);
+};
+
+export const getPostV1BackupsRestoreMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1BackupsRestore>>,
+		TError,
+		{ data?: PostV1BackupsRestoreBody },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1BackupsRestore>>,
+	TError,
+	{ data?: PostV1BackupsRestoreBody },
+	TContext
+> => {
+	const mutationKey = ["postV1BackupsRestore"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1BackupsRestore>>,
+		{ data?: PostV1BackupsRestoreBody }
+	> = (props) => {
+		const { data } = props ?? {};
+
+		return postV1BackupsRestore(data, requestOptions);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type PostV1BackupsRestoreMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1BackupsRestore>>
+>;
+export type PostV1BackupsRestoreMutationBody =
+	| PostV1BackupsRestoreBody
+	| undefined;
+export type PostV1BackupsRestoreMutationError = DtoErrorResponse;
+
+/**
+ * @summary Restore database dari file backup
+ */
+export const usePostV1BackupsRestore = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1BackupsRestore>>,
+			TError,
+			{ data?: PostV1BackupsRestoreBody },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1BackupsRestore>>,
+	TError,
+	{ data?: PostV1BackupsRestoreBody },
+	TContext
+> => {
+	return useMutation(
+		getPostV1BackupsRestoreMutationOptions(options),
+		queryClient,
+	);
 };
 export type getV1BackupsFilenameResponse200 = {
 	data: Blob;

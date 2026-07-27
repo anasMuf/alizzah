@@ -479,6 +479,8 @@ func main() {
 	backups.GET("", backupHandler.List)
 	backups.POST("", backupHandler.Create)
 	backups.GET("/:filename", backupHandler.Download)
+	backups.POST("/restore", backupHandler.Restore)
+	backups.POST("/preview", backupHandler.Preview)
 
 	// Users — superadmin only
 	users := api.Group("/users", middleware.JWTAuth(tokenBlacklistRepo), middleware.RateLimiter(20, 40), middleware.RequireRoles("superadmin"))

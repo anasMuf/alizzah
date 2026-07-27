@@ -63,6 +63,21 @@ type BackupFileInfo struct {
 	Format    string `json:"format"` // "dump" / "sql" / "sql-compat"
 }
 
+// TableInfo represents a table/schema entry found in a backup file preview.
+type TableInfo struct {
+	Name   string `json:"name"`   // table or schema name
+	Schema string `json:"schema"` // schema (public, etc.)
+	Type   string `json:"type"`   // TABLE, SEQUENCE, FUNCTION, etc.
+}
+
+// RestorePreview holds the parsed metadata from a backup file.
+type RestorePreview struct {
+	Filename string      `json:"filename"`
+	Format   string      `json:"format"`
+	Size     int64       `json:"size_bytes"`
+	Tables   []TableInfo `json:"tables"`
+}
+
 // ─── Service ───────────────────────────────────────────────────────────────────
 
 // BackupService handles database backup creation, verification, cleanup,
@@ -318,6 +333,227 @@ func (s *BackupService) verifyFormat(path string, format string) error {
 	}
 
 	return nil
+}
+
+// ─── Restore ──────────────────────────────────────────────────────────────────
+
+// Restore imports a backup file into the database. Steps:
+// 1. Save uploaded file to temp location
+// 2. Drop target database (connect to "postgres" default DB)
+// 3. Create target database
+// 4. Import via pg_restore (.dump) or psql (.sql)
+// 5. Clean up temp file
+// Only works when APP_ENV=local (safeguard against production accidents).
+func (s *BackupService) Restore(ctx context.Context, srcPath, format string) error {
+	// Safeguard: only allow restore in local environment
+	if os.Getenv("APP_ENV") != "local" {
+		return fmt.Errorf("restore only allowed when APP_ENV=local (current: %s)", os.Getenv("APP_ENV"))
+	}
+
+	// Validate source file exists
+	if _, err := os.Stat(srcPath); err != nil {
+		return fmt.Errorf("source file not found: %w", err)
+	}
+
+	// Validate format
+	if format != "dump" && format != "sql" {
+		return fmt.Errorf("%w: %s (valid: dump, sql)", ErrInvalidFormat, format)
+	}
+
+	pgPassword := s.config.DBPassword
+
+	log.Printf("[backup] Restore starting: %s -> %s", srcPath, s.config.DBName)
+
+	// Step 1: Drop database (connect to default "postgres" DB)
+	if err := s.execSQL("postgres", fmt.Sprintf("DROP DATABASE IF EXISTS %s", s.config.DBName)); err != nil {
+		return fmt.Errorf("failed to drop database: %w", err)
+	}
+	log.Printf("[backup] Restore: dropped database %s", s.config.DBName)
+
+	// Step 2: Create database
+	if err := s.execSQL("postgres", fmt.Sprintf("CREATE DATABASE %s", s.config.DBName)); err != nil {
+		return fmt.Errorf("failed to create database: %w", err)
+	}
+	log.Printf("[backup] Restore: created database %s", s.config.DBName)
+
+	// Step 3: Import
+	if format == "dump" {
+		// pg_restore for custom format
+		cmd := exec.CommandContext(ctx, "pg_restore",
+			"-U", s.config.DBUser,
+			"-h", s.config.DBHost,
+			"-p", s.config.DBPort,
+			"-d", s.config.DBName,
+			"--no-owner", "--no-privileges",
+			srcPath,
+		)
+		cmd.Env = append(os.Environ(), "PGPASSWORD="+pgPassword)
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("pg_restore failed: %w\n%s", err, string(output))
+		}
+	} else {
+		// psql for plain SQL
+		cmd := exec.CommandContext(ctx, "psql",
+			"-U", s.config.DBUser,
+			"-h", s.config.DBHost,
+			"-p", s.config.DBPort,
+			"-d", s.config.DBName,
+			"-f", srcPath,
+		)
+		cmd.Env = append(os.Environ(), "PGPASSWORD="+pgPassword)
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("psql import failed: %w\n%s", err, string(output))
+		}
+	}
+
+	log.Printf("[backup] Restore completed: %s", s.config.DBName)
+	return nil
+}
+
+// execSQL runs a SQL statement against the given database via psql.
+func (s *BackupService) execSQL(database, sql string) error {
+	cmd := exec.Command("psql",
+		"-U", s.config.DBUser,
+		"-h", s.config.DBHost,
+		"-p", s.config.DBPort,
+		"-d", database,
+		"-c", sql,
+	)
+	cmd.Env = append(os.Environ(), "PGPASSWORD="+s.config.DBPassword)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("%w\n%s", err, string(output))
+	}
+	return nil
+}
+
+// ─── Preview ──────────────────────────────────────────────────────────────────
+
+// Preview reads a backup file and extracts table/schema metadata without restoring.
+// - .dump: runs pg_restore -l to list TOC
+// - .sql: scans for CREATE TABLE/SEQUENCE/FUNCTION statements
+func (s *BackupService) Preview(filePath string) (*RestorePreview, error) {
+	info, err := os.Stat(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("cannot read file: %w", err)
+	}
+
+	filename := filepath.Base(filePath)
+	ext := filepath.Ext(filename)
+
+	var tables []TableInfo
+
+	switch ext {
+	case ".dump":
+		tables, err = s.previewDump(filePath)
+	case ".sql":
+		tables, err = s.previewSQL(filePath)
+	default:
+		return nil, fmt.Errorf("unsupported format: %s", ext)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	format := "dump"
+	if ext == ".sql" {
+		format = "sql"
+	}
+
+	return &RestorePreview{
+		Filename: filename,
+		Format:   format,
+		Size:     info.Size(),
+		Tables:   tables,
+	}, nil
+}
+
+// previewDump runs pg_restore -l and parses the TOC output.
+func (s *BackupService) previewDump(path string) ([]TableInfo, error) {
+	cmd := exec.Command("pg_restore", "-l", path)
+	cmd.Env = append(os.Environ(), "PGPASSWORD="+s.config.DBPassword)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return nil, fmt.Errorf("pg_restore -l failed: %w\n%s", err, string(output))
+	}
+
+	// Parse pg_restore -l output:
+	// ;
+	// ; Archive created at ...
+	// ;
+	// 1234; 1259 16395 TABLE public expenses postgres
+	// 1235; 1259 16399 SEQUENCE public expenses_id_seq postgres
+	var tables []TableInfo
+	scanner := bufio.NewScanner(strings.NewReader(string(output)))
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, ";") {
+			continue
+		}
+		// Format: <oid>; <catalog> <oid> <type> <schema> <name> <owner>
+		parts := strings.Split(line, ";")
+		if len(parts) < 2 {
+			continue
+		}
+		rest := strings.TrimSpace(parts[1])
+		fields := strings.Fields(rest)
+		if len(fields) < 4 {
+			continue
+		}
+		entryType := fields[1]
+		schema := fields[2]
+		name := fields[3]
+
+		// Only include interesting types
+		if entryType == "TABLE" || entryType == "SEQUENCE" || entryType == "FUNCTION" ||
+			entryType == "INDEX" || entryType == "VIEW" || entryType == "MATERIALIZED" ||
+			entryType == "TRIGGER" {
+			tables = append(tables, TableInfo{
+				Name:   name,
+				Schema: schema,
+				Type:   entryType,
+			})
+		}
+	}
+	return tables, nil
+}
+
+// previewSQL scans a plain SQL dump for CREATE TABLE/SEQUENCE/FUNCTION statements.
+func (s *BackupService) previewSQL(path string) ([]TableInfo, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("cannot open SQL file: %w", err)
+	}
+	defer f.Close()
+
+	reCreate := regexp.MustCompile(`(?i)CREATE\s+(TABLE|SEQUENCE|FUNCTION|INDEX|VIEW|MATERIALIZED\s+VIEW|TRIGGER)\s+(IF\s+NOT\s+EXISTS\s+)?(\w+\.)?"?(\w+)"?`)
+
+	var tables []TableInfo
+	seen := make(map[string]bool)
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		matches := reCreate.FindStringSubmatch(line)
+		if len(matches) >= 5 {
+			entryType := strings.ToUpper(matches[1])
+			if entryType == "MATERIALIZED" {
+				entryType = "MATERIALIZED VIEW"
+			}
+			name := matches[4]
+			key := entryType + ":" + name
+			if !seen[key] {
+				seen[key] = true
+				tables = append(tables, TableInfo{
+					Name:   name,
+					Schema: "public",
+					Type:   entryType,
+				})
+			}
+		}
+	}
+	return tables, nil
 }
 
 // ─── List ──────────────────────────────────────────────────────────────────────

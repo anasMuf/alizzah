@@ -16,7 +16,6 @@ import { useGetV1Invoices } from "#/api/endpoints/invoices/invoices";
 import { useGetV1ReportsDaily } from "#/api/endpoints/reports/reports";
 import { useGetV1VaultBalance } from "#/api/endpoints/vault/vault";
 import { useAccess } from "#/features/auth/access";
-import { BackupButton } from "#/features/keuangan/components/BackupButton";
 import { academicYearAtom } from "../../../store/global";
 import { formatCurrency } from "../../../utils/format";
 
@@ -26,7 +25,7 @@ export const Route = createFileRoute("/_authenticated/keuangan/")({
 
 function KeuanganOverviewPage() {
 	const [activeAy] = useAtom(academicYearAtom);
-	const { isSuperadmin } = useAccess();
+	useAccess();
 	const today = new Date().toISOString().split("T")[0];
 
 	const enabled = !!activeAy?.id;
@@ -90,7 +89,6 @@ function KeuanganOverviewPage() {
 					</p>
 				</div>
 				<div className="mt-4 sm:ml-4 sm:mt-0 flex gap-2">
-					{isSuperadmin && <BackupButton />}
 					<Link
 						to="/keuangan/pengeluaran"
 						search={{} as any}

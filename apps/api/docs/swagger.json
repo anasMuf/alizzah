@@ -928,13 +928,66 @@
             }
         },
         "/v1/backups": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Menampilkan semua file backup yang tersedia di direktori backup VPS.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "backup"
+                ],
+                "summary": "List backup files",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/dto.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/service.BackupFileInfo"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Trigger full database backup (pg_dump -Fc). Hanya superadmin / admin dengan modul keuangan.",
+                "description": "Trigger full database backup. Format: dump (custom -Fc), sql (plain -Fp), sql-compat (plain tanpa restrict/unrestrict). Default: dump.",
                 "consumes": [
                     "application/json"
                 ],
@@ -945,6 +998,14 @@
                     "backup"
                 ],
                 "summary": "Buat backup database manual",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Format backup: dump, sql, sql-compat",
+                        "name": "format",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "201": {
                         "description": "Created",
@@ -964,6 +1025,12 @@
                             ]
                         }
                     },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
@@ -978,6 +1045,61 @@
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/backups/{filename}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Download file backup berdasarkan nama file. Hanya superadmin.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "backup"
+                ],
+                "summary": "Download backup file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Nama file backup",
+                        "name": "filename",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/dto.ErrorResponse"
                         }
@@ -18300,10 +18422,34 @@
                 }
             }
         },
+        "service.BackupFileInfo": {
+            "type": "object",
+            "properties": {
+                "filename": {
+                    "type": "string"
+                },
+                "format": {
+                    "description": "\"dump\" / \"sql\" / \"sql-compat\"",
+                    "type": "string"
+                },
+                "size_bytes": {
+                    "type": "integer"
+                },
+                "size_human": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
         "service.BackupResult": {
             "type": "object",
             "properties": {
                 "filename": {
+                    "type": "string"
+                },
+                "format": {
                     "type": "string"
                 },
                 "path": {

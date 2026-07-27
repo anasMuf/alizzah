@@ -7,22 +7,205 @@
  */
 
 import type {
+	DataTag,
+	DefinedInitialDataOptions,
+	DefinedUseQueryResult,
 	MutationFunction,
 	QueryClient,
+	QueryFunction,
+	QueryKey,
+	UndefinedInitialDataOptions,
 	UseMutationOptions,
 	UseMutationResult,
+	UseQueryOptions,
+	UseQueryResult,
 } from "@tanstack/react-query";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
-import type { DtoErrorResponse, PostV1Backups201 } from "../../model";
+import type {
+	DtoErrorResponse,
+	GetV1Backups200,
+	PostV1Backups201,
+	PostV1BackupsParams,
+} from "../../model";
 
 import { customInstance } from "../../mutator/custom-instance";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
+export type getV1BackupsResponse200 = {
+	data: GetV1Backups200;
+	status: 200;
+};
+
+export type getV1BackupsResponse401 = {
+	data: DtoErrorResponse;
+	status: 401;
+};
+
+export type getV1BackupsResponse403 = {
+	data: DtoErrorResponse;
+	status: 403;
+};
+
+export type getV1BackupsResponseSuccess = getV1BackupsResponse200 & {
+	headers: Headers;
+};
+export type getV1BackupsResponseError = (
+	| getV1BackupsResponse401
+	| getV1BackupsResponse403
+) & {
+	headers: Headers;
+};
+
+export type getV1BackupsResponse =
+	| getV1BackupsResponseSuccess
+	| getV1BackupsResponseError;
+
+export const getGetV1BackupsUrl = () => {
+	return `/v1/backups`;
+};
+
+/**
+ * Menampilkan semua file backup yang tersedia di direktori backup VPS.
+ * @summary List backup files
+ */
+export const getV1Backups = async (
+	options?: RequestInit,
+): Promise<getV1BackupsResponse> => {
+	return customInstance<getV1BackupsResponse>(getGetV1BackupsUrl(), {
+		...options,
+		method: "GET",
+	});
+};
+
+export const getGetV1BackupsQueryKey = () => {
+	return [`/v1/backups`] as const;
+};
+
+export const getGetV1BackupsQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1Backups>>,
+	TError = DtoErrorResponse,
+>(options?: {
+	query?: Partial<
+		UseQueryOptions<Awaited<ReturnType<typeof getV1Backups>>, TError, TData>
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
+
+	const queryKey = queryOptions?.queryKey ?? getGetV1BackupsQueryKey();
+
+	const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1Backups>>> = ({
+		signal,
+	}) => getV1Backups({ signal, ...requestOptions });
+
+	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1Backups>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetV1BackupsQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1Backups>>
+>;
+export type GetV1BackupsQueryError = DtoErrorResponse;
+
+export function useGetV1Backups<
+	TData = Awaited<ReturnType<typeof getV1Backups>>,
+	TError = DtoErrorResponse,
+>(
+	options: {
+		query: Partial<
+			UseQueryOptions<Awaited<ReturnType<typeof getV1Backups>>, TError, TData>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1Backups>>,
+					TError,
+					Awaited<ReturnType<typeof getV1Backups>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1Backups<
+	TData = Awaited<ReturnType<typeof getV1Backups>>,
+	TError = DtoErrorResponse,
+>(
+	options?: {
+		query?: Partial<
+			UseQueryOptions<Awaited<ReturnType<typeof getV1Backups>>, TError, TData>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1Backups>>,
+					TError,
+					Awaited<ReturnType<typeof getV1Backups>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1Backups<
+	TData = Awaited<ReturnType<typeof getV1Backups>>,
+	TError = DtoErrorResponse,
+>(
+	options?: {
+		query?: Partial<
+			UseQueryOptions<Awaited<ReturnType<typeof getV1Backups>>, TError, TData>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary List backup files
+ */
+
+export function useGetV1Backups<
+	TData = Awaited<ReturnType<typeof getV1Backups>>,
+	TError = DtoErrorResponse,
+>(
+	options?: {
+		query?: Partial<
+			UseQueryOptions<Awaited<ReturnType<typeof getV1Backups>>, TError, TData>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1BackupsQueryOptions(options);
+
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+	return { ...query, queryKey: queryOptions.queryKey };
+}
+
 export type postV1BackupsResponse201 = {
 	data: PostV1Backups201;
 	status: 201;
+};
+
+export type postV1BackupsResponse400 = {
+	data: DtoErrorResponse;
+	status: 400;
 };
 
 export type postV1BackupsResponse401 = {
@@ -44,6 +227,7 @@ export type postV1BackupsResponseSuccess = postV1BackupsResponse201 & {
 	headers: Headers;
 };
 export type postV1BackupsResponseError = (
+	| postV1BackupsResponse400
 	| postV1BackupsResponse401
 	| postV1BackupsResponse403
 	| postV1BackupsResponse500
@@ -55,18 +239,31 @@ export type postV1BackupsResponse =
 	| postV1BackupsResponseSuccess
 	| postV1BackupsResponseError;
 
-export const getPostV1BackupsUrl = () => {
-	return `/v1/backups`;
+export const getPostV1BackupsUrl = (params?: PostV1BackupsParams) => {
+	const normalizedParams = new URLSearchParams();
+
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(key, value === null ? "null" : value.toString());
+		}
+	});
+
+	const stringifiedParams = normalizedParams.toString();
+
+	return stringifiedParams.length > 0
+		? `/v1/backups?${stringifiedParams}`
+		: `/v1/backups`;
 };
 
 /**
- * Trigger full database backup (pg_dump -Fc). Hanya superadmin / admin dengan modul keuangan.
+ * Trigger full database backup. Format: dump (custom -Fc), sql (plain -Fp), sql-compat (plain tanpa restrict/unrestrict). Default: dump.
  * @summary Buat backup database manual
  */
 export const postV1Backups = async (
+	params?: PostV1BackupsParams,
 	options?: RequestInit,
 ): Promise<postV1BackupsResponse> => {
-	return customInstance<postV1BackupsResponse>(getPostV1BackupsUrl(), {
+	return customInstance<postV1BackupsResponse>(getPostV1BackupsUrl(params), {
 		...options,
 		method: "POST",
 	});
@@ -79,14 +276,14 @@ export const getPostV1BackupsMutationOptions = <
 	mutation?: UseMutationOptions<
 		Awaited<ReturnType<typeof postV1Backups>>,
 		TError,
-		void,
+		{ params?: PostV1BackupsParams },
 		TContext
 	>;
 	request?: SecondParameter<typeof customInstance>;
 }): UseMutationOptions<
 	Awaited<ReturnType<typeof postV1Backups>>,
 	TError,
-	void,
+	{ params?: PostV1BackupsParams },
 	TContext
 > => {
 	const mutationKey = ["postV1Backups"];
@@ -100,9 +297,11 @@ export const getPostV1BackupsMutationOptions = <
 
 	const mutationFn: MutationFunction<
 		Awaited<ReturnType<typeof postV1Backups>>,
-		void
-	> = () => {
-		return postV1Backups(requestOptions);
+		{ params?: PostV1BackupsParams }
+	> = (props) => {
+		const { params } = props ?? {};
+
+		return postV1Backups(params, requestOptions);
 	};
 
 	return { mutationFn, ...mutationOptions };
@@ -122,7 +321,7 @@ export const usePostV1Backups = <TError = DtoErrorResponse, TContext = unknown>(
 		mutation?: UseMutationOptions<
 			Awaited<ReturnType<typeof postV1Backups>>,
 			TError,
-			void,
+			{ params?: PostV1BackupsParams },
 			TContext
 		>;
 		request?: SecondParameter<typeof customInstance>;
@@ -131,8 +330,217 @@ export const usePostV1Backups = <TError = DtoErrorResponse, TContext = unknown>(
 ): UseMutationResult<
 	Awaited<ReturnType<typeof postV1Backups>>,
 	TError,
-	void,
+	{ params?: PostV1BackupsParams },
 	TContext
 > => {
 	return useMutation(getPostV1BackupsMutationOptions(options), queryClient);
 };
+export type getV1BackupsFilenameResponse200 = {
+	data: Blob;
+	status: 200;
+};
+
+export type getV1BackupsFilenameResponse401 = {
+	data: Blob;
+	status: 401;
+};
+
+export type getV1BackupsFilenameResponse403 = {
+	data: Blob;
+	status: 403;
+};
+
+export type getV1BackupsFilenameResponse404 = {
+	data: Blob;
+	status: 404;
+};
+
+export type getV1BackupsFilenameResponseSuccess =
+	getV1BackupsFilenameResponse200 & {
+		headers: Headers;
+	};
+export type getV1BackupsFilenameResponseError = (
+	| getV1BackupsFilenameResponse401
+	| getV1BackupsFilenameResponse403
+	| getV1BackupsFilenameResponse404
+) & {
+	headers: Headers;
+};
+
+export type getV1BackupsFilenameResponse =
+	| getV1BackupsFilenameResponseSuccess
+	| getV1BackupsFilenameResponseError;
+
+export const getGetV1BackupsFilenameUrl = (filename: string) => {
+	return `/v1/backups/${filename}`;
+};
+
+/**
+ * Download file backup berdasarkan nama file. Hanya superadmin.
+ * @summary Download backup file
+ */
+export const getV1BackupsFilename = async (
+	filename: string,
+	options?: RequestInit,
+): Promise<getV1BackupsFilenameResponse> => {
+	return customInstance<getV1BackupsFilenameResponse>(
+		getGetV1BackupsFilenameUrl(filename),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
+
+export const getGetV1BackupsFilenameQueryKey = (filename: string) => {
+	return [`/v1/backups/${filename}`] as const;
+};
+
+export const getGetV1BackupsFilenameQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1BackupsFilename>>,
+	TError = Blob,
+>(
+	filename: string,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1BackupsFilename>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
+
+	const queryKey =
+		queryOptions?.queryKey ?? getGetV1BackupsFilenameQueryKey(filename);
+
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1BackupsFilename>>
+	> = ({ signal }) =>
+		getV1BackupsFilename(filename, { signal, ...requestOptions });
+
+	return {
+		queryKey,
+		queryFn,
+		enabled: !!filename,
+		...queryOptions,
+	} as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1BackupsFilename>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetV1BackupsFilenameQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1BackupsFilename>>
+>;
+export type GetV1BackupsFilenameQueryError = Blob;
+
+export function useGetV1BackupsFilename<
+	TData = Awaited<ReturnType<typeof getV1BackupsFilename>>,
+	TError = Blob,
+>(
+	filename: string,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1BackupsFilename>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1BackupsFilename>>,
+					TError,
+					Awaited<ReturnType<typeof getV1BackupsFilename>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1BackupsFilename<
+	TData = Awaited<ReturnType<typeof getV1BackupsFilename>>,
+	TError = Blob,
+>(
+	filename: string,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1BackupsFilename>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1BackupsFilename>>,
+					TError,
+					Awaited<ReturnType<typeof getV1BackupsFilename>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1BackupsFilename<
+	TData = Awaited<ReturnType<typeof getV1BackupsFilename>>,
+	TError = Blob,
+>(
+	filename: string,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1BackupsFilename>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Download backup file
+ */
+
+export function useGetV1BackupsFilename<
+	TData = Awaited<ReturnType<typeof getV1BackupsFilename>>,
+	TError = Blob,
+>(
+	filename: string,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1BackupsFilename>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1BackupsFilenameQueryOptions(filename, options);
+
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+	return { ...query, queryKey: queryOptions.queryKey };
+}

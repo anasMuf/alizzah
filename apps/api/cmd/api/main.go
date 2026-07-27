@@ -356,6 +356,8 @@ func main() {
 	// Backup Service
 	// =====================
 
+	backupEnabled := os.Getenv("BACKUP_ENABLED") == "true"
+
 	backupDir := os.Getenv("BACKUP_DIR")
 	if backupDir == "" {
 		home, _ := os.UserHomeDir()
@@ -377,27 +379,32 @@ func main() {
 		DBPort:        os.Getenv("DB_PORT"),
 		DBName:        os.Getenv("DB_NAME"),
 		RetentionDays: retentionDays,
+		Enabled:       backupEnabled,
 	})
 
-	// Startup check: pg_dump & pg_restore must exist
-	if err := backupSvc.CheckDependencies(); err != nil {
-		log.Fatalf("[FATAL] Backup dependencies missing: %v", err)
-	}
-	log.Printf("[backup] Dependencies OK. Backup dir: %s", backupDir)
-
-	// Start cron scheduler (daily 23:00 WIB = 16:00 UTC)
-	go backupSvc.StartScheduler()
-
-	// Start cleanup goroutine (daily)
-	go func() {
-		for {
-			time.Sleep(24 * time.Hour)
-			log.Printf("[backup] Running retention cleanup...")
-			if err := backupSvc.Cleanup(context.Background()); err != nil {
-				log.Printf("[backup] Cleanup error: %v", err)
-			}
+	// Startup check: pg_dump & pg_restore must exist (only if backup enabled)
+	if backupEnabled {
+		if err := backupSvc.CheckDependencies(); err != nil {
+			log.Fatalf("[FATAL] Backup dependencies missing: %v", err)
 		}
-	}()
+		log.Printf("[backup] Enabled. Backup dir: %s", backupDir)
+
+		// Start cron scheduler (daily 23:00 WIB = 16:00 UTC)
+		go backupSvc.StartScheduler()
+
+		// Start cleanup goroutine (daily)
+		go func() {
+			for {
+				time.Sleep(24 * time.Hour)
+				log.Printf("[backup] Running retention cleanup...")
+				if err := backupSvc.Cleanup(context.Background()); err != nil {
+					log.Printf("[backup] Cleanup error: %v", err)
+				}
+			}
+		}()
+	} else {
+		log.Printf("[backup] Disabled (BACKUP_ENABLED not set to 'true'). Scheduler & create skipped.")
+	}
 
 	// Write README.md restore instructions to backup dir
 	if err := backupSvc.WriteRestoreInstructions(); err != nil {
@@ -467,8 +474,11 @@ func main() {
 	authProtected.POST("/logout", authHandler.Logout)
 	authProtected.GET("/me", authHandler.Me)
 
-	// Backup — manual trigger
-	api.POST("/backups", backupHandler.Create, middleware.JWTAuth(tokenBlacklistRepo), guard.RequireModule(middleware.ModuleKeuangan))
+	// Backup — superadmin only (list + create + download)
+	backups := api.Group("/backups", middleware.JWTAuth(tokenBlacklistRepo), middleware.RequireRoles("superadmin"))
+	backups.GET("", backupHandler.List)
+	backups.POST("", backupHandler.Create)
+	backups.GET("/:filename", backupHandler.Download)
 
 	// Users — superadmin only
 	users := api.Group("/users", middleware.JWTAuth(tokenBlacklistRepo), middleware.RateLimiter(20, 40), middleware.RequireRoles("superadmin"))

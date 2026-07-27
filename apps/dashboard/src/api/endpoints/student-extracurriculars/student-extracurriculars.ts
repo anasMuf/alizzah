@@ -27,6 +27,10 @@ import type {
 	DtoErrorResponse,
 	DtoSuccessResponse,
 	DtoUpdateStudentExtracurricularRequest,
+	GetV1ExtracurricularsExport200,
+	GetV1ExtracurricularsExportParams,
+	GetV1ExtracurricularsIdStudents200,
+	GetV1ExtracurricularsIdStudentsParams,
 	GetV1StudentsIdExtracurriculars200,
 	GetV1StudentsIdExtracurricularsParams,
 	PostV1ExtracurricularsSyncInvoices200,
@@ -37,6 +41,236 @@ import type {
 import { customInstance } from "../../mutator/custom-instance";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
+export type getV1ExtracurricularsExportResponse200 = {
+	data: GetV1ExtracurricularsExport200;
+	status: 200;
+};
+
+export type getV1ExtracurricularsExportResponse400 = {
+	data: DtoErrorResponse;
+	status: 400;
+};
+
+export type getV1ExtracurricularsExportResponse401 = {
+	data: DtoErrorResponse;
+	status: 401;
+};
+
+export type getV1ExtracurricularsExportResponse403 = {
+	data: DtoErrorResponse;
+	status: 403;
+};
+
+export type getV1ExtracurricularsExportResponse500 = {
+	data: DtoErrorResponse;
+	status: 500;
+};
+
+export type getV1ExtracurricularsExportResponseSuccess =
+	getV1ExtracurricularsExportResponse200 & {
+		headers: Headers;
+	};
+export type getV1ExtracurricularsExportResponseError = (
+	| getV1ExtracurricularsExportResponse400
+	| getV1ExtracurricularsExportResponse401
+	| getV1ExtracurricularsExportResponse403
+	| getV1ExtracurricularsExportResponse500
+) & {
+	headers: Headers;
+};
+
+export type getV1ExtracurricularsExportResponse =
+	| getV1ExtracurricularsExportResponseSuccess
+	| getV1ExtracurricularsExportResponseError;
+
+export const getGetV1ExtracurricularsExportUrl = (
+	params: GetV1ExtracurricularsExportParams,
+) => {
+	const normalizedParams = new URLSearchParams();
+
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(key, value === null ? "null" : value.toString());
+		}
+	});
+
+	const stringifiedParams = normalizedParams.toString();
+
+	return stringifiedParams.length > 0
+		? `/v1/extracurriculars/export?${stringifiedParams}`
+		: `/v1/extracurriculars/export`;
+};
+
+/**
+ * Get all extracurriculars with their enrolled students for Excel export
+ * @summary Export extracurriculars with students
+ */
+export const getV1ExtracurricularsExport = async (
+	params: GetV1ExtracurricularsExportParams,
+	options?: RequestInit,
+): Promise<getV1ExtracurricularsExportResponse> => {
+	return customInstance<getV1ExtracurricularsExportResponse>(
+		getGetV1ExtracurricularsExportUrl(params),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
+
+export const getGetV1ExtracurricularsExportQueryKey = (
+	params?: GetV1ExtracurricularsExportParams,
+) => {
+	return [`/v1/extracurriculars/export`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetV1ExtracurricularsExportQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1ExtracurricularsExport>>,
+	TError = DtoErrorResponse,
+>(
+	params: GetV1ExtracurricularsExportParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1ExtracurricularsExport>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
+
+	const queryKey =
+		queryOptions?.queryKey ?? getGetV1ExtracurricularsExportQueryKey(params);
+
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1ExtracurricularsExport>>
+	> = ({ signal }) =>
+		getV1ExtracurricularsExport(params, { signal, ...requestOptions });
+
+	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1ExtracurricularsExport>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetV1ExtracurricularsExportQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1ExtracurricularsExport>>
+>;
+export type GetV1ExtracurricularsExportQueryError = DtoErrorResponse;
+
+export function useGetV1ExtracurricularsExport<
+	TData = Awaited<ReturnType<typeof getV1ExtracurricularsExport>>,
+	TError = DtoErrorResponse,
+>(
+	params: GetV1ExtracurricularsExportParams,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1ExtracurricularsExport>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1ExtracurricularsExport>>,
+					TError,
+					Awaited<ReturnType<typeof getV1ExtracurricularsExport>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1ExtracurricularsExport<
+	TData = Awaited<ReturnType<typeof getV1ExtracurricularsExport>>,
+	TError = DtoErrorResponse,
+>(
+	params: GetV1ExtracurricularsExportParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1ExtracurricularsExport>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1ExtracurricularsExport>>,
+					TError,
+					Awaited<ReturnType<typeof getV1ExtracurricularsExport>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1ExtracurricularsExport<
+	TData = Awaited<ReturnType<typeof getV1ExtracurricularsExport>>,
+	TError = DtoErrorResponse,
+>(
+	params: GetV1ExtracurricularsExportParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1ExtracurricularsExport>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Export extracurriculars with students
+ */
+
+export function useGetV1ExtracurricularsExport<
+	TData = Awaited<ReturnType<typeof getV1ExtracurricularsExport>>,
+	TError = DtoErrorResponse,
+>(
+	params: GetV1ExtracurricularsExportParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1ExtracurricularsExport>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1ExtracurricularsExportQueryOptions(
+		params,
+		options,
+	);
+
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+	return { ...query, queryKey: queryOptions.queryKey };
+}
 
 export type postV1ExtracurricularsSyncInvoicesResponse200 = {
 	data: PostV1ExtracurricularsSyncInvoices200;
@@ -164,6 +398,260 @@ export const usePostV1ExtracurricularsSyncInvoices = <
 		queryClient,
 	);
 };
+export type getV1ExtracurricularsIdStudentsResponse200 = {
+	data: GetV1ExtracurricularsIdStudents200;
+	status: 200;
+};
+
+export type getV1ExtracurricularsIdStudentsResponse400 = {
+	data: DtoErrorResponse;
+	status: 400;
+};
+
+export type getV1ExtracurricularsIdStudentsResponse401 = {
+	data: DtoErrorResponse;
+	status: 401;
+};
+
+export type getV1ExtracurricularsIdStudentsResponse403 = {
+	data: DtoErrorResponse;
+	status: 403;
+};
+
+export type getV1ExtracurricularsIdStudentsResponse404 = {
+	data: DtoErrorResponse;
+	status: 404;
+};
+
+export type getV1ExtracurricularsIdStudentsResponse500 = {
+	data: DtoErrorResponse;
+	status: 500;
+};
+
+export type getV1ExtracurricularsIdStudentsResponseSuccess =
+	getV1ExtracurricularsIdStudentsResponse200 & {
+		headers: Headers;
+	};
+export type getV1ExtracurricularsIdStudentsResponseError = (
+	| getV1ExtracurricularsIdStudentsResponse400
+	| getV1ExtracurricularsIdStudentsResponse401
+	| getV1ExtracurricularsIdStudentsResponse403
+	| getV1ExtracurricularsIdStudentsResponse404
+	| getV1ExtracurricularsIdStudentsResponse500
+) & {
+	headers: Headers;
+};
+
+export type getV1ExtracurricularsIdStudentsResponse =
+	| getV1ExtracurricularsIdStudentsResponseSuccess
+	| getV1ExtracurricularsIdStudentsResponseError;
+
+export const getGetV1ExtracurricularsIdStudentsUrl = (
+	id: number,
+	params: GetV1ExtracurricularsIdStudentsParams,
+) => {
+	const normalizedParams = new URLSearchParams();
+
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(key, value === null ? "null" : value.toString());
+		}
+	});
+
+	const stringifiedParams = normalizedParams.toString();
+
+	return stringifiedParams.length > 0
+		? `/v1/extracurriculars/${id}/students?${stringifiedParams}`
+		: `/v1/extracurriculars/${id}/students`;
+};
+
+/**
+ * Get list of students enrolled in a specific extracurricular
+ * @summary Get students in an extracurricular
+ */
+export const getV1ExtracurricularsIdStudents = async (
+	id: number,
+	params: GetV1ExtracurricularsIdStudentsParams,
+	options?: RequestInit,
+): Promise<getV1ExtracurricularsIdStudentsResponse> => {
+	return customInstance<getV1ExtracurricularsIdStudentsResponse>(
+		getGetV1ExtracurricularsIdStudentsUrl(id, params),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
+
+export const getGetV1ExtracurricularsIdStudentsQueryKey = (
+	id: number,
+	params?: GetV1ExtracurricularsIdStudentsParams,
+) => {
+	return [
+		`/v1/extracurriculars/${id}/students`,
+		...(params ? [params] : []),
+	] as const;
+};
+
+export const getGetV1ExtracurricularsIdStudentsQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1ExtracurricularsIdStudents>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	params: GetV1ExtracurricularsIdStudentsParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1ExtracurricularsIdStudents>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
+
+	const queryKey =
+		queryOptions?.queryKey ??
+		getGetV1ExtracurricularsIdStudentsQueryKey(id, params);
+
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1ExtracurricularsIdStudents>>
+	> = ({ signal }) =>
+		getV1ExtracurricularsIdStudents(id, params, { signal, ...requestOptions });
+
+	return {
+		queryKey,
+		queryFn,
+		enabled: !!id,
+		...queryOptions,
+	} as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1ExtracurricularsIdStudents>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetV1ExtracurricularsIdStudentsQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1ExtracurricularsIdStudents>>
+>;
+export type GetV1ExtracurricularsIdStudentsQueryError = DtoErrorResponse;
+
+export function useGetV1ExtracurricularsIdStudents<
+	TData = Awaited<ReturnType<typeof getV1ExtracurricularsIdStudents>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	params: GetV1ExtracurricularsIdStudentsParams,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1ExtracurricularsIdStudents>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1ExtracurricularsIdStudents>>,
+					TError,
+					Awaited<ReturnType<typeof getV1ExtracurricularsIdStudents>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1ExtracurricularsIdStudents<
+	TData = Awaited<ReturnType<typeof getV1ExtracurricularsIdStudents>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	params: GetV1ExtracurricularsIdStudentsParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1ExtracurricularsIdStudents>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1ExtracurricularsIdStudents>>,
+					TError,
+					Awaited<ReturnType<typeof getV1ExtracurricularsIdStudents>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1ExtracurricularsIdStudents<
+	TData = Awaited<ReturnType<typeof getV1ExtracurricularsIdStudents>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	params: GetV1ExtracurricularsIdStudentsParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1ExtracurricularsIdStudents>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get students in an extracurricular
+ */
+
+export function useGetV1ExtracurricularsIdStudents<
+	TData = Awaited<ReturnType<typeof getV1ExtracurricularsIdStudents>>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	params: GetV1ExtracurricularsIdStudentsParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1ExtracurricularsIdStudents>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1ExtracurricularsIdStudentsQueryOptions(
+		id,
+		params,
+		options,
+	);
+
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+	return { ...query, queryKey: queryOptions.queryKey };
+}
+
 export type getV1StudentsIdExtracurricularsResponse200 = {
 	data: GetV1StudentsIdExtracurriculars200;
 	status: 200;

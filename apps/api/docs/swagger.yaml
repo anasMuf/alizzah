@@ -1141,6 +1141,36 @@ definitions:
       total:
         type: number
     type: object
+  dto.ExtracurricularExportItem:
+    properties:
+      extracurricular_id:
+        type: integer
+      extracurricular_name:
+        type: string
+      students:
+        items:
+          $ref: '#/definitions/dto.ExtracurricularExportStudent'
+        type: array
+    type: object
+  dto.ExtracurricularExportStudent:
+    properties:
+      birth_date:
+        type: string
+      birth_place:
+        type: string
+      class_group_level:
+        type: string
+      class_group_name:
+        type: string
+      full_name:
+        type: string
+      gender:
+        type: string
+      id:
+        type: integer
+      status:
+        type: string
+    type: object
   dto.ExtracurricularResponse:
     properties:
       id:
@@ -3395,6 +3425,19 @@ definitions:
       total_principal:
         type: number
     type: object
+  service.BackupResult:
+    properties:
+      filename:
+        type: string
+      path:
+        type: string
+      size_bytes:
+        type: integer
+      size_human:
+        type: string
+      timestamp:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -3965,6 +4008,41 @@ paths:
       summary: Get current user
       tags:
       - auth
+  /v1/backups:
+    post:
+      consumes:
+      - application/json
+      description: Trigger full database backup (pg_dump -Fc). Hanya superadmin /
+        admin dengan modul keuangan.
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/service.BackupResult'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Buat backup database manual
+      tags:
+      - backup
   /v1/cash/balance:
     get:
       consumes:
@@ -6096,6 +6174,106 @@ paths:
       summary: Update extracurricular
       tags:
       - extracurriculars
+  /v1/extracurriculars/{id}/students:
+    get:
+      consumes:
+      - application/json
+      description: Get list of students enrolled in a specific extracurricular
+      parameters:
+      - description: Extracurricular ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Academic Year ID
+        in: query
+        name: academic_year_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.ExtracurricularExportItem'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get students in an extracurricular
+      tags:
+      - student-extracurriculars
+  /v1/extracurriculars/export:
+    get:
+      consumes:
+      - application/json
+      description: Get all extracurriculars with their enrolled students for Excel
+        export
+      parameters:
+      - description: Academic Year ID
+        in: query
+        name: academic_year_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.ExtracurricularExportItem'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Export extracurriculars with students
+      tags:
+      - student-extracurriculars
   /v1/extracurriculars/sync-invoices:
     post:
       consumes:

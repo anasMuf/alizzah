@@ -13,12 +13,13 @@ import (
 )
 
 type AuthHandler struct {
-	authService service.AuthService
+	authService   service.AuthService
 	blacklistRepo repository.TokenBlacklistRepository
+	backupSvc     *service.BackupService
 }
 
-func NewAuthHandler(authService service.AuthService, blacklistRepo repository.TokenBlacklistRepository) *AuthHandler {
-	return &AuthHandler{authService: authService, blacklistRepo: blacklistRepo}
+func NewAuthHandler(authService service.AuthService, blacklistRepo repository.TokenBlacklistRepository, backupSvc *service.BackupService) *AuthHandler {
+	return &AuthHandler{authService: authService, blacklistRepo: blacklistRepo, backupSvc: backupSvc}
 }
 
 // Login godoc
@@ -80,6 +81,11 @@ func (h *AuthHandler) Logout(c echo.Context) error {
 
 			_ = h.blacklistRepo.Create(tokenHash, expiresAt)
 		}
+	}
+
+	// Trigger backup async dengan debounce (side-effect, tidak memblokir response)
+	if h.backupSvc != nil {
+		h.backupSvc.CreateAsync(c.Request().Context())
 	}
 
 	return c.JSON(http.StatusOK, dto.SuccessResponse{

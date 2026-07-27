@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -350,8 +352,60 @@ func main() {
 		return
 	}
 
+	// =====================
+	// Backup Service
+	// =====================
+
+	backupDir := os.Getenv("BACKUP_DIR")
+	if backupDir == "" {
+		home, _ := os.UserHomeDir()
+		backupDir = filepath.Join(home, "backups", "alizzah-app")
+	}
+
+	retentionDays := 7
+	if v := os.Getenv("BACKUP_RETENTION_DAYS"); v != "" {
+		if d, err := strconv.Atoi(v); err == nil && d > 0 {
+			retentionDays = d
+		}
+	}
+
+	backupSvc := service.NewBackupService(service.BackupConfig{
+		BackupDir:     backupDir,
+		DBUser:        os.Getenv("DB_USER"),
+		DBPassword:    os.Getenv("DB_PASSWORD"),
+		DBHost:        os.Getenv("DB_HOST"),
+		DBPort:        os.Getenv("DB_PORT"),
+		DBName:        os.Getenv("DB_NAME"),
+		RetentionDays: retentionDays,
+	})
+
+	// Startup check: pg_dump & pg_restore must exist
+	if err := backupSvc.CheckDependencies(); err != nil {
+		log.Fatalf("[FATAL] Backup dependencies missing: %v", err)
+	}
+	log.Printf("[backup] Dependencies OK. Backup dir: %s", backupDir)
+
+	// Start cron scheduler (daily 23:00 WIB = 16:00 UTC)
+	go backupSvc.StartScheduler()
+
+	// Start cleanup goroutine (daily)
+	go func() {
+		for {
+			time.Sleep(24 * time.Hour)
+			log.Printf("[backup] Running retention cleanup...")
+			if err := backupSvc.Cleanup(context.Background()); err != nil {
+				log.Printf("[backup] Cleanup error: %v", err)
+			}
+		}
+	}()
+
+	// Write README.md restore instructions to backup dir
+	if err := backupSvc.WriteRestoreInstructions(); err != nil {
+		log.Printf("[backup] Warning: failed to write README: %v", err)
+	}
+
 	// Handlers
-	authHandler := handler.NewAuthHandler(authService, tokenBlacklistRepo)
+	authHandler := handler.NewAuthHandler(authService, tokenBlacklistRepo, backupSvc)
 	userHandler := handler.NewUserHandler(userService)
 	ayHandler := handler.NewAcademicYearHandler(ayService)
 	studentHandler := handler.NewStudentHandler(studentService)
@@ -396,6 +450,9 @@ func main() {
 	dailyClosingHandler := handler.NewDailyClosingHandler(dailyClosingService)
 	reportHandler := handler.NewReportHandler(reportService)
 
+	// Backup
+	backupHandler := handler.NewBackupHandler(backupSvc)
+
 	// =====================
 	// Routes — /api/v1
 	// =====================
@@ -409,6 +466,9 @@ func main() {
 	authProtected := api.Group("/auth", middleware.JWTAuth(tokenBlacklistRepo), middleware.RateLimiter(20, 40))
 	authProtected.POST("/logout", authHandler.Logout)
 	authProtected.GET("/me", authHandler.Me)
+
+	// Backup — manual trigger
+	api.POST("/backups", backupHandler.Create, middleware.JWTAuth(tokenBlacklistRepo), guard.RequireModule(middleware.ModuleKeuangan))
 
 	// Users — superadmin only
 	users := api.Group("/users", middleware.JWTAuth(tokenBlacklistRepo), middleware.RateLimiter(20, 40), middleware.RequireRoles("superadmin"))

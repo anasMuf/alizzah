@@ -19,7 +19,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 
 # ---- runtime ----
 FROM alpine:3.20
-RUN apk add --no-cache ca-certificates tzdata wget \
+RUN apk add --no-cache ca-certificates tzdata wget postgresql-client \
     && addgroup -S app && adduser -S -G app app
 ENV TZ=Asia/Jakarta
 WORKDIR /app

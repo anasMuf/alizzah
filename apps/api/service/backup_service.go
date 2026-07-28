@@ -360,18 +360,30 @@ func (s *BackupService) Restore(ctx context.Context, srcPath, format string) err
 		return fmt.Errorf("%w: %s (valid: dump, sql)", ErrInvalidFormat, format)
 	}
 
+	// Create safety backup before destructive operations
+	log.Printf("[backup] Restore: creating pre-restore safety backup...")
+	safetyResult, err := s.Create(ctx, "dump")
+	if err != nil {
+		return fmt.Errorf("safety backup failed, restore aborted: %w", err)
+	}
+	log.Printf("[backup] Restore: safety backup created: %s (%s)", safetyResult.Filename, safetyResult.SizeHuman)
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	pgPassword := s.config.DBPassword
 
 	log.Printf("[backup] Restore starting: %s -> %s", srcPath, s.config.DBName)
 
 	// Step 1: Drop database (connect to default "postgres" DB)
-	if err := s.execSQL("postgres", fmt.Sprintf("DROP DATABASE IF EXISTS %s", s.config.DBName)); err != nil {
+	dbName := quoteIdent(s.config.DBName)
+	if err := s.execSQL("postgres", fmt.Sprintf("DROP DATABASE IF EXISTS %s", dbName)); err != nil {
 		return fmt.Errorf("failed to drop database: %w", err)
 	}
 	log.Printf("[backup] Restore: dropped database %s", s.config.DBName)
 
 	// Step 2: Create database
-	if err := s.execSQL("postgres", fmt.Sprintf("CREATE DATABASE %s", s.config.DBName)); err != nil {
+	if err := s.execSQL("postgres", fmt.Sprintf("CREATE DATABASE %s", dbName)); err != nil {
 		return fmt.Errorf("failed to create database: %w", err)
 	}
 	log.Printf("[backup] Restore: created database %s", s.config.DBName)
@@ -414,6 +426,8 @@ func (s *BackupService) Restore(ctx context.Context, srcPath, format string) err
 
 // execSQL runs a SQL statement against the given database via psql.
 func (s *BackupService) execSQL(database, sql string) error {
+	// Quote database identifier to prevent injection
+	database = quoteIdent(database)
 	cmd := exec.Command("psql",
 		"-U", s.config.DBUser,
 		"-h", s.config.DBHost,
@@ -522,35 +536,29 @@ func (s *BackupService) previewDump(path string) ([]TableInfo, error) {
 
 // previewSQL scans a plain SQL dump for CREATE TABLE/SEQUENCE/FUNCTION statements.
 func (s *BackupService) previewSQL(path string) ([]TableInfo, error) {
-	f, err := os.Open(path)
+	content, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("cannot open SQL file: %w", err)
+		return nil, fmt.Errorf("cannot read SQL file: %w", err)
 	}
-	defer f.Close()
 
-	reCreate := regexp.MustCompile(`(?i)CREATE\s+(TABLE|SEQUENCE|FUNCTION|INDEX|VIEW|MATERIALIZED\s+VIEW|TRIGGER)\s+(IF\s+NOT\s+EXISTS\s+)?(\w+\.)?"?(\w+)"?`)
+	reCreate := regexp.MustCompile(`(?si)CREATE\s+(TABLE|SEQUENCE|FUNCTION|INDEX|VIEW|MATERIALIZED\s+VIEW|TRIGGER)\s+(IF\s+NOT\s+EXISTS\s+)?([\w.]+\.)?"?(\w+)"?`)
 
 	var tables []TableInfo
 	seen := make(map[string]bool)
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		matches := reCreate.FindStringSubmatch(line)
-		if len(matches) >= 5 {
-			entryType := strings.ToUpper(matches[1])
-			if entryType == "MATERIALIZED" {
-				entryType = "MATERIALIZED VIEW"
-			}
-			name := matches[4]
-			key := entryType + ":" + name
-			if !seen[key] {
-				seen[key] = true
-				tables = append(tables, TableInfo{
-					Name:   name,
-					Schema: "public",
-					Type:   entryType,
-				})
-			}
+	for _, match := range reCreate.FindAllStringSubmatch(string(content), -1) {
+		entryType := strings.ToUpper(match[1])
+		if entryType == "MATERIALIZED" {
+			entryType = "MATERIALIZED VIEW"
+		}
+		name := match[4]
+		key := entryType + ":" + name
+		if !seen[key] {
+			seen[key] = true
+			tables = append(tables, TableInfo{
+				Name:   name,
+				Schema: "public",
+				Type:   entryType,
+			})
 		}
 	}
 	return tables, nil
@@ -821,4 +829,10 @@ func truncate(s string, max int) string {
 		return s
 	}
 	return s[:max]
+}
+
+// quoteIdent quotes a PostgreSQL identifier by wrapping in double quotes
+// and escaping any embedded double quotes.
+func quoteIdent(s string) string {
+	return `"` + strings.ReplaceAll(s, `"`, `""`) + `"`
 }

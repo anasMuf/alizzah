@@ -242,6 +242,25 @@ func TestFormatBytes(t *testing.T) {
 	}
 }
 
+func TestBackupService_PreviewSQL_Multiline(t *testing.T) {
+	dir := t.TempDir()
+	sqlFile := filepath.Join(dir, "multiline.sql")
+	// Multi-line CREATE TABLE
+	content := `CREATE TABLE students (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+);`
+	require.NoError(t, os.WriteFile(sqlFile, []byte(content), 0644))
+
+	svc := NewBackupService(BackupConfig{})
+	tables, err := svc.previewSQL(sqlFile)
+	require.NoError(t, err)
+	assert.Len(t, tables, 1)
+	assert.Equal(t, "students", tables[0].Name)
+	assert.Equal(t, "TABLE", tables[0].Type)
+}
+
 func TestNewBackupService_Location(t *testing.T) {
 	svc := NewBackupService(BackupConfig{})
 	require.NotNil(t, svc.loc)

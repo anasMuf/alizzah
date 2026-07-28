@@ -112,6 +112,68 @@ func (h *BackupHandler) Download(c echo.Context) error {
 	return c.Attachment(path, filepath.Base(path))
 }
 
+// saveBackupUpload reads the "file" multipart field, validates its extension,
+// and saves it to a temporary file. On success the caller receives a cleanup
+// function that removes the temp file; on error the temp file is cleaned up
+// automatically.
+func saveBackupUpload(c echo.Context, allowedExt ...string) (tmpPath string, format string, cleanup func(), err error) {
+	file, err := c.FormFile("file")
+	if err != nil {
+		return "", "", nil, echo.NewHTTPError(http.StatusBadRequest, "File backup diperlukan: "+err.Error())
+	}
+
+	ext := filepath.Ext(file.Filename)
+
+	// Validate extension
+	valid := false
+	for _, allowed := range allowedExt {
+		if ext == allowed {
+			valid = true
+			break
+		}
+	}
+	if !valid {
+		return "", "", nil, echo.NewHTTPError(http.StatusBadRequest, "Format file tidak didukung. Gunakan .dump atau .sql")
+	}
+
+	switch ext {
+	case ".dump":
+		format = "dump"
+	case ".sql":
+		format = "sql"
+	}
+
+	// Open uploaded file
+	src, err := file.Open()
+	if err != nil {
+		return "", "", nil, echo.NewHTTPError(http.StatusInternalServerError, "Gagal membaca file: "+err.Error())
+	}
+	defer src.Close()
+
+	// Save to temp file
+	tmpFile, err := os.CreateTemp("", "alizzah-upload-*"+ext)
+	if err != nil {
+		return "", "", nil, echo.NewHTTPError(http.StatusInternalServerError, "Gagal membuat file temporary: "+err.Error())
+	}
+	// Close the temp file on every return. On error also remove it so the
+	// caller doesn't have to worry about leaked files.
+	defer func() {
+		tmpFile.Close()
+		if err != nil {
+			os.Remove(tmpFile.Name())
+		}
+	}()
+
+	if _, err := io.Copy(tmpFile, src); err != nil {
+		return "", "", nil, echo.NewHTTPError(http.StatusInternalServerError, "Gagal menyimpan file: "+err.Error())
+	}
+
+	tmpPath = tmpFile.Name()
+	cleanup = func() { os.Remove(tmpPath) }
+
+	return tmpPath, format, cleanup, nil
+}
+
 // Preview godoc
 // @Summary      Preview isi file backup
 // @Description  Upload file backup (.dump/.sql) untuk melihat daftar tabel dan schema yang akan direstore.
@@ -127,42 +189,13 @@ func (h *BackupHandler) Download(c echo.Context) error {
 // @Failure      500   {object}  dto.ErrorResponse
 // @Router       /v1/backups/preview [post]
 func (h *BackupHandler) Preview(c echo.Context) error {
-	file, err := c.FormFile("file")
+	tmpPath, _, cleanup, err := saveBackupUpload(c, ".dump", ".sql")
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "File backup diperlukan: "+err.Error())
+		return err
 	}
+	defer cleanup()
 
-	// Validate extension
-	ext := filepath.Ext(file.Filename)
-	switch ext {
-	case ".dump", ".sql":
-		// valid
-	default:
-		return echo.NewHTTPError(http.StatusBadRequest, "Format file tidak didukung. Gunakan .dump atau .sql")
-	}
-
-	// Open uploaded file
-	src, err := file.Open()
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Gagal membaca file: "+err.Error())
-	}
-	defer src.Close()
-
-	// Save to temp file
-	tmpFile, err := os.CreateTemp("", "alizzah-preview-*"+ext)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Gagal membuat file temporary: "+err.Error())
-	}
-	defer os.Remove(tmpFile.Name())
-
-	if _, err := io.Copy(tmpFile, src); err != nil {
-		tmpFile.Close()
-		return echo.NewHTTPError(http.StatusInternalServerError, "Gagal menyimpan file: "+err.Error())
-	}
-	tmpFile.Close()
-
-	// Run preview
-	preview, err := h.backupSvc.Preview(tmpFile.Name())
+	preview, err := h.backupSvc.Preview(tmpPath)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Preview gagal: "+err.Error())
 	}
@@ -188,49 +221,17 @@ func (h *BackupHandler) Preview(c echo.Context) error {
 // @Failure      500   {object}  dto.ErrorResponse
 // @Router       /v1/backups/restore [post]
 func (h *BackupHandler) Restore(c echo.Context) error {
-	file, err := c.FormFile("file")
+	tmpPath, format, cleanup, err := saveBackupUpload(c, ".dump", ".sql")
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "File backup diperlukan: "+err.Error())
+		return err
 	}
+	defer cleanup()
 
-	// Validate extension
-	ext := filepath.Ext(file.Filename)
-	var format string
-	switch ext {
-	case ".dump":
-		format = "dump"
-	case ".sql":
-		format = "sql"
-	default:
-		return echo.NewHTTPError(http.StatusBadRequest, "Format file tidak didukung. Gunakan .dump atau .sql")
-	}
-
-	// Open uploaded file
-	src, err := file.Open()
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Gagal membaca file: "+err.Error())
-	}
-	defer src.Close()
-
-	// Save to temp file
-	tmpFile, err := os.CreateTemp("", "alizzah-restore-*"+ext)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Gagal membuat file temporary: "+err.Error())
-	}
-	defer os.Remove(tmpFile.Name())
-
-	if _, err := io.Copy(tmpFile, src); err != nil {
-		tmpFile.Close()
-		return echo.NewHTTPError(http.StatusInternalServerError, "Gagal menyimpan file: "+err.Error())
-	}
-	tmpFile.Close()
-
-	// Run restore
-	if err := h.backupSvc.Restore(c.Request().Context(), tmpFile.Name(), format); err != nil {
+	if err := h.backupSvc.Restore(c.Request().Context(), tmpPath, format); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Restore gagal: "+err.Error())
 	}
 
 	return c.JSON(http.StatusOK, dto.SuccessResponse{
-		Message: "Restore berhasil. Database telah di-reset dengan data dari " + file.Filename,
+		Message: "Restore berhasil. Database telah di-reset dengan data dari file backup",
 	})
 }

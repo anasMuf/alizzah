@@ -1263,7 +1263,7 @@ func (s *invoiceGenerateService) GenerateDaycareMonthlyInvoices(params dto.Gener
 		if err := s.recalculateInvoiceTotal(invoice.ID); err != nil {
 			return err
 		}
-		if err := s.applyDispensationToInvoice(invoice, "daycare"); err != nil {
+		if err := s.applyDispensationToInvoice(invoice, "monthly_spp", "daycare"); err != nil {
 			log.Printf("[Daycare SPD] Gagal apply dispensasi: %v", err)
 		}
 		return s.recalculateInvoiceTotal(invoice.ID)
@@ -1324,7 +1324,7 @@ func (s *invoiceGenerateService) GenerateDaycareMonthlyInvoices(params dto.Gener
 	if err := s.recalculateInvoiceTotal(invoice.ID); err != nil {
 		return err
 	}
-	if err := s.applyDispensationToInvoice(invoice, "daycare"); err != nil {
+	if err := s.applyDispensationToInvoice(invoice, "monthly_spp", "daycare"); err != nil {
 		log.Printf("[Daycare SPD] Gagal apply dispensasi: %v", err)
 	}
 	return s.recalculateInvoiceTotal(invoice.ID)
@@ -1345,6 +1345,12 @@ func (s *invoiceGenerateService) applyDispensationToInvoice(invoice *model.Invoi
 	if invoice.Month != nil && invoice.Year != nil {
 		month = *invoice.Month
 		year = *invoice.Year
+	}
+
+	// Hapus semua item dispensasi lama yang belum dibayar agar tidak menumpuk
+	// saat fungsi ini dipanggil berulang (misal dari GenerateDaycareMonthlyInvoices).
+	if _, err := s.invoiceItemRepo.DeleteUnpaidByInvoiceAndCategory(invoice.ID, "dispensation"); err != nil {
+		return err
 	}
 
 	items, err := s.invoiceItemRepo.FindByInvoiceID(invoice.ID)

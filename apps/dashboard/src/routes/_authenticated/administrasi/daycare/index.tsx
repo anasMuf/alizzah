@@ -5,9 +5,12 @@ import {
 	CalendarCheck,
 	ClipboardList,
 	Cog,
+	Pencil,
 	Plus,
 	Search,
+	ShieldCheck,
 	ShieldX,
+	Trash2,
 	UserCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -19,6 +22,7 @@ import {
 	usePostV1DaycareEnrollmentsGenerateMonthlyBulk,
 	usePutV1DaycareEnrollmentsMonthlyAttendance,
 } from "#/api/endpoints/daycare-enrollments/daycare-enrollments";
+import { customInstance } from "#/api/mutator/custom-instance";
 import {
 	Badge,
 	Button,
@@ -108,7 +112,16 @@ function EnrollmentTab() {
 	const [isDeactivateOpen, setIsDeactivateOpen] = useState(false);
 	const [enrollmentToDeactivate, setEnrollmentToDeactivate] =
 		useState<any>(null);
+	const [isActivateOpen, setIsActivateOpen] = useState(false);
+	const [enrollmentToActivate, setEnrollmentToActivate] = useState<any>(null);
 	const [generatingBulkSpd, setGeneratingBulkSpd] = useState(false);
+
+	// Delete state
+	const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+	const [enrollmentToDelete, setEnrollmentToDelete] = useState<any>(null);
+	const [deleteWarning, setDeleteWarning] = useState<any>(null); // unpaid invoices warning
+	const [isDeleting, setIsDeleting] = useState(false);
+	const [isCheckingDelete, setIsCheckingDelete] = useState(false);
 
 	const bulkSpdMutation = usePostV1DaycareEnrollmentsGenerateMonthlyBulk();
 
@@ -177,6 +190,81 @@ function EnrollmentTab() {
 			addToast({ variant: "error", title: "Gagal", message: e.message });
 		} finally {
 			setGeneratingBulkSpd(false);
+		}
+	};
+
+	const handleDeleteCheck = async (enrollment: any) => {
+		setEnrollmentToDelete(enrollment);
+		setDeleteWarning(null);
+		setIsCheckingDelete(true);
+		try {
+			const res = await customInstance<any>(
+				`/v1/daycare-enrollments/${enrollment.id}`,
+				{ method: "DELETE" },
+			);
+			// customInstance wraps: { data: jsonBody, status, headers }
+			// jsonBody = { message: "...", data: { warning, message, unpaid_invoices } }
+			const jsonBody = res?.data;
+			const innerData = jsonBody?.data;
+			if (innerData?.warning) {
+				setDeleteWarning(innerData);
+				setIsDeleteOpen(true);
+			} else {
+				addToast({
+					variant: "success",
+					title: "Berhasil",
+					message:
+						innerData?.message || jsonBody?.message || "Enrollment dihapus.",
+				});
+				queryClient.invalidateQueries({
+					queryKey: getGetV1DaycareEnrollmentsQueryKey(),
+				});
+				setEnrollmentToDelete(null);
+			}
+		} catch (e: any) {
+			addToast({
+				variant: "error",
+				title: "Gagal",
+				message: e?.message || "Gagal menghapus.",
+			});
+			setEnrollmentToDelete(null);
+		} finally {
+			setIsCheckingDelete(false);
+		}
+	};
+
+	const handleDeleteConfirm = async () => {
+		if (!enrollmentToDelete) return;
+		setIsDeleting(true);
+		try {
+			const res = await customInstance<any>(
+				`/v1/daycare-enrollments/${enrollmentToDelete.id}?delete_invoices=true`,
+				{ method: "DELETE" },
+			);
+			const jsonBody = res?.data;
+			const innerData = jsonBody?.data;
+			addToast({
+				variant: "success",
+				title: "Berhasil",
+				message:
+					innerData?.message ||
+					jsonBody?.message ||
+					"Enrollment dan invoice dihapus.",
+			});
+			queryClient.invalidateQueries({
+				queryKey: getGetV1DaycareEnrollmentsQueryKey(),
+			});
+			setIsDeleteOpen(false);
+			setEnrollmentToDelete(null);
+			setDeleteWarning(null);
+		} catch (e: any) {
+			addToast({
+				variant: "error",
+				title: "Gagal",
+				message: e?.message || "Gagal menghapus.",
+			});
+		} finally {
+			setIsDeleting(false);
 		}
 	};
 
@@ -299,18 +387,54 @@ function EnrollmentTab() {
 										)}
 									</td>
 									<td className="py-3 pr-4 text-right">
-										{e.status === "active" && (
+										<div className="flex items-center justify-end gap-2">
 											<button
-												onClick={() => {
-													setEnrollmentToDeactivate(e);
-													setIsDeactivateOpen(true);
-												}}
-												className="text-red-600 hover:text-red-900 text-xs font-semibold flex items-center gap-1"
+												onClick={() =>
+													navigate({
+														to: "/administrasi/daycare/baru",
+														search: { edit_id: e.id } as any,
+													})
+												}
+												className="text-indigo-600 hover:text-indigo-900 text-xs font-semibold flex items-center gap-1"
 											>
-												<ShieldX className="h-3 w-3" />
-												Stop
+												<Pencil className="h-3 w-3" />
+												Edit
 											</button>
-										)}
+											<button
+												onClick={() => handleDeleteCheck(e)}
+												disabled={isCheckingDelete}
+												className="text-red-600 hover:text-red-900 text-xs font-semibold flex items-center gap-1 disabled:opacity-50"
+											>
+												<Trash2 className="h-3 w-3" />
+												{isCheckingDelete && enrollmentToDelete?.id === e.id
+													? "..."
+													: "Hapus"}
+											</button>
+											{e.status === "active" && (
+												<button
+													onClick={() => {
+														setEnrollmentToDeactivate(e);
+														setIsDeactivateOpen(true);
+													}}
+													className="text-red-600 hover:text-red-900 text-xs font-semibold flex items-center gap-1"
+												>
+													<ShieldX className="h-3 w-3" />
+													Stop
+												</button>
+											)}
+											{e.status !== "active" && (
+												<button
+													onClick={() => {
+														setEnrollmentToActivate(e);
+														setIsActivateOpen(true);
+													}}
+													className="text-green-600 hover:text-green-900 text-xs font-semibold flex items-center gap-1"
+												>
+													<ShieldCheck className="h-3 w-3" />
+													Aktifkan
+												</button>
+											)}
+										</div>
 									</td>
 								</tr>
 							))}
@@ -357,6 +481,70 @@ function EnrollmentTab() {
 					Nonaktifkan daycare untuk{" "}
 					<strong>{enrollmentToDeactivate?.student?.full_name}</strong>?
 				</p>
+			</ConfirmDialog>
+
+			<ConfirmDialog
+				open={isActivateOpen}
+				onCancel={() => setIsActivateOpen(false)}
+				onConfirm={() =>
+					enrollmentToActivate &&
+					updateStatusMutation.mutate({
+						id: enrollmentToActivate.id,
+						data: { status: "active" },
+					})
+				}
+				title="Aktifkan Daycare"
+				variant="primary"
+			>
+				<p>
+					Aktifkan kembali daycare untuk{" "}
+					<strong>{enrollmentToActivate?.student?.full_name}</strong>?
+				</p>
+			</ConfirmDialog>
+
+			{/* Delete confirmation dialog */}
+			<ConfirmDialog
+				open={isDeleteOpen && !!deleteWarning}
+				onCancel={() => {
+					setIsDeleteOpen(false);
+					setEnrollmentToDelete(null);
+					setDeleteWarning(null);
+				}}
+				onConfirm={handleDeleteConfirm}
+				title="Hapus Pendaftaran Daycare"
+				variant="danger"
+				confirmLabel={isDeleting ? "Menghapus..." : "Hapus Beserta Invoice"}
+			>
+				<div className="space-y-3">
+					<p>
+						Hapus pendaftaran daycare untuk{" "}
+						<strong>{enrollmentToDelete?.student?.full_name}</strong>?
+					</p>
+					{deleteWarning?.unpaid_invoices?.length > 0 && (
+						<div className="bg-red-50 border border-red-200 rounded-lg p-3">
+							<p className="text-sm font-medium text-red-800 mb-2">
+								⚠️ Terdapat {deleteWarning.unpaid_invoices.length} invoice belum
+								lunas:
+							</p>
+							<ul className="text-xs text-red-700 space-y-1">
+								{deleteWarning.unpaid_invoices.map((inv: any) => (
+									<li key={inv.id}>
+										{inv.type}{" "}
+										{inv.month && inv.year
+											? `${String(inv.month).padStart(2, "0")}/${inv.year}`
+											: ""}{" "}
+										— Rp {Number(inv.total_amount).toLocaleString("id-ID")}{" "}
+										(Lunas: Rp {Number(inv.paid_amount).toLocaleString("id-ID")}
+										)
+									</li>
+								))}
+							</ul>
+							<p className="text-xs text-red-600 mt-2">
+								Jika dilanjutkan, invoice di atas juga akan dihapus.
+							</p>
+						</div>
+					)}
+				</div>
 			</ConfirmDialog>
 		</div>
 	);

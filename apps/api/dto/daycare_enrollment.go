@@ -7,6 +7,7 @@ type CreateDaycareEnrollmentRequest struct {
 	TimeSlot       string `json:"time_slot" validate:"required,oneof=07-15 10-15 10-13"`
 	AgeGroup       string `json:"age_group" validate:"required,oneof=kbtk under3"`
 	StartDate      string `json:"start_date" validate:"required"`
+	EnrollmentType string `json:"enrollment_type" validate:"omitempty,oneof=baru lanjutan"` // hanya untuk premium
 }
 
 type UpsertDaycareAttendanceRequest struct {
@@ -94,4 +95,21 @@ type DaycareMonthlyAttendanceResponse struct {
 	Year           uint   `json:"year"`
 	SPDDays        uint   `json:"spd_days"`
 	MealDays       uint   `json:"meal_days"`
+}
+
+// ─── Delete ──────────────────────────────────────────────────
+
+type DeleteDaycareEnrollmentResponse struct {
+	Warning        bool                 `json:"warning"`
+	Message        string               `json:"message"`
+	UnpaidInvoices []UnpaidInvoiceBrief `json:"unpaid_invoices,omitempty"`
+}
+
+type UnpaidInvoiceBrief struct {
+	ID          uint    `json:"id"`
+	Type        string  `json:"type"`
+	Month       *uint   `json:"month"`
+	Year        *uint   `json:"year"`
+	TotalAmount float64 `json:"total_amount"`
+	PaidAmount  float64 `json:"paid_amount"`
 }

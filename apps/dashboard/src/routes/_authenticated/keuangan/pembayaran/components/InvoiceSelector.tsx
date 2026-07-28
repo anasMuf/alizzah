@@ -207,9 +207,10 @@ export function InvoiceSelector({
 		});
 
 		// Exclude items that just appeared (not seen before)
+		// Skip dispensation items — they represent discounts that must be included.
 		const currentIds = new Set(invoiceItems.map((i) => i.id));
 		const newItems = invoiceItems.filter(
-			(item) => !prevIdsRef.current.has(item.id),
+			(item) => !prevIdsRef.current.has(item.id) && !item.is_dispensation,
 		);
 		if (newItems.length > 0) {
 			onExcludeItemsRef.current(newItems.map((item) => item.id));
@@ -380,9 +381,13 @@ export function InvoiceSelector({
 			{/* Item detail table */}
 			{invoiceItems.length > 0 &&
 				(() => {
+					// Hanya item non-dispensasi yang bisa di-exclude
+					const checkableItems = invoiceItems.filter(
+						(item) => !item.is_dispensation,
+					);
 					const allExcluded =
-						invoiceItems.length > 0 &&
-						invoiceItems.every((item) => excludedItems.includes(item.id));
+						checkableItems.length > 0 &&
+						checkableItems.every((item) => excludedItems.includes(item.id));
 					return (
 						<div className="mt-3 border-t border-gray-200 pt-3">
 							<div className="flex items-center justify-between mb-2">
@@ -395,7 +400,10 @@ export function InvoiceSelector({
 										className="h-3.5 w-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
 										checked={!allExcluded}
 										onChange={() => {
-											const ids = invoiceItems.map((i) => i.id);
+											// Jangan sertakan item dispensasi — tidak bisa di-uncheck
+											const ids = invoiceItems
+												.filter((i) => !i.is_dispensation)
+												.map((i) => i.id);
 											if (allExcluded) {
 												onIncludeItems(ids);
 											} else {
@@ -407,130 +415,167 @@ export function InvoiceSelector({
 								</label>
 							</div>
 							<div className="space-y-1">
-								{invoiceItems.map((item: any) => {
-									const checkable = !item.is_dispensation && !item.is_locked;
-									const isExcluded = excludedItems.includes(item.id);
-									return (
-										<div
-											key={item.id}
-											className={`flex items-center gap-2 py-1.5 px-2 rounded text-sm ${item.is_dispensation ? "bg-green-50" : ""} ${isExcluded ? "opacity-50" : ""}`}
-										>
-											{checkable ? (
-												<input
-													type="checkbox"
-													className="h-3.5 w-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
-													checked={!isExcluded}
-													onChange={() => onToggleItem(item.id)}
-													title={
-														isExcluded
-															? "Sertakan item ini"
-															: "Kecualikan dari pembayaran"
-													}
-												/>
-											) : (
-												<span className="w-3.5" />
-											)}
-											<span
-												className={`flex-1 ${item.is_dispensation ? "text-green-700 italic text-xs" : "text-gray-800"} ${isExcluded ? "line-through" : ""}`}
+								{/* Item yang belum lunas */}
+								{invoiceItems
+									.filter(
+										(item: any) =>
+											item.sisa_tagihan > 0 || item.is_dispensation,
+									)
+									.map((item: any) => {
+										const checkable = !item.is_dispensation && !item.is_locked;
+										const isExcluded = excludedItems.includes(item.id);
+										return (
+											<div
+												key={item.id}
+												className={`flex items-center gap-2 py-1.5 px-2 rounded text-sm ${item.is_dispensation ? "bg-green-50" : ""} ${isExcluded ? "opacity-50" : ""}`}
 											>
-												{item.name}
-												{item.is_locked && (
-													<span className="ml-1 text-xs text-indigo-500">
-														(dispensasi)
-													</span>
+												{checkable ? (
+													<input
+														type="checkbox"
+														className="h-3.5 w-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+														checked={!isExcluded}
+														onChange={() => onToggleItem(item.id)}
+														title={
+															isExcluded
+																? "Sertakan item ini"
+																: "Kecualikan dari pembayaran"
+														}
+													/>
+												) : (
+													<span className="w-3.5" />
 												)}
-											</span>
-
-											{/* Icon edit untuk item harian/per-Senin */}
-											{item.unit_price > 0 && item.quantity > 0 && (
-												<button
-													type="button"
-													onClick={() => {
-														setQtyEditingItem(item);
-														setQtyValue(String(item.quantity));
-													}}
-													className="text-gray-400 hover:text-indigo-600 transition-colors"
-													title={`${item.quantity} hari × ${formatCurrency(item.unit_price)} — klik untuk ubah`}
+												<span
+													className={`flex-1 ${item.is_dispensation ? "text-green-700 italic text-xs" : "text-gray-800"} ${isExcluded ? "line-through" : ""}`}
 												>
-													<Pencil className="w-3.5 h-3.5" />
-												</button>
-											)}
+													{item.name}
+													{item.is_locked && (
+														<span className="ml-1 text-xs text-indigo-500">
+															(dispensasi)
+														</span>
+													)}
+												</span>
 
-											<span
-												className={`text-xs tabular-nums ${item.is_dispensation ? "text-green-600" : "text-gray-500"}`}
-											>
-												{formatCurrency(
-													isEditMode && item.sisa_tagihan === 0
-														? (payAmounts[item.id] ?? item.sisa_tagihan)
-														: item.sisa_tagihan,
-												)}
-											</span>
-											<div className="w-36">
-												{item.is_dispensation || item.is_locked ? (
-													<span
-														className={`block text-right text-xs font-medium tabular-nums ${item.is_dispensation ? "text-green-600" : "text-gray-900"}`}
+												{/* Icon edit untuk item harian/per-Senin */}
+												{item.unit_price > 0 && item.quantity > 0 && (
+													<button
+														type="button"
+														onClick={() => {
+															setQtyEditingItem(item);
+															setQtyValue(String(item.quantity));
+														}}
+														className="text-gray-400 hover:text-indigo-600 transition-colors"
+														title={`${item.quantity} hari × ${formatCurrency(item.unit_price)} — klik untuk ubah`}
 													>
+														<Pencil className="w-3.5 h-3.5" />
+													</button>
+												)}
+
+												<span
+													className={`text-xs tabular-nums ${item.is_dispensation ? "text-green-600" : "text-gray-500"}`}
+												>
+													{formatCurrency(
+														isEditMode && item.sisa_tagihan === 0
+															? (payAmounts[item.id] ?? item.sisa_tagihan)
+															: item.sisa_tagihan,
+													)}
+												</span>
+												<div className="w-36">
+													{item.is_dispensation || item.is_locked ? (
+														<span
+															className={`block text-right text-xs font-medium tabular-nums ${item.is_dispensation ? "text-green-600" : "text-gray-900"}`}
+														>
+															{formatCurrency(
+																payAmounts[item.id] ?? item.sisa_tagihan,
+															)}
+														</span>
+													) : (
+														<div className="flex items-center gap-1">
+															<CurrencyInput
+																className="flex-1 rounded border-0 py-1 px-2 text-xs text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 text-right tabular-nums disabled:bg-gray-100 disabled:text-gray-400"
+																value={payAmounts[item.id] ?? 0}
+																onChange={(val) => onAmountChange(item.id, val)}
+																disabled={isExcluded}
+															/>
+															{/* Quick button: tambah 1 hari (akumulatif) */}
+															{item.unit_price > 0 &&
+																!isExcluded &&
+																(() => {
+																	const current = payAmounts[item.id] ?? 0;
+																	const next = current + item.unit_price;
+																	const capped =
+																		next > item.sisa_tagihan
+																			? item.sisa_tagihan
+																			: next;
+																	const prev = Math.max(
+																		current - item.unit_price,
+																		0,
+																	);
+																	const days = Math.round(
+																		current / item.unit_price,
+																	);
+																	return (
+																		<div className="flex flex-col gap-0.5">
+																			<button
+																				type="button"
+																				onClick={() =>
+																					onAmountChange(item.id, capped)
+																				}
+																				className="text-[10px] text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-1 py-0.5 rounded font-medium transition-colors whitespace-nowrap leading-none"
+																				title={`${days} hari — klik tambah 1 hari (${formatCurrency(item.unit_price)})`}
+																			>
+																				+1
+																			</button>
+																			<button
+																				type="button"
+																				onClick={() =>
+																					onAmountChange(item.id, prev)
+																				}
+																				disabled={current <= 0}
+																				className="text-[10px] text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-1 py-0.5 rounded font-medium transition-colors whitespace-nowrap leading-none disabled:opacity-30 disabled:cursor-not-allowed"
+																				title="Kurangi 1 hari"
+																			>
+																				-1
+																			</button>
+																		</div>
+																	);
+																})()}
+														</div>
+													)}
+												</div>
+											</div>
+										);
+									})}
+
+								{/* Item yang sudah lunas */}
+								{invoiceItems.filter(
+									(item: any) =>
+										item.sisa_tagihan === 0 && !item.is_dispensation,
+								).length > 0 && (
+									<div className="mt-2 pt-2 border-t border-gray-100">
+										<p className="text-[11px] font-medium text-gray-400 uppercase tracking-wider mb-1 px-2">
+											Sudah Lunas
+										</p>
+										{invoiceItems
+											.filter(
+												(item: any) =>
+													item.sisa_tagihan === 0 && !item.is_dispensation,
+											)
+											.map((item: any) => (
+												<div
+													key={item.id}
+													className="flex items-center gap-2 py-1 px-2 rounded text-sm text-gray-400 line-through"
+												>
+													<span className="w-3.5" />
+													<span className="flex-1 text-xs">{item.name}</span>
+													<span className="text-xs tabular-nums">
 														{formatCurrency(
 															payAmounts[item.id] ?? item.sisa_tagihan,
 														)}
 													</span>
-												) : (
-													<div className="flex items-center gap-1">
-														<CurrencyInput
-															className="flex-1 rounded border-0 py-1 px-2 text-xs text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 text-right tabular-nums disabled:bg-gray-100 disabled:text-gray-400"
-															value={payAmounts[item.id] ?? 0}
-															onChange={(val) => onAmountChange(item.id, val)}
-															disabled={isExcluded}
-														/>
-														{/* Quick button: tambah 1 hari (akumulatif) */}
-														{item.unit_price > 0 &&
-															!isExcluded &&
-															(() => {
-																const current = payAmounts[item.id] ?? 0;
-																const next = current + item.unit_price;
-																const capped =
-																	next > item.sisa_tagihan
-																		? item.sisa_tagihan
-																		: next;
-																const prev = Math.max(
-																	current - item.unit_price,
-																	0,
-																);
-																const days = Math.round(
-																	current / item.unit_price,
-																);
-																return (
-																	<div className="flex flex-col gap-0.5">
-																		<button
-																			type="button"
-																			onClick={() =>
-																				onAmountChange(item.id, capped)
-																			}
-																			className="text-[10px] text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-1 py-0.5 rounded font-medium transition-colors whitespace-nowrap leading-none"
-																			title={`${days} hari — klik tambah 1 hari (${formatCurrency(item.unit_price)})`}
-																		>
-																			+1
-																		</button>
-																		<button
-																			type="button"
-																			onClick={() =>
-																				onAmountChange(item.id, prev)
-																			}
-																			disabled={current <= 0}
-																			className="text-[10px] text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-1 py-0.5 rounded font-medium transition-colors whitespace-nowrap leading-none disabled:opacity-30 disabled:cursor-not-allowed"
-																			title="Kurangi 1 hari"
-																		>
-																			-1
-																		</button>
-																	</div>
-																);
-															})()}
-													</div>
-												)}
-											</div>
-										</div>
-									);
-								})}
+												</div>
+											))}
+									</div>
+								)}
 							</div>
 						</div>
 					);

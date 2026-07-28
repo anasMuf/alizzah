@@ -5,7 +5,9 @@ import { ChevronRight, Search, UserCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
 	getGetV1DaycareEnrollmentsQueryKey,
+	useGetV1DaycareEnrollmentsId,
 	usePostV1DaycareEnrollments,
+	usePutV1DaycareEnrollmentsId,
 } from "#/api/endpoints/daycare-enrollments/daycare-enrollments";
 import { getGetV1StudentsIdInvoicesQueryKey } from "#/api/endpoints/invoices/invoices";
 import {
@@ -13,7 +15,7 @@ import {
 	useGetV1StudentsId,
 } from "#/api/endpoints/students/students";
 import type { DtoCreateDaycareEnrollmentRequest } from "#/api/model";
-import { ApiError } from "#/api/mutator/custom-instance";
+import { ApiError, customInstance } from "#/api/mutator/custom-instance";
 import { Button, FormField, useToast } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
 
@@ -44,12 +46,20 @@ export const Route = createFileRoute(
 				: typeof params.student_id === "string"
 					? Number.parseInt(params.student_id, 10) || undefined
 					: undefined,
+		edit_id:
+			typeof params.edit_id === "number"
+				? params.edit_id
+				: typeof params.edit_id === "string"
+					? Number.parseInt(params.edit_id, 10) || undefined
+					: undefined,
 	}),
 });
 
 function DaycareBaruPage() {
 	const search = Route.useSearch();
 	const prefilledStudentId = search.student_id;
+	const editId = search.edit_id;
+	const isEdit = !!editId;
 	const [activeAy] = useAtom(academicYearAtom);
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
@@ -65,6 +75,34 @@ function DaycareBaruPage() {
 		start_date: new Date().toISOString().split("T")[0],
 	});
 
+	const [enrollmentType, setEnrollmentType] = useState<string>(""); // auto-detect, "baru", "lanjutan"
+	const [premiumHistoryChecked, setPremiumHistoryChecked] = useState(false);
+
+	// Fetch existing enrollment for edit mode
+	const { data: editEnrollment, isLoading: isEditLoading } =
+		useGetV1DaycareEnrollmentsId(editId!, {
+			query: { enabled: isEdit },
+		} as any);
+
+	// Pre-fill form when editing
+	useEffect(() => {
+		if (isEdit && editEnrollment) {
+			const enr = (editEnrollment as any)?.data?.data;
+			if (enr) {
+				setSelectedStudent(enr.student);
+				setStudentSearch(enr.student?.full_name || "");
+				setFormData({
+					category: enr.category,
+					time_slot: enr.time_slot,
+					age_group: enr.age_group,
+					start_date:
+						enr.start_date?.split("T")[0] ||
+						new Date().toISOString().split("T")[0],
+				});
+			}
+		}
+	}, [isEdit, editEnrollment]);
+
 	const { data: searchResponse, isLoading: isSearchLoading } = useGetV1Students(
 		{ search: studentSearch, limit: 5 },
 		{ query: { enabled: studentSearch.length > 2 } },
@@ -72,7 +110,7 @@ function DaycareBaruPage() {
 
 	const searchResults = (searchResponse?.data as any)?.data || [];
 
-	// Auto-select student jika ada student_id dari query param (shortcut dari tambah siswa)
+	// Auto-select student jika ada student_id dari query param
 	const { data: prefilledStudent } = useGetV1StudentsId(prefilledStudentId!, {
 		query: { enabled: !!prefilledStudentId },
 	} as any);
@@ -82,11 +120,39 @@ function DaycareBaruPage() {
 			const s = (prefilledStudent as any)?.data?.data;
 			if (s) {
 				setSelectedStudent(s);
-				// Pre-fill student search field with the name
 				setStudentSearch(s.full_name || "");
 			}
 		}
 	}, [prefilledStudent]);
+
+	// Auto-detect premium history when student is selected and category is premium
+	useEffect(() => {
+		if (
+			selectedStudent &&
+			formData.category === "premium" &&
+			!premiumHistoryChecked
+		) {
+			customInstance<any>(
+				`/v1/daycare-enrollments/check-premium-history?student_id=${selectedStudent.id}`,
+			)
+				.then((res) => {
+					const hasHistory = res?.data?.has_premium_history;
+					setEnrollmentType(hasHistory ? "lanjutan" : "baru");
+					setPremiumHistoryChecked(true);
+				})
+				.catch(() => {
+					// fallback: default to baru
+					setEnrollmentType("baru");
+					setPremiumHistoryChecked(true);
+				});
+		}
+	}, [selectedStudent, formData.category, premiumHistoryChecked]);
+
+	// Reset premium check when student or category changes
+	useEffect(() => {
+		setPremiumHistoryChecked(false);
+		setEnrollmentType("");
+	}, [selectedStudent?.id, formData.category]);
 
 	const createMutation = usePostV1DaycareEnrollments({
 		mutation: {
@@ -99,7 +165,6 @@ function DaycareBaruPage() {
 				queryClient.invalidateQueries({
 					queryKey: getGetV1DaycareEnrollmentsQueryKey(),
 				});
-				// Refresh tagihan siswa jika nanti dibuka
 				queryClient.invalidateQueries({
 					queryKey: getGetV1StudentsIdInvoicesQueryKey(selectedStudent.id),
 				});
@@ -115,23 +180,55 @@ function DaycareBaruPage() {
 		},
 	});
 
+	const updateMutation = usePutV1DaycareEnrollmentsId({
+		mutation: {
+			onSuccess: () => {
+				addToast({
+					variant: "success",
+					title: "Berhasil",
+					message: "Pendaftaran daycare berhasil diperbarui.",
+				});
+				queryClient.invalidateQueries({
+					queryKey: getGetV1DaycareEnrollmentsQueryKey(),
+				});
+				navigate({ to: "/administrasi/daycare", search: {} as any });
+			},
+			onError: (error: Error) => {
+				const msg =
+					error instanceof ApiError
+						? error.message
+						: "Gagal memperbarui pendaftaran.";
+				addToast({ variant: "error", title: "Gagal", message: msg });
+			},
+		},
+	});
+
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!selectedStudent || !activeAy) return;
 
-		createMutation.mutate({
-			data: {
-				student_id: selectedStudent.id,
-				academic_year_id: activeAy.id,
-				category:
-					formData.category as DtoCreateDaycareEnrollmentRequest["category"],
-				time_slot:
-					formData.time_slot as DtoCreateDaycareEnrollmentRequest["time_slot"],
-				age_group:
-					formData.age_group as DtoCreateDaycareEnrollmentRequest["age_group"],
-				start_date: `${formData.start_date}T00:00:00Z`,
-			},
-		});
+		const payload: any = {
+			student_id: selectedStudent.id,
+			academic_year_id: activeAy.id,
+			category:
+				formData.category as DtoCreateDaycareEnrollmentRequest["category"],
+			time_slot:
+				formData.time_slot as DtoCreateDaycareEnrollmentRequest["time_slot"],
+			age_group:
+				formData.age_group as DtoCreateDaycareEnrollmentRequest["age_group"],
+			start_date: `${formData.start_date}T00:00:00Z`,
+		};
+
+		// Sertakan enrollment_type jika premium dan user sudah memilih
+		if (formData.category === "premium" && enrollmentType) {
+			payload.enrollment_type = enrollmentType;
+		}
+
+		if (isEdit) {
+			updateMutation.mutate({ id: editId!, data: payload });
+		} else {
+			createMutation.mutate({ data: payload });
+		}
 	};
 
 	return (
@@ -182,10 +279,12 @@ function DaycareBaruPage() {
 
 			<div className="border-b border-gray-200 pb-5">
 				<h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:tracking-tight">
-					Pendaftaran Daycare
+					{isEdit ? "Edit Pendaftaran Daycare" : "Pendaftaran Daycare"}
 				</h2>
 				<p className="mt-1 text-sm text-gray-500">
-					Daftarkan siswa ke layanan daycare (penitipan anak).
+					{isEdit
+						? "Perbarui data pendaftaran daycare."
+						: "Daftarkan siswa ke layanan daycare (penitipan anak)."}
 				</p>
 			</div>
 
@@ -197,7 +296,29 @@ function DaycareBaruPage() {
 							<label className="block text-sm font-medium leading-6 text-gray-900 mb-2">
 								Pilih Siswa
 							</label>
-							{!selectedStudent ? (
+							{isEdit ? (
+								<div className="flex items-center justify-between p-4 border border-gray-200 bg-gray-50 rounded-lg">
+									<div className="flex items-center">
+										{selectedStudent?.photo_url ? (
+											<img
+												src={selectedStudent.photo_url}
+												alt=""
+												className="h-10 w-10 rounded-full"
+											/>
+										) : (
+											<UserCircle className="h-10 w-10 text-gray-400" />
+										)}
+										<div className="ml-4">
+											<p className="text-sm font-medium text-gray-900">
+												{selectedStudent?.full_name}
+											</p>
+											<p className="text-xs text-gray-500">
+												Siswa tidak dapat diubah saat edit
+											</p>
+										</div>
+									</div>
+								</div>
+							) : !selectedStudent ? (
 								<div className="relative">
 									<div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
 										<Search className="h-5 w-5 text-gray-400" />
@@ -308,9 +429,78 @@ function DaycareBaruPage() {
 									</label>
 								))}
 							</div>
-							{formData.category === "premium" && (
-								<p className="mt-2 text-xs text-amber-600">
-									⚠️ Premium akan dikenakan Biaya Awal Rp 400.000.
+							{formData.category === "premium" && !isEdit && (
+								<div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+									<label className="block text-sm font-medium text-gray-900 mb-2">
+										Jenis Pendaftaran Premium
+									</label>
+									<div className="flex gap-4">
+										<label
+											className={`flex items-center gap-2 px-4 py-3 rounded-lg border cursor-pointer transition-colors ${
+												enrollmentType === "baru"
+													? "border-indigo-500 bg-indigo-50"
+													: "border-gray-200 hover:bg-gray-50"
+											}`}
+										>
+											<input
+												type="radio"
+												name="enrollment_type"
+												value="baru"
+												checked={enrollmentType === "baru"}
+												onChange={(e) => setEnrollmentType(e.target.value)}
+												className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
+											/>
+											<span className="text-sm text-gray-900">
+												Baru{" "}
+												<span className="text-amber-600">
+													(Kena Biaya Awal)
+												</span>
+											</span>
+										</label>
+										<label
+											className={`flex items-center gap-2 px-4 py-3 rounded-lg border cursor-pointer transition-colors ${
+												enrollmentType === "lanjutan"
+													? "border-indigo-500 bg-indigo-50"
+													: "border-gray-200 hover:bg-gray-50"
+											}`}
+										>
+											<input
+												type="radio"
+												name="enrollment_type"
+												value="lanjutan"
+												checked={enrollmentType === "lanjutan"}
+												onChange={(e) => setEnrollmentType(e.target.value)}
+												className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
+											/>
+											<span className="text-sm text-gray-900">
+												Lanjutan{" "}
+												<span className="text-green-600">
+													(Tanpa Biaya Awal)
+												</span>
+											</span>
+										</label>
+									</div>
+									{!enrollmentType && (
+										<p className="mt-2 text-xs text-gray-500">
+											Mendeteksi otomatis...
+										</p>
+									)}
+									{enrollmentType === "baru" && (
+										<p className="mt-2 text-xs text-amber-600">
+											⚠️ Pendaftaran baru akan dikenakan Biaya Awal.
+										</p>
+									)}
+									{enrollmentType === "lanjutan" && (
+										<p className="mt-2 text-xs text-green-600">
+											✅ Lanjutan — tidak dikenakan Biaya Awal.
+										</p>
+									)}
+								</div>
+							)}
+							{formData.category === "premium" && isEdit && (
+								<p className="mt-2 text-xs text-gray-500">
+									ℹ️ Jenis pendaftaran (Baru/Lanjutan) hanya dapat diatur saat
+									pembuatan.
 								</p>
 							)}
 						</div>
@@ -380,9 +570,20 @@ function DaycareBaruPage() {
 					<Button
 						type="submit"
 						variant="primary"
-						disabled={!selectedStudent || createMutation.isPending || !activeAy}
+						disabled={
+							!selectedStudent ||
+							(isEdit ? updateMutation.isPending : createMutation.isPending) ||
+							!activeAy ||
+							isEditLoading
+						}
 					>
-						{createMutation.isPending ? "Menyimpan..." : "Daftarkan Siswa"}
+						{isEdit
+							? updateMutation.isPending
+								? "Menyimpan..."
+								: "Simpan Perubahan"
+							: createMutation.isPending
+								? "Menyimpan..."
+								: "Daftarkan Siswa"}
 					</Button>
 				</div>
 			</form>

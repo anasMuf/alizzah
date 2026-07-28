@@ -118,6 +118,12 @@ func (s *BackupService) Create(ctx context.Context, format string) (*BackupResul
 	if !s.config.Enabled {
 		return nil, ErrBackupDisabled
 	}
+	return s.createInternal(ctx, format)
+}
+
+// createInternal runs pg_dump without the Enabled check. Used by Restore() for
+// safety backups that must work even when BACKUP_ENABLED=false (e.g. local dev).
+func (s *BackupService) createInternal(ctx context.Context, format string) (*BackupResult, error) {
 	if format == "" {
 		format = "dump"
 	}
@@ -360,9 +366,10 @@ func (s *BackupService) Restore(ctx context.Context, srcPath, format string) err
 		return fmt.Errorf("%w: %s (valid: dump, sql)", ErrInvalidFormat, format)
 	}
 
-	// Create safety backup before destructive operations
+	// Create safety backup before destructive operations (bypass Enabled check —
+	// restore must work even when BACKUP_ENABLED=false, e.g. in local dev)
 	log.Printf("[backup] Restore: creating pre-restore safety backup...")
-	safetyResult, err := s.Create(ctx, "dump")
+	safetyResult, err := s.createInternal(ctx, "dump")
 	if err != nil {
 		return fmt.Errorf("safety backup failed, restore aborted: %w", err)
 	}

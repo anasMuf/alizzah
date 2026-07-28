@@ -2,10 +2,13 @@ package dto
 
 // Cash
 type CashBalanceResponse struct {
-	Balance         float64 `json:"balance"`
-	LastClosingDate *string `json:"last_closing_date"`
-	TodayCredit     float64 `json:"today_credit"`
-	TodayDebit      float64 `json:"today_debit"`
+	Balance                      float64 `json:"balance"`
+	LastClosingDate              *string `json:"last_closing_date"`
+	TodayCredit                  float64 `json:"today_credit"`
+	TodayDebit                   float64 `json:"today_debit"`
+	TotalSavingsMandatory        float64 `json:"total_savings_mandatory"`
+	TotalSavingsMandatoryBerlian float64 `json:"total_savings_mandatory_berlian"`
+	TotalSavingsMandatoryMutiara float64 `json:"total_savings_mandatory_mutiara"`
 }
 
 type CashTransactionResponse struct {

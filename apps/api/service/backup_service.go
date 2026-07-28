@@ -427,9 +427,9 @@ func (s *BackupService) Restore(ctx context.Context, srcPath, format string) err
 }
 
 // execSQL runs a SQL statement against the given database via psql.
+// The caller is responsible for quoting identifiers in the SQL string.
+// The database parameter is passed as -d argument (no quoting needed).
 func (s *BackupService) execSQL(database, sql string) error {
-	// Quote database identifier to prevent injection
-	database = quoteIdent(database)
 	cmd := exec.Command("psql",
 		"-U", s.config.DBUser,
 		"-h", s.config.DBHost,

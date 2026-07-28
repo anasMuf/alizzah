@@ -327,6 +327,8 @@ func (s *paymentService) createInTx(tx *gorm.DB, createdBy uint, req dto.CreateP
 	}
 
 	// [I] Credit mandatory savings for savings_mandatory invoice items
+	// Tabungan wajib berada di kas, bukan di brangkas.
+	// Uang sudah tercatat di cash_transactions melalui WriteCashCredit di step [F].
 	if mandatorySavingsAmount > 0 {
 		mandatorySavings, err := s.savingsRepo.FindByStudentAndTypeForUpdate(tx, req.StudentID, "mandatory")
 		if err != nil {
@@ -351,15 +353,6 @@ func (s *paymentService) createInTx(tx *gorm.DB, createdBy uint, req dto.CreateP
 		}
 		if err := s.savingsRepo.AddBalance(tx, mandatorySavings.ID, mandatorySavingsAmount); err != nil {
 			return nil, fmt.Errorf("gagal menambah saldo tabungan wajib: %w", err)
-		}
-		if err := s.txnWriter.WriteVaultCredit(req.AcademicYearID, paymentDate, mandatorySavingsAmount, "savings_deposit", &result.ID, fmt.Sprintf("Setoran tabungan wajib %s", student.FullName), createdBy, tx); err != nil {
-			return nil, err
-		}
-		// Transfer dari kas ke brangkas (hanya untuk source cash) agar uang tidak double-count
-		if req.Source == "cash" {
-			if err := s.txnWriter.WriteCashDebit(req.AcademicYearID, paymentDate, mandatorySavingsAmount, "transfer_to_vault", &result.ID, fmt.Sprintf("Transfer ke brangkas: tabungan wajib %s", student.FullName), createdBy, tx); err != nil {
-				return nil, err
-			}
 		}
 	}
 

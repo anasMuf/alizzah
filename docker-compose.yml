@@ -46,6 +46,11 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
       SSL_MODE: disable
+      BACKUP_ENABLED: ${BACKUP_ENABLED:-false}
+      APP_ENV: ${APP_ENV:-production}
+      BACKUP_DIR: /backups
+    volumes:
+      - ${BACKUP_VOLUME:-~/backups/alizzah-app}:/backups
     # Hanya di loopback host → di-proxy nginx host
     ports:
       - "127.0.0.1:${API_PORT:-8091}:8080"

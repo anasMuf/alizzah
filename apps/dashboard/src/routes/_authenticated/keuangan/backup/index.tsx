@@ -12,10 +12,14 @@ import {
 } from "#/api/endpoints/backup/backup";
 import { ApiError } from "#/api/mutator/custom-instance";
 import { Button, useToast } from "#/components/ui";
+import { getToken } from "#/features/auth/AuthContext";
 import { isSuperadmin as checkSuperadmin } from "#/features/auth/access";
 import { BackupHistoryTable } from "#/features/keuangan/components/BackupHistoryTable";
 import { FormatSelector } from "#/features/keuangan/components/FormatSelector";
 import { RestoreDialog } from "#/features/keuangan/components/RestoreDialog";
+
+const API_URL =
+	(import.meta as any).env?.VITE_API_URL || "http://localhost:8080/api";
 
 export const Route = createFileRoute("/_authenticated/keuangan/backup/")({
 	beforeLoad: () => {
@@ -33,28 +37,33 @@ async function downloadBackupFile(
 	addToast: ReturnType<typeof useToast>["addToast"],
 ) {
 	try {
-		const { getV1BackupsFilename } = await import(
-			"#/api/endpoints/backup/backup"
+		const token = getToken();
+		const response = await fetch(
+			`${API_URL}/v1/backups/${encodeURIComponent(filename)}`,
+			{
+				headers: token ? { Authorization: `Bearer ${token}` } : {},
+			},
 		);
-		const res = await getV1BackupsFilename(filename);
-		if (res.status === 200) {
-			const blob = await (res.data as unknown as Response).blob?.();
-			if (blob) {
-				const url = URL.createObjectURL(blob);
-				const a = document.createElement("a");
-				a.href = url;
-				a.download = filename;
-				document.body.appendChild(a);
-				a.click();
-				a.remove();
-				URL.revokeObjectURL(url);
-			}
+
+		if (!response.ok) {
+			const err = await response.json().catch(() => ({}));
+			throw new Error(err?.message || `Download failed: ${response.status}`);
 		}
-	} catch {
+
+		const blob = await response.blob();
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = filename;
+		document.body.appendChild(a);
+		a.click();
+		a.remove();
+		URL.revokeObjectURL(url);
+	} catch (e: any) {
 		addToast({
 			variant: "error",
 			title: "Download gagal",
-			message: `Tidak dapat mendownload ${filename}`,
+			message: e?.message || `Tidak dapat mendownload ${filename}`,
 		});
 	}
 }

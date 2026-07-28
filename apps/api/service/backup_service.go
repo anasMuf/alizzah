@@ -382,8 +382,17 @@ func (s *BackupService) Restore(ctx context.Context, srcPath, format string) err
 
 	log.Printf("[backup] Restore starting from %s", filepath.Base(srcPath))
 
-	// Step 1: Drop database (connect to default "postgres" DB)
+	// Step 0: Terminate existing connections to target database (API has its own pool)
 	dbName := quoteIdent(s.config.DBName)
+	terminateSQL := fmt.Sprintf(
+		"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = %s AND pid <> pg_backend_pid()",
+		dbName,
+	)
+	// Ignore errors — may fail if DB doesn't exist or no connections
+	_ = s.execSQL("postgres", terminateSQL)
+	log.Printf("[backup] Restore: connections terminated")
+
+	// Step 1: Drop database (connect to default "postgres" DB)
 	if err := s.execSQL("postgres", fmt.Sprintf("DROP DATABASE IF EXISTS %s", dbName)); err != nil {
 		return fmt.Errorf("failed to drop database: %w", err)
 	}

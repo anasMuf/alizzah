@@ -11,8 +11,9 @@ type SavingsTransactionQueryParams struct {
 
 // Request
 type SavingsWithdrawalRequest struct {
-	Amount float64 `json:"amount" validate:"required,min=1"`
-	Notes  string  `json:"notes" validate:"omitempty"`
+	Amount        float64 `json:"amount" validate:"required,min=1"`
+	Notes         string  `json:"notes" validate:"omitempty"`
+	ApplyAdminFee bool    `json:"apply_admin_fee"`
 }
 
 // Response

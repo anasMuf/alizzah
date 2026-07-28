@@ -147,7 +147,10 @@ func (s *savingsService) GuardianWithdrawal(studentID, createdBy uint, req dto.S
 			adminRate = fc.SavingsAdminRate
 		}
 
-		adminFee = req.Amount * (adminRate / 100)
+		adminFee = float64(0)
+		if req.ApplyAdminFee {
+			adminFee = req.Amount * (adminRate / 100)
+		}
 		netAmount = req.Amount - adminFee
 
 		// Buat SavingsTransaction record

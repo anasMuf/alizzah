@@ -323,7 +323,7 @@ func main() {
 	extracurricularService := service.NewExtracurricularService(db, extracurricularRepo, fcRepo, fcItemRepo)
 	seService := service.NewStudentExtracurricularService(db, seRepo, studentRepo, extracurricularRepo, ayRepo, enrollmentRepo, invoiceGenService)
 	eventService := service.NewStudentAcademicEventService(eventRepo, studentRepo)
-	daycareService := service.NewDaycareEnrollmentService(db, daycareRepo, studentRepo, ayRepo, daycareMonthlyAttRepo, invoiceGenService)
+	daycareService := service.NewDaycareEnrollmentService(db, daycareRepo, studentRepo, ayRepo, daycareMonthlyAttRepo, invoiceRepo, invoiceGenService)
 
 	// Batch 4
 	fcService := service.NewFeeConfigService(fcRepo, fcItemRepo, ayRepo, extracurricularRepo)
@@ -586,7 +586,9 @@ func main() {
 	daycare.POST("/generate-monthly-bulk", daycareHandler.GenerateMonthlyBulk)
 	daycare.GET("/:id", daycareHandler.Get)
 	daycare.PUT("/:id", daycareHandler.Update)
+	daycare.DELETE("/:id", daycareHandler.Delete)
 	daycare.PATCH("/:id/status", daycareHandler.UpdateStatus)
+	daycare.GET("/check-premium-history", daycareHandler.CheckPremiumHistory)
 
 	// Daycare Attendance
 	daycare.GET("/attendance", daycareHandler.GetAttendance)

@@ -20,6 +20,9 @@ type DaycareEnrollmentService interface {
 	Create(createdBy uint, req dto.CreateDaycareEnrollmentRequest) (*dto.DaycareEnrollmentResponse, error)
 	Update(id uint, req dto.CreateDaycareEnrollmentRequest) (*dto.DaycareEnrollmentResponse, error)
 	UpdateStatus(id uint, req dto.UpdateDaycareStatusRequest) error
+	Delete(id uint) (*dto.DeleteDaycareEnrollmentResponse, error)
+	DeleteWithInvoices(id uint) (*dto.DeleteDaycareEnrollmentResponse, error)
+	HasPremiumHistory(studentID uint) (bool, error)
 	// Attendance (daily - kept for backward compat)
 	UpsertAttendance(createdBy uint, req dto.UpsertDaycareAttendanceRequest) (*dto.DaycareAttendanceResponse, error)
 	GetAttendance(studentID, month, year uint) ([]dto.DaycareAttendanceResponse, error)
@@ -35,16 +38,18 @@ type daycareEnrollmentService struct {
 	studentRepo    repository.StudentRepository
 	acRepo         repository.AcademicYearRepository
 	monthlyAttRepo repository.DaycareMonthlyAttendanceRepository
+	invoiceRepo    repository.InvoiceRepository
 	invoiceGen     InvoiceGenerateService
 }
 
-func NewDaycareEnrollmentService(db *gorm.DB, daycareRepo repository.DaycareEnrollmentRepository, studentRepo repository.StudentRepository, acRepo repository.AcademicYearRepository, monthlyAttRepo repository.DaycareMonthlyAttendanceRepository, invoiceGen InvoiceGenerateService) DaycareEnrollmentService {
+func NewDaycareEnrollmentService(db *gorm.DB, daycareRepo repository.DaycareEnrollmentRepository, studentRepo repository.StudentRepository, acRepo repository.AcademicYearRepository, monthlyAttRepo repository.DaycareMonthlyAttendanceRepository, invoiceRepo repository.InvoiceRepository, invoiceGen InvoiceGenerateService) DaycareEnrollmentService {
 	return &daycareEnrollmentService{
 		db:             db,
 		daycareRepo:    daycareRepo,
 		studentRepo:    studentRepo,
 		acRepo:         acRepo,
 		monthlyAttRepo: monthlyAttRepo,
+		invoiceRepo:    invoiceRepo,
 		invoiceGen:     invoiceGen,
 	}
 }
@@ -108,6 +113,17 @@ func (s *daycareEnrollmentService) Create(createdBy uint, req dto.CreateDaycareE
 		return nil, errors.New("Format start_date tidak valid (YYYY-MM-DD)")
 	}
 
+	// Auto-detect enrollment_type untuk premium
+	enrollmentType := req.EnrollmentType
+	if req.Category == "premium" && enrollmentType == "" {
+		hasHistory, _ := s.daycareRepo.HasPremiumHistory(req.StudentID)
+		if hasHistory {
+			enrollmentType = "lanjutan"
+		} else {
+			enrollmentType = "baru"
+		}
+	}
+
 	de := &model.DaycareEnrollment{
 		StudentID:      req.StudentID,
 		AcademicYearID: req.AcademicYearID,
@@ -124,8 +140,8 @@ func (s *daycareEnrollmentService) Create(createdBy uint, req dto.CreateDaycareE
 		return nil, err
 	}
 
-	// Generate initial invoice (Biaya Awal) + inject SPD ke future monthly invoices untuk Premium
-	if de.Category == "premium" && s.invoiceGen != nil {
+	// Generate initial invoice (Biaya Awal) hanya untuk premium baru
+	if de.Category == "premium" && enrollmentType == "baru" && s.invoiceGen != nil {
 		student, _ := s.studentRepo.FindByID(req.StudentID)
 		gender := "all"
 		if student != nil {
@@ -138,7 +154,10 @@ func (s *daycareEnrollmentService) Create(createdBy uint, req dto.CreateDaycareE
 			Gender:         gender,
 			CreatedBy:      createdBy,
 		})
-		// Inject flat SPD + meal + TPQ ke semua monthly invoice yg sudah ada
+	}
+
+	// Inject flat SPD + meal + TPQ ke semua monthly invoice yg sudah ada (premium semua tipe)
+	if de.Category == "premium" && s.invoiceGen != nil {
 		if err := s.invoiceGen.InjectPremiumDaycareToMonthlyInvoices(*de); err != nil {
 			return nil, err
 		}
@@ -208,7 +227,127 @@ func (s *daycareEnrollmentService) UpdateStatus(id uint, req dto.UpdateDaycareSt
 		s.invoiceGen.RemoveDaycareFromFutureInvoices(de.StudentID, uint(now.Month()), uint(now.Year()))
 	}
 
+	// Aktifkan kembali: inject ulang item daycare ke invoice bulan depan
+	if req.Status == "active" && s.invoiceGen != nil {
+		if de.Category == "premium" {
+			// Premium: inject flat SPD + meal + TPQ
+			if err := s.invoiceGen.InjectPremiumDaycareToMonthlyInvoices(*de); err != nil {
+				log.Printf("[Daycare] Gagal inject premium saat aktivasi: %v", err)
+			}
+		}
+	}
+
 	return nil
+}
+
+// Delete checks for unpaid monthly invoices before deleting. If there are unpaid
+// invoices from current month onward, returns a warning without deleting.
+// If enrollment is already inactive, deletes immediately without checking invoices.
+func (s *daycareEnrollmentService) Delete(id uint) (*dto.DeleteDaycareEnrollmentResponse, error) {
+	de, err := s.daycareRepo.FindByID(id)
+	if err != nil {
+		return nil, errors.New("Pendaftaran daycare tidak ditemukan")
+	}
+
+	// Enrollment non-aktif → hapus langsung, tidak perlu cek invoice
+	if de.Status != "active" {
+		if err := s.daycareRepo.Delete(id); err != nil {
+			return nil, fmt.Errorf("gagal menghapus enrollment: %w", err)
+		}
+		return &dto.DeleteDaycareEnrollmentResponse{
+			Warning: false,
+			Message: fmt.Sprintf("Pendaftaran daycare untuk %s berhasil dihapus", de.Student.FullName),
+		}, nil
+	}
+
+	// Enrollment aktif → cek invoice bulanan yang belum lunas dari bulan ini ke depan
+	now := time.Now()
+	invoices, err := s.invoiceRepo.FindMonthlyByStudentFromMonth(de.StudentID, uint(now.Month()), uint(now.Year()))
+	if err != nil {
+		return nil, fmt.Errorf("gagal mengecek invoice: %w", err)
+	}
+
+	var unpaid []dto.UnpaidInvoiceBrief
+	for _, inv := range invoices {
+		if inv.Status != "paid" {
+			unpaid = append(unpaid, dto.UnpaidInvoiceBrief{
+				ID:          inv.ID,
+				Type:        inv.Type,
+				Month:       inv.Month,
+				Year:        inv.Year,
+				TotalAmount: inv.TotalAmount,
+				PaidAmount:  inv.PaidAmount,
+			})
+		}
+	}
+
+	// Jika ada invoice unpaid, kembalikan warning — jangan hapus dulu
+	if len(unpaid) > 0 {
+		return &dto.DeleteDaycareEnrollmentResponse{
+			Warning:        true,
+			Message:        fmt.Sprintf("Terdapat %d invoice belum lunas untuk %s", len(unpaid), de.Student.FullName),
+			UnpaidInvoices: unpaid,
+		}, nil
+	}
+
+	// Tidak ada invoice unpaid → hapus langsung
+	if err := s.daycareRepo.Delete(id); err != nil {
+		return nil, fmt.Errorf("gagal menghapus enrollment: %w", err)
+	}
+
+	return &dto.DeleteDaycareEnrollmentResponse{
+		Warning: false,
+		Message: fmt.Sprintf("Pendaftaran daycare untuk %s berhasil dihapus", de.Student.FullName),
+	}, nil
+}
+
+// DeleteWithInvoices deletes the enrollment and all unpaid monthly invoices
+// from current month onward. For inactive enrollments, just deletes the record.
+func (s *daycareEnrollmentService) DeleteWithInvoices(id uint) (*dto.DeleteDaycareEnrollmentResponse, error) {
+	de, err := s.daycareRepo.FindByID(id)
+	if err != nil {
+		return nil, errors.New("Pendaftaran daycare tidak ditemukan")
+	}
+
+	// Enrollment non-aktif → hapus langsung
+	if de.Status != "active" {
+		if err := s.daycareRepo.Delete(id); err != nil {
+			return nil, fmt.Errorf("gagal menghapus enrollment: %w", err)
+		}
+		return &dto.DeleteDaycareEnrollmentResponse{
+			Warning: false,
+			Message: fmt.Sprintf("Pendaftaran daycare untuk %s berhasil dihapus", de.Student.FullName),
+		}, nil
+	}
+
+	now := time.Now()
+	invoices, err := s.invoiceRepo.FindMonthlyByStudentFromMonth(de.StudentID, uint(now.Month()), uint(now.Year()))
+	if err != nil {
+		return nil, fmt.Errorf("gagal mengecek invoice: %w", err)
+	}
+
+	var deletedCount int
+	for _, inv := range invoices {
+		if inv.Status != "paid" {
+			s.db.Where("invoice_id = ?", inv.ID).Delete(&model.InvoiceItem{})
+			s.db.Delete(&inv)
+			deletedCount++
+		}
+	}
+
+	if err := s.daycareRepo.Delete(id); err != nil {
+		return nil, fmt.Errorf("gagal menghapus enrollment: %w", err)
+	}
+
+	return &dto.DeleteDaycareEnrollmentResponse{
+		Warning: false,
+		Message: fmt.Sprintf("Pendaftaran daycare untuk %s dan %d invoice berhasil dihapus", de.Student.FullName, deletedCount),
+	}, nil
+}
+
+// HasPremiumHistory returns true if the student has ever had a premium daycare enrollment.
+func (s *daycareEnrollmentService) HasPremiumHistory(studentID uint) (bool, error) {
+	return s.daycareRepo.HasPremiumHistory(studentID)
 }
 
 // ─── Attendance ──────────────────────────────────────────────────────

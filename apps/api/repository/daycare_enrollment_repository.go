@@ -13,9 +13,11 @@ type DaycareEnrollmentRepository interface {
 	FindByID(id uint) (*model.DaycareEnrollment, error)
 	FindActiveByStudentID(studentID, academicYearID uint) (*model.DaycareEnrollment, error)
 	FindAllActive() ([]model.DaycareEnrollment, error)
+	HasPremiumHistory(studentID uint) (bool, error)
 	Create(de *model.DaycareEnrollment) error
 	Update(de *model.DaycareEnrollment) error
 	UpdateStatus(id uint, status string, endDate *time.Time) error
+	Delete(id uint) error
 }
 
 type daycareEnrollmentRepository struct {
@@ -95,4 +97,18 @@ func (r *daycareEnrollmentRepository) UpdateStatus(id uint, status string, endDa
 	}
 
 	return r.db.Model(&model.DaycareEnrollment{}).Where("id = ?", id).Updates(updates).Error
+}
+
+// HasPremiumHistory returns true if the student has ever had a premium daycare enrollment.
+func (r *daycareEnrollmentRepository) HasPremiumHistory(studentID uint) (bool, error) {
+	var count int64
+	err := r.db.Model(&model.DaycareEnrollment{}).
+		Where("student_id = ? AND category = 'premium'", studentID).
+		Count(&count).Error
+	return count > 0, err
+}
+
+// Delete permanently removes a daycare enrollment record.
+func (r *daycareEnrollmentRepository) Delete(id uint) error {
+	return r.db.Delete(&model.DaycareEnrollment{}, id).Error
 }

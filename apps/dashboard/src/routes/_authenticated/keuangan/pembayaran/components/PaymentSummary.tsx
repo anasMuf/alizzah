@@ -52,6 +52,19 @@ export function PaymentSummary({
 					.filter(
 						(i: any) => payAmounts[i.id] !== 0 && !excludedItems.includes(i.id),
 					)
+					// Sembunyikan dispensasi jika tidak ada item non-dispensasi dari invoice yang sama ikut dibayar
+					.filter((item: any, _: number, arr: any[]) => {
+						if (!item.is_dispensation) return true;
+						const hasNonDisp = arr.some(
+							(i: any) =>
+								i.invoice_id === item.invoice_id && !i.is_dispensation,
+						);
+						return hasNonDisp;
+					})
+					.sort(
+						(a: any, b: any) =>
+							(a.is_dispensation ? 1 : 0) - (b.is_dispensation ? 1 : 0),
+					)
 					.map((item: any) => (
 						<div
 							key={item.id}

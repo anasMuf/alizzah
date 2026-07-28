@@ -373,20 +373,20 @@ func (s *BackupService) Restore(ctx context.Context, srcPath, format string) err
 
 	pgPassword := s.config.DBPassword
 
-	log.Printf("[backup] Restore starting: %s -> %s", srcPath, s.config.DBName)
+	log.Printf("[backup] Restore starting from %s", filepath.Base(srcPath))
 
 	// Step 1: Drop database (connect to default "postgres" DB)
 	dbName := quoteIdent(s.config.DBName)
 	if err := s.execSQL("postgres", fmt.Sprintf("DROP DATABASE IF EXISTS %s", dbName)); err != nil {
 		return fmt.Errorf("failed to drop database: %w", err)
 	}
-	log.Printf("[backup] Restore: dropped database %s", s.config.DBName)
+	log.Printf("[backup] Restore: database dropped")
 
 	// Step 2: Create database
 	if err := s.execSQL("postgres", fmt.Sprintf("CREATE DATABASE %s", dbName)); err != nil {
 		return fmt.Errorf("failed to create database: %w", err)
 	}
-	log.Printf("[backup] Restore: created database %s", s.config.DBName)
+	log.Printf("[backup] Restore: database created")
 
 	// Step 3: Import
 	if format == "dump" {
@@ -402,7 +402,8 @@ func (s *BackupService) Restore(ctx context.Context, srcPath, format string) err
 		cmd.Env = append(os.Environ(), "PGPASSWORD="+pgPassword)
 		output, err := cmd.CombinedOutput()
 		if err != nil {
-			return fmt.Errorf("pg_restore failed: %w\n%s", err, string(output))
+			log.Printf("[backup] Restore import failed: %v\n%s", err, string(output))
+			return fmt.Errorf("pg_restore failed: %w\n%s", err, truncate(string(output), 500))
 		}
 	} else {
 		// psql for plain SQL
@@ -416,11 +417,12 @@ func (s *BackupService) Restore(ctx context.Context, srcPath, format string) err
 		cmd.Env = append(os.Environ(), "PGPASSWORD="+pgPassword)
 		output, err := cmd.CombinedOutput()
 		if err != nil {
-			return fmt.Errorf("psql import failed: %w\n%s", err, string(output))
+			log.Printf("[backup] Restore import failed: %v\n%s", err, string(output))
+			return fmt.Errorf("psql import failed: %w\n%s", err, truncate(string(output), 500))
 		}
 	}
 
-	log.Printf("[backup] Restore completed: %s", s.config.DBName)
+	log.Printf("[backup] Restore completed")
 	return nil
 }
 
@@ -828,7 +830,7 @@ func truncate(s string, max int) string {
 	if len(s) <= max {
 		return s
 	}
-	return s[:max]
+	return s[:max] + "...(truncated)"
 }
 
 // quoteIdent quotes a PostgreSQL identifier by wrapping in double quotes

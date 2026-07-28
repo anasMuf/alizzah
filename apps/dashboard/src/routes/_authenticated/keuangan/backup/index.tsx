@@ -28,6 +28,37 @@ export const Route = createFileRoute("/_authenticated/keuangan/backup/")({
 
 type Format = "dump" | "sql" | "sql-compat";
 
+async function downloadBackupFile(
+	filename: string,
+	addToast: ReturnType<typeof useToast>["addToast"],
+) {
+	try {
+		const { getV1BackupsFilename } = await import(
+			"#/api/endpoints/backup/backup"
+		);
+		const res = await getV1BackupsFilename(filename);
+		if (res.status === 200) {
+			const blob = await (res.data as unknown as Response).blob?.();
+			if (blob) {
+				const url = URL.createObjectURL(blob);
+				const a = document.createElement("a");
+				a.href = url;
+				a.download = filename;
+				document.body.appendChild(a);
+				a.click();
+				a.remove();
+				URL.revokeObjectURL(url);
+			}
+		}
+	} catch {
+		addToast({
+			variant: "error",
+			title: "Download gagal",
+			message: `Tidak dapat mendownload ${filename}`,
+		});
+	}
+}
+
 function BackupPage() {
 	const [format, setFormat] = useState<Format>("dump");
 	const { addToast } = useToast();
@@ -147,31 +178,7 @@ function BackupPage() {
 						});
 						refetch();
 						if (result?.filename) {
-							try {
-								const { getV1BackupsFilename } = await import(
-									"#/api/endpoints/backup/backup"
-								);
-								const res = await getV1BackupsFilename(result.filename);
-								if (res.status === 200) {
-									const blob = await (res.data as unknown as Response).blob?.();
-									if (blob) {
-										const url = URL.createObjectURL(blob);
-										const a = document.createElement("a");
-										a.href = url;
-										a.download = result.filename;
-										document.body.appendChild(a);
-										a.click();
-										a.remove();
-										URL.revokeObjectURL(url);
-									}
-								}
-							} catch {
-								addToast({
-									variant: "error",
-									title: "Download gagal",
-									message: "File backup tidak dapat didownload.",
-								});
-							}
+							await downloadBackupFile(result.filename, addToast);
 						}
 					}
 				},
@@ -180,36 +187,12 @@ function BackupPage() {
 	};
 
 	const handleDownload = async (filename: string) => {
-		try {
-			const { getV1BackupsFilename } = await import(
-				"#/api/endpoints/backup/backup"
-			);
-			const res = await getV1BackupsFilename(filename);
-			if (res.status === 200) {
-				const blob = await (res.data as unknown as Response).blob?.();
-				if (blob) {
-					const url = URL.createObjectURL(blob);
-					const a = document.createElement("a");
-					a.href = url;
-					a.download = filename;
-					document.body.appendChild(a);
-					a.click();
-					a.remove();
-					URL.revokeObjectURL(url);
-					addToast({
-						variant: "success",
-						title: "Download dimulai",
-						message: filename,
-					});
-				}
-			}
-		} catch {
-			addToast({
-				variant: "error",
-				title: "Download gagal",
-				message: `Tidak dapat mendownload ${filename}`,
-			});
-		}
+		await downloadBackupFile(filename, addToast);
+		addToast({
+			variant: "success",
+			title: "Download dimulai",
+			message: filename,
+		});
 	};
 
 	const closePreview = () => {

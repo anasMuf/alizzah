@@ -6,10 +6,10 @@
  * OpenAPI spec version: 1.0
  */
 
-export interface ServiceBackupResult {
+export interface ServiceBackupFileInfo {
 	filename?: string;
+	/** "dump" / "sql" / "sql-compat" */
 	format?: string;
-	path?: string;
 	size_bytes?: number;
 	size_human?: string;
 	timestamp?: string;

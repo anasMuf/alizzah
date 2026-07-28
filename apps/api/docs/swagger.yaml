@@ -3425,9 +3425,25 @@ definitions:
       total_principal:
         type: number
     type: object
+  service.BackupFileInfo:
+    properties:
+      filename:
+        type: string
+      format:
+        description: '"dump" / "sql" / "sql-compat"'
+        type: string
+      size_bytes:
+        type: integer
+      size_human:
+        type: string
+      timestamp:
+        type: string
+    type: object
   service.BackupResult:
     properties:
       filename:
+        type: string
+      format:
         type: string
       path:
         type: string
@@ -3436,6 +3452,31 @@ definitions:
       size_human:
         type: string
       timestamp:
+        type: string
+    type: object
+  service.RestorePreview:
+    properties:
+      filename:
+        type: string
+      format:
+        type: string
+      size_bytes:
+        type: integer
+      tables:
+        items:
+          $ref: '#/definitions/service.TableInfo'
+        type: array
+    type: object
+  service.TableInfo:
+    properties:
+      name:
+        description: table or schema name
+        type: string
+      schema:
+        description: schema (public, etc.)
+        type: string
+      type:
+        description: TABLE, SEQUENCE, FUNCTION, etc.
         type: string
     type: object
 host: localhost:8080
@@ -4009,11 +4050,48 @@ paths:
       tags:
       - auth
   /v1/backups:
+    get:
+      consumes:
+      - application/json
+      description: Menampilkan semua file backup yang tersedia di direktori backup
+        VPS.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/service.BackupFileInfo'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: List backup files
+      tags:
+      - backup
     post:
       consumes:
       - application/json
-      description: Trigger full database backup (pg_dump -Fc). Hanya superadmin /
-        admin dengan modul keuangan.
+      description: 'Trigger full database backup. Format: dump (custom -Fc), sql (plain
+        -Fp), sql-compat (plain tanpa restrict/unrestrict). Default: dump.'
+      parameters:
+      - description: 'Format backup: dump, sql, sql-compat'
+        in: query
+        name: format
+        type: string
       produces:
       - application/json
       responses:
@@ -4026,6 +4104,10 @@ paths:
                 data:
                   $ref: '#/definitions/service.BackupResult'
               type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
@@ -4041,6 +4123,126 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Buat backup database manual
+      tags:
+      - backup
+  /v1/backups/{filename}:
+    get:
+      consumes:
+      - application/json
+      description: Download file backup berdasarkan nama file. Hanya superadmin.
+      parameters:
+      - description: Nama file backup
+        in: path
+        name: filename
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Download backup file
+      tags:
+      - backup
+  /v1/backups/preview:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload file backup (.dump/.sql) untuk melihat daftar tabel dan
+        schema yang akan direstore.
+      parameters:
+      - description: File backup (.dump atau .sql)
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/service.RestorePreview'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Preview isi file backup
+      tags:
+      - backup
+  /v1/backups/restore:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload file backup (.dump/.sql), drop database, create ulang, import.
+        Hanya superadmin + APP_ENV=local.
+      parameters:
+      - description: File backup (.dump atau .sql)
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Restore database dari file backup
       tags:
       - backup
   /v1/cash/balance:

@@ -37,6 +37,7 @@ import { Route as AuthenticatedKeuanganPenerimaanIndexRouteImport } from './rout
 import { Route as AuthenticatedKeuanganPembayaranIndexRouteImport } from './routes/_authenticated/keuangan/pembayaran/index'
 import { Route as AuthenticatedKeuanganLaporanIndexRouteImport } from './routes/_authenticated/keuangan/laporan/index'
 import { Route as AuthenticatedKeuanganKasIndexRouteImport } from './routes/_authenticated/keuangan/kas/index'
+import { Route as AuthenticatedKeuanganBackupIndexRouteImport } from './routes/_authenticated/keuangan/backup/index'
 import { Route as AuthenticatedAdministrasiSiswaIndexRouteImport } from './routes/_authenticated/administrasi/siswa/index'
 import { Route as AuthenticatedAdministrasiSiklusIndexRouteImport } from './routes/_authenticated/administrasi/siklus/index'
 import { Route as AuthenticatedAdministrasiRombelIndexRouteImport } from './routes/_authenticated/administrasi/rombel/index'
@@ -255,6 +256,12 @@ const AuthenticatedKeuanganKasIndexRoute =
   AuthenticatedKeuanganKasIndexRouteImport.update({
     id: '/kas/',
     path: '/kas/',
+    getParentRoute: () => AuthenticatedKeuanganRoute,
+  } as any)
+const AuthenticatedKeuanganBackupIndexRoute =
+  AuthenticatedKeuanganBackupIndexRouteImport.update({
+    id: '/backup/',
+    path: '/backup/',
     getParentRoute: () => AuthenticatedKeuanganRoute,
   } as any)
 const AuthenticatedAdministrasiSiswaIndexRoute =
@@ -666,6 +673,7 @@ export interface FileRoutesByFullPath {
   '/administrasi/rombel/': typeof AuthenticatedAdministrasiRombelIndexRoute
   '/administrasi/siklus/': typeof AuthenticatedAdministrasiSiklusIndexRoute
   '/administrasi/siswa/': typeof AuthenticatedAdministrasiSiswaIndexRoute
+  '/keuangan/backup/': typeof AuthenticatedKeuanganBackupIndexRoute
   '/keuangan/kas/': typeof AuthenticatedKeuanganKasIndexRoute
   '/keuangan/laporan/': typeof AuthenticatedKeuanganLaporanIndexRoute
   '/keuangan/pembayaran/': typeof AuthenticatedKeuanganPembayaranIndexRoute
@@ -750,6 +758,7 @@ export interface FileRoutesByTo {
   '/administrasi/rombel': typeof AuthenticatedAdministrasiRombelIndexRoute
   '/administrasi/siklus': typeof AuthenticatedAdministrasiSiklusIndexRoute
   '/administrasi/siswa': typeof AuthenticatedAdministrasiSiswaIndexRoute
+  '/keuangan/backup': typeof AuthenticatedKeuanganBackupIndexRoute
   '/keuangan/kas': typeof AuthenticatedKeuanganKasIndexRoute
   '/keuangan/laporan': typeof AuthenticatedKeuanganLaporanIndexRoute
   '/keuangan/pembayaran': typeof AuthenticatedKeuanganPembayaranIndexRoute
@@ -839,6 +848,7 @@ export interface FileRoutesById {
   '/_authenticated/administrasi/rombel/': typeof AuthenticatedAdministrasiRombelIndexRoute
   '/_authenticated/administrasi/siklus/': typeof AuthenticatedAdministrasiSiklusIndexRoute
   '/_authenticated/administrasi/siswa/': typeof AuthenticatedAdministrasiSiswaIndexRoute
+  '/_authenticated/keuangan/backup/': typeof AuthenticatedKeuanganBackupIndexRoute
   '/_authenticated/keuangan/kas/': typeof AuthenticatedKeuanganKasIndexRoute
   '/_authenticated/keuangan/laporan/': typeof AuthenticatedKeuanganLaporanIndexRoute
   '/_authenticated/keuangan/pembayaran/': typeof AuthenticatedKeuanganPembayaranIndexRoute
@@ -928,6 +938,7 @@ export interface FileRouteTypes {
     | '/administrasi/rombel/'
     | '/administrasi/siklus/'
     | '/administrasi/siswa/'
+    | '/keuangan/backup/'
     | '/keuangan/kas/'
     | '/keuangan/laporan/'
     | '/keuangan/pembayaran/'
@@ -1012,6 +1023,7 @@ export interface FileRouteTypes {
     | '/administrasi/rombel'
     | '/administrasi/siklus'
     | '/administrasi/siswa'
+    | '/keuangan/backup'
     | '/keuangan/kas'
     | '/keuangan/laporan'
     | '/keuangan/pembayaran'
@@ -1100,6 +1112,7 @@ export interface FileRouteTypes {
     | '/_authenticated/administrasi/rombel/'
     | '/_authenticated/administrasi/siklus/'
     | '/_authenticated/administrasi/siswa/'
+    | '/_authenticated/keuangan/backup/'
     | '/_authenticated/keuangan/kas/'
     | '/_authenticated/keuangan/laporan/'
     | '/_authenticated/keuangan/pembayaran/'
@@ -1330,6 +1343,13 @@ declare module '@tanstack/react-router' {
       path: '/kas'
       fullPath: '/keuangan/kas/'
       preLoaderRoute: typeof AuthenticatedKeuanganKasIndexRouteImport
+      parentRoute: typeof AuthenticatedKeuanganRoute
+    }
+    '/_authenticated/keuangan/backup/': {
+      id: '/_authenticated/keuangan/backup/'
+      path: '/backup'
+      fullPath: '/keuangan/backup/'
+      preLoaderRoute: typeof AuthenticatedKeuanganBackupIndexRouteImport
       parentRoute: typeof AuthenticatedKeuanganRoute
     }
     '/_authenticated/administrasi/siswa/': {
@@ -1872,6 +1892,7 @@ interface AuthenticatedKeuanganRouteChildren {
   AuthenticatedKeuanganPengeluaranBaruRoute: typeof AuthenticatedKeuanganPengeluaranBaruRoute
   AuthenticatedKeuanganPengeluaranKategoriRoute: typeof AuthenticatedKeuanganPengeluaranKategoriRoute
   AuthenticatedKeuanganTagihanIdRoute: typeof AuthenticatedKeuanganTagihanIdRoute
+  AuthenticatedKeuanganBackupIndexRoute: typeof AuthenticatedKeuanganBackupIndexRoute
   AuthenticatedKeuanganKasIndexRoute: typeof AuthenticatedKeuanganKasIndexRoute
   AuthenticatedKeuanganLaporanIndexRoute: typeof AuthenticatedKeuanganLaporanIndexRoute
   AuthenticatedKeuanganPembayaranIndexRoute: typeof AuthenticatedKeuanganPembayaranIndexRoute
@@ -1923,6 +1944,7 @@ const AuthenticatedKeuanganRouteChildren: AuthenticatedKeuanganRouteChildren = {
   AuthenticatedKeuanganPengeluaranKategoriRoute:
     AuthenticatedKeuanganPengeluaranKategoriRoute,
   AuthenticatedKeuanganTagihanIdRoute: AuthenticatedKeuanganTagihanIdRoute,
+  AuthenticatedKeuanganBackupIndexRoute: AuthenticatedKeuanganBackupIndexRoute,
   AuthenticatedKeuanganKasIndexRoute: AuthenticatedKeuanganKasIndexRoute,
   AuthenticatedKeuanganLaporanIndexRoute:
     AuthenticatedKeuanganLaporanIndexRoute,

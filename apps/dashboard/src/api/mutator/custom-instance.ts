@@ -50,10 +50,13 @@ export const customInstance = async <T>(
 
 	const token = tokenGetter();
 
+	// Don't force Content-Type for FormData — browser auto-sets multipart boundary
+	const isFormData = options?.body instanceof FormData;
+
 	const response = await fetch(url.toString(), {
 		...options,
 		headers: {
-			"Content-Type": "application/json",
+			...(isFormData ? {} : { "Content-Type": "application/json" }),
 			...(token ? { Authorization: `Bearer ${token}` } : {}),
 			...options?.headers,
 		},

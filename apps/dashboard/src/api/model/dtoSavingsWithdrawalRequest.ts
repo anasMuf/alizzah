@@ -10,4 +10,5 @@ export interface DtoSavingsWithdrawalRequest {
 	/** @minimum 1 */
 	amount: number;
 	notes?: string;
+	apply_admin_fee?: boolean;
 }

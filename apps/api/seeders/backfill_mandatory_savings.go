@@ -106,38 +106,9 @@ func BackfillMandatorySavingsDeposit(db *gorm.DB) {
 				return err
 			}
 
-			// 4. Buat vault_transaction (debit = uang masuk ke brangkas)
-			vt := model.VaultTransaction{
-				AcademicYearID:  pm.AcademicYearID,
-				TransactionDate: pm.PaymentDate,
-				TransactionType: "debit",
-				Amount:          pm.MandatoryAmount,
-				SourceType:      "savings_deposit",
-				SourceID:        &pm.PaymentID,
-				Description:     "Backfill: setoran tabungan wajib " + pm.StudentName,
-				CreatedBy:       pm.CreatedBy,
-			}
-			if err := tx.Create(&vt).Error; err != nil {
-				return err
-			}
-
-			// 5. Untuk source cash: transfer dari kas ke brangkas agar
-			//    uang tidak double-count di kas + brangkas
-			if pm.Source == "cash" {
-				ct := model.CashTransaction{
-					AcademicYearID:  pm.AcademicYearID,
-					TransactionDate: pm.PaymentDate,
-					TransactionType: "debit",
-					Amount:          pm.MandatoryAmount,
-					SourceType:      "transfer_to_vault",
-					SourceID:        &pm.PaymentID,
-					Description:     "Backfill: transfer ke brangkas (tab wajib) " + pm.StudentName,
-					CreatedBy:       pm.CreatedBy,
-				}
-				if err := tx.Create(&ct).Error; err != nil {
-					return err
-				}
-			}
+			// Tabungan wajib berada di kas, bukan di brangkas.
+			// Tidak perlu vault_transaction atau transfer ke brangkas.
+			// Uang sudah tercatat di cash_transactions dari payment source cash.
 
 			return nil
 		})

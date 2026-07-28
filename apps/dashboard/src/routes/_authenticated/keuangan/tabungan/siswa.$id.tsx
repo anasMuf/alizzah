@@ -78,19 +78,29 @@ function DetailTabunganSiswaPage() {
 	const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
 	const [withdrawAmount, setWithdrawAmount] = useState("");
 	const [withdrawNotes, setWithdrawNotes] = useState("");
+	const [withdrawApplyAdminFee, setWithdrawApplyAdminFee] = useState(false);
 
 	// Sync guard — cegah double-submit
 	const withdrawGuard = useRef(false);
 
 	const withdrawMutation = usePostV1StudentsIdSavingsWithdrawals({
 		mutation: {
-			onSuccess: () => {
+			onSuccess: (response: any) => {
 				withdrawGuard.current = false;
-				addToast({
-					variant: "success",
-					title: "Berhasil",
-					message: "Penarikan saldo berhasil diproses.",
-				});
+				const data = response?.data?.data;
+				if (data?.admin_fee > 0) {
+					addToast({
+						variant: "success",
+						title: "Berhasil",
+						message: `Penarikan berhasil. Biaya admin: ${formatCurrency(data.admin_fee)}, diterima: ${formatCurrency(data.net_amount)}`,
+					});
+				} else {
+					addToast({
+						variant: "success",
+						title: "Berhasil",
+						message: "Penarikan saldo berhasil diproses.",
+					});
+				}
 				queryClient.invalidateQueries({
 					queryKey: ["/v1/students", id, "savings"],
 				});
@@ -100,6 +110,7 @@ function DetailTabunganSiswaPage() {
 				setIsWithdrawOpen(false);
 				setWithdrawAmount("");
 				setWithdrawNotes("");
+				setWithdrawApplyAdminFee(false);
 			},
 			onError: (err: any) => {
 				withdrawGuard.current = false;
@@ -233,7 +244,10 @@ function DetailTabunganSiswaPage() {
 		setPrintEndDate("");
 	};
 
-	const handleCloseWithdraw = useCallback(() => setIsWithdrawOpen(false), []);
+	const handleCloseWithdraw = useCallback(() => {
+		setIsWithdrawOpen(false);
+		setWithdrawApplyAdminFee(false);
+	}, []);
 
 	const handleWithdraw = (e: React.FormEvent) => {
 		e.preventDefault();
@@ -253,6 +267,7 @@ function DetailTabunganSiswaPage() {
 			data: {
 				amount: Number(withdrawAmount),
 				notes: withdrawNotes,
+				apply_admin_fee: withdrawApplyAdminFee,
 			},
 		});
 	};
@@ -705,6 +720,16 @@ function DetailTabunganSiswaPage() {
 							onChange={(e: any) => setWithdrawNotes(e.target.value)}
 							placeholder="Contoh: Diambil oleh Ibunda siswa"
 						/>
+
+						<label className="flex items-center gap-3 px-1 cursor-pointer">
+							<input
+								type="checkbox"
+								checked={withdrawApplyAdminFee}
+								onChange={(e) => setWithdrawApplyAdminFee(e.target.checked)}
+								className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+							/>
+							<span className="text-sm text-gray-700">Kenakan biaya admin</span>
+						</label>
 
 						<div className="text-sm text-gray-500 bg-gray-50 p-3 rounded border border-gray-200">
 							<p>

@@ -209,6 +209,10 @@ function KasirPembayaranPage() {
 				}
 			});
 		});
+		// Dispensasi selalu di bawah sebelum total
+		items.sort(
+			(a, b) => (a.is_dispensation ? 1 : 0) - (b.is_dispensation ? 1 : 0),
+		);
 		return items;
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [invoiceDetails]);
@@ -249,17 +253,31 @@ function KasirPembayaranPage() {
 		.filter((i) => i.isSavings)
 		.reduce((sum, i) => sum + i.amount, 0);
 	const totalPay = useMemo(() => {
-		const invoiceTotal = Object.entries(payAmounts).reduce(
-			(sum, [id, amt]) =>
-				excludedItems.includes(Number(id)) ? sum : sum + amt,
-			0,
-		);
+		// Kelompokkan item per invoice. Dispensasi hanya berlaku jika
+		// ada item non-dispensasi di invoice yang sama ikut dibayar.
+		const invoiceGroups: Record<number, { nonDisp: number; disp: number }> = {};
+		invoiceItems.forEach((item: any) => {
+			const invId = item.invoice_id;
+			if (!invoiceGroups[invId]) invoiceGroups[invId] = { nonDisp: 0, disp: 0 };
+			const amt = payAmounts[item.id] ?? 0;
+			if (excludedItems.includes(item.id)) return;
+			if (item.is_dispensation) {
+				invoiceGroups[invId].disp += amt;
+			} else {
+				invoiceGroups[invId].nonDisp += amt;
+			}
+		});
+
+		const invoiceTotal = Object.values(invoiceGroups).reduce((sum, g) => {
+			// Diskon dispensasi hanya berlaku jika ada item yang dibayar di invoice ini
+			return sum + g.nonDisp + (g.nonDisp > 0 ? g.disp : 0);
+		}, 0);
 		const incidentalTotal = incidentalItems.reduce(
 			(sum, item) => sum + item.amount,
 			0,
 		);
 		return invoiceTotal + incidentalTotal;
-	}, [payAmounts, incidentalItems, excludedItems]);
+	}, [payAmounts, incidentalItems, excludedItems, invoiceItems]);
 
 	// Auto-fill cash received sesuai total
 	useEffect(() => {

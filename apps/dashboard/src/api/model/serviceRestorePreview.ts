@@ -5,12 +5,11 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
+import type { ServiceTableInfo } from "./serviceTableInfo";
 
-export interface ServiceBackupResult {
+export interface ServiceRestorePreview {
 	filename?: string;
 	format?: string;
-	path?: string;
 	size_bytes?: number;
-	size_human?: string;
-	timestamp?: string;
+	tables?: ServiceTableInfo[];
 }

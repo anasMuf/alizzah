@@ -8,6 +8,7 @@ import {
 	Calendar,
 	CircleDollarSign,
 	CreditCard,
+	Database,
 	FileText,
 	FolderTree,
 	HandCoins,
@@ -192,6 +193,9 @@ export function Sidebar({ isOpen }: SidebarProps) {
 							</p>
 							<NavLink to="/pengaturan/pengguna" icon={UserCog}>
 								Pengguna
+							</NavLink>
+							<NavLink to="/keuangan/backup" icon={Database}>
+								Backup Database
 							</NavLink>
 						</div>
 					)}

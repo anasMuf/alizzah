@@ -6,11 +6,9 @@
  * OpenAPI spec version: 1.0
  */
 
-export interface ServiceBackupResult {
-	filename?: string;
+export type PostV1BackupsParams = {
+	/**
+	 * Format backup: dump, sql, sql-compat
+	 */
 	format?: string;
-	path?: string;
-	size_bytes?: number;
-	size_human?: string;
-	timestamp?: string;
-}
+};

@@ -6,11 +6,7 @@
  * OpenAPI spec version: 1.0
  */
 
-export interface ServiceBackupResult {
-	filename?: string;
-	format?: string;
-	path?: string;
-	size_bytes?: number;
-	size_human?: string;
-	timestamp?: string;
-}
+export type PostV1BackupsRestoreBody = {
+	/** File backup (.dump atau .sql) */
+	file: Blob;
+};

@@ -11,4 +11,7 @@ export interface DtoCashBalanceResponse {
 	last_closing_date?: string;
 	today_credit?: number;
 	today_debit?: number;
+	total_savings_mandatory?: number;
+	total_savings_mandatory_berlian?: number;
+	total_savings_mandatory_mutiara?: number;
 }

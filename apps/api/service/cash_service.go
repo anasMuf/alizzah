@@ -18,16 +18,18 @@ type CashService interface {
 }
 
 type cashService struct {
-	db       *gorm.DB
-	cashRepo repository.CashTransactionRepository
-	txWriter TransactionWriterService
+	db          *gorm.DB
+	cashRepo    repository.CashTransactionRepository
+	savingsRepo repository.StudentSavingsRepository
+	txWriter    TransactionWriterService
 }
 
-func NewCashService(db *gorm.DB, cashRepo repository.CashTransactionRepository, txWriter TransactionWriterService) CashService {
+func NewCashService(db *gorm.DB, cashRepo repository.CashTransactionRepository, savingsRepo repository.StudentSavingsRepository, txWriter TransactionWriterService) CashService {
 	return &cashService{
-		db:       db,
-		cashRepo: cashRepo,
-		txWriter: txWriter,
+		db:          db,
+		cashRepo:    cashRepo,
+		savingsRepo: savingsRepo,
+		txWriter:    txWriter,
 	}
 }
 
@@ -51,11 +53,18 @@ func (s *cashService) GetBalance(academicYearID uint) (*dto.CashBalanceResponse,
 		lastClosingStr = &str
 	}
 
+	totalMandatory, _ := s.savingsRepo.SumBalanceByType(academicYearID, "mandatory")
+	totalMandatoryBerlian, _ := s.savingsRepo.SumBalanceByTypeAndLevel(academicYearID, "mandatory", "berlian")
+	totalMandatoryMutiara, _ := s.savingsRepo.SumBalanceByTypeAndLevel(academicYearID, "mandatory", "mutiara")
+
 	return &dto.CashBalanceResponse{
-		Balance:         balance,
-		LastClosingDate: lastClosingStr,
-		TodayCredit:     todayCredit,
-		TodayDebit:      todayDebit,
+		Balance:                      balance,
+		LastClosingDate:              lastClosingStr,
+		TodayCredit:                  todayCredit,
+		TodayDebit:                   todayDebit,
+		TotalSavingsMandatory:        totalMandatory,
+		TotalSavingsMandatoryBerlian: totalMandatoryBerlian,
+		TotalSavingsMandatoryMutiara: totalMandatoryMutiara,
 	}, nil
 }
 

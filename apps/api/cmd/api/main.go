@@ -311,7 +311,7 @@ func main() {
 	incomeService := service.NewIncomeTransactionService(db, incomeRepo, ayRepo, txnWriterService)
 
 	// Batch 7
-	cashService := service.NewCashService(db, cashTxnRepo, txnWriterService)
+	cashService := service.NewCashService(db, cashTxnRepo, savingsRepo, txnWriterService)
 	vaultService := service.NewVaultService(vaultTxnRepo, savingsRepo)
 	dailyClosingService := service.NewDailyClosingService(dailyClosingRepo, cashTxnRepo)
 	reportService := service.NewReportService(reportRepo, ayRepo, cashTxnRepo, vaultTxnRepo, dailyClosingRepo, studentRepo, invoiceRepo, invoiceItemRepo, paymentRepo, savingsService, classGroupRepo, savingsTxnRepo)

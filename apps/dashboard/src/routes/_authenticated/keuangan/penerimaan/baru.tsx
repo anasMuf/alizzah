@@ -7,7 +7,8 @@ import {
 	getGetV1IncomeTransactionsQueryKey,
 	usePostV1IncomeTransactions,
 } from "#/api/endpoints/income-transactions/income-transactions";
-import { Button, FormField, useToast } from "#/components/ui";
+import type { DtoCreateIncomeTransactionRequestCategory } from "#/api/model";
+import { Alert, Button, CurrencyInput, useToast } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
 
 export const Route = createFileRoute(
@@ -29,14 +30,17 @@ function PenerimaanBaruPage() {
 	const queryClient = useQueryClient();
 	const { addToast } = useToast();
 
-	const [category, setCategory] = useState("bos");
+	const [category, setCategory] =
+		useState<DtoCreateIncomeTransactionRequestCategory>("bos");
 	const [sourceName, setSourceName] = useState("");
-	const [amount, setAmount] = useState("");
+	const [amount, setAmount] = useState<number>(0);
 	const [transactionDate, setTransactionDate] = useState(
 		new Date().toISOString().split("T")[0],
 	);
 	const [referenceNumber, setReferenceNumber] = useState("");
 	const [notes, setNotes] = useState("");
+	const [formError, setFormError] = useState("");
+	const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
 	const createMutation = usePostV1IncomeTransactions({
 		mutation: {
@@ -55,30 +59,69 @@ function PenerimaanBaruPage() {
 				navigate({ to: "/keuangan/penerimaan", search: {} as any });
 			},
 			onError: (err: any) => {
-				addToast({
-					variant: "error",
-					title: "Gagal",
-					message: err.message || "Gagal mencatat penerimaan.",
-				});
+				const status = err?.status || err?.response?.status;
+				const data = err?.response?.data || err?.data;
+
+				if (status === 400 && data?.errors) {
+					const errors: Record<string, string> = {};
+					for (const [key, val] of Object.entries(
+						data.errors as Record<string, unknown>,
+					)) {
+						errors[key] = Array.isArray(val) ? String(val[0]) : String(val);
+					}
+					setFieldErrors(errors);
+					return;
+				}
+
+				if (status === 422) {
+					setFormError(
+						data?.message ||
+							"Tanggal ini sudah ditutup buku. Tidak dapat mencatat penerimaan pada tanggal tersebut.",
+					);
+					return;
+				}
+
+				setFormError(
+					data?.message || err?.message || "Gagal mencatat penerimaan.",
+				);
 			},
 		},
 	});
 
-	const handleSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-		createMutation.mutate({
-			academic_year_id: activeAy?.id || 0,
-			category,
-			source_name: sourceName,
-			amount: Number(amount),
-			transaction_date: transactionDate,
-			reference_number: referenceNumber || undefined,
-			notes: notes || undefined,
-		} as any);
+	const validate = (): boolean => {
+		const errors: Record<string, string> = {};
+
+		if (!activeAy?.id) errors.academic_year_id = "Tahun ajaran belum dipilih.";
+		if (!sourceName.trim())
+			errors.source_name = "Sumber / pengirim wajib diisi.";
+		if (amount <= 0) errors.amount = "Nominal harus lebih dari 0.";
+		if (!transactionDate)
+			errors.transaction_date = "Tanggal transaksi wajib diisi.";
+
+		setFieldErrors(errors);
+		return Object.keys(errors).length === 0;
 	};
 
-	const canSubmit =
-		!!sourceName.trim() && Number(amount) > 0 && !!transactionDate;
+	const handleSubmit = (e: React.FormEvent) => {
+		e.preventDefault();
+		setFormError("");
+
+		if (!validate()) return;
+
+		createMutation.mutate({
+			data: {
+				academic_year_id: activeAy?.id || 0,
+				category,
+				source_name: sourceName.trim(),
+				amount: amount,
+				transaction_date: transactionDate,
+				reference_number: referenceNumber.trim() || undefined,
+				notes: notes.trim() || undefined,
+			},
+		});
+	};
+
+	const canSubmit = !!sourceName.trim() && amount > 0 && !!transactionDate;
 
 	return (
 		<div className="space-y-6 max-w-2xl mx-auto">
@@ -105,6 +148,12 @@ function PenerimaanBaruPage() {
 				</p>
 			</div>
 
+			{formError && (
+				<Alert variant="error" title="Gagal" onClose={() => setFormError("")}>
+					{formError}
+				</Alert>
+			)}
+
 			<form
 				onSubmit={handleSubmit}
 				className="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl"
@@ -117,8 +166,17 @@ function PenerimaanBaruPage() {
 						</label>
 						<select
 							value={category}
-							onChange={(e) => setCategory(e.target.value)}
-							className="block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
+							onChange={(e) => {
+								setCategory(
+									e.target.value as DtoCreateIncomeTransactionRequestCategory,
+								);
+								setFieldErrors((prev) => {
+									const next = { ...prev };
+									delete next.category;
+									return next;
+								});
+							}}
+							className={`block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ${fieldErrors.category ? "ring-red-300 focus:ring-red-500" : "ring-gray-300 focus:ring-indigo-600"} focus:ring-2 focus:ring-inset sm:text-sm sm:leading-6`}
 						>
 							{CATEGORY_OPTIONS.map((opt) => (
 								<option key={opt.value} value={opt.value}>
@@ -126,48 +184,117 @@ function PenerimaanBaruPage() {
 								</option>
 							))}
 						</select>
+						{fieldErrors.category && (
+							<p className="mt-1 text-sm text-red-600">
+								{fieldErrors.category}
+							</p>
+						)}
 					</div>
 
 					{/* Sumber */}
-					<FormField
-						id="sourceName"
-						label="Sumber / Pengirim"
-						value={sourceName}
-						onChange={(e: any) => setSourceName(e.target.value)}
-						required
-						placeholder='Contoh: "BOS Reguler Semester 1", "Donatur Bpk. Ahmad"'
-					/>
+					<div>
+						<label
+							htmlFor="sourceName"
+							className="block text-sm font-medium leading-6 text-gray-900 mb-2"
+						>
+							Sumber / Pengirim <span className="text-red-500">*</span>
+						</label>
+						<input
+							id="sourceName"
+							type="text"
+							value={sourceName}
+							onChange={(e) => {
+								setSourceName(e.target.value);
+								setFieldErrors((prev) => {
+									const next = { ...prev };
+									delete next.source_name;
+									return next;
+								});
+							}}
+							placeholder='Contoh: "BOS Reguler Semester 1", "Donatur Bpk. Ahmad"'
+							className={`block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ${fieldErrors.source_name ? "ring-red-300 focus:ring-red-500" : "ring-gray-300 focus:ring-indigo-600"} placeholder:text-gray-400 focus:ring-2 focus:ring-inset sm:text-sm sm:leading-6`}
+						/>
+						{fieldErrors.source_name && (
+							<p className="mt-1 text-sm text-red-600">
+								{fieldErrors.source_name}
+							</p>
+						)}
+					</div>
 
 					{/* Nominal */}
-					<FormField
-						id="amount"
-						type="number"
-						label="Nominal (Rp)"
-						value={amount}
-						onChange={(e: any) => setAmount(e.target.value)}
-						required
-						min="1"
-						placeholder="Masukkan nominal penerimaan"
-					/>
+					<div>
+						<label
+							htmlFor="amount"
+							className="block text-sm font-medium leading-6 text-gray-900 mb-2"
+						>
+							Nominal (Rp) <span className="text-red-500">*</span>
+						</label>
+						<CurrencyInput
+							id="amount"
+							value={amount}
+							onChange={(val) => {
+								setAmount(val);
+								setFieldErrors((prev) => {
+									const next = { ...prev };
+									delete next.amount;
+									return next;
+								});
+							}}
+							showSymbol
+							placeholder="Masukkan nominal penerimaan"
+							className={`${fieldErrors.amount ? "ring-1 ring-red-500" : ""}`}
+						/>
+						{fieldErrors.amount && (
+							<p className="mt-1 text-sm text-red-600">{fieldErrors.amount}</p>
+						)}
+					</div>
 
 					{/* Tanggal */}
-					<FormField
-						id="transactionDate"
-						type="date"
-						label="Tanggal Transaksi"
-						value={transactionDate}
-						onChange={(e: any) => setTransactionDate(e.target.value)}
-						required
-					/>
+					<div>
+						<label
+							htmlFor="transactionDate"
+							className="block text-sm font-medium leading-6 text-gray-900 mb-2"
+						>
+							Tanggal Transaksi <span className="text-red-500">*</span>
+						</label>
+						<input
+							id="transactionDate"
+							type="date"
+							value={transactionDate}
+							onChange={(e) => {
+								setTransactionDate(e.target.value);
+								setFieldErrors((prev) => {
+									const next = { ...prev };
+									delete next.transaction_date;
+									return next;
+								});
+							}}
+							className={`block w-full sm:w-64 rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ${fieldErrors.transaction_date ? "ring-red-300 focus:ring-red-500" : "ring-gray-300 focus:ring-indigo-600"} focus:ring-2 focus:ring-inset sm:text-sm sm:leading-6`}
+						/>
+						{fieldErrors.transaction_date && (
+							<p className="mt-1 text-sm text-red-600">
+								{fieldErrors.transaction_date}
+							</p>
+						)}
+					</div>
 
 					{/* Nomor Referensi */}
-					<FormField
-						id="referenceNumber"
-						label="Nomor Referensi / Dokumen"
-						value={referenceNumber}
-						onChange={(e: any) => setReferenceNumber(e.target.value)}
-						placeholder="Opsional, contoh: BOS-2025-001"
-					/>
+					<div>
+						<label
+							htmlFor="referenceNumber"
+							className="block text-sm font-medium leading-6 text-gray-900 mb-2"
+						>
+							Nomor Referensi / Dokumen
+						</label>
+						<input
+							id="referenceNumber"
+							type="text"
+							value={referenceNumber}
+							onChange={(e) => setReferenceNumber(e.target.value)}
+							placeholder="Opsional, contoh: BOS-2025-001"
+							className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
+						/>
+					</div>
 
 					{/* Catatan */}
 					<div>

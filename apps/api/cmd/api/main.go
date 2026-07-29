@@ -308,7 +308,7 @@ func main() {
 
 	// Income transactions
 	incomeRepo := repository.NewIncomeTransactionRepository(db)
-	incomeService := service.NewIncomeTransactionService(db, incomeRepo, ayRepo, txnWriterService)
+	incomeService := service.NewIncomeTransactionService(db, incomeRepo, txnWriterService)
 
 	// Batch 7
 	cashService := service.NewCashService(db, cashTxnRepo, savingsRepo, txnWriterService)

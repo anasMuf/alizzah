@@ -15,6 +15,7 @@ import {
 	Badge,
 	Button,
 	ConfirmDialog,
+	CurrencyInput,
 	EmptyState,
 	useToast,
 } from "#/components/ui";
@@ -45,7 +46,7 @@ function PengeluaranDetailPage() {
 	const [expenseDate, setExpenseDate] = useState("");
 	const [parentCategoryId, setParentCategoryId] = useState("");
 	const [subCategoryId, setSubCategoryId] = useState("");
-	const [amount, setAmount] = useState("");
+	const [amount, setAmount] = useState<number>(0);
 	const [description, setDescription] = useState("");
 	const [formError, setFormError] = useState("");
 
@@ -70,7 +71,7 @@ function PengeluaranDetailPage() {
 	useEffect(() => {
 		if (expense && categories.length > 0) {
 			setExpenseDate(expense.expense_date || "");
-			setAmount(String(expense.amount || ""));
+			setAmount(Number(expense.amount) || 0);
 			setDescription(expense.description || "");
 
 			const cat = expense.category;
@@ -106,6 +107,8 @@ function PengeluaranDetailPage() {
 					queryKey: [`/v1/expenses/${expenseId}`],
 				});
 				queryClient.invalidateQueries({ queryKey: ["/v1/expenses"] });
+				queryClient.invalidateQueries({ queryKey: ["/v1/cash/balance"] });
+				queryClient.invalidateQueries({ queryKey: ["/v1/cash/transactions"] });
 				setIsEditing(false);
 			},
 			onError: (error: Error) => {
@@ -141,12 +144,7 @@ function PengeluaranDetailPage() {
 
 	const handleSave = () => {
 		setFormError("");
-		if (
-			!subCategoryId ||
-			!amount ||
-			Number(amount) <= 0 ||
-			!description.trim()
-		) {
+		if (!subCategoryId || amount <= 0 || !description.trim()) {
 			setFormError("Semua field wajib diisi dengan benar.");
 			return;
 		}
@@ -160,7 +158,7 @@ function PengeluaranDetailPage() {
 				academic_year_id: activeAy.id,
 				expense_category_id: Number(subCategoryId),
 				expense_date: expenseDate,
-				amount: Number(amount),
+				amount,
 				description: description.trim(),
 			},
 		});
@@ -171,7 +169,7 @@ function PengeluaranDetailPage() {
 		setFormError("");
 		if (expense) {
 			setExpenseDate(expense.expense_date || "");
-			setAmount(String(expense.amount || ""));
+			setAmount(Number(expense.amount) || 0);
 			setDescription(expense.description || "");
 		}
 	};
@@ -325,18 +323,13 @@ function PengeluaranDetailPage() {
 
 					<Field label="Nominal">
 						{isEditing ? (
-							<div className="relative w-full sm:w-64">
-								<div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-									<span className="text-gray-500 sm:text-sm">Rp</span>
-								</div>
-								<input
-									type="number"
-									min="1"
-									value={amount}
-									onChange={(e) => setAmount(e.target.value)}
-									className="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
-								/>
-							</div>
+							<CurrencyInput
+								value={amount}
+								onChange={(val) => setAmount(val)}
+								showSymbol
+								placeholder="0"
+								className="sm:w-64"
+							/>
 						) : (
 							<span className="text-lg font-semibold text-gray-900">
 								{formatCurrency(Number(expense.amount))}

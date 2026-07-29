@@ -20,23 +20,27 @@ type IncomeTransactionService interface {
 	Delete(id uint) error
 }
 
+var incomeCategoryLabels = map[string]string{
+	"bos":     "Dana BOS",
+	"donasi":  "Donasi",
+	"hibah":   "Hibah",
+	"lainnya": "Penerimaan Lainnya",
+}
+
 type incomeTransactionService struct {
 	db        *gorm.DB
 	repo      repository.IncomeTransactionRepository
-	ayRepo    repository.AcademicYearRepository
 	txnWriter TransactionWriterService
 }
 
 func NewIncomeTransactionService(
 	db *gorm.DB,
 	repo repository.IncomeTransactionRepository,
-	ayRepo repository.AcademicYearRepository,
 	txnWriter TransactionWriterService,
 ) IncomeTransactionService {
 	return &incomeTransactionService{
 		db:        db,
 		repo:      repo,
-		ayRepo:    ayRepo,
 		txnWriter: txnWriter,
 	}
 }
@@ -84,13 +88,6 @@ func (s *incomeTransactionService) Create(createdBy uint, req dto.CreateIncomeTr
 		return nil, errors.New("Tanggal sudah dikunci oleh tutup buku")
 	}
 
-	categoryLabels := map[string]string{
-		"bos":     "Dana BOS",
-		"donasi":  "Donasi",
-		"hibah":   "Hibah",
-		"lainnya": "Penerimaan Lainnya",
-	}
-
 	var income model.IncomeTransaction
 	err = s.db.Transaction(func(tx *gorm.DB) error {
 		income = model.IncomeTransaction{
@@ -107,7 +104,7 @@ func (s *incomeTransactionService) Create(createdBy uint, req dto.CreateIncomeTr
 			return err
 		}
 
-		label := categoryLabels[req.Category]
+		label := incomeCategoryLabels[req.Category]
 		desc := fmt.Sprintf("%s: %s", label, req.SourceName)
 		return s.txnWriter.WriteCashCredit(
 			req.AcademicYearID, txnDate, req.Amount,
@@ -153,13 +150,6 @@ func (s *incomeTransactionService) Update(id uint, req dto.CreateIncomeTransacti
 	it.ReferenceNumber = req.ReferenceNumber
 	it.Notes = req.Notes
 
-	categoryLabels := map[string]string{
-		"bos":     "Dana BOS",
-		"donasi":  "Donasi",
-		"hibah":   "Hibah",
-		"lainnya": "Penerimaan Lainnya",
-	}
-
 	err = s.db.Transaction(func(tx *gorm.DB) error {
 		// 1. Hapus CashTransaction lama
 		if err := s.txnWriter.DeleteCashBySource(tx, "income", it.ID); err != nil {
@@ -172,7 +162,7 @@ func (s *incomeTransactionService) Update(id uint, req dto.CreateIncomeTransacti
 		}
 
 		// 3. Tulis CashTransaction baru
-		label := categoryLabels[req.Category]
+		label := incomeCategoryLabels[req.Category]
 		desc := fmt.Sprintf("%s: %s", label, req.SourceName)
 		return s.txnWriter.WriteCashCredit(
 			req.AcademicYearID, txnDate, req.Amount,

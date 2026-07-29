@@ -3,12 +3,12 @@ import { useAtom } from "jotai";
 import { ChevronRight, Printer } from "lucide-react";
 import { useGetV1ReportsAnnual } from "#/api/endpoints/reports/reports";
 import { Alert, Button } from "#/components/ui";
-import { academicYearAtom } from "../../../../store/global";
-import { formatCurrency } from "../../../../utils/format";
-import { openPrintWindow } from "../../../../utils/print";
+import { academicYearAtom } from "../../../../../store/global";
+import { formatCurrency } from "../../../../../utils/format";
+import { openPrintWindow } from "../../../../../utils/print";
 
 export const Route = createFileRoute(
-	"/_authenticated/keuangan/laporan/tahunan",
+	"/_authenticated/keuangan/laporan/old/tahunan",
 )({
 	component: LaporanTahunanPage,
 });

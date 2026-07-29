@@ -1,74 +1,71 @@
-# Implementation Plan: Daycare Kalkulasi Bulanan (Attendance → Monthly Days)
+# Implementation Plan: Laporan Keuangan Rebuild
 
 ## Overview
 
-Mengubah sistem tagihan daycare dari berbasis absensi harian menjadi input jumlah hari per bulan.
-Perubahan mencakup: model baru `DaycareMonthlyAttendance`, API baru untuk input kehadiran bulanan,
-modifikasi invoice generation, dan update frontend. TPQ dihapus dari kalkulasi tagihan.
+Rebuild halaman laporan keuangan dari 9 sub-halaman terpisah menjadi 4 sub-halaman yang ringkas dan konsisten: **Pemasukan**, **Pengeluaran**, **Saldo**, **Posisi Kas**. Semua sub-halaman berbagi filter bar yang sama (TA, date range Dari-Sampai + shortcut, payment method, tombol Generate), section info filter, dan tabel yang looping per tanggal/periode. Halaman lama dipindahkan ke folder `old/` untuk tracking.
 
 ## Architecture Decisions
 
-- **New table `daycare_monthly_attendances`** — menyimpan `spd_days` dan `meal_days` per siswa per bulan. Unique constraint pada `(student_id, month, year)`.
-- **Backward compatible** — jika data bulanan tidak ada, fallback ke absensi harian (perilaku lama). Ini memastikan enrollment existing tidak break.
-- **Premium meal pakai tarif harian regular** — `daycare_premium_meal` (flat 400k) dinonaktifkan, pakai `daycare_regular_meal` (20k/hari) untuk semua kategori.
-- **TPQ items dinonaktifkan** — `daycare_premium_tpq` dan `daycare_regular_tpq` di-seeder diset `is_active: false`.
-- **Validasi maksimal 30 hari** — `spd_days` dan `meal_days` divalidasi max 30.
+- **Shared FilterBar component**: Satu komponen reusable yang dipakai semua 4 sub-halaman, berisi TA selector, date range (Dari-Sampai native input), shortcut buttons (Hari Ini, Bulan Ini, TA Saat Ini), payment method (Tunai/Tabungan), dan tombol Generate. Filter state dikelola per halaman via local `useState`, tidak dishare cross-page.
+- **Multi-select via checkbox list**: Fee items, kategori pengeluaran, dan TA ditampilkan sebagai checkbox list dengan toggle "Semua/Pilih Semua". Value disimpan sebagai array ID.
+- **Tombol Generate (bukan auto-fetch)**: API call hanya triggered saat user klik Generate, mencegah request berlebihan dengan 4-5 filter aktif.
+- **Native `<input type="date">`**: Tidak menambah library date picker, konsisten dengan pattern existing (harian.tsx).
+- **Reuse API endpoints existing dengan extended params**: Backend Go di-extend untuk menerima `date_from`, `date_to`, `fee_item_ids[]`, `expense_category_ids[]`, `academic_year_ids[]`, dan `payment_method` sebagai query params tambahan.
+- **Data multi-select dari API yang sudah ada**: `GET /v1/fee-configs` → items, `GET /v1/expense-categories` → tree (flattened), `GET /v1/academic-years` → list.
 
 ## Task List
 
-### Phase 1: Foundation (Backend Model + Repository)
+### Phase 1: Foundation — Reusable Components
 
-- [ ] **Task 1:** Buat model `DaycareMonthlyAttendance` + register di AutoMigrate
-- [ ] **Task 2:** Buat repository `DaycareMonthlyAttendanceRepository`
+- [ ] **Task 1:** Buat komponen `FilterBar.tsx`
+- [ ] **Task 2:** Buat komponen `MultiSelectCheckbox.tsx`
+- [ ] **Task 3:** Buat komponen `ReportInfoCard.tsx` dan `ReportTable.tsx`
 
 ### Checkpoint: Foundation
-- [ ] Model terdaftar di `main.go` AutoMigrate
-- [ ] Repository bisa di-compile (method FindByStudentMonthYear, Upsert)
+- [ ] Semua 4 komponen reusable siap, build tidak error
 
-### Phase 2: Service + Handler (API Layer)
+### Phase 2: Backend API Adjustments
 
-- [ ] **Task 3:** Tambah method `UpsertMonthlyAttendance` & `GetMonthlyAttendance` di service
-- [ ] **Task 4:** Tambah endpoint GET & PUT `/v1/daycare-enrollments/monthly-attendance` di handler + register di `main.go`
+- [ ] **Task 4:** Extend API endpoint Saldo dengan `date_from`, `date_to`, `fee_item_ids[]`, `academic_year_ids[]`
+- [ ] **Task 5:** Extend API endpoint Posisi Kas dengan `date_from`, `date_to`, `fee_item_ids[]`, `expense_category_ids[]`
+- [ ] **Task 6:** Buat API endpoint Pemasukan (atau extend existing income-transactions list) dengan filter date range, payment method, fee_item_ids
+- [ ] **Task 7:** Buat API endpoint Pengeluaran (atau extend existing expenses list) dengan filter date range, fee_item_ids, expense_category_ids
+- [ ] **Task 8:** Generate/update frontend API client hooks (orval atau manual)
 
-### Checkpoint: API Layer
-- [ ] API bisa disimpan dan dibaca via curl/Postman
-- [ ] Validasi max 30 hari berfungsi
+### Checkpoint: Backend
+- [ ] API endpoints bisa dipanggil via curl/Postman dan return data sesuai filter
 
-### Phase 3: Invoice Generation Changes
+### Phase 3: Sub-halaman — Vertical Slices
 
-- [ ] **Task 5:** Modifikasi `GenerateDaycareMonthlyInvoices` — gunakan `DaycareMonthlyAttendance` jika ada, fallback ke absensi harian. Hapus TPQ dari kalkulasi. Premium meal pakai daily rate.
+- [ ] **Task 9:** Sub-halaman Pemasukan (`/keuangan/laporan/pemasukan`)
+- [ ] **Task 10:** Sub-halaman Pengeluaran (`/keuangan/laporan/pengeluaran`)
+- [ ] **Task 11:** Sub-halaman Saldo (`/keuangan/laporan/saldo`)
+- [ ] **Task 12:** Sub-halaman Posisi Kas (`/keuangan/laporan/posisi-kas`)
 
-### Checkpoint: Invoice Logic
-- [ ] Generate invoice dengan data bulanan menghasilkan tagihan yang benar
-- [ ] Generate invoice tanpa data bulanan masih berfungsi (fallback)
-- [ ] TPQ tidak muncul di invoice item
+### Checkpoint: Core Features
+- [ ] Keempat sub-halaman berfungsi end-to-end: filter → generate → tabel → cetak
 
-### Phase 4: Seeders
+### Phase 4: Migration & Cleanup
 
-- [ ] **Task 6:** Nonaktifkan TPQ items dan premium meal flat di `fee_config_seeder.go`
-
-### Phase 5: Frontend
-
-- [ ] **Task 7:** Ubah UI absensi harian menjadi input kehadiran bulanan di `index.tsx`
-- [ ] **Task 8:** Regenerate Orval API client (jika perlu)
+- [ ] **Task 13:** Pindahkan 9 halaman lama ke folder `old/`
+- [ ] **Task 14:** Update hub page (`laporan/index.tsx`) ke 4 card baru
+- [ ] **Task 15:** Final integration test & polish
 
 ### Checkpoint: Complete
-- [ ] End-to-end: input kehadiran bulanan → generate invoice → lihat hasil
-- [ ] Enrollment existing masih bisa generate invoice (fallback)
-- [ ] Build dan test passing
+- [ ] Semua acceptance criteria terpenuhi
+- [ ] Build dan dev server berjalan tanpa error
+- [ ] Navigasi antar sub-halaman lancar
 
 ## Risks and Mitigations
 
 | Risk | Impact | Mitigation |
 |------|--------|------------|
-| Enrollment existing break setelah perubahan invoice logic | High | Backward compatible: fallback ke absensi harian jika data bulanan tidak ada |
-| Premium meal rate berubah (flat 400k → 20k/hari) | Med | Komunikasikan ke user, nonaktifkan fee item lama di seeder |
-| Orval regeneration meng-overwrite custom code | Low | Back-up file sebelum regenerate, atau tulis manual endpoint call |
+| Backend Go API perlu diubah signifikan untuk support multi-select + date range | High | Prioritaskan Task 4-7 early; jika terlalu berat, fallback ke filter client-side dari data yang sudah di-fetch |
+| Response shape API existing tidak cocok dengan UI baru (Pemasukan/Pengeluaran) | Medium | Evaluasi di Task 6-7; buat endpoint baru hanya jika existing tidak bisa di-extend |
+| Multi-select fee config items bergantung pada fee config aktif | Low | Hardcode fallback ke semua fee config jika tidak ada yang aktif |
+| Perubahan route (dari 9 jadi 4) bisa break existing links/bookmark | Low | Tambahkan redirect dari route lama ke route baru di Task 14 |
 
 ## Open Questions
 
-- [x] Apakah jumlah hari berbeda per bulan? → YES, input per bulan
-- [x] Apakah TPQ masih dihitung? → NO, dihapus
-- [x] Apakah premium meal tetap flat? → NO, pakai daily rate (20k/hari)
-- [x] Apakah Biaya Awal premium tetap? → YES, tidak berubah
-- [x] Batas maksimal hari? → 30
+- Apakah backend `/v1/income-transactions` dan `/v1/expenses` sudah bisa di-filter by date range + fee_item_id? (perlu dicek di Task 6-7)
+- Apakah perlu pagination untuk tabel dengan data banyak? (default: tampilkan semua, no pagination)

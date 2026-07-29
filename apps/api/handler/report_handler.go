@@ -366,3 +366,70 @@ func (h *ReportHandler) ByClassGroup(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil mengambil laporan kelas", Data: report})
 }
+
+// Pemasukan godoc
+// @Summary      Income report
+// @Description  Get income transactions grouped by date with filter options
+// @Tags         reports
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        date_from         query  string  true   "Start date (YYYY-MM-DD)"
+// @Param        date_to           query  string  true   "End date (YYYY-MM-DD)"
+// @Param        payment_method    query  string  false  "Payment method filter (tunai/tabungan)"
+// @Param        fee_item_ids      query  string  false  "Comma-separated fee config item IDs"
+// @Param        academic_year_id  query  int     false  "Academic Year ID"
+// @Success      200               {object}  dto.SuccessResponse{data=dto.PemasukanResponse}
+// @Failure      400               {object}  dto.ErrorResponse
+// @Failure      401               {object}  dto.ErrorResponse
+// @Failure      403               {object}  dto.ErrorResponse
+// @Failure      500               {object}  dto.ErrorResponse
+// @Router       /v1/reports/pemasukan [get]
+func (h *ReportHandler) Pemasukan(c echo.Context) error {
+	var req dto.PemasukanRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: err.Error()})
+	}
+
+	report, err := h.service.GetPemasukan(req)
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{Status: status, Code: code, Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil mengambil laporan pemasukan", Data: report})
+}
+
+// Pengeluaran godoc
+// @Summary      Expense report
+// @Description  Get expense transactions grouped by date with filter options
+// @Tags         reports
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        date_from             query  string  true   "Start date (YYYY-MM-DD)"
+// @Param        date_to               query  string  true   "End date (YYYY-MM-DD)"
+// @Param        payment_method        query  string  false  "Payment method filter (tunai/tabungan)"
+// @Param        fee_item_ids          query  string  false  "Comma-separated fee config item IDs"
+// @Param        expense_category_ids  query  string  false  "Comma-separated expense category IDs"
+// @Param        academic_year_id      query  int     false  "Academic Year ID"
+// @Success      200                   {object}  dto.SuccessResponse{data=dto.PengeluaranResponse}
+// @Failure      400                   {object}  dto.ErrorResponse
+// @Failure      401                   {object}  dto.ErrorResponse
+// @Failure      403                   {object}  dto.ErrorResponse
+// @Failure      500                   {object}  dto.ErrorResponse
+// @Router       /v1/reports/pengeluaran [get]
+func (h *ReportHandler) Pengeluaran(c echo.Context) error {
+	var req dto.PengeluaranRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: err.Error()})
+	}
+
+	report, err := h.service.GetPengeluaran(req)
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{Status: status, Code: code, Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil mengambil laporan pengeluaran", Data: report})
+}

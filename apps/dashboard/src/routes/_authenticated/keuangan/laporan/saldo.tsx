@@ -1,211 +1,188 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { ChevronRight, Printer } from "lucide-react";
-import { useCallback } from "react";
-import type { SaldoRow } from "#/api/endpoints/reports/saldo";
-import { useGetReportsSaldo } from "#/api/endpoints/reports/saldo";
+import { useMemo, useState } from "react";
+import { useGetV1AcademicYears } from "#/api/endpoints/academic-years/academic-years";
+import {
+	useGetV1FeeConfigs,
+	useGetV1FeeConfigsIdItems,
+} from "#/api/endpoints/fee-configs/fee-configs";
+import {
+	type SaldoData,
+	useGetReportsSaldo,
+} from "#/api/endpoints/reports/saldo";
 import { Alert, Button } from "#/components/ui";
-import { academicYearAtom } from "../../../../store/global";
-import { openPrintWindow } from "../../../../utils/print";
+import {
+	FilterBar,
+	type FilterBarValues,
+} from "#/features/keuangan/components/FilterBar";
+import { MultiSelectCheckbox } from "#/features/keuangan/components/MultiSelectCheckbox";
+import { ReportInfoCard } from "#/features/keuangan/components/ReportInfoCard";
+import { academicYearAtom } from "#/store/global";
+import { formatCurrency, formatDate } from "#/utils/format";
+import { openPrintWindow } from "#/utils/print";
 
 export const Route = createFileRoute("/_authenticated/keuangan/laporan/saldo")({
 	component: LaporanSaldoPage,
-	validateSearch: (search: Record<string, unknown>) => {
-		const asNum = (v: unknown) =>
-			typeof v === "number"
-				? v
-				: typeof v === "string" && v !== ""
-					? Number(v)
-					: undefined;
-		return {
-			month: asNum(search.month),
-			year: asNum(search.year),
-			category: search.category as string | undefined,
-		};
-	},
 });
-
-const MONTH_NAMES = [
-	"Januari",
-	"Februari",
-	"Maret",
-	"April",
-	"Mei",
-	"Juni",
-	"Juli",
-	"Agustus",
-	"September",
-	"Oktober",
-	"November",
-	"Desember",
-];
-
-/** Daftar pos pemasukan untuk dropdown filter */
-const CATEGORY_OPTIONS = [
-	{ value: "", label: "Semua Pos" },
-	{ value: "monthly_spp", label: "SPP" },
-	{ value: "monthly_infaq", label: "Infaq Harian" },
-	{ value: "initial", label: "Biaya Awal Masuk" },
-	{ value: "daycare_initial", label: "Biaya Awal Daycare" },
-	{ value: "registration", label: "Biaya Registrasi" },
-	{ value: "pasta", label: "PASTA" },
-	{ value: "calisan", label: "Calisan" },
-	{ value: "ekskul", label: "Ekskul" },
-	{ value: "savings_mandatory", label: "Tabungan Wajib" },
-	{ value: "daycare", label: "Daycare" },
-	{ value: "graduation", label: "Wisuda" },
-];
-
-function formatRupiah(amount: number): string {
-	if (amount === 0) return "0";
-	const isNegative = amount < 0;
-	const abs = Math.abs(amount);
-	const formatted = new Intl.NumberFormat("id-ID", {
-		minimumFractionDigits: 0,
-		maximumFractionDigits: 0,
-	}).format(abs);
-	return isNegative ? `(${formatted})` : formatted;
-}
-
-function formatDateID(dateStr: string): string {
-	const d = new Date(`${dateStr}T00:00:00`);
-	return d.toLocaleDateString("id-ID", {
-		day: "2-digit",
-		month: "2-digit",
-		year: "numeric",
-	});
-}
 
 function LaporanSaldoPage() {
 	const [activeAy] = useAtom(academicYearAtom);
-	const now = new Date();
-	const navigate = useNavigate();
-	const searchParams = Route.useSearch();
 
-	const month = searchParams.month ?? now.getMonth() + 1;
-	const year = searchParams.year ?? now.getFullYear();
-	const category = searchParams.category ?? "";
-
-	const updateSearch = useCallback(
-		(updates: Partial<typeof searchParams>) => {
-			navigate({
-				from: Route.fullPath,
-				search: { ...searchParams, ...updates } as typeof searchParams,
-				replace: true,
-			});
-		},
-		[navigate, searchParams],
+	// Fee configs → fee items (for pos penerimaan multi-select)
+	const { data: feeConfigsData } = useGetV1FeeConfigs({
+		query: { staleTime: 5 * 60 * 1000 },
+	});
+	const feeConfigs = ((feeConfigsData?.data as any)?.data ?? []) as any[];
+	const activeFeeConfig = feeConfigs.find(
+		(fc: any) => fc.academic_year?.is_active,
 	);
+	const feeConfigId = activeFeeConfig?.id ?? feeConfigs[0]?.id;
+
+	const { data: feeItemsData } = useGetV1FeeConfigsIdItems(
+		feeConfigId,
+		undefined,
+		{ query: { enabled: !!feeConfigId, staleTime: 5 * 60 * 1000 } },
+	);
+	const feeItems = ((feeItemsData?.data as any)?.data ?? []) as any[];
+
+	// Deduplicate by category for pos multi-select
+	const posOptions = useMemo(() => {
+		const seen = new Set<string>();
+		return feeItems
+			.filter((item: any) => {
+				if (seen.has(item.category)) return false;
+				seen.add(item.category);
+				return true;
+			})
+			.map((item: any) => ({
+				id: item.id,
+				label: item.name,
+			}));
+	}, [feeItems]);
+
+	// Academic years for multi-TA select
+	const { data: ayData } = useGetV1AcademicYears({
+		query: { staleTime: 5 * 60 * 1000 },
+	});
+	const academicYears = ((ayData?.data as any)?.data ?? []) as any[];
+	const ayOptions = useMemo(
+		() =>
+			academicYears.map((ay: any) => ({
+				id: ay.id,
+				label: ay.name,
+			})),
+		[academicYears],
+	);
+
+	// Filter state
+	const [selectedPosIds, setSelectedPosIds] = useState<number[]>([]);
+	const [selectedAyIds, setSelectedAyIds] = useState<number[]>([]);
+	const [generatedFilters, setGeneratedFilters] =
+		useState<FilterBarValues | null>(null);
+
+	const queryParams = useMemo(() => {
+		if (!generatedFilters) return {};
+
+		// Map selected fee item IDs → category names
+		const selectedCategories = feeItems
+			.filter((item: any) => selectedPosIds.includes(item.id))
+			.map((item: any) => item.category);
+
+		return {
+			date_from: generatedFilters.date_from,
+			date_to: generatedFilters.date_to,
+			categories:
+				selectedCategories.length > 0
+					? selectedCategories.join(",")
+					: undefined,
+			academic_year_id: generatedFilters.academic_year_id,
+			academic_year_ids:
+				selectedAyIds.length > 0 ? selectedAyIds.join(",") : undefined,
+		};
+	}, [generatedFilters, selectedPosIds, selectedAyIds, feeItems]);
 
 	const {
 		data: reportData,
 		isLoading,
 		isError,
-	} = useGetReportsSaldo(
-		{
-			month,
-			year,
-			category: category || undefined,
-			academic_year_id: activeAy?.id,
-		},
-		{ query: { enabled: !!activeAy?.id } },
-	);
+	} = useGetReportsSaldo(queryParams, {
+		query: { enabled: !!generatedFilters },
+	});
 
-	const report = (reportData?.data as any)?.data || null;
-	const rows: SaldoRow[] = report?.rows || [];
+	const report: SaldoData | null = (reportData?.data as any)?.data ?? null;
 
-	const currentYear = now.getFullYear();
-	const yearOptions = Array.from({ length: 3 }, (_, i) => currentYear - i);
+	const handleGenerate = (filters: FilterBarValues) => {
+		setGeneratedFilters(filters);
+	};
 
-	const isSemuaPos = !category;
-	const isDefault =
-		searchParams.month === undefined &&
-		searchParams.year === undefined &&
-		searchParams.category === undefined;
-
-	function handlePrint() {
+	const handlePrint = () => {
+		if (!report) return;
 		const esc = (s: string) =>
 			s
 				.replace(/&/g, "&amp;")
 				.replace(/</g, "&lt;")
 				.replace(/>/g, "&gt;")
 				.replace(/"/g, "&quot;");
+		const fmt = (n: number) => esc(formatCurrency(n));
 
-		const html = `
-<div class="mb-4">
-	<h2 class="text-lg font-bold mb-2">Laporan Saldo — ${esc(report?.post_name || "-")}</h2>
-	<p class="text-sm text-gray">${esc(MONTH_NAMES[month - 1])} ${year} &middot; TA ${esc(report?.academic_year || activeAy?.name || "-")}</p>
-	${report?.post_list && report.post_list.length > 0 ? `<p class="text-sm text-gray mt-2">Pos: ${esc(report.post_list.join(", "))}</p>` : ""}
-</div>
+		let html = `<h2 class="text-lg font-bold mb-2">Laporan Saldo</h2>`;
+		html += `<p class="text-sm text-gray mb-2">Pos: ${esc(report.post_name)}</p>`;
+		html += `<p class="text-sm text-gray mb-2">TA: ${esc(report.academic_year)}</p>`;
+		html += `<p class="text-sm text-gray mb-4">Saldo Sebelum: ${fmt(report.saldo_sebelum)}</p>`;
 
-<table>
-	<thead>
-		<tr>
-			<th>No.</th>
-			<th>Tanggal</th>
-			<th class="text-right">Jumlah Penerimaan</th>
-			<th class="text-right">Jumlah Pengeluaran</th>
-			<th class="text-right">Selisih</th>
-			<th class="text-right">Saldo</th>
-		</tr>
-	</thead>
-	<tbody>
-		<tr class="bg-gray-50">
-			<td></td>
-			<td class="text-gray">Saldo Sebelum ${esc(MONTH_NAMES[month - 1])} ${year}</td>
-			<td></td>
-			<td></td>
-			<td></td>
-			<td class="text-right font-bold ${report.saldo_sebelum < 0 ? "text-red" : ""}">${esc(formatRupiah(report.saldo_sebelum))}</td>
-		</tr>
-		${
-			rows.length > 0
-				? rows
-						.map(
-							(row, idx) => `
-		<tr>
-			<td>${idx + 1}.</td>
-			<td>${esc(formatDateID(row.date))}</td>
-			<td class="text-right">${row.penerimaan ? esc(formatRupiah(row.penerimaan)) : ""}</td>
-			<td class="text-right">${row.pengeluaran ? esc(formatRupiah(row.pengeluaran)) : ""}</td>
-			<td class="text-right ${row.selisih < 0 ? "text-red" : ""}">${row.selisih !== 0 ? esc(formatRupiah(row.selisih)) : ""}</td>
-			<td class="text-right ${row.saldo < 0 ? "text-red" : ""}">${esc(formatRupiah(row.saldo))}</td>
-		</tr>`,
-						)
-						.join("")
-				: `
-		<tr>
-			<td colspan="6" class="text-center text-gray py-3">Tidak ada transaksi pada bulan ini.</td>
-		</tr>`
+		html += `<table><thead><tr>
+			<th>Tanggal</th><th class="text-right">Debit</th><th class="text-right">Kredit</th>
+			<th class="text-right">Selisih</th><th class="text-right">Saldo</th>
+		</tr></thead><tbody>`;
+
+		for (const row of report.rows) {
+			html += `<tr>
+				<td>${esc(formatDate(row.date))}</td>
+				<td class="text-right font-mono">${fmt(row.penerimaan)}</td>
+				<td class="text-right font-mono">${fmt(row.pengeluaran)}</td>
+				<td class="text-right font-mono">${fmt(row.selisih)}</td>
+				<td class="text-right font-mono font-bold">${fmt(row.saldo)}</td>
+			</tr>`;
 		}
-		${
-			report.total_bulan
-				? `
-		<tr class="bg-gray-50 border-t-foot font-bold">
-			<td></td>
-			<td>Jumlah Bulan ${esc(MONTH_NAMES[month - 1])} ${year}</td>
-			<td class="text-right">${esc(formatRupiah(report.total_bulan.penerimaan))}</td>
-			<td class="text-right">${esc(formatRupiah(report.total_bulan.pengeluaran))}</td>
-			<td class="text-right ${report.total_bulan.selisih < 0 ? "text-red" : ""}">${esc(formatRupiah(report.total_bulan.selisih))}</td>
-			<td></td>
-		</tr>`
-				: ""
-		}
-		<tr class="bg-gray-50 border-t-foot font-bold">
-			<td></td>
-			<td>Saldo Akhir ${esc(MONTH_NAMES[month - 1])} ${year}</td>
-			<td></td>
-			<td></td>
-			<td></td>
-			<td class="text-right ${report.saldo_akhir < 0 ? "text-red" : ""}">${esc(formatRupiah(report.saldo_akhir))}</td>
-		</tr>
-	</tbody>
-</table>`;
+		html += `<tr class="border-t font-bold">
+			<td>Total</td>
+			<td class="text-right">${fmt(report.total_bulan.penerimaan)}</td>
+			<td class="text-right">${fmt(report.total_bulan.pengeluaran)}</td>
+			<td class="text-right">${fmt(report.total_bulan.selisih)}</td>
+			<td class="text-right">${fmt(report.saldo_akhir)}</td>
+		</tr>`;
+		html += `</tbody></table>`;
 
 		openPrintWindow(html, {
-			title: `Saldo - ${report?.post_name || ""}`,
+			title: `Saldo — ${report.post_name}`,
+			subtitle: `TA ${report.academic_year}`,
 		});
-	}
+	};
+
+	const infoFilters: Record<string, string> = useMemo(() => {
+		if (!generatedFilters) return {} as Record<string, string>;
+		const posNames = feeItems
+			.filter((item: any) => selectedPosIds.includes(item.id))
+			.map((item: any) => item.name)
+			.join(", ");
+		const taNames = academicYears
+			.filter((ay: any) => selectedAyIds.includes(ay.id))
+			.map((ay: any) => ay.name)
+			.join(", ");
+		return {
+			periode: `${formatDate(generatedFilters.date_from)} - ${formatDate(generatedFilters.date_to)}`,
+			pos: posNames || "Semua",
+			ta: taNames || activeAy?.name || "-",
+		};
+	}, [
+		generatedFilters,
+		selectedPosIds,
+		selectedAyIds,
+		feeItems,
+		academicYears,
+		activeAy,
+	]);
 
 	return (
 		<div className="space-y-6">
@@ -220,24 +197,14 @@ function LaporanSaldoPage() {
 							Laporan
 						</Link>
 						<ChevronRight className="w-4 h-4 mx-1" />
-						<span className="text-gray-900 font-medium">
-							Saldo {isSemuaPos ? "Semua Pos" : "Per Pos"}
-						</span>
+						<span className="text-gray-900 font-medium">Saldo</span>
 					</nav>
 					<h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:tracking-tight">
-						{report ? `Laporan Saldo — ${report.post_name}` : "Laporan Saldo"}
+						Laporan Saldo
 					</h2>
-					{report && (
-						<p className="mt-1 text-sm text-gray-500">
-							{MONTH_NAMES[month - 1]} {year} &middot; TA{" "}
-							{report.academic_year || activeAy?.name || "-"}
-						</p>
-					)}
-					{report?.post_list && report.post_list.length > 0 && (
-						<p className="mt-0.5 text-xs text-gray-400">
-							Pos: {report.post_list.join(", ")}
-						</p>
-					)}
+					<p className="mt-1 text-sm text-gray-500">
+						TA {activeAy?.name || "-"}
+					</p>
 				</div>
 				{report && (
 					<Button variant="secondary" onClick={handlePrint}>
@@ -247,221 +214,148 @@ function LaporanSaldoPage() {
 				)}
 			</div>
 
-			{/* Filter — auto-fetch */}
-			<div className="bg-white p-4 rounded-xl shadow-sm ring-1 ring-gray-900/5">
-				<div className="flex flex-wrap gap-4 items-end">
-					<div>
-						<label className="block text-sm font-medium leading-6 text-gray-900 mb-1">
-							Pos Pemasukan
-						</label>
-						<select
-							value={category}
-							onChange={(e) =>
-								updateSearch({
-									category: e.target.value || undefined,
-								})
-							}
-							className="block w-full sm:w-52 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
-						>
-							{CATEGORY_OPTIONS.map((opt) => (
-								<option key={opt.value} value={opt.value}>
-									{opt.label}
-								</option>
-							))}
-						</select>
+			{/* Filter */}
+			<FilterBar onGenerate={handleGenerate} isLoading={isLoading}>
+				<div className="flex flex-wrap gap-6">
+					<div className="max-w-sm">
+						<MultiSelectCheckbox
+							label="Pos Penerimaan"
+							options={posOptions}
+							selected={selectedPosIds}
+							onChange={setSelectedPosIds}
+						/>
 					</div>
-					<div>
-						<label className="block text-sm font-medium leading-6 text-gray-900 mb-1">
-							Bulan
-						</label>
-						<select
-							value={month}
-							onChange={(e) => updateSearch({ month: Number(e.target.value) })}
-							className="block w-full sm:w-40 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
-						>
-							{MONTH_NAMES.map((name, idx) => (
-								<option key={idx} value={idx + 1}>
-									{name}
-								</option>
-							))}
-						</select>
+					<div className="max-w-sm">
+						<MultiSelectCheckbox
+							label="Tahun Ajaran"
+							options={ayOptions}
+							selected={selectedAyIds}
+							onChange={setSelectedAyIds}
+						/>
 					</div>
-					<div>
-						<label className="block text-sm font-medium leading-6 text-gray-900 mb-1">
-							Tahun
-						</label>
-						<select
-							value={year}
-							onChange={(e) => updateSearch({ year: Number(e.target.value) })}
-							className="block w-full sm:w-28 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
-						>
-							{yearOptions.map((y) => (
-								<option key={y} value={y}>
-									{y}
-								</option>
-							))}
-						</select>
-					</div>
-					{!isDefault && (
-						<button
-							type="button"
-							onClick={() => {
-								updateSearch({
-									month: undefined,
-									year: undefined,
-									category: undefined,
-								});
-							}}
-							className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
-						>
-							Reset Filter
-						</button>
-					)}
 				</div>
-			</div>
+			</FilterBar>
 
 			{/* Loading */}
 			{isLoading && (
 				<div className="animate-pulse space-y-4">
+					<div className="h-12 bg-gray-200 rounded-xl" />
 					<div className="h-64 bg-gray-200 rounded-xl" />
 				</div>
 			)}
 
+			{/* Error */}
 			{isError && (
 				<Alert variant="error" title="Gagal Memuat">
 					Terjadi kesalahan saat memuat laporan saldo.
 				</Alert>
 			)}
 
-			{/* Report Table */}
+			{/* Report */}
 			{report && !isLoading && (
-				<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden">
-					<div className="overflow-x-auto">
-						<table className="min-w-full divide-y divide-gray-300">
-							<thead className="bg-gray-50">
-								<tr>
-									<th className="py-3 pl-6 pr-3 text-left text-sm font-semibold text-gray-900 w-12">
-										No.
-									</th>
-									<th className="px-3 py-3 text-left text-sm font-semibold text-gray-900 w-32">
-										Tanggal
-									</th>
-									<th className="px-3 py-3 text-right text-sm font-semibold text-gray-900">
-										Jumlah Penerimaan
-									</th>
-									<th className="px-3 py-3 text-right text-sm font-semibold text-gray-900">
-										Jumlah Pengeluaran
-									</th>
-									<th className="px-3 py-3 text-right text-sm font-semibold text-gray-900">
-										Selisih
-									</th>
-									<th className="px-3 py-3 text-right text-sm font-semibold text-gray-900 pr-6">
-										Saldo
-									</th>
-								</tr>
-							</thead>
-							<tbody className="divide-y divide-gray-100 bg-white">
-								{/* Saldo Sebelum row */}
-								<tr className="bg-gray-50/50">
-									<td className="py-2.5 pl-6 pr-3 text-sm text-gray-500" />
-									<td className="px-3 py-2.5 text-sm text-gray-500 italic">
-										Saldo Sebelum {MONTH_NAMES[month - 1]} {year}
-									</td>
-									<td className="px-3 py-2.5" />
-									<td className="px-3 py-2.5" />
-									<td className="px-3 py-2.5" />
-									<td
-										className={`px-3 py-2.5 text-sm text-right tabular-nums font-semibold pr-6 ${report.saldo_sebelum < 0 ? "text-red-600" : "text-gray-900"}`}
-									>
-										{formatRupiah(report.saldo_sebelum)}
-									</td>
-								</tr>
+				<>
+					<ReportInfoCard filters={infoFilters} />
 
-								{rows.length > 0 ? (
-									rows.map((row, idx) => (
-										<tr key={row.date} className="hover:bg-gray-50">
-											<td className="py-2 pl-6 pr-3 text-sm text-gray-500 tabular-nums">
-												{idx + 1}.
+					{report.rows.length > 0 ? (
+						<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden">
+							{/* Saldo Sebelum */}
+							<div className="px-6 py-3 bg-gray-50 border-b border-gray-200">
+								<span className="text-sm text-gray-600">
+									Saldo Sebelum:{" "}
+									<span className="font-semibold text-gray-900 tabular-nums">
+										{formatCurrency(report.saldo_sebelum)}
+									</span>
+								</span>
+							</div>
+
+							<div className="overflow-x-auto">
+								<table className="min-w-full divide-y divide-gray-200">
+									<thead className="bg-gray-50">
+										<tr>
+											<th className="py-3 pl-6 pr-3 text-left text-sm font-semibold text-gray-900">
+												Tanggal
+											</th>
+											<th className="px-3 py-3 text-right text-sm font-semibold text-gray-900">
+												Debit
+											</th>
+											<th className="px-3 py-3 text-right text-sm font-semibold text-gray-900">
+												Kredit
+											</th>
+											<th className="px-3 py-3 text-right text-sm font-semibold text-gray-900">
+												Selisih
+											</th>
+											<th className="px-3 py-3 text-right text-sm font-semibold text-gray-900 pr-6">
+												Saldo
+											</th>
+										</tr>
+									</thead>
+									<tbody className="divide-y divide-gray-100 bg-white">
+										{report.rows.map((row) => (
+											<tr key={row.date} className="hover:bg-gray-50">
+												<td className="py-2.5 pl-6 pr-3 text-sm text-gray-900">
+													{formatDate(row.date)}
+												</td>
+												<td className="px-3 py-2.5 text-sm text-right text-green-600 tabular-nums">
+													{row.penerimaan > 0
+														? formatCurrency(row.penerimaan)
+														: "-"}
+												</td>
+												<td className="px-3 py-2.5 text-sm text-right text-red-600 tabular-nums">
+													{row.pengeluaran > 0
+														? formatCurrency(row.pengeluaran)
+														: "-"}
+												</td>
+												<td
+													className={`px-3 py-2.5 text-sm text-right tabular-nums ${
+														row.selisih >= 0 ? "text-green-600" : "text-red-600"
+													}`}
+												>
+													{formatCurrency(row.selisih)}
+												</td>
+												<td className="px-3 py-2.5 text-sm text-right font-semibold text-gray-900 tabular-nums pr-6">
+													{formatCurrency(row.saldo)}
+												</td>
+											</tr>
+										))}
+									</tbody>
+									{/* Total Row */}
+									<tfoot>
+										<tr className="border-t-2 border-gray-300 bg-gray-50 font-bold">
+											<td className="py-3 pl-6 pr-3 text-sm text-gray-900">
+												Total
 											</td>
-											<td className="px-3 py-2 text-sm text-gray-900 tabular-nums">
-												{formatDateID(row.date)}
+											<td className="px-3 py-3 text-sm text-right text-green-600 tabular-nums">
+												{formatCurrency(report.total_bulan.penerimaan)}
 											</td>
-											<td className="px-3 py-2 text-sm text-right tabular-nums text-gray-900">
-												{row.penerimaan ? formatRupiah(row.penerimaan) : ""}
+											<td className="px-3 py-3 text-sm text-right text-red-600 tabular-nums">
+												{formatCurrency(report.total_bulan.pengeluaran)}
 											</td>
-											<td className="px-3 py-2 text-sm text-right tabular-nums text-gray-900">
-												{row.pengeluaran ? formatRupiah(row.pengeluaran) : ""}
+											<td className="px-3 py-3 text-sm text-right tabular-nums text-gray-900">
+												{formatCurrency(report.total_bulan.selisih)}
 											</td>
-											<td
-												className={`px-3 py-2 text-sm text-right tabular-nums ${row.selisih < 0 ? "text-red-600" : "text-gray-900"}`}
-											>
-												{row.selisih !== 0 ? formatRupiah(row.selisih) : ""}
-											</td>
-											<td
-												className={`px-3 py-2 text-sm text-right tabular-nums pr-6 ${row.saldo < 0 ? "text-red-600" : "text-gray-900"}`}
-											>
-												{formatRupiah(row.saldo)}
+											<td className="px-3 py-3 text-sm text-right tabular-nums text-gray-900 pr-6">
+												{formatCurrency(report.saldo_akhir)}
 											</td>
 										</tr>
-									))
-								) : (
-									<tr>
-										<td
-											colSpan={6}
-											className="px-6 py-8 text-center text-sm text-gray-500"
-										>
-											Tidak ada transaksi pada bulan ini.
-										</td>
-									</tr>
-								)}
-
-								{/* Jumlah Bulan footer */}
-								{report.total_bulan && (
-									<tr className="bg-gray-50 border-t-2 border-gray-300 font-semibold">
-										<td className="py-3 pl-6 pr-3" />
-										<td className="px-3 py-3 text-sm text-gray-900">
-											Jumlah Bulan {MONTH_NAMES[month - 1]} {year}
-										</td>
-										<td className="px-3 py-3 text-sm text-right tabular-nums text-gray-900">
-											{formatRupiah(report.total_bulan.penerimaan)}
-										</td>
-										<td className="px-3 py-3 text-sm text-right tabular-nums text-gray-900">
-											{formatRupiah(report.total_bulan.pengeluaran)}
-										</td>
-										<td
-											className={`px-3 py-3 text-sm text-right tabular-nums ${report.total_bulan.selisih < 0 ? "text-red-600" : "text-gray-900"}`}
-										>
-											{formatRupiah(report.total_bulan.selisih)}
-										</td>
-										<td className="px-3 py-3" />
-									</tr>
-								)}
-
-								{/* Saldo Akhir */}
-								<tr className="bg-gray-100 border-t border-gray-300 font-bold">
-									<td className="py-3 pl-6 pr-3" />
-									<td className="px-3 py-3 text-sm text-gray-900">
-										Saldo Akhir {MONTH_NAMES[month - 1]} {year}
-									</td>
-									<td className="px-3 py-3" />
-									<td className="px-3 py-3" />
-									<td className="px-3 py-3" />
-									<td
-										className={`px-3 py-3 text-sm text-right tabular-nums pr-6 ${report.saldo_akhir < 0 ? "text-red-600" : "text-gray-900"}`}
-									>
-										{formatRupiah(report.saldo_akhir)}
-									</td>
-								</tr>
-							</tbody>
-						</table>
-					</div>
-				</div>
+									</tfoot>
+								</table>
+							</div>
+						</div>
+					) : (
+						<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-12 text-center">
+							<p className="text-sm text-gray-500">
+								Tidak ada data saldo untuk filter yang dipilih.
+							</p>
+						</div>
+					)}
+				</>
 			)}
 
-			{!isLoading && !isError && !report && (
+			{!report && !isLoading && !isError && (
 				<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-12 text-center">
 					<p className="text-sm text-gray-500">
-						Belum ada data untuk bulan ini.
+						Atur filter dan klik <strong>Generate</strong> untuk menampilkan
+						laporan.
 					</p>
 				</div>
 			)}

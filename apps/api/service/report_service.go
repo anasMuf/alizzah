@@ -6,6 +6,8 @@ import (
 	"api/utility"
 	"fmt"
 	"sort"
+	"strings"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -19,6 +21,8 @@ type ReportService interface {
 	GetPosisiKas(req dto.PosisiKasRequest) (*dto.PosisiKasResponse, error)
 	GetSaldo(req dto.SaldoRequest) (*dto.SaldoResponse, error)
 	GetTransaksiPengeluaran(req dto.TransaksiPengeluaranRequest) (*dto.TransaksiPengeluaranResponse, error)
+	GetPemasukan(req dto.PemasukanRequest) (*dto.PemasukanResponse, error)
+	GetPengeluaran(req dto.PengeluaranRequest) (*dto.PengeluaranResponse, error)
 	GetTabunganReport(req dto.TabunganReportRequest) (*dto.TabunganReportResponse, error)
 	GetTabunganSiswaReport(studentID uint, req dto.TabunganSiswaReportRequest) (*dto.TabunganSiswaReportResponse, error)
 }
@@ -380,19 +384,38 @@ func (s *reportService) GetPosisiKas(req dto.PosisiKasRequest) (*dto.PosisiKasRe
 		return nil, err
 	}
 
-	// Date ranges
-	startOfMonth := time.Date(int(req.Year), time.Month(req.Month), 1, 0, 0, 0, 0, time.UTC)
-	endOfMonth := startOfMonth.AddDate(0, 1, -1)
-	endOfPrevMonth := startOfMonth.AddDate(0, 0, -1)
+	// Date ranges: date_from/date_to take priority over month/year
+	var startDate, endDate, endPrevDate time.Time
+	if req.DateFrom != "" && req.DateTo != "" {
+		startDate, _ = time.Parse("2006-01-02", req.DateFrom)
+		endDate, _ = time.Parse("2006-01-02", req.DateTo)
+		endPrevDate = startDate.AddDate(0, 0, -1)
+	} else {
+		startDate = time.Date(int(req.Year), time.Month(req.Month), 1, 0, 0, 0, 0, time.UTC)
+		endDate = startDate.AddDate(0, 1, -1)
+		endPrevDate = startDate.AddDate(0, 0, -1)
+	}
+
+	// Parse categories filter
+	var categoryFilter map[string]bool
+	if req.Categories != "" {
+		categoryFilter = make(map[string]bool)
+		for _, c := range strings.Split(req.Categories, ",") {
+			c = strings.TrimSpace(c)
+			if c != "" {
+				categoryFilter[c] = true
+			}
+		}
+	}
 
 	// Penerimaan bulan ini per category (dari invoice payment)
-	penerimaanBulan, err := s.reportRepo.SumPenerimaanByInvoiceCategory(academicYearID, startOfMonth, endOfMonth)
+	penerimaanBulan, err := s.reportRepo.SumPenerimaanByInvoiceCategory(academicYearID, startDate, endDate)
 	if err != nil {
 		return nil, err
 	}
 
 	// Gabung penerimaan dari income_transactions (Dana BOS, Donasi, Hibah, Lainnya)
-	incomeBulan, err := s.reportRepo.SumIncomeTransactionsByCategory(academicYearID, startOfMonth, endOfMonth)
+	incomeBulan, err := s.reportRepo.SumIncomeTransactionsByCategory(academicYearID, startDate, endDate)
 	if err != nil {
 		return nil, err
 	}
@@ -401,18 +424,18 @@ func (s *reportService) GetPosisiKas(req dto.PosisiKasRequest) (*dto.PosisiKasRe
 	}
 
 	// Pengeluaran bulan ini per category (with details)
-	pengeluaranBulan, err := s.reportRepo.SumPengeluaranByInvoiceCategory(academicYearID, startOfMonth, endOfMonth)
+	pengeluaranBulan, err := s.reportRepo.SumPengeluaranByInvoiceCategory(academicYearID, startDate, endDate)
 	if err != nil {
 		return nil, err
 	}
 
 	// Saldo sebelum: penerimaan - pengeluaran from start of AY to end of prev month
-	penerimaanSebelum, err := s.reportRepo.SumPenerimaanByInvoiceCategory(academicYearID, ay.StartDate, endOfPrevMonth)
+	penerimaanSebelum, err := s.reportRepo.SumPenerimaanByInvoiceCategory(academicYearID, ay.StartDate, endPrevDate)
 	if err != nil {
 		return nil, err
 	}
 
-	incomeSebelum, err := s.reportRepo.SumIncomeTransactionsByCategory(academicYearID, ay.StartDate, endOfPrevMonth)
+	incomeSebelum, err := s.reportRepo.SumIncomeTransactionsByCategory(academicYearID, ay.StartDate, endPrevDate)
 	if err != nil {
 		return nil, err
 	}
@@ -420,7 +443,7 @@ func (s *reportService) GetPosisiKas(req dto.PosisiKasRequest) (*dto.PosisiKasRe
 		penerimaanSebelum[cat] += amount
 	}
 
-	pengeluaranSebelumRaw, err := s.reportRepo.SumPengeluaranByInvoiceCategory(academicYearID, ay.StartDate, endOfPrevMonth)
+	pengeluaranSebelumRaw, err := s.reportRepo.SumPengeluaranByInvoiceCategory(academicYearID, ay.StartDate, endPrevDate)
 	if err != nil {
 		return nil, err
 	}
@@ -445,6 +468,15 @@ func (s *reportService) GetPosisiKas(req dto.PosisiKasRequest) (*dto.PosisiKasRe
 	}
 	for cat := range pengeluaranSebelumTotal {
 		categorySet[cat] = true
+	}
+
+	// If categories filter is applied, only keep matching categories
+	if categoryFilter != nil {
+		for cat := range categorySet {
+			if !categoryFilter[cat] {
+				delete(categorySet, cat)
+			}
+		}
 	}
 
 	// Build posts in defined order
@@ -527,9 +559,14 @@ func (s *reportService) GetPosisiKas(req dto.PosisiKasRequest) (*dto.PosisiKasRe
 		grandTotal.SaldoSampai += saldoSampai
 	}
 
+	dateFrom := req.DateFrom
+	dateTo := req.DateTo
+
 	return &dto.PosisiKasResponse{
 		Month:        req.Month,
 		Year:         req.Year,
+		DateFrom:     dateFrom,
+		DateTo:       dateTo,
 		AcademicYear: ay.Name,
 		Posts:        posts,
 		GrandTotal:   grandTotal,
@@ -545,38 +582,98 @@ func (s *reportService) GetSaldo(req dto.SaldoRequest) (*dto.SaldoResponse, erro
 
 	category := req.Category // "" = semua pos
 
-	// Date ranges
-	startOfMonth := time.Date(int(req.Year), time.Month(req.Month), 1, 0, 0, 0, 0, time.UTC)
-	endOfMonth := startOfMonth.AddDate(0, 1, -1)
-	endOfPrevMonth := startOfMonth.AddDate(0, 0, -1)
+	// Parse date range: date_from/date_to take priority over month/year
+	var startDate, endDate, endPrevDate time.Time
+	if req.DateFrom != "" && req.DateTo != "" {
+		startDate, _ = time.Parse("2006-01-02", req.DateFrom)
+		endDate, _ = time.Parse("2006-01-02", req.DateTo)
+		endPrevDate = startDate.AddDate(0, 0, -1)
+	} else {
+		startDate = time.Date(int(req.Year), time.Month(req.Month), 1, 0, 0, 0, 0, time.UTC)
+		endDate = startDate.AddDate(0, 1, -1)
+		endPrevDate = startDate.AddDate(0, 0, -1)
+	}
 
-	// Saldo sebelum: penerimaan - pengeluaran from start of AY to end of prev month
-	penerimaanSebelum, err := s.reportRepo.SumPenerimaan(academicYearID, ay.StartDate, endOfPrevMonth, category)
-	if err != nil {
-		return nil, err
+	// Parse categories: comma-separated takes priority over single category
+	categories := []string{category}
+	if req.Categories != "" {
+		categories = strings.Split(req.Categories, ",")
+		// Trim and filter empty
+		var filtered []string
+		for _, c := range categories {
+			c = strings.TrimSpace(c)
+			if c != "" {
+				filtered = append(filtered, c)
+			}
+		}
+		categories = filtered
 	}
-	pengeluaranSebelum, err := s.reportRepo.SumPengeluaran(academicYearID, ay.StartDate, endOfPrevMonth, category)
-	if err != nil {
-		return nil, err
-	}
-	saldoSebelum := penerimaanSebelum - pengeluaranSebelum
+	// If categories is just [""] (no filter), treat as all pos
+	allPos := len(categories) == 1 && categories[0] == ""
 
-	// Daily data for the month
-	dailyIncome, err := s.reportRepo.DailyPenerimaan(academicYearID, startOfMonth, endOfMonth, category)
-	if err != nil {
-		return nil, err
+	// Aggregate data across all selected categories
+	var mergedIncome map[string]float64
+	var mergedExpense map[string]float64
+	var totalPenerimaanSebelum, totalPengeluaranSebelum float64
+
+	if allPos {
+		mergedIncome, err = s.reportRepo.DailyPenerimaan(academicYearID, startDate, endDate, "")
+		if err != nil {
+			return nil, err
+		}
+		mergedExpense, err = s.reportRepo.DailyPengeluaran(academicYearID, startDate, endDate, "")
+		if err != nil {
+			return nil, err
+		}
+		penerimaanSebelum, err := s.reportRepo.SumPenerimaan(academicYearID, ay.StartDate, endPrevDate, "")
+		if err != nil {
+			return nil, err
+		}
+		pengeluaranSebelum, err := s.reportRepo.SumPengeluaran(academicYearID, ay.StartDate, endPrevDate, "")
+		if err != nil {
+			return nil, err
+		}
+		totalPenerimaanSebelum = penerimaanSebelum
+		totalPengeluaranSebelum = pengeluaranSebelum
+	} else {
+		mergedIncome = make(map[string]float64)
+		mergedExpense = make(map[string]float64)
+		for _, cat := range categories {
+			catIncome, err := s.reportRepo.DailyPenerimaan(academicYearID, startDate, endDate, cat)
+			if err != nil {
+				return nil, err
+			}
+			for d, v := range catIncome {
+				mergedIncome[d] += v
+			}
+			catExpense, err := s.reportRepo.DailyPengeluaran(academicYearID, startDate, endDate, cat)
+			if err != nil {
+				return nil, err
+			}
+			for d, v := range catExpense {
+				mergedExpense[d] += v
+			}
+			pSebelum, err := s.reportRepo.SumPenerimaan(academicYearID, ay.StartDate, endPrevDate, cat)
+			if err != nil {
+				return nil, err
+			}
+			totalPenerimaanSebelum += pSebelum
+			pengSebelum, err := s.reportRepo.SumPengeluaran(academicYearID, ay.StartDate, endPrevDate, cat)
+			if err != nil {
+				return nil, err
+			}
+			totalPengeluaranSebelum += pengSebelum
+		}
 	}
-	dailyExpense, err := s.reportRepo.DailyPengeluaran(academicYearID, startOfMonth, endOfMonth, category)
-	if err != nil {
-		return nil, err
-	}
+
+	saldoSebelum := totalPenerimaanSebelum - totalPengeluaranSebelum
 
 	// Collect all dates that have transactions
 	dateSet := make(map[string]bool)
-	for d := range dailyIncome {
+	for d := range mergedIncome {
 		dateSet[d] = true
 	}
-	for d := range dailyExpense {
+	for d := range mergedExpense {
 		dateSet[d] = true
 	}
 
@@ -593,8 +690,8 @@ func (s *reportService) GetSaldo(req dto.SaldoRequest) (*dto.SaldoResponse, erro
 	var totalPenerimaan, totalPengeluaran float64
 
 	for _, d := range dates {
-		penerimaan := dailyIncome[d]
-		pengeluaran := dailyExpense[d]
+		penerimaan := mergedIncome[d]
+		pengeluaran := mergedExpense[d]
 		selisih := penerimaan - pengeluaran
 		runningBalance += selisih
 
@@ -613,14 +710,27 @@ func (s *reportService) GetSaldo(req dto.SaldoRequest) (*dto.SaldoResponse, erro
 	// Post name & post list
 	postName := "Semua Pos"
 	var postList []string
-	if category != "" {
-		if label, ok := invoiceCategoryLabels[category]; ok {
-			postName = label
+	var categoryDisplay string
+	var categoriesDisplay []string
+	if !allPos {
+		if len(categories) == 1 {
+			categoryDisplay = categories[0]
+			if label, ok := invoiceCategoryLabels[categoryDisplay]; ok {
+				postName = label
+			} else {
+				postName = categoryDisplay
+			}
 		} else {
-			postName = category
+			postName = fmt.Sprintf("%d Pos", len(categories))
+			for _, cat := range categories {
+				if label, ok := invoiceCategoryLabels[cat]; ok {
+					categoriesDisplay = append(categoriesDisplay, label)
+				} else {
+					categoriesDisplay = append(categoriesDisplay, cat)
+				}
+			}
 		}
 	} else {
-		// List all categories for sub-header
 		for _, cat := range invoiceCategoryOrder {
 			if label, ok := invoiceCategoryLabels[cat]; ok {
 				postList = append(postList, label)
@@ -628,12 +738,18 @@ func (s *reportService) GetSaldo(req dto.SaldoRequest) (*dto.SaldoResponse, erro
 		}
 	}
 
+	dateFrom := req.DateFrom
+	dateTo := req.DateTo
+
 	return &dto.SaldoResponse{
 		Month:        req.Month,
 		Year:         req.Year,
+		DateFrom:     dateFrom,
+		DateTo:       dateTo,
 		AcademicYear: ay.Name,
 		PostName:     postName,
-		Category:     category,
+		Category:     categoryDisplay,
+		Categories:   categoriesDisplay,
 		PostList:     postList,
 		SaldoSebelum: saldoSebelum,
 		Rows:         rows,
@@ -921,3 +1037,180 @@ func (s *reportService) GetTabunganSiswaReport(studentID uint, req dto.TabunganS
 		SaldoAkhir:  runningBalance,
 	}, nil
 }
+
+func (s *reportService) GetPemasukan(req dto.PemasukanRequest) (*dto.PemasukanResponse, error) {
+	academicYearID := utility.ResolveAcademicYear(req.AcademicYearID, s.academicYearRepo)
+	ay, err := s.academicYearRepo.FindByID(academicYearID)
+	if err != nil {
+		return nil, err
+	}
+
+	startDate, _ := time.Parse("2006-01-02", req.DateFrom)
+	endDate, _ := time.Parse("2006-01-02", req.DateTo)
+
+	// Parse categories from request
+	var categories []string
+	if req.Categories != "" {
+		for _, s := range strings.Split(req.Categories, ",") {
+			s = strings.TrimSpace(s)
+			if s != "" {
+				categories = append(categories, s)
+			}
+		}
+	}
+	// Also support fee_item_ids param (resolve to categories if needed)
+	if req.FeeItemIDs != "" && len(categories) == 0 {
+		for _, s := range strings.Split(req.FeeItemIDs, ",") {
+			s = strings.TrimSpace(s)
+			if s != "" {
+				categories = append(categories, s)
+			}
+		}
+	}
+
+	// Query payments
+	payments, err := s.reportRepo.FindPaymentsInRange(academicYearID, startDate, endDate, categories)
+	if err != nil {
+		return nil, err
+	}
+
+	// Query income transactions
+	incomeTxns, err := s.reportRepo.FindIncomeTransactionsInRange(academicYearID, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+
+	// Merge and group by date
+	allTxns := append(payments, incomeTxns...)
+
+	dateMap := make(map[string][]dto.PemasukanTransaction)
+	for _, txn := range allTxns {
+		dateMap[txn.TransactionDate] = append(dateMap[txn.TransactionDate], txn)
+	}
+
+	// Sort dates
+	var dates []string
+	for d := range dateMap {
+		dates = append(dates, d)
+	}
+	sort.Strings(dates)
+
+	var blocks []dto.PemasukanDateBlock
+	var grandTotal float64
+
+	for _, d := range dates {
+		txns := dateMap[d]
+		var subtotal float64
+		for _, t := range txns {
+			subtotal += t.TotalAmount
+		}
+		grandTotal += subtotal
+		blocks = append(blocks, dto.PemasukanDateBlock{
+			Date:         d,
+			Transactions: txns,
+			Subtotal:     subtotal,
+		})
+	}
+
+	return &dto.PemasukanResponse{
+		DateFrom:     req.DateFrom,
+		DateTo:       req.DateTo,
+		AcademicYear: ay.Name,
+		Transactions: blocks,
+		GrandTotal:   grandTotal,
+	}, nil
+}
+
+func (s *reportService) GetPengeluaran(req dto.PengeluaranRequest) (*dto.PengeluaranResponse, error) {
+	academicYearID := utility.ResolveAcademicYear(req.AcademicYearID, s.academicYearRepo)
+	ay, err := s.academicYearRepo.FindByID(academicYearID)
+	if err != nil {
+		return nil, err
+	}
+
+	startDate, _ := time.Parse("2006-01-02", req.DateFrom)
+	endDate, _ := time.Parse("2006-01-02", req.DateTo)
+
+	// Parse IDs
+	var feeItemIDs []uint
+	if req.FeeItemIDs != "" {
+		for _, s := range strings.Split(req.FeeItemIDs, ",") {
+			s = strings.TrimSpace(s)
+			if id, err := strconv.ParseUint(s, 10, 64); err == nil {
+				feeItemIDs = append(feeItemIDs, uint(id))
+			}
+		}
+	}
+	var expenseIDs []uint
+	if req.ExpenseCategoryIDs != "" {
+		for _, s := range strings.Split(req.ExpenseCategoryIDs, ",") {
+			s = strings.TrimSpace(s)
+			if id, err := strconv.ParseUint(s, 10, 64); err == nil {
+				expenseIDs = append(expenseIDs, uint(id))
+			}
+		}
+	}
+
+	// Use FindExpensesForMonth (already accepts date range) — rename for clarity
+	expenses, err := s.reportRepo.FindExpensesForMonth(academicYearID, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+
+	// Group by date
+	dateMap := make(map[string][]dto.PengeluaranTransaction)
+	for _, exp := range expenses {
+		categoryName := exp.ExpenseCategory.Name
+
+		dateStr := exp.ExpenseDate.Format("2006-01-02")
+
+		txn := dto.PengeluaranTransaction{
+			ID:              exp.ID,
+			Source:          "",
+			PaymentMethod:   "tunai",
+			Terbilang:       "",
+			TransactionDate: dateStr,
+			TransactionNo:   fmt.Sprintf("EXP-%d", exp.ID),
+			Petugas:         "",
+			Items: []dto.PengeluaranItem{
+				{No: 1, ExpenseCategory: categoryName, Description: exp.Description, Amount: exp.Amount},
+			},
+			TotalAmount: exp.Amount,
+		}
+		dateMap[dateStr] = append(dateMap[dateStr], txn)
+	}
+
+	// Sort dates
+	var dates []string
+	for d := range dateMap {
+		dates = append(dates, d)
+	}
+	sort.Strings(dates)
+
+	var blocks []dto.PengeluaranDateBlock
+	var grandTotal float64
+
+	for _, d := range dates {
+		txns := dateMap[d]
+		var subtotal float64
+		for _, t := range txns {
+			subtotal += t.TotalAmount
+		}
+		grandTotal += subtotal
+		blocks = append(blocks, dto.PengeluaranDateBlock{
+			Date:         d,
+			Transactions: txns,
+			Subtotal:     subtotal,
+		})
+	}
+
+	return &dto.PengeluaranResponse{
+		DateFrom:     req.DateFrom,
+		DateTo:       req.DateTo,
+		AcademicYear: ay.Name,
+		Transactions: blocks,
+		GrandTotal:   grandTotal,
+	}, nil
+}
+
+

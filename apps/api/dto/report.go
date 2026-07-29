@@ -188,28 +188,33 @@ type StudentPaymentStatusInReport struct {
 // ===== Laporan Posisi Kas =====
 
 type PosisiKasRequest struct {
-	Month          uint `query:"month" validate:"required,min=1,max=12"`
-	Year           uint `query:"year" validate:"required"`
-	AcademicYearID uint `query:"academic_year_id"`
+	Month          uint   `query:"month" validate:"omitempty,min=1,max=12"`
+	Year           uint   `query:"year"`
+	DateFrom       string `query:"date_from"`  // YYYY-MM-DD, takes priority over month/year
+	DateTo         string `query:"date_to"`    // YYYY-MM-DD
+	Categories     string `query:"categories"` // comma-separated invoice categories filter
+	AcademicYearID uint   `query:"academic_year_id"`
 }
 
 type PosisiKasResponse struct {
-	Month        uint               `json:"month"`
-	Year         uint               `json:"year"`
-	AcademicYear string             `json:"academic_year"`
-	Posts        []PosisiKasPost    `json:"posts"`
-	GrandTotal   PosisiKasTotal     `json:"grand_total"`
+	Month        uint            `json:"month"`
+	Year         uint            `json:"year"`
+	DateFrom     string          `json:"date_from,omitempty"`
+	DateTo       string          `json:"date_to,omitempty"`
+	AcademicYear string          `json:"academic_year"`
+	Posts        []PosisiKasPost `json:"posts"`
+	GrandTotal   PosisiKasTotal  `json:"grand_total"`
 }
 
 type PosisiKasPost struct {
-	Name           string                `json:"name"`
-	Category       string                `json:"category"`
-	SaldoSebelum   float64               `json:"saldo_sebelum"`
-	Penerimaan     float64               `json:"penerimaan"`
-	Pengeluaran    float64               `json:"pengeluaran"`
-	SaldoBulan     float64               `json:"saldo_bulan"`
-	SaldoSampai    float64               `json:"saldo_sampai"`
-	ExpenseDetails []PosisiKasExpense    `json:"expense_details"`
+	Name           string             `json:"name"`
+	Category       string             `json:"category"`
+	SaldoSebelum   float64            `json:"saldo_sebelum"`
+	Penerimaan     float64            `json:"penerimaan"`
+	Pengeluaran    float64            `json:"pengeluaran"`
+	SaldoBulan     float64            `json:"saldo_bulan"`
+	SaldoSampai    float64            `json:"saldo_sampai"`
+	ExpenseDetails []PosisiKasExpense `json:"expense_details"`
 }
 
 type PosisiKasExpense struct {
@@ -228,19 +233,26 @@ type PosisiKasTotal struct {
 // ===== Laporan Saldo Per Pos / Semua Pos =====
 
 type SaldoRequest struct {
-	Month          uint   `query:"month" validate:"required,min=1,max=12"`
-	Year           uint   `query:"year" validate:"required"`
-	Category       string `query:"category"` // kosong = semua pos
-	AcademicYearID uint   `query:"academic_year_id"`
+	Month           uint   `query:"month" validate:"omitempty,min=1,max=12"`
+	Year            uint   `query:"year"`
+	DateFrom        string `query:"date_from"`  // YYYY-MM-DD, takes priority over month/year
+	DateTo          string `query:"date_to"`    // YYYY-MM-DD, takes priority over month/year
+	Category        string `query:"category"`   // single category (backward compatible)
+	Categories      string `query:"categories"` // comma-separated category names (takes priority)
+	AcademicYearID  uint   `query:"academic_year_id"`
+	AcademicYearIDs string `query:"academic_year_ids"` // comma-separated IDs (multi-TA)
 }
 
 type SaldoResponse struct {
 	Month        uint            `json:"month"`
 	Year         uint            `json:"year"`
+	DateFrom     string          `json:"date_from,omitempty"`
+	DateTo       string          `json:"date_to,omitempty"`
 	AcademicYear string          `json:"academic_year"`
 	PostName     string          `json:"post_name"`
 	Category     string          `json:"category,omitempty"`
-	PostList     []string        `json:"post_list,omitempty"` // hanya jika semua pos
+	Categories   []string        `json:"categories,omitempty"` // multiple selected categories
+	PostList     []string        `json:"post_list,omitempty"`
 	SaldoSebelum float64         `json:"saldo_sebelum"`
 	Rows         []SaldoRow      `json:"rows"`
 	TotalBulan   SaldoTotalBulan `json:"total_bulan"`
@@ -278,16 +290,16 @@ type TransaksiPengeluaranResponse struct {
 }
 
 type TransaksiPengeluaranBlock struct {
-	ID              uint                        `json:"id"`
-	TransactionDate string                      `json:"transaction_date"`
-	Source          string                      `json:"source"`
-	TotalAmount     float64                     `json:"total_amount"`
-	TotalTerbilang  string                      `json:"total_terbilang"`
-	Description     string                      `json:"description"`
-	CategoryName    string                      `json:"category_name"`
-	CreatedByName   string                      `json:"created_by_name"`
-	CreatedAt       string                      `json:"created_at"`
-	Items           []TransaksiPengeluaranItem  `json:"items"`
+	ID              uint                       `json:"id"`
+	TransactionDate string                     `json:"transaction_date"`
+	Source          string                     `json:"source"`
+	TotalAmount     float64                    `json:"total_amount"`
+	TotalTerbilang  string                     `json:"total_terbilang"`
+	Description     string                     `json:"description"`
+	CategoryName    string                     `json:"category_name"`
+	CreatedByName   string                     `json:"created_by_name"`
+	CreatedAt       string                     `json:"created_at"`
+	Items           []TransaksiPengeluaranItem `json:"items"`
 }
 
 type TransaksiPengeluaranItem struct {
@@ -354,9 +366,97 @@ type TabunganSiswaPeriod struct {
 
 type TabunganSiswaRow struct {
 	Date        string  `json:"date"`
-	Type        string  `json:"type"`        // deposit | withdrawal | usage | allocation | return
+	Type        string  `json:"type"` // deposit | withdrawal | usage | allocation | return
 	Description string  `json:"description"`
-	Debit       float64 `json:"debit"`       // masuk (setoran)
-	Credit      float64 `json:"credit"`      // keluar (penarikan)
-	Saldo       float64 `json:"saldo"`       // running balance
+	Debit       float64 `json:"debit"`  // masuk (setoran)
+	Credit      float64 `json:"credit"` // keluar (penarikan)
+	Saldo       float64 `json:"saldo"`  // running balance
+}
+
+// ===== Laporan Pemasukan =====
+
+type PemasukanRequest struct {
+	DateFrom       string `query:"date_from"`
+	DateTo         string `query:"date_to"`
+	PaymentMethod  string `query:"payment_method"` // tunai, tabungan, kosong=semua
+	FeeItemIDs     string `query:"fee_item_ids"`   // comma-separated IDs
+	Categories     string `query:"categories"`     // comma-separated category names (takes priority)
+	AcademicYearID uint   `query:"academic_year_id"`
+}
+
+type PemasukanResponse struct {
+	DateFrom     string               `json:"date_from"`
+	DateTo       string               `json:"date_to"`
+	AcademicYear string               `json:"academic_year"`
+	Transactions []PemasukanDateBlock `json:"transactions"`
+	GrandTotal   float64              `json:"grand_total"`
+}
+
+type PemasukanDateBlock struct {
+	Date         string                 `json:"date"`
+	Transactions []PemasukanTransaction `json:"transactions"`
+	Subtotal     float64                `json:"subtotal"`
+}
+
+type PemasukanTransaction struct {
+	ID              uint            `json:"id"`
+	Source          string          `json:"source"`
+	PaymentMethod   string          `json:"payment_method"`
+	Terbilang       string          `json:"terbilang"`
+	TransactionDate string          `json:"transaction_date"`
+	TransactionNo   string          `json:"transaction_no"`
+	Petugas         string          `json:"petugas"`
+	Items           []PemasukanItem `json:"items"`
+	TotalAmount     float64         `json:"total_amount"`
+}
+
+type PemasukanItem struct {
+	No          int     `json:"no"`
+	Category    string  `json:"category"`
+	Description string  `json:"description"`
+	Amount      float64 `json:"amount"`
+}
+
+// ===== Laporan Pengeluaran =====
+
+type PengeluaranRequest struct {
+	DateFrom           string `query:"date_from"`
+	DateTo             string `query:"date_to"`
+	PaymentMethod      string `query:"payment_method"`       // tunai, tabungan, kosong=semua
+	FeeItemIDs         string `query:"fee_item_ids"`         // comma-separated IDs
+	ExpenseCategoryIDs string `query:"expense_category_ids"` // comma-separated IDs
+	AcademicYearID     uint   `query:"academic_year_id"`
+}
+
+type PengeluaranResponse struct {
+	DateFrom     string                 `json:"date_from"`
+	DateTo       string                 `json:"date_to"`
+	AcademicYear string                 `json:"academic_year"`
+	Transactions []PengeluaranDateBlock `json:"transactions"`
+	GrandTotal   float64                `json:"grand_total"`
+}
+
+type PengeluaranDateBlock struct {
+	Date         string                   `json:"date"`
+	Transactions []PengeluaranTransaction `json:"transactions"`
+	Subtotal     float64                  `json:"subtotal"`
+}
+
+type PengeluaranTransaction struct {
+	ID              uint              `json:"id"`
+	Source          string            `json:"source"`
+	PaymentMethod   string            `json:"payment_method"`
+	Terbilang       string            `json:"terbilang"`
+	TransactionDate string            `json:"transaction_date"`
+	TransactionNo   string            `json:"transaction_no"`
+	Petugas         string            `json:"petugas"`
+	Items           []PengeluaranItem `json:"items"`
+	TotalAmount     float64           `json:"total_amount"`
+}
+
+type PengeluaranItem struct {
+	No              int     `json:"no"`
+	ExpenseCategory string  `json:"expense_category"`
+	Description     string  `json:"description"`
+	Amount          float64 `json:"amount"`
 }

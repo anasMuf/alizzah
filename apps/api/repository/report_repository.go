@@ -3,6 +3,7 @@ package repository
 import (
 	"api/dto"
 	"api/model"
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -29,6 +30,10 @@ type ReportRepository interface {
 	DailyPengeluaran(academicYearID uint, startDate, endDate time.Time, category string) (map[string]float64, error)
 	SumPenerimaan(academicYearID uint, startDate, endDate time.Time, category string) (float64, error)
 	SumPengeluaran(academicYearID uint, startDate, endDate time.Time, category string) (float64, error)
+
+	// Pemasukan & Pengeluaran
+	FindPaymentsInRange(academicYearID uint, startDate, endDate time.Time, categories []string) ([]dto.PemasukanTransaction, error)
+	FindIncomeTransactionsInRange(academicYearID uint, startDate, endDate time.Time) ([]dto.PemasukanTransaction, error)
 
 	// Tabungan
 	DailySavingsCredit(startDate, endDate time.Time, savingsType string) (map[string]float64, error)
@@ -488,4 +493,124 @@ func (r *reportRepository) SumSavingsDebit(startDate, endDate time.Time, savings
 	query = savingsTypeFilter(query, savingsType)
 	err := query.Scan(&total).Error
 	return total, err
+}
+
+// FindPaymentsInRange returns payments (invoice + income_transaction format) in date range
+func (r *reportRepository) FindPaymentsInRange(academicYearID uint, startDate, endDate time.Time, categories []string) ([]dto.PemasukanTransaction, error) {
+	type Row struct {
+		PaymentID     uint      `gorm:"column:payment_id"`
+		PaymentDate   time.Time `gorm:"column:payment_date"`
+		Source        string    `gorm:"column:source"`
+		TotalAmount   float64   `gorm:"column:total_amount"`
+		ItemCategory  string    `gorm:"column:item_category"`
+		ItemName      string    `gorm:"column:item_name"`
+		ItemAmount    float64   `gorm:"column:item_amount"`
+		CreatedByName string    `gorm:"column:created_by_name"`
+	}
+
+	var rows []Row
+	query := r.db.Table("payments p").
+		Select("p.id as payment_id, p.payment_date, p.source, p.total_amount, ii.category as item_category, ii.name as item_name, COALESCE(ii.notes, ii.name) as item_description, pi.amount as item_amount, u.full_name as created_by_name").
+		Joins("JOIN payment_items pi ON pi.payment_id = p.id").
+		Joins("JOIN invoice_items ii ON ii.id = pi.invoice_item_id").
+		Joins("LEFT JOIN users u ON u.id = p.created_by").
+		Where("p.academic_year_id = ? AND p.payment_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
+
+	if len(categories) > 0 {
+		query = query.Where("ii.category IN ?", categories)
+	}
+
+	query = query.Order("p.payment_date ASC, p.id ASC")
+
+	if err := query.Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+
+	// Group by payment_id
+	paymentMap := make(map[uint]*dto.PemasukanTransaction)
+	var paymentOrder []uint
+
+	for _, row := range rows {
+		if _, exists := paymentMap[row.PaymentID]; !exists {
+			paymentMap[row.PaymentID] = &dto.PemasukanTransaction{
+				ID:              row.PaymentID,
+				Source:          row.ItemCategory,
+				PaymentMethod:   row.Source,
+				Terbilang:       "",
+				TransactionDate: row.PaymentDate.Format("2006-01-02"),
+				TransactionNo:   fmt.Sprintf("PAY-%d", row.PaymentID),
+				Petugas:         row.CreatedByName,
+				Items:           []dto.PemasukanItem{},
+				TotalAmount:     row.TotalAmount,
+			}
+			paymentOrder = append(paymentOrder, row.PaymentID)
+		}
+		txn := paymentMap[row.PaymentID]
+		txn.Items = append(txn.Items, dto.PemasukanItem{
+			No:       len(txn.Items) + 1,
+			Category: row.ItemName,
+			Amount:   row.ItemAmount,
+		})
+	}
+
+	var result []dto.PemasukanTransaction
+	for _, id := range paymentOrder {
+		result = append(result, *paymentMap[id])
+	}
+
+	return result, nil
+}
+
+// FindIncomeTransactionsInRange returns income transactions in date range as PemasukanTransaction format
+func (r *reportRepository) FindIncomeTransactionsInRange(academicYearID uint, startDate, endDate time.Time) ([]dto.PemasukanTransaction, error) {
+	type Row struct {
+		ID              uint      `gorm:"column:id"`
+		TransactionDate time.Time `gorm:"column:transaction_date"`
+		Category        string    `gorm:"column:category"`
+		SourceName      string    `gorm:"column:source_name"`
+		Amount          float64   `gorm:"column:amount"`
+		ReferenceNumber string    `gorm:"column:reference_number"`
+		CreatedByName   string    `gorm:"column:created_by_name"`
+	}
+
+	var rows []Row
+	err := r.db.Table("income_transactions it").
+		Select("it.id, it.transaction_date, it.category, it.source_name, it.amount, COALESCE(it.reference_number, '') as reference_number, u.full_name as created_by_name").
+		Joins("LEFT JOIN users u ON u.id = it.created_by").
+		Where("it.academic_year_id = ? AND it.transaction_date BETWEEN ? AND ?", academicYearID, startDate, endDate).
+		Order("it.transaction_date ASC, it.id ASC").
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+
+	var result []dto.PemasukanTransaction
+	incomeLabels := map[string]string{
+		"bos":     "Dana BOS",
+		"donasi":  "Donasi",
+		"hibah":   "Hibah",
+		"lainnya": "Lainnya",
+	}
+
+	for _, row := range rows {
+		categoryLabel := row.Category
+		if label, ok := incomeLabels[row.Category]; ok {
+			categoryLabel = label
+		}
+		result = append(result, dto.PemasukanTransaction{
+			ID:              row.ID,
+			Source:          categoryLabel,
+			PaymentMethod:   "tunai",
+			Terbilang:       "",
+			TransactionDate: row.TransactionDate.Format("2006-01-02"),
+			TransactionNo:   row.ReferenceNumber,
+			Petugas:         row.CreatedByName,
+			Items: []dto.PemasukanItem{
+				{No: 1, Category: categoryLabel, Description: row.SourceName, Amount: row.Amount},
+			},
+			TotalAmount: row.Amount,
+		})
+	}
+
+	return result, nil
 }

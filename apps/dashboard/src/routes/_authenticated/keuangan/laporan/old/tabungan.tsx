@@ -4,10 +4,10 @@ import { useCallback } from "react";
 import type { TabunganReportRow } from "#/api/endpoints/reports/tabungan";
 import { useGetReportsTabungan } from "#/api/endpoints/reports/tabungan";
 import { Alert, Button } from "#/components/ui";
-import { openPrintWindow } from "../../../../utils/print";
+import { openPrintWindow } from "../../../../../utils/print";
 
 export const Route = createFileRoute(
-	"/_authenticated/keuangan/laporan/tabungan",
+	"/_authenticated/keuangan/laporan/old/tabungan",
 )({
 	component: LaporanTabunganPage,
 	validateSearch: (search: Record<string, unknown>) => {

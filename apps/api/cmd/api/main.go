@@ -92,6 +92,8 @@ func main() {
 		&model.TokenBlacklist{},
 		// RBAC by-modul: grant akses modul per-user
 		&model.UserModule{},
+		// Audit trail — log semua request mutasi untuk superadmin
+		&model.AuditEntry{},
 	); err != nil {
 		log.Fatal("Gagal AutoMigrate:", err)
 	}
@@ -249,6 +251,10 @@ func main() {
 	// Batch 7
 	dailyClosingRepo := repository.NewDailyClosingRepository(db)
 	reportRepo := repository.NewReportRepository(db)
+
+	// Audit trail — log semua request mutasi untuk superadmin debugging
+	auditRepo := repository.NewAuditEntryRepository(db)
+	auditService := service.NewAuditService(auditRepo)
 
 	// Otorisasi berbasis modul (RBAC by-modul). superadmin bypass; admin dibatasi
 	// modul yang di-grant (lookup DB tiap request via user_modules).
@@ -411,6 +417,18 @@ func main() {
 		log.Printf("[backup] Warning: failed to write README: %v", err)
 	}
 
+	// Audit log cleanup: hapus entry > 7 hari, jalan tiap jam
+	go func() {
+		for {
+			time.Sleep(1 * time.Hour)
+			if deleted, err := auditService.Cleanup(7); err != nil {
+				log.Printf("[audit] cleanup error: %v", err)
+			} else if deleted > 0 {
+				log.Printf("[audit] cleanup: %d entries dihapus (retensi 7 hari)", deleted)
+			}
+		}
+	}()
+
 	// Handlers
 	authHandler := handler.NewAuthHandler(authService, tokenBlacklistRepo, backupSvc)
 	userHandler := handler.NewUserHandler(userService)
@@ -457,6 +475,10 @@ func main() {
 	dailyClosingHandler := handler.NewDailyClosingHandler(dailyClosingService)
 	reportHandler := handler.NewReportHandler(reportService)
 
+	// Audit log handler (superadmin-only)
+	auditLogHandler := handler.NewAuditLogHandler(auditService)
+	auditMiddleware := middleware.NewAuditMiddleware(auditService)
+
 	// Backup
 	backupHandler := handler.NewBackupHandler(backupSvc)
 
@@ -464,6 +486,11 @@ func main() {
 	// Routes — /api/v1
 	// =====================
 	api := bootstrap.APIGroup(e)
+
+	// Audit middleware — tangkap body & rekam semua request non-GET.
+	// Dipasang di level api group; body capture pre-hook, user extraction
+	// post-hook (setelah JWTAuth set context).
+	api.Use(auditMiddleware.Capture)
 
 	// Rate limiting: 1 req/detik untuk login (anti brute-force), burst 3
 	auth := api.Group("/auth")
@@ -473,6 +500,11 @@ func main() {
 	authProtected := api.Group("/auth", middleware.JWTAuth(tokenBlacklistRepo), middleware.RateLimiter(20, 40))
 	authProtected.POST("/logout", authHandler.Logout)
 	authProtected.GET("/me", authHandler.Me)
+
+	// Audit logs — superadmin only
+	auditLogs := api.Group("/audit-logs", middleware.JWTAuth(tokenBlacklistRepo), middleware.RequireRoles("superadmin"))
+	auditLogs.GET("", auditLogHandler.List)
+	auditLogs.GET("/:id", auditLogHandler.Get)
 
 	// Backup — superadmin only (list + create + download)
 	backups := api.Group("/backups", middleware.JWTAuth(tokenBlacklistRepo), middleware.RequireRoles("superadmin"))

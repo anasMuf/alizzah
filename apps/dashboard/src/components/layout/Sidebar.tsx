@@ -18,6 +18,7 @@ import {
 	PiggyBank,
 	ReceiptText,
 	RefreshCw,
+	ScrollText,
 	ShoppingBag,
 	ShoppingCart,
 	Store,
@@ -196,6 +197,9 @@ export function Sidebar({ isOpen }: SidebarProps) {
 							</NavLink>
 							<NavLink to="/keuangan/backup" icon={Database}>
 								Backup Database
+							</NavLink>
+							<NavLink to="/pengaturan/log" icon={ScrollText}>
+								Log Aktivitas
 							</NavLink>
 						</div>
 					)}

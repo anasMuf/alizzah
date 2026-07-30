@@ -115,7 +115,14 @@ func (r *studentSavingsRepository) UpdateBalance(id uint, balance float64, tx *g
 	if tx != nil {
 		db = tx
 	}
-	return db.Model(&model.StudentSavings{}).Where("id = ?", id).Update("balance", balance).Error
+	result := db.Model(&model.StudentSavings{}).Where("id = ?", id).Update("balance", balance)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }
 
 func (r *studentSavingsRepository) SubtractBalance(tx *gorm.DB, id uint, amount float64) error {
@@ -132,7 +139,14 @@ func (r *studentSavingsRepository) SubtractBalance(tx *gorm.DB, id uint, amount 
 }
 
 func (r *studentSavingsRepository) AddBalance(tx *gorm.DB, id uint, amount float64) error {
-	return tx.Model(&model.StudentSavings{}).
+	result := tx.Model(&model.StudentSavings{}).
 		Where("id = ?", id).
-		Update("balance", gorm.Expr("balance + ?", amount)).Error
+		Update("balance", gorm.Expr("balance + ?", amount))
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }

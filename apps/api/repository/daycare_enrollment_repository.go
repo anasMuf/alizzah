@@ -96,7 +96,14 @@ func (r *daycareEnrollmentRepository) UpdateStatus(id uint, status string, endDa
 		updates["end_date"] = gorm.Expr("NULL")
 	}
 
-	return r.db.Model(&model.DaycareEnrollment{}).Where("id = ?", id).Updates(updates).Error
+	result := r.db.Model(&model.DaycareEnrollment{}).Where("id = ?", id).Updates(updates)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }
 
 // HasPremiumHistory returns true if the student has ever had a premium daycare enrollment.

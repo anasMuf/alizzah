@@ -106,7 +106,14 @@ func (r *dailyClosingRepository) Confirm(id uint, notes string) error {
 	if notes != "" {
 		updates["notes"] = notes
 	}
-	return r.db.Model(&model.DailyClosing{}).Where("id = ?", id).Updates(updates).Error
+	result := r.db.Model(&model.DailyClosing{}).Where("id = ?", id).Updates(updates)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }
 
 func (r *dailyClosingRepository) IsDateConfirmed(date time.Time) (bool, error) {

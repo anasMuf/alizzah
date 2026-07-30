@@ -31,7 +31,7 @@ type CreatePaymentRequest struct {
 
 type PaymentItemReq struct {
 	InvoiceItemID uint    `json:"invoice_item_id" validate:"required"`
-	Amount        float64 `json:"amount" validate:"required,min=1"`
+	Amount        float64 `json:"amount" validate:"required"`
 }
 
 type IncidentalItemReq struct {

@@ -148,6 +148,10 @@ func (s *paymentService) createInTx(tx *gorm.DB, createdBy uint, req dto.CreateP
 		if err != nil {
 			return nil, fmt.Errorf("Item tagihan %d tidak ditemukan", item.InvoiceItemID)
 		}
+		// Item non-dispensasi harus memiliki amount > 0
+		if invoiceItem.Category != "dispensation" && item.Amount <= 0 {
+			return nil, fmt.Errorf("Jumlah pembayaran item '%s' harus lebih dari 0", invoiceItem.Name)
+		}
 		remaining := invoiceItem.Amount - invoiceItem.PaidAmount
 		if item.Amount > remaining {
 			return nil, fmt.Errorf("Jumlah pembayaran item '%s' melebihi sisa tagihan (sisa: %.0f)", invoiceItem.Name, remaining)

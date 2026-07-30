@@ -950,12 +950,24 @@ func (s *invoiceGenerateService) recalculateInvoiceTotal(invoiceID uint) error {
 
 	total := float64(0)
 	paid := float64(0)
+	allPaid := true
 	for _, item := range items {
 		total += item.Amount
 		paid += item.PaidAmount
+		if item.Status != "paid" {
+			allPaid = false
+		}
 	}
 
-	status := utility.CalculateInvoiceStatus(total, paid)
+	// Invoice lunas hanya jika seluruh item lunas, bukan berdasarkan jumlah
+	status := "unpaid"
+	if paid > 0 {
+		if allPaid {
+			status = "paid"
+		} else {
+			status = "partial"
+		}
+	}
 	if err := s.invoiceRepo.UpdateTotalAmount(invoiceID, total); err != nil {
 		return err
 	}
@@ -973,12 +985,24 @@ func (s *invoiceGenerateService) recalculateInvoiceTotalWithTx(tx *gorm.DB, invo
 
 	total := float64(0)
 	paid := float64(0)
+	allPaid := true
 	for _, item := range items {
 		total += item.Amount
 		paid += item.PaidAmount
+		if item.Status != "paid" {
+			allPaid = false
+		}
 	}
 
-	status := utility.CalculateInvoiceStatus(total, paid)
+	// Invoice lunas hanya jika seluruh item lunas, bukan berdasarkan jumlah
+	status := "unpaid"
+	if paid > 0 {
+		if allPaid {
+			status = "paid"
+		} else {
+			status = "partial"
+		}
+	}
 	if err := txInvoiceRepo.UpdateTotalAmount(invoiceID, total); err != nil {
 		return err
 	}

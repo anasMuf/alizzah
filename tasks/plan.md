@@ -1,74 +1,74 @@
-# Implementation Plan: Daycare Kalkulasi Bulanan (Attendance → Monthly Days)
+# Implementation Plan: Audit Trail / Activity Log (Superadmin)
 
 ## Overview
 
-Mengubah sistem tagihan daycare dari berbasis absensi harian menjadi input jumlah hari per bulan.
-Perubahan mencakup: model baru `DaycareMonthlyAttendance`, API baru untuk input kehadiran bulanan,
-modifikasi invoice generation, dan update frontend. TPQ dihapus dari kalkulasi tagihan.
+Menambahkan menu log aktivitas di dashboard untuk superadmin. Setiap request non-GET (POST/PUT/PATCH/DELETE) direkam otomatis via middleware — termasuk metadata request, request body lengkap, status response, dan error message. Superadmin bisa filter/search log dari UI tanpa perlu SSH ke VPS. Data log di-retain 7 hari.
 
 ## Architecture Decisions
 
-- **New table `daycare_monthly_attendances`** — menyimpan `spd_days` dan `meal_days` per siswa per bulan. Unique constraint pada `(student_id, month, year)`.
-- **Backward compatible** — jika data bulanan tidak ada, fallback ke absensi harian (perilaku lama). Ini memastikan enrollment existing tidak break.
-- **Premium meal pakai tarif harian regular** — `daycare_premium_meal` (flat 400k) dinonaktifkan, pakai `daycare_regular_meal` (20k/hari) untuk semua kategori.
-- **TPQ items dinonaktifkan** — `daycare_premium_tpq` dan `daycare_regular_tpq` di-seeder diset `is_active: false`.
-- **Validasi maksimal 30 hari** — `spd_days` dan `meal_days` divalidasi max 30.
+- **Middleware-based capture** — satu `AuditMiddleware` dipasang di atas middleware chain yang sudah ada (setelah JWTAuth, sebelum handler). Tidak ada perubahan di handler/service existing.
+- **Async write** — penulisan ke database via goroutine agar tidak blocking response time ke user.
+- **Denormalized `user_name`** — nama user disimpan di row audit supaya query list tidak perlu JOIN ke tabel users.
+- **Module dari URL path** — heuristic: extract segmen pertama setelah `/api/v1/` (misal `/students` → administrasi, `/invoices` → keuangan). Mapping disimpan di map constant.
+- **Retensi 7 hari** — go routine cleanup tiap jam, pakai simple `DELETE WHERE created_at < NOW() - INTERVAL '7 days'`.
+- **Skip GET** — hanya method mutasi (POST, PUT, PATCH, DELETE) yang direkam. GET tidak direkam karena noise dan tidak relevan untuk debugging.
 
 ## Task List
 
-### Phase 1: Foundation (Backend Model + Repository)
+### Phase 1: Foundation (Backend Model + Repository + Service)
 
-- [ ] **Task 1:** Buat model `DaycareMonthlyAttendance` + register di AutoMigrate
-- [ ] **Task 2:** Buat repository `DaycareMonthlyAttendanceRepository`
+- [ ] **Task 1:** Buat model `AuditEntry` + DTO `AuditLogQueryParams` & `AuditLogResponse`
 
 ### Checkpoint: Foundation
 - [ ] Model terdaftar di `main.go` AutoMigrate
-- [ ] Repository bisa di-compile (method FindByStudentMonthYear, Upsert)
+- [ ] Compile clean: `cd apps/api && go build ./...`
 
-### Phase 2: Service + Handler (API Layer)
+### Phase 2: Core Middleware + Integration
 
-- [ ] **Task 3:** Tambah method `UpsertMonthlyAttendance` & `GetMonthlyAttendance` di service
-- [ ] **Task 4:** Tambah endpoint GET & PUT `/v1/daycare-enrollments/monthly-attendance` di handler + register di `main.go`
+- [ ] **Task 2:** Buat `AuditEntryRepository` (insert + findAll dengan filter/search/pagination)
+- [ ] **Task 3:** Buat `AuditService` (async write + query dengan filter + module mapping)
+- [ ] **Task 4:** Buat `AuditMiddleware` (pre-hook capture body, post-hook write entry)
+- [ ] **Task 5:** Register middleware + route di `cmd/api/main.go` + cleanup goroutine
 
-### Checkpoint: API Layer
-- [ ] API bisa disimpan dan dibaca via curl/Postman
-- [ ] Validasi max 30 hari berfungsi
+### Checkpoint: Core
+- [ ] Setiap POST/PUT/DELETE request tercatat di tabel `audit_entries`
+- [ ] Request body tersimpan sebagai JSON string
+- [ ] Error 400/500 tercatat dengan error message yang sesuai
+- [ ] Cleanup jalan — data >7 hari terhapus
 
-### Phase 3: Invoice Generation Changes
+### Phase 3: Backend API (Superadmin Read)
 
-- [ ] **Task 5:** Modifikasi `GenerateDaycareMonthlyInvoices` — gunakan `DaycareMonthlyAttendance` jika ada, fallback ke absensi harian. Hapus TPQ dari kalkulasi. Premium meal pakai daily rate.
+- [ ] **Task 6:** Tambah endpoint `GET /v1/audit-logs` + `GET /v1/audit-logs/:id` di handler + route (superadmin-only)
 
-### Checkpoint: Invoice Logic
-- [ ] Generate invoice dengan data bulanan menghasilkan tagihan yang benar
-- [ ] Generate invoice tanpa data bulanan masih berfungsi (fallback)
-- [ ] TPQ tidak muncul di invoice item
+### Checkpoint: Backend API
+- [ ] `GET /v1/audit-logs?module=keuangan&status_min=400&search=constraint` mengembalikan hasil terfilter
+- [ ] `GET /v1/audit-logs/:id` mengembalikan detail satu entry (termasuk request body)
+- [ ] Pagination berfungsi
+- [ ] Role guard: hanya superadmin yang bisa akses
 
-### Phase 4: Seeders
+### Phase 4: Frontend
 
-- [ ] **Task 6:** Nonaktifkan TPQ items dan premium meal flat di `fee_config_seeder.go`
-
-### Phase 5: Frontend
-
-- [ ] **Task 7:** Ubah UI absensi harian menjadi input kehadiran bulanan di `index.tsx`
-- [ ] **Task 8:** Regenerate Orval API client (jika perlu)
+- [ ] **Task 7:** Tambah API client untuk `audit-logs` endpoint (manual, mengikuti pattern existing)
+- [ ] **Task 8:** Buat halaman `/pengaturan/log` + entry di sidebar superadmin
 
 ### Checkpoint: Complete
-- [ ] End-to-end: input kehadiran bulanan → generate invoice → lihat hasil
-- [ ] Enrollment existing masih bisa generate invoice (fallback)
-- [ ] Build dan test passing
+- [ ] Superadmin bisa akses `/pengaturan/log` dari sidebar
+- [ ] Filter (date range, user, module, method, status, search) berfungsi
+- [ ] Klik entry → detail slideover dengan request body terformat
+- [ ] Error entry ditandai dengan badge merah, success hijau
+- [ ] Pagination berfungsi
+- [ ] Build frontend clean: `cd apps/dashboard && pnpm build`
 
 ## Risks and Mitigations
 
 | Risk | Impact | Mitigation |
 |------|--------|------------|
-| Enrollment existing break setelah perubahan invoice logic | High | Backward compatible: fallback ke absensi harian jika data bulanan tidak ada |
-| Premium meal rate berubah (flat 400k → 20k/hari) | Med | Komunikasikan ke user, nonaktifkan fee item lama di seeder |
-| Orval regeneration meng-overwrite custom code | Low | Back-up file sebelum regenerate, atau tulis manual endpoint call |
+| Request body besar (upload file, import CSV) bloating DB | Med | Skip body jika >100KB, catat `[body too large: N bytes]` |
+| Middleware gagal write ke DB (DB down) | Low | Log error ke console, jangan block request. Audit entry loss diterima untuk edge case ini. |
+| Async write race condition | Low | Gunakan DB connection dari pool yang sama (thread-safe). Closure capture value, bukan reference. |
+| Module mapping dari URL salah untuk nested route | Low | Map berdasarkan prefix. Nested route seperti `/students/:id/enrollments` tetap ke `administrasi`. |
 
 ## Open Questions
 
-- [x] Apakah jumlah hari berbeda per bulan? → YES, input per bulan
-- [x] Apakah TPQ masih dihitung? → NO, dihapus
-- [x] Apakah premium meal tetap flat? → NO, pakai daily rate (20k/hari)
-- [x] Apakah Biaya Awal premium tetap? → YES, tidak berubah
-- [x] Batas maksimal hari? → 30
+- [ ] Apakah perlu export/download log? → Out of scope untuk v1, bisa jadi enhancement
+- [ ] Apakah perlu log GET untuk endpoint tertentu (misal: download backup)? → Skip dulu, evaluasi setelah 1-2 minggu usage

@@ -83,13 +83,22 @@ func (r *effectiveDayRepository) Upsert(ed *model.EffectiveDay) error {
 		if err == nil {
 			// Restore jika sebelumnya soft-deleted, lalu update
 			if existing.DeletedAt.Valid {
-				tx.Unscoped().Model(&existing).Update("deleted_at", nil)
+				if result := tx.Unscoped().Model(&existing).Update("deleted_at", nil); result.Error != nil {
+					return result.Error
+				}
 			}
 			existing.AcademicYearID = ed.AcademicYearID
 			existing.TotalDays = ed.TotalDays
 			existing.TotalMondays = ed.TotalMondays
 			existing.CreatedBy = ed.CreatedBy
-			return tx.Unscoped().Save(&existing).Error
+			result := tx.Unscoped().Save(&existing)
+			if result.Error != nil {
+				return result.Error
+			}
+			if result.RowsAffected == 0 {
+				return gorm.ErrRecordNotFound
+			}
+			return nil
 		}
 
 		if errors.Is(err, gorm.ErrRecordNotFound) {

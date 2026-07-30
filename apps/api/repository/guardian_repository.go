@@ -71,13 +71,15 @@ func (r *guardianRepository) SetPrimary(studentID, guardianID uint) error {
 		}
 
 		// Set all to false
-		if err := tx.Model(&model.StudentGuardian{}).Where("student_id = ?", studentID).Update("is_primary", false).Error; err != nil {
-			return err
+		if result := tx.Model(&model.StudentGuardian{}).Where("student_id = ?", studentID).Update("is_primary", false); result.Error != nil {
+			return result.Error
 		}
 
 		// Set target to true
-		if err := tx.Model(&model.StudentGuardian{}).Where("student_id = ? AND guardian_id = ?", studentID, guardianID).Update("is_primary", true).Error; err != nil {
-			return err
+		if result := tx.Model(&model.StudentGuardian{}).Where("student_id = ? AND guardian_id = ?", studentID, guardianID).Update("is_primary", true); result.Error != nil {
+			return result.Error
+		} else if result.RowsAffected == 0 {
+			return gorm.ErrRecordNotFound
 		}
 
 		return nil

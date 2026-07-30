@@ -18,6 +18,7 @@ type DaycareEnrollmentRepository interface {
 	Update(de *model.DaycareEnrollment) error
 	UpdateStatus(id uint, status string, endDate *time.Time) error
 	Delete(id uint) error
+	WithTx(tx *gorm.DB) DaycareEnrollmentRepository
 }
 
 type daycareEnrollmentRepository struct {
@@ -26,6 +27,13 @@ type daycareEnrollmentRepository struct {
 
 func NewDaycareEnrollmentRepository(db *gorm.DB) DaycareEnrollmentRepository {
 	return &daycareEnrollmentRepository{db: db}
+}
+
+func (r *daycareEnrollmentRepository) WithTx(tx *gorm.DB) DaycareEnrollmentRepository {
+	if tx == nil {
+		return r
+	}
+	return &daycareEnrollmentRepository{db: tx}
 }
 
 func (r *daycareEnrollmentRepository) FindAll(params dto.DaycareEnrollmentQueryParams) ([]model.DaycareEnrollment, int64, error) {

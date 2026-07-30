@@ -82,6 +82,7 @@ func mapEntryToResponse(entry model.AuditEntry) dto.AuditLogResponse {
 		Module:       entry.Module,
 		Action:       entry.Action,
 		RequestBody:  entry.RequestBody,
+		ResponseBody: entry.ResponseBody,
 		StatusCode:   entry.StatusCode,
 		ErrorMessage: entry.ErrorMessage,
 		IPAddress:    entry.IPAddress,

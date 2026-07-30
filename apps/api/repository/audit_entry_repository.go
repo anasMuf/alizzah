@@ -43,8 +43,8 @@ func (r *auditEntryRepository) FindAll(params dto.AuditLogQueryParams) ([]model.
 	if params.Search != "" {
 		pattern := "%" + params.Search + "%"
 		query = query.Where(
-			"path ILIKE ? OR error_message ILIKE ? OR user_name ILIKE ?",
-			pattern, pattern, pattern,
+			"path ILIKE ? OR error_message ILIKE ? OR user_name ILIKE ? OR response_body ILIKE ?",
+			pattern, pattern, pattern, pattern,
 		)
 	}
 

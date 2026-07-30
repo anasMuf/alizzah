@@ -499,6 +499,16 @@ function LogAktivitasComponent() {
 							</div>
 						)}
 
+						{/* Response Body */}
+						{detail.response_body && (
+							<div>
+								<span className="text-sm text-gray-500">Response Body</span>
+								<pre className="mt-1 text-xs text-gray-800 bg-gray-50 p-3 rounded overflow-auto max-h-64 whitespace-pre-wrap break-all">
+									{formatJson(detail.response_body)}
+								</pre>
+							</div>
+						)}
+
 						{/* Error Message */}
 						{detail.error_message && (
 							<div>

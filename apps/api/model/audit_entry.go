@@ -14,6 +14,7 @@ type AuditEntry struct {
 	Module       string    `json:"module" gorm:"size:50;index"`
 	Action       string    `json:"action" gorm:"size:50"`
 	RequestBody  string    `json:"request_body" gorm:"type:text"`
+	ResponseBody string    `json:"response_body" gorm:"type:text"`
 	StatusCode   int       `json:"status_code" gorm:"not null;index"`
 	ErrorMessage string    `json:"error_message" gorm:"type:text"`
 	IPAddress    string    `json:"ip_address" gorm:"size:45"`

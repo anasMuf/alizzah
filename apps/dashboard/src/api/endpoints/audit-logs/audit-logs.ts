@@ -12,6 +12,7 @@ export interface AuditLogEntry {
 	module: string;
 	action: string;
 	request_body?: string;
+	response_body?: string;
 	status_code: number;
 	error_message?: string;
 	ip_address: string;

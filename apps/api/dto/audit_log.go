@@ -29,6 +29,7 @@ type AuditLogResponse struct {
 	Module       string    `json:"module"`
 	Action       string    `json:"action"`
 	RequestBody  string    `json:"request_body,omitempty"`
+	ResponseBody string    `json:"response_body,omitempty"`
 	StatusCode   int       `json:"status_code"`
 	ErrorMessage string    `json:"error_message,omitempty"`
 	IPAddress    string    `json:"ip_address"`

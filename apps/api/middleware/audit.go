@@ -14,6 +14,31 @@ import (
 
 const maxBodyBytes = 100 * 1024 // 100 KB
 
+// responseBodyWriter membungkus http.ResponseWriter untuk menangkap body
+// response yang ditulis oleh handler, sambil tetap meneruskan ke client.
+type responseBodyWriter struct {
+	http.ResponseWriter
+	buf    *bytes.Buffer
+	status int
+}
+
+func (w *responseBodyWriter) Write(b []byte) (int, error) {
+	if w.buf.Len() < maxBodyBytes {
+		remain := maxBodyBytes - w.buf.Len()
+		if len(b) > remain {
+			w.buf.Write(b[:remain])
+		} else {
+			w.buf.Write(b)
+		}
+	}
+	return w.ResponseWriter.Write(b)
+}
+
+func (w *responseBodyWriter) WriteHeader(statusCode int) {
+	w.status = statusCode
+	w.ResponseWriter.WriteHeader(statusCode)
+}
+
 // AuditWriter adalah interface minimal yang dibutuhkan middleware untuk menulis
 // audit entry — menghindari import cycle (middleware → service → middleware).
 type AuditWriter interface {
@@ -31,7 +56,7 @@ func NewAuditMiddleware(writer AuditWriter) *AuditMiddleware {
 }
 
 // Capture adalah middleware handler yang membaca request body, memproses request,
-// lalu menulis audit entry secara async.
+// lalu menulis audit entry secara async — termasuk response body.
 func (m *AuditMiddleware) Capture(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		// Skip GET (read-only) — tidak relevan untuk audit debugging
@@ -42,20 +67,26 @@ func (m *AuditMiddleware) Capture(next echo.HandlerFunc) echo.HandlerFunc {
 		start := time.Now()
 
 		// Capture raw request body
-		var bodyStr string
+		var reqBodyStr string
 		if c.Request().Body != nil {
 			bodyBytes, err := io.ReadAll(c.Request().Body)
 			if err == nil {
-				// Restore body agar handler tetap bisa membacanya
 				c.Request().Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
-
 				if len(bodyBytes) > maxBodyBytes {
-					bodyStr = "[body too large: " + humanizeBytes(len(bodyBytes)) + "]"
+					reqBodyStr = "[body too large: " + humanizeBytes(len(bodyBytes)) + "]"
 				} else {
-					bodyStr = string(bodyBytes)
+					reqBodyStr = string(bodyBytes)
 				}
 			}
 		}
+
+		// Bungkus ResponseWriter untuk menangkap response body
+		resBodyBuf := new(bytes.Buffer)
+		wrap := &responseBodyWriter{
+			ResponseWriter: c.Response().Writer,
+			buf:            resBodyBuf,
+		}
+		c.Response().Writer = wrap
 
 		// Jalankan handler
 		err := next(c)
@@ -66,17 +97,25 @@ func (m *AuditMiddleware) Capture(next echo.HandlerFunc) echo.HandlerFunc {
 			Path:        c.Request().URL.Path,
 			Module:      utility.ModuleFromPath(c.Request().URL.Path),
 			Action:      utility.ActionFromMethod(c.Request().Method),
-			RequestBody: bodyStr,
+			RequestBody: reqBodyStr,
 			StatusCode:  c.Response().Status,
 			IPAddress:   c.RealIP(),
 			LatencyMs:   int(time.Since(start).Milliseconds()),
+		}
+
+		// Response body — format JSON jika memungkinkan
+		if resBodyBuf.Len() > 0 {
+			if resBodyBuf.Len() > maxBodyBytes {
+				entry.ResponseBody = "[body too large: " + humanizeBytes(resBodyBuf.Len()) + "]"
+			} else {
+				entry.ResponseBody = resBodyBuf.String()
+			}
 		}
 
 		// Extract user info dari JWT context
 		if claims := GetCurrentUser(c); claims != nil {
 			entry.UserID = claims.UserID
 		}
-		// Try get user name dari context (jika diset oleh login handler, dll)
 		if name, ok := c.Get("user_name").(string); ok {
 			entry.UserName = name
 		}

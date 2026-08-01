@@ -265,7 +265,7 @@ function LaporanPengeluaranPage() {
 				<>
 					<ReportInfoCard filters={infoFilters} />
 
-					{report.transactions.length > 0 ? (
+					{report.transactions?.length > 0 ? (
 						<div className="space-y-6">
 							{report.transactions.map((block) => (
 								<div key={block.date}>

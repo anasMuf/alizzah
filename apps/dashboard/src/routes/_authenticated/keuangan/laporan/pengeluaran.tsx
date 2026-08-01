@@ -148,7 +148,7 @@ function LaporanPengeluaranPage() {
 				html += `<tr><td class="text-sm text-gray">Metode:</td><td class="text-sm">${esc(txn.payment_method)}</td></tr>`;
 				html += `<tr><td class="text-sm text-gray">Terbilang:</td><td class="text-sm">${esc(txn.terbilang)}</td></tr>`;
 				html += `<tr><td class="text-sm text-gray">Tgl:</td><td class="text-sm">${esc(formatDate(txn.transaction_date))}</td></tr>`;
-				html += `<tr><td class="text-sm text-gray">No:</td><td class="text-sm">${esc(txn.transaction_no)}</td></tr>`;
+				html += ``;
 				html += `<tr><td class="text-sm text-gray">Petugas:</td><td class="text-sm">${esc(txn.petugas)}</td></tr>`;
 				html += `</tbody></table>`;
 				html += `<table><thead><tr><th>No</th><th>Kategori</th><th>Deskripsi</th><th class="text-right">Nominal</th></tr></thead><tbody>`;

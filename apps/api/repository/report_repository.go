@@ -498,19 +498,20 @@ func (r *reportRepository) SumSavingsDebit(startDate, endDate time.Time, savings
 // FindPaymentsInRange returns payments (invoice + income_transaction format) in date range
 func (r *reportRepository) FindPaymentsInRange(academicYearID uint, startDate, endDate time.Time, categories []string) ([]dto.PemasukanTransaction, error) {
 	type Row struct {
-		PaymentID     uint      `gorm:"column:payment_id"`
-		PaymentDate   time.Time `gorm:"column:payment_date"`
-		Source        string    `gorm:"column:source"`
-		TotalAmount   float64   `gorm:"column:total_amount"`
-		ItemCategory  string    `gorm:"column:item_category"`
-		ItemName      string    `gorm:"column:item_name"`
-		ItemAmount    float64   `gorm:"column:item_amount"`
-		CreatedByName string    `gorm:"column:created_by_name"`
+		PaymentID       uint    `gorm:"column:payment_id"`
+		PaymentDate     string  `gorm:"column:payment_date"`
+		Source          string  `gorm:"column:source"`
+		TotalAmount     float64 `gorm:"column:total_amount"`
+		ItemCategory    string  `gorm:"column:item_category"`
+		ItemName        string  `gorm:"column:item_name"`
+		ItemDescription string  `gorm:"column:item_description"`
+		ItemAmount      float64 `gorm:"column:item_amount"`
+		CreatedByName   string  `gorm:"column:created_by_name"`
 	}
 
 	var rows []Row
 	query := r.db.Table("payments p").
-		Select("p.id as payment_id, p.payment_date, p.source, p.total_amount, ii.category as item_category, ii.name as item_name, COALESCE(ii.notes, ii.name) as item_description, pi.amount as item_amount, u.full_name as created_by_name").
+		Select("p.id as payment_id, DATE(p.payment_date) as payment_date, p.source, p.total_amount, ii.category as item_category, ii.name as item_name, COALESCE(ii.notes, ii.name) as item_description, pi.amount as item_amount, u.full_name as created_by_name").
 		Joins("JOIN payment_items pi ON pi.payment_id = p.id").
 		Joins("JOIN invoice_items ii ON ii.id = pi.invoice_item_id").
 		Joins("LEFT JOIN users u ON u.id = p.created_by").
@@ -537,7 +538,7 @@ func (r *reportRepository) FindPaymentsInRange(academicYearID uint, startDate, e
 				Source:          row.ItemCategory,
 				PaymentMethod:   row.Source,
 				Terbilang:       "",
-				TransactionDate: row.PaymentDate.Format("2006-01-02"),
+				TransactionDate: row.PaymentDate, // already YYYY-MM-DD string
 				TransactionNo:   fmt.Sprintf("PAY-%d", row.PaymentID),
 				Petugas:         row.CreatedByName,
 				Items:           []dto.PemasukanItem{},
@@ -564,13 +565,13 @@ func (r *reportRepository) FindPaymentsInRange(academicYearID uint, startDate, e
 // FindIncomeTransactionsInRange returns income transactions in date range as PemasukanTransaction format
 func (r *reportRepository) FindIncomeTransactionsInRange(academicYearID uint, startDate, endDate time.Time) ([]dto.PemasukanTransaction, error) {
 	type Row struct {
-		ID              uint      `gorm:"column:id"`
-		TransactionDate time.Time `gorm:"column:transaction_date"`
-		Category        string    `gorm:"column:category"`
-		SourceName      string    `gorm:"column:source_name"`
-		Amount          float64   `gorm:"column:amount"`
-		ReferenceNumber string    `gorm:"column:reference_number"`
-		CreatedByName   string    `gorm:"column:created_by_name"`
+		ID              uint    `gorm:"column:id"`
+		TransactionDate string  `gorm:"column:transaction_date"`
+		Category        string  `gorm:"column:category"`
+		SourceName      string  `gorm:"column:source_name"`
+		Amount          float64 `gorm:"column:amount"`
+		ReferenceNumber string  `gorm:"column:reference_number"`
+		CreatedByName   string  `gorm:"column:created_by_name"`
 	}
 
 	var rows []Row
@@ -602,7 +603,7 @@ func (r *reportRepository) FindIncomeTransactionsInRange(academicYearID uint, st
 			Source:          categoryLabel,
 			PaymentMethod:   "tunai",
 			Terbilang:       "",
-			TransactionDate: row.TransactionDate.Format("2006-01-02"),
+			TransactionDate: row.TransactionDate, // already YYYY-MM-DD from DB
 			TransactionNo:   row.ReferenceNumber,
 			Petugas:         row.CreatedByName,
 			Items: []dto.PemasukanItem{

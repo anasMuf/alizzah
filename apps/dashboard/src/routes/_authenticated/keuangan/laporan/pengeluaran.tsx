@@ -4,10 +4,6 @@ import { ChevronRight, Printer } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useGetV1ExpenseCategories } from "#/api/endpoints/expense-categories/expense-categories";
 import {
-	useGetV1FeeConfigs,
-	useGetV1FeeConfigsIdItems,
-} from "#/api/endpoints/fee-configs/fee-configs";
-import {
 	type PengeluaranData,
 	useGetReportsPengeluaran,
 } from "#/api/endpoints/reports/pengeluaran";
@@ -46,31 +42,6 @@ function flattenCategories(
 function LaporanPengeluaranPage() {
 	const [activeAy] = useAtom(academicYearAtom);
 
-	const { data: feeConfigsData } = useGetV1FeeConfigs({
-		query: { staleTime: 5 * 60 * 1000 },
-	});
-	const feeConfigs = ((feeConfigsData?.data as any)?.data ?? []) as any[];
-	const activeFeeConfig = feeConfigs.find(
-		(fc: any) => fc.academic_year?.is_active,
-	);
-	const feeConfigId = activeFeeConfig?.id ?? feeConfigs[0]?.id;
-
-	const { data: feeItemsData } = useGetV1FeeConfigsIdItems(
-		feeConfigId,
-		undefined,
-		{ query: { enabled: !!feeConfigId, staleTime: 5 * 60 * 1000 } },
-	);
-	const feeItems = ((feeItemsData?.data as any)?.data ?? []) as any[];
-
-	const feeItemOptions = useMemo(
-		() =>
-			feeItems.map((item: any) => ({
-				id: item.id,
-				label: `${item.name} (${item.category})`,
-			})),
-		[feeItems],
-	);
-
 	const { data: expenseCatData } = useGetV1ExpenseCategories({
 		query: { staleTime: 5 * 60 * 1000 },
 	});
@@ -80,7 +51,6 @@ function LaporanPengeluaranPage() {
 		[expenseCats],
 	);
 
-	const [selectedFeeItemIds, setSelectedFeeItemIds] = useState<number[]>([]);
 	const [selectedExpenseCatIds, setSelectedExpenseCatIds] = useState<number[]>(
 		[],
 	);
@@ -93,17 +63,13 @@ function LaporanPengeluaranPage() {
 			date_from: generatedFilters.date_from,
 			date_to: generatedFilters.date_to,
 			payment_method: generatedFilters.payment_method || undefined,
-			fee_item_ids:
-				selectedFeeItemIds.length > 0
-					? selectedFeeItemIds.join(",")
-					: undefined,
 			expense_category_ids:
 				selectedExpenseCatIds.length > 0
 					? selectedExpenseCatIds.join(",")
 					: undefined,
 			academic_year_id: generatedFilters.academic_year_id,
 		};
-	}, [generatedFilters, selectedFeeItemIds, selectedExpenseCatIds]);
+	}, [generatedFilters, selectedExpenseCatIds]);
 
 	const {
 		data: reportData,
@@ -179,29 +145,17 @@ function LaporanPengeluaranPage() {
 
 	const infoFilters: Record<string, string> = useMemo(() => {
 		if (!generatedFilters) return {} as Record<string, string>;
-		const feeNames = feeItems
-			.filter((item: any) => selectedFeeItemIds.includes(item.id))
-			.map((item: any) => item.name)
-			.join(", ");
 		const catNames = expenseCatOptions
 			.filter((cat) => selectedExpenseCatIds.includes(cat.id))
 			.map((cat) => cat.label)
 			.join(", ");
 		return {
-			sumber: feeNames || "Semua",
 			kategori: catNames || "Semua",
 			metode: generatedFilters.payment_method || "Semua",
 			periode: `${formatDate(generatedFilters.date_from)} - ${formatDate(generatedFilters.date_to)}`,
 			ta: activeAy?.name ?? "-",
 		};
-	}, [
-		generatedFilters,
-		selectedFeeItemIds,
-		selectedExpenseCatIds,
-		feeItems,
-		expenseCatOptions,
-		activeAy,
-	]);
+	}, [generatedFilters, selectedExpenseCatIds, expenseCatOptions, activeAy]);
 
 	return (
 		<div className="space-y-6">
@@ -233,23 +187,13 @@ function LaporanPengeluaranPage() {
 			</div>
 
 			<FilterBar onGenerate={handleGenerate} isLoading={isLoading}>
-				<div className="flex flex-wrap gap-6">
-					<div className="max-w-sm">
-						<MultiSelectCheckbox
-							label="Fee Item (Pemasukan)"
-							options={feeItemOptions}
-							selected={selectedFeeItemIds}
-							onChange={setSelectedFeeItemIds}
-						/>
-					</div>
-					<div className="max-w-sm">
-						<MultiSelectCheckbox
-							label="Kategori Pengeluaran"
-							options={expenseCatOptions}
-							selected={selectedExpenseCatIds}
-							onChange={setSelectedExpenseCatIds}
-						/>
-					</div>
+				<div className="max-w-sm">
+					<MultiSelectCheckbox
+						label="Kategori Pengeluaran"
+						options={expenseCatOptions}
+						selected={selectedExpenseCatIds}
+						onChange={setSelectedExpenseCatIds}
+					/>
 				</div>
 			</FilterBar>
 

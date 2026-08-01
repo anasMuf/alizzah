@@ -1,5 +1,5 @@
 /**
- * Manual API hook for Laporan Pengeluaran
+ * Manual API hook for Laporan Pengeluaran (per-transaction detail)
  */
 
 import type { UseQueryOptions } from "@tanstack/react-query";
@@ -15,36 +15,18 @@ export interface PengeluaranParams {
 	academic_year_id?: number;
 }
 
-export interface PengeluaranItem {
-	no: number;
-	expense_category: string;
+export interface PengeluaranRow {
+	date: string;
+	category: string;
 	description: string;
 	amount: number;
-}
-
-export interface PengeluaranTransaction {
-	id: number;
-	source: string;
-	payment_method: string;
-	terbilang: string;
-	transaction_date: string;
-	transaction_no: string;
-	petugas: string;
-	items: PengeluaranItem[];
-	total_amount: number;
-}
-
-export interface PengeluaranDateBlock {
-	date: string;
-	transactions: PengeluaranTransaction[];
-	subtotal: number;
 }
 
 export interface PengeluaranData {
 	date_from: string;
 	date_to: string;
 	academic_year: string;
-	transactions: PengeluaranDateBlock[];
+	rows: PengeluaranRow[];
 	grand_total: number;
 }
 
@@ -79,7 +61,7 @@ export function useGetReportsPengeluaran(
 	return useQuery({
 		queryKey,
 		queryFn,
-		enabled: false, // triggered manually by Generate button
+		enabled: false,
 		...options?.query,
 	});
 }

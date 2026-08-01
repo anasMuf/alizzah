@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"strconv"
 	"sync"
 	"time"
 )
@@ -1097,86 +1096,29 @@ func (s *reportService) GetPengeluaran(req dto.PengeluaranRequest) (*dto.Pengelu
 	startDate, _ := time.Parse("2006-01-02", req.DateFrom)
 	endDate, _ := time.Parse("2006-01-02", req.DateTo)
 
-	// Parse IDs
-	var feeItemIDs []uint
-	if req.FeeItemIDs != "" {
-		for _, s := range strings.Split(req.FeeItemIDs, ",") {
-			s = strings.TrimSpace(s)
-			if id, err := strconv.ParseUint(s, 10, 64); err == nil {
-				feeItemIDs = append(feeItemIDs, uint(id))
-			}
-		}
-	}
-	var expenseIDs []uint
+	// Parse expense category IDs
+	var expenseIDs []string
 	if req.ExpenseCategoryIDs != "" {
-		for _, s := range strings.Split(req.ExpenseCategoryIDs, ",") {
-			s = strings.TrimSpace(s)
-			if id, err := strconv.ParseUint(s, 10, 64); err == nil {
-				expenseIDs = append(expenseIDs, uint(id))
-			}
-		}
+		expenseIDs = strings.Split(req.ExpenseCategoryIDs, ",")
 	}
 
-	// Use FindExpensesForMonth (already accepts date range) — rename for clarity
-	expenses, err := s.reportRepo.FindExpensesForMonth(academicYearID, startDate, endDate)
+	// Query
+	rows, err := s.reportRepo.FindPengeluaranRows(academicYearID, startDate, endDate, expenseIDs)
 	if err != nil {
 		return nil, err
 	}
 
-	// Group by date
-	dateMap := make(map[string][]dto.PengeluaranTransaction)
-	for _, exp := range expenses {
-		categoryName := exp.ExpenseCategory.Name
-
-		dateStr := exp.ExpenseDate.Format("2006-01-02")
-
-		txn := dto.PengeluaranTransaction{
-			ID:              exp.ID,
-			Source:          "",
-			PaymentMethod:   "tunai",
-			Terbilang:       "",
-			TransactionDate: dateStr,
-			TransactionNo:   fmt.Sprintf("EXP-%d", exp.ID),
-			Petugas:         "",
-			Items: []dto.PengeluaranItem{
-				{No: 1, ExpenseCategory: categoryName, Description: exp.Description, Amount: exp.Amount},
-			},
-			TotalAmount: exp.Amount,
-		}
-		dateMap[dateStr] = append(dateMap[dateStr], txn)
-	}
-
-	// Sort dates
-	var dates []string
-	for d := range dateMap {
-		dates = append(dates, d)
-	}
-	sort.Strings(dates)
-
-	var blocks []dto.PengeluaranDateBlock
 	var grandTotal float64
-
-	for _, d := range dates {
-		txns := dateMap[d]
-		var subtotal float64
-		for _, t := range txns {
-			subtotal += t.TotalAmount
-		}
-		grandTotal += subtotal
-		blocks = append(blocks, dto.PengeluaranDateBlock{
-			Date:         d,
-			Transactions: txns,
-			Subtotal:     subtotal,
-		})
+	for _, r := range rows {
+		grandTotal += r.Amount
 	}
 
 	return &dto.PengeluaranResponse{
 		DateFrom:     req.DateFrom,
 		DateTo:       req.DateTo,
 		AcademicYear: ay.Name,
-		Transactions: blocks,
+		Rows:         rows,
 		GrandTotal:   grandTotal,
 	}, nil
 }
-
 

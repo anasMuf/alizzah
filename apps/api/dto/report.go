@@ -401,7 +401,7 @@ type PemasukanResponse struct {
 	GrandTotal   float64        `json:"grand_total"`
 }
 
-// ===== Laporan Pengeluaran =====
+// ===== Laporan Pengeluaran (per-transaction detail) =====
 
 type PengeluaranRequest struct {
 	DateFrom           string `query:"date_from"`
@@ -412,35 +412,17 @@ type PengeluaranRequest struct {
 	AcademicYearID     uint   `query:"academic_year_id"`
 }
 
+type PengeluaranRow struct {
+	Date        string  `json:"date"`
+	Category    string  `json:"category"`    // expense category name
+	Description string  `json:"description"` // expense description + petugas
+	Amount      float64 `json:"amount"`
+}
+
 type PengeluaranResponse struct {
-	DateFrom     string                 `json:"date_from"`
-	DateTo       string                 `json:"date_to"`
-	AcademicYear string                 `json:"academic_year"`
-	Transactions []PengeluaranDateBlock `json:"transactions"`
-	GrandTotal   float64                `json:"grand_total"`
-}
-
-type PengeluaranDateBlock struct {
-	Date         string                   `json:"date"`
-	Transactions []PengeluaranTransaction `json:"transactions"`
-	Subtotal     float64                  `json:"subtotal"`
-}
-
-type PengeluaranTransaction struct {
-	ID              uint              `json:"id"`
-	Source          string            `json:"source"`
-	PaymentMethod   string            `json:"payment_method"`
-	Terbilang       string            `json:"terbilang"`
-	TransactionDate string            `json:"transaction_date"`
-	TransactionNo   string            `json:"transaction_no"`
-	Petugas         string            `json:"petugas"`
-	Items           []PengeluaranItem `json:"items"`
-	TotalAmount     float64           `json:"total_amount"`
-}
-
-type PengeluaranItem struct {
-	No              int     `json:"no"`
-	ExpenseCategory string  `json:"expense_category"`
-	Description     string  `json:"description"`
-	Amount          float64 `json:"amount"`
+	DateFrom     string           `json:"date_from"`
+	DateTo       string           `json:"date_to"`
+	AcademicYear string           `json:"academic_year"`
+	Rows         []PengeluaranRow `json:"rows"`
+	GrandTotal   float64          `json:"grand_total"`
 }

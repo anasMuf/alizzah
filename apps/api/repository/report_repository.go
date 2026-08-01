@@ -32,6 +32,7 @@ type ReportRepository interface {
 
 	// Pemasukan & Pengeluaran
 	FindPemasukanSummary(academicYearID uint, startDate, endDate time.Time, categories []string, paymentMethod string) ([]dto.PemasukanRow, error)
+	FindPengeluaranRows(academicYearID uint, startDate, endDate time.Time, expenseIDs []string) ([]dto.PengeluaranRow, error)
 
 	// Tabungan
 	DailySavingsCredit(startDate, endDate time.Time, savingsType string) (map[string]float64, error)
@@ -581,3 +582,42 @@ func (r *reportRepository) FindPemasukanSummary(academicYearID uint, startDate, 
 	return result, nil
 }
 
+// FindPengeluaranRows returns expense rows in date range grouped by expense_category
+func (r *reportRepository) FindPengeluaranRows(academicYearID uint, startDate, endDate time.Time, expenseIDs []string) ([]dto.PengeluaranRow, error) {
+	type Row struct {
+		Date        string  `gorm:"column:date"`
+		Category    string  `gorm:"column:category"`
+		Description string  `gorm:"column:description"`
+		Amount      float64 `gorm:"column:amount"`
+	}
+
+	var rows []Row
+
+	query := r.db.Table("expenses e").
+		Select("DATE(e.expense_date) as date, ec.name as category, CONCAT(COALESCE(e.description, ''), ' - ', COALESCE(u.full_name, '')) as description, e.amount").
+		Joins("LEFT JOIN expense_categories ec ON ec.id = e.expense_category_id").
+		Joins("LEFT JOIN users u ON u.id = e.created_by").
+		Where("e.academic_year_id = ? AND e.expense_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
+
+	if len(expenseIDs) > 0 {
+		query = query.Where("e.expense_category_id IN ?", expenseIDs)
+	}
+
+	query = query.Order("DATE(e.expense_date), ec.name")
+
+	if err := query.Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+
+	var result []dto.PengeluaranRow
+	for _, row := range rows {
+		result = append(result, dto.PengeluaranRow{
+			Date:        row.Date,
+			Category:    row.Category,
+			Description: row.Description,
+			Amount:      row.Amount,
+		})
+	}
+
+	return result, nil
+}

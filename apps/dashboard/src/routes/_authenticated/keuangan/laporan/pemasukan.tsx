@@ -282,14 +282,6 @@ function LaporanPemasukanPage() {
 															</div>
 															<div className="flex">
 																<span className="text-gray-500 w-36 shrink-0">
-																	Nomor Bukti
-																</span>
-																<span className="text-gray-900">
-																	: {txn.transaction_no}
-																</span>
-															</div>
-															<div className="flex">
-																<span className="text-gray-500 w-36 shrink-0">
 																	Petugas
 																</span>
 																<span className="text-gray-900">

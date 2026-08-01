@@ -92,7 +92,7 @@ function LaporanPemasukanPage() {
 
 	// Group rows by date
 	const dateGroups = useMemo(() => {
-		if (!report) return null;
+		if (!report?.rows) return null;
 		const map = new Map<string, PemasukanData["rows"]>();
 		for (const row of report.rows) {
 			const existing = map.get(row.date) || [];
@@ -220,7 +220,7 @@ function LaporanPemasukanPage() {
 				<>
 					<ReportInfoCard filters={infoFilters} />
 
-					{report.rows.length > 0 && dateGroups ? (
+					{report.rows?.length > 0 && dateGroups ? (
 						<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden">
 							<div className="overflow-x-auto">
 								<table className="min-w-full divide-y divide-gray-200">

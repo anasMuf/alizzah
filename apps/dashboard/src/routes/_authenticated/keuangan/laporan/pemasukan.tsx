@@ -2,11 +2,14 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { ChevronRight, Printer } from "lucide-react";
 import { useMemo, useState } from "react";
-import { useGetV1ExpenseCategories } from "#/api/endpoints/expense-categories/expense-categories";
 import {
-	type PengeluaranData,
-	useGetReportsPengeluaran,
-} from "#/api/endpoints/reports/pengeluaran";
+	useGetV1FeeConfigs,
+	useGetV1FeeConfigsIdItems,
+} from "#/api/endpoints/fee-configs/fee-configs";
+import {
+	type PemasukanData,
+	useGetReportsPemasukan,
+} from "#/api/endpoints/reports/pemasukan";
 import { Alert, Button } from "#/components/ui";
 import {
 	FilterBar,
@@ -19,42 +22,42 @@ import { formatCurrency, formatDate } from "#/utils/format";
 import { openPrintWindow } from "#/utils/print";
 
 export const Route = createFileRoute(
-	"/_authenticated/keuangan/laporan/pengeluaran",
+	"/_authenticated/keuangan/laporan/pemasukan",
 )({
-	component: LaporanPengeluaranPage,
+	component: LaporanPemasukanPage,
 });
 
-function flattenCategories(
-	cats: any[],
-	prefix = "",
-): { id: number; label: string }[] {
-	const result: { id: number; label: string }[] = [];
-	for (const cat of cats) {
-		const label = prefix ? `${prefix} > ${cat.name}` : cat.name;
-		result.push({ id: cat.id, label });
-		if (cat.children?.length) {
-			result.push(...flattenCategories(cat.children, label));
-		}
-	}
-	return result;
-}
-
-function LaporanPengeluaranPage() {
+function LaporanPemasukanPage() {
 	const [activeAy] = useAtom(academicYearAtom);
 
-	const { data: expenseCatData } = useGetV1ExpenseCategories({
+	const { data: feeConfigsData } = useGetV1FeeConfigs({
 		query: { staleTime: 5 * 60 * 1000 },
 	});
-	const expenseCats = ((expenseCatData?.data as any)?.data ?? []) as any[];
-	const expenseCatOptions = useMemo(
-		() => flattenCategories(expenseCats),
-		[expenseCats],
+	const feeConfigs = ((feeConfigsData?.data as any)?.data ?? []) as any[];
+	const activeFeeConfig = feeConfigs.find(
+		(fc: any) => fc.academic_year?.is_active,
+	);
+	const feeConfigId = activeFeeConfig?.id ?? feeConfigs[0]?.id;
+
+	const { data: feeItemsData } = useGetV1FeeConfigsIdItems(
+		feeConfigId,
+		undefined,
+		{ query: { enabled: !!feeConfigId, staleTime: 5 * 60 * 1000 } },
+	);
+	const feeItems = ((feeItemsData?.data as any)?.data ?? []) as any[];
+
+	const feeItemOptions = useMemo(
+		() =>
+			feeItems.map((item: any) => ({
+				id: item.id,
+				label: `${item.name} (${item.category})`,
+			})),
+		[feeItems],
 	);
 
-	const [selectedExpenseCatIds, setSelectedExpenseCatIds] = useState<number[]>(
-		[],
-	);
+	const [selectedFeeItemIds, setSelectedFeeItemIds] = useState<number[]>([]);
 
+	// Snapshots filter values only on Generate click — prevents auto-fetch on filter changes
 	const [committedParams, setCommittedParams] = useState<Record<
 		string,
 		unknown
@@ -64,29 +67,32 @@ function LaporanPengeluaranPage() {
 		data: reportData,
 		isLoading,
 		isError,
-	} = useGetReportsPengeluaran(committedParams || {}, {
+	} = useGetReportsPemasukan(committedParams || {}, {
 		query: { enabled: !!committedParams },
 	});
 
-	const report: PengeluaranData | null =
-		(reportData?.data as any)?.data ?? null;
+	const report: PemasukanData | null = (reportData?.data as any)?.data ?? null;
 
 	const handleGenerate = (filters: FilterBarValues) => {
+		const selectedCategories = feeItems
+			.filter((item: any) => selectedFeeItemIds.includes(item.id))
+			.map((item: any) => item.category);
 		setCommittedParams({
 			date_from: filters.date_from,
 			date_to: filters.date_to,
 			payment_method: filters.payment_method || undefined,
-			expense_category_ids:
-				selectedExpenseCatIds.length > 0
-					? selectedExpenseCatIds.join(",")
+			categories:
+				selectedCategories.length > 0
+					? selectedCategories.join(",")
 					: undefined,
 			academic_year_id: filters.academic_year_id,
 		});
 	};
 
+	// Group rows by date
 	const dateGroups = useMemo(() => {
 		if (!report?.rows) return null;
-		const map = new Map<string, PengeluaranData["rows"]>();
+		const map = new Map<string, PemasukanData["rows"]>();
 		for (const row of report.rows) {
 			const existing = map.get(row.date) || [];
 			existing.push(row);
@@ -105,7 +111,7 @@ function LaporanPengeluaranPage() {
 				.replace(/"/g, "&quot;");
 		const fmt = (n: number) => esc(formatCurrency(n));
 
-		let html = `<h2 class="text-lg font-bold mb-2">Laporan Pengeluaran</h2>`;
+		let html = `<h2 class="text-lg font-bold mb-2">Laporan Pemasukan</h2>`;
 		html += `<p class="text-sm text-gray mb-2">Periode: ${esc(formatDate(report.date_from))} - ${esc(formatDate(report.date_to))}</p>`;
 		html += `<p class="text-sm text-gray mb-4">TA ${esc(report.academic_year)}</p>`;
 		html += `<table><thead><tr>
@@ -136,27 +142,28 @@ function LaporanPengeluaranPage() {
 		</tr></tbody></table>`;
 
 		openPrintWindow(html, {
-			title: "Laporan Pengeluaran",
+			title: "Laporan Pemasukan",
 			subtitle: `Periode: ${formatDate(report.date_from)} - ${formatDate(report.date_to)}`,
 		});
 	};
 
 	const infoFilters: Record<string, string> = useMemo(() => {
 		if (!committedParams) return {} as Record<string, string>;
-		const catNames = expenseCatOptions
-			.filter((cat) => selectedExpenseCatIds.includes(cat.id))
-			.map((cat) => cat.label)
+		const selectedNames = feeItems
+			.filter((item: any) => selectedFeeItemIds.includes(item.id))
+			.map((item: any) => item.name)
 			.join(", ");
 		return {
-			kategori: catNames || "Semua",
+			sumber: selectedNames || "Semua",
 			metode: (committedParams.payment_method as string) || "Semua",
 			periode: `${formatDate(committedParams.date_from as string)} - ${formatDate(committedParams.date_to as string)}`,
 			ta: activeAy?.name ?? "-",
 		};
-	}, [committedParams, selectedExpenseCatIds, expenseCatOptions, activeAy]);
+	}, [committedParams, selectedFeeItemIds, feeItems, activeAy]);
 
 	return (
 		<div className="space-y-6">
+			{/* Header */}
 			<div className="flex items-start justify-between">
 				<div>
 					<nav className="flex items-center text-sm text-gray-500 mb-2">
@@ -167,10 +174,10 @@ function LaporanPengeluaranPage() {
 							Laporan
 						</Link>
 						<ChevronRight className="w-4 h-4 mx-1" />
-						<span className="text-gray-900 font-medium">Pengeluaran</span>
+						<span className="text-gray-900 font-medium">Pemasukan</span>
 					</nav>
 					<h2 className="text-2xl font-bold leading-7 text-gray-900">
-						Laporan Pengeluaran
+						Laporan Pemasukan
 					</h2>
 					<p className="mt-1 text-sm text-gray-500">
 						TA {activeAy?.name || "-"}
@@ -187,10 +194,10 @@ function LaporanPengeluaranPage() {
 			<FilterBar onGenerate={handleGenerate} isLoading={isLoading}>
 				<div className="max-w-sm">
 					<MultiSelectCheckbox
-						label="Kategori Pengeluaran"
-						options={expenseCatOptions}
-						selected={selectedExpenseCatIds}
-						onChange={setSelectedExpenseCatIds}
+						label="Fee Item (Pemasukan)"
+						options={feeItemOptions}
+						selected={selectedFeeItemIds}
+						onChange={setSelectedFeeItemIds}
 					/>
 				</div>
 			</FilterBar>
@@ -204,7 +211,7 @@ function LaporanPengeluaranPage() {
 
 			{isError && (
 				<Alert variant="error" title="Gagal Memuat">
-					Terjadi kesalahan saat memuat laporan pengeluaran.
+					Terjadi kesalahan saat memuat laporan pemasukan.
 				</Alert>
 			)}
 
@@ -221,7 +228,7 @@ function LaporanPengeluaranPage() {
 											<th className="py-3 pl-6 pr-3 text-left text-sm font-semibold text-gray-900 w-28">
 												Tanggal
 											</th>
-											<th className="px-3 py-3 text-left text-sm font-semibold text-gray-900 w-36">
+											<th className="px-3 py-3 text-left text-sm font-semibold text-gray-900 w-32">
 												Kategori
 											</th>
 											<th className="px-3 py-3 text-left text-sm font-semibold text-gray-900">
@@ -253,15 +260,15 @@ function LaporanPengeluaranPage() {
 															</td>
 														</tr>
 													))}
-													<tr className="bg-red-50 border-t border-gray-200">
+													<tr className="bg-gray-50 border-t border-gray-200">
 														<td
 															colSpan={2}
 															className="py-2 pl-6 pr-3 text-sm"
 														/>
-														<td className="px-3 py-2 text-sm text-right font-semibold text-red-700">
+														<td className="px-3 py-2 text-sm text-right font-semibold text-gray-500">
 															Subtotal
 														</td>
-														<td className="px-3 py-2 text-sm text-right font-semibold text-red-700 tabular-nums pr-6">
+														<td className="px-3 py-2 text-sm text-right font-semibold text-gray-900 tabular-nums pr-6">
 															{formatCurrency(subtotal)}
 														</td>
 													</tr>
@@ -270,15 +277,15 @@ function LaporanPengeluaranPage() {
 										})}
 									</tbody>
 									<tfoot>
-										<tr className="border-t-2 border-gray-300 bg-red-50 font-bold">
+										<tr className="border-t-2 border-gray-300 bg-indigo-50 font-bold">
 											<td
 												colSpan={2}
-												className="py-3 pl-6 pr-3 text-sm text-red-900"
+												className="py-3 pl-6 pr-3 text-sm text-indigo-900"
 											/>
-											<td className="px-3 py-3 text-sm text-right text-red-900">
+											<td className="px-3 py-3 text-sm text-right text-indigo-900">
 												Grand Total
 											</td>
-											<td className="px-3 py-3 text-sm text-right text-red-900 tabular-nums pr-6">
+											<td className="px-3 py-3 text-sm text-right text-indigo-900 tabular-nums pr-6">
 												{formatCurrency(report.grand_total)}
 											</td>
 										</tr>
@@ -289,7 +296,7 @@ function LaporanPengeluaranPage() {
 					) : (
 						<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-12 text-center">
 							<p className="text-sm text-gray-500">
-								Tidak ada transaksi pengeluaran untuk filter yang dipilih.
+								Tidak ada transaksi pemasukan untuk filter yang dipilih.
 							</p>
 						</div>
 					)}

@@ -15,11 +15,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useGetV1ReportsStudentsId } from "#/api/endpoints/reports/reports";
 import { useGetV1Students } from "#/api/endpoints/students/students";
 import { Alert, Badge, Button } from "#/components/ui";
-import { academicYearAtom } from "../../../../store/global";
-import { formatCurrency, formatDate } from "../../../../utils/format";
-import { openPrintWindow } from "../../../../utils/print";
+import { academicYearAtom } from "../../../../../store/global";
+import { formatCurrency, formatDate } from "../../../../../utils/format";
+import { openPrintWindow } from "../../../../../utils/print";
 
-export const Route = createFileRoute("/_authenticated/keuangan/laporan/siswa")({
+export const Route = createFileRoute(
+	"/_authenticated/keuangan/laporan/old/siswa",
+)({
 	component: RekapSiswaPage,
 	validateSearch: (search: Record<string, unknown>) => {
 		const asNum = (v: unknown) =>

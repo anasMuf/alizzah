@@ -743,6 +743,8 @@ func main() {
 	reports.GET("/annual", reportHandler.Annual, guard.RequireModule(middleware.ModuleKeuangan, middleware.ModuleLaporan))
 	reports.GET("/posisi-kas", reportHandler.PosisiKas, guard.RequireModule(middleware.ModuleKeuangan, middleware.ModuleLaporan))
 	reports.GET("/saldo", reportHandler.Saldo, guard.RequireModule(middleware.ModuleKeuangan, middleware.ModuleLaporan))
+	reports.GET("/pemasukan", reportHandler.Pemasukan, guard.RequireModule(middleware.ModuleKeuangan, middleware.ModuleLaporan))
+	reports.GET("/pengeluaran", reportHandler.Pengeluaran, guard.RequireModule(middleware.ModuleKeuangan, middleware.ModuleLaporan))
 	reports.GET("/transaksi-pengeluaran", reportHandler.TransaksiPengeluaran, guard.RequireModule(middleware.ModuleKeuangan, middleware.ModuleLaporan))
 	reports.GET("/tabungan", reportHandler.TabunganReport, guard.RequireModule(middleware.ModuleKeuangan, middleware.ModuleLaporan))
 	reports.GET("/savings/students/:id", reportHandler.TabunganSiswaReport, guard.RequireModule(middleware.ModuleKeuangan))

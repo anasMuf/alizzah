@@ -9,8 +9,11 @@ import { customInstance } from "../../mutator/custom-instance";
 
 // Types
 export interface PosisiKasParams {
-	month: number;
-	year: number;
+	month?: number;
+	year?: number;
+	date_from?: string; // YYYY-MM-DD, takes priority over month/year
+	date_to?: string; // YYYY-MM-DD
+	categories?: string; // comma-separated category names filter
 	academic_year_id?: number;
 }
 
@@ -41,6 +44,8 @@ export interface PosisiKasTotal {
 export interface PosisiKasData {
 	month: number;
 	year: number;
+	date_from?: string;
+	date_to?: string;
 	academic_year: string;
 	posts: PosisiKasPost[];
 	grand_total: PosisiKasTotal;

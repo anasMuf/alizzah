@@ -1,3 +1,11 @@
+/** Format a Date object into YYYY-MM-DD string (for <input type="date">) */
+export const formatDateInput = (date: Date): string => {
+	const y = date.getFullYear();
+	const m = String(date.getMonth() + 1).padStart(2, "0");
+	const d = String(date.getDate()).padStart(2, "0");
+	return `${y}-${m}-${d}`;
+};
+
 export const formatCurrency = (amount: number): string => {
 	return new Intl.NumberFormat("id-ID", {
 		style: "currency",

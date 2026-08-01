@@ -4,12 +4,12 @@ import { ChevronRight, Printer } from "lucide-react";
 import { useState } from "react";
 import { useGetV1ReportsMonthly } from "#/api/endpoints/reports/reports";
 import { Alert, Button } from "#/components/ui";
-import { academicYearAtom } from "../../../../store/global";
-import { formatCurrency } from "../../../../utils/format";
-import { openPrintWindow } from "../../../../utils/print";
+import { academicYearAtom } from "../../../../../store/global";
+import { formatCurrency } from "../../../../../utils/format";
+import { openPrintWindow } from "../../../../../utils/print";
 
 export const Route = createFileRoute(
-	"/_authenticated/keuangan/laporan/bulanan",
+	"/_authenticated/keuangan/laporan/old/bulanan",
 )({
 	component: LaporanBulananPage,
 });
@@ -515,7 +515,7 @@ function LaporanBulananPage() {
 						{arrears.length > 0 && (
 							<div className="px-6 py-3 border-t border-gray-200">
 								<Link
-									to="/keuangan/laporan/kelas"
+									to="/keuangan/laporan/old/kelas"
 									search={{} as any}
 									className="text-sm font-medium text-indigo-600 hover:text-indigo-500 inline-flex items-center"
 								>

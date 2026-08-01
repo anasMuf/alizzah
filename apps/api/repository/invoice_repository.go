@@ -181,18 +181,39 @@ func (r *invoiceRepository) Update(invoice *model.Invoice) error {
 }
 
 func (r *invoiceRepository) UpdateStatus(id uint, status string, paidAmount float64) error {
-	return r.db.Model(&model.Invoice{}).Where("id = ?", id).Updates(map[string]interface{}{
+	result := r.db.Model(&model.Invoice{}).Where("id = ?", id).Updates(map[string]interface{}{
 		"status":      status,
 		"paid_amount": paidAmount,
-	}).Error
+	})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }
 
 func (r *invoiceRepository) UpdateTotalAmount(id uint, totalAmount float64) error {
-	return r.db.Model(&model.Invoice{}).Where("id = ?", id).Update("total_amount", totalAmount).Error
+	result := r.db.Model(&model.Invoice{}).Where("id = ?", id).Update("total_amount", totalAmount)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }
 
 func (r *invoiceRepository) UpdateNotes(id uint, notes string) error {
-	return r.db.Model(&model.Invoice{}).Where("id = ?", id).Update("notes", notes).Error
+	result := r.db.Model(&model.Invoice{}).Where("id = ?", id).Update("notes", notes)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }
 
 func (r *invoiceRepository) ExistsInitialByStudent(studentID, academicYearID uint) (bool, error) {

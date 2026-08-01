@@ -89,7 +89,7 @@ func (h *IncomeTransactionHandler) Create(c echo.Context) error {
 
 	createdBy, err := middleware.GetUserID(c)
 	if err != nil {
-		return err
+		return c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Status: http.StatusUnauthorized, Code: "UNAUTHORIZED", Message: "User ID tidak ditemukan di context"})
 	}
 	txn, err := h.service.Create(createdBy, req)
 	if err != nil {

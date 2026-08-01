@@ -372,12 +372,26 @@ func (s *invoiceService) RecalculateTotalAmount(invoiceID uint, tx *gorm.DB) err
 
 	total := float64(0)
 	paid := float64(0)
+	allPaid := true
 	for _, item := range items {
 		total += item.Amount
 		paid += item.PaidAmount
+		if item.Status != "paid" {
+			allPaid = false
+		}
 	}
 
-	status := utility.CalculateInvoiceStatus(total, paid)
+	// Invoice lunas hanya jika seluruh item lunas, bukan berdasarkan jumlah.
+	// Dispensasi bernilai negatif bisa membuat total invoice lebih kecil dari
+	// total pembayaran meski belum semua item dibayar.
+	status := "unpaid"
+	if paid > 0 {
+		if allPaid {
+			status = "paid"
+		} else {
+			status = "partial"
+		}
+	}
 	invoiceRepo := s.invoiceRepo
 	if tx != nil {
 		invoiceRepo = s.invoiceRepo.WithTx(tx)

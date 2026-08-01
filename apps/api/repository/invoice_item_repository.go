@@ -83,10 +83,17 @@ func (r *invoiceItemRepository) Update(item *model.InvoiceItem) error {
 }
 
 func (r *invoiceItemRepository) UpdatePaidAmount(id uint, paidAmount float64, status string) error {
-	return r.db.Model(&model.InvoiceItem{}).Where("id = ?", id).Updates(map[string]interface{}{
+	result := r.db.Model(&model.InvoiceItem{}).Where("id = ?", id).Updates(map[string]interface{}{
 		"paid_amount": paidAmount,
 		"status":      status,
-	}).Error
+	})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }
 
 func (r *invoiceItemRepository) Delete(id uint) error {

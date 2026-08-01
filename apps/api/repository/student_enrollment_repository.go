@@ -68,10 +68,17 @@ func (r *studentEnrollmentRepository) Create(enrollment *model.StudentEnrollment
 }
 
 func (r *studentEnrollmentRepository) UpdateStatus(id uint, status string, endDate *time.Time) error {
-	return r.db.Model(&model.StudentEnrollment{}).Where("id = ?", id).Updates(map[string]interface{}{
+	result := r.db.Model(&model.StudentEnrollment{}).Where("id = ?", id).Updates(map[string]interface{}{
 		"status":   status,
 		"end_date": endDate,
-	}).Error
+	})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }
 
 func (r *studentEnrollmentRepository) ExistsByStudentAndYear(studentID, academicYearID uint) (bool, error) {
@@ -102,10 +109,17 @@ func (r *studentEnrollmentRepository) FindAllActiveByLevel(academicYearID uint, 
 }
 
 func (r *studentEnrollmentRepository) CloseEnrollment(id uint, endDate time.Time, status string) error {
-	return r.db.Model(&model.StudentEnrollment{}).Where("id = ?", id).Updates(map[string]interface{}{
+	result := r.db.Model(&model.StudentEnrollment{}).Where("id = ?", id).Updates(map[string]interface{}{
 		"status":   status,
 		"end_date": endDate,
-	}).Error
+	})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }
 
 func (r *studentEnrollmentRepository) BulkCreate(enrollments []model.StudentEnrollment) error {
@@ -116,5 +130,12 @@ func (r *studentEnrollmentRepository) BulkCreate(enrollments []model.StudentEnro
 }
 
 func (r *studentEnrollmentRepository) UpdateEnrollmentType(id uint, enrollmentType string) error {
-	return r.db.Model(&model.StudentEnrollment{}).Where("id = ?", id).Update("enrollment_type", enrollmentType).Error
+	result := r.db.Model(&model.StudentEnrollment{}).Where("id = ?", id).Update("enrollment_type", enrollmentType)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }

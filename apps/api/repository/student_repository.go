@@ -141,7 +141,14 @@ func (r *studentRepository) WithTx(tx *gorm.DB) StudentRepository {
 }
 
 func (r *studentRepository) UpdateStatus(id uint, status string) error {
-	return r.db.Model(&model.Student{}).Where("id = ?", id).Update("status", status).Error
+	result := r.db.Model(&model.Student{}).Where("id = ?", id).Update("status", status)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }
 
 func (r *studentRepository) FindByIDs(ids []uint) ([]model.Student, error) {

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type DaycareEnrollmentService interface {
@@ -136,24 +137,32 @@ func (s *daycareEnrollmentService) Create(createdBy uint, req dto.CreateDaycareE
 		CreatedBy:      createdBy,
 	}
 
-	if err := s.daycareRepo.Create(de); err != nil {
-		return nil, err
-	}
-
-	// Generate initial invoice (Biaya Awal) hanya untuk premium baru
-	if de.Category == "premium" && enrollmentType == "baru" && s.invoiceGen != nil {
-		student, _ := s.studentRepo.FindByID(req.StudentID)
-		gender := "all"
-		if student != nil {
-			gender = student.Gender
+	err = s.db.Transaction(func(tx *gorm.DB) error {
+		if err := s.daycareRepo.WithTx(tx).Create(de); err != nil {
+			return err
 		}
-		s.invoiceGen.GenerateDaycareInitial(dto.GenerateInitialInvoiceParams{
-			StudentID:      req.StudentID,
-			AcademicYearID: req.AcademicYearID,
-			Level:          "all",
-			Gender:         gender,
-			CreatedBy:      createdBy,
-		})
+
+		// Generate initial invoice (Biaya Awal) hanya untuk premium baru
+		if de.Category == "premium" && enrollmentType == "baru" && s.invoiceGen != nil {
+			student, _ := s.studentRepo.FindByID(req.StudentID)
+			gender := "all"
+			if student != nil {
+				gender = student.Gender
+			}
+			if err := s.invoiceGen.GenerateDaycareInitial(dto.GenerateInitialInvoiceParams{
+				StudentID:      req.StudentID,
+				AcademicYearID: req.AcademicYearID,
+				Level:          "all",
+				Gender:         gender,
+				CreatedBy:      createdBy,
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	// Inject flat SPD + meal + TPQ ke semua monthly invoice yg sudah ada (premium semua tipe)
@@ -327,16 +336,22 @@ func (s *daycareEnrollmentService) DeleteWithInvoices(id uint) (*dto.DeleteDayca
 	}
 
 	var deletedCount int
-	for _, inv := range invoices {
-		if inv.Status != "paid" {
-			s.db.Where("invoice_id = ?", inv.ID).Delete(&model.InvoiceItem{})
-			s.db.Delete(&inv)
-			deletedCount++
+	err = s.db.Transaction(func(tx *gorm.DB) error {
+		for _, inv := range invoices {
+			if inv.Status != "paid" {
+				if err := tx.Where("invoice_id = ?", inv.ID).Delete(&model.InvoiceItem{}).Error; err != nil {
+					return err
+				}
+				if err := tx.Delete(&inv).Error; err != nil {
+					return err
+				}
+				deletedCount++
+			}
 		}
-	}
-
-	if err := s.daycareRepo.Delete(id); err != nil {
-		return nil, fmt.Errorf("gagal menghapus enrollment: %w", err)
+		return tx.Delete(&model.DaycareEnrollment{}, id).Error
+	})
+	if err != nil {
+		return nil, fmt.Errorf("gagal menghapus enrollment dan invoice: %w", err)
 	}
 
 	return &dto.DeleteDaycareEnrollmentResponse{
@@ -358,21 +373,24 @@ func (s *daycareEnrollmentService) UpsertAttendance(createdBy uint, req dto.Upse
 		return nil, errors.New("Format date tidak valid (YYYY-MM-DD)")
 	}
 
-	att := model.DaycareAttendance{}
-	s.db.Where("student_id = ? AND date = ?", req.StudentID, date).First(&att)
+	att := model.DaycareAttendance{
+		StudentID:      req.StudentID,
+		AcademicYearID: req.AcademicYearID,
+		Date:           date,
+		TimeSlot:       req.TimeSlot,
+		WithMeal:       req.WithMeal,
+		WithTpq:        req.WithTpq,
+		CreatedBy:      createdBy,
+	}
 
-	att.StudentID = req.StudentID
-	att.AcademicYearID = req.AcademicYearID
-	att.Date = date
-	att.TimeSlot = req.TimeSlot
-	att.WithMeal = req.WithMeal
-	att.WithTpq = req.WithTpq
-	att.CreatedBy = createdBy
-
-	if att.ID == 0 {
-		s.db.Create(&att)
-	} else {
-		s.db.Save(&att)
+	err = s.db.Transaction(func(tx *gorm.DB) error {
+		return tx.Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "student_id"}, {Name: "date"}},
+			DoUpdates: clause.AssignmentColumns([]string{"time_slot", "with_meal", "with_tpq", "created_by", "updated_at"}),
+		}).Create(&att).Error
+	})
+	if err != nil {
+		return nil, fmt.Errorf("gagal menyimpan absensi: %w", err)
 	}
 
 	// Auto-generate SPD (meal/TPQ dari attendance untuk semua kategori)

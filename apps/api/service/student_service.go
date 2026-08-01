@@ -404,37 +404,43 @@ func (s *studentService) Update(id uint, req dto.UpdateStudentRequest) (*dto.Stu
 
 	// Track perubahan status exceptionality sebelum update
 	wasExceptional := false
+	exceptionalityChanged := false
 	if s.exceptionalityRepo != nil {
 		_, err := s.exceptionalityRepo.FindActiveByStudentID(id)
 		wasExceptional = err == nil
 	}
 
-	if err := s.studentRepo.Update(student); err != nil {
-		return nil, err
-	}
+	err = s.db.Transaction(func(tx *gorm.DB) error {
+		if err := s.studentRepo.WithTx(tx).Update(student); err != nil {
+			return err
+		}
 
-	// Handle exceptionality (ABK)
-	exceptionalityChanged := false
-	if s.exceptionalityRepo != nil && req.Exceptionality != nil {
-		isActive := true
-		if req.Exceptionality.IsActive != nil {
-			isActive = *req.Exceptionality.IsActive
+		// Handle exceptionality (ABK)
+		if s.exceptionalityRepo != nil && req.Exceptionality != nil {
+			isActive := true
+			if req.Exceptionality.IsActive != nil {
+				isActive = *req.Exceptionality.IsActive
+			}
+			if isActive {
+				se := &model.StudentExceptionality{
+					StudentID:   id,
+					Description: req.Exceptionality.Description,
+					IsActive:    true,
+				}
+				if err := s.exceptionalityRepo.WithTx(tx).Upsert(se); err != nil {
+					return err
+				}
+			} else {
+				if err := s.exceptionalityRepo.WithTx(tx).Deactivate(id); err != nil {
+					return err
+				}
+			}
+			exceptionalityChanged = wasExceptional != isActive
 		}
-		if isActive {
-			se := &model.StudentExceptionality{
-				StudentID:   id,
-				Description: req.Exceptionality.Description,
-				IsActive:    true,
-			}
-			if err := s.exceptionalityRepo.Upsert(se); err != nil {
-				return nil, err
-			}
-		} else {
-			if err := s.exceptionalityRepo.Deactivate(id); err != nil {
-				return nil, err
-			}
-		}
-		exceptionalityChanged = wasExceptional != isActive
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	// Recalculate tagihan jika gender berubah ATAU exceptionality berubah

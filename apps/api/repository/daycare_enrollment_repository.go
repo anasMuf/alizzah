@@ -18,6 +18,7 @@ type DaycareEnrollmentRepository interface {
 	Update(de *model.DaycareEnrollment) error
 	UpdateStatus(id uint, status string, endDate *time.Time) error
 	Delete(id uint) error
+	WithTx(tx *gorm.DB) DaycareEnrollmentRepository
 }
 
 type daycareEnrollmentRepository struct {
@@ -26,6 +27,13 @@ type daycareEnrollmentRepository struct {
 
 func NewDaycareEnrollmentRepository(db *gorm.DB) DaycareEnrollmentRepository {
 	return &daycareEnrollmentRepository{db: db}
+}
+
+func (r *daycareEnrollmentRepository) WithTx(tx *gorm.DB) DaycareEnrollmentRepository {
+	if tx == nil {
+		return r
+	}
+	return &daycareEnrollmentRepository{db: tx}
 }
 
 func (r *daycareEnrollmentRepository) FindAll(params dto.DaycareEnrollmentQueryParams) ([]model.DaycareEnrollment, int64, error) {
@@ -96,7 +104,14 @@ func (r *daycareEnrollmentRepository) UpdateStatus(id uint, status string, endDa
 		updates["end_date"] = gorm.Expr("NULL")
 	}
 
-	return r.db.Model(&model.DaycareEnrollment{}).Where("id = ?", id).Updates(updates).Error
+	result := r.db.Model(&model.DaycareEnrollment{}).Where("id = ?", id).Updates(updates)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }
 
 // HasPremiumHistory returns true if the student has ever had a premium daycare enrollment.

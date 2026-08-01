@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { ChevronRight, Save } from "lucide-react";
@@ -16,6 +17,7 @@ export const Route = createFileRoute(
 function CatatPengeluaranPage() {
 	const navigate = useNavigate();
 	const [activeAy] = useAtom(academicYearAtom);
+	const queryClient = useQueryClient();
 	const { addToast } = useToast();
 
 	const today = new Date().toISOString().split("T")[0];
@@ -25,7 +27,6 @@ function CatatPengeluaranPage() {
 	const [subCategoryId, setSubCategoryId] = useState("");
 	const [amount, setAmount] = useState(0);
 	const [description, setDescription] = useState("");
-	const [_receiptFile, setReceiptFile] = useState("");
 	const [formError, setFormError] = useState("");
 	const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
@@ -48,6 +49,8 @@ function CatatPengeluaranPage() {
 					title: "Berhasil",
 					message: "Pengeluaran berhasil dicatat.",
 				});
+				queryClient.invalidateQueries({ queryKey: ["/v1/cash/balance"] });
+				queryClient.invalidateQueries({ queryKey: ["/v1/cash/transactions"] });
 				navigate({ to: "/keuangan/pengeluaran", search: {} as any });
 			},
 			onError: (err: any) => {
@@ -337,9 +340,9 @@ function CatatPengeluaranPage() {
 									id="receipt"
 									type="file"
 									accept="image/*,.pdf"
-									onChange={(e) =>
-										setReceiptFile(e.target.files?.[0]?.name || "")
-									}
+									onChange={() => {
+										// TODO: implement file upload
+									}}
 									className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 file:cursor-pointer"
 								/>
 								<p className="mt-1 text-xs text-gray-500">

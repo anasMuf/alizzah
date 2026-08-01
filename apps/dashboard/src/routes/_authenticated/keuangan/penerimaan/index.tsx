@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
-import { Plus, Trash2 } from "lucide-react";
+import { Edit, Plus, Trash2 } from "lucide-react";
 import { useCallback, useState } from "react";
 import {
 	getGetV1IncomeTransactionsQueryKey,
@@ -299,9 +299,9 @@ function PenerimaanListPage() {
 													<Link
 														to="/keuangan/penerimaan/$id"
 														params={{ id: item.id.toString() }}
-														className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
+														className="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center"
 													>
-														Detail
+														<Edit className="w-3 h-3 mr-0.5" /> Edit
 													</Link>
 													<button
 														type="button"

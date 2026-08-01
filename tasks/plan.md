@@ -1,71 +1,74 @@
-# Implementation Plan: Laporan Keuangan Rebuild
+# Implementation Plan: Audit Trail / Activity Log (Superadmin)
 
 ## Overview
 
-Rebuild halaman laporan keuangan dari 9 sub-halaman terpisah menjadi 4 sub-halaman yang ringkas dan konsisten: **Pemasukan**, **Pengeluaran**, **Saldo**, **Posisi Kas**. Semua sub-halaman berbagi filter bar yang sama (TA, date range Dari-Sampai + shortcut, payment method, tombol Generate), section info filter, dan tabel yang looping per tanggal/periode. Halaman lama dipindahkan ke folder `old/` untuk tracking.
+Menambahkan menu log aktivitas di dashboard untuk superadmin. Setiap request non-GET (POST/PUT/PATCH/DELETE) direkam otomatis via middleware — termasuk metadata request, request body lengkap, status response, dan error message. Superadmin bisa filter/search log dari UI tanpa perlu SSH ke VPS. Data log di-retain 7 hari.
 
 ## Architecture Decisions
 
-- **Shared FilterBar component**: Satu komponen reusable yang dipakai semua 4 sub-halaman, berisi TA selector, date range (Dari-Sampai native input), shortcut buttons (Hari Ini, Bulan Ini, TA Saat Ini), payment method (Tunai/Tabungan), dan tombol Generate. Filter state dikelola per halaman via local `useState`, tidak dishare cross-page.
-- **Multi-select via checkbox list**: Fee items, kategori pengeluaran, dan TA ditampilkan sebagai checkbox list dengan toggle "Semua/Pilih Semua". Value disimpan sebagai array ID.
-- **Tombol Generate (bukan auto-fetch)**: API call hanya triggered saat user klik Generate, mencegah request berlebihan dengan 4-5 filter aktif.
-- **Native `<input type="date">`**: Tidak menambah library date picker, konsisten dengan pattern existing (harian.tsx).
-- **Reuse API endpoints existing dengan extended params**: Backend Go di-extend untuk menerima `date_from`, `date_to`, `fee_item_ids[]`, `expense_category_ids[]`, `academic_year_ids[]`, dan `payment_method` sebagai query params tambahan.
-- **Data multi-select dari API yang sudah ada**: `GET /v1/fee-configs` → items, `GET /v1/expense-categories` → tree (flattened), `GET /v1/academic-years` → list.
+- **Middleware-based capture** — satu `AuditMiddleware` dipasang di atas middleware chain yang sudah ada (setelah JWTAuth, sebelum handler). Tidak ada perubahan di handler/service existing.
+- **Async write** — penulisan ke database via goroutine agar tidak blocking response time ke user.
+- **Denormalized `user_name`** — nama user disimpan di row audit supaya query list tidak perlu JOIN ke tabel users.
+- **Module dari URL path** — heuristic: extract segmen pertama setelah `/api/v1/` (misal `/students` → administrasi, `/invoices` → keuangan). Mapping disimpan di map constant.
+- **Retensi 7 hari** — go routine cleanup tiap jam, pakai simple `DELETE WHERE created_at < NOW() - INTERVAL '7 days'`.
+- **Skip GET** — hanya method mutasi (POST, PUT, PATCH, DELETE) yang direkam. GET tidak direkam karena noise dan tidak relevan untuk debugging.
 
 ## Task List
 
-### Phase 1: Foundation — Reusable Components
+### Phase 1: Foundation (Backend Model + Repository + Service)
 
-- [ ] **Task 1:** Buat komponen `FilterBar.tsx`
-- [ ] **Task 2:** Buat komponen `MultiSelectCheckbox.tsx`
-- [ ] **Task 3:** Buat komponen `ReportInfoCard.tsx` dan `ReportTable.tsx`
+- [ ] **Task 1:** Buat model `AuditEntry` + DTO `AuditLogQueryParams` & `AuditLogResponse`
 
 ### Checkpoint: Foundation
-- [ ] Semua 4 komponen reusable siap, build tidak error
+- [ ] Model terdaftar di `main.go` AutoMigrate
+- [ ] Compile clean: `cd apps/api && go build ./...`
 
-### Phase 2: Backend API Adjustments
+### Phase 2: Core Middleware + Integration
 
-- [ ] **Task 4:** Extend API endpoint Saldo dengan `date_from`, `date_to`, `fee_item_ids[]`, `academic_year_ids[]`
-- [ ] **Task 5:** Extend API endpoint Posisi Kas dengan `date_from`, `date_to`, `fee_item_ids[]`, `expense_category_ids[]`
-- [ ] **Task 6:** Buat API endpoint Pemasukan (atau extend existing income-transactions list) dengan filter date range, payment method, fee_item_ids
-- [ ] **Task 7:** Buat API endpoint Pengeluaran (atau extend existing expenses list) dengan filter date range, fee_item_ids, expense_category_ids
-- [ ] **Task 8:** Generate/update frontend API client hooks (orval atau manual)
+- [ ] **Task 2:** Buat `AuditEntryRepository` (insert + findAll dengan filter/search/pagination)
+- [ ] **Task 3:** Buat `AuditService` (async write + query dengan filter + module mapping)
+- [ ] **Task 4:** Buat `AuditMiddleware` (pre-hook capture body, post-hook write entry)
+- [ ] **Task 5:** Register middleware + route di `cmd/api/main.go` + cleanup goroutine
 
-### Checkpoint: Backend
-- [ ] API endpoints bisa dipanggil via curl/Postman dan return data sesuai filter
+### Checkpoint: Core
+- [ ] Setiap POST/PUT/DELETE request tercatat di tabel `audit_entries`
+- [ ] Request body tersimpan sebagai JSON string
+- [ ] Error 400/500 tercatat dengan error message yang sesuai
+- [ ] Cleanup jalan — data >7 hari terhapus
 
-### Phase 3: Sub-halaman — Vertical Slices
+### Phase 3: Backend API (Superadmin Read)
 
-- [ ] **Task 9:** Sub-halaman Pemasukan (`/keuangan/laporan/pemasukan`)
-- [ ] **Task 10:** Sub-halaman Pengeluaran (`/keuangan/laporan/pengeluaran`)
-- [ ] **Task 11:** Sub-halaman Saldo (`/keuangan/laporan/saldo`)
-- [ ] **Task 12:** Sub-halaman Posisi Kas (`/keuangan/laporan/posisi-kas`)
+- [ ] **Task 6:** Tambah endpoint `GET /v1/audit-logs` + `GET /v1/audit-logs/:id` di handler + route (superadmin-only)
 
-### Checkpoint: Core Features
-- [ ] Keempat sub-halaman berfungsi end-to-end: filter → generate → tabel → cetak
+### Checkpoint: Backend API
+- [ ] `GET /v1/audit-logs?module=keuangan&status_min=400&search=constraint` mengembalikan hasil terfilter
+- [ ] `GET /v1/audit-logs/:id` mengembalikan detail satu entry (termasuk request body)
+- [ ] Pagination berfungsi
+- [ ] Role guard: hanya superadmin yang bisa akses
 
-### Phase 4: Migration & Cleanup
+### Phase 4: Frontend
 
-- [ ] **Task 13:** Pindahkan 9 halaman lama ke folder `old/`
-- [ ] **Task 14:** Update hub page (`laporan/index.tsx`) ke 4 card baru
-- [ ] **Task 15:** Final integration test & polish
+- [ ] **Task 7:** Tambah API client untuk `audit-logs` endpoint (manual, mengikuti pattern existing)
+- [ ] **Task 8:** Buat halaman `/pengaturan/log` + entry di sidebar superadmin
 
 ### Checkpoint: Complete
-- [ ] Semua acceptance criteria terpenuhi
-- [ ] Build dan dev server berjalan tanpa error
-- [ ] Navigasi antar sub-halaman lancar
+- [ ] Superadmin bisa akses `/pengaturan/log` dari sidebar
+- [ ] Filter (date range, user, module, method, status, search) berfungsi
+- [ ] Klik entry → detail slideover dengan request body terformat
+- [ ] Error entry ditandai dengan badge merah, success hijau
+- [ ] Pagination berfungsi
+- [ ] Build frontend clean: `cd apps/dashboard && pnpm build`
 
 ## Risks and Mitigations
 
 | Risk | Impact | Mitigation |
 |------|--------|------------|
-| Backend Go API perlu diubah signifikan untuk support multi-select + date range | High | Prioritaskan Task 4-7 early; jika terlalu berat, fallback ke filter client-side dari data yang sudah di-fetch |
-| Response shape API existing tidak cocok dengan UI baru (Pemasukan/Pengeluaran) | Medium | Evaluasi di Task 6-7; buat endpoint baru hanya jika existing tidak bisa di-extend |
-| Multi-select fee config items bergantung pada fee config aktif | Low | Hardcode fallback ke semua fee config jika tidak ada yang aktif |
-| Perubahan route (dari 9 jadi 4) bisa break existing links/bookmark | Low | Tambahkan redirect dari route lama ke route baru di Task 14 |
+| Request body besar (upload file, import CSV) bloating DB | Med | Skip body jika >100KB, catat `[body too large: N bytes]` |
+| Middleware gagal write ke DB (DB down) | Low | Log error ke console, jangan block request. Audit entry loss diterima untuk edge case ini. |
+| Async write race condition | Low | Gunakan DB connection dari pool yang sama (thread-safe). Closure capture value, bukan reference. |
+| Module mapping dari URL salah untuk nested route | Low | Map berdasarkan prefix. Nested route seperti `/students/:id/enrollments` tetap ke `administrasi`. |
 
 ## Open Questions
 
-- Apakah backend `/v1/income-transactions` dan `/v1/expenses` sudah bisa di-filter by date range + fee_item_id? (perlu dicek di Task 6-7)
-- Apakah perlu pagination untuk tabel dengan data banyak? (default: tampilkan semua, no pagination)
+- [ ] Apakah perlu export/download log? → Out of scope untuk v1, bisa jadi enhancement
+- [ ] Apakah perlu log GET untuk endpoint tertentu (misal: download backup)? → Skip dulu, evaluasi setelah 1-2 minggu usage

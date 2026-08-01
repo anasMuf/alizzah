@@ -493,22 +493,24 @@ func (r *reportRepository) SumSavingsDebit(startDate, endDate time.Time, savings
 	return total, err
 }
 
-// FindPemasukanSummary returns daily summary grouped by category from payments + income_transactions
+// FindPemasukanSummary returns per-transaction rows (date, category, description, amount)
 func (r *reportRepository) FindPemasukanSummary(academicYearID uint, startDate, endDate time.Time, categories []string, paymentMethod string) ([]dto.PemasukanRow, error) {
 	type Row struct {
-		Date     string  `gorm:"column:date"`
-		Category string  `gorm:"column:category"`
-		Count    int     `gorm:"column:count"`
-		Total    float64 `gorm:"column:total"`
+		Date        string  `gorm:"column:date"`
+		Category    string  `gorm:"column:category"`
+		Description string  `gorm:"column:description"`
+		Amount      float64 `gorm:"column:amount"`
 	}
 
 	var rows []Row
 
-	// 1. Invoice payments (payment_items grouped by date + invoice category)
+	// 1. Invoice payments: per payment_item with student name
 	payQuery := r.db.Table("payment_items pi").
-		Select("DATE(p.payment_date) as date, ii.category, COUNT(DISTINCT p.id) as count, SUM(pi.amount) as total").
+		Select("DATE(p.payment_date) as date, ii.category, CONCAT(COALESCE(s.full_name, 'Siswa #' || s.id), ' - ', ii.name) as description, pi.amount").
 		Joins("JOIN payments p ON p.id = pi.payment_id").
 		Joins("JOIN invoice_items ii ON ii.id = pi.invoice_item_id").
+		Joins("JOIN invoices i ON i.id = ii.invoice_id").
+		Joins("JOIN students s ON s.id = i.student_id").
 		Where("p.academic_year_id = ? AND p.payment_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
 
 	if len(categories) > 0 {
@@ -520,31 +522,25 @@ func (r *reportRepository) FindPemasukanSummary(academicYearID uint, startDate, 
 		payQuery = payQuery.Where("p.source = ?", "savings")
 	}
 
-	payQuery = payQuery.Group("DATE(p.payment_date), ii.category").Order("DATE(p.payment_date), ii.category")
+	payQuery = payQuery.Order("DATE(p.payment_date), ii.category, s.full_name")
 
 	if err := payQuery.Scan(&rows).Error; err != nil {
 		return nil, err
 	}
 
-	// 2. Income transactions (grouped by date + category)
+	// 2. Income transactions: per transaction with source name
 	type IncomeRow struct {
-		Date     string  `gorm:"column:date"`
-		Category string  `gorm:"column:category"`
-		Count    int     `gorm:"column:count"`
-		Total    float64 `gorm:"column:total"`
+		Date        string  `gorm:"column:date"`
+		Category    string  `gorm:"column:category"`
+		Description string  `gorm:"column:description"`
+		Amount      float64 `gorm:"column:amount"`
 	}
 	var incomeRows []IncomeRow
 
 	incomeQuery := r.db.Table("income_transactions it").
-		Select("DATE(it.transaction_date) as date, it.category, COUNT(*) as count, SUM(it.amount) as total").
-		Where("it.academic_year_id = ? AND it.transaction_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
-
-	if len(categories) > 0 {
-		// income_transactions have their own category system, only include if no fee item filter
-		// (fee items are from invoice system, income_transactions are separate)
-	}
-
-	incomeQuery = incomeQuery.Group("DATE(it.transaction_date), it.category").Order("DATE(it.transaction_date), it.category")
+		Select("DATE(it.transaction_date) as date, it.category, it.source_name as description, it.amount").
+		Where("it.academic_year_id = ? AND it.transaction_date BETWEEN ? AND ?", academicYearID, startDate, endDate).
+		Order("DATE(it.transaction_date), it.category")
 
 	if err := incomeQuery.Scan(&incomeRows).Error; err != nil {
 		return nil, err
@@ -564,21 +560,21 @@ func (r *reportRepository) FindPemasukanSummary(academicYearID uint, startDate, 
 			label = l
 		}
 		rows = append(rows, Row{
-			Date:     r.Date,
-			Category: label,
-			Count:    r.Count,
-			Total:    r.Total,
+			Date:        r.Date,
+			Category:    label,
+			Description: r.Description,
+			Amount:      r.Amount,
 		})
 	}
 
-	// Convert to PemasukanRow (raw category codes, service will map labels)
+	// Convert to PemasukanRow
 	var result []dto.PemasukanRow
 	for _, row := range rows {
 		result = append(result, dto.PemasukanRow{
-			Date:     row.Date,
-			Category: row.Category,
-			Count:    row.Count,
-			Total:    row.Total,
+			Date:        row.Date,
+			Category:    row.Category,
+			Description: row.Description,
+			Amount:      row.Amount,
 		})
 	}
 

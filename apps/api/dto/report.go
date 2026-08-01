@@ -387,10 +387,10 @@ type PemasukanRequest struct {
 }
 
 type PemasukanRow struct {
-	Date     string  `json:"date"`
-	Category string  `json:"category"`
-	Count    int     `json:"count"`
-	Total    float64 `json:"total"`
+	Date        string  `json:"date"`
+	Category    string  `json:"category"`
+	Description string  `json:"description"` // siapa + untuk apa
+	Amount      float64 `json:"amount"`
 }
 
 type PemasukanResponse struct {

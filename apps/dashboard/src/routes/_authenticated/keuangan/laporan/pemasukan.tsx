@@ -30,7 +30,6 @@ export const Route = createFileRoute(
 function LaporanPemasukanPage() {
 	const [activeAy] = useAtom(academicYearAtom);
 
-	// Fetch fee configs for multi-select
 	const { data: feeConfigsData } = useGetV1FeeConfigs({
 		query: { staleTime: 5 * 60 * 1000 },
 	});
@@ -56,7 +55,6 @@ function LaporanPemasukanPage() {
 		[feeItems],
 	);
 
-	// Filter state
 	const [selectedFeeItemIds, setSelectedFeeItemIds] = useState<number[]>([]);
 	const [generatedFilters, setGeneratedFilters] =
 		useState<FilterBarValues | null>(null);
@@ -92,7 +90,7 @@ function LaporanPemasukanPage() {
 		setGeneratedFilters(filters);
 	};
 
-	// Group rows by date for rendering
+	// Group rows by date
 	const dateGroups = useMemo(() => {
 		if (!report) return null;
 		const map = new Map<string, PemasukanData["rows"]>();
@@ -117,36 +115,32 @@ function LaporanPemasukanPage() {
 		let html = `<h2 class="text-lg font-bold mb-2">Laporan Pemasukan</h2>`;
 		html += `<p class="text-sm text-gray mb-2">Periode: ${esc(formatDate(report.date_from))} - ${esc(formatDate(report.date_to))}</p>`;
 		html += `<p class="text-sm text-gray mb-4">TA ${esc(report.academic_year)}</p>`;
-
 		html += `<table><thead><tr>
-			<th>Tanggal</th><th>Kategori</th><th class="text-right">Jml Trans</th><th class="text-right">Nominal</th>
+			<th>Tanggal</th><th>Kategori</th><th>Keterangan</th><th class="text-right">Nominal</th>
 		</tr></thead><tbody>`;
 
 		if (dateGroups) {
 			for (const [date, rows] of dateGroups) {
-				const subtotal = rows.reduce((s, r) => s + r.total, 0);
+				const subtotal = rows.reduce((s, r) => s + r.amount, 0);
 				for (let i = 0; i < rows.length; i++) {
 					const r = rows[i];
 					html += `<tr>
 						<td>${i === 0 ? esc(formatDate(date)) : ""}</td>
 						<td>${esc(r.category)}</td>
-						<td class="text-right">${r.count}</td>
-						<td class="text-right font-mono">${fmt(r.total)}</td>
+						<td>${esc(r.description)}</td>
+						<td class="text-right font-mono">${fmt(r.amount)}</td>
 					</tr>`;
 				}
 				html += `<tr class="border-t text-gray font-bold">
-					<td colspan="2"></td>
-					<td class="text-right">Subtotal</td>
+					<td colspan="2"></td><td class="text-right">Subtotal</td>
 					<td class="text-right font-mono">${fmt(subtotal)}</td>
 				</tr>`;
 			}
 		}
 		html += `<tr class="border-t-2 border-black font-bold text-base">
-			<td colspan="2"></td>
-			<td class="text-right">Grand Total</td>
+			<td colspan="2"></td><td class="text-right">Grand Total</td>
 			<td class="text-right font-mono">${fmt(report.grand_total)}</td>
-		</tr>`;
-		html += `</tbody></table>`;
+		</tr></tbody></table>`;
 
 		openPrintWindow(html, {
 			title: "Laporan Pemasukan",
@@ -183,7 +177,7 @@ function LaporanPemasukanPage() {
 						<ChevronRight className="w-4 h-4 mx-1" />
 						<span className="text-gray-900 font-medium">Pemasukan</span>
 					</nav>
-					<h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:tracking-tight">
+					<h2 className="text-2xl font-bold leading-7 text-gray-900">
 						Laporan Pemasukan
 					</h2>
 					<p className="mt-1 text-sm text-gray-500">
@@ -198,7 +192,6 @@ function LaporanPemasukanPage() {
 				)}
 			</div>
 
-			{/* Filter */}
 			<FilterBar onGenerate={handleGenerate} isLoading={isLoading}>
 				<div className="max-w-sm">
 					<MultiSelectCheckbox
@@ -210,7 +203,6 @@ function LaporanPemasukanPage() {
 				</div>
 			</FilterBar>
 
-			{/* Loading */}
 			{isLoading && (
 				<div className="animate-pulse space-y-4">
 					<div className="h-12 bg-gray-200 rounded-xl" />
@@ -218,14 +210,12 @@ function LaporanPemasukanPage() {
 				</div>
 			)}
 
-			{/* Error */}
 			{isError && (
 				<Alert variant="error" title="Gagal Memuat">
 					Terjadi kesalahan saat memuat laporan pemasukan.
 				</Alert>
 			)}
 
-			{/* Report */}
 			{report && !isLoading && (
 				<>
 					<ReportInfoCard filters={infoFilters} />
@@ -236,46 +226,45 @@ function LaporanPemasukanPage() {
 								<table className="min-w-full divide-y divide-gray-200">
 									<thead className="bg-gray-50">
 										<tr>
-											<th className="py-3 pl-6 pr-3 text-left text-sm font-semibold text-gray-900 w-32">
+											<th className="py-3 pl-6 pr-3 text-left text-sm font-semibold text-gray-900 w-28">
 												Tanggal
 											</th>
-											<th className="px-3 py-3 text-left text-sm font-semibold text-gray-900">
+											<th className="px-3 py-3 text-left text-sm font-semibold text-gray-900 w-32">
 												Kategori
 											</th>
-											<th className="px-3 py-3 text-right text-sm font-semibold text-gray-900 w-24">
-												Jml Trans
+											<th className="px-3 py-3 text-left text-sm font-semibold text-gray-900">
+												Keterangan
 											</th>
 											<th className="px-3 py-3 text-right text-sm font-semibold text-gray-900 pr-6 w-40">
-												Total Nominal
+												Nominal
 											</th>
 										</tr>
 									</thead>
 									<tbody className="divide-y divide-gray-100 bg-white">
 										{[...dateGroups.entries()].map(([date, rows]) => {
-											const subtotal = rows.reduce((s, r) => s + r.total, 0);
+											const subtotal = rows.reduce((s, r) => s + r.amount, 0);
 											return (
 												<>
 													{rows.map((row, i) => (
-														<tr key={`${date}-${row.category}`}>
+														<tr key={`${date}-${row.category}-${i}`}>
 															<td className="py-2.5 pl-6 pr-3 text-sm text-gray-900">
 																{i === 0 ? formatDate(date) : ""}
 															</td>
 															<td className="px-3 py-2.5 text-sm text-gray-900">
 																{row.category}
 															</td>
-															<td className="px-3 py-2.5 text-sm text-right text-gray-500 tabular-nums">
-																{row.count}
+															<td className="px-3 py-2.5 text-sm text-gray-700">
+																{row.description}
 															</td>
 															<td className="px-3 py-2.5 text-sm text-right text-gray-900 tabular-nums pr-6">
-																{formatCurrency(row.total)}
+																{formatCurrency(row.amount)}
 															</td>
 														</tr>
 													))}
-													{/* Subtotal */}
 													<tr className="bg-gray-50 border-t border-gray-200">
 														<td
 															colSpan={2}
-															className="py-2 pl-6 pr-3 text-sm font-medium text-gray-500"
+															className="py-2 pl-6 pr-3 text-sm"
 														/>
 														<td className="px-3 py-2 text-sm text-right font-semibold text-gray-500">
 															Subtotal
@@ -288,7 +277,6 @@ function LaporanPemasukanPage() {
 											);
 										})}
 									</tbody>
-									{/* Grand Total */}
 									<tfoot>
 										<tr className="border-t-2 border-gray-300 bg-indigo-50 font-bold">
 											<td
@@ -316,7 +304,6 @@ function LaporanPemasukanPage() {
 				</>
 			)}
 
-			{/* Empty — before generate */}
 			{!report && !isLoading && !isError && (
 				<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-12 text-center">
 					<p className="text-sm text-gray-500">

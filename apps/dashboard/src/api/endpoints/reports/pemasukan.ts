@@ -1,5 +1,5 @@
 /**
- * Manual API hook for Laporan Pemasukan (summary per date per category)
+ * Manual API hook for Laporan Pemasukan (per-transaction detail)
  */
 
 import type { UseQueryOptions } from "@tanstack/react-query";
@@ -18,8 +18,8 @@ export interface PemasukanParams {
 export interface PemasukanRow {
 	date: string;
 	category: string;
-	count: number;
-	total: number;
+	description: string; // e.g. "Ahmad - SPP Juli 2026"
+	amount: number;
 }
 
 export interface PemasukanData {

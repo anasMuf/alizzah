@@ -1075,7 +1075,7 @@ func (s *reportService) GetPemasukan(req dto.PemasukanRequest) (*dto.PemasukanRe
 	// Calculate grand total
 	var grandTotal float64
 	for _, r := range rows {
-		grandTotal += r.Total
+		grandTotal += r.Amount
 	}
 
 	return &dto.PemasukanResponse{

@@ -56,38 +56,37 @@ function LaporanPemasukanPage() {
 	);
 
 	const [selectedFeeItemIds, setSelectedFeeItemIds] = useState<number[]>([]);
-	const [generatedFilters, setGeneratedFilters] =
-		useState<FilterBarValues | null>(null);
 
-	const queryParams = useMemo(() => {
-		if (!generatedFilters) return {};
-		const selectedCategories = feeItems
-			.filter((item: any) => selectedFeeItemIds.includes(item.id))
-			.map((item: any) => item.category);
-		return {
-			date_from: generatedFilters.date_from,
-			date_to: generatedFilters.date_to,
-			payment_method: generatedFilters.payment_method || undefined,
-			categories:
-				selectedCategories.length > 0
-					? selectedCategories.join(",")
-					: undefined,
-			academic_year_id: generatedFilters.academic_year_id,
-		};
-	}, [generatedFilters, selectedFeeItemIds, feeItems]);
+	// Snapshots filter values only on Generate click — prevents auto-fetch on filter changes
+	const [committedParams, setCommittedParams] = useState<Record<
+		string,
+		unknown
+	> | null>(null);
 
 	const {
 		data: reportData,
 		isLoading,
 		isError,
-	} = useGetReportsPemasukan(queryParams, {
-		query: { enabled: !!generatedFilters },
+	} = useGetReportsPemasukan(committedParams || {}, {
+		query: { enabled: !!committedParams },
 	});
 
 	const report: PemasukanData | null = (reportData?.data as any)?.data ?? null;
 
 	const handleGenerate = (filters: FilterBarValues) => {
-		setGeneratedFilters(filters);
+		const selectedCategories = feeItems
+			.filter((item: any) => selectedFeeItemIds.includes(item.id))
+			.map((item: any) => item.category);
+		setCommittedParams({
+			date_from: filters.date_from,
+			date_to: filters.date_to,
+			payment_method: filters.payment_method || undefined,
+			categories:
+				selectedCategories.length > 0
+					? selectedCategories.join(",")
+					: undefined,
+			academic_year_id: filters.academic_year_id,
+		});
 	};
 
 	// Group rows by date
@@ -149,18 +148,18 @@ function LaporanPemasukanPage() {
 	};
 
 	const infoFilters: Record<string, string> = useMemo(() => {
-		if (!generatedFilters) return {} as Record<string, string>;
+		if (!committedParams) return {} as Record<string, string>;
 		const selectedNames = feeItems
 			.filter((item: any) => selectedFeeItemIds.includes(item.id))
 			.map((item: any) => item.name)
 			.join(", ");
 		return {
 			sumber: selectedNames || "Semua",
-			metode: generatedFilters.payment_method || "Semua",
-			periode: `${formatDate(generatedFilters.date_from)} - ${formatDate(generatedFilters.date_to)}`,
+			metode: (committedParams.payment_method as string) || "Semua",
+			periode: `${formatDate(committedParams.date_from as string)} - ${formatDate(committedParams.date_to as string)}`,
 			ta: activeAy?.name ?? "-",
 		};
-	}, [generatedFilters, selectedFeeItemIds, feeItems, activeAy]);
+	}, [committedParams, selectedFeeItemIds, feeItems, activeAy]);
 
 	return (
 		<div className="space-y-6">

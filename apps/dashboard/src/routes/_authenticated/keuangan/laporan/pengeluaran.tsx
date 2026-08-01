@@ -54,36 +54,34 @@ function LaporanPengeluaranPage() {
 	const [selectedExpenseCatIds, setSelectedExpenseCatIds] = useState<number[]>(
 		[],
 	);
-	const [generatedFilters, setGeneratedFilters] =
-		useState<FilterBarValues | null>(null);
 
-	const queryParams = useMemo(() => {
-		if (!generatedFilters) return {};
-		return {
-			date_from: generatedFilters.date_from,
-			date_to: generatedFilters.date_to,
-			payment_method: generatedFilters.payment_method || undefined,
-			expense_category_ids:
-				selectedExpenseCatIds.length > 0
-					? selectedExpenseCatIds.join(",")
-					: undefined,
-			academic_year_id: generatedFilters.academic_year_id,
-		};
-	}, [generatedFilters, selectedExpenseCatIds]);
+	const [committedParams, setCommittedParams] = useState<Record<
+		string,
+		unknown
+	> | null>(null);
 
 	const {
 		data: reportData,
 		isLoading,
 		isError,
-	} = useGetReportsPengeluaran(queryParams, {
-		query: { enabled: !!generatedFilters },
+	} = useGetReportsPengeluaran(committedParams || {}, {
+		query: { enabled: !!committedParams },
 	});
 
 	const report: PengeluaranData | null =
 		(reportData?.data as any)?.data ?? null;
 
 	const handleGenerate = (filters: FilterBarValues) => {
-		setGeneratedFilters(filters);
+		setCommittedParams({
+			date_from: filters.date_from,
+			date_to: filters.date_to,
+			payment_method: filters.payment_method || undefined,
+			expense_category_ids:
+				selectedExpenseCatIds.length > 0
+					? selectedExpenseCatIds.join(",")
+					: undefined,
+			academic_year_id: filters.academic_year_id,
+		});
 	};
 
 	const dateGroups = useMemo(() => {
@@ -144,18 +142,18 @@ function LaporanPengeluaranPage() {
 	};
 
 	const infoFilters: Record<string, string> = useMemo(() => {
-		if (!generatedFilters) return {} as Record<string, string>;
+		if (!committedParams) return {} as Record<string, string>;
 		const catNames = expenseCatOptions
 			.filter((cat) => selectedExpenseCatIds.includes(cat.id))
 			.map((cat) => cat.label)
 			.join(", ");
 		return {
 			kategori: catNames || "Semua",
-			metode: generatedFilters.payment_method || "Semua",
-			periode: `${formatDate(generatedFilters.date_from)} - ${formatDate(generatedFilters.date_to)}`,
+			metode: (committedParams.payment_method as string) || "Semua",
+			periode: `${formatDate(committedParams.date_from as string)} - ${formatDate(committedParams.date_to as string)}`,
 			ta: activeAy?.name ?? "-",
 		};
-	}, [generatedFilters, selectedExpenseCatIds, expenseCatOptions, activeAy]);
+	}, [committedParams, selectedExpenseCatIds, expenseCatOptions, activeAy]);
 
 	return (
 		<div className="space-y-6">

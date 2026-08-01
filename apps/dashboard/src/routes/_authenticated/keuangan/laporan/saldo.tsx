@@ -78,42 +78,37 @@ function LaporanSaldoPage() {
 	// Filter state
 	const [selectedPosIds, setSelectedPosIds] = useState<number[]>([]);
 	const [selectedAyIds, setSelectedAyIds] = useState<number[]>([]);
-	const [generatedFilters, setGeneratedFilters] =
-		useState<FilterBarValues | null>(null);
 
-	const queryParams = useMemo(() => {
-		if (!generatedFilters) return {};
-
-		// Map selected fee item IDs → category names
-		const selectedCategories = feeItems
-			.filter((item: any) => selectedPosIds.includes(item.id))
-			.map((item: any) => item.category);
-
-		return {
-			date_from: generatedFilters.date_from,
-			date_to: generatedFilters.date_to,
-			categories:
-				selectedCategories.length > 0
-					? selectedCategories.join(",")
-					: undefined,
-			academic_year_id: generatedFilters.academic_year_id,
-			academic_year_ids:
-				selectedAyIds.length > 0 ? selectedAyIds.join(",") : undefined,
-		};
-	}, [generatedFilters, selectedPosIds, selectedAyIds, feeItems]);
+	const [committedParams, setCommittedParams] = useState<Record<
+		string,
+		unknown
+	> | null>(null);
 
 	const {
 		data: reportData,
 		isLoading,
 		isError,
-	} = useGetReportsSaldo(queryParams, {
-		query: { enabled: !!generatedFilters },
+	} = useGetReportsSaldo(committedParams || {}, {
+		query: { enabled: !!committedParams },
 	});
 
 	const report: SaldoData | null = (reportData?.data as any)?.data ?? null;
 
 	const handleGenerate = (filters: FilterBarValues) => {
-		setGeneratedFilters(filters);
+		const selectedCategories = feeItems
+			.filter((item: any) => selectedPosIds.includes(item.id))
+			.map((item: any) => item.category);
+		setCommittedParams({
+			date_from: filters.date_from,
+			date_to: filters.date_to,
+			categories:
+				selectedCategories.length > 0
+					? selectedCategories.join(",")
+					: undefined,
+			academic_year_id: filters.academic_year_id,
+			academic_year_ids:
+				selectedAyIds.length > 0 ? selectedAyIds.join(",") : undefined,
+		});
 	};
 
 	const handlePrint = () => {
@@ -161,7 +156,7 @@ function LaporanSaldoPage() {
 	};
 
 	const infoFilters: Record<string, string> = useMemo(() => {
-		if (!generatedFilters) return {} as Record<string, string>;
+		if (!committedParams) return {} as Record<string, string>;
 		const posNames = feeItems
 			.filter((item: any) => selectedPosIds.includes(item.id))
 			.map((item: any) => item.name)
@@ -171,12 +166,12 @@ function LaporanSaldoPage() {
 			.map((ay: any) => ay.name)
 			.join(", ");
 		return {
-			periode: `${formatDate(generatedFilters.date_from)} - ${formatDate(generatedFilters.date_to)}`,
+			periode: `${formatDate(committedParams.date_from as string)} - ${formatDate(committedParams.date_to as string)}`,
 			pos: posNames || "Semua",
 			ta: taNames || activeAy?.name || "-",
 		};
 	}, [
-		generatedFilters,
+		committedParams,
 		selectedPosIds,
 		selectedAyIds,
 		feeItems,

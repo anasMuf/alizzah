@@ -59,31 +59,18 @@ function LaporanPosisiKasPage() {
 
 	// Filter state
 	const [selectedFeeItemIds, setSelectedFeeItemIds] = useState<number[]>([]);
-	const [generatedFilters, setGeneratedFilters] =
-		useState<FilterBarValues | null>(null);
 
-	const queryParams = useMemo(() => {
-		if (!generatedFilters) return {};
-		const selectedCategories = feeItems
-			.filter((item: any) => selectedFeeItemIds.includes(item.id))
-			.map((item: any) => item.category);
-		return {
-			date_from: generatedFilters.date_from,
-			date_to: generatedFilters.date_to,
-			categories:
-				selectedCategories.length > 0
-					? selectedCategories.join(",")
-					: undefined,
-			academic_year_id: generatedFilters.academic_year_id,
-		};
-	}, [generatedFilters, selectedFeeItemIds, feeItems]);
+	const [committedParams, setCommittedParams] = useState<Record<
+		string,
+		unknown
+	> | null>(null);
 
 	const {
 		data: reportData,
 		isLoading,
 		isError,
-	} = useGetReportsPosisiKas(queryParams, {
-		query: { enabled: !!generatedFilters },
+	} = useGetReportsPosisiKas(committedParams || {}, {
+		query: { enabled: !!committedParams },
 	});
 
 	const report: PosisiKasData | null = (reportData?.data as any)?.data ?? null;
@@ -91,7 +78,18 @@ function LaporanPosisiKasPage() {
 	const grandTotal = report?.grand_total;
 
 	const handleGenerate = (filters: FilterBarValues) => {
-		setGeneratedFilters(filters);
+		const selectedCategories = feeItems
+			.filter((item: any) => selectedFeeItemIds.includes(item.id))
+			.map((item: any) => item.category);
+		setCommittedParams({
+			date_from: filters.date_from,
+			date_to: filters.date_to,
+			categories:
+				selectedCategories.length > 0
+					? selectedCategories.join(",")
+					: undefined,
+			academic_year_id: filters.academic_year_id,
+		});
 	};
 
 	function handlePrint() {
@@ -167,21 +165,21 @@ function LaporanPosisiKasPage() {
 	}
 
 	const infoFilters: Record<string, string> = useMemo(() => {
-		if (!generatedFilters) return {} as Record<string, string>;
+		if (!committedParams) return {} as Record<string, string>;
 		const feeNames = feeItems
 			.filter((item: any) => selectedFeeItemIds.includes(item.id))
 			.map((item: any) => item.name)
 			.join(", ");
 		const periodLabel =
-			generatedFilters.date_from && generatedFilters.date_to
-				? `${formatDate(generatedFilters.date_from)} - ${formatDate(generatedFilters.date_to)}`
+			committedParams.date_from && committedParams.date_to
+				? `${formatDate(committedParams.date_from as string)} - ${formatDate(committedParams.date_to as string)}`
 				: "-";
 		return {
 			pos: feeNames || "Semua",
 			periode: periodLabel,
 			ta: activeAy?.name ?? "-",
 		};
-	}, [generatedFilters, selectedFeeItemIds, feeItems, activeAy]);
+	}, [committedParams, selectedFeeItemIds, feeItems, activeAy]);
 
 	return (
 		<div className="space-y-6">

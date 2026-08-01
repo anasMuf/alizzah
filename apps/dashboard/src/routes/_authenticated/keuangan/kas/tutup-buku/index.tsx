@@ -445,9 +445,9 @@ function TutupBukuPage() {
 					</div>
 
 					<div className="mt-6 flex flex-wrap gap-3">
-						<Link to="/keuangan/laporan/harian">
+						<Link to="/keuangan/laporan/saldo">
 							<Button variant="secondary">
-								Lihat Laporan Harian
+								Lihat Laporan Saldo
 								<ArrowRight className="w-4 h-4 ml-1.5" />
 							</Button>
 						</Link>

@@ -5,11 +5,13 @@ import { useCallback, useMemo } from "react";
 import { useGetV1ClassGroups } from "#/api/endpoints/class-groups/class-groups";
 import { useGetV1ReportsClassGroupsId } from "#/api/endpoints/reports/reports";
 import { Alert, Badge, Button } from "#/components/ui";
-import { academicYearAtom } from "../../../../store/global";
-import { formatCurrency } from "../../../../utils/format";
-import { openPrintWindow } from "../../../../utils/print";
+import { academicYearAtom } from "../../../../../store/global";
+import { formatCurrency } from "../../../../../utils/format";
+import { openPrintWindow } from "../../../../../utils/print";
 
-export const Route = createFileRoute("/_authenticated/keuangan/laporan/kelas")({
+export const Route = createFileRoute(
+	"/_authenticated/keuangan/laporan/old/kelas",
+)({
 	component: RekapKelasPage,
 	validateSearch: (search: Record<string, unknown>) => {
 		const asNum = (v: unknown) =>
@@ -432,7 +434,7 @@ function RekapKelasPage() {
 												</td>
 												<td className="whitespace-nowrap px-3 py-3 text-sm">
 													<Link
-														to="/keuangan/laporan/siswa"
+														to="/keuangan/laporan/old/siswa"
 														search={{
 															studentId: student.student_id,
 															allTA: undefined,

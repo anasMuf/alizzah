@@ -8,10 +8,14 @@ import { customInstance } from "../../mutator/custom-instance";
 
 // Types
 export interface SaldoParams {
-	month: number;
-	year: number;
-	category?: string; // kosong = semua pos
+	month?: number;
+	year?: number;
+	date_from?: string; // YYYY-MM-DD, takes priority over month/year
+	date_to?: string; // YYYY-MM-DD
+	category?: string; // single category (backward compatible)
+	categories?: string; // comma-separated category names (takes priority)
 	academic_year_id?: number;
+	academic_year_ids?: string; // comma-separated IDs
 }
 
 export interface SaldoRow {
@@ -31,9 +35,12 @@ export interface SaldoTotalBulan {
 export interface SaldoData {
 	month: number;
 	year: number;
+	date_from?: string;
+	date_to?: string;
 	academic_year: string;
 	post_name: string;
 	category?: string;
+	categories?: string[];
 	post_list?: string[];
 	saldo_sebelum: number;
 	rows: SaldoRow[];

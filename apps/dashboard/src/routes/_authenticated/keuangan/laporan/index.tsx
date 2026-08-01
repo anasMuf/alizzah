@@ -2,13 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
 	ArrowRight,
 	BarChart3,
-	CalendarCheck,
-	CalendarDays,
-	CalendarRange,
-	PiggyBank,
 	Receipt,
-	School,
-	User,
+	TrendingDown,
 	Wallet,
 } from "lucide-react";
 
@@ -18,81 +13,39 @@ export const Route = createFileRoute("/_authenticated/keuangan/laporan/")({
 
 const REPORT_CARDS = [
 	{
-		title: "Laporan Harian",
-		description: "Ringkasan pemasukan, pengeluaran, dan tutup buku per hari.",
-		icon: CalendarDays,
-		to: "/keuangan/laporan/harian",
-		color: "text-blue-600",
-		bg: "bg-blue-50",
-	},
-	{
-		title: "Laporan Bulanan",
+		title: "Pemasukan",
 		description:
-			"Total tagihan vs realisasi, tunggakan per kelas, dan ringkasan kas.",
-		icon: CalendarRange,
-		to: "/keuangan/laporan/bulanan",
-		color: "text-emerald-600",
-		bg: "bg-emerald-50",
+			"Transaksi pemasukan per tanggal dengan filter fee item, metode bayar, dan rentang tanggal.",
+		icon: TrendingDown,
+		to: "/keuangan/laporan/pemasukan",
+		color: "text-green-600",
+		bg: "bg-green-50",
 	},
 	{
-		title: "Laporan Tahunan",
-		description: "Ringkasan keuangan satu tahun ajaran penuh.",
-		icon: CalendarCheck,
-		to: "/keuangan/laporan/tahunan",
-		color: "text-purple-600",
-		bg: "bg-purple-50",
-	},
-	{
-		title: "Posisi Kas",
+		title: "Pengeluaran",
 		description:
-			"Saldo semua pos pemasukan beserta rincian pengeluaran per pos.",
-		icon: Wallet,
-		to: "/keuangan/laporan/posisi-kas",
-		color: "text-teal-600",
-		bg: "bg-teal-50",
+			"Transaksi pengeluaran per tanggal dengan filter fee item, kategori pengeluaran, dan rentang tanggal.",
+		icon: Receipt,
+		to: "/keuangan/laporan/pengeluaran",
+		color: "text-red-600",
+		bg: "bg-red-50",
 	},
 	{
-		title: "Saldo Per Pos",
+		title: "Saldo",
 		description:
-			"Rincian transaksi harian dan saldo berjalan per pos pemasukan atau semua pos.",
+			"Saldo berjalan per pos penerimaan dengan multi-select pos dan tahun ajaran.",
 		icon: BarChart3,
 		to: "/keuangan/laporan/saldo",
 		color: "text-cyan-600",
 		bg: "bg-cyan-50",
 	},
 	{
-		title: "Transaksi Pengeluaran",
-		description:
-			"Daftar semua transaksi pengeluaran per bulan dalam format blok/kartu.",
-		icon: Receipt,
-		to: "/keuangan/laporan/pengeluaran",
-		color: "text-orange-600",
-		bg: "bg-orange-50",
-	},
-	{
-		title: "Tabungan Siswa",
-		description: "Saldo dan mutasi harian tabungan umum atau tabungan wajib.",
-		icon: PiggyBank,
-		to: "/keuangan/laporan/tabungan",
-		color: "text-pink-600",
-		bg: "bg-pink-50",
-	},
-	{
-		title: "Rekap per Siswa",
-		description:
-			"Riwayat tagihan dan pembayaran individual untuk dicetak ke wali murid.",
-		icon: User,
-		to: "/keuangan/laporan/siswa",
-		color: "text-amber-600",
-		bg: "bg-amber-50",
-	},
-	{
-		title: "Rekap per Kelas",
-		description: "Status pembayaran semua siswa per rombel per bulan.",
-		icon: School,
-		to: "/keuangan/laporan/kelas",
-		color: "text-rose-600",
-		bg: "bg-rose-50",
+		title: "Posisi Kas",
+		description: "Posisi kas per kategori dengan rincian pengeluaran per pos.",
+		icon: Wallet,
+		to: "/keuangan/laporan/posisi-kas",
+		color: "text-teal-600",
+		bg: "bg-teal-50",
 	},
 ];
 
@@ -108,7 +61,7 @@ function LaporanHubPage() {
 				</p>
 			</div>
 
-			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+			<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 				{REPORT_CARDS.map((card) => {
 					const Icon = card.icon;
 					return (

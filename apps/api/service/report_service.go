@@ -1058,65 +1058,31 @@ func (s *reportService) GetPemasukan(req dto.PemasukanRequest) (*dto.PemasukanRe
 			}
 		}
 	}
-	// Also support fee_item_ids param (resolve to categories if needed)
-	if req.FeeItemIDs != "" && len(categories) == 0 {
-		for _, s := range strings.Split(req.FeeItemIDs, ",") {
-			s = strings.TrimSpace(s)
-			if s != "" {
-				categories = append(categories, s)
-			}
+
+	// Query summary
+	rows, err := s.reportRepo.FindPemasukanSummary(academicYearID, startDate, endDate, categories, req.PaymentMethod)
+	if err != nil {
+		return nil, err
+	}
+
+	// Map category codes to display labels
+	for i := range rows {
+		if label, ok := invoiceCategoryLabels[rows[i].Category]; ok {
+			rows[i].Category = label
 		}
 	}
 
-	// Query payments
-	payments, err := s.reportRepo.FindPaymentsInRange(academicYearID, startDate, endDate, categories)
-	if err != nil {
-		return nil, err
-	}
-
-	// Query income transactions
-	incomeTxns, err := s.reportRepo.FindIncomeTransactionsInRange(academicYearID, startDate, endDate)
-	if err != nil {
-		return nil, err
-	}
-
-	// Merge and group by date
-	allTxns := append(payments, incomeTxns...)
-
-	dateMap := make(map[string][]dto.PemasukanTransaction)
-	for _, txn := range allTxns {
-		dateMap[txn.TransactionDate] = append(dateMap[txn.TransactionDate], txn)
-	}
-
-	// Sort dates
-	var dates []string
-	for d := range dateMap {
-		dates = append(dates, d)
-	}
-	sort.Strings(dates)
-
-	var blocks []dto.PemasukanDateBlock
+	// Calculate grand total
 	var grandTotal float64
-
-	for _, d := range dates {
-		txns := dateMap[d]
-		var subtotal float64
-		for _, t := range txns {
-			subtotal += t.TotalAmount
-		}
-		grandTotal += subtotal
-		blocks = append(blocks, dto.PemasukanDateBlock{
-			Date:         d,
-			Transactions: txns,
-			Subtotal:     subtotal,
-		})
+	for _, r := range rows {
+		grandTotal += r.Total
 	}
 
 	return &dto.PemasukanResponse{
 		DateFrom:     req.DateFrom,
 		DateTo:       req.DateTo,
 		AcademicYear: ay.Name,
-		Transactions: blocks,
+		Rows:         rows,
 		GrandTotal:   grandTotal,
 	}, nil
 }

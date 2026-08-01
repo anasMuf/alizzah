@@ -375,6 +375,8 @@ type TabunganSiswaRow struct {
 
 // ===== Laporan Pemasukan =====
 
+// ===== Laporan Pemasukan (summary per date per category) =====
+
 type PemasukanRequest struct {
 	DateFrom       string `query:"date_from"`
 	DateTo         string `query:"date_to"`
@@ -384,37 +386,19 @@ type PemasukanRequest struct {
 	AcademicYearID uint   `query:"academic_year_id"`
 }
 
+type PemasukanRow struct {
+	Date     string  `json:"date"`
+	Category string  `json:"category"`
+	Count    int     `json:"count"`
+	Total    float64 `json:"total"`
+}
+
 type PemasukanResponse struct {
-	DateFrom     string               `json:"date_from"`
-	DateTo       string               `json:"date_to"`
-	AcademicYear string               `json:"academic_year"`
-	Transactions []PemasukanDateBlock `json:"transactions"`
-	GrandTotal   float64              `json:"grand_total"`
-}
-
-type PemasukanDateBlock struct {
-	Date         string                 `json:"date"`
-	Transactions []PemasukanTransaction `json:"transactions"`
-	Subtotal     float64                `json:"subtotal"`
-}
-
-type PemasukanTransaction struct {
-	ID              uint            `json:"id"`
-	Source          string          `json:"source"`
-	PaymentMethod   string          `json:"payment_method"`
-	Terbilang       string          `json:"terbilang"`
-	TransactionDate string          `json:"transaction_date"`
-	TransactionNo   string          `json:"transaction_no"`
-	Petugas         string          `json:"petugas"`
-	Items           []PemasukanItem `json:"items"`
-	TotalAmount     float64         `json:"total_amount"`
-}
-
-type PemasukanItem struct {
-	No          int     `json:"no"`
-	Category    string  `json:"category"`
-	Description string  `json:"description"`
-	Amount      float64 `json:"amount"`
+	DateFrom     string         `json:"date_from"`
+	DateTo       string         `json:"date_to"`
+	AcademicYear string         `json:"academic_year"`
+	Rows         []PemasukanRow `json:"rows"`
+	GrandTotal   float64        `json:"grand_total"`
 }
 
 // ===== Laporan Pengeluaran =====

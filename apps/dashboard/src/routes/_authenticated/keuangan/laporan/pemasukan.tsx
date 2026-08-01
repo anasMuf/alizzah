@@ -61,7 +61,6 @@ function LaporanPemasukanPage() {
 	const [generatedFilters, setGeneratedFilters] =
 		useState<FilterBarValues | null>(null);
 
-	// Build query params
 	const queryParams = useMemo(() => {
 		if (!generatedFilters) return {};
 		const selectedCategories = feeItems
@@ -71,10 +70,6 @@ function LaporanPemasukanPage() {
 			date_from: generatedFilters.date_from,
 			date_to: generatedFilters.date_to,
 			payment_method: generatedFilters.payment_method || undefined,
-			fee_item_ids:
-				selectedFeeItemIds.length > 0
-					? selectedFeeItemIds.join(",")
-					: undefined,
 			categories:
 				selectedCategories.length > 0
 					? selectedCategories.join(",")
@@ -97,6 +92,18 @@ function LaporanPemasukanPage() {
 		setGeneratedFilters(filters);
 	};
 
+	// Group rows by date for rendering
+	const dateGroups = useMemo(() => {
+		if (!report) return null;
+		const map = new Map<string, PemasukanData["rows"]>();
+		for (const row of report.rows) {
+			const existing = map.get(row.date) || [];
+			existing.push(row);
+			map.set(row.date, existing);
+		}
+		return map;
+	}, [report]);
+
 	const handlePrint = () => {
 		if (!report) return;
 		const esc = (s: string) =>
@@ -108,33 +115,38 @@ function LaporanPemasukanPage() {
 		const fmt = (n: number) => esc(formatCurrency(n));
 
 		let html = `<h2 class="text-lg font-bold mb-2">Laporan Pemasukan</h2>`;
-		html += `<p class="text-gray mb-2">Periode: ${esc(formatDate(report.date_from))} - ${esc(formatDate(report.date_to))}</p>`;
-		html += `<p class="text-gray mb-4">TA ${esc(report.academic_year)}</p>`;
+		html += `<p class="text-sm text-gray mb-2">Periode: ${esc(formatDate(report.date_from))} - ${esc(formatDate(report.date_to))}</p>`;
+		html += `<p class="text-sm text-gray mb-4">TA ${esc(report.academic_year)}</p>`;
 
-		for (const block of report.transactions) {
-			html += `<div class="border p-4 rounded mb-4">`;
-			html += `<p class="text-sm font-bold mb-2">${esc(formatDate(block.date))} — Subtotal: ${fmt(block.subtotal)}</p>`;
+		html += `<table><thead><tr>
+			<th>Tanggal</th><th>Kategori</th><th class="text-right">Jml Trans</th><th class="text-right">Nominal</th>
+		</tr></thead><tbody>`;
 
-			for (const txn of block.transactions) {
-				html += `<div class="border-t pt-2 mt-2">`;
-				html += `<table class="mb-1"><tbody>`;
-				html += `<tr><td class="text-sm text-gray">Sumber:</td><td class="text-sm">${esc(txn.source)}</td></tr>`;
-				html += `<tr><td class="text-sm text-gray">Metode:</td><td class="text-sm">${esc(txn.payment_method)}</td></tr>`;
-				html += `<tr><td class="text-sm text-gray">Terbilang:</td><td class="text-sm">${esc(txn.terbilang)}</td></tr>`;
-				html += `<tr><td class="text-sm text-gray">Tgl:</td><td class="text-sm">${esc(formatDate(txn.transaction_date))}</td></tr>`;
-				html += ``;
-				html += `<tr><td class="text-sm text-gray">Petugas:</td><td class="text-sm">${esc(txn.petugas)}</td></tr>`;
-				html += `</tbody></table>`;
-				html += `<table><thead><tr><th>No</th><th>Kategori</th><th>Deskripsi</th><th class="text-right">Nominal</th></tr></thead><tbody>`;
-				for (const item of txn.items) {
-					html += `<tr><td>${item.no}</td><td>${esc(item.category)}</td><td>${esc(item.description || "-")}</td><td class="text-right font-mono">${fmt(item.amount)}</td></tr>`;
+		if (dateGroups) {
+			for (const [date, rows] of dateGroups) {
+				const subtotal = rows.reduce((s, r) => s + r.total, 0);
+				for (let i = 0; i < rows.length; i++) {
+					const r = rows[i];
+					html += `<tr>
+						<td>${i === 0 ? esc(formatDate(date)) : ""}</td>
+						<td>${esc(r.category)}</td>
+						<td class="text-right">${r.count}</td>
+						<td class="text-right font-mono">${fmt(r.total)}</td>
+					</tr>`;
 				}
-				html += `</tbody></table>`;
-				html += `</div>`;
+				html += `<tr class="border-t text-gray font-bold">
+					<td colspan="2"></td>
+					<td class="text-right">Subtotal</td>
+					<td class="text-right font-mono">${fmt(subtotal)}</td>
+				</tr>`;
 			}
-			html += `</div>`;
 		}
-		html += `<div class="border-t-2 border-black pt-2 font-bold text-right text-base">Grand Total: ${fmt(report.grand_total)}</div>`;
+		html += `<tr class="border-t-2 border-black font-bold text-base">
+			<td colspan="2"></td>
+			<td class="text-right">Grand Total</td>
+			<td class="text-right font-mono">${fmt(report.grand_total)}</td>
+		</tr>`;
+		html += `</tbody></table>`;
 
 		openPrintWindow(html, {
 			title: "Laporan Pemasukan",
@@ -142,7 +154,6 @@ function LaporanPemasukanPage() {
 		});
 	};
 
-	// Build info card filters
 	const infoFilters: Record<string, string> = useMemo(() => {
 		if (!generatedFilters) return {} as Record<string, string>;
 		const selectedNames = feeItems
@@ -214,146 +225,85 @@ function LaporanPemasukanPage() {
 				</Alert>
 			)}
 
-			{/* Report Content */}
+			{/* Report */}
 			{report && !isLoading && (
 				<>
 					<ReportInfoCard filters={infoFilters} />
 
-					{report.transactions?.length > 0 ? (
-						<div className="space-y-6">
-							{report.transactions.map((block) => (
-								<div key={block.date}>
-									{/* Date header */}
-									<div className="flex items-center gap-2 mb-3">
-										<h3 className="text-sm font-semibold text-gray-900">
-											{formatDate(block.date)}
-										</h3>
-										<span className="text-xs text-gray-500">
-											Subtotal: {formatCurrency(block.subtotal)}
-										</span>
-									</div>
-
-									{/* Transactions for this date */}
-									<div className="space-y-6">
-										{block.transactions.map((txn) => (
-											<div
-												key={txn.id}
-												className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden"
-											>
-												{/* Two-column info header */}
-												<div className="p-4 border-b border-gray-100">
-													<div className="flex flex-col sm:flex-row sm:justify-between gap-3">
-														{/* Left Column */}
-														<div className="flex-1 space-y-1.5 text-sm">
-															<div className="flex">
-																<span className="text-gray-500 w-36 shrink-0">
-																	Cara Transaksi
-																</span>
-																<span className="text-gray-900 font-medium">
-																	: {txn.payment_method.toUpperCase()}
-																</span>
-															</div>
-															<div className="flex">
-																<span className="text-gray-500 w-36 shrink-0">
-																	Keterangan
-																</span>
-																<span className="text-gray-900">
-																	: {txn.source}
-																</span>
-															</div>
-															<div className="flex">
-																<span className="text-gray-500 w-36 shrink-0">
-																	Terbilang
-																</span>
-																<span className="text-gray-900">
-																	: {txn.terbilang || "-"}
-																</span>
-															</div>
-														</div>
-														{/* Right Column */}
-														<div className="flex-1 space-y-1.5 text-sm">
-															<div className="flex">
-																<span className="text-gray-500 w-36 shrink-0">
-																	Tgl. Transaksi
-																</span>
-																<span className="text-gray-900">
-																	: {formatDate(txn.transaction_date)}
-																</span>
-															</div>
-															<div className="flex">
-																<span className="text-gray-500 w-36 shrink-0">
-																	Petugas
-																</span>
-																<span className="text-gray-900">
-																	: {txn.petugas || "-"}
-																</span>
-															</div>
-														</div>
-													</div>
-												</div>
-
-												{/* Items table */}
-												<div className="overflow-x-auto">
-													<p className="px-4 pt-3 text-sm text-gray-600 font-medium">
-														Dengan rincian transaksi sebagai berikut :
-													</p>
-													<table className="min-w-full divide-y divide-gray-200 mt-2">
-														<thead className="bg-gray-50">
-															<tr>
-																<th className="py-2 pl-4 pr-3 text-left text-xs font-semibold text-gray-500 uppercase w-12">
-																	No
-																</th>
-																<th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase w-32">
-																	Kategori
-																</th>
-																<th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase">
-																	Deskripsi
-																</th>
-																<th className="px-3 py-2 text-right text-xs font-semibold text-gray-500 uppercase pr-4 w-36">
-																	Nominal
-																</th>
-															</tr>
-														</thead>
-														<tbody className="divide-y divide-gray-100">
-															{txn.items.map((item) => (
-																<tr key={item.no}>
-																	<td className="py-2 pl-4 pr-3 text-sm text-gray-500">
-																		{item.no}
-																	</td>
-																	<td className="px-3 py-2 text-sm text-gray-900">
-																		{item.category}
-																	</td>
-																	<td className="px-3 py-2 text-sm text-gray-900">
-																		{item.description || "-"}
-																	</td>
-																	<td className="px-3 py-2 text-sm text-right text-gray-900 tabular-nums pr-4">
-																		{formatCurrency(item.amount)}
-																	</td>
-																</tr>
-															))}
-														</tbody>
-													</table>
-													{/* Subtotal per transaction */}
-													<div className="flex justify-end px-4 py-2 border-t border-gray-200">
-														<span className="text-sm font-semibold text-gray-900">
-															Jumlah {formatCurrency(txn.total_amount)}
-														</span>
-													</div>
-												</div>
-											</div>
-										))}
-									</div>
-								</div>
-							))}
-
-							{/* Grand Total */}
-							<div className="bg-indigo-50 rounded-xl border border-indigo-100 p-4 flex justify-between items-center">
-								<span className="text-sm font-semibold text-indigo-900">
-									Grand Total
-								</span>
-								<span className="text-lg font-bold text-indigo-900 tabular-nums">
-									{formatCurrency(report.grand_total)}
-								</span>
+					{report.rows.length > 0 && dateGroups ? (
+						<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden">
+							<div className="overflow-x-auto">
+								<table className="min-w-full divide-y divide-gray-200">
+									<thead className="bg-gray-50">
+										<tr>
+											<th className="py-3 pl-6 pr-3 text-left text-sm font-semibold text-gray-900 w-32">
+												Tanggal
+											</th>
+											<th className="px-3 py-3 text-left text-sm font-semibold text-gray-900">
+												Kategori
+											</th>
+											<th className="px-3 py-3 text-right text-sm font-semibold text-gray-900 w-24">
+												Jml Trans
+											</th>
+											<th className="px-3 py-3 text-right text-sm font-semibold text-gray-900 pr-6 w-40">
+												Total Nominal
+											</th>
+										</tr>
+									</thead>
+									<tbody className="divide-y divide-gray-100 bg-white">
+										{[...dateGroups.entries()].map(([date, rows]) => {
+											const subtotal = rows.reduce((s, r) => s + r.total, 0);
+											return (
+												<>
+													{rows.map((row, i) => (
+														<tr key={`${date}-${row.category}`}>
+															<td className="py-2.5 pl-6 pr-3 text-sm text-gray-900">
+																{i === 0 ? formatDate(date) : ""}
+															</td>
+															<td className="px-3 py-2.5 text-sm text-gray-900">
+																{row.category}
+															</td>
+															<td className="px-3 py-2.5 text-sm text-right text-gray-500 tabular-nums">
+																{row.count}
+															</td>
+															<td className="px-3 py-2.5 text-sm text-right text-gray-900 tabular-nums pr-6">
+																{formatCurrency(row.total)}
+															</td>
+														</tr>
+													))}
+													{/* Subtotal */}
+													<tr className="bg-gray-50 border-t border-gray-200">
+														<td
+															colSpan={2}
+															className="py-2 pl-6 pr-3 text-sm font-medium text-gray-500"
+														/>
+														<td className="px-3 py-2 text-sm text-right font-semibold text-gray-500">
+															Subtotal
+														</td>
+														<td className="px-3 py-2 text-sm text-right font-semibold text-gray-900 tabular-nums pr-6">
+															{formatCurrency(subtotal)}
+														</td>
+													</tr>
+												</>
+											);
+										})}
+									</tbody>
+									{/* Grand Total */}
+									<tfoot>
+										<tr className="border-t-2 border-gray-300 bg-indigo-50 font-bold">
+											<td
+												colSpan={2}
+												className="py-3 pl-6 pr-3 text-sm text-indigo-900"
+											/>
+											<td className="px-3 py-3 text-sm text-right text-indigo-900">
+												Grand Total
+											</td>
+											<td className="px-3 py-3 text-sm text-right text-indigo-900 tabular-nums pr-6">
+												{formatCurrency(report.grand_total)}
+											</td>
+										</tr>
+									</tfoot>
+								</table>
 							</div>
 						</div>
 					) : (
@@ -366,7 +316,7 @@ function LaporanPemasukanPage() {
 				</>
 			)}
 
-			{/* Empty state — before generate */}
+			{/* Empty — before generate */}
 			{!report && !isLoading && !isError && (
 				<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-12 text-center">
 					<p className="text-sm text-gray-500">

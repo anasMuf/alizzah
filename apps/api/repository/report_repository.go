@@ -3,7 +3,6 @@ package repository
 import (
 	"api/dto"
 	"api/model"
-	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -32,8 +31,7 @@ type ReportRepository interface {
 	SumPengeluaran(academicYearID uint, startDate, endDate time.Time, category string) (float64, error)
 
 	// Pemasukan & Pengeluaran
-	FindPaymentsInRange(academicYearID uint, startDate, endDate time.Time, categories []string) ([]dto.PemasukanTransaction, error)
-	FindIncomeTransactionsInRange(academicYearID uint, startDate, endDate time.Time) ([]dto.PemasukanTransaction, error)
+	FindPemasukanSummary(academicYearID uint, startDate, endDate time.Time, categories []string, paymentMethod string) ([]dto.PemasukanRow, error)
 
 	// Tabungan
 	DailySavingsCredit(startDate, endDate time.Time, savingsType string) (map[string]float64, error)
@@ -495,97 +493,64 @@ func (r *reportRepository) SumSavingsDebit(startDate, endDate time.Time, savings
 	return total, err
 }
 
-// FindPaymentsInRange returns payments (invoice + income_transaction format) in date range
-func (r *reportRepository) FindPaymentsInRange(academicYearID uint, startDate, endDate time.Time, categories []string) ([]dto.PemasukanTransaction, error) {
+// FindPemasukanSummary returns daily summary grouped by category from payments + income_transactions
+func (r *reportRepository) FindPemasukanSummary(academicYearID uint, startDate, endDate time.Time, categories []string, paymentMethod string) ([]dto.PemasukanRow, error) {
 	type Row struct {
-		PaymentID       uint    `gorm:"column:payment_id"`
-		PaymentDate     string  `gorm:"column:payment_date"`
-		Source          string  `gorm:"column:source"`
-		TotalAmount     float64 `gorm:"column:total_amount"`
-		ItemCategory    string  `gorm:"column:item_category"`
-		ItemName        string  `gorm:"column:item_name"`
-		ItemDescription string  `gorm:"column:item_description"`
-		ItemAmount      float64 `gorm:"column:item_amount"`
-		CreatedByName   string  `gorm:"column:created_by_name"`
+		Date     string  `gorm:"column:date"`
+		Category string  `gorm:"column:category"`
+		Count    int     `gorm:"column:count"`
+		Total    float64 `gorm:"column:total"`
 	}
 
 	var rows []Row
-	query := r.db.Table("payments p").
-		Select("p.id as payment_id, DATE(p.payment_date) as payment_date, p.source, p.total_amount, ii.category as item_category, ii.name as item_name, COALESCE(ii.notes, ii.name) as item_description, pi.amount as item_amount, u.full_name as created_by_name").
-		Joins("JOIN payment_items pi ON pi.payment_id = p.id").
+
+	// 1. Invoice payments (payment_items grouped by date + invoice category)
+	payQuery := r.db.Table("payment_items pi").
+		Select("DATE(p.payment_date) as date, ii.category, COUNT(DISTINCT p.id) as count, SUM(pi.amount) as total").
+		Joins("JOIN payments p ON p.id = pi.payment_id").
 		Joins("JOIN invoice_items ii ON ii.id = pi.invoice_item_id").
-		Joins("LEFT JOIN users u ON u.id = p.created_by").
 		Where("p.academic_year_id = ? AND p.payment_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
 
 	if len(categories) > 0 {
-		query = query.Where("ii.category IN ?", categories)
+		payQuery = payQuery.Where("ii.category IN ?", categories)
+	}
+	if paymentMethod == "tunai" {
+		payQuery = payQuery.Where("p.source = ?", "cash")
+	} else if paymentMethod == "tabungan" {
+		payQuery = payQuery.Where("p.source = ?", "savings")
 	}
 
-	query = query.Order("p.payment_date ASC, p.id ASC")
+	payQuery = payQuery.Group("DATE(p.payment_date), ii.category").Order("DATE(p.payment_date), ii.category")
 
-	if err := query.Scan(&rows).Error; err != nil {
+	if err := payQuery.Scan(&rows).Error; err != nil {
 		return nil, err
 	}
 
-	// Group by payment_id
-	paymentMap := make(map[uint]*dto.PemasukanTransaction)
-	var paymentOrder []uint
+	// 2. Income transactions (grouped by date + category)
+	type IncomeRow struct {
+		Date     string  `gorm:"column:date"`
+		Category string  `gorm:"column:category"`
+		Count    int     `gorm:"column:count"`
+		Total    float64 `gorm:"column:total"`
+	}
+	var incomeRows []IncomeRow
 
-	for _, row := range rows {
-		if _, exists := paymentMap[row.PaymentID]; !exists {
-			paymentMap[row.PaymentID] = &dto.PemasukanTransaction{
-				ID:              row.PaymentID,
-				Source:          row.ItemCategory,
-				PaymentMethod:   row.Source,
-				Terbilang:       "",
-				TransactionDate: row.PaymentDate, // already YYYY-MM-DD string
-				TransactionNo:   fmt.Sprintf("PAY-%d", row.PaymentID),
-				Petugas:         row.CreatedByName,
-				Items:           []dto.PemasukanItem{},
-				TotalAmount:     row.TotalAmount,
-			}
-			paymentOrder = append(paymentOrder, row.PaymentID)
-		}
-		txn := paymentMap[row.PaymentID]
-		txn.Items = append(txn.Items, dto.PemasukanItem{
-			No:       len(txn.Items) + 1,
-			Category: row.ItemName,
-			Amount:   row.ItemAmount,
-		})
+	incomeQuery := r.db.Table("income_transactions it").
+		Select("DATE(it.transaction_date) as date, it.category, COUNT(*) as count, SUM(it.amount) as total").
+		Where("it.academic_year_id = ? AND it.transaction_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
+
+	if len(categories) > 0 {
+		// income_transactions have their own category system, only include if no fee item filter
+		// (fee items are from invoice system, income_transactions are separate)
 	}
 
-	var result []dto.PemasukanTransaction
-	for _, id := range paymentOrder {
-		result = append(result, *paymentMap[id])
-	}
+	incomeQuery = incomeQuery.Group("DATE(it.transaction_date), it.category").Order("DATE(it.transaction_date), it.category")
 
-	return result, nil
-}
-
-// FindIncomeTransactionsInRange returns income transactions in date range as PemasukanTransaction format
-func (r *reportRepository) FindIncomeTransactionsInRange(academicYearID uint, startDate, endDate time.Time) ([]dto.PemasukanTransaction, error) {
-	type Row struct {
-		ID              uint    `gorm:"column:id"`
-		TransactionDate string  `gorm:"column:transaction_date"`
-		Category        string  `gorm:"column:category"`
-		SourceName      string  `gorm:"column:source_name"`
-		Amount          float64 `gorm:"column:amount"`
-		ReferenceNumber string  `gorm:"column:reference_number"`
-		CreatedByName   string  `gorm:"column:created_by_name"`
-	}
-
-	var rows []Row
-	err := r.db.Table("income_transactions it").
-		Select("it.id, it.transaction_date, it.category, it.source_name, it.amount, COALESCE(it.reference_number, '') as reference_number, u.full_name as created_by_name").
-		Joins("LEFT JOIN users u ON u.id = it.created_by").
-		Where("it.academic_year_id = ? AND it.transaction_date BETWEEN ? AND ?", academicYearID, startDate, endDate).
-		Order("it.transaction_date ASC, it.id ASC").
-		Scan(&rows).Error
-	if err != nil {
+	if err := incomeQuery.Scan(&incomeRows).Error; err != nil {
 		return nil, err
 	}
 
-	var result []dto.PemasukanTransaction
+	// Map income categories to labels
 	incomeLabels := map[string]string{
 		"bos":     "Dana BOS",
 		"donasi":  "Donasi",
@@ -593,25 +558,30 @@ func (r *reportRepository) FindIncomeTransactionsInRange(academicYearID uint, st
 		"lainnya": "Lainnya",
 	}
 
-	for _, row := range rows {
-		categoryLabel := row.Category
-		if label, ok := incomeLabels[row.Category]; ok {
-			categoryLabel = label
+	for _, r := range incomeRows {
+		label := r.Category
+		if l, ok := incomeLabels[r.Category]; ok {
+			label = l
 		}
-		result = append(result, dto.PemasukanTransaction{
-			ID:              row.ID,
-			Source:          categoryLabel,
-			PaymentMethod:   "tunai",
-			Terbilang:       "",
-			TransactionDate: row.TransactionDate, // already YYYY-MM-DD from DB
-			TransactionNo:   row.ReferenceNumber,
-			Petugas:         row.CreatedByName,
-			Items: []dto.PemasukanItem{
-				{No: 1, Category: categoryLabel, Description: row.SourceName, Amount: row.Amount},
-			},
-			TotalAmount: row.Amount,
+		rows = append(rows, Row{
+			Date:     r.Date,
+			Category: label,
+			Count:    r.Count,
+			Total:    r.Total,
+		})
+	}
+
+	// Convert to PemasukanRow (raw category codes, service will map labels)
+	var result []dto.PemasukanRow
+	for _, row := range rows {
+		result = append(result, dto.PemasukanRow{
+			Date:     row.Date,
+			Category: row.Category,
+			Count:    row.Count,
+			Total:    row.Total,
 		})
 	}
 
 	return result, nil
 }
+

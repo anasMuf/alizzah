@@ -26,6 +26,27 @@ export const Route = createFileRoute("/_authenticated/keuangan/laporan/saldo")({
 	component: LaporanSaldoPage,
 });
 
+const CATEGORY_ORDER: Record<string, number> = {
+	initial: 1,
+	registration: 2,
+	monthly_spp: 3,
+	monthly_infaq: 4,
+	pasta: 5,
+	savings_mandatory: 6,
+	daycare: 7,
+	daycare_meal: 8,
+	graduation: 9,
+	calisan: 10,
+	ekskul: 11,
+};
+
+function sortByCategory(a: any, b: any): number {
+	const orderA = CATEGORY_ORDER[a.category] ?? 99;
+	const orderB = CATEGORY_ORDER[b.category] ?? 99;
+	if (orderA !== orderB) return orderA - orderB;
+	return a.id - b.id;
+}
+
 function LaporanSaldoPage() {
 	const [activeAy] = useAtom(academicYearAtom);
 
@@ -51,7 +72,7 @@ function LaporanSaldoPage() {
 		const seen = new Set<string>();
 		return feeItems
 			.slice()
-			.sort((a: any, b: any) => a.id - b.id)
+			.sort(sortByCategory)
 			.filter((item: any) => {
 				if (seen.has(item.category)) return false;
 				seen.add(item.category);

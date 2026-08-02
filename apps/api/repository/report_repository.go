@@ -529,43 +529,46 @@ func (r *reportRepository) FindPemasukanSummary(academicYearID uint, startDate, 
 		return nil, err
 	}
 
-	// 2. Income transactions: per transaction with source name
-	type IncomeRow struct {
-		Date        string  `gorm:"column:date"`
-		Category    string  `gorm:"column:category"`
-		Description string  `gorm:"column:description"`
-		Amount      float64 `gorm:"column:amount"`
-	}
-	var incomeRows []IncomeRow
-
-	incomeQuery := r.db.Table("income_transactions it").
-		Select("DATE(it.transaction_date) as date, it.category, it.source_name as description, it.amount").
-		Where("it.academic_year_id = ? AND it.transaction_date BETWEEN ? AND ?", academicYearID, startDate, endDate).
-		Order("DATE(it.transaction_date), it.category")
-
-	if err := incomeQuery.Scan(&incomeRows).Error; err != nil {
-		return nil, err
-	}
-
-	// Map income categories to labels
-	incomeLabels := map[string]string{
-		"bos":     "Dana BOS",
-		"donasi":  "Donasi",
-		"hibah":   "Hibah",
-		"lainnya": "Lainnya",
-	}
-
-	for _, r := range incomeRows {
-		label := r.Category
-		if l, ok := incomeLabels[r.Category]; ok {
-			label = l
+	// 2. Income transactions: only include when no fee item filter is active
+	// (income transactions are separate from invoice-based fee items)
+	if len(categories) == 0 {
+		type IncomeRow struct {
+			Date        string  `gorm:"column:date"`
+			Category    string  `gorm:"column:category"`
+			Description string  `gorm:"column:description"`
+			Amount      float64 `gorm:"column:amount"`
 		}
-		rows = append(rows, Row{
-			Date:        r.Date,
-			Category:    label,
-			Description: r.Description,
-			Amount:      r.Amount,
-		})
+		var incomeRows []IncomeRow
+
+		incomeQuery := r.db.Table("income_transactions it").
+			Select("DATE(it.transaction_date) as date, it.category, it.source_name as description, it.amount").
+			Where("it.academic_year_id = ? AND it.transaction_date BETWEEN ? AND ?", academicYearID, startDate, endDate).
+			Order("DATE(it.transaction_date), it.category")
+
+		if err := incomeQuery.Scan(&incomeRows).Error; err != nil {
+			return nil, err
+		}
+
+		// Map income categories to labels
+		incomeLabels := map[string]string{
+			"bos":     "Dana BOS",
+			"donasi":  "Donasi",
+			"hibah":   "Hibah",
+			"lainnya": "Lainnya",
+		}
+
+		for _, r := range incomeRows {
+			label := r.Category
+			if l, ok := incomeLabels[r.Category]; ok {
+				label = l
+			}
+			rows = append(rows, Row{
+				Date:        r.Date,
+				Category:    label,
+				Description: r.Description,
+				Amount:      r.Amount,
+			})
+		}
 	}
 
 	// Convert to PemasukanRow

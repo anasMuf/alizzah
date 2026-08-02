@@ -19,6 +19,7 @@ import {
 	ReceiptText,
 	RefreshCw,
 	ScrollText,
+	Settings,
 	ShoppingBag,
 	ShoppingCart,
 	Store,
@@ -200,6 +201,9 @@ export function Sidebar({ isOpen }: SidebarProps) {
 							</NavLink>
 							<NavLink to="/pengaturan/log" icon={ScrollText}>
 								Log Aktivitas
+							</NavLink>
+							<NavLink to="/pengaturan/aplikasi" icon={Settings}>
+								Pengaturan Aplikasi
 							</NavLink>
 						</div>
 					)}

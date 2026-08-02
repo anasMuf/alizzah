@@ -20,6 +20,7 @@ import { Route as AuthenticatedKoperasiIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedKeuanganIndexRouteImport } from './routes/_authenticated/keuangan/index'
 import { Route as AuthenticatedPengaturanPenggunaRouteImport } from './routes/_authenticated/pengaturan/pengguna'
 import { Route as AuthenticatedPengaturanLogRouteImport } from './routes/_authenticated/pengaturan/log'
+import { Route as AuthenticatedPengaturanAplikasiRouteImport } from './routes/_authenticated/pengaturan/aplikasi'
 import { Route as AuthenticatedKoperasiPemasokRouteImport } from './routes/_authenticated/koperasi/pemasok'
 import { Route as AuthenticatedKoperasiLaporanRouteImport } from './routes/_authenticated/koperasi/laporan'
 import { Route as AuthenticatedKoperasiLainLainRouteImport } from './routes/_authenticated/koperasi/lain-lain'
@@ -156,6 +157,12 @@ const AuthenticatedPengaturanLogRoute =
   AuthenticatedPengaturanLogRouteImport.update({
     id: '/pengaturan/log',
     path: '/pengaturan/log',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPengaturanAplikasiRoute =
+  AuthenticatedPengaturanAplikasiRouteImport.update({
+    id: '/pengaturan/aplikasi',
+    path: '/pengaturan/aplikasi',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedKoperasiPemasokRoute =
@@ -640,6 +647,7 @@ export interface FileRoutesByFullPath {
   '/koperasi/lain-lain': typeof AuthenticatedKoperasiLainLainRoute
   '/koperasi/laporan': typeof AuthenticatedKoperasiLaporanRoute
   '/koperasi/pemasok': typeof AuthenticatedKoperasiPemasokRoute
+  '/pengaturan/aplikasi': typeof AuthenticatedPengaturanAplikasiRoute
   '/pengaturan/log': typeof AuthenticatedPengaturanLogRoute
   '/pengaturan/pengguna': typeof AuthenticatedPengaturanPenggunaRoute
   '/keuangan/': typeof AuthenticatedKeuanganIndexRoute
@@ -728,6 +736,7 @@ export interface FileRoutesByTo {
   '/koperasi/lain-lain': typeof AuthenticatedKoperasiLainLainRoute
   '/koperasi/laporan': typeof AuthenticatedKoperasiLaporanRoute
   '/koperasi/pemasok': typeof AuthenticatedKoperasiPemasokRoute
+  '/pengaturan/aplikasi': typeof AuthenticatedPengaturanAplikasiRoute
   '/pengaturan/log': typeof AuthenticatedPengaturanLogRoute
   '/pengaturan/pengguna': typeof AuthenticatedPengaturanPenggunaRoute
   '/keuangan': typeof AuthenticatedKeuanganIndexRoute
@@ -819,6 +828,7 @@ export interface FileRoutesById {
   '/_authenticated/koperasi/lain-lain': typeof AuthenticatedKoperasiLainLainRoute
   '/_authenticated/koperasi/laporan': typeof AuthenticatedKoperasiLaporanRoute
   '/_authenticated/koperasi/pemasok': typeof AuthenticatedKoperasiPemasokRoute
+  '/_authenticated/pengaturan/aplikasi': typeof AuthenticatedPengaturanAplikasiRoute
   '/_authenticated/pengaturan/log': typeof AuthenticatedPengaturanLogRoute
   '/_authenticated/pengaturan/pengguna': typeof AuthenticatedPengaturanPenggunaRoute
   '/_authenticated/keuangan/': typeof AuthenticatedKeuanganIndexRoute
@@ -911,6 +921,7 @@ export interface FileRouteTypes {
     | '/koperasi/lain-lain'
     | '/koperasi/laporan'
     | '/koperasi/pemasok'
+    | '/pengaturan/aplikasi'
     | '/pengaturan/log'
     | '/pengaturan/pengguna'
     | '/keuangan/'
@@ -999,6 +1010,7 @@ export interface FileRouteTypes {
     | '/koperasi/lain-lain'
     | '/koperasi/laporan'
     | '/koperasi/pemasok'
+    | '/pengaturan/aplikasi'
     | '/pengaturan/log'
     | '/pengaturan/pengguna'
     | '/keuangan'
@@ -1089,6 +1101,7 @@ export interface FileRouteTypes {
     | '/_authenticated/koperasi/lain-lain'
     | '/_authenticated/koperasi/laporan'
     | '/_authenticated/koperasi/pemasok'
+    | '/_authenticated/pengaturan/aplikasi'
     | '/_authenticated/pengaturan/log'
     | '/_authenticated/pengaturan/pengguna'
     | '/_authenticated/keuangan/'
@@ -1250,6 +1263,13 @@ declare module '@tanstack/react-router' {
       path: '/pengaturan/log'
       fullPath: '/pengaturan/log'
       preLoaderRoute: typeof AuthenticatedPengaturanLogRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pengaturan/aplikasi': {
+      id: '/_authenticated/pengaturan/aplikasi'
+      path: '/pengaturan/aplikasi'
+      fullPath: '/pengaturan/aplikasi'
+      preLoaderRoute: typeof AuthenticatedPengaturanAplikasiRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/koperasi/pemasok': {
@@ -2072,6 +2092,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedKeuanganRoute: typeof AuthenticatedKeuanganRouteWithChildren
   AuthenticatedKoperasiRoute: typeof AuthenticatedKoperasiRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedPengaturanAplikasiRoute: typeof AuthenticatedPengaturanAplikasiRoute
   AuthenticatedPengaturanLogRoute: typeof AuthenticatedPengaturanLogRoute
   AuthenticatedPengaturanPenggunaRoute: typeof AuthenticatedPengaturanPenggunaRoute
   AuthenticatedPengaturanTarifIdRoute: typeof AuthenticatedPengaturanTarifIdRoute
@@ -2083,6 +2104,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedKeuanganRoute: AuthenticatedKeuanganRouteWithChildren,
   AuthenticatedKoperasiRoute: AuthenticatedKoperasiRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedPengaturanAplikasiRoute: AuthenticatedPengaturanAplikasiRoute,
   AuthenticatedPengaturanLogRoute: AuthenticatedPengaturanLogRoute,
   AuthenticatedPengaturanPenggunaRoute: AuthenticatedPengaturanPenggunaRoute,
   AuthenticatedPengaturanTarifIdRoute: AuthenticatedPengaturanTarifIdRoute,

@@ -6,11 +6,12 @@ interface ReportInfoCardProps {
 
 const FIELD_LABELS: Record<string, string> = {
 	sumber: "Sumber",
+	pos: "Pos",
+	kategori: "Kategori",
+	pengeluaran: "Pengeluaran",
 	metode: "Metode Bayar",
 	periode: "Periode",
 	ta: "Tahun Ajaran",
-	pos: "Pos Penerimaan",
-	kategori: "Kategori Pengeluaran",
 };
 
 export function ReportInfoCard({ filters }: ReportInfoCardProps) {

@@ -10,12 +10,13 @@ import { customInstance } from "../../mutator/custom-instance";
 export interface SaldoParams {
 	month?: number;
 	year?: number;
-	date_from?: string; // YYYY-MM-DD, takes priority over month/year
-	date_to?: string; // YYYY-MM-DD
-	category?: string; // single category (backward compatible)
-	categories?: string; // comma-separated category names (takes priority)
+	date_from?: string;
+	date_to?: string;
+	category?: string;
+	categories?: string;
+	income_categories?: string; // comma-separated income category codes (bos, donasi, dll)
 	academic_year_id?: number;
-	academic_year_ids?: string; // comma-separated IDs
+	academic_year_ids?: string;
 }
 
 export interface SaldoRow {

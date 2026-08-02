@@ -3,8 +3,8 @@ package repository
 import (
 	"api/dto"
 	"api/model"
-	"time"
 	"strings"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -506,28 +506,30 @@ func (r *reportRepository) FindPemasukanSummary(academicYearID uint, startDate, 
 
 	var rows []Row
 
-	// 1. Invoice payments: per payment_item with student name
-	payQuery := r.db.Table("payment_items pi").
-		Select("DATE(p.payment_date) as date, ii.category, CONCAT(COALESCE(s.full_name, 'Siswa #' || s.id), ' - ', ii.name) as description, pi.amount").
-		Joins("JOIN payments p ON p.id = pi.payment_id").
-		Joins("JOIN invoice_items ii ON ii.id = pi.invoice_item_id").
-		Joins("JOIN invoices i ON i.id = ii.invoice_id").
-		Joins("JOIN students s ON s.id = i.student_id").
-		Where("p.academic_year_id = ? AND p.payment_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
+	// 1. Invoice payments: skip if ONLY income categories are selected (no invoice categories)
+	if !(len(categories) == 0 && incomeCategories != "") {
+		payQuery := r.db.Table("payment_items pi").
+			Select("DATE(p.payment_date) as date, ii.category, CONCAT(COALESCE(s.full_name, 'Siswa #' || s.id), ' - ', ii.name) as description, pi.amount").
+			Joins("JOIN payments p ON p.id = pi.payment_id").
+			Joins("JOIN invoice_items ii ON ii.id = pi.invoice_item_id").
+			Joins("JOIN invoices i ON i.id = ii.invoice_id").
+			Joins("JOIN students s ON s.id = i.student_id").
+			Where("p.academic_year_id = ? AND p.payment_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
 
-	if len(categories) > 0 {
-		payQuery = payQuery.Where("ii.category IN ?", categories)
-	}
-	if paymentMethod == "tunai" {
-		payQuery = payQuery.Where("p.source = ?", "cash")
-	} else if paymentMethod == "tabungan" {
-		payQuery = payQuery.Where("p.source = ?", "savings")
-	}
+		if len(categories) > 0 {
+			payQuery = payQuery.Where("ii.category IN ?", categories)
+		}
+		if paymentMethod == "tunai" {
+			payQuery = payQuery.Where("p.source = ?", "cash")
+		} else if paymentMethod == "tabungan" {
+			payQuery = payQuery.Where("p.source = ?", "savings")
+		}
 
-	payQuery = payQuery.Order("DATE(p.payment_date), ii.category, s.full_name")
+		payQuery = payQuery.Order("DATE(p.payment_date), ii.category, s.full_name")
 
-	if err := payQuery.Scan(&rows).Error; err != nil {
-		return nil, err
+		if err := payQuery.Scan(&rows).Error; err != nil {
+			return nil, err
+		}
 	}
 
 	// 2. Income transactions: only include when no fee item filter is active

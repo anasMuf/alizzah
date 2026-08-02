@@ -94,10 +94,11 @@ function LaporanPemasukanPage() {
 			if (!map.has(groupName)) {
 				map.set(groupName, { header: groupName, items: [] });
 			}
-			map.get(groupName)!.items.push({
-				id: item.id,
-				label: item.name, // tanpa category dalam kurung
-			});
+			const label =
+				item.level && item.level !== "all"
+					? `${item.name} (${item.level.toUpperCase()})`
+					: item.name;
+			map.get(groupName)!.items.push({ id: item.id, label });
 		}
 
 		// Income categories as final group

@@ -94,7 +94,13 @@ function LaporanPosisiKasPage() {
 			if (!map.has(groupName)) {
 				map.set(groupName, { header: groupName, items: [] });
 			}
-			map.get(groupName)!.items.push({ id: item.id, label: item.name });
+			map.get(groupName)!.items.push({
+				id: item.id,
+				label:
+					item.level && item.level !== "all"
+						? `${item.name} (${item.level.toUpperCase()})`
+						: item.name,
+			});
 		}
 		return [...map.values()];
 	}, [feeItems]);

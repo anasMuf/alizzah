@@ -16,7 +16,10 @@ import {
 	FilterBar,
 	type FilterBarValues,
 } from "#/features/keuangan/components/FilterBar";
-import { MultiSelectCheckbox } from "#/features/keuangan/components/MultiSelectCheckbox";
+import {
+	MultiSelectCheckbox,
+	type MultiSelectGroup,
+} from "#/features/keuangan/components/MultiSelectCheckbox";
 import { ReportInfoCard } from "#/features/keuangan/components/ReportInfoCard";
 import { academicYearAtom } from "#/store/global";
 import { formatDate } from "#/utils/format";
@@ -27,6 +30,20 @@ export const Route = createFileRoute(
 )({
 	component: LaporanPosisiKasPage,
 });
+
+const CATEGORY_LABELS: Record<string, string> = {
+	initial: "Biaya Awal Pendidikan",
+	registration: "Biaya Registrasi",
+	monthly_spp: "SPP",
+	monthly_infaq: "Infaq",
+	pasta: "Pasta",
+	savings_mandatory: "Tabungan",
+	daycare: "Daycare",
+	daycare_meal: "Konsumsi Daycare",
+	graduation: "Wisuda",
+	calisan: "Calisan",
+	ekskul: "Ekskul",
+};
 
 const CATEGORY_ORDER: Record<string, number> = {
 	initial: 1,
@@ -69,16 +86,22 @@ function LaporanPosisiKasPage() {
 	);
 	const feeItems = ((feeItemsData?.data as any)?.data ?? []) as any[];
 
-	const feeItemOptions = useMemo(
-		() =>
-			feeItems
-				.slice()
-				.sort(sortByCategory)
-				.map((item: any) => ({
-					id: item.id,
-					label: `${item.name} (${item.category})`,
-				})),
-		[feeItems],
+	const feeItemGroups = useMemo((): MultiSelectGroup[] => {
+		const sorted = [...feeItems].sort(sortByCategory);
+		const map = new Map<string, MultiSelectGroup>();
+		for (const item of sorted) {
+			const groupName = CATEGORY_LABELS[item.category] || item.category;
+			if (!map.has(groupName)) {
+				map.set(groupName, { header: groupName, items: [] });
+			}
+			map.get(groupName)!.items.push({ id: item.id, label: item.name });
+		}
+		return [...map.values()];
+	}, [feeItems]);
+
+	const flatFeeItemOptions = useMemo(
+		() => feeItemGroups.flatMap((g) => g.items),
+		[feeItemGroups],
 	);
 
 	// Filter state
@@ -241,7 +264,8 @@ function LaporanPosisiKasPage() {
 					<div className="max-w-sm">
 						<MultiSelectCheckbox
 							label="Fee Item (Pemasukan)"
-							options={feeItemOptions}
+							options={flatFeeItemOptions}
+							groups={feeItemGroups}
 							selected={selectedFeeItemIds}
 							onChange={setSelectedFeeItemIds}
 						/>

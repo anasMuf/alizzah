@@ -15,7 +15,10 @@ import {
 	FilterBar,
 	type FilterBarValues,
 } from "#/features/keuangan/components/FilterBar";
-import { MultiSelectCheckbox } from "#/features/keuangan/components/MultiSelectCheckbox";
+import {
+	MultiSelectCheckbox,
+	type MultiSelectGroup,
+} from "#/features/keuangan/components/MultiSelectCheckbox";
 import { ReportInfoCard } from "#/features/keuangan/components/ReportInfoCard";
 import { academicYearAtom } from "#/store/global";
 import { formatCurrency, formatDate } from "#/utils/format";
@@ -67,22 +70,54 @@ function LaporanPemasukanPage() {
 	);
 	const feeItems = ((feeItemsData?.data as any)?.data ?? []) as any[];
 
-	const feeItemOptions = useMemo(
-		() => [
-			...feeItems
-				.slice()
-				.sort(sortByCategory)
-				.map((item: any) => ({
-					id: item.id,
-					label: `${item.name} (${item.category})`,
-				})),
-			// Income transaction categories (negative IDs)
-			{ id: -1, label: "Dana BOS" },
-			{ id: -2, label: "Donasi" },
-			{ id: -3, label: "Hibah" },
-			{ id: -4, label: "Lainnya" },
-		],
-		[feeItems],
+	const feeItemGroups = useMemo((): MultiSelectGroup[] => {
+		const sorted = [...feeItems].sort(sortByCategory);
+		const map = new Map<string, MultiSelectGroup>();
+
+		// Category display labels
+		const categoryLabels: Record<string, string> = {
+			initial: "Biaya Awal Pendidikan",
+			registration: "Biaya Registrasi",
+			monthly_spp: "SPP",
+			monthly_infaq: "Infaq",
+			pasta: "Pasta",
+			savings_mandatory: "Tabungan",
+			daycare: "Daycare",
+			daycare_meal: "Konsumsi Daycare",
+			graduation: "Wisuda",
+			calisan: "Calisan",
+			ekskul: "Ekskul",
+		};
+
+		for (const item of sorted) {
+			const groupName = categoryLabels[item.category] || item.category;
+			if (!map.has(groupName)) {
+				map.set(groupName, { header: groupName, items: [] });
+			}
+			map.get(groupName)!.items.push({
+				id: item.id,
+				label: item.name, // tanpa category dalam kurung
+			});
+		}
+
+		// Income categories as final group
+		map.set("Penerimaan Lain", {
+			header: "Penerimaan Lain",
+			items: [
+				{ id: -1, label: "Dana BOS" },
+				{ id: -2, label: "Donasi" },
+				{ id: -3, label: "Hibah" },
+				{ id: -4, label: "Lainnya" },
+			],
+		});
+
+		return [...map.values()];
+	}, [feeItems]);
+
+	// Flat options for "Semua" toggle
+	const allFeeItemOptions = useMemo(
+		() => feeItemGroups.flatMap((g) => g.items),
+		[feeItemGroups],
 	);
 
 	const [selectedFeeItemIds, setSelectedFeeItemIds] = useState<number[]>([]);
@@ -255,7 +290,8 @@ function LaporanPemasukanPage() {
 				<div className="max-w-sm">
 					<MultiSelectCheckbox
 						label="Fee Item (Pemasukan)"
-						options={feeItemOptions}
+						options={allFeeItemOptions}
+						groups={feeItemGroups}
 						selected={selectedFeeItemIds}
 						onChange={setSelectedFeeItemIds}
 					/>

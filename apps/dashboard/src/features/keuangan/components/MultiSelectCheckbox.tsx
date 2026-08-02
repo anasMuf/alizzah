@@ -5,18 +5,24 @@ export interface MultiSelectOption {
 	label: string;
 }
 
+export interface MultiSelectGroup {
+	header: string;
+	items: MultiSelectOption[];
+}
+
 interface MultiSelectCheckboxProps {
 	label: string;
 	options: MultiSelectOption[];
+	groups?: MultiSelectGroup[];
 	selected: number[];
 	onChange: (ids: number[]) => void;
-	/** Show "Semua" toggle at top. Default true. */
 	showSelectAll?: boolean;
 }
 
 export function MultiSelectCheckbox({
 	label,
 	options,
+	groups,
 	selected,
 	onChange,
 	showSelectAll = true,
@@ -44,6 +50,21 @@ export function MultiSelectCheckbox({
 		[selected, onChange],
 	);
 
+	const renderItem = (option: MultiSelectOption) => (
+		<label
+			key={option.id}
+			className="flex items-center gap-2 px-1.5 py-0.5 rounded hover:bg-gray-50 cursor-pointer"
+		>
+			<input
+				type="checkbox"
+				checked={selected.includes(option.id)}
+				onChange={() => handleToggle(option.id)}
+				className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer"
+			/>
+			<span className="text-sm text-gray-700">{option.label}</span>
+		</label>
+	);
+
 	return (
 		<div>
 			<label className="block text-sm font-medium leading-6 text-gray-900 mb-1">
@@ -54,7 +75,7 @@ export function MultiSelectCheckbox({
 					</span>
 				)}
 			</label>
-			<div className="max-h-48 overflow-y-auto rounded-md border border-gray-200 bg-white p-2 space-y-1">
+			<div className="max-h-64 overflow-y-auto rounded-md border border-gray-200 bg-white p-2 space-y-0.5">
 				{showSelectAll && options.length > 0 && (
 					<label className="flex items-center gap-2 px-1.5 py-0.5 rounded hover:bg-gray-50 cursor-pointer">
 						<input
@@ -66,23 +87,28 @@ export function MultiSelectCheckbox({
 						<span className="text-sm font-medium text-gray-700">Semua</span>
 					</label>
 				)}
-				{options.length === 0 && (
+
+				{!groups && options.length === 0 && (
 					<p className="text-sm text-gray-400 px-1.5 py-1">Tidak ada opsi</p>
 				)}
-				{options.map((option) => (
-					<label
-						key={option.id}
-						className="flex items-center gap-2 px-1.5 py-0.5 rounded hover:bg-gray-50 cursor-pointer"
-					>
-						<input
-							type="checkbox"
-							checked={selected.includes(option.id)}
-							onChange={() => handleToggle(option.id)}
-							className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer"
-						/>
-						<span className="text-sm text-gray-700">{option.label}</span>
-					</label>
-				))}
+
+				{/* Grouped display */}
+				{groups
+					? groups.map((group, gi) => (
+							<div key={gi}>
+								<div className="px-1.5 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider bg-gray-50 -mx-2 px-2">
+									{group.header}
+								</div>
+								{group.items.length === 0 ? (
+									<p className="text-sm text-gray-400 px-1.5 py-0.5">
+										(belum ada item)
+									</p>
+								) : (
+									group.items.map(renderItem)
+								)}
+							</div>
+						))
+					: options.map(renderItem)}
 			</div>
 		</div>
 	);

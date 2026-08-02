@@ -16,7 +16,10 @@ import {
 	FilterBar,
 	type FilterBarValues,
 } from "#/features/keuangan/components/FilterBar";
-import { MultiSelectCheckbox } from "#/features/keuangan/components/MultiSelectCheckbox";
+import {
+	MultiSelectCheckbox,
+	type MultiSelectGroup,
+} from "#/features/keuangan/components/MultiSelectCheckbox";
 import { ReportInfoCard } from "#/features/keuangan/components/ReportInfoCard";
 import { academicYearAtom } from "#/store/global";
 import { formatCurrency, formatDate } from "#/utils/format";
@@ -25,6 +28,20 @@ import { openPrintWindow } from "#/utils/print";
 export const Route = createFileRoute("/_authenticated/keuangan/laporan/saldo")({
 	component: LaporanSaldoPage,
 });
+
+const CATEGORY_LABELS: Record<string, string> = {
+	initial: "Biaya Awal Pendidikan",
+	registration: "Biaya Registrasi",
+	monthly_spp: "SPP",
+	monthly_infaq: "Infaq",
+	pasta: "Pasta",
+	savings_mandatory: "Tabungan",
+	daycare: "Daycare",
+	daycare_meal: "Konsumsi Daycare",
+	graduation: "Wisuda",
+	calisan: "Calisan",
+	ekskul: "Ekskul",
+};
 
 const CATEGORY_ORDER: Record<string, number> = {
 	initial: 1,
@@ -67,22 +84,24 @@ function LaporanSaldoPage() {
 	);
 	const feeItems = ((feeItemsData?.data as any)?.data ?? []) as any[];
 
-	// Deduplicate by category for pos multi-select
-	const posOptions = useMemo(() => {
-		const seen = new Set<string>();
-		return feeItems
-			.slice()
-			.sort(sortByCategory)
-			.filter((item: any) => {
-				if (seen.has(item.category)) return false;
-				seen.add(item.category);
-				return true;
-			})
-			.map((item: any) => ({
-				id: item.id,
-				label: item.name,
-			}));
+	// Grouped by category for pos multi-select
+	const posGroups = useMemo((): MultiSelectGroup[] => {
+		const sorted = [...feeItems].sort(sortByCategory);
+		const map = new Map<string, MultiSelectGroup>();
+		for (const item of sorted) {
+			const groupName = CATEGORY_LABELS[item.category] || item.category;
+			if (!map.has(groupName)) {
+				map.set(groupName, { header: groupName, items: [] });
+			}
+			map.get(groupName)!.items.push({ id: item.id, label: item.name });
+		}
+		return [...map.values()];
 	}, [feeItems]);
+
+	const flatPosOptions = useMemo(
+		() => posGroups.flatMap((g) => g.items),
+		[posGroups],
+	);
 
 	// Academic years for multi-TA select
 	const { data: ayData } = useGetV1AcademicYears({
@@ -238,7 +257,8 @@ function LaporanSaldoPage() {
 					<div className="max-w-sm">
 						<MultiSelectCheckbox
 							label="Pos Penerimaan"
-							options={posOptions}
+							options={flatPosOptions}
+							groups={posGroups}
 							selected={selectedPosIds}
 							onChange={setSelectedPosIds}
 						/>

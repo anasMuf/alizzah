@@ -48,10 +48,13 @@ function LaporanPemasukanPage() {
 
 	const feeItemOptions = useMemo(
 		() => [
-			...feeItems.map((item: any) => ({
-				id: item.id,
-				label: `${item.name} (${item.category})`,
-			})),
+			...feeItems
+				.slice()
+				.sort((a: any, b: any) => a.id - b.id)
+				.map((item: any) => ({
+					id: item.id,
+					label: `${item.name} (${item.category})`,
+				})),
 			// Income transaction categories (negative IDs)
 			{ id: -1, label: "Dana BOS" },
 			{ id: -2, label: "Donasi" },

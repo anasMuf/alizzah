@@ -50,10 +50,13 @@ function LaporanPosisiKasPage() {
 
 	const feeItemOptions = useMemo(
 		() =>
-			feeItems.map((item: any) => ({
-				id: item.id,
-				label: `${item.name} (${item.category})`,
-			})),
+			feeItems
+				.slice()
+				.sort((a: any, b: any) => a.id - b.id)
+				.map((item: any) => ({
+					id: item.id,
+					label: `${item.name} (${item.category})`,
+				})),
 		[feeItems],
 	);
 

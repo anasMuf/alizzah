@@ -50,6 +50,8 @@ function LaporanSaldoPage() {
 	const posOptions = useMemo(() => {
 		const seen = new Set<string>();
 		return feeItems
+			.slice()
+			.sort((a: any, b: any) => a.id - b.id)
 			.filter((item: any) => {
 				if (seen.has(item.category)) return false;
 				seen.add(item.category);

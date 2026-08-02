@@ -20,10 +20,21 @@ export interface PrintOptions {
 	pageSize?: "A4" | "A5" | "letter" | "legal";
 	/** Margin halaman (CSS) */
 	margin?: string;
+	// ── Tanda tangan ──
+	/** URL gambar tanda tangan (path dari public/, misal "/ttd-yayasan.png") */
+	signature?: string;
+	/** Nama penanda tangan */
+	signatoryName?: string;
+	/** Jabatan penanda tangan */
+	signatoryTitle?: string;
 }
 
-const DEFAULTS: Required<Omit<PrintOptions, "subtitle">> & {
+const DEFAULTS: Required<
+	Omit<PrintOptions, "subtitle" | "signatoryName" | "signatoryTitle">
+> & {
 	subtitle: string;
+	signatoryName: string;
+	signatoryTitle: string;
 } = {
 	title: "Cetak",
 	logo: "/logo192.png",
@@ -32,7 +43,54 @@ const DEFAULTS: Required<Omit<PrintOptions, "subtitle">> & {
 	orientation: "portrait",
 	pageSize: "A4",
 	margin: "10mm",
+	signature: "/ttd-yayasan.png",
+	signatoryName: "",
+	signatoryTitle: "",
 };
+
+/** API base URL tanpa trailing /api */
+function apiBase(): string {
+	// Di production, API dan frontend satu domain — relative path cukup.
+	// Di development, prefix dengan VITE_API_URL.
+	if (import.meta.env.DEV) {
+		const raw = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+		return raw.replace(/\/api\/?$/, "");
+	}
+	return "";
+}
+
+/** Normalisasi path gambar dari relative ke absolute (hanya di dev) */
+function normalizeUrl(path: string): string {
+	if (!path || path.startsWith("http://") || path.startsWith("https://"))
+		return path;
+	return apiBase() + path;
+}
+
+/** Baca setting dari localStorage (cache dari API) */
+function readSetting(key: string): string {
+	try {
+		const raw = localStorage.getItem("app_settings");
+		if (!raw) return "";
+		const settings = JSON.parse(raw);
+		const val = settings[key] || "";
+		// Normalisasi URL gambar
+		if (key === "logo_url" || key === "signature_url") {
+			return normalizeUrl(val);
+		}
+		return val;
+	} catch {
+		return "";
+	}
+}
+
+/** Simpan settings ke localStorage (dipanggil dari halaman pengaturan) */
+export function cacheAppSettings(settings: Record<string, string>): void {
+	try {
+		localStorage.setItem("app_settings", JSON.stringify(settings));
+	} catch {
+		// ignore quota errors
+	}
+}
 
 /**
  * Membuka jendela print baru dengan konten HTML dan memicu dialog cetak browser.
@@ -44,7 +102,20 @@ export function openPrintWindow(
 	innerHtml: string,
 	options: PrintOptions = {},
 ): void {
-	const opts = { ...DEFAULTS, ...options };
+	const stored = {
+		logo: readSetting("logo_url"),
+		signature: readSetting("signature_url"),
+		signatoryName: readSetting("signatory_name"),
+		signatoryTitle: readSetting("signatory_title"),
+	};
+	const opts = {
+		...DEFAULTS,
+		logo: stored.logo || DEFAULTS.logo,
+		signature: stored.signature || DEFAULTS.signature,
+		signatoryName: stored.signatoryName || DEFAULTS.signatoryName,
+		signatoryTitle: stored.signatoryTitle || DEFAULTS.signatoryTitle,
+		...options,
+	};
 	const now = new Date();
 	const dateStr = now.toLocaleDateString("id-ID", {
 		day: "numeric",
@@ -209,6 +280,52 @@ export function openPrintWindow(
 	.space-y-2 > * + * { margin-top: 8px; }
 	.gap-x-8 > * + * { margin-left: 0; }
 
+	/* ===== SIGNATURE ===== */
+	.signature-section {
+		display: flex;
+		justify-content: flex-end;
+		margin-top: 48px;
+		margin-bottom: 16px;
+	}
+	.signature-box {
+		text-align: center;
+		min-width: 180px;
+	}
+	.signature-label {
+		font-size: 11px;
+		color: #374151;
+		margin-bottom: 2px;
+	}
+	.signature-title {
+		font-size: 11px;
+		font-weight: 600;
+		color: #1f2937;
+		margin-bottom: 24px;
+	}
+	.signature-img-wrapper {
+		display: inline-block;
+		margin-bottom: 4px;
+	}
+	.signature-img {
+		max-width: 140px;
+		max-height: 60px;
+		object-fit: contain;
+	}
+	.signature-placeholder {
+		height: 60px;
+	}
+	.signature-line {
+		width: 100%;
+		border-bottom: 1px solid #1f2937;
+		margin: 8px 0 4px;
+	}
+	.signature-name {
+		font-size: 11px;
+		font-weight: 600;
+		color: #1f2937;
+		margin-top: 4px;
+	}
+
 	/* ===== FOOTER ===== */
 	.print-footer {
 		margin-top: 40px;
@@ -252,6 +369,22 @@ export function openPrintWindow(
 
 	<!-- CONTENT -->
 	${innerHtml}
+
+	${
+		opts.signatoryName || opts.signature
+			? `
+		<!-- TANDA TANGAN -->
+		<div class="signature-section">
+			<div class="signature-box">
+				<p class="signature-label">Mengetahui,</p>
+				${opts.signatoryTitle ? `<p class="signature-title">${escapeHtml(opts.signatoryTitle)}</p>` : ""}
+				${opts.signature ? `<div class="signature-img-wrapper"><img src="${escapeAttr(opts.signature)}" class="signature-img" alt="Tanda Tangan" /></div>` : `<div class="signature-placeholder">&nbsp;</div>`}
+				<div class="signature-line"></div>
+				<p class="signature-name">${escapeHtml(opts.signatoryName)}</p>
+			</div>
+		</div>`
+			: ""
+	}
 
 	<!-- FOOTER -->
 	<div class="print-footer">

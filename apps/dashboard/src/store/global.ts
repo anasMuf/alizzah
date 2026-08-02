@@ -11,3 +11,13 @@ export interface AcademicYear {
 // Atom untuk menyimpan Tahun Ajaran yang sedang dipilih
 // Nilai default akan diset null sampai data diload pertama kali dari API
 export const academicYearAtom = atom<AcademicYear | null>(null);
+
+// ── App Settings (logo, ttd, dll) ──
+export interface AppSettingsAtom {
+	signatory_name?: string;
+	signatory_title?: string;
+	logo_url?: string;
+	signature_url?: string;
+}
+
+export const appSettingsAtom = atom<AppSettingsAtom>({});

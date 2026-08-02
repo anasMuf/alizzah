@@ -6,6 +6,7 @@ import { Topbar } from "./Topbar";
 // Routes that use full-bleed layout (no padding on main)
 const FULL_BLEED_ROUTES = [
 	"/keuangan/pembayaran/baru",
+	"/keuangan/laporan/",
 	"/koperasi/penjualan/pos",
 	"/koperasi/pembelian/pos",
 ];

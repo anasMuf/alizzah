@@ -378,12 +378,13 @@ type TabunganSiswaRow struct {
 // ===== Laporan Pemasukan (summary per date per category) =====
 
 type PemasukanRequest struct {
-	DateFrom       string `query:"date_from"`
-	DateTo         string `query:"date_to"`
-	PaymentMethod  string `query:"payment_method"` // tunai, tabungan, kosong=semua
-	FeeItemIDs     string `query:"fee_item_ids"`   // comma-separated IDs
-	Categories     string `query:"categories"`     // comma-separated category names (takes priority)
-	AcademicYearID uint   `query:"academic_year_id"`
+	DateFrom         string `query:"date_from"`
+	DateTo           string `query:"date_to"`
+	PaymentMethod    string `query:"payment_method"`    // tunai, tabungan, kosong=semua
+	FeeItemIDs       string `query:"fee_item_ids"`      // comma-separated IDs
+	Categories       string `query:"categories"`        // comma-separated invoice category names
+	IncomeCategories string `query:"income_categories"` // comma-separated income category codes (bos, donasi, hibah, lainnya)
+	AcademicYearID   uint   `query:"academic_year_id"`
 }
 
 type PemasukanRow struct {

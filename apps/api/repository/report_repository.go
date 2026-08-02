@@ -4,6 +4,7 @@ import (
 	"api/dto"
 	"api/model"
 	"time"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -31,7 +32,7 @@ type ReportRepository interface {
 	SumPengeluaran(academicYearID uint, startDate, endDate time.Time, category string) (float64, error)
 
 	// Pemasukan & Pengeluaran
-	FindPemasukanSummary(academicYearID uint, startDate, endDate time.Time, categories []string, paymentMethod string) ([]dto.PemasukanRow, error)
+	FindPemasukanSummary(academicYearID uint, startDate, endDate time.Time, categories []string, paymentMethod string, incomeCategories string) ([]dto.PemasukanRow, error)
 	FindPengeluaranRows(academicYearID uint, startDate, endDate time.Time, expenseIDs []string) ([]dto.PengeluaranRow, error)
 
 	// Tabungan
@@ -495,7 +496,7 @@ func (r *reportRepository) SumSavingsDebit(startDate, endDate time.Time, savings
 }
 
 // FindPemasukanSummary returns per-transaction rows (date, category, description, amount)
-func (r *reportRepository) FindPemasukanSummary(academicYearID uint, startDate, endDate time.Time, categories []string, paymentMethod string) ([]dto.PemasukanRow, error) {
+func (r *reportRepository) FindPemasukanSummary(academicYearID uint, startDate, endDate time.Time, categories []string, paymentMethod string, incomeCategories string) ([]dto.PemasukanRow, error) {
 	type Row struct {
 		Date        string  `gorm:"column:date"`
 		Category    string  `gorm:"column:category"`
@@ -531,7 +532,7 @@ func (r *reportRepository) FindPemasukanSummary(academicYearID uint, startDate, 
 
 	// 2. Income transactions: only include when no fee item filter is active
 	// (income transactions are separate from invoice-based fee items)
-	if len(categories) == 0 {
+	if len(categories) == 0 || incomeCategories != "" {
 		type IncomeRow struct {
 			Date        string  `gorm:"column:date"`
 			Category    string  `gorm:"column:category"`
@@ -542,8 +543,14 @@ func (r *reportRepository) FindPemasukanSummary(academicYearID uint, startDate, 
 
 		incomeQuery := r.db.Table("income_transactions it").
 			Select("DATE(it.transaction_date) as date, it.category, it.source_name as description, it.amount").
-			Where("it.academic_year_id = ? AND it.transaction_date BETWEEN ? AND ?", academicYearID, startDate, endDate).
-			Order("DATE(it.transaction_date), it.category")
+			Where("it.academic_year_id = ? AND it.transaction_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
+
+		if incomeCategories != "" {
+			incomeCats := strings.Split(incomeCategories, ",")
+			incomeQuery = incomeQuery.Where("it.category IN ?", incomeCats)
+		}
+
+		incomeQuery = incomeQuery.Order("DATE(it.transaction_date), it.category")
 
 		if err := incomeQuery.Scan(&incomeRows).Error; err != nil {
 			return nil, err

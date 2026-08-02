@@ -1059,7 +1059,7 @@ func (s *reportService) GetPemasukan(req dto.PemasukanRequest) (*dto.PemasukanRe
 	}
 
 	// Query summary
-	rows, err := s.reportRepo.FindPemasukanSummary(academicYearID, startDate, endDate, categories, req.PaymentMethod)
+	rows, err := s.reportRepo.FindPemasukanSummary(academicYearID, startDate, endDate, categories, req.PaymentMethod, req.IncomeCategories)
 	if err != nil {
 		return nil, err
 	}

@@ -47,11 +47,17 @@ function LaporanPemasukanPage() {
 	const feeItems = ((feeItemsData?.data as any)?.data ?? []) as any[];
 
 	const feeItemOptions = useMemo(
-		() =>
-			feeItems.map((item: any) => ({
+		() => [
+			...feeItems.map((item: any) => ({
 				id: item.id,
 				label: `${item.name} (${item.category})`,
 			})),
+			// Income transaction categories (negative IDs)
+			{ id: -1, label: "Dana BOS" },
+			{ id: -2, label: "Donasi" },
+			{ id: -3, label: "Hibah" },
+			{ id: -4, label: "Lainnya" },
+		],
 		[feeItems],
 	);
 
@@ -77,6 +83,19 @@ function LaporanPemasukanPage() {
 		const selectedCategories = feeItems
 			.filter((item: any) => selectedFeeItemIds.includes(item.id))
 			.map((item: any) => item.category);
+
+		// Map negative IDs to income category codes
+		const incomeCategoryMap: Record<number, string> = {
+			[-1]: "bos",
+			[-2]: "donasi",
+			[-3]: "hibah",
+			[-4]: "lainnya",
+		};
+		const selectedIncomeCategories = selectedFeeItemIds
+			.filter((id) => id < 0)
+			.map((id) => incomeCategoryMap[id])
+			.filter(Boolean);
+
 		setCommittedParams({
 			date_from: filters.date_from,
 			date_to: filters.date_to,
@@ -84,6 +103,10 @@ function LaporanPemasukanPage() {
 			categories:
 				selectedCategories.length > 0
 					? selectedCategories.join(",")
+					: undefined,
+			income_categories:
+				selectedIncomeCategories.length > 0
+					? selectedIncomeCategories.join(",")
 					: undefined,
 			academic_year_id: filters.academic_year_id,
 		});
@@ -149,12 +172,25 @@ function LaporanPemasukanPage() {
 
 	const infoFilters: Record<string, string> = useMemo(() => {
 		if (!committedParams) return {} as Record<string, string>;
-		const selectedNames = feeItems
-			.filter((item: any) => selectedFeeItemIds.includes(item.id))
-			.map((item: any) => item.name)
-			.join(", ");
+		const allNames = [
+			...feeItems
+				.filter((item: any) => selectedFeeItemIds.includes(item.id))
+				.map((item: any) => item.name),
+			...selectedFeeItemIds
+				.filter((id) => id < 0)
+				.map((id) => {
+					const map: Record<number, string> = {
+						[-1]: "Dana BOS",
+						[-2]: "Donasi",
+						[-3]: "Hibah",
+						[-4]: "Lainnya",
+					};
+					return map[id];
+				})
+				.filter(Boolean),
+		];
 		return {
-			sumber: selectedNames || "Semua",
+			sumber: allNames.join(", ") || "Semua",
 			metode: (committedParams.payment_method as string) || "Semua",
 			periode: `${formatDate(committedParams.date_from as string)} - ${formatDate(committedParams.date_to as string)}`,
 			ta: activeAy?.name ?? "-",

@@ -188,12 +188,15 @@ type StudentPaymentStatusInReport struct {
 // ===== Laporan Posisi Kas =====
 
 type PosisiKasRequest struct {
-	Month          uint   `query:"month" validate:"omitempty,min=1,max=12"`
-	Year           uint   `query:"year"`
-	DateFrom       string `query:"date_from"`  // YYYY-MM-DD, takes priority over month/year
-	DateTo         string `query:"date_to"`    // YYYY-MM-DD
-	Categories     string `query:"categories"` // comma-separated invoice categories filter
-	AcademicYearID uint   `query:"academic_year_id"`
+	Month              uint   `query:"month" validate:"omitempty,min=1,max=12"`
+	Year               uint   `query:"year"`
+	DateFrom           string `query:"date_from"`
+	DateTo             string `query:"date_to"`
+	Categories         string `query:"categories"`
+	IncomeCategories   string `query:"income_categories"`
+	IncludeSavings     bool   `query:"include_savings"`
+	ExpenseCategoryIDs string `query:"expense_category_ids"`
+	AcademicYearID     uint   `query:"academic_year_id"`
 }
 
 type PosisiKasResponse struct {
@@ -233,14 +236,16 @@ type PosisiKasTotal struct {
 // ===== Laporan Saldo Per Pos / Semua Pos =====
 
 type SaldoRequest struct {
-	Month           uint   `query:"month" validate:"omitempty,min=1,max=12"`
-	Year            uint   `query:"year"`
-	DateFrom        string `query:"date_from"`  // YYYY-MM-DD, takes priority over month/year
-	DateTo          string `query:"date_to"`    // YYYY-MM-DD, takes priority over month/year
-	Category        string `query:"category"`   // single category (backward compatible)
-	Categories      string `query:"categories"` // comma-separated category names (takes priority)
-	AcademicYearID  uint   `query:"academic_year_id"`
-	AcademicYearIDs string `query:"academic_year_ids"` // comma-separated IDs (multi-TA)
+	Month            uint   `query:"month" validate:"omitempty,min=1,max=12"`
+	Year             uint   `query:"year"`
+	DateFrom         string `query:"date_from"`
+	DateTo           string `query:"date_to"`
+	Category         string `query:"category"`
+	Categories       string `query:"categories"`
+	IncomeCategories string `query:"income_categories"`
+	IncludeSavings   bool   `query:"include_savings"` // include Tabungan Umum deposits
+	AcademicYearID   uint   `query:"academic_year_id"`
+	AcademicYearIDs  string `query:"academic_year_ids"`
 }
 
 type SaldoResponse struct {
@@ -380,10 +385,11 @@ type TabunganSiswaRow struct {
 type PemasukanRequest struct {
 	DateFrom         string `query:"date_from"`
 	DateTo           string `query:"date_to"`
-	PaymentMethod    string `query:"payment_method"`    // tunai, tabungan, kosong=semua
-	FeeItemIDs       string `query:"fee_item_ids"`      // comma-separated IDs
-	Categories       string `query:"categories"`        // comma-separated invoice category names
-	IncomeCategories string `query:"income_categories"` // comma-separated income category codes (bos, donasi, hibah, lainnya)
+	PaymentMethod    string `query:"payment_method"`
+	FeeItemIDs       string `query:"fee_item_ids"`
+	Categories       string `query:"categories"`
+	IncomeCategories string `query:"income_categories"`
+	IncludeSavings   bool   `query:"include_savings"` // include Tabungan Umum deposits
 	AcademicYearID   uint   `query:"academic_year_id"`
 }
 

@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
-import { ChevronRight, Printer } from "lucide-react";
+import { Printer } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
 	useGetV1FeeConfigs,
@@ -53,7 +53,6 @@ function sortByCategory(a: any, b: any): number {
 
 function LaporanPemasukanPage() {
 	const [activeAy] = useAtom(academicYearAtom);
-
 	const { data: feeConfigsData } = useGetV1FeeConfigs({
 		query: { staleTime: 5 * 60 * 1000 },
 	});
@@ -109,6 +108,7 @@ function LaporanPemasukanPage() {
 				{ id: -2, label: "Donasi" },
 				{ id: -3, label: "Hibah" },
 				{ id: -4, label: "Lainnya" },
+				{ id: -5, label: "Tabungan Umum" },
 			],
 		});
 
@@ -152,9 +152,10 @@ function LaporanPemasukanPage() {
 			[-4]: "lainnya",
 		};
 		const selectedIncomeCategories = selectedFeeItemIds
-			.filter((id) => id < 0)
+			.filter((id) => id < 0 && id >= -4)
 			.map((id) => incomeCategoryMap[id])
 			.filter(Boolean);
+		const includeSavings = selectedFeeItemIds.includes(-5);
 
 		setCommittedParams({
 			date_from: filters.date_from,
@@ -168,6 +169,7 @@ function LaporanPemasukanPage() {
 				selectedIncomeCategories.length > 0
 					? selectedIncomeCategories.join(",")
 					: undefined,
+			include_savings: includeSavings || undefined,
 			academic_year_id: filters.academic_year_id,
 		});
 	};
@@ -176,7 +178,7 @@ function LaporanPemasukanPage() {
 	const dateGroups = useMemo(() => {
 		if (!report?.rows) return null;
 		const map = new Map<string, PemasukanData["rows"]>();
-		for (const row of report.rows) {
+		for (const row of report.rows || []) {
 			const existing = map.get(row.date) || [];
 			existing.push(row);
 			map.set(row.date, existing);
@@ -244,6 +246,7 @@ function LaporanPemasukanPage() {
 						[-2]: "Donasi",
 						[-3]: "Hibah",
 						[-4]: "Lainnya",
+						[-5]: "Tabungan Umum",
 					};
 					return map[id];
 				})
@@ -258,26 +261,20 @@ function LaporanPemasukanPage() {
 	}, [committedParams, selectedFeeItemIds, feeItems, activeAy]);
 
 	return (
-		<div className="space-y-6">
-			{/* Header */}
-			<div className="flex items-start justify-between">
-				<div>
-					<nav className="flex items-center text-sm text-gray-500 mb-2">
-						<Link
-							to="/keuangan/laporan"
-							className="hover:text-indigo-600 transition-colors"
-						>
-							Laporan
-						</Link>
-						<ChevronRight className="w-4 h-4 mx-1" />
-						<span className="text-gray-900 font-medium">Pemasukan</span>
-					</nav>
-					<h2 className="text-2xl font-bold leading-7 text-gray-900">
-						Laporan Pemasukan
-					</h2>
-					<p className="mt-1 text-sm text-gray-500">
+		<div className="h-full flex flex-col">
+			{/* Top bar */}
+			<div className="flex-shrink-0 bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
+				<div className="flex items-center gap-4">
+					<Link
+						to="/keuangan/laporan"
+						className="text-sm text-indigo-600 hover:text-indigo-500"
+					>
+						← Laporan
+					</Link>
+					<h2 className="text-lg font-bold text-gray-900">Pemasukan</h2>
+					<span className="text-sm text-gray-500">
 						TA {activeAy?.name || "-"}
-					</p>
+					</span>
 				</div>
 				{report && (
 					<Button variant="secondary" onClick={handlePrint}>
@@ -287,127 +284,137 @@ function LaporanPemasukanPage() {
 				)}
 			</div>
 
-			<FilterBar onGenerate={handleGenerate} isLoading={isLoading}>
-				<div className="max-w-sm">
-					<MultiSelectCheckbox
-						label="Fee Item (Pemasukan)"
-						options={allFeeItemOptions}
-						groups={feeItemGroups}
-						selected={selectedFeeItemIds}
-						onChange={setSelectedFeeItemIds}
-					/>
+			{/* 2-column body */}
+			<div className="flex-1 flex min-h-0">
+				{/* Left: Filter */}
+				<div className="w-80 flex-shrink-0 border-r border-gray-200 bg-white">
+					<FilterBar onGenerate={handleGenerate} isLoading={isLoading}>
+						<MultiSelectCheckbox
+							label="Fee Item (Pemasukan)"
+							options={allFeeItemOptions}
+							groups={feeItemGroups}
+							selected={selectedFeeItemIds}
+							onChange={setSelectedFeeItemIds}
+						/>
+					</FilterBar>
 				</div>
-			</FilterBar>
 
-			{isLoading && (
-				<div className="animate-pulse space-y-4">
-					<div className="h-12 bg-gray-200 rounded-xl" />
-					<div className="h-64 bg-gray-200 rounded-xl" />
-				</div>
-			)}
+				{/* Right: Preview */}
+				<div className="flex-1 flex flex-col bg-gray-50 overflow-y-auto">
+					<div className="p-4">
+						{isLoading && (
+							<div className="animate-pulse space-y-4">
+								<div className="h-12 bg-gray-200 rounded-xl" />
+								<div className="h-64 bg-gray-200 rounded-xl" />
+							</div>
+						)}
 
-			{isError && (
-				<Alert variant="error" title="Gagal Memuat">
-					Terjadi kesalahan saat memuat laporan pemasukan.
-				</Alert>
-			)}
+						{isError && (
+							<Alert variant="error" title="Gagal Memuat">
+								Terjadi kesalahan saat memuat laporan pemasukan.
+							</Alert>
+						)}
 
-			{report && !isLoading && (
-				<>
-					<ReportInfoCard filters={infoFilters} />
+						{report && !isLoading && (
+							<>
+								<ReportInfoCard filters={infoFilters} />
 
-					{report.rows?.length > 0 && dateGroups ? (
-						<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden">
-							<div className="overflow-x-auto">
-								<table className="min-w-full divide-y divide-gray-200">
-									<thead className="bg-gray-50">
-										<tr>
-											<th className="py-3 pl-6 pr-3 text-left text-sm font-semibold text-gray-900 w-28">
-												Tanggal
-											</th>
-											<th className="px-3 py-3 text-left text-sm font-semibold text-gray-900 w-32">
-												Kategori
-											</th>
-											<th className="px-3 py-3 text-left text-sm font-semibold text-gray-900">
-												Keterangan
-											</th>
-											<th className="px-3 py-3 text-right text-sm font-semibold text-gray-900 pr-6 w-40">
-												Nominal
-											</th>
-										</tr>
-									</thead>
-									<tbody className="divide-y divide-gray-100 bg-white">
-										{[...dateGroups.entries()].map(([date, rows]) => {
-											const subtotal = rows.reduce((s, r) => s + r.amount, 0);
-											return (
-												<>
-													{rows.map((row, i) => (
-														<tr key={`${date}-${row.category}-${i}`}>
-															<td className="py-2.5 pl-6 pr-3 text-sm text-gray-900">
-																{i === 0 ? formatDate(date) : ""}
-															</td>
-															<td className="px-3 py-2.5 text-sm text-gray-900">
-																{row.category}
-															</td>
-															<td className="px-3 py-2.5 text-sm text-gray-700">
-																{row.description}
-															</td>
-															<td className="px-3 py-2.5 text-sm text-right text-gray-900 tabular-nums pr-6">
-																{formatCurrency(row.amount)}
-															</td>
-														</tr>
-													))}
-													<tr className="bg-gray-50 border-t border-gray-200">
+								{report.rows?.length > 0 && dateGroups ? (
+									<div className="mt-4 bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden">
+										<div className="overflow-x-auto">
+											<table className="min-w-full divide-y divide-gray-200">
+												<thead className="bg-gray-50">
+													<tr>
+														<th className="py-2.5 pl-4 pr-3 text-left text-xs font-semibold text-gray-500 uppercase w-28">
+															Tanggal
+														</th>
+														<th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase w-28">
+															Kategori
+														</th>
+														<th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">
+															Keterangan
+														</th>
+														<th className="px-3 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase pr-4 w-36">
+															Nominal
+														</th>
+													</tr>
+												</thead>
+												<tbody className="divide-y divide-gray-100 bg-white">
+													{[...dateGroups.entries()].map(([date, rows]) => {
+														const subtotal = rows.reduce(
+															(s, r) => s + r.amount,
+															0,
+														);
+														return (
+															<>
+																{rows.map((row, i) => (
+																	<tr key={`${date}-${row.category}-${i}`}>
+																		<td className="py-2 pl-4 pr-3 text-sm text-gray-900">
+																			{i === 0 ? formatDate(date) : ""}
+																		</td>
+																		<td className="px-3 py-2 text-sm text-gray-900">
+																			{row.category}
+																		</td>
+																		<td className="px-3 py-2 text-sm text-gray-700">
+																			{row.description}
+																		</td>
+																		<td className="px-3 py-2 text-sm text-right text-gray-900 tabular-nums pr-4">
+																			{formatCurrency(row.amount)}
+																		</td>
+																	</tr>
+																))}
+																<tr className="bg-gray-50 border-t border-gray-200">
+																	<td
+																		colSpan={2}
+																		className="py-2 pl-4 pr-3 text-sm"
+																	/>
+																	<td className="px-3 py-2 text-sm text-right font-semibold text-gray-500">
+																		Subtotal
+																	</td>
+																	<td className="px-3 py-2 text-sm text-right font-semibold text-gray-900 tabular-nums pr-4">
+																		{formatCurrency(subtotal)}
+																	</td>
+																</tr>
+															</>
+														);
+													})}
+												</tbody>
+												<tfoot>
+													<tr className="border-t-2 border-gray-300 bg-indigo-50">
 														<td
 															colSpan={2}
-															className="py-2 pl-6 pr-3 text-sm"
+															className="py-2.5 pl-4 pr-3 text-sm"
 														/>
-														<td className="px-3 py-2 text-sm text-right font-semibold text-gray-500">
-															Subtotal
+														<td className="px-3 py-2.5 text-sm text-right font-bold text-indigo-900">
+															Grand Total
 														</td>
-														<td className="px-3 py-2 text-sm text-right font-semibold text-gray-900 tabular-nums pr-6">
-															{formatCurrency(subtotal)}
+														<td className="px-3 py-2.5 text-sm text-right font-bold text-indigo-900 tabular-nums pr-4">
+															{formatCurrency(report.grand_total)}
 														</td>
 													</tr>
-												</>
-											);
-										})}
-									</tbody>
-									<tfoot>
-										<tr className="border-t-2 border-gray-300 bg-indigo-50 font-bold">
-											<td
-												colSpan={2}
-												className="py-3 pl-6 pr-3 text-sm text-indigo-900"
-											/>
-											<td className="px-3 py-3 text-sm text-right text-indigo-900">
-												Grand Total
-											</td>
-											<td className="px-3 py-3 text-sm text-right text-indigo-900 tabular-nums pr-6">
-												{formatCurrency(report.grand_total)}
-											</td>
-										</tr>
-									</tfoot>
-								</table>
-							</div>
-						</div>
-					) : (
-						<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-12 text-center">
-							<p className="text-sm text-gray-500">
-								Tidak ada transaksi pemasukan untuk filter yang dipilih.
-							</p>
-						</div>
-					)}
-				</>
-			)}
+												</tfoot>
+											</table>
+										</div>
+									</div>
+								) : (
+									<div className="mt-4 bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-12 text-center">
+										<p className="text-sm text-gray-500">
+											Tidak ada transaksi untuk filter yang dipilih.
+										</p>
+									</div>
+								)}
+							</>
+						)}
 
-			{!report && !isLoading && !isError && (
-				<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-12 text-center">
-					<p className="text-sm text-gray-500">
-						Atur filter dan klik <strong>Generate</strong> untuk menampilkan
-						laporan.
-					</p>
+						{!report && !isLoading && !isError && (
+							<div className="flex items-center justify-center h-64 text-sm text-gray-500">
+								Atur filter dan klik <strong className="mx-1">Generate</strong>{" "}
+								untuk menampilkan laporan.
+							</div>
+						)}
+					</div>
 				</div>
-			)}
+			</div>
 		</div>
 	);
 }

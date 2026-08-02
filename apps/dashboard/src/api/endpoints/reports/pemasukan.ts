@@ -12,6 +12,8 @@ export interface PemasukanParams {
 	payment_method?: string;
 	fee_item_ids?: string;
 	categories?: string;
+	income_categories?: string;
+	include_savings?: boolean;
 	academic_year_id?: number;
 }
 

@@ -359,6 +359,7 @@ var invoiceCategoryLabels = map[string]string{
 	"daycare_meal":      "Konsumsi Daycare",
 	"graduation":        "Wisuda",
 	"lainnya":           "Lain-lain",
+	"savings_voluntary": "Tabungan Umum",
 }
 
 // invoiceCategoryOrder defines display order for posisi kas report
@@ -374,6 +375,7 @@ var invoiceCategoryOrder = []string{
 	"daycare",
 	"graduation",
 	"lainnya",
+	"savings_voluntary",
 }
 
 func (s *reportService) GetPosisiKas(req dto.PosisiKasRequest) (*dto.PosisiKasResponse, error) {
@@ -397,13 +399,22 @@ func (s *reportService) GetPosisiKas(req dto.PosisiKasRequest) (*dto.PosisiKasRe
 
 	// Parse categories filter
 	var categoryFilter map[string]bool
-	if req.Categories != "" {
+	if req.Categories != "" || req.IncomeCategories != "" || req.IncludeSavings {
 		categoryFilter = make(map[string]bool)
 		for _, c := range strings.Split(req.Categories, ",") {
 			c = strings.TrimSpace(c)
 			if c != "" {
 				categoryFilter[c] = true
 			}
+		}
+		for _, c := range strings.Split(req.IncomeCategories, ",") {
+			c = strings.TrimSpace(c)
+			if c != "" {
+				categoryFilter[c] = true
+			}
+		}
+		if req.IncludeSavings {
+			categoryFilter["savings_voluntary"] = true
 		}
 	}
 
@@ -414,7 +425,7 @@ func (s *reportService) GetPosisiKas(req dto.PosisiKasRequest) (*dto.PosisiKasRe
 	}
 
 	// Gabung penerimaan dari income_transactions (Dana BOS, Donasi, Hibah, Lainnya)
-	incomeBulan, err := s.reportRepo.SumIncomeTransactionsByCategory(academicYearID, startDate, endDate)
+	incomeBulan, err := s.reportRepo.SumIncomeTransactionsByCategory(academicYearID, startDate, endDate, req.IncomeCategories)
 	if err != nil {
 		return nil, err
 	}
@@ -422,8 +433,19 @@ func (s *reportService) GetPosisiKas(req dto.PosisiKasRequest) (*dto.PosisiKasRe
 		penerimaanBulan[cat] += amount
 	}
 
+	// Gabung Tabungan Umum (savings deposits) as separate pos
+	if req.IncludeSavings {
+		savingsBulan, err := s.reportRepo.SumSavingsDeposits(academicYearID, startDate, endDate)
+		if err != nil {
+			return nil, err
+		}
+		if savingsBulan > 0 {
+			penerimaanBulan["savings_voluntary"] += savingsBulan
+		}
+	}
+
 	// Pengeluaran bulan ini per category (with details)
-	pengeluaranBulan, err := s.reportRepo.SumPengeluaranByInvoiceCategory(academicYearID, startDate, endDate)
+	pengeluaranBulan, err := s.reportRepo.SumPengeluaranByInvoiceCategory(academicYearID, startDate, endDate, req.ExpenseCategoryIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -434,7 +456,7 @@ func (s *reportService) GetPosisiKas(req dto.PosisiKasRequest) (*dto.PosisiKasRe
 		return nil, err
 	}
 
-	incomeSebelum, err := s.reportRepo.SumIncomeTransactionsByCategory(academicYearID, ay.StartDate, endPrevDate)
+	incomeSebelum, err := s.reportRepo.SumIncomeTransactionsByCategory(academicYearID, ay.StartDate, endPrevDate, req.IncomeCategories)
 	if err != nil {
 		return nil, err
 	}
@@ -442,7 +464,15 @@ func (s *reportService) GetPosisiKas(req dto.PosisiKasRequest) (*dto.PosisiKasRe
 		penerimaanSebelum[cat] += amount
 	}
 
-	pengeluaranSebelumRaw, err := s.reportRepo.SumPengeluaranByInvoiceCategory(academicYearID, ay.StartDate, endPrevDate)
+	if req.IncludeSavings {
+		savingsSebelum, err := s.reportRepo.SumSavingsDeposits(academicYearID, ay.StartDate, endPrevDate)
+		if err != nil {
+			return nil, err
+		}
+		penerimaanSebelum["savings_voluntary"] += savingsSebelum
+	}
+
+	pengeluaranSebelumRaw, err := s.reportRepo.SumPengeluaranByInvoiceCategory(academicYearID, ay.StartDate, endPrevDate, req.ExpenseCategoryIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -502,6 +532,8 @@ func (s *reportService) GetPosisiKas(req dto.PosisiKasRequest) (*dto.PosisiKasRe
 		label := cat
 		if l, ok := invoiceCategoryLabels[cat]; ok {
 			label = l
+		} else if l, ok := incomeCategoryLabels[cat]; ok {
+			label = l
 		}
 
 		posts = append(posts, dto.PosisiKasPost{
@@ -537,6 +569,8 @@ func (s *reportService) GetPosisiKas(req dto.PosisiKasRequest) (*dto.PosisiKasRe
 
 		label := cat
 		if l, ok := invoiceCategoryLabels[cat]; ok {
+			label = l
+		} else if l, ok := incomeCategoryLabels[cat]; ok {
 			label = l
 		}
 
@@ -596,19 +630,23 @@ func (s *reportService) GetSaldo(req dto.SaldoRequest) (*dto.SaldoResponse, erro
 	// Parse categories: comma-separated takes priority over single category
 	categories := []string{category}
 	if req.Categories != "" {
-		categories = strings.Split(req.Categories, ",")
-		// Trim and filter empty
+		cats := strings.Split(req.Categories, ",")
+		// Trim, filter empty, and deduplicate
+		seen := make(map[string]bool)
 		var filtered []string
-		for _, c := range categories {
+		for _, c := range cats {
 			c = strings.TrimSpace(c)
-			if c != "" {
+			if c != "" && !seen[c] {
+				seen[c] = true
 				filtered = append(filtered, c)
 			}
 		}
 		categories = filtered
 	}
-	// If categories is just [""] (no filter), treat as all pos
-	allPos := len(categories) == 1 && categories[0] == ""
+	// If categories is just [""] (no invoice filter) AND no income filter → show all
+	// If only income_categories specified, skip invoice queries
+	allPos := len(categories) == 1 && categories[0] == "" && req.IncomeCategories == "" && !req.IncludeSavings
+	onlyIncome := len(categories) == 1 && categories[0] == "" && req.IncomeCategories != ""
 
 	// Aggregate data across all selected categories
 	var mergedIncome map[string]float64
@@ -634,7 +672,10 @@ func (s *reportService) GetSaldo(req dto.SaldoRequest) (*dto.SaldoResponse, erro
 		}
 		totalPenerimaanSebelum = penerimaanSebelum
 		totalPengeluaranSebelum = pengeluaranSebelum
-	} else {
+	} else if onlyIncome {
+		mergedIncome = make(map[string]float64)
+		mergedExpense = make(map[string]float64)
+	} else if len(categories) > 0 && categories[0] != "" {
 		mergedIncome = make(map[string]float64)
 		mergedExpense = make(map[string]float64)
 		for _, cat := range categories {
@@ -663,9 +704,46 @@ func (s *reportService) GetSaldo(req dto.SaldoRequest) (*dto.SaldoResponse, erro
 			}
 			totalPengeluaranSebelum += pengSebelum
 		}
+	} else {
+		mergedIncome = make(map[string]float64)
+		mergedExpense = make(map[string]float64)
 	}
 
 	saldoSebelum := totalPenerimaanSebelum - totalPengeluaranSebelum
+
+	// 3. Income transactions (add to penerimaan).
+	// allPos: skip — DailyPenerimaan/SumPenerimaan already include them.
+	// onlyIncome / explicit income_categories: include.
+	if onlyIncome || strings.TrimSpace(req.IncomeCategories) != "" {
+		incomeDaily, err := s.reportRepo.DailyIncomeTransactions(academicYearID, startDate, endDate, req.IncomeCategories)
+		if err != nil {
+			return nil, err
+		}
+		for d, v := range incomeDaily {
+			mergedIncome[d] += v
+		}
+		incomeSumSebelum, err := s.reportRepo.SumIncomeTransactions(academicYearID, ay.StartDate, endPrevDate, req.IncomeCategories)
+		if err != nil {
+			return nil, err
+		}
+		saldoSebelum += incomeSumSebelum
+	}
+
+	// 4. Savings deposits (Tabungan Umum) — add to penerimaan (only when explicitly requested)
+	if allPos || req.IncludeSavings {
+		savingsDaily, err := s.reportRepo.DailySavingsDeposits(academicYearID, startDate, endDate)
+		if err != nil {
+			return nil, err
+		}
+		for d, v := range savingsDaily {
+			mergedIncome[d] += v
+		}
+		savingsSumSebelum, err := s.reportRepo.SumSavingsDeposits(academicYearID, ay.StartDate, endPrevDate)
+		if err != nil {
+			return nil, err
+		}
+		saldoSebelum += savingsSumSebelum
+	}
 
 	// Collect all dates that have transactions
 	dateSet := make(map[string]bool)
@@ -711,7 +789,11 @@ func (s *reportService) GetSaldo(req dto.SaldoRequest) (*dto.SaldoResponse, erro
 	var postList []string
 	var categoryDisplay string
 	var categoriesDisplay []string
-	if !allPos {
+	if onlyIncome {
+		postName = "Penerimaan Lain"
+	} else if req.IncludeSavings && len(categories) == 1 && categories[0] == "" {
+		postName = "Tabungan Umum"
+	} else if !allPos {
 		if len(categories) == 1 {
 			categoryDisplay = categories[0]
 			if label, ok := invoiceCategoryLabels[categoryDisplay]; ok {
@@ -1059,7 +1141,7 @@ func (s *reportService) GetPemasukan(req dto.PemasukanRequest) (*dto.PemasukanRe
 	}
 
 	// Query summary
-	rows, err := s.reportRepo.FindPemasukanSummary(academicYearID, startDate, endDate, categories, req.PaymentMethod, req.IncomeCategories)
+	rows, err := s.reportRepo.FindPemasukanSummary(academicYearID, startDate, endDate, categories, req.PaymentMethod, req.IncomeCategories, req.IncludeSavings)
 	if err != nil {
 		return nil, err
 	}
@@ -1121,4 +1203,3 @@ func (s *reportService) GetPengeluaran(req dto.PengeluaranRequest) (*dto.Pengelu
 		GrandTotal:   grandTotal,
 	}, nil
 }
-

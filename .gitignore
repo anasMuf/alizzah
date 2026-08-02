@@ -47,3 +47,6 @@ Thumbs.db
 
 # Go binary
 apps/api/api
+
+# Uploaded assets (runtime)
+apps/api/uploads/

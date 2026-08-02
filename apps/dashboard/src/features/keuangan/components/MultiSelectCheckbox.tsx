@@ -86,7 +86,7 @@ export function MultiSelectCheckbox({
 	);
 
 	return (
-		<div>
+		<div className="flex flex-col min-h-0">
 			<label className="block text-sm font-medium leading-6 text-gray-900 mb-1">
 				{label}
 				{selected.length > 0 && (
@@ -95,7 +95,7 @@ export function MultiSelectCheckbox({
 					</span>
 				)}
 			</label>
-			<div className="rounded-md border border-gray-200 bg-white overflow-hidden">
+			<div className="rounded-md border border-gray-200 bg-white overflow-hidden flex flex-col flex-1 min-h-0">
 				{/* Search input */}
 				<input
 					type="text"
@@ -105,7 +105,7 @@ export function MultiSelectCheckbox({
 					className="block w-full border-0 border-b border-gray-200 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:ring-0 focus:border-gray-300"
 				/>
 
-				<div className="max-h-56 overflow-y-auto p-2 space-y-0.5">
+				<div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-0.5">
 					{showSelectAll && options.length > 0 && !search.trim() && (
 						<label className="flex items-center gap-2 px-1.5 py-0.5 rounded hover:bg-gray-50 cursor-pointer">
 							<input
@@ -120,20 +120,53 @@ export function MultiSelectCheckbox({
 
 					{/* Grouped display */}
 					{filteredGroups ? (
-						filteredGroups.map((group, gi) => (
-							<div key={gi}>
-								<div className="px-1.5 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider bg-gray-50 -mx-2 px-2">
-									{group.header}
+						filteredGroups.map((group, gi) => {
+							const groupIds = group.items.map((i) => i.id);
+							const allGroupSelected =
+								groupIds.length > 0 &&
+								groupIds.every((id) => selected.includes(id));
+							const someGroupSelected = groupIds.some((id) =>
+								selected.includes(id),
+							);
+							return (
+								<div key={gi}>
+									<div className="flex items-center justify-between px-1.5 py-1 bg-gray-50 -mx-2 px-2">
+										<span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+											{group.header}
+										</span>
+										<button
+											type="button"
+											onClick={() => {
+												if (allGroupSelected) {
+													onChange(
+														selected.filter((id) => !groupIds.includes(id)),
+													);
+												} else {
+													const toAdd = groupIds.filter(
+														(id) => !selected.includes(id),
+													);
+													onChange([...selected, ...toAdd]);
+												}
+											}}
+											className={`text-[10px] font-medium hover:underline ${someGroupSelected ? "text-indigo-600" : "text-gray-400"}`}
+										>
+											{allGroupSelected
+												? "hapus semua"
+												: someGroupSelected
+													? "pilih semua"
+													: "pilih semua"}
+										</button>
+									</div>
+									{group.items.length === 0 ? (
+										<p className="text-sm text-gray-400 px-1.5 py-0.5">
+											(belum ada item)
+										</p>
+									) : (
+										group.items.map(renderItem)
+									)}
 								</div>
-								{group.items.length === 0 ? (
-									<p className="text-sm text-gray-400 px-1.5 py-0.5">
-										(belum ada item)
-									</p>
-								) : (
-									group.items.map(renderItem)
-								)}
-							</div>
-						))
+							);
+						})
 					) : filteredOptions.length > 0 ? (
 						filteredOptions.map(renderItem)
 					) : search.trim() ? (

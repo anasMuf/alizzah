@@ -94,6 +94,8 @@ func main() {
 		&model.UserModule{},
 		// Audit trail — log semua request mutasi untuk superadmin
 		&model.AuditEntry{},
+		// Settings key-value
+		&model.Setting{},
 	); err != nil {
 		log.Fatal("Gagal AutoMigrate:", err)
 	}
@@ -255,6 +257,14 @@ func main() {
 	// Audit trail — log semua request mutasi untuk superadmin debugging
 	auditRepo := repository.NewAuditEntryRepository(db)
 	auditService := service.NewAuditService(auditRepo)
+
+	// Settings
+	settingRepo := repository.NewSettingRepository(db)
+	uploadDir := os.Getenv("UPLOAD_DIR")
+	if uploadDir == "" {
+		uploadDir = "./uploads"
+	}
+	settingService := service.NewSettingService(settingRepo, uploadDir)
 
 	// Otorisasi berbasis modul (RBAC by-modul). superadmin bypass; admin dibatasi
 	// modul yang di-grant (lookup DB tiap request via user_modules).
@@ -481,6 +491,9 @@ func main() {
 
 	// Backup
 	backupHandler := handler.NewBackupHandler(backupSvc)
+
+	// Settings
+	settingHandler := handler.NewSettingHandler(settingService)
 
 	// =====================
 	// Routes — /api/v1
@@ -753,6 +766,15 @@ func main() {
 
 	// Catatan: modul Koperasi dilayani oleh binary terpisah (cmd/koperasi) demi
 	// deploy/restart & isolasi fault yang independen. Lihat docs/architecture/adr-002.
+
+	// Settings (app configuration + file upload)
+	settings := api.Group("/settings", middleware.JWTAuth(tokenBlacklistRepo))
+	settings.GET("", settingHandler.GetAll)
+	settings.PUT("", settingHandler.Update, guard.RequireModule(middleware.ModuleAdministrasi))
+	settings.POST("/upload", settingHandler.Upload, guard.RequireModule(middleware.ModuleAdministrasi))
+
+	// Static file serving untuk file upload (logo, ttd, dll)
+	e.Static("/uploads", uploadDir)
 
 	// Background: hapus token blacklist expired tiap 10 menit
 	go func() {

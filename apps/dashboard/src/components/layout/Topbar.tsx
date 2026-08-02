@@ -1,4 +1,4 @@
-import { useRouterState } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { Menu } from "lucide-react";
 import { useState } from "react";
 import { usePostV1AuthLogout } from "#/api/endpoints/auth/auth";
@@ -13,9 +13,15 @@ export function Topbar({ onMenuClick }: TopbarProps) {
 	const { user, logout } = useAuth();
 	const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 	const logoutMutation = usePostV1AuthLogout();
+	const navigate = useNavigate();
 
 	const handleLogout = () => {
-		logoutMutation.mutate(undefined, { onSettled: () => logout() });
+		logoutMutation.mutate(undefined, {
+			onSettled: () => {
+				logout();
+				navigate({ to: "/login" });
+			},
+		});
 	};
 
 	// Simple breadcrumb logic from router state

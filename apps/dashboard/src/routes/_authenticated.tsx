@@ -1,4 +1,5 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { getToken, hasToken, useAuth } from "#/features/auth/AuthContext";
 import { DashboardLayout } from "../components/layout/DashboardLayout";
 
@@ -35,7 +36,14 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 function AuthenticatedLayout() {
-	const { isLoading } = useAuth();
+	const { isLoading, isAuthenticated } = useAuth();
+	const navigate = useNavigate();
+
+	useEffect(() => {
+		if (!isLoading && !isAuthenticated) {
+			navigate({ to: "/login" });
+		}
+	}, [isLoading, isAuthenticated, navigate]);
 
 	if (isLoading) {
 		return (

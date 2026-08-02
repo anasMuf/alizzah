@@ -12,7 +12,7 @@ import { cacheAppSettings } from "#/utils/print";
 export const Route = createFileRoute("/_authenticated/pengaturan/aplikasi")({
 	beforeLoad: () => {
 		const role = localStorage.getItem("alizzah_role");
-		if (role !== "superadmin") {
+		if (role !== "superadmin" && role !== "admin") {
 			throw redirect({ to: "/" });
 		}
 	},

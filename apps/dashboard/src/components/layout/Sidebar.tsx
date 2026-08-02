@@ -40,7 +40,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isOpen }: SidebarProps) {
-	const { isSuperadmin, hasModule } = useAccess();
+	const { isSuperadmin, hasModule, role } = useAccess();
 
 	const showAdministrasi = hasModule("administrasi");
 	const showKeuangan = hasModule("keuangan");
@@ -188,20 +188,24 @@ export function Sidebar({ isOpen }: SidebarProps) {
 						</div>
 					)}
 
-					{isSuperadmin && (
+					{(isSuperadmin || role === "admin") && (
 						<div className="pt-4">
 							<p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
 								Pengaturan
 							</p>
-							<NavLink to="/pengaturan/pengguna" icon={UserCog}>
-								Pengguna
-							</NavLink>
-							<NavLink to="/keuangan/backup" icon={Database}>
-								Backup Database
-							</NavLink>
-							<NavLink to="/pengaturan/log" icon={ScrollText}>
-								Log Aktivitas
-							</NavLink>
+							{isSuperadmin && (
+								<>
+									<NavLink to="/pengaturan/pengguna" icon={UserCog}>
+										Pengguna
+									</NavLink>
+									<NavLink to="/keuangan/backup" icon={Database}>
+										Backup Database
+									</NavLink>
+									<NavLink to="/pengaturan/log" icon={ScrollText}>
+										Log Aktivitas
+									</NavLink>
+								</>
+							)}
 							<NavLink to="/pengaturan/aplikasi" icon={Settings}>
 								Pengaturan Aplikasi
 							</NavLink>

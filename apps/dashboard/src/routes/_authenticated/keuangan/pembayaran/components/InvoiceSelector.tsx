@@ -79,6 +79,15 @@ export function InvoiceSelector({
 			!preFilledIdsRef.current.has(inv.id),
 	);
 	const [showPaidHistory, setShowPaidHistory] = useState(false);
+	const [expandedPaidInvoiceId, setExpandedPaidInvoiceId] = useState<
+		number | null
+	>(null);
+
+	// Fetch item details for expanded paid invoice
+	const { data: expandedPaidInvoiceDetails = [] } = useGetV1InvoicesBatch(
+		expandedPaidInvoiceId !== null ? [expandedPaidInvoiceId] : [],
+		{ enabled: expandedPaidInvoiceId !== null },
+	);
 
 	// Auto-select initial invoice
 	useEffect(() => {
@@ -218,6 +227,75 @@ export function InvoiceSelector({
 		prevIdsRef.current = currentIds;
 	}, [invoiceItems, isEditMode]);
 
+	// Helper to render a paid invoice row with expandable item breakdown
+	const renderPaidInvoiceRow = (inv: any) => {
+		const isExpanded = expandedPaidInvoiceId === inv.id;
+		const detail = isExpanded ? expandedPaidInvoiceDetails?.[0] : null;
+		return (
+			<div key={inv.id}>
+				<button
+					type="button"
+					onClick={() => setExpandedPaidInvoiceId(isExpanded ? null : inv.id)}
+					className="w-full flex items-center px-3 py-2.5 text-sm hover:bg-gray-50 transition-colors"
+				>
+					<span className="flex-1 text-gray-600 text-left">
+						{inv.type === "monthly"
+							? `Bulanan ${inv.month}/${inv.year}`
+							: inv.type === "registration"
+								? "Registrasi"
+								: inv.type === "initial"
+									? "Biaya Awal"
+									: inv.type === "daycare_initial"
+										? "Biaya Awal Daycare"
+										: "Lainnya"}
+					</span>
+					<span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full font-medium">
+						Lunas
+					</span>
+					<span className="ml-2 font-semibold text-gray-900 tabular-nums">
+						{formatCurrency(Number(inv.total_amount))}
+					</span>
+					<ChevronDown
+						className={`w-3.5 h-3.5 ml-1.5 text-gray-400 transition-transform flex-shrink-0 ${isExpanded ? "rotate-180" : ""}`}
+					/>
+				</button>
+				{isExpanded && detail?.items && (
+					<div className="bg-gray-50/50 border-t border-gray-100 px-5 py-2">
+						<div className="space-y-1">
+							{detail.items.map((item: any) => {
+								const itemPaid = Number(item.paid_amount || 0);
+								const itemAmount = Number(item.amount || 0);
+								const isDisp = item.category === "dispensation";
+								return (
+									<div
+										key={item.id}
+										className={`flex items-center gap-2 py-0.5 text-xs ${isDisp ? "bg-green-50 -mx-5 px-5" : ""}`}
+									>
+										<span
+											className={`flex-1 ${isDisp ? "text-green-700 italic" : "text-gray-500"}`}
+										>
+											{item.name}
+										</span>
+										<span
+											className={`tabular-nums ${isDisp ? "text-green-500" : "text-gray-400"}`}
+										>
+											{isDisp
+												? `-${formatCurrency(Math.abs(itemAmount))}`
+												: formatCurrency(itemAmount)}
+										</span>
+										<span className="font-medium tabular-nums w-24 text-right text-green-600">
+											{formatCurrency(itemPaid)}
+										</span>
+									</div>
+								);
+							})}
+						</div>
+					</div>
+				)}
+			</div>
+		);
+	};
+
 	if (isLoading) {
 		return (
 			<div className="animate-pulse space-y-2">
@@ -238,7 +316,10 @@ export function InvoiceSelector({
 					<div className="border border-gray-200 rounded-lg overflow-hidden">
 						<button
 							type="button"
-							onClick={() => setShowPaidHistory(!showPaidHistory)}
+							onClick={() => {
+								setShowPaidHistory(!showPaidHistory);
+								if (showPaidHistory) setExpandedPaidInvoiceId(null);
+							}}
 							className="w-full flex items-center justify-between px-3 py-2.5 bg-gray-50 hover:bg-gray-100 transition-colors text-sm"
 						>
 							<span className="font-medium text-gray-700">
@@ -250,30 +331,7 @@ export function InvoiceSelector({
 						</button>
 						{showPaidHistory && (
 							<div className="divide-y divide-gray-100">
-								{paidInvoices.map((inv: any) => (
-									<div
-										key={inv.id}
-										className="flex items-center px-3 py-2.5 text-sm"
-									>
-										<span className="flex-1 text-gray-600">
-											{inv.type === "monthly"
-												? `Bulanan ${inv.month}/${inv.year}`
-												: inv.type === "registration"
-													? "Registrasi"
-													: inv.type === "initial"
-														? "Biaya Awal"
-														: inv.type === "daycare_initial"
-															? "Biaya Awal Daycare"
-															: "Lainnya"}
-										</span>
-										<span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full font-medium">
-											Lunas
-										</span>
-										<span className="ml-2 font-semibold text-gray-900 tabular-nums">
-											{formatCurrency(Number(inv.total_amount))}
-										</span>
-									</div>
-								))}
+								{paidInvoices.map(renderPaidInvoiceRow)}
 							</div>
 						)}
 					</div>
@@ -337,7 +395,10 @@ export function InvoiceSelector({
 				<div className="mt-4 border border-gray-200 rounded-lg overflow-hidden">
 					<button
 						type="button"
-						onClick={() => setShowPaidHistory(!showPaidHistory)}
+						onClick={() => {
+							setShowPaidHistory(!showPaidHistory);
+							if (showPaidHistory) setExpandedPaidInvoiceId(null);
+						}}
 						className="w-full flex items-center justify-between px-3 py-2.5 bg-gray-50 hover:bg-gray-100 transition-colors text-sm"
 					>
 						<span className="font-medium text-gray-700">
@@ -349,30 +410,7 @@ export function InvoiceSelector({
 					</button>
 					{showPaidHistory && (
 						<div className="divide-y divide-gray-100">
-							{paidInvoices.map((inv: any) => (
-								<div
-									key={inv.id}
-									className="flex items-center px-3 py-2.5 text-sm"
-								>
-									<span className="flex-1 text-gray-600">
-										{inv.type === "monthly"
-											? `Bulanan ${inv.month}/${inv.year}`
-											: inv.type === "registration"
-												? "Registrasi"
-												: inv.type === "initial"
-													? "Biaya Awal"
-													: inv.type === "daycare_initial"
-														? "Biaya Awal Daycare"
-														: "Lainnya"}
-									</span>
-									<span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full font-medium">
-										Lunas
-									</span>
-									<span className="ml-2 font-semibold text-gray-900 tabular-nums">
-										{formatCurrency(Number(inv.total_amount))}
-									</span>
-								</div>
-							))}
+							{paidInvoices.map(renderPaidInvoiceRow)}
 						</div>
 					)}
 				</div>

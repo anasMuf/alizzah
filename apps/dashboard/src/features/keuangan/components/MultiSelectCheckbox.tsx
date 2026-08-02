@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 export interface MultiSelectOption {
 	id: number;
@@ -27,6 +27,8 @@ export function MultiSelectCheckbox({
 	onChange,
 	showSelectAll = true,
 }: MultiSelectCheckboxProps) {
+	const [search, setSearch] = useState("");
+
 	const allIds = useMemo(() => options.map((o) => o.id), [options]);
 	const allSelected =
 		allIds.length > 0 && allIds.every((id) => selected.includes(id));
@@ -49,6 +51,24 @@ export function MultiSelectCheckbox({
 		},
 		[selected, onChange],
 	);
+
+	// Filter groups/items by search query
+	const filteredGroups = useMemo(() => {
+		if (!groups || !search.trim()) return groups;
+		const q = search.toLowerCase();
+		return groups
+			.map((g) => ({
+				...g,
+				items: g.items.filter((item) => item.label.toLowerCase().includes(q)),
+			}))
+			.filter((g) => g.items.length > 0);
+	}, [groups, search]);
+
+	const filteredOptions = useMemo(() => {
+		if (!search.trim()) return options;
+		const q = search.toLowerCase();
+		return options.filter((item) => item.label.toLowerCase().includes(q));
+	}, [options, search]);
 
 	const renderItem = (option: MultiSelectOption) => (
 		<label
@@ -75,26 +95,32 @@ export function MultiSelectCheckbox({
 					</span>
 				)}
 			</label>
-			<div className="max-h-64 overflow-y-auto rounded-md border border-gray-200 bg-white p-2 space-y-0.5">
-				{showSelectAll && options.length > 0 && (
-					<label className="flex items-center gap-2 px-1.5 py-0.5 rounded hover:bg-gray-50 cursor-pointer">
-						<input
-							type="checkbox"
-							checked={allSelected}
-							onChange={handleToggleAll}
-							className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer"
-						/>
-						<span className="text-sm font-medium text-gray-700">Semua</span>
-					</label>
-				)}
+			<div className="rounded-md border border-gray-200 bg-white overflow-hidden">
+				{/* Search input */}
+				<input
+					type="text"
+					placeholder="Cari..."
+					value={search}
+					onChange={(e) => setSearch(e.target.value)}
+					className="block w-full border-0 border-b border-gray-200 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:ring-0 focus:border-gray-300"
+				/>
 
-				{!groups && options.length === 0 && (
-					<p className="text-sm text-gray-400 px-1.5 py-1">Tidak ada opsi</p>
-				)}
+				<div className="max-h-56 overflow-y-auto p-2 space-y-0.5">
+					{showSelectAll && options.length > 0 && !search.trim() && (
+						<label className="flex items-center gap-2 px-1.5 py-0.5 rounded hover:bg-gray-50 cursor-pointer">
+							<input
+								type="checkbox"
+								checked={allSelected}
+								onChange={handleToggleAll}
+								className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer"
+							/>
+							<span className="text-sm font-medium text-gray-700">Semua</span>
+						</label>
+					)}
 
-				{/* Grouped display */}
-				{groups
-					? groups.map((group, gi) => (
+					{/* Grouped display */}
+					{filteredGroups ? (
+						filteredGroups.map((group, gi) => (
 							<div key={gi}>
 								<div className="px-1.5 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider bg-gray-50 -mx-2 px-2">
 									{group.header}
@@ -108,7 +134,14 @@ export function MultiSelectCheckbox({
 								)}
 							</div>
 						))
-					: options.map(renderItem)}
+					) : filteredOptions.length > 0 ? (
+						filteredOptions.map(renderItem)
+					) : search.trim() ? (
+						<p className="text-sm text-gray-400 px-1.5 py-1">Tidak ditemukan</p>
+					) : (
+						<p className="text-sm text-gray-400 px-1.5 py-1">Tidak ada opsi</p>
+					)}
+				</div>
 			</div>
 		</div>
 	);

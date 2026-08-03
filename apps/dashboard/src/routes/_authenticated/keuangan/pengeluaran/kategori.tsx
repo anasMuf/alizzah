@@ -250,6 +250,27 @@ function ExpenseCategoryPage() {
 	);
 }
 
+// Valid invoice_category values yang bisa dipilih untuk parent kategori.
+// Mencakup seluruh fee_config_items.category + income_transactions.category.
+const INVOICE_CATEGORY_OPTIONS = [
+	{ value: "", label: "(Tidak terkait income tertentu)" },
+	// Fee item categories
+	{ value: "initial", label: "Biaya Awal (initial)" },
+	{ value: "registration", label: "Biaya Registrasi (registration)" },
+	{ value: "monthly_spp", label: "SPP (monthly_spp)" },
+	{ value: "monthly_infaq", label: "Infaq Harian (monthly_infaq)" },
+	{ value: "pasta", label: "Pasta & Ekskul (pasta)" },
+	{ value: "savings_mandatory", label: "Tabungan Wajib (savings_mandatory)" },
+	{ value: "daycare", label: "Daycare (daycare)" },
+	{ value: "graduation", label: "Wisuda (graduation)" },
+	{ value: "facility", label: "Fasilitas (facility)" },
+	// Income transaction categories (dana bantuan)
+	{ value: "bos", label: "Dana BOS (bos)" },
+	{ value: "donasi", label: "Donasi (donasi)" },
+	{ value: "hibah", label: "Hibah (hibah)" },
+	{ value: "lainnya", label: "Penerimaan Lainnya (lainnya)" },
+];
+
 function CategoryFormSlideOver({
 	isOpen,
 	onClose,
@@ -265,12 +286,15 @@ function CategoryFormSlideOver({
 }) {
 	const { addToast } = useToast();
 	const isEditing = !!initialData;
+	const isParent = !parentId && (!initialData || !initialData.parent_id);
 
 	const [name, setName] = useState("");
+	const [invoiceCategory, setInvoiceCategory] = useState("");
 
 	useEffect(() => {
 		if (isOpen) {
 			setName(initialData?.name || "");
+			setInvoiceCategory(initialData?.invoice_category || "");
 		}
 	}, [isOpen, initialData]);
 
@@ -328,23 +352,22 @@ function CategoryFormSlideOver({
 		e.preventDefault();
 		if (!name.trim()) return;
 
+		const payload = {
+			name: name.trim(),
+			...(parentId ? { parent_id: parentId } : {}),
+			// Hanya kirim invoice_category untuk parent (bukan sub-kategori)
+			...(isParent && invoiceCategory
+				? { invoice_category: invoiceCategory }
+				: {}),
+		};
+
 		if (isEditing && initialData) {
 			updateMutation.mutate({
 				id: initialData.id as number,
-				data: {
-					name: name.trim(),
-					...(initialData.parent_id
-						? { parent_id: initialData.parent_id }
-						: {}),
-				},
+				data: payload,
 			});
 		} else {
-			createMutation.mutate({
-				data: {
-					name: name.trim(),
-					...(parentId ? { parent_id: parentId } : {}),
-				},
-			});
+			createMutation.mutate({ data: payload });
 		}
 	};
 
@@ -383,6 +406,35 @@ function CategoryFormSlideOver({
 					required
 					maxLength={100}
 				/>
+
+				{/* Invoice category — hanya untuk parent (bukan sub-kategori) */}
+				{isParent && (
+					<div>
+						<label
+							htmlFor="invoiceCategory"
+							className="block text-sm font-medium leading-6 text-gray-900 mb-2"
+						>
+							Kategori Pendapatan Terkait
+						</label>
+						<select
+							id="invoiceCategory"
+							value={invoiceCategory}
+							onChange={(e) => setInvoiceCategory(e.target.value)}
+							className="block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
+						>
+							{INVOICE_CATEGORY_OPTIONS.map((opt) => (
+								<option key={opt.value} value={opt.value}>
+									{opt.label}
+								</option>
+							))}
+						</select>
+						<p className="mt-2 text-sm text-gray-500">
+							Pilih kategori pendapatan yang terkait untuk laporan posisi kas.
+							Biarkan kosong jika tidak terkait pendapatan tertentu.
+						</p>
+					</div>
+				)}
+
 				{parentId && (
 					<p className="text-sm text-gray-500">
 						Sub-kategori ini akan ditambahkan di bawah kategori induk yang

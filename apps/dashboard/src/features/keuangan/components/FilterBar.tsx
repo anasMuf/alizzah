@@ -16,6 +16,7 @@ export interface FilterBarValues {
 interface FilterBarProps {
 	onGenerate: (filters: FilterBarValues) => void;
 	isLoading?: boolean;
+	hidePaymentMethod?: boolean;
 	children?: ReactNode;
 }
 
@@ -45,6 +46,7 @@ function getAcademicYearDateRange(ay: { start_date: string } | null) {
 export function FilterBar({
 	onGenerate,
 	isLoading = false,
+	hidePaymentMethod = false,
 	children,
 }: FilterBarProps) {
 	const [activeAy] = useAtom(academicYearAtom);
@@ -165,21 +167,23 @@ export function FilterBar({
 					)}
 				</div>
 
-				{/* Payment Method */}
-				<div>
-					<label className={labelClass}>Metode Bayar</label>
-					<select
-						value={paymentMethod}
-						onChange={(e) => setPaymentMethod(e.target.value)}
-						className={selectClass}
-					>
-						{PAYMENT_METHODS.map((m) => (
-							<option key={m.value} value={m.value}>
-								{m.label}
-							</option>
-						))}
-					</select>
-				</div>
+				{/* Payment Method — opsional, disembunyikan untuk laporan yang tidak relevan */}
+				{!hidePaymentMethod && (
+					<div>
+						<label className={labelClass}>Metode Bayar</label>
+						<select
+							value={paymentMethod}
+							onChange={(e) => setPaymentMethod(e.target.value)}
+							className={selectClass}
+						>
+							{PAYMENT_METHODS.map((m) => (
+								<option key={m.value} value={m.value}>
+									{m.label}
+								</option>
+							))}
+						</select>
+					</div>
+				)}
 
 				{/* Children: per-page multi-select */}
 				{children && (

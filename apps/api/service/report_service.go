@@ -358,6 +358,7 @@ var invoiceCategoryLabels = map[string]string{
 	"daycare":           "Daycare (SPD)",
 	"daycare_meal":      "Konsumsi Daycare",
 	"graduation":        "Wisuda",
+	"facility":          "Fasilitas",
 	"lainnya":           "Lain-lain",
 	"savings_voluntary": "Tabungan Umum",
 }
@@ -374,6 +375,7 @@ var invoiceCategoryOrder = []string{
 	"savings_mandatory",
 	"daycare",
 	"graduation",
+	"facility",
 	"lainnya",
 	"savings_voluntary",
 }

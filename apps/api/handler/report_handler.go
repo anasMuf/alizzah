@@ -409,8 +409,6 @@ func (h *ReportHandler) Pemasukan(c echo.Context) error {
 // @Security     ApiKeyAuth
 // @Param        date_from             query  string  true   "Start date (YYYY-MM-DD)"
 // @Param        date_to               query  string  true   "End date (YYYY-MM-DD)"
-// @Param        payment_method        query  string  false  "Payment method filter (tunai/tabungan)"
-// @Param        fee_item_ids          query  string  false  "Comma-separated fee config item IDs"
 // @Param        expense_category_ids  query  string  false  "Comma-separated expense category IDs"
 // @Param        academic_year_id      query  int     false  "Academic Year ID"
 // @Success      200                   {object}  dto.SuccessResponse{data=dto.PengeluaranResponse}

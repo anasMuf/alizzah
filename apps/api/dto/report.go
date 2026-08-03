@@ -413,9 +413,7 @@ type PemasukanResponse struct {
 type PengeluaranRequest struct {
 	DateFrom           string `query:"date_from"`
 	DateTo             string `query:"date_to"`
-	PaymentMethod      string `query:"payment_method"`       // tunai, tabungan, kosong=semua
-	FeeItemIDs         string `query:"fee_item_ids"`         // comma-separated IDs
-	ExpenseCategoryIDs string `query:"expense_category_ids"` // comma-separated IDs
+	ExpenseCategoryIDs string `query:"expense_category_ids"` // comma-separated expense category IDs
 	AcademicYearID     uint   `query:"academic_year_id"`
 }
 

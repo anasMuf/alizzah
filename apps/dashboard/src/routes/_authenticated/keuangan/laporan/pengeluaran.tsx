@@ -62,9 +62,9 @@ function LaporanPengeluaranPage() {
 		return { expenseCatGroups: groups, flatExpenseCatOptions: flat };
 	}, [expenseCats]);
 
-	const [selectedExpenseCatIds, setSelectedExpenseCatIds] = useState<number[]>(
-		[],
-	);
+	const [selectedExpenseCatIds, setSelectedExpenseCatIds] = useState<
+		(string | number)[]
+	>([]);
 
 	const [committedParams, setCommittedParams] = useState<Record<
 		string,
@@ -86,7 +86,6 @@ function LaporanPengeluaranPage() {
 		setCommittedParams({
 			date_from: filters.date_from,
 			date_to: filters.date_to,
-			payment_method: filters.payment_method || undefined,
 			expense_category_ids:
 				selectedExpenseCatIds.length > 0
 					? selectedExpenseCatIds.join(",")
@@ -160,7 +159,6 @@ function LaporanPengeluaranPage() {
 			.join(", ");
 		return {
 			kategori: catNames || "Semua",
-			metode: (committedParams.payment_method as string) || "Semua",
 			periode: `${formatDate(committedParams.date_from as string)} - ${formatDate(committedParams.date_to as string)}`,
 			ta: activeAy?.name ?? "-",
 		};
@@ -194,7 +192,11 @@ function LaporanPengeluaranPage() {
 			<div className="flex-1 flex min-h-0">
 				{/* Left: Filter */}
 				<div className="w-80 flex-shrink-0 border-r border-gray-200 bg-white">
-					<FilterBar onGenerate={handleGenerate} isLoading={isLoading}>
+					<FilterBar
+						onGenerate={handleGenerate}
+						isLoading={isLoading}
+						hidePaymentMethod
+					>
 						<MultiSelectCheckbox
 							label="Kategori Pengeluaran"
 							options={flatExpenseCatOptions}

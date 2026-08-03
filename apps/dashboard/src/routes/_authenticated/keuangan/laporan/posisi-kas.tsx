@@ -42,6 +42,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 	daycare: "Daycare",
 	daycare_meal: "Konsumsi Daycare",
 	graduation: "Wisuda",
+	facility: "Fasilitas",
 	calisan: "Calisan",
 	ekskul: "Ekskul",
 };
@@ -56,20 +57,20 @@ const CATEGORY_ORDER: Record<string, number> = {
 	daycare: 7,
 	daycare_meal: 8,
 	graduation: 9,
-	calisan: 10,
-	ekskul: 11,
+	facility: 10,
+	calisan: 11,
+	ekskul: 12,
 };
 
-function sortByCategory(a: any, b: any): number {
-	const orderA = CATEGORY_ORDER[a.category] ?? 99;
-	const orderB = CATEGORY_ORDER[b.category] ?? 99;
-	if (orderA !== orderB) return orderA - orderB;
-	return a.id - b.id;
-}
+const INCOME_CATEGORIES: { key: string; label: string }[] = [
+	{ key: "bos", label: "Dana BOS" },
+	{ key: "donasi", label: "Donasi" },
+	{ key: "hibah", label: "Hibah" },
+	{ key: "lainnya", label: "Lainnya" },
+];
 
 function LaporanPosisiKasPage() {
 	const [activeAy] = useAtom(academicYearAtom);
-	// Fee configs
 	const { data: feeConfigsData } = useGetV1FeeConfigs({
 		query: { staleTime: 5 * 60 * 1000 },
 	});
@@ -86,79 +87,80 @@ function LaporanPosisiKasPage() {
 	);
 	const feeItems = ((feeItemsData?.data as any)?.data ?? []) as any[];
 
-	const feeItemGroups = useMemo((): MultiSelectGroup[] => {
-		const sorted = [...feeItems].sort(sortByCategory);
-		const map = new Map<string, MultiSelectGroup>();
-		for (const item of sorted) {
-			const groupName = CATEGORY_LABELS[item.category] || item.category;
-			if (!map.has(groupName)) {
-				map.set(groupName, { header: groupName, items: [] });
-			}
-			map.get(groupName)!.items.push({
-				id: item.id,
-				label:
-					item.level && item.level !== "all"
-						? `${item.name} (${item.level.toUpperCase()})`
-						: item.name,
-			});
-		}
-		return [
-			...map.values(),
-			{
-				header: "Penerimaan Lain",
-				items: [
-					{ id: -1, label: "Dana BOS" },
-					{ id: -2, label: "Donasi" },
-					{ id: -3, label: "Hibah" },
-					{ id: -4, label: "Lainnya" },
-					{ id: -5, label: "Tabungan Umum" },
-				],
-			},
-		];
-	}, [feeItems]);
-
-	const flatFeeItemOptions = useMemo(
-		() => feeItemGroups.flatMap((g) => g.items),
-		[feeItemGroups],
-	);
-
-	// Expense categories for filter (grouped)
 	const { data: expenseCatData } = useGetV1ExpenseCategories({
 		query: { staleTime: 5 * 60 * 1000 },
 	});
 	const expenseCats = ((expenseCatData?.data as any)?.data ?? []) as any[];
-	const { expenseCatGroups, flatExpenseCatOptions } = useMemo(() => {
+
+	// Unified category tree: fee categories + expense subs + income-only
+	const { kategoriGroups, flatKategoriOptions } = useMemo(() => {
 		const groups: MultiSelectGroup[] = [];
-		const flat: { id: number; label: string }[] = [];
-		function collectDescendants(
-			cat: any,
-			prefix: string,
-		): { id: number; label: string }[] {
-			const items: { id: number; label: string }[] = [];
-			const label = prefix ? `${prefix} > ${cat.name}` : cat.name;
-			flat.push({ id: cat.id, label });
-			items.push({ id: cat.id, label: cat.name });
-			if (cat.children?.length) {
-				for (const child of cat.children) {
-					items.push(...collectDescendants(child, label));
+		const flat: { id: string | number; label: string }[] = [];
+
+		// Index expense parents by invoice_category
+		const expenseByInvoice: Record<string, any> = {};
+		for (const cat of expenseCats) {
+			if (cat.invoice_category) {
+				expenseByInvoice[cat.invoice_category] = cat;
+			}
+		}
+
+		// Fee categories (sorted)
+		const feeCats = [...new Set(feeItems.map((i: any) => i.category))].sort(
+			(a, b) => (CATEGORY_ORDER[a] ?? 99) - (CATEGORY_ORDER[b] ?? 99),
+		);
+
+		for (const cat of feeCats) {
+			const label = CATEGORY_LABELS[cat] || cat;
+			const items: { id: string | number; label: string }[] = [];
+
+			// Income checkbox (fee category)
+			const incomeId = `cat:${cat}`;
+			items.push({ id: incomeId, label: "Pemasukan" });
+			flat.push({ id: incomeId, label: `${label} — Pemasukan` });
+
+			// Expense sub-categories under matching parent
+			const expenseParent = expenseByInvoice[cat];
+			if (expenseParent?.children) {
+				for (const child of expenseParent.children) {
+					items.push({ id: child.id, label: child.name });
+					flat.push({ id: child.id, label: `${label} > ${child.name}` });
 				}
 			}
-			return items;
-		}
-		for (const cat of expenseCats) {
-			groups.push({
-				header: cat.name,
-				items: collectDescendants(cat, cat.name),
-			});
-		}
-		return { expenseCatGroups: groups, flatExpenseCatOptions: flat };
-	}, [expenseCats]);
 
-	// Filter state
-	const [selectedFeeItemIds, setSelectedFeeItemIds] = useState<number[]>([]);
-	const [selectedExpenseCatIds, setSelectedExpenseCatIds] = useState<number[]>(
-		[],
-	);
+			groups.push({ header: label, items });
+		}
+
+		// Income-only categories
+		for (const inc of INCOME_CATEGORIES) {
+			const expenseParent = expenseByInvoice[inc.key];
+			const items: { id: string | number; label: string }[] = [];
+
+			const incomeId = `income:${inc.key}`;
+			items.push({ id: incomeId, label: "Pemasukan" });
+			flat.push({ id: incomeId, label: `${inc.label} — Pemasukan` });
+
+			if (expenseParent?.children) {
+				for (const child of expenseParent.children) {
+					items.push({ id: child.id, label: child.name });
+					flat.push({ id: child.id, label: `${inc.label} > ${child.name}` });
+				}
+			}
+
+			groups.push({ header: inc.label, items });
+		}
+
+		// Tabungan Umum
+		groups.push({
+			header: "Tabungan Umum",
+			items: [{ id: "savings:voluntary", label: "Setoran" }],
+		});
+		flat.push({ id: "savings:voluntary", label: "Tabungan Umum — Setoran" });
+
+		return { kategoriGroups: groups, flatKategoriOptions: flat };
+	}, [feeItems, expenseCats]);
+
+	const [selectedIds, setSelectedIds] = useState<(string | number)[]>([]);
 
 	const [committedParams, setCommittedParams] = useState<Record<
 		string,
@@ -178,35 +180,34 @@ function LaporanPosisiKasPage() {
 	const grandTotal = report?.grand_total;
 
 	const handleGenerate = (filters: FilterBarValues) => {
-		const selectedCategories = feeItems
-			.filter((item: any) => selectedFeeItemIds.includes(item.id))
-			.map((item: any) => item.category);
-		const incomeCategoryMap: Record<number, string> = {
-			[-1]: "bos",
-			[-2]: "donasi",
-			[-3]: "hibah",
-			[-4]: "lainnya",
-		};
-		const selectedIncomeCategories = selectedFeeItemIds
-			.filter((id) => id < 0 && id >= -4)
-			.map((id) => incomeCategoryMap[id])
-			.filter(Boolean);
-		const includeSavings = selectedFeeItemIds.includes(-5);
+		const selected = [...selectedIds];
+
+		// Fee categories → categories param
+		const categories = selected
+			.filter((id) => typeof id === "string" && id.startsWith("cat:"))
+			.map((id) => (id as string).replace("cat:", ""));
+
+		// Income categories → income_categories param
+		const incomeCategories = selected
+			.filter((id) => typeof id === "string" && id.startsWith("income:"))
+			.map((id) => (id as string).replace("income:", ""));
+
+		// Expense sub-category IDs → expense_category_ids param
+		const expenseIds = selected.filter(
+			(id) => typeof id === "number",
+		) as number[];
+
+		// Tabungan Umum
+		const includeSavings = selected.includes("savings:voluntary");
+
 		setCommittedParams({
 			date_from: filters.date_from,
 			date_to: filters.date_to,
-			categories:
-				selectedCategories.length > 0
-					? selectedCategories.join(",")
-					: undefined,
+			categories: categories.length > 0 ? categories.join(",") : undefined,
 			income_categories:
-				selectedIncomeCategories.length > 0
-					? selectedIncomeCategories.join(",")
-					: undefined,
+				incomeCategories.length > 0 ? incomeCategories.join(",") : undefined,
 			expense_category_ids:
-				selectedExpenseCatIds.length > 0
-					? selectedExpenseCatIds.join(",")
-					: undefined,
+				expenseIds.length > 0 ? expenseIds.join(",") : undefined,
 			include_savings: includeSavings || undefined,
 			academic_year_id: filters.academic_year_id,
 		});
@@ -222,7 +223,7 @@ function LaporanPosisiKasPage() {
 				.replace(/"/g, "&quot;");
 
 		const fmtRupiah = (amount: number): string => {
-			if (amount === 0) return "0";
+			if (amount === 0) return "-";
 			const isNegative = amount < 0;
 			const abs = Math.abs(amount);
 			const formatted = new Intl.NumberFormat("id-ID").format(abs);
@@ -286,44 +287,20 @@ function LaporanPosisiKasPage() {
 
 	const infoFilters: Record<string, string> = useMemo(() => {
 		if (!committedParams) return {} as Record<string, string>;
-		const incomeLabelMap: Record<number, string> = {
-			[-1]: "Dana BOS",
-			[-2]: "Donasi",
-			[-3]: "Hibah",
-			[-4]: "Lainnya",
-			[-5]: "Tabungan Umum",
-		};
-		const feeNames = feeItems
-			.filter((item: any) => selectedFeeItemIds.includes(item.id))
-			.map((item: any) => item.name);
-		const incomeNames = selectedFeeItemIds
-			.filter((id) => id < 0)
-			.map((id) => incomeLabelMap[id])
-			.filter(Boolean);
-		const allPosNames = [...feeNames, ...incomeNames];
-		const expenseNames = flatExpenseCatOptions
-			.filter((cat) => selectedExpenseCatIds.includes(cat.id))
-			.map((cat) => cat.label)
+		const selectedNames = flatKategoriOptions
+			.filter((opt) => selectedIds.includes(opt.id))
+			.map((opt) => opt.label)
 			.join(", ");
 		const periodLabel =
 			committedParams.date_from && committedParams.date_to
 				? `${formatDate(committedParams.date_from as string)} - ${formatDate(committedParams.date_to as string)}`
 				: "-";
 		return {
-			pos: allPosNames.join(", ") || "Semua",
-			pengeluaran: expenseNames || "Semua",
-			metode: (committedParams.payment_method as string) || "Semua",
+			kategori: selectedNames || "Semua",
 			periode: periodLabel,
 			ta: activeAy?.name ?? "-",
 		};
-	}, [
-		committedParams,
-		selectedFeeItemIds,
-		selectedExpenseCatIds,
-		feeItems,
-		flatExpenseCatOptions,
-		activeAy,
-	]);
+	}, [committedParams, selectedIds, flatKategoriOptions, activeAy]);
 
 	return (
 		<div className="h-full flex flex-col">
@@ -353,23 +330,18 @@ function LaporanPosisiKasPage() {
 			<div className="flex-1 flex min-h-0">
 				{/* Left: Filter */}
 				<div className="w-80 flex-shrink-0 border-r border-gray-200 bg-white">
-					<FilterBar onGenerate={handleGenerate} isLoading={isLoading}>
-						<div className="space-y-4">
-							<MultiSelectCheckbox
-								label="Fee Item (Pemasukan)"
-								options={flatFeeItemOptions}
-								groups={feeItemGroups}
-								selected={selectedFeeItemIds}
-								onChange={setSelectedFeeItemIds}
-							/>
-							<MultiSelectCheckbox
-								label="Kategori Pengeluaran"
-								options={flatExpenseCatOptions}
-								groups={expenseCatGroups}
-								selected={selectedExpenseCatIds}
-								onChange={setSelectedExpenseCatIds}
-							/>
-						</div>
+					<FilterBar
+						onGenerate={handleGenerate}
+						isLoading={isLoading}
+						hidePaymentMethod
+					>
+						<MultiSelectCheckbox
+							label="Kategori"
+							options={flatKategoriOptions}
+							groups={kategoriGroups}
+							selected={selectedIds}
+							onChange={setSelectedIds}
+						/>
 					</FilterBar>
 				</div>
 
@@ -466,7 +438,7 @@ function LaporanPosisiKasPage() {
 }
 
 function formatRupiah(amount: number): string {
-	if (amount === 0) return "0";
+	if (amount === 0) return "-";
 	const isNegative = amount < 0;
 	const abs = Math.abs(amount);
 	const formatted = new Intl.NumberFormat("id-ID").format(abs);

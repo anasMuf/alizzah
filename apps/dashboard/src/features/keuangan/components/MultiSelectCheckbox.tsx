@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 
 export interface MultiSelectOption {
-	id: number;
+	id: string | number;
 	label: string;
 }
 
@@ -14,8 +14,8 @@ interface MultiSelectCheckboxProps {
 	label: string;
 	options: MultiSelectOption[];
 	groups?: MultiSelectGroup[];
-	selected: number[];
-	onChange: (ids: number[]) => void;
+	selected: (string | number)[];
+	onChange: (ids: (string | number)[]) => void;
 	showSelectAll?: boolean;
 }
 
@@ -42,7 +42,7 @@ export function MultiSelectCheckbox({
 	}, [allSelected, allIds, onChange]);
 
 	const handleToggle = useCallback(
-		(id: number) => {
+		(id: string | number) => {
 			if (selected.includes(id)) {
 				onChange(selected.filter((s) => s !== id));
 			} else {

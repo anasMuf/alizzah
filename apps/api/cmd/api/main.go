@@ -194,6 +194,7 @@ func main() {
 	seeders.SwapTransactionTypes(db)            // Swap credit↔debit: ubah perspektif bank statement → akuntansi sekolah
 	seeders.FixSavingsTransactionTypes(db)      // Perbaiki guardian_withdrawal/graduation yang salah type
 	seeders.BackfillExpenseCategoryLainLain(db) // Pastikan kategori Lain-lain tersedia
+	seeders.BackfillExpenseCategoryMapping(db)  // Perbaiki mapping invoice_category & tambah kategori income
 	seeders.BackfillRemoveAslinFromJuly(db)     // Hapus item Aslin dari invoice Juli (start_month=8)
 	seeders.BackfillMandatorySavingsDeposit(db) // Setoran tabungan wajib untuk payment historical
 

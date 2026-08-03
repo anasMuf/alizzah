@@ -12,9 +12,17 @@ var defaultExpenseCategories = []struct {
 	InvoiceCategory string // mapping ke invoice_items.category
 	Children        []string
 }{
+	// === Income-mapped categories ===
 	{"Biaya Awal", "initial", []string{"Infaq Sarpras", "Infaq APE", "Biaya Psikotes IQ", "Koperasi"}},
 	{"Biaya Registrasi", "registration", []string{"Biaya MPLS", "Buku PK Karakter", "Alat Belajar", "Iuran Kegiatan Kecamatan/Kabupaten", "Administrasi LPP", "Kalender", "Koperasi"}},
 	{"SPP", "monthly_spp", []string{"Gaji Guru"}},
+	{"Infaq Harian", "monthly_infaq", []string{"Bekal Siswa", "Kegiatan Sekolah"}},
+	{"Daycare", "daycare", nil},
+	{"Pasta & Ekskul", "pasta", nil},
+	{"Tabungan Wajib", "savings_mandatory", nil},
+	{"Wisuda", "graduation", nil},
+	{"Fasilitas", "facility", nil},
+	// === Catch-all (no income mapping) ===
 	{"Lain-lain", "lainnya", []string{"ATK", "Transportasi", "Listrik & Air", "Internet & Telepon", "Pemeliharaan", "Lain-lain"}},
 }
 

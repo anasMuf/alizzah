@@ -135,8 +135,8 @@ function LaporanSaldoPage() {
 	);
 
 	// Filter state
-	const [selectedPosIds, setSelectedPosIds] = useState<number[]>([]);
-	const [selectedAyIds, setSelectedAyIds] = useState<number[]>([]);
+	const [selectedPosIds, setSelectedPosIds] = useState<(string | number)[]>([]);
+	const [selectedAyIds, setSelectedAyIds] = useState<(string | number)[]>([]);
 
 	const [committedParams, setCommittedParams] = useState<Record<
 		string,
@@ -164,8 +164,8 @@ function LaporanSaldoPage() {
 			[-4]: "lainnya",
 		};
 		const selectedIncomeCategories = selectedPosIds
-			.filter((id) => id < 0 && id >= -4)
-			.map((id) => incomeCategoryMap[id])
+			.filter((id) => typeof id === "number" && id < 0 && id >= -4)
+			.map((id) => incomeCategoryMap[id as number])
 			.filter(Boolean);
 		const includeSavings = selectedPosIds.includes(-5);
 		setCommittedParams({
@@ -243,8 +243,8 @@ function LaporanSaldoPage() {
 			.filter((item: any) => selectedPosIds.includes(item.id))
 			.map((item: any) => item.name);
 		const incomeNames = selectedPosIds
-			.filter((id) => id < 0)
-			.map((id) => incomeLabelMap[id])
+			.filter((id) => typeof id === "number" && id < 0)
+			.map((id) => incomeLabelMap[id as number])
 			.filter(Boolean);
 		const allPosNames = [...feeNames, ...incomeNames];
 		const taNames = academicYears

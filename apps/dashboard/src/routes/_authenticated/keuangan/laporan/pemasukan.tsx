@@ -121,7 +121,9 @@ function LaporanPemasukanPage() {
 		[feeItemGroups],
 	);
 
-	const [selectedFeeItemIds, setSelectedFeeItemIds] = useState<number[]>([]);
+	const [selectedFeeItemIds, setSelectedFeeItemIds] = useState<
+		(string | number)[]
+	>([]);
 
 	// Snapshots filter values only on Generate click — prevents auto-fetch on filter changes
 	const [committedParams, setCommittedParams] = useState<Record<
@@ -152,8 +154,8 @@ function LaporanPemasukanPage() {
 			[-4]: "lainnya",
 		};
 		const selectedIncomeCategories = selectedFeeItemIds
-			.filter((id) => id < 0 && id >= -4)
-			.map((id) => incomeCategoryMap[id])
+			.filter((id) => typeof id === "number" && id < 0 && id >= -4)
+			.map((id) => incomeCategoryMap[id as number])
 			.filter(Boolean);
 		const includeSavings = selectedFeeItemIds.includes(-5);
 
@@ -239,7 +241,7 @@ function LaporanPemasukanPage() {
 				.filter((item: any) => selectedFeeItemIds.includes(item.id))
 				.map((item: any) => item.name),
 			...selectedFeeItemIds
-				.filter((id) => id < 0)
+				.filter((id) => typeof id === "number" && id < 0)
 				.map((id) => {
 					const map: Record<number, string> = {
 						[-1]: "Dana BOS",
@@ -248,7 +250,7 @@ function LaporanPemasukanPage() {
 						[-4]: "Lainnya",
 						[-5]: "Tabungan Umum",
 					};
-					return map[id];
+					return map[id as number];
 				})
 				.filter(Boolean),
 		];

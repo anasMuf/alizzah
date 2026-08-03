@@ -460,7 +460,7 @@ export function InvoiceSelector({
 											item.sisa_tagihan > 0 || item.is_dispensation,
 									)
 									.map((item: any) => {
-										const checkable = !item.is_dispensation && !item.is_locked;
+										const checkable = !item.is_dispensation;
 										const isExcluded = excludedItems.includes(item.id);
 										return (
 											<div
@@ -518,7 +518,7 @@ export function InvoiceSelector({
 													)}
 												</span>
 												<div className="w-36">
-													{item.is_dispensation || item.is_locked ? (
+													{item.is_dispensation ? (
 														<span
 															className={`block text-right text-xs font-medium tabular-nums ${item.is_dispensation ? "text-green-600" : "text-gray-900"}`}
 														>

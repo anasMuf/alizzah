@@ -75,6 +75,7 @@ type StudentListResponse struct {
 	Status            string                   `json:"status"`
 	IsDaycareOnly     bool                     `json:"is_daycare_only"`
 	CurrentEnrollment *EnrollmentBriefResponse `json:"active_enrollment,omitempty"`
+	SavingsBalances   []SavingsBalanceResponse `json:"savings_balances,omitempty"`
 }
 
 // ExceptionalityResponse is the response for a student's exceptional (ABK) status.

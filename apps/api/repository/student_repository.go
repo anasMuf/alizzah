@@ -74,7 +74,7 @@ func (r *studentRepository) FindAll(params dto.StudentQueryParams) ([]model.Stud
 	}
 
 	offset := (params.Page - 1) * params.Limit
-	if err := query.Order("created_at DESC").Offset(offset).Limit(params.Limit).Find(&students).Error; err != nil {
+	if err := query.Preload("Savings").Order("created_at DESC").Offset(offset).Limit(params.Limit).Find(&students).Error; err != nil {
 		return nil, 0, err
 	}
 

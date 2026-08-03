@@ -7,6 +7,11 @@
  */
 import type { DtoEnrollmentBriefResponse } from "./dtoEnrollmentBriefResponse";
 
+export interface DtoSavingsBalanceResponse {
+	type?: string;
+	balance?: number;
+}
+
 export interface DtoStudentListResponse {
 	active_enrollment?: DtoEnrollmentBriefResponse;
 	birth_date?: string;
@@ -14,5 +19,6 @@ export interface DtoStudentListResponse {
 	gender?: string;
 	id?: number;
 	is_daycare_only?: boolean;
+	savings_balances?: DtoSavingsBalanceResponse[];
 	status?: string;
 }

@@ -1,20 +1,14 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import {
-	ArrowDownCircle,
-	ArrowUpCircle,
-	Banknote,
-	ChevronRight,
-	Printer,
-} from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Banknote, ChevronRight, Printer } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 import {
+	type TabunganSiswaReportData,
 	type TabunganSiswaRow,
 	useGetReportsTabunganSiswa,
 } from "#/api/endpoints/reports/tabungan";
 import {
 	useGetV1StudentsIdSavings,
-	useGetV1StudentsIdSavingsTransactions,
 	usePostV1StudentsIdSavingsWithdrawals,
 } from "#/api/endpoints/savings/savings";
 import { useGetV1StudentsId } from "#/api/endpoints/students/students";
@@ -39,21 +33,6 @@ function DetailTabunganSiswaPage() {
 	const { id } = Route.useParams();
 	const queryClient = useQueryClient();
 	const { addToast } = useToast();
-	const navigate = useNavigate();
-
-	const searchParams = Route.useSearch();
-	const page = searchParams.page ?? 1;
-
-	const updateSearch = useCallback(
-		(updates: Partial<typeof searchParams>) => {
-			navigate({
-				from: Route.fullPath,
-				search: { ...searchParams, ...updates } as typeof searchParams,
-				replace: true,
-			});
-		},
-		[navigate, searchParams],
-	);
 
 	const { data: studentResp, isLoading: isStudentLoading } = useGetV1StudentsId(
 		Number(id),
@@ -65,15 +44,6 @@ function DetailTabunganSiswaPage() {
 			query: { enabled: !!id },
 		});
 	const savings = (savingsResp?.data as any)?.data;
-
-	const { data: transactionsResp, isLoading: isTransactionsLoading } =
-		useGetV1StudentsIdSavingsTransactions(
-			Number(id),
-			{ page, limit: 10 },
-			{ query: { enabled: !!id } },
-		);
-	const transactions = (transactionsResp?.data as any)?.data || [];
-	const meta = (transactionsResp?.data as any)?.meta;
 
 	const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
 	const [withdrawAmount, setWithdrawAmount] = useState("");
@@ -105,7 +75,7 @@ function DetailTabunganSiswaPage() {
 					queryKey: ["/v1/students", id, "savings"],
 				});
 				queryClient.invalidateQueries({
-					queryKey: ["/v1/students", id, "savings/transactions"],
+					queryKey: [`/v1/reports/savings/students/${id}`],
 				});
 				setIsWithdrawOpen(false);
 				setWithdrawAmount("");
@@ -122,6 +92,16 @@ function DetailTabunganSiswaPage() {
 			},
 		},
 	});
+
+	// Running balance — always loaded (no date filter = all time)
+	const { data: reportResp, isLoading: isReportLoading } =
+		useGetReportsTabunganSiswa(Number(id), undefined, {
+			query: { enabled: !!id },
+		});
+	const report = ((reportResp as any)?.data as any)?.data as
+		| TabunganSiswaReportData
+		| undefined;
+	const reportRows: TabunganSiswaRow[] = report?.rows || [];
 
 	// Print report state
 	const [showPrintFilter, setShowPrintFilter] = useState(false);
@@ -559,124 +539,141 @@ function DetailTabunganSiswaPage() {
 				</div>
 			</div>
 
-			{/* Riwayat Transaksi */}
+			{/* Tabel Saldo Berjalan */}
 			<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden mt-8">
-				<div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-					<h3 className="text-base font-semibold leading-6 text-gray-900">
-						Riwayat Mutasi Tabungan
-					</h3>
-				</div>
-
-				{isTransactionsLoading ? (
+				{isReportLoading ? (
 					<div className="p-8 text-center text-gray-500">
-						Memuat riwayat transaksi...
-					</div>
-				) : transactions.length === 0 ? (
-					<div className="p-8 text-center text-gray-500">
-						Belum ada riwayat mutasi tabungan.
+						Memuat data saldo berjalan...
 					</div>
 				) : (
-					<ul className="divide-y divide-gray-100">
-						{transactions.map((trx: any) => (
-							<li
-								key={trx.id}
-								className="relative flex justify-between gap-x-6 px-4 py-5 sm:px-6 hover:bg-gray-50"
-							>
-								<div className="flex gap-x-4 items-center">
-									{trx.transaction_type === "debit" ? (
-										<ArrowDownCircle className="h-8 w-8 flex-none text-green-500 bg-green-50 rounded-full" />
-									) : (
-										<ArrowUpCircle className="h-8 w-8 flex-none text-rose-500 bg-rose-50 rounded-full" />
-									)}
-									<div className="min-w-0 flex-auto">
-										<p className="text-sm font-semibold leading-6 text-gray-900">
-											{trx.transaction_type === "debit" ? "Debit" : "Kredit"}
-										</p>
-										<p className="mt-1 flex text-xs leading-5 text-gray-500">
-											{formatDate(trx.created_at)} &bull;{" "}
-											{trx.notes ||
-												(trx.source_type
-													? trx.source_type
-													: "Tanpa Keterangan")}
-										</p>
-									</div>
-								</div>
-								<div className="flex items-center gap-x-4">
-									<div
-										className={`text-sm font-bold leading-6 ${trx.transaction_type === "debit" ? "text-green-600" : "text-rose-600"}`}
+					<div className="overflow-x-auto">
+						<table className="min-w-full divide-y divide-gray-300">
+							<thead className="bg-gray-50">
+								<tr>
+									<th
+										scope="col"
+										className="py-3 pl-4 pr-3 text-left text-xs font-semibold text-gray-900 sm:pl-6 w-12"
 									>
-										{trx.transaction_type === "debit" ? "+" : "-"}
-										{formatCurrency(Number(trx.amount))}
-									</div>
-								</div>
-							</li>
-						))}
-					</ul>
-				)}
+										No.
+									</th>
+									<th
+										scope="col"
+										className="px-3 py-3 text-left text-xs font-semibold text-gray-900 w-28"
+									>
+										Tanggal
+									</th>
+									<th
+										scope="col"
+										className="px-3 py-3 text-left text-xs font-semibold text-gray-900"
+									>
+										Keterangan
+									</th>
+									<th
+										scope="col"
+										className="px-3 py-3 text-right text-xs font-semibold text-gray-900 w-36"
+									>
+										Setoran
+									</th>
+									<th
+										scope="col"
+										className="px-3 py-3 text-right text-xs font-semibold text-gray-900 w-36"
+									>
+										Penarikan
+									</th>
+									<th
+										scope="col"
+										className="px-3 py-3 text-right text-xs font-semibold text-gray-900 pr-6 w-36"
+									>
+										Saldo
+									</th>
+								</tr>
+							</thead>
+							<tbody className="divide-y divide-gray-200 bg-white">
+								{/* Saldo Awal */}
+								{report && (
+									<tr className="bg-gray-50/50">
+										<td className="py-2.5 pl-4 pr-3 sm:pl-6" />
+										<td
+											className="px-3 py-2.5 text-sm text-gray-500 italic"
+											colSpan={2}
+										>
+											Saldo Awal
+										</td>
+										<td className="px-3 py-2.5" />
+										<td className="px-3 py-2.5" />
+										<td className="px-3 py-2.5 text-right text-sm font-semibold tabular-nums pr-6">
+											{formatCurrency(report.saldo_awal)}
+										</td>
+									</tr>
+								)}
 
-				{meta && meta.total_pages > 1 && (
-					<div className="border-t border-gray-200 px-4 py-3 flex items-center justify-between sm:px-6">
-						<div className="flex flex-1 justify-between sm:hidden">
-							<Button
-								variant="secondary"
-								onClick={() => updateSearch({ page: Math.max(1, page - 1) })}
-								disabled={page === 1}
-							>
-								Previous
-							</Button>
-							<Button
-								variant="secondary"
-								onClick={() => updateSearch({ page: page + 1 })}
-								disabled={page >= meta.total_pages}
-							>
-								Next
-							</Button>
-						</div>
-						<div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-							<div>
-								<p className="text-sm text-gray-700">
-									Menampilkan{" "}
-									<span className="font-medium">{(page - 1) * 10 + 1}</span>{" "}
-									sampai{" "}
-									<span className="font-medium">
-										{Math.min(page * 10, meta.total_items)}
-									</span>{" "}
-									dari <span className="font-medium">{meta.total_items}</span>{" "}
-									riwayat
-								</p>
-							</div>
-							<div>
-								<nav
-									className="isolate inline-flex -space-x-px rounded-md shadow-sm"
-									aria-label="Pagination"
-								>
-									<button
-										onClick={() =>
-											updateSearch({ page: Math.max(1, page - 1) })
-										}
-										disabled={page === 1}
-										className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
-									>
-										<span className="sr-only">Previous</span>
-										<ChevronRight
-											className="h-5 w-5 rotate-180"
-											aria-hidden="true"
-										/>
-									</button>
-									<span className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300">
-										{page}
-									</span>
-									<button
-										onClick={() => updateSearch({ page: page + 1 })}
-										disabled={page >= meta.total_pages}
-										className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
-									>
-										<span className="sr-only">Next</span>
-										<ChevronRight className="h-5 w-5" aria-hidden="true" />
-									</button>
-								</nav>
-							</div>
-						</div>
+								{reportRows.length === 0 && report ? (
+									<tr>
+										<td
+											colSpan={6}
+											className="px-3 py-12 text-center text-sm text-gray-500"
+										>
+											Belum ada mutasi tabungan.
+										</td>
+									</tr>
+								) : (
+									reportRows.map((row: TabunganSiswaRow, idx: number) => (
+										<tr key={idx} className="hover:bg-gray-50">
+											<td className="whitespace-nowrap py-2 pl-4 pr-3 text-sm text-gray-500 tabular-nums sm:pl-6">
+												{idx + 1}.
+											</td>
+											<td className="whitespace-nowrap px-3 py-2 text-sm text-gray-900 tabular-nums">
+												{formatDate(row.date)}
+											</td>
+											<td className="px-3 py-2 text-sm text-gray-700">
+												{row.description}
+											</td>
+											<td className="whitespace-nowrap px-3 py-2 text-sm text-right tabular-nums text-green-700">
+												{row.debit ? formatCurrency(row.debit) : ""}
+											</td>
+											<td className="whitespace-nowrap px-3 py-2 text-sm text-right tabular-nums text-rose-700">
+												{row.credit ? formatCurrency(row.credit) : ""}
+											</td>
+											<td className="whitespace-nowrap px-3 py-2 text-sm text-right tabular-nums font-semibold pr-6">
+												{formatCurrency(row.saldo)}
+											</td>
+										</tr>
+									))
+								)}
+
+								{/* Total */}
+								{reportRows.length > 0 && report && (
+									<tr className="bg-gray-50 border-t-2 border-gray-300 font-semibold">
+										<td className="py-2.5 pl-4 pr-3 sm:pl-6" />
+										<td className="px-3 py-2.5 text-sm" colSpan={2}>
+											Total Mutasi
+										</td>
+										<td className="px-3 py-2.5 text-sm text-right tabular-nums text-green-700">
+											{formatCurrency(report.total_debit)}
+										</td>
+										<td className="px-3 py-2.5 text-sm text-right tabular-nums text-rose-700">
+											{formatCurrency(report.total_credit)}
+										</td>
+										<td className="px-3 py-2.5" />
+									</tr>
+								)}
+
+								{/* Saldo Akhir */}
+								{report && (
+									<tr className="bg-gray-100 border-t font-bold">
+										<td className="py-2.5 pl-4 pr-3 sm:pl-6" />
+										<td className="px-3 py-2.5 text-sm" colSpan={2}>
+											Saldo Akhir
+										</td>
+										<td className="px-3 py-2.5" />
+										<td className="px-3 py-2.5" />
+										<td className="px-3 py-2.5 text-right text-sm tabular-nums pr-6">
+											{formatCurrency(report.saldo_akhir)}
+										</td>
+									</tr>
+								)}
+							</tbody>
+						</table>
 					</div>
 				)}
 			</div>

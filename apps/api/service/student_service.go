@@ -89,6 +89,14 @@ func (s *studentService) GetAll(params dto.StudentQueryParams) ([]dto.StudentLis
 			Status:        st.Status,
 			IsDaycareOnly: st.IsDaycareOnly,
 		}
+		// Populate savings balances
+		for _, sv := range st.Savings {
+			responses[i].SavingsBalances = append(responses[i].SavingsBalances, dto.SavingsBalanceResponse{
+				ID:      sv.ID,
+				Type:    sv.Type,
+				Balance: sv.Balance,
+			})
+		}
 		// Populate current enrollment
 		if s.enrollmentRepo != nil {
 			if enr, err := s.enrollmentRepo.FindActiveByStudentID(st.ID); err == nil {

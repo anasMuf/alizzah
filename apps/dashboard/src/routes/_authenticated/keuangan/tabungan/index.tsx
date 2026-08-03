@@ -6,6 +6,7 @@ import { useDebounce } from "use-debounce";
 import { useGetV1ClassGroups } from "#/api/endpoints/class-groups/class-groups";
 import { useGetV1Students } from "#/api/endpoints/students/students";
 import { Pagination } from "#/components/ui";
+import { formatCurrency } from "#/utils/format";
 import { academicYearAtom } from "../../../../store/global";
 
 export const Route = createFileRoute("/_authenticated/keuangan/tabungan/")({
@@ -184,8 +185,17 @@ function TabunganListPage() {
 										</td>
 										<td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900 font-medium">
 											{student.full_name}
-											<div className="text-xs text-gray-500 font-normal mt-1">
-												{student.nisn || "-"}
+											<div className="text-xs text-gray-500 font-normal mt-1 space-y-0.5">
+												{student.savings_balances?.length > 0 ? (
+													student.savings_balances.map((s: any) => (
+														<div key={s.type}>
+															{s.type === "general" ? "Umum" : "Wajib"}:{" "}
+															{formatCurrency(s.balance)}
+														</div>
+													))
+												) : (
+													<span>Belum ada tabungan</span>
+												)}
 											</div>
 										</td>
 										<td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">

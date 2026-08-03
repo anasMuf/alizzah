@@ -20,6 +20,7 @@ type Student struct {
 	StudentGuardians []StudentGuardian      `gorm:"foreignKey:StudentID" json:"-"`
 	Enrollments      []StudentEnrollment    `gorm:"foreignKey:StudentID" json:"-"`
 	Exceptionality   *StudentExceptionality `gorm:"foreignKey:StudentID" json:"exceptionality,omitempty"`
+	Savings          []StudentSavings       `gorm:"foreignKey:StudentID" json:"-"`
 }
 
 func (Student) TableName() string {

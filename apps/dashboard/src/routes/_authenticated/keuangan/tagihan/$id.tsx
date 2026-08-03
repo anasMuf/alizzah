@@ -498,7 +498,7 @@ function DetailTagihanPage() {
 		const itemTotal = Number(item.amount);
 		const itemPaid = Number(item.paid_amount);
 		const itemSisa = itemTotal - itemPaid;
-		const isPaid = itemPaid >= itemTotal;
+		const isPaid = itemTotal > 0 && itemPaid >= itemTotal;
 		const isPartial = itemPaid > 0 && !isPaid;
 		const hasQuantity = item.quantity != null && item.unit_price != null;
 		const unitLabel = item.category === "savings_mandatory" ? "Senin" : "hari";

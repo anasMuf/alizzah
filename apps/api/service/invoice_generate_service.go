@@ -1637,8 +1637,12 @@ func (s *invoiceGenerateService) AddFacilityToMonthlyRange(studentID, facilityID
 			if feeItem.Unit == "per_day" {
 				enrollment, _ := s.enrollmentRepo.FindActiveByStudentID(studentID)
 				if enrollment != nil {
+					// Cek per rombel dulu, fallback ke per jenjang
 					ed, _ := s.effectiveDayRepo.FindByClassGroupMonthYear(enrollment.ClassGroupID, m.Month, m.Year)
-					if ed != nil {
+					if ed == nil || ed.ID == 0 {
+						ed, _ = s.effectiveDayRepo.FindByLevelMonthYear(enrollment.ClassGroup.Level, m.Month, m.Year)
+					}
+					if ed != nil && ed.ID != 0 {
 						totalDays := ed.TotalDays
 						amount = feeItem.Amount * float64(totalDays)
 						itemName = fmt.Sprintf("%s (%d hari)", feeItem.Name, totalDays)

@@ -17,10 +17,10 @@ import { useGetV1StudentsId } from "#/api/endpoints/students/students";
 import { Button, useToast } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
 import { formatCurrency } from "../../../../utils/format";
-import { IncidentalItems } from "./components/IncidentalItems";
-import { InvoiceSelector } from "./components/InvoiceSelector";
-import { PaymentSummary } from "./components/PaymentSummary";
-import { StudentSearch } from "./components/StudentSearch";
+import { IncidentalItems } from "./components/-IncidentalItems";
+import { InvoiceSelector } from "./components/-InvoiceSelector";
+import { PaymentSummary } from "./components/-PaymentSummary";
+import { StudentSearch } from "./components/-StudentSearch";
 
 type IncidentalItem = {
 	id: number;

@@ -148,6 +148,7 @@ export function InvoiceSelector({
 						sisa_tagihan: sisa,
 						quantity: item.quantity ?? 0,
 						unit_price: item.unit_price ?? 0,
+						status: item.status,
 						is_dispensation: item.category === "dispensation",
 						is_locked: isLockedBySpp,
 					});
@@ -457,7 +458,7 @@ export function InvoiceSelector({
 								{invoiceItems
 									.filter(
 										(item: any) =>
-											item.sisa_tagihan > 0 || item.is_dispensation,
+											item.status !== "paid" || item.sisa_tagihan > 0,
 									)
 									.map((item: any) => {
 										const checkable = !item.is_dispensation;
@@ -494,7 +495,7 @@ export function InvoiceSelector({
 												</span>
 
 												{/* Icon edit untuk item harian/per-Senin */}
-												{item.unit_price > 0 && item.quantity > 0 && (
+												{item.unit_price > 0 && (
 													<button
 														type="button"
 														onClick={() => {
@@ -587,7 +588,7 @@ export function InvoiceSelector({
 								{/* Item yang sudah lunas */}
 								{invoiceItems.filter(
 									(item: any) =>
-										item.sisa_tagihan === 0 && !item.is_dispensation,
+										item.status === "paid" && item.sisa_tagihan === 0,
 								).length > 0 && (
 									<div className="mt-2 pt-2 border-t border-gray-100">
 										<p className="text-[11px] font-medium text-gray-400 uppercase tracking-wider mb-1 px-2">
@@ -596,7 +597,7 @@ export function InvoiceSelector({
 										{invoiceItems
 											.filter(
 												(item: any) =>
-													item.sisa_tagihan === 0 && !item.is_dispensation,
+													item.status === "paid" && item.sisa_tagihan === 0,
 											)
 											.map((item: any) => (
 												<div

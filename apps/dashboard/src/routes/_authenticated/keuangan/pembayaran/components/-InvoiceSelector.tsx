@@ -588,7 +588,7 @@ export function InvoiceSelector({
 								{/* Item yang sudah lunas */}
 								{invoiceItems.filter(
 									(item: any) =>
-										item.status === "paid" && item.sisa_tagihan === 0,
+										item.status === "paid" && item.sisa_tagihan <= 0,
 								).length > 0 && (
 									<div className="mt-2 pt-2 border-t border-gray-100">
 										<p className="text-[11px] font-medium text-gray-400 uppercase tracking-wider mb-1 px-2">
@@ -597,7 +597,7 @@ export function InvoiceSelector({
 										{invoiceItems
 											.filter(
 												(item: any) =>
-													item.status === "paid" && item.sisa_tagihan === 0,
+													item.status === "paid" && item.sisa_tagihan <= 0,
 											)
 											.map((item: any) => (
 												<div

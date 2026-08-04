@@ -164,6 +164,7 @@ func (s *invoiceGenerateService) GenerateInitial(params dto.GenerateInitialInvoi
 							Name:     label,
 							Category: "dispensation",
 							Amount:   -discountForThis,
+							Status:   "paid",
 						})
 					}
 				}
@@ -464,6 +465,7 @@ func (s *invoiceGenerateService) GenerateMonthly(params dto.GenerateMonthlyInvoi
 							Category:    "dispensation",
 							Amount:      -discountForThis,
 							IsMandatory: true,
+							Status:      "paid",
 							Notes:       d.Notes,
 						})
 					}
@@ -1465,6 +1467,7 @@ func (s *invoiceGenerateService) applyDispensationToInvoice(invoice *model.Invoi
 					Category:    "dispensation",
 					Amount:      -discountForThis,
 					IsMandatory: true,
+					Status:      "paid",
 					Notes:       d.Notes,
 				})
 			}

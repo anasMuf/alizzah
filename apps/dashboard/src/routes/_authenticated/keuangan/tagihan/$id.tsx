@@ -492,14 +492,14 @@ function DetailTagihanPage() {
 
 	const totalAmount = Number(invoice.total_amount);
 	const paidAmount = Number(invoice.paid_amount);
-	const sisa = totalAmount - paidAmount;
+	const sisa = Math.max(0, totalAmount - paidAmount);
 
 	const renderItemRow = (item: any) => {
 		const itemTotal = Number(item.amount);
 		const itemPaid = Number(item.paid_amount);
 		const itemSisa = itemTotal - itemPaid;
-		const isPaid = itemTotal > 0 && itemPaid >= itemTotal;
-		const isPartial = itemPaid > 0 && !isPaid;
+		const isPaid = item.status === "paid";
+		const isPartial = item.status === "partial";
 		const hasQuantity = item.quantity != null && item.unit_price != null;
 		const unitLabel = item.category === "savings_mandatory" ? "Senin" : "hari";
 

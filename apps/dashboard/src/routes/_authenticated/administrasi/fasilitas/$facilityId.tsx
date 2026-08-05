@@ -68,10 +68,10 @@ function FacilityDetailPage() {
 			{ query: { enabled: !!activeAy?.id && !!id } },
 		);
 
-	const studentsData = ((studentsResp as any)?.data as any)?.data as
+	const studentsData = ((studentsResp as any)?.data as any)?.data?.data as
 		| DtoFacilityStudentItemResponse[]
 		| undefined;
-	const meta = ((studentsResp as any)?.data as any)?.meta as
+	const meta = ((studentsResp as any)?.data as any)?.data?.meta as
 		| { page: number; limit: number; total: number }
 		| undefined;
 

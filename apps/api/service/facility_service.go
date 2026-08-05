@@ -302,6 +302,14 @@ func (s *studentFacilityService) UpdateEnrollment(studentID, sfID uint, req dto.
 		return nil, err
 	}
 
+	// Update invoices: remove old facility items, then re-add with new zone price
+	if s.invoiceGen != nil {
+		go func() {
+			s.invoiceGen.RemoveFacilityFromFutureInvoices(studentID, sf.FacilityID, sf.AcademicYearID)
+			s.invoiceGen.AddFacilityToMonthlyRange(studentID, sf.FacilityID, sf.AcademicYearID)
+		}()
+	}
+
 	// Reload with preloaded relations
 	saved, err := s.sfRepo.FindByID(sf.ID)
 	if err != nil {

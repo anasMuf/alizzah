@@ -61,7 +61,7 @@ function SiswaFasilitasPage() {
 	});
 	const feeConfigs: any[] = (fcResp?.data as any)?.data || [];
 	const activeFeeConfig = feeConfigs.find(
-		(fc: any) => fc.academic_year?.is_active,
+		(fc: any) => fc.academic_year?.id === activeAy?.id,
 	);
 	const feeConfigId = activeFeeConfig?.id;
 

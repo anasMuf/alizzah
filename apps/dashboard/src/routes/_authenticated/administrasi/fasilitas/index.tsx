@@ -187,7 +187,7 @@ function FasilitasPage() {
 											<Link
 												to="/administrasi/fasilitas/$facilityId"
 												params={{ facilityId: String(f.id) }}
-												search={{ page: 1, search: "" } as any}
+												search={{ page: undefined, search: undefined }}
 												className="text-gray-500 hover:text-indigo-600"
 												title="Lihat detail"
 											>

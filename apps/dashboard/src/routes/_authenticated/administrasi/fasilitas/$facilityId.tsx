@@ -46,8 +46,14 @@ export const Route = createFileRoute(
 )({
 	component: FacilityDetailPage,
 	validateSearch: (params: Record<string, unknown>) => ({
-		page: typeof params.page === "string" ? Number(params.page) || 1 : 1,
-		search: typeof params.search === "string" ? params.search : "",
+		page:
+			typeof params.page === "string"
+				? Number(params.page) || undefined
+				: undefined,
+		search:
+			typeof params.search === "string" && params.search
+				? params.search
+				: undefined,
 	}),
 });
 
@@ -58,8 +64,10 @@ function FacilityDetailPage() {
 	const [activeAy] = useAtom(academicYearAtom);
 
 	const { facilityId } = Route.useParams();
-	const { page, search: searchParam } = Route.useSearch();
-	const [searchInput, setSearchInput] = useState(searchParam);
+	const { page: rawPage, search: searchParam } = Route.useSearch();
+	const page = rawPage ?? 1;
+	const search = searchParam ?? "";
+	const [searchInput, setSearchInput] = useState(search);
 	const [deletingItem, setDeletingItem] =
 		useState<DtoFacilityStudentItemResponse | null>(null);
 
@@ -78,7 +86,7 @@ function FacilityDetailPage() {
 	});
 	const feeConfigs: any[] = (fcResp?.data as any)?.data || [];
 	const activeFeeConfig = feeConfigs.find(
-		(fc: any) => fc.academic_year?.is_active,
+		(fc: any) => fc.academic_year?.id === activeAy?.id,
 	);
 	const feeConfigId = activeFeeConfig?.id;
 
@@ -215,7 +223,7 @@ function FacilityDetailPage() {
 				academic_year_id: activeAy?.id,
 				page,
 				limit: 15,
-				search: searchParam || undefined,
+				search: search || undefined,
 			},
 			{ query: { enabled: !!activeAy?.id && !!id } },
 		);
@@ -250,7 +258,7 @@ function FacilityDetailPage() {
 	const handleSearch = () => {
 		navigate({
 			from: Route.fullPath,
-			search: { page: 1, search: searchInput } as any,
+			search: { page: undefined, search: searchInput || undefined } as any,
 			replace: true,
 		});
 	};
@@ -258,7 +266,10 @@ function FacilityDetailPage() {
 	const handlePageChange = (newPage: number) => {
 		navigate({
 			from: Route.fullPath,
-			search: { page: newPage, search: searchParam } as any,
+			search: {
+				page: newPage > 1 ? newPage : undefined,
+				search: search || undefined,
+			} as any,
 			replace: true,
 		});
 	};
@@ -424,14 +435,14 @@ function FacilityDetailPage() {
 					<Button variant="secondary" onClick={handleSearch}>
 						Cari
 					</Button>
-					{searchParam && (
+					{search && (
 						<button
 							type="button"
 							onClick={() => {
 								setSearchInput("");
 								navigate({
 									from: Route.fullPath,
-									search: { page: 1, search: "" } as any,
+									search: { page: undefined, search: undefined } as any,
 									replace: true,
 								});
 							}}
@@ -446,8 +457,8 @@ function FacilityDetailPage() {
 					<EmptyState
 						title="Belum ada siswa terdaftar"
 						description={
-							searchParam
-								? `Tidak ada siswa dengan nama "${searchParam}" di fasilitas ini.`
+							search
+								? `Tidak ada siswa dengan nama "${search}" di fasilitas ini.`
 								: "Daftarkan siswa melalui halaman detail siswa."
 						}
 					/>

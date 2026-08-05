@@ -12739,6 +12739,62 @@ const docTemplate = `{
             }
         },
         "/v1/students/{id}/facilities/{facilityId}": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "tags": [
+                    "facilities"
+                ],
+                "summary": "Update student facility enrollment (change zone/package)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Student ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Student Facility enrollment ID",
+                        "name": "facilityId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update enrollment",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateStudentFacilityRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/dto.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.StudentFacilityResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
             "delete": {
                 "security": [
                     {
@@ -18297,6 +18353,14 @@ const docTemplate = `{
             "properties": {
                 "end_date": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.UpdateStudentFacilityRequest": {
+            "type": "object",
+            "properties": {
+                "fee_config_item_id": {
+                    "type": "integer"
                 }
             }
         },

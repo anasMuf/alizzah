@@ -41,6 +41,11 @@ type StudentFacilityQueryParams struct {
 	AcademicYearID uint
 }
 
+// Update enrollment (change zone/package)
+type UpdateStudentFacilityRequest struct {
+	FeeConfigItemID *uint `json:"fee_config_item_id"`
+}
+
 // --- Facility detail: list students by facility ---
 
 type FacilityStudentQueryParams struct {

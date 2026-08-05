@@ -2816,6 +2816,11 @@ definitions:
     required:
     - end_date
     type: object
+  dto.UpdateStudentFacilityRequest:
+    properties:
+      fee_config_item_id:
+        type: integer
+    type: object
   dto.UpdateStudentRequest:
     properties:
       birth_date:
@@ -11336,6 +11341,39 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Unenroll student from facility
+      tags:
+      - facilities
+    put:
+      parameters:
+      - description: Student ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Student Facility enrollment ID
+        in: path
+        name: facilityId
+        required: true
+        type: integer
+      - description: Update enrollment
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateStudentFacilityRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.StudentFacilityResponse'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Update student facility enrollment (change zone/package)
       tags:
       - facilities
   /v1/students/{id}/guardians:

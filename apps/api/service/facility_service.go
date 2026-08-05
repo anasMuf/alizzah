@@ -25,6 +25,7 @@ type StudentFacilityService interface {
 	GetByStudentID(studentID uint, params dto.StudentFacilityQueryParams) ([]dto.StudentFacilityResponse, error)
 	GetStudentsByFacility(facilityID uint, params dto.FacilityStudentQueryParams) (*dto.PaginatedFacilityStudentResponse, error)
 	Enroll(studentID uint, req dto.EnrollFacilityRequest) (*dto.StudentFacilityResponse, error)
+	UpdateEnrollment(studentID, sfID uint, req dto.UpdateStudentFacilityRequest) (*dto.StudentFacilityResponse, error)
 	Unenroll(studentID, sfID uint) error
 }
 
@@ -270,6 +271,41 @@ func (s *studentFacilityService) Enroll(studentID uint, req dto.EnrollFacilityRe
 	saved, err := s.sfRepo.FindByID(sf.ID)
 	if err != nil {
 		return nil, fmt.Errorf("gagal mengambil data fasilitas: %w", err)
+	}
+	resp := mapStudentFacilityToResponse(*saved)
+	return &resp, nil
+}
+
+func (s *studentFacilityService) UpdateEnrollment(studentID, sfID uint, req dto.UpdateStudentFacilityRequest) (*dto.StudentFacilityResponse, error) {
+	sf, err := s.sfRepo.FindByID(sfID)
+	if err != nil || sf.StudentID != studentID {
+		return nil, errors.New("Data pendaftaran fasilitas tidak ditemukan")
+	}
+
+	if sf.EndDate != nil {
+		return nil, errors.New("Siswa sudah tidak aktif di fasilitas ini")
+	}
+
+	// Validate FeeConfigItem if provided
+	if req.FeeConfigItemID != nil {
+		item, err := s.feeConfigItemRepo.FindByID(*req.FeeConfigItemID)
+		if err != nil {
+			return nil, errors.New("Paket/zona tidak ditemukan")
+		}
+		if !item.IsActive {
+			return nil, errors.New("Paket/zona sudah tidak aktif")
+		}
+	}
+
+	sf.FeeConfigItemID = req.FeeConfigItemID
+	if err := s.sfRepo.Update(sf); err != nil {
+		return nil, err
+	}
+
+	// Reload with preloaded relations
+	saved, err := s.sfRepo.FindByID(sf.ID)
+	if err != nil {
+		return nil, err
 	}
 	resp := mapStudentFacilityToResponse(*saved)
 	return &resp, nil

@@ -1,4 +1,4 @@
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import {
@@ -30,6 +30,7 @@ import type {
 	DtoFacilityResponse,
 	DtoFacilityStudentItemResponse,
 } from "#/api/model";
+import { customInstance } from "#/api/mutator/custom-instance";
 import {
 	Badge,
 	Button,
@@ -178,6 +179,43 @@ function FacilityDetailPage() {
 			onError: (err: any) =>
 				addToast({ variant: "error", title: "Gagal", message: err.message }),
 		},
+	});
+
+	// Edit enrollment zone
+	const [editingEnrollmentId, setEditingEnrollmentId] = useState<number | null>(
+		null,
+	);
+	const editEnrollmentMutation = useMutation({
+		mutationFn: async ({
+			studentId,
+			sfId,
+			feeConfigItemId,
+		}: {
+			studentId: number;
+			sfId: number;
+			feeConfigItemId: number | null;
+		}) => {
+			return customInstance(`/v1/students/${studentId}/facilities/${sfId}`, {
+				method: "PUT",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ fee_config_item_id: feeConfigItemId }),
+			});
+		},
+		onSuccess: () => {
+			addToast({
+				variant: "success",
+				title: "Berhasil",
+				message: "Zona berhasil diubah.",
+			});
+			queryClient.invalidateQueries({
+				queryKey: getGetV1FacilitiesIdStudentsQueryKey(id, {
+					academic_year_id: activeAy?.id,
+				}),
+			});
+			setEditingEnrollmentId(null);
+		},
+		onError: (err: any) =>
+			addToast({ variant: "error", title: "Gagal", message: err.message }),
 	});
 
 	const openAddZone = () => {
@@ -506,15 +544,60 @@ function FacilityDetailPage() {
 											</div>
 										</td>
 										<td className="px-3 py-3 text-sm text-gray-500">
-											{sf.fee_config_item ? (
-												<span className="inline-flex items-center gap-1">
-													<span>{sf.fee_config_item.name}</span>
-													<span className="text-xs text-gray-400">
-														({formatPrice(sf.fee_config_item.amount ?? 0)})
-													</span>
-												</span>
+											{editingEnrollmentId === sf.id ? (
+												<div className="flex items-center gap-1">
+													<select
+														value={sf.fee_config_item?.id ?? ""}
+														onChange={(e) => {
+															const val = e.target.value;
+															editEnrollmentMutation.mutate({
+																studentId: sf.student?.id ?? 0,
+																sfId: sf.id ?? 0,
+																feeConfigItemId: val ? Number(val) : null,
+															});
+														}}
+														className="block w-full rounded border-0 py-0.5 text-xs ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+													>
+														<option value="">Tanpa zona</option>
+														{zones.map((z: any) => (
+															<option key={z.id} value={z.id}>
+																{z.name} ({formatPrice(z.amount)})
+															</option>
+														))}
+													</select>
+													<button
+														type="button"
+														onClick={() => setEditingEnrollmentId(null)}
+														className="text-xs text-gray-400 hover:text-gray-600"
+													>
+														Batal
+													</button>
+												</div>
 											) : (
-												"-"
+												<span className="inline-flex items-center gap-1">
+													{sf.fee_config_item ? (
+														<>
+															<span>{sf.fee_config_item.name}</span>
+															<span className="text-xs text-gray-400">
+																({formatPrice(sf.fee_config_item.amount ?? 0)})
+															</span>
+														</>
+													) : (
+														"-"
+													)}
+													{!sf.end_date && (
+														<button
+															type="button"
+															onClick={() =>
+																setEditingEnrollmentId(sf.id ?? null)
+															}
+															className="p-0.5 text-gray-400 hover:text-indigo-600 rounded"
+															title="Ubah zona"
+														>
+															<Edit2 className="w-3 h-3" />
+														</button>
+													)}
+												</span>
 											)}
 										</td>
 										<td className="px-3 py-3 text-sm text-gray-500">

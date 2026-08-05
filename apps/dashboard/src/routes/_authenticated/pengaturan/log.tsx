@@ -2,11 +2,10 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { Clock, Eye, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
-	type AuditLogEntry,
 	type AuditLogQueryParams,
 	useAuditLogDetail,
 	useAuditLogs,
-} from "#/api/endpoints/audit-logs/audit-logs";
+} from "#/api/endpoints/audit-logs";
 import {
 	Badge,
 	Button,
@@ -147,12 +146,13 @@ function LogAktivitasComponent() {
 
 	const { data: response, isLoading, isError } = useAuditLogs(params);
 	const { data: detailResponse, isLoading: detailLoading } = useAuditLogDetail(
-		isDetailOpen ? selectedId : null,
+		isDetailOpen && selectedId ? selectedId : 0,
+		{ query: { enabled: isDetailOpen && !!selectedId } },
 	);
 
-	const entries: AuditLogEntry[] = (response as any)?.data ?? [];
+	const entries = (response as any)?.data ?? [];
 	const meta = (response as any)?.meta ?? { page: 1, limit: 20, total: 0 };
-	const detail = (detailResponse as any)?.data as AuditLogEntry | undefined;
+	const detail = (detailResponse as any)?.data;
 
 	const hasFilters =
 		search ||
@@ -348,7 +348,7 @@ function LogAktivitasComponent() {
 								</tr>
 							</thead>
 							<tbody className="bg-white divide-y divide-gray-200">
-								{entries.map((entry) => {
+								{entries.map((entry: any) => {
 									const st = statusBadge(entry.status_code);
 									return (
 										<tr

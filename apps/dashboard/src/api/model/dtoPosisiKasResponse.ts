@@ -10,6 +10,8 @@ import type { DtoPosisiKasTotal } from "./dtoPosisiKasTotal";
 
 export interface DtoPosisiKasResponse {
 	academic_year?: string;
+	date_from?: string;
+	date_to?: string;
 	grand_total?: DtoPosisiKasTotal;
 	month?: number;
 	posts?: DtoPosisiKasPost[];

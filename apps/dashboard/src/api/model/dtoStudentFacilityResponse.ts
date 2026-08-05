@@ -6,10 +6,12 @@
  * OpenAPI spec version: 1.0
  */
 import type { DtoFacilityResponse } from "./dtoFacilityResponse";
+import type { DtoFeeConfigItemBriefResponse } from "./dtoFeeConfigItemBriefResponse";
 
 export interface DtoStudentFacilityResponse {
 	end_date?: string;
 	facility?: DtoFacilityResponse;
+	fee_config_item?: DtoFeeConfigItemBriefResponse;
 	id?: number;
 	start_date?: string;
 }

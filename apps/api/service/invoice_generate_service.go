@@ -1588,12 +1588,6 @@ func (s *invoiceGenerateService) AddFacilityToMonthlyRange(studentID, facilityID
 		return nil
 	}
 
-	itemKey := facilityItemKey(facility.Name)
-	feeItems, _ := s.feeConfigItemRepo.FindByItemKeys(feeConfig.ID, []string{itemKey})
-	if len(feeItems) == 0 {
-		return nil
-	}
-
 	ay, err := s.acRepo.FindByID(academicYearID)
 	if err != nil {
 		return nil
@@ -1601,14 +1595,32 @@ func (s *invoiceGenerateService) AddFacilityToMonthlyRange(studentID, facilityID
 
 	allSF, _ := s.sfRepo.FindActiveByStudentID(studentID, academicYearID)
 	var startDate time.Time
+	var feeConfigItemID *uint
 	for _, enrollment := range allSF {
 		if enrollment.FacilityID == facilityID {
 			startDate = enrollment.StartDate
+			feeConfigItemID = enrollment.FeeConfigItemID
 			break
 		}
 	}
 	if startDate.IsZero() {
 		return nil
+	}
+
+	// Use specific FeeConfigItem if student enrolled with one; fallback to all items matching facility name
+	var feeItems []model.FeeConfigItem
+	if feeConfigItemID != nil {
+		item, err := s.feeConfigItemRepo.FindByID(*feeConfigItemID)
+		if err == nil && item != nil {
+			feeItems = []model.FeeConfigItem{*item}
+		}
+	}
+	if len(feeItems) == 0 {
+		itemKey := facilityItemKey(facility.Name)
+		feeItems, _ = s.feeConfigItemRepo.FindByItemKeys(feeConfig.ID, []string{itemKey})
+		if len(feeItems) == 0 {
+			return nil
+		}
 	}
 
 	months := utility.MonthRangeFromDate(startDate, ay.EndDate)

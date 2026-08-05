@@ -477,7 +477,7 @@ func main() {
 
 	// Facilities
 	facilityService := service.NewFacilityService(facilityRepo, fcRepo, fcItemRepo)
-	sfService := service.NewStudentFacilityService(sfRepo, studentRepo, facilityRepo, ayRepo, invoiceGenService)
+	sfService := service.NewStudentFacilityService(sfRepo, studentRepo, facilityRepo, ayRepo, fcItemRepo, invoiceGenService)
 	facilityHandler := handler.NewFacilityHandler(facilityService, sfService)
 
 	// Batch 7
@@ -723,6 +723,7 @@ func main() {
 	facilities.POST("", facilityHandler.Create, guard.RequireModule(middleware.ModuleAdministrasi))
 	facilities.PUT("/:id", facilityHandler.Update, guard.RequireModule(middleware.ModuleAdministrasi))
 	facilities.DELETE("/:id", facilityHandler.Delete, guard.RequireModule(middleware.ModuleAdministrasi))
+	facilities.GET("/:id/students", facilityHandler.ListStudents, guard.RequireModule(middleware.ModuleAdministrasi))
 
 	// Income Transactions (Dana Bantuan)
 	incomes := api.Group("/income-transactions", middleware.JWTAuth(tokenBlacklistRepo), guard.RequireModule(middleware.ModuleKeuangan))

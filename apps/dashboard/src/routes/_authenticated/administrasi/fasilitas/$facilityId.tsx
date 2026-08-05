@@ -32,6 +32,7 @@ import {
 	Badge,
 	Button,
 	ConfirmDialog,
+	CurrencyFormField,
 	EmptyState,
 	FormField,
 	PageLoading,
@@ -115,7 +116,7 @@ function FacilityDetailPage() {
 	const [editingZone, setEditingZone] = useState<any>(null);
 	const [deletingZone, setDeletingZone] = useState<any>(null);
 	const [zoneName, setZoneName] = useState("");
-	const [zoneAmount, setZoneAmount] = useState("");
+	const [zoneAmount, setZoneAmount] = useState(0);
 
 	const zoneCreateMutation = usePostV1FeeConfigsIdItems({
 		mutation: {
@@ -173,13 +174,13 @@ function FacilityDetailPage() {
 
 	const openAddZone = () => {
 		setZoneName("");
-		setZoneAmount("");
+		setZoneAmount(0);
 		setEditingZone(null);
 		setIsZoneFormOpen(true);
 	};
 	const openEditZone = (z: any) => {
 		setZoneName(z.name);
-		setZoneAmount(String(z.amount));
+		setZoneAmount(z.amount);
 		setEditingZone(z);
 		setIsZoneFormOpen(true);
 	};
@@ -189,15 +190,14 @@ function FacilityDetailPage() {
 	};
 	const handleZoneSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
-		const amount = Number(zoneAmount);
-		if (!zoneName.trim() || amount <= 0) return;
+		if (!zoneName.trim() || zoneAmount <= 0) return;
 
 		const itemKey = `${zonePrefix}${zoneName.toLowerCase().replace(/\s+/g, "_")}`;
 		const payload: any = {
 			name: zoneName.trim(),
 			item_key: itemKey,
 			category: "facility",
-			amount,
+			amount: zoneAmount,
 			unit: "per_day",
 			level: "all",
 			gender: "all",
@@ -569,14 +569,13 @@ function FacilityDetailPage() {
 							required
 							placeholder="Contoh: Zona 1"
 						/>
-						<FormField
+						<CurrencyFormField
 							id="zoneAmount"
 							label="Biaya (Rp)"
-							type="number"
 							value={zoneAmount}
-							onChange={(e: any) => setZoneAmount(e.target.value)}
-							required
-							placeholder="Contoh: 10000"
+							onChange={setZoneAmount}
+							showSymbol
+							placeholder="Contoh: 10.000"
 						/>
 						<p className="text-xs text-gray-400 -mt-3">
 							Biaya per hari. Unit otomatis <code>per_day</code>.
@@ -591,7 +590,7 @@ function FacilityDetailPage() {
 							variant="primary"
 							disabled={
 								!zoneName.trim() ||
-								!zoneAmount ||
+								zoneAmount <= 0 ||
 								zoneCreateMutation.isPending ||
 								zoneUpdateMutation.isPending
 							}

@@ -13,11 +13,13 @@ import {
 import { useMemo, useState } from "react";
 
 import {
+	getGetV1FacilitiesIdStudentsQueryKey,
 	useDeleteV1StudentsIdFacilitiesFacilityId,
 	useGetV1Facilities,
 	useGetV1FacilitiesIdStudents,
 } from "#/api/endpoints/facilities/facilities";
 import {
+	getGetV1FeeConfigsIdItemsQueryKey,
 	useDeleteV1FeeConfigsIdItemsItemId,
 	useGetV1FeeConfigs,
 	useGetV1FeeConfigsIdItems,
@@ -127,7 +129,9 @@ function FacilityDetailPage() {
 					message: "Zona berhasil ditambahkan.",
 				});
 				queryClient.invalidateQueries({
-					queryKey: ["/v1/fee-configs", feeConfigId, "items"],
+					queryKey: getGetV1FeeConfigsIdItemsQueryKey(feeConfigId, {
+						category: "facility",
+					}),
 				});
 				closeZoneForm();
 			},
@@ -145,7 +149,9 @@ function FacilityDetailPage() {
 					message: "Zona berhasil diperbarui.",
 				});
 				queryClient.invalidateQueries({
-					queryKey: ["/v1/fee-configs", feeConfigId, "items"],
+					queryKey: getGetV1FeeConfigsIdItemsQueryKey(feeConfigId, {
+						category: "facility",
+					}),
 				});
 				closeZoneForm();
 			},
@@ -163,7 +169,9 @@ function FacilityDetailPage() {
 					message: "Zona berhasil dihapus.",
 				});
 				queryClient.invalidateQueries({
-					queryKey: ["/v1/fee-configs", feeConfigId, "items"],
+					queryKey: getGetV1FeeConfigsIdItemsQueryKey(feeConfigId, {
+						category: "facility",
+					}),
 				});
 				setDeletingZone(null);
 			},
@@ -246,7 +254,9 @@ function FacilityDetailPage() {
 					message: "Siswa berhasil dilepas dari fasilitas.",
 				});
 				queryClient.invalidateQueries({
-					queryKey: ["/v1/facilities", id, "students"],
+					queryKey: getGetV1FacilitiesIdStudentsQueryKey(id, {
+						academic_year_id: activeAy?.id,
+					}),
 				});
 				setDeletingItem(null);
 			},

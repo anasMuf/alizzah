@@ -1,14 +1,29 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
-import { ArrowLeft, Bus, Search, UserX } from "lucide-react";
-import { useState } from "react";
+import {
+	ArrowLeft,
+	Bus,
+	Edit2,
+	Plus,
+	Search,
+	Trash2,
+	UserX,
+} from "lucide-react";
+import { useMemo, useState } from "react";
 
 import {
 	useDeleteV1StudentsIdFacilitiesFacilityId,
 	useGetV1Facilities,
 	useGetV1FacilitiesIdStudents,
 } from "#/api/endpoints/facilities/facilities";
+import {
+	useDeleteV1FeeConfigsIdItemsItemId,
+	useGetV1FeeConfigs,
+	useGetV1FeeConfigsIdItems,
+	usePostV1FeeConfigsIdItems,
+	usePutV1FeeConfigsIdItemsItemId,
+} from "#/api/endpoints/fee-configs/fee-configs";
 import type {
 	DtoFacilityResponse,
 	DtoFacilityStudentItemResponse,
@@ -18,8 +33,10 @@ import {
 	Button,
 	ConfirmDialog,
 	EmptyState,
+	FormField,
 	PageLoading,
 	Pagination,
+	SlideOver,
 	useToast,
 } from "#/components/ui";
 import { academicYearAtom } from "#/store/global";
@@ -54,6 +71,141 @@ function FacilityDetailPage() {
 	const facilities: DtoFacilityResponse[] =
 		((facilityResp as any)?.data as any)?.data || [];
 	const facility = facilities.find((f: DtoFacilityResponse) => f.id === id);
+
+	// Fetch active fee config for zone management
+	const { data: fcResp } = useGetV1FeeConfigs({
+		query: { staleTime: 5 * 60 * 1000 },
+	});
+	const feeConfigs: any[] = (fcResp?.data as any)?.data || [];
+	const activeFeeConfig = feeConfigs.find(
+		(fc: any) => fc.academic_year?.is_active,
+	);
+	const feeConfigId = activeFeeConfig?.id;
+
+	const { data: itemsResp } = useGetV1FeeConfigsIdItems(
+		feeConfigId || 0,
+		{ category: "facility" },
+		{ query: { enabled: !!feeConfigId } },
+	);
+	const allFeeItems: any[] = (itemsResp?.data as any)?.data || [];
+
+	// Filter zones for this facility
+	const facilitySlug =
+		(facility?.name || "").toLowerCase().replace(/\s+/g, "_") || "";
+	const zonePrefix = `facility_${facilitySlug}_`;
+	const zones = useMemo(
+		() =>
+			allFeeItems.filter(
+				(item: any) =>
+					item.item_key && String(item.item_key).startsWith(zonePrefix),
+			),
+		[allFeeItems, zonePrefix],
+	);
+
+	// Zone CRUD
+	const [isZoneFormOpen, setIsZoneFormOpen] = useState(false);
+	const [editingZone, setEditingZone] = useState<any>(null);
+	const [deletingZone, setDeletingZone] = useState<any>(null);
+	const [zoneName, setZoneName] = useState("");
+	const [zoneAmount, setZoneAmount] = useState("");
+
+	const zoneCreateMutation = usePostV1FeeConfigsIdItems({
+		mutation: {
+			onSuccess: () => {
+				addToast({
+					variant: "success",
+					title: "Berhasil",
+					message: "Zona berhasil ditambahkan.",
+				});
+				queryClient.invalidateQueries({
+					queryKey: ["/v1/fee-configs", feeConfigId, "items"],
+				});
+				closeZoneForm();
+			},
+			onError: (err: any) =>
+				addToast({ variant: "error", title: "Gagal", message: err.message }),
+		},
+	});
+
+	const zoneUpdateMutation = usePutV1FeeConfigsIdItemsItemId({
+		mutation: {
+			onSuccess: () => {
+				addToast({
+					variant: "success",
+					title: "Berhasil",
+					message: "Zona berhasil diperbarui.",
+				});
+				queryClient.invalidateQueries({
+					queryKey: ["/v1/fee-configs", feeConfigId, "items"],
+				});
+				closeZoneForm();
+			},
+			onError: (err: any) =>
+				addToast({ variant: "error", title: "Gagal", message: err.message }),
+		},
+	});
+
+	const zoneDeleteMutation = useDeleteV1FeeConfigsIdItemsItemId({
+		mutation: {
+			onSuccess: () => {
+				addToast({
+					variant: "success",
+					title: "Berhasil",
+					message: "Zona berhasil dihapus.",
+				});
+				queryClient.invalidateQueries({
+					queryKey: ["/v1/fee-configs", feeConfigId, "items"],
+				});
+				setDeletingZone(null);
+			},
+			onError: (err: any) =>
+				addToast({ variant: "error", title: "Gagal", message: err.message }),
+		},
+	});
+
+	const openAddZone = () => {
+		setZoneName("");
+		setZoneAmount("");
+		setEditingZone(null);
+		setIsZoneFormOpen(true);
+	};
+	const openEditZone = (z: any) => {
+		setZoneName(z.name);
+		setZoneAmount(String(z.amount));
+		setEditingZone(z);
+		setIsZoneFormOpen(true);
+	};
+	const closeZoneForm = () => {
+		setIsZoneFormOpen(false);
+		setEditingZone(null);
+	};
+	const handleZoneSubmit = (e: React.FormEvent) => {
+		e.preventDefault();
+		const amount = Number(zoneAmount);
+		if (!zoneName.trim() || amount <= 0) return;
+
+		const itemKey = `${zonePrefix}${zoneName.toLowerCase().replace(/\s+/g, "_")}`;
+		const payload: any = {
+			name: zoneName.trim(),
+			item_key: itemKey,
+			category: "facility",
+			amount,
+			unit: "per_day",
+			level: "all",
+			gender: "all",
+			is_active: true,
+		};
+
+		if (editingZone) {
+			zoneUpdateMutation.mutate({
+				id: feeConfigId,
+				itemId: editingZone.id,
+				data: { ...payload, item_key: editingZone.item_key },
+			});
+		} else {
+			zoneCreateMutation.mutate({ id: feeConfigId, data: payload });
+		}
+	};
 
 	// Fetch students enrolled (using Orval-generated hook)
 	const { data: studentsResp, isLoading: studentsLoading } =
@@ -176,148 +328,276 @@ function FacilityDetailPage() {
 						{facility.is_active ? "Aktif" : "Nonaktif"}
 					</Badge>
 				</div>
-				<p className="mt-2 text-sm text-gray-500">
-					Total siswa terdaftar:{" "}
-					<span className="font-semibold text-gray-900">
-						{meta?.total ?? 0}
-					</span>
-				</p>
 			</div>
 
-			{/* Filter bar */}
-			<div className="flex items-center gap-3">
-				<div className="relative flex-1 max-w-sm">
-					<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-					<input
-						type="text"
-						value={searchInput}
-						onChange={(e) => setSearchInput(e.target.value)}
-						onKeyDown={(e) => {
-							if (e.key === "Enter") handleSearch();
-						}}
-						placeholder="Cari nama siswa..."
-						className="block w-full rounded-md border-0 py-1.5 pl-10 pr-4 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
-					/>
-				</div>
-				<Button variant="secondary" onClick={handleSearch}>
-					Cari
-				</Button>
-				{searchParam && (
-					<button
-						type="button"
-						onClick={() => {
-							setSearchInput("");
-							navigate({
-								from: Route.fullPath,
-								search: { page: 1, search: "" } as any,
-								replace: true,
-							});
-						}}
-						className="text-sm text-gray-500 hover:text-gray-700"
+			{/* Zone / Package Management */}
+			<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-6">
+				<div className="flex items-center justify-between mb-4">
+					<h3 className="text-base font-semibold text-gray-900">
+						Zona / Paket Harga
+					</h3>
+					<Button
+						variant="primary"
+						onClick={openAddZone}
+						disabled={!feeConfigId}
 					>
-						Reset
-					</button>
+						<Plus className="w-4 h-4 mr-2" /> Tambah Zona
+					</Button>
+				</div>
+
+				{!feeConfigId ? (
+					<p className="text-sm text-gray-400">
+						Tidak ada konfigurasi tarif aktif. Zona tidak dapat dikelola.
+					</p>
+				) : zones.length === 0 ? (
+					<p className="text-sm text-gray-500 py-3">
+						Belum ada zona. Tambahkan zona untuk memberikan opsi harga saat
+						mendaftarkan siswa ke fasilitas ini.
+					</p>
+				) : (
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+						{zones.map((z: any) => (
+							<div
+								key={z.id}
+								className="flex items-center justify-between p-3 rounded-lg border border-gray-200 bg-gray-50"
+							>
+								<div>
+									<p className="text-sm font-medium text-gray-900">{z.name}</p>
+									<p className="text-xs text-gray-500">
+										{formatPrice(z.amount)}
+										{z.unit === "per_day" ? " /hari" : ""}
+									</p>
+								</div>
+								<div className="flex gap-1">
+									<button
+										type="button"
+										onClick={() => openEditZone(z)}
+										className="p-1 text-gray-400 hover:text-indigo-600 rounded"
+										title="Edit zona"
+									>
+										<Edit2 className="w-3.5 h-3.5" />
+									</button>
+									<button
+										type="button"
+										onClick={() => setDeletingZone(z)}
+										className="p-1 text-gray-400 hover:text-rose-600 rounded"
+										title="Hapus zona"
+									>
+										<Trash2 className="w-3.5 h-3.5" />
+									</button>
+								</div>
+							</div>
+						))}
+					</div>
 				)}
 			</div>
 
-			{/* Table */}
-			{!studentsData || studentsData.length === 0 ? (
-				<EmptyState
-					title="Belum ada siswa terdaftar"
-					description={
-						searchParam
-							? `Tidak ada siswa dengan nama "${searchParam}" di fasilitas ini.`
-							: "Daftarkan siswa melalui halaman detail siswa."
-					}
-				/>
-			) : (
-				<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden">
-					<table className="min-w-full divide-y divide-gray-300">
-						<thead className="bg-gray-50">
-							<tr>
-								<th className="py-3 pl-6 pr-3 text-left text-sm font-semibold text-gray-900">
-									Nama
-								</th>
-								<th className="px-3 py-3 text-left text-sm font-semibold text-gray-900">
-									Zona / Paket
-								</th>
-								<th className="px-3 py-3 text-left text-sm font-semibold text-gray-900">
-									Mulai
-								</th>
-								<th className="px-3 py-3 text-center text-sm font-semibold text-gray-900">
-									Status
-								</th>
-								<th className="px-3 py-3 text-right text-sm font-semibold text-gray-900 pr-6">
-									Aksi
-								</th>
-							</tr>
-						</thead>
-						<tbody className="divide-y divide-gray-100">
-							{studentsData.map((sf) => (
-								<tr key={sf.id} className="hover:bg-gray-50">
-									<td className="py-3 pl-6 pr-3">
-										<div className="text-sm font-medium text-gray-900">
-											{sf.student?.full_name}
-										</div>
-										<div className="text-xs text-gray-500">
-											{sf.student?.gender === "L" ? "Laki-laki" : "Perempuan"}
-										</div>
-									</td>
-									<td className="px-3 py-3 text-sm text-gray-500">
-										{sf.fee_config_item ? (
-											<span className="inline-flex items-center gap-1">
-												<span>{sf.fee_config_item.name}</span>
-												<span className="text-xs text-gray-400">
-													({formatPrice(sf.fee_config_item.amount ?? 0)})
-												</span>
-											</span>
-										) : (
-											"-"
-										)}
-									</td>
-									<td className="px-3 py-3 text-sm text-gray-500">
-										{sf.start_date ? formatDate(sf.start_date) : "-"}
-									</td>
-									<td className="px-3 py-3 text-sm text-center">
-										<span
-											className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-												sf.end_date
-													? "bg-gray-100 text-gray-500"
-													: "bg-green-100 text-green-700"
-											}`}
-										>
-											{sf.end_date ? "Berhenti" : "Aktif"}
-										</span>
-									</td>
-									<td className="px-3 py-3 text-right pr-6">
-										{!sf.end_date && (
-											<button
-												type="button"
-												onClick={() => setDeletingItem(sf)}
-												className="inline-flex items-center gap-1 text-xs font-medium text-rose-600 hover:text-rose-800"
-											>
-												<UserX className="w-3.5 h-3.5" />
-												Lepas
-											</button>
-										)}
-									</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
+			{/* Students section */}
+			<div>
+				<div className="flex items-center justify-between mb-3">
+					<h3 className="text-base font-semibold text-gray-900">
+						Siswa Terdaftar
+					</h3>
+					<span className="text-sm text-gray-500">
+						Total:{" "}
+						<span className="font-semibold text-gray-900">
+							{meta?.total ?? 0}
+						</span>
+					</span>
+				</div>
 
-					{meta && (
-						<Pagination
-							page={meta.page}
-							limit={meta.limit}
-							total={meta.total}
-							onPageChange={handlePageChange}
+				{/* Filter bar */}
+				<div className="flex items-center gap-3 mb-4">
+					<div className="relative flex-1 max-w-sm">
+						<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+						<input
+							type="text"
+							value={searchInput}
+							onChange={(e) => setSearchInput(e.target.value)}
+							onKeyDown={(e) => {
+								if (e.key === "Enter") handleSearch();
+							}}
+							placeholder="Cari nama siswa..."
+							className="block w-full rounded-md border-0 py-1.5 pl-10 pr-4 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						/>
+					</div>
+					<Button variant="secondary" onClick={handleSearch}>
+						Cari
+					</Button>
+					{searchParam && (
+						<button
+							type="button"
+							onClick={() => {
+								setSearchInput("");
+								navigate({
+									from: Route.fullPath,
+									search: { page: 1, search: "" } as any,
+									replace: true,
+								});
+							}}
+							className="text-sm text-gray-500 hover:text-gray-700"
+						>
+							Reset
+						</button>
 					)}
 				</div>
-			)}
 
-			{/* Confirm Unenroll */}
+				{!studentsData || studentsData.length === 0 ? (
+					<EmptyState
+						title="Belum ada siswa terdaftar"
+						description={
+							searchParam
+								? `Tidak ada siswa dengan nama "${searchParam}" di fasilitas ini.`
+								: "Daftarkan siswa melalui halaman detail siswa."
+						}
+					/>
+				) : (
+					<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden">
+						<table className="min-w-full divide-y divide-gray-300">
+							<thead className="bg-gray-50">
+								<tr>
+									<th className="py-3 pl-6 pr-3 text-left text-sm font-semibold text-gray-900">
+										Nama
+									</th>
+									<th className="px-3 py-3 text-left text-sm font-semibold text-gray-900">
+										Zona / Paket
+									</th>
+									<th className="px-3 py-3 text-left text-sm font-semibold text-gray-900">
+										Mulai
+									</th>
+									<th className="px-3 py-3 text-center text-sm font-semibold text-gray-900">
+										Status
+									</th>
+									<th className="px-3 py-3 text-right text-sm font-semibold text-gray-900 pr-6">
+										Aksi
+									</th>
+								</tr>
+							</thead>
+							<tbody className="divide-y divide-gray-100">
+								{studentsData.map((sf) => (
+									<tr key={sf.id} className="hover:bg-gray-50">
+										<td className="py-3 pl-6 pr-3">
+											<div className="text-sm font-medium text-gray-900">
+												{sf.student?.full_name}
+											</div>
+											<div className="text-xs text-gray-500">
+												{sf.student?.gender === "L" ? "Laki-laki" : "Perempuan"}
+											</div>
+										</td>
+										<td className="px-3 py-3 text-sm text-gray-500">
+											{sf.fee_config_item ? (
+												<span className="inline-flex items-center gap-1">
+													<span>{sf.fee_config_item.name}</span>
+													<span className="text-xs text-gray-400">
+														({formatPrice(sf.fee_config_item.amount ?? 0)})
+													</span>
+												</span>
+											) : (
+												"-"
+											)}
+										</td>
+										<td className="px-3 py-3 text-sm text-gray-500">
+											{sf.start_date ? formatDate(sf.start_date) : "-"}
+										</td>
+										<td className="px-3 py-3 text-sm text-center">
+											<span
+												className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+													sf.end_date
+														? "bg-gray-100 text-gray-500"
+														: "bg-green-100 text-green-700"
+												}`}
+											>
+												{sf.end_date ? "Berhenti" : "Aktif"}
+											</span>
+										</td>
+										<td className="px-3 py-3 text-right pr-6">
+											{!sf.end_date && (
+												<button
+													type="button"
+													onClick={() => setDeletingItem(sf)}
+													className="inline-flex items-center gap-1 text-xs font-medium text-rose-600 hover:text-rose-800"
+												>
+													<UserX className="w-3.5 h-3.5" />
+													Lepas
+												</button>
+											)}
+										</td>
+									</tr>
+								))}
+							</tbody>
+						</table>
+
+						{meta && (
+							<Pagination
+								page={meta.page}
+								limit={meta.limit}
+								total={meta.total}
+								onPageChange={handlePageChange}
+							/>
+						)}
+					</div>
+				)}
+			</div>
+
+			{/* Zone form SlideOver */}
+			<SlideOver
+				isOpen={isZoneFormOpen}
+				onClose={closeZoneForm}
+				title={editingZone ? "Edit Zona" : "Tambah Zona"}
+			>
+				<form
+					onSubmit={handleZoneSubmit}
+					className="flex h-full flex-col bg-white"
+				>
+					<div className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 space-y-6">
+						<FormField
+							id="zoneName"
+							label="Nama Zona"
+							value={zoneName}
+							onChange={(e: any) => setZoneName(e.target.value)}
+							required
+							placeholder="Contoh: Zona 1"
+						/>
+						<FormField
+							id="zoneAmount"
+							label="Biaya (Rp)"
+							type="number"
+							value={zoneAmount}
+							onChange={(e: any) => setZoneAmount(e.target.value)}
+							required
+							placeholder="Contoh: 10000"
+						/>
+						<p className="text-xs text-gray-400 -mt-3">
+							Biaya per hari. Unit otomatis <code>per_day</code>.
+						</p>
+					</div>
+					<div className="flex-shrink-0 border-t border-gray-200 px-4 py-5 sm:px-6 flex justify-end gap-3">
+						<Button type="button" variant="secondary" onClick={closeZoneForm}>
+							Batal
+						</Button>
+						<Button
+							type="submit"
+							variant="primary"
+							disabled={
+								!zoneName.trim() ||
+								!zoneAmount ||
+								zoneCreateMutation.isPending ||
+								zoneUpdateMutation.isPending
+							}
+						>
+							{editingZone
+								? zoneUpdateMutation.isPending
+									? "Menyimpan..."
+									: "Simpan"
+								: zoneCreateMutation.isPending
+									? "Menambah..."
+									: "Tambah"}
+						</Button>
+					</div>
+				</form>
+			</SlideOver>
+
+			{/* Confirm Unenroll Student */}
 			<ConfirmDialog
 				open={!!deletingItem}
 				onCancel={() => setDeletingItem(null)}
@@ -335,6 +615,25 @@ function FacilityDetailPage() {
 				Apakah Anda yakin ingin melepas{" "}
 				<strong>{deletingItem?.student?.full_name}</strong> dari fasilitas{" "}
 				<strong>{facility.name}</strong>?
+			</ConfirmDialog>
+
+			{/* Confirm Delete Zone */}
+			<ConfirmDialog
+				open={!!deletingZone}
+				onCancel={() => setDeletingZone(null)}
+				onConfirm={() => {
+					if (!deletingZone || !feeConfigId) return;
+					zoneDeleteMutation.mutate({
+						id: feeConfigId,
+						itemId: deletingZone.id,
+					});
+				}}
+				title="Hapus Zona"
+				variant="danger"
+				confirmLabel="Hapus"
+			>
+				Apakah Anda yakin ingin menghapus zona{" "}
+				<strong>{deletingZone?.name}</strong>?
 			</ConfirmDialog>
 		</div>
 	);

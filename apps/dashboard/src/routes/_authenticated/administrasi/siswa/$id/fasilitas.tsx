@@ -2,7 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { Bus, Plus, X } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
 	getGetV1StudentsIdFacilitiesQueryKey,
 	useDeleteV1StudentsIdFacilitiesFacilityId,
@@ -10,6 +10,10 @@ import {
 	useGetV1StudentsIdFacilities,
 	usePostV1StudentsIdFacilities,
 } from "#/api/endpoints/facilities/facilities";
+import {
+	useGetV1FeeConfigs,
+	useGetV1FeeConfigsIdItems,
+} from "#/api/endpoints/fee-configs/fee-configs";
 import {
 	Badge,
 	Button,
@@ -35,6 +39,7 @@ function SiswaFasilitasPage() {
 
 	const [isFormOpen, setIsFormOpen] = useState(false);
 	const [selectedFacilityId, setSelectedFacilityId] = useState("");
+	const [selectedZoneId, setSelectedZoneId] = useState("");
 	const [startDate, setStartDate] = useState(
 		new Date().toISOString().split("T")[0],
 	);
@@ -49,6 +54,42 @@ function SiswaFasilitasPage() {
 
 	const { data: masterResp } = useGetV1Facilities();
 	const allFacilities: any[] = ((masterResp as any)?.data as any)?.data || [];
+
+	// Fetch active fee config and its items for zone dropdown
+	const { data: fcResp } = useGetV1FeeConfigs({
+		query: { staleTime: 5 * 60 * 1000 },
+	});
+	const feeConfigs: any[] = (fcResp?.data as any)?.data || [];
+	const activeFeeConfig = feeConfigs.find(
+		(fc: any) => fc.academic_year?.is_active,
+	);
+	const feeConfigId = activeFeeConfig?.id;
+
+	const { data: itemsResp } = useGetV1FeeConfigsIdItems(
+		feeConfigId || 0,
+		{ category: "facility" },
+		{ query: { enabled: !!feeConfigId } },
+	);
+	const allFeeItems: any[] = (itemsResp?.data as any)?.data || [];
+
+	// Filter zone items for the selected facility
+	const selectedFacility = allFacilities.find(
+		(f: any) => String(f.id) === selectedFacilityId,
+	);
+	const zones = useMemo(() => {
+		if (!selectedFacility) return [];
+		const slug = selectedFacility.name.toLowerCase().replace(/\s+/g, "_");
+		const prefix = `facility_${slug}_`;
+		return allFeeItems.filter(
+			(item: any) => item.item_key && String(item.item_key).startsWith(prefix),
+		);
+	}, [selectedFacility, allFeeItems]);
+
+	// Reset zone when facility changes
+	const handleFacilityChange = (facilityId: string) => {
+		setSelectedFacilityId(facilityId);
+		setSelectedZoneId("");
+	};
 
 	// Filter out already enrolled
 	const enrolledIds = new Set(
@@ -102,15 +143,26 @@ function SiswaFasilitasPage() {
 	const handleEnroll = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!selectedFacilityId || !activeAy?.id) return;
+		const payload: any = {
+			facility_id: Number(selectedFacilityId),
+			academic_year_id: activeAy.id,
+			start_date: startDate,
+		};
+		if (selectedZoneId) {
+			payload.fee_config_item_id = Number(selectedZoneId);
+		}
 		enrollMutation.mutate({
 			id: studentId,
-			data: {
-				facility_id: Number(selectedFacilityId),
-				academic_year_id: activeAy.id,
-				start_date: startDate,
-			} as any,
+			data: payload,
 		});
 	};
+
+	const formatPrice = (amount: number) =>
+		new Intl.NumberFormat("id-ID", {
+			style: "currency",
+			currency: "IDR",
+			minimumFractionDigits: 0,
+		}).format(amount);
 
 	return (
 		<div className="space-y-6">
@@ -122,6 +174,7 @@ function SiswaFasilitasPage() {
 					variant="primary"
 					onClick={() => {
 						setSelectedFacilityId("");
+						setSelectedZoneId("");
 						setIsFormOpen(true);
 					}}
 					disabled={availableFacilities.length === 0}
@@ -157,6 +210,12 @@ function SiswaFasilitasPage() {
 										{sf.facility.name}
 									</p>
 									<p className="text-xs text-gray-500">
+										{sf.fee_config_item && (
+											<>
+												{sf.fee_config_item.name} (
+												{formatPrice(sf.fee_config_item.amount)}) &bull;{" "}
+											</>
+										)}
 										Mulai: {formatDate(sf.start_date)}
 										{sf.end_date && (
 											<> &bull; Berakhir: {formatDate(sf.end_date)}</>
@@ -200,7 +259,7 @@ function SiswaFasilitasPage() {
 							</label>
 							<select
 								value={selectedFacilityId}
-								onChange={(e) => setSelectedFacilityId(e.target.value)}
+								onChange={(e) => handleFacilityChange(e.target.value)}
 								className="block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 							>
 								<option value="">— Pilih fasilitas —</option>
@@ -216,6 +275,38 @@ function SiswaFasilitasPage() {
 								</p>
 							)}
 						</div>
+
+						{/* Zone selector — appears when facility is selected and has zones */}
+						{zones.length > 0 && (
+							<div>
+								<label className="block text-sm font-medium text-gray-900 mb-2">
+									Zona / Paket
+								</label>
+								<select
+									value={selectedZoneId}
+									onChange={(e) => setSelectedZoneId(e.target.value)}
+									className="block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
+								>
+									<option value="">— Pilih zona (opsional) —</option>
+									{zones.map((z: any) => (
+										<option key={z.id} value={z.id}>
+											{z.name} — {formatPrice(z.amount)}
+											{z.unit === "per_day" ? " /hari" : ""}
+										</option>
+									))}
+								</select>
+							</div>
+						)}
+
+						{selectedFacilityId &&
+							zones.length === 0 &&
+							allFeeItems.length > 0 && (
+								<p className="text-xs text-gray-400">
+									Fasilitas ini belum memiliki opsi zona/paket. Zona dapat
+									ditambahkan di halaman detail fasilitas.
+								</p>
+							)}
+
 						<div>
 							<label className="block text-sm font-medium text-gray-900 mb-2">
 								Tanggal Mulai

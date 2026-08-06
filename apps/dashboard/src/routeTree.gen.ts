@@ -57,6 +57,7 @@ import { Route as AuthenticatedKeuanganTagihanIdRouteImport } from './routes/_au
 import { Route as AuthenticatedKeuanganPengeluaranKategoriRouteImport } from './routes/_authenticated/keuangan/pengeluaran/kategori'
 import { Route as AuthenticatedKeuanganPengeluaranBaruRouteImport } from './routes/_authenticated/keuangan/pengeluaran/baru'
 import { Route as AuthenticatedKeuanganPengeluaranIdRouteImport } from './routes/_authenticated/keuangan/pengeluaran/$id'
+import { Route as AuthenticatedKeuanganPenerimaanKategoriRouteImport } from './routes/_authenticated/keuangan/penerimaan/kategori'
 import { Route as AuthenticatedKeuanganPenerimaanBaruRouteImport } from './routes/_authenticated/keuangan/penerimaan/baru'
 import { Route as AuthenticatedKeuanganPenerimaanIdRouteImport } from './routes/_authenticated/keuangan/penerimaan/$id'
 import { Route as AuthenticatedKeuanganPembayaranBaruRouteImport } from './routes/_authenticated/keuangan/pembayaran/baru'
@@ -382,6 +383,12 @@ const AuthenticatedKeuanganPengeluaranIdRoute =
     path: '/pengeluaran/$id',
     getParentRoute: () => AuthenticatedKeuanganRoute,
   } as any)
+const AuthenticatedKeuanganPenerimaanKategoriRoute =
+  AuthenticatedKeuanganPenerimaanKategoriRouteImport.update({
+    id: '/penerimaan/kategori',
+    path: '/penerimaan/kategori',
+    getParentRoute: () => AuthenticatedKeuanganRoute,
+  } as any)
 const AuthenticatedKeuanganPenerimaanBaruRoute =
   AuthenticatedKeuanganPenerimaanBaruRouteImport.update({
     id: '/penerimaan/baru',
@@ -682,6 +689,7 @@ export interface FileRoutesByFullPath {
   '/keuangan/pembayaran/baru': typeof AuthenticatedKeuanganPembayaranBaruRoute
   '/keuangan/penerimaan/$id': typeof AuthenticatedKeuanganPenerimaanIdRoute
   '/keuangan/penerimaan/baru': typeof AuthenticatedKeuanganPenerimaanBaruRoute
+  '/keuangan/penerimaan/kategori': typeof AuthenticatedKeuanganPenerimaanKategoriRoute
   '/keuangan/pengeluaran/$id': typeof AuthenticatedKeuanganPengeluaranIdRoute
   '/keuangan/pengeluaran/baru': typeof AuthenticatedKeuanganPengeluaranBaruRoute
   '/keuangan/pengeluaran/kategori': typeof AuthenticatedKeuanganPengeluaranKategoriRoute
@@ -771,6 +779,7 @@ export interface FileRoutesByTo {
   '/keuangan/pembayaran/baru': typeof AuthenticatedKeuanganPembayaranBaruRoute
   '/keuangan/penerimaan/$id': typeof AuthenticatedKeuanganPenerimaanIdRoute
   '/keuangan/penerimaan/baru': typeof AuthenticatedKeuanganPenerimaanBaruRoute
+  '/keuangan/penerimaan/kategori': typeof AuthenticatedKeuanganPenerimaanKategoriRoute
   '/keuangan/pengeluaran/$id': typeof AuthenticatedKeuanganPengeluaranIdRoute
   '/keuangan/pengeluaran/baru': typeof AuthenticatedKeuanganPengeluaranBaruRoute
   '/keuangan/pengeluaran/kategori': typeof AuthenticatedKeuanganPengeluaranKategoriRoute
@@ -865,6 +874,7 @@ export interface FileRoutesById {
   '/_authenticated/keuangan/pembayaran/baru': typeof AuthenticatedKeuanganPembayaranBaruRoute
   '/_authenticated/keuangan/penerimaan/$id': typeof AuthenticatedKeuanganPenerimaanIdRoute
   '/_authenticated/keuangan/penerimaan/baru': typeof AuthenticatedKeuanganPenerimaanBaruRoute
+  '/_authenticated/keuangan/penerimaan/kategori': typeof AuthenticatedKeuanganPenerimaanKategoriRoute
   '/_authenticated/keuangan/pengeluaran/$id': typeof AuthenticatedKeuanganPengeluaranIdRoute
   '/_authenticated/keuangan/pengeluaran/baru': typeof AuthenticatedKeuanganPengeluaranBaruRoute
   '/_authenticated/keuangan/pengeluaran/kategori': typeof AuthenticatedKeuanganPengeluaranKategoriRoute
@@ -959,6 +969,7 @@ export interface FileRouteTypes {
     | '/keuangan/pembayaran/baru'
     | '/keuangan/penerimaan/$id'
     | '/keuangan/penerimaan/baru'
+    | '/keuangan/penerimaan/kategori'
     | '/keuangan/pengeluaran/$id'
     | '/keuangan/pengeluaran/baru'
     | '/keuangan/pengeluaran/kategori'
@@ -1048,6 +1059,7 @@ export interface FileRouteTypes {
     | '/keuangan/pembayaran/baru'
     | '/keuangan/penerimaan/$id'
     | '/keuangan/penerimaan/baru'
+    | '/keuangan/penerimaan/kategori'
     | '/keuangan/pengeluaran/$id'
     | '/keuangan/pengeluaran/baru'
     | '/keuangan/pengeluaran/kategori'
@@ -1141,6 +1153,7 @@ export interface FileRouteTypes {
     | '/_authenticated/keuangan/pembayaran/baru'
     | '/_authenticated/keuangan/penerimaan/$id'
     | '/_authenticated/keuangan/penerimaan/baru'
+    | '/_authenticated/keuangan/penerimaan/kategori'
     | '/_authenticated/keuangan/pengeluaran/$id'
     | '/_authenticated/keuangan/pengeluaran/baru'
     | '/_authenticated/keuangan/pengeluaran/kategori'
@@ -1535,6 +1548,13 @@ declare module '@tanstack/react-router' {
       path: '/pengeluaran/$id'
       fullPath: '/keuangan/pengeluaran/$id'
       preLoaderRoute: typeof AuthenticatedKeuanganPengeluaranIdRouteImport
+      parentRoute: typeof AuthenticatedKeuanganRoute
+    }
+    '/_authenticated/keuangan/penerimaan/kategori': {
+      id: '/_authenticated/keuangan/penerimaan/kategori'
+      path: '/penerimaan/kategori'
+      fullPath: '/keuangan/penerimaan/kategori'
+      preLoaderRoute: typeof AuthenticatedKeuanganPenerimaanKategoriRouteImport
       parentRoute: typeof AuthenticatedKeuanganRoute
     }
     '/_authenticated/keuangan/penerimaan/baru': {
@@ -1966,6 +1986,7 @@ interface AuthenticatedKeuanganRouteChildren {
   AuthenticatedKeuanganPembayaranBaruRoute: typeof AuthenticatedKeuanganPembayaranBaruRoute
   AuthenticatedKeuanganPenerimaanIdRoute: typeof AuthenticatedKeuanganPenerimaanIdRoute
   AuthenticatedKeuanganPenerimaanBaruRoute: typeof AuthenticatedKeuanganPenerimaanBaruRoute
+  AuthenticatedKeuanganPenerimaanKategoriRoute: typeof AuthenticatedKeuanganPenerimaanKategoriRoute
   AuthenticatedKeuanganPengeluaranIdRoute: typeof AuthenticatedKeuanganPengeluaranIdRoute
   AuthenticatedKeuanganPengeluaranBaruRoute: typeof AuthenticatedKeuanganPengeluaranBaruRoute
   AuthenticatedKeuanganPengeluaranKategoriRoute: typeof AuthenticatedKeuanganPengeluaranKategoriRoute
@@ -2011,6 +2032,8 @@ const AuthenticatedKeuanganRouteChildren: AuthenticatedKeuanganRouteChildren = {
     AuthenticatedKeuanganPenerimaanIdRoute,
   AuthenticatedKeuanganPenerimaanBaruRoute:
     AuthenticatedKeuanganPenerimaanBaruRoute,
+  AuthenticatedKeuanganPenerimaanKategoriRoute:
+    AuthenticatedKeuanganPenerimaanKategoriRoute,
   AuthenticatedKeuanganPengeluaranIdRoute:
     AuthenticatedKeuanganPengeluaranIdRoute,
   AuthenticatedKeuanganPengeluaranBaruRoute:

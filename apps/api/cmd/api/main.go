@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -21,6 +22,8 @@ import (
 
 	"api/internal/modules/koperasi/barang"
 	"api/internal/modules/koperasi/kas"
+
+	"gorm.io/gorm"
 )
 
 // @title          Alizzah Manajemen API
@@ -42,6 +45,9 @@ func main() {
 
 	// Initialize database
 	db := config.DBInit()
+
+	// Pre-migration: handle income_category_id column sebelum AutoMigrate
+	preMigrateIncomeCategory(db)
 
 	// AutoMigrate
 	if err := db.AutoMigrate(
@@ -79,6 +85,8 @@ func main() {
 		&model.VaultTransaction{},
 		// Batch 7
 		&model.DailyClosing{},
+		// Income categories (must be before IncomeTransaction for FK)
+		&model.IncomeCategory{},
 		// Income transactions
 		&model.IncomeTransaction{},
 		// Facilities
@@ -172,18 +180,20 @@ func main() {
 	}
 
 	// Seed data (urutan penting karena ada dependency antar seeder)
-	seeders.SeedUsers(db)              // 1. Users (superadmin saja; admin dibuat via UI)
-	seeders.SeedAcademicYears(db)      // 2. Tahun Ajaran
-	seeders.SeedClassGroups(db)        // 3. Rombel (depends on #2)
-	seeders.SeedExtracurriculars(db)   // 4. Ekskul/Pasta
-	seeders.SeedFeeConfigs(db)         // 5. Tarif (depends on #2)
-	seeders.SeedExpenseCategories(db)  // 6. Kategori Pengeluaran
-	seeders.SeedFacilities(db)         // 6b. Fasilitas (Antar Jemput, dll)
-	seeders.SeedStudentsFromLegacy(db) // 7. Siswa + Enrollment + Savings (depends on #1,2,3)
-	seeders.SeedEffectiveDays(db)      // 8. Hari Efektif (depends on #3)
-	seeders.SeedDispensations(db)      // 8b. Dispensasi sample (depends on #2,7)
-	seeders.SeedSampleTransactions(db) // 9. Invoice + Sample Bayar/Pengeluaran (depends on #5,7,8)
-	seeders.SeedIncomeTransactions(db) // 10. Sample Penerimaan Dana Bantuan (depends on #2)
+	seeders.SeedUsers(db)                // 1. Users (superadmin saja; admin dibuat via UI)
+	seeders.SeedAcademicYears(db)        // 2. Tahun Ajaran
+	seeders.SeedClassGroups(db)          // 3. Rombel (depends on #2)
+	seeders.SeedExtracurriculars(db)     // 4. Ekskul/Pasta
+	seeders.SeedFeeConfigs(db)           // 5. Tarif (depends on #2)
+	seeders.SeedExpenseCategories(db)    // 6. Kategori Pengeluaran
+	seeders.SeedFacilities(db)           // 6b. Fasilitas (Antar Jemput, dll)
+	seeders.SeedStudentsFromLegacy(db)   // 7. Siswa + Enrollment + Savings (depends on #1,2,3)
+	seeders.SeedEffectiveDays(db)        // 8. Hari Efektif (depends on #3)
+	seeders.SeedDispensations(db)        // 8b. Dispensasi sample (depends on #2,7)
+	seeders.SeedSampleTransactions(db)   // 9. Invoice + Sample Bayar/Pengeluaran (depends on #5,7,8)
+	seeders.SeedIncomeCategories(db)     // 9b. Kategori Penerimaan default
+	seeders.BackfillIncomeCategoryFK(db) // 9c. Migrasi category string → FK
+	seeders.SeedIncomeTransactions(db)   // 10. Sample Penerimaan Dana Bantuan (depends on #2)
 
 	// Data migrations / fixes
 	seeders.FixClassGroupSchedules(db)          // Fix schedule JSON format from old "groups" to "weekdays/weekend"
@@ -323,7 +333,9 @@ func main() {
 	expCatService := service.NewExpenseCategoryService(expCatRepo)
 	expenseService := service.NewExpenseService(db, expenseRepo, expCatRepo, ayRepo, txnWriterService)
 
-	// Income transactions
+	// Income categories & transactions
+	incomeCatRepo := repository.NewIncomeCategoryRepository(db)
+	incomeCatService := service.NewIncomeCategoryService(incomeCatRepo)
 	incomeRepo := repository.NewIncomeTransactionRepository(db)
 	incomeService := service.NewIncomeTransactionService(db, incomeRepo, txnWriterService)
 
@@ -468,7 +480,8 @@ func main() {
 	expCatHandler := handler.NewExpenseCategoryHandler(expCatService)
 	expenseHandler := handler.NewExpenseHandler(expenseService)
 
-	// Income transactions
+	// Income categories & transactions
+	incomeCatHandler := handler.NewIncomeCategoryHandler(incomeCatService)
 	incomeHandler := handler.NewIncomeTransactionHandler(incomeService)
 
 	// Dispensations
@@ -726,6 +739,13 @@ func main() {
 	facilities.DELETE("/:id", facilityHandler.Delete, guard.RequireModule(middleware.ModuleAdministrasi))
 	facilities.GET("/:id/students", facilityHandler.ListStudents, guard.RequireModule(middleware.ModuleAdministrasi))
 
+	// Income Categories (master)
+	incomeCats := api.Group("/income-categories", middleware.JWTAuth(tokenBlacklistRepo))
+	incomeCats.GET("", incomeCatHandler.List, guard.RequireModule(middleware.ModuleKeuangan))
+	incomeCats.POST("", incomeCatHandler.Create, guard.RequireModule(middleware.ModuleKeuangan))
+	incomeCats.PUT("/:id", incomeCatHandler.Update, guard.RequireModule(middleware.ModuleKeuangan))
+	incomeCats.DELETE("/:id", incomeCatHandler.Delete, guard.RequireModule(middleware.ModuleKeuangan))
+
 	// Income Transactions (Dana Bantuan)
 	incomes := api.Group("/income-transactions", middleware.JWTAuth(tokenBlacklistRepo), guard.RequireModule(middleware.ModuleKeuangan))
 	incomes.GET("", incomeHandler.List)
@@ -799,4 +819,79 @@ func main() {
 // Set ke "true" untuk mengaktifkan kembali integrasi otomatis.
 func isKoperasiSeamEnabled() bool {
 	return os.Getenv("KOPERASI_SEAM_ENABLED") == "true"
+}
+
+// preMigrateIncomeCategory menangani migrasi income_transactions dari kolom category (string)
+// ke income_category_id (FK) SEBELUM AutoMigrate. GORM AutoMigrate akan gagal jika mencoba
+// menambah kolom NOT NULL ke tabel yang sudah berisi data.
+func preMigrateIncomeCategory(db *gorm.DB) {
+	migrator := db.Migrator()
+
+	// 1. Buat tabel income_categories jika belum ada
+	if !migrator.HasTable(&model.IncomeCategory{}) {
+		if err := db.AutoMigrate(&model.IncomeCategory{}); err != nil {
+			log.Printf("[preMigrateIncome] Gagal membuat tabel income_categories: %v", err)
+			return
+		}
+		log.Println("[preMigrateIncome] Tabel income_categories dibuat")
+	}
+
+	// 2. Seed 4 kategori default jika tabel kosong
+	var catCount int64
+	db.Model(&model.IncomeCategory{}).Count(&catCount)
+	if catCount == 0 {
+		defaultCats := []struct {
+			Code string
+			Name string
+		}{
+			{Code: "bos", Name: "Dana BOS"},
+			{Code: "donasi", Name: "Donasi"},
+			{Code: "hibah", Name: "Hibah"},
+			{Code: "lainnya", Name: "Lainnya"},
+		}
+		for _, c := range defaultCats {
+			db.Create(&model.IncomeCategory{Code: c.Code, Name: c.Name})
+		}
+		log.Println("[preMigrateIncome] 4 kategori default dibuat")
+	}
+
+	// 3. Tambah kolom income_category_id jika belum ada
+	if !migrator.HasColumn(&model.IncomeTransaction{}, "income_category_id") {
+		var defaultCat model.IncomeCategory
+		if err := db.Where("code = ?", "lainnya").First(&defaultCat).Error; err != nil {
+			log.Printf("[preMigrateIncome] Kategori 'lainnya' tidak ditemukan, skip migrasi")
+			return
+		}
+
+		sql := fmt.Sprintf("ALTER TABLE income_transactions ADD COLUMN income_category_id bigint NOT NULL DEFAULT %d", defaultCat.ID)
+		if err := db.Exec(sql).Error; err != nil {
+			log.Printf("[preMigrateIncome] Gagal tambah kolom: %v", err)
+			return
+		}
+
+		// Backfill: map string category → income_category_id
+		result := db.Exec(`
+			UPDATE income_transactions
+			SET income_category_id = COALESCE(
+				(SELECT id FROM income_categories WHERE code = income_transactions.category),
+				?
+			)
+		`, defaultCat.ID)
+		if result.Error != nil {
+			log.Printf("[preMigrateIncome] Gagal backfill: %v", result.Error)
+			return
+		}
+		log.Printf("[preMigrateIncome] Kolom income_category_id ditambah + %d row di-backfill", result.RowsAffected)
+
+		db.Exec(fmt.Sprintf("ALTER TABLE income_transactions ALTER COLUMN income_category_id DROP DEFAULT"))
+	}
+
+	// 4. Drop kolom category lama
+	if migrator.HasColumn(&model.IncomeTransaction{}, "category") {
+		if err := migrator.DropColumn(&model.IncomeTransaction{}, "category"); err != nil {
+			log.Printf("[preMigrateIncome] Gagal drop kolom category: %v", err)
+		} else {
+			log.Println("[preMigrateIncome] Kolom 'category' lama di-drop")
+		}
+	}
 }

@@ -3,11 +3,12 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { ChevronRight } from "lucide-react";
 import { useState } from "react";
+import { useGetV1IncomeCategories } from "#/api/endpoints/income-categories/income-categories";
 import {
 	getGetV1IncomeTransactionsQueryKey,
 	usePostV1IncomeTransactions,
 } from "#/api/endpoints/income-transactions/income-transactions";
-import type { DtoCreateIncomeTransactionRequestCategory } from "#/api/model";
+import type { DtoIncomeCategoryResponse } from "#/api/model";
 import { Alert, Button, CurrencyInput, useToast } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
 
@@ -17,21 +18,18 @@ export const Route = createFileRoute(
 	component: PenerimaanBaruPage,
 });
 
-const CATEGORY_OPTIONS = [
-	{ value: "bos", label: "Dana BOS" },
-	{ value: "donasi", label: "Donasi" },
-	{ value: "hibah", label: "Hibah" },
-	{ value: "lainnya", label: "Lainnya" },
-];
-
 function PenerimaanBaruPage() {
 	const navigate = useNavigate();
 	const [activeAy] = useAtom(academicYearAtom);
 	const queryClient = useQueryClient();
 	const { addToast } = useToast();
 
-	const [category, setCategory] =
-		useState<DtoCreateIncomeTransactionRequestCategory>("bos");
+	// Fetch income categories from API
+	const { data: catResp } = useGetV1IncomeCategories();
+	const categories: DtoIncomeCategoryResponse[] =
+		((catResp as any)?.data as any)?.data || [];
+
+	const [categoryId, setCategoryId] = useState<number>(0);
 	const [sourceName, setSourceName] = useState("");
 	const [amount, setAmount] = useState<number>(0);
 	const [transactionDate, setTransactionDate] = useState(
@@ -92,6 +90,7 @@ function PenerimaanBaruPage() {
 		const errors: Record<string, string> = {};
 
 		if (!activeAy?.id) errors.academic_year_id = "Tahun ajaran belum dipilih.";
+		if (categoryId === 0) errors.income_category_id = "Kategori wajib dipilih.";
 		if (!sourceName.trim())
 			errors.source_name = "Sumber / pengirim wajib diisi.";
 		if (amount <= 0) errors.amount = "Nominal harus lebih dari 0.";
@@ -111,7 +110,7 @@ function PenerimaanBaruPage() {
 		createMutation.mutate({
 			data: {
 				academic_year_id: activeAy?.id || 0,
-				category,
+				income_category_id: categoryId,
 				source_name: sourceName.trim(),
 				amount: amount,
 				transaction_date: transactionDate,
@@ -121,7 +120,8 @@ function PenerimaanBaruPage() {
 		});
 	};
 
-	const canSubmit = !!sourceName.trim() && amount > 0 && !!transactionDate;
+	const canSubmit =
+		categoryId > 0 && !!sourceName.trim() && amount > 0 && !!transactionDate;
 
 	return (
 		<div className="space-y-6 max-w-2xl mx-auto">
@@ -165,28 +165,29 @@ function PenerimaanBaruPage() {
 							Kategori <span className="text-red-500">*</span>
 						</label>
 						<select
-							value={category}
+							value={categoryId}
 							onChange={(e) => {
-								setCategory(
-									e.target.value as DtoCreateIncomeTransactionRequestCategory,
-								);
+								setCategoryId(Number(e.target.value));
 								setFieldErrors((prev) => {
 									const next = { ...prev };
-									delete next.category;
+									delete next.income_category_id;
 									return next;
 								});
 							}}
-							className={`block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ${fieldErrors.category ? "ring-red-300 focus:ring-red-500" : "ring-gray-300 focus:ring-indigo-600"} focus:ring-2 focus:ring-inset sm:text-sm sm:leading-6`}
+							className={`block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ${fieldErrors.income_category_id ? "ring-red-300 focus:ring-red-500" : "ring-gray-300 focus:ring-indigo-600"} focus:ring-2 focus:ring-inset sm:text-sm sm:leading-6`}
 						>
-							{CATEGORY_OPTIONS.map((opt) => (
-								<option key={opt.value} value={opt.value}>
-									{opt.label}
+							<option value={0} disabled>
+								{categories.length === 0 ? "Memuat..." : "Pilih Kategori"}
+							</option>
+							{categories.map((cat) => (
+								<option key={cat.id} value={cat.id}>
+									{cat.name}
 								</option>
 							))}
 						</select>
-						{fieldErrors.category && (
+						{fieldErrors.income_category_id && (
 							<p className="mt-1 text-sm text-red-600">
-								{fieldErrors.category}
+								{fieldErrors.income_category_id}
 							</p>
 						)}
 					</div>

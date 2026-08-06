@@ -5,13 +5,12 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoCreateIncomeTransactionRequestCategory } from "./dtoCreateIncomeTransactionRequestCategory";
 
 export interface DtoCreateIncomeTransactionRequest {
 	academic_year_id: number;
 	/** @minimum 1 */
 	amount: number;
-	category: DtoCreateIncomeTransactionRequestCategory;
+	income_category_id: number;
 	notes?: string;
 	/** @maxLength 50 */
 	reference_number?: string;

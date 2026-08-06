@@ -92,7 +92,7 @@ export const getGetV1IncomeTransactionsUrl = (
 };
 
 /**
- * Get a paginated list of income transactions (BOS, donasi, hibah, etc.)
+ * Get a paginated list of income transactions
  * @summary List income transactions
  */
 export const getV1IncomeTransactions = async (
@@ -311,7 +311,7 @@ export const getPostV1IncomeTransactionsUrl = () => {
 };
 
 /**
- * Record a new income transaction (BOS, donasi, hibah, etc.)
+ * Record a new income transaction with income_category_id
  * @summary Create income transaction
  */
 export const postV1IncomeTransactions = async (

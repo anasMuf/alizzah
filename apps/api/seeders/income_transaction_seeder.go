@@ -34,73 +34,102 @@ func SeedIncomeTransactions(db *gorm.DB) {
 		return
 	}
 
-	transactions := []model.IncomeTransaction{
+	// Resolve income category IDs from code
+	resolveCat := func(code string) uint {
+		var cat model.IncomeCategory
+		if err := db.Where("code = ?", code).First(&cat).Error; err != nil {
+			log.Printf("WARNING: income category '%s' not found, fallback to 'lainnya'", code)
+			db.Where("code = ?", "lainnya").First(&cat)
+		}
+		return cat.ID
+	}
+
+	catBOS := resolveCat("bos")
+	catDonasi := resolveCat("donasi")
+	catHibah := resolveCat("hibah")
+	catLainnya := resolveCat("lainnya")
+
+	transactions := []struct {
+		CategoryID      uint
+		SourceName      string
+		Amount          float64
+		TransactionDate time.Time
+		ReferenceNumber string
+		Notes           string
+		CategoryLabel   string
+	}{
 		{
-			AcademicYearID:  activeYear.ID,
-			Category:        "bos",
+			CategoryID:      catBOS,
 			SourceName:      "BOS Reguler Semester 1 TA 2025/2026",
 			Amount:          15000000,
 			TransactionDate: time.Date(2025, 8, 15, 0, 0, 0, 0, time.UTC),
 			ReferenceNumber: "BOS-2025-001",
 			Notes:           "Dana BOS reguler dari Kemendikbud semester 1",
-			CreatedBy:       admin.ID,
+			CategoryLabel:   "Dana BOS",
 		},
 		{
-			AcademicYearID:  activeYear.ID,
-			Category:        "donasi",
+			CategoryID:      catDonasi,
 			SourceName:      "Donatur Bpk. Ahmad Hidayat",
 			Amount:          5000000,
 			TransactionDate: time.Date(2025, 9, 10, 0, 0, 0, 0, time.UTC),
 			Notes:           "Donasi untuk renovasi perpustakaan",
-			CreatedBy:       admin.ID,
+			CategoryLabel:   "Donasi",
 		},
 		{
-			AcademicYearID:  activeYear.ID,
-			Category:        "hibah",
+			CategoryID:      catHibah,
 			SourceName:      "Yayasan Pendidikan Desa Sejahtera",
 			Amount:          3000000,
 			TransactionDate: time.Date(2025, 10, 1, 0, 0, 0, 0, time.UTC),
 			ReferenceNumber: "HIB-2025-003",
 			Notes:           "Hibah untuk pengadaan alat peraga",
-			CreatedBy:       admin.ID,
+			CategoryLabel:   "Hibah",
 		},
 		{
-			AcademicYearID:  activeYear.ID,
-			Category:        "bos",
+			CategoryID:      catBOS,
 			SourceName:      "BOS Reguler Semester 2 TA 2025/2026",
 			Amount:          15000000,
 			TransactionDate: time.Date(2026, 1, 20, 0, 0, 0, 0, time.UTC),
 			ReferenceNumber: "BOS-2026-001",
 			Notes:           "Dana BOS reguler dari Kemendikbud semester 2",
-			CreatedBy:       admin.ID,
+			CategoryLabel:   "Dana BOS",
 		},
 		{
-			AcademicYearID:  activeYear.ID,
-			Category:        "lainnya",
+			CategoryID:      catLainnya,
 			SourceName:      "Hasil Bazaar Sekolah",
 			Amount:          2500000,
 			TransactionDate: time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC),
 			Notes:           "Hasil penjualan bazaar akhir semester 1",
-			CreatedBy:       admin.ID,
+			CategoryLabel:   "Penerimaan Lainnya",
 		},
 	}
 
 	for _, t := range transactions {
-		if err := db.Create(&t).Error; err != nil {
+		income := model.IncomeTransaction{
+			AcademicYearID:   activeYear.ID,
+			IncomeCategoryID: t.CategoryID,
+			SourceName:       t.SourceName,
+			Amount:           t.Amount,
+			TransactionDate:  t.TransactionDate,
+			ReferenceNumber:  t.ReferenceNumber,
+			Notes:            t.Notes,
+			CreatedBy:        admin.ID,
+		}
+		if err := db.Create(&income).Error; err != nil {
 			log.Printf("Gagal seed income transaction '%s': %v", t.SourceName, err)
 			continue
 		}
 
 		// Create corresponding cash_transaction (credit)
+		desc := t.CategoryLabel + ": " + t.SourceName
 		cashTxn := model.CashTransaction{
-			AcademicYearID:  t.AcademicYearID,
-			TransactionDate: t.TransactionDate,
+			AcademicYearID:  income.AcademicYearID,
+			TransactionDate: income.TransactionDate,
 			TransactionType: "credit",
-			Amount:          t.Amount,
+			Amount:          income.Amount,
 			SourceType:      "income",
-			SourceID:        &t.ID,
-			Description:     categoryLabel(t.Category) + ": " + t.SourceName,
-			CreatedBy:       t.CreatedBy,
+			SourceID:        &income.ID,
+			Description:     desc,
+			CreatedBy:       income.CreatedBy,
 		}
 		if err := db.Create(&cashTxn).Error; err != nil {
 			log.Printf("Gagal seed cash transaction for income '%s': %v", t.SourceName, err)
@@ -108,17 +137,4 @@ func SeedIncomeTransactions(db *gorm.DB) {
 	}
 
 	log.Printf("Seeded %d income transactions", len(transactions))
-}
-
-func categoryLabel(cat string) string {
-	switch cat {
-	case "bos":
-		return "Dana BOS"
-	case "donasi":
-		return "Donasi"
-	case "hibah":
-		return "Hibah"
-	default:
-		return "Penerimaan Lainnya"
-	}
 }

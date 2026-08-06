@@ -6,15 +6,16 @@
  * OpenAPI spec version: 1.0
  */
 import type { DtoAcademicYearBriefResponse } from "./dtoAcademicYearBriefResponse";
+import type { DtoIncomeCategoryBriefResponse } from "./dtoIncomeCategoryBriefResponse";
 import type { DtoUserBriefResponse } from "./dtoUserBriefResponse";
 
 export interface DtoIncomeTransactionResponse {
 	academic_year?: DtoAcademicYearBriefResponse;
 	amount?: number;
-	category?: string;
 	created_at?: string;
 	created_by?: DtoUserBriefResponse;
 	id?: number;
+	income_category?: DtoIncomeCategoryBriefResponse;
 	notes?: string;
 	reference_number?: string;
 	source_name?: string;

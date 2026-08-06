@@ -223,16 +223,19 @@ function FacilityDetailPage() {
 	// Enroll student from facility detail
 	const [isEnrollOpen, setIsEnrollOpen] = useState(false);
 	const [enrollStudentSearch, setEnrollStudentSearch] = useState("");
-	const [enrollStudentId, setEnrollStudentId] = useState(0);
+	const [selectedStudent, setSelectedStudent] = useState<any>(null);
 	const [enrollZoneId, setEnrollZoneId] = useState(0);
 	const [enrollStartDate, setEnrollStartDate] = useState(
 		new Date().toISOString().split("T")[0],
 	);
 
-	const { data: studentsSearchResp } = useGetV1Students(
-		{ search: enrollStudentSearch || undefined, status: "active", limit: 20 },
-		{ query: { enabled: isEnrollOpen && enrollStudentSearch.length >= 2 } },
-	);
+	const { data: studentsSearchResp, isLoading: isSearchLoading } =
+		useGetV1Students(
+			{ search: enrollStudentSearch || undefined, status: "active", limit: 5 },
+			{
+				query: { enabled: isEnrollOpen && enrollStudentSearch.length > 2 },
+			},
+		);
 	const searchResults: any[] =
 		((studentsSearchResp as any)?.data as any)?.data || [];
 
@@ -258,7 +261,7 @@ function FacilityDetailPage() {
 
 	const openEnrollForm = () => {
 		setEnrollStudentSearch("");
-		setEnrollStudentId(0);
+		setSelectedStudent(null);
 		setEnrollZoneId(0);
 		setEnrollStartDate(new Date().toISOString().split("T")[0]);
 		setIsEnrollOpen(true);
@@ -267,9 +270,9 @@ function FacilityDetailPage() {
 
 	const handleEnrollSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!enrollStudentId || !activeAy?.id) return;
+		if (!selectedStudent || !activeAy?.id) return;
 		enrollMutation.mutate({
-			id: enrollStudentId,
+			id: selectedStudent.id,
 			data: {
 				facility_id: id,
 				academic_year_id: activeAy.id,
@@ -817,56 +820,94 @@ function FacilityDetailPage() {
 				>
 					<div className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 space-y-6">
 						{/* Student search */}
-						<div>
-							<label className="block text-sm font-medium text-gray-900 mb-2">
-								Cari Siswa
-							</label>
-							<input
-								type="text"
-								value={enrollStudentSearch}
-								onChange={(e) => {
-									setEnrollStudentSearch(e.target.value);
-									setEnrollStudentId(0);
-								}}
-								placeholder="Ketik minimal 2 huruf untuk mencari..."
-								className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
-							/>
-							{enrollStudentSearch.length >= 2 && (
-								<div className="mt-2 border rounded-md max-h-48 overflow-y-auto">
-									{searchResults.length === 0 ? (
-										<p className="p-3 text-sm text-gray-400">
-											Tidak ada siswa ditemukan.
-										</p>
-									) : (
-										searchResults.map((s: any) => (
-											<button
-												key={s.id}
-												type="button"
-												onClick={() => {
-													setEnrollStudentId(s.id);
-													setEnrollStudentSearch(s.full_name);
-												}}
-												className={`w-full text-left px-3 py-2 text-sm hover:bg-indigo-50 ${
-													enrollStudentId === s.id
-														? "bg-indigo-100 text-indigo-900"
-														: "text-gray-700"
-												}`}
-											>
-												{s.full_name}
-												<span className="text-xs text-gray-400 ml-2">
-													{s.gender === "L" ? "L" : "P"}
-												</span>
-											</button>
-										))
-									)}
+						{!selectedStudent ? (
+							<div className="relative">
+								<label className="block text-sm font-medium text-gray-900 mb-2">
+									Pilih Siswa
+								</label>
+								<div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 pt-7">
+									<Search className="h-5 w-5 text-gray-400" />
 								</div>
-							)}
-							{enrollStudentId > 0 && (
-								<p className="mt-1 text-xs text-green-600">
-									Siswa dipilih. Lanjutkan isi data di bawah.
-								</p>
-							)}
-						</div>
+								<input
+									type="text"
+									className="block w-full rounded-md border-0 py-2 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+									placeholder="Ketik minimal 3 huruf nama siswa..."
+									value={enrollStudentSearch}
+									onChange={(e) => setEnrollStudentSearch(e.target.value)}
+								/>
+								{enrollStudentSearch.length > 2 && (
+									<div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+										{isSearchLoading ? (
+											<div className="px-4 py-2 text-sm text-gray-500">
+												Mencari...
+											</div>
+										) : searchResults.length === 0 ? (
+											<div className="px-4 py-2 text-sm text-gray-500">
+												Tidak ada siswa ditemukan.
+											</div>
+										) : (
+											searchResults.map((student: any) => (
+												<div
+													key={student.id}
+													className="relative cursor-pointer select-none py-2 pl-3 pr-9 hover:bg-indigo-50"
+													onClick={() => {
+														setSelectedStudent(student);
+														setEnrollStudentSearch(student.full_name);
+													}}
+												>
+													<div className="flex items-center">
+														<span className="ml-3 block truncate font-medium text-gray-900">
+															{student.full_name}{" "}
+															<span className="text-gray-500 font-normal">
+																(
+																{student.gender === "L"
+																	? "Laki-laki"
+																	: "Perempuan"}
+																)
+															</span>
+														</span>
+													</div>
+													{student.active_enrollment && (
+														<div className="ml-6 text-xs text-gray-400">
+															{student.active_enrollment.class_group?.name ||
+																""}
+														</div>
+													)}
+												</div>
+											))
+										)}
+									</div>
+								)}
+							</div>
+						) : (
+							<div className="flex items-center justify-between p-4 border border-indigo-200 bg-indigo-50 rounded-lg">
+								<div>
+									<p className="text-sm font-medium text-gray-900">
+										{selectedStudent.full_name}
+									</p>
+									<p className="text-xs text-gray-500">
+										{selectedStudent.gender === "L" ? "Laki-laki" : "Perempuan"}
+										{selectedStudent.active_enrollment?.class_group?.name && (
+											<>
+												{" "}
+												&bull;{" "}
+												{selectedStudent.active_enrollment.class_group.name}
+											</>
+										)}
+									</p>
+								</div>
+								<Button
+									type="button"
+									variant="secondary"
+									onClick={() => {
+										setSelectedStudent(null);
+										setEnrollStudentSearch("");
+									}}
+								>
+									Ganti
+								</Button>
+							</div>
+						)}
 
 						{/* Zone selector */}
 						{zones.length > 0 && (
@@ -910,7 +951,7 @@ function FacilityDetailPage() {
 						<Button
 							type="submit"
 							variant="primary"
-							disabled={!enrollStudentId || enrollMutation.isPending}
+							disabled={!selectedStudent || enrollMutation.isPending}
 						>
 							{enrollMutation.isPending ? "Mendaftarkan..." : "Daftarkan"}
 						</Button>

@@ -1,13 +1,15 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
-import { Edit, Plus, Trash2 } from "lucide-react";
+import { Edit, Plus, Tag, Trash2 } from "lucide-react";
 import { useCallback, useState } from "react";
+import { useGetV1IncomeCategories } from "#/api/endpoints/income-categories/income-categories";
 import {
 	getGetV1IncomeTransactionsQueryKey,
 	useDeleteV1IncomeTransactionsId,
 	useGetV1IncomeTransactions,
 } from "#/api/endpoints/income-transactions/income-transactions";
+import type { DtoIncomeCategoryResponse } from "#/api/model";
 import {
 	Alert,
 	Badge,
@@ -23,7 +25,12 @@ import { formatCurrency, formatDate } from "../../../../utils/format";
 export const Route = createFileRoute("/_authenticated/keuangan/penerimaan/")({
 	component: PenerimaanListPage,
 	validateSearch: (search: Record<string, unknown>) => ({
-		category: typeof search.category === "string" ? search.category : undefined,
+		income_category_id:
+			typeof search.income_category_id === "number"
+				? search.income_category_id
+				: typeof search.income_category_id === "string"
+					? Number.parseInt(search.income_category_id, 10) || undefined
+					: undefined,
 		date_from:
 			typeof search.date_from === "string" ? search.date_from : undefined,
 		date_to: typeof search.date_to === "string" ? search.date_to : undefined,
@@ -35,39 +42,19 @@ export const Route = createFileRoute("/_authenticated/keuangan/penerimaan/")({
 	}),
 });
 
-const CATEGORY_LABELS: Record<string, string> = {
-	bos: "Dana BOS",
-	donasi: "Donasi",
-	hibah: "Hibah",
-	lainnya: "Lainnya",
-};
-
-const CATEGORY_VARIANTS: Record<
-	string,
-	"info" | "success" | "warning" | "danger"
-> = {
-	bos: "info",
-	donasi: "success",
-	hibah: "warning",
-	lainnya: "danger",
-};
-
-const CATEGORY_OPTIONS = [
-	{ value: "", label: "Semua Kategori" },
-	{ value: "bos", label: "Dana BOS" },
-	{ value: "donasi", label: "Donasi" },
-	{ value: "hibah", label: "Hibah" },
-	{ value: "lainnya", label: "Lainnya" },
-];
-
 function PenerimaanListPage() {
 	const [activeAy] = useAtom(academicYearAtom);
 	const queryClient = useQueryClient();
 	const { addToast } = useToast();
 	const navigate = useNavigate();
 
+	// Fetch income categories from API
+	const { data: catResp } = useGetV1IncomeCategories();
+	const categories: DtoIncomeCategoryResponse[] =
+		((catResp as any)?.data as any)?.data || [];
+
 	const searchParams = Route.useSearch();
-	const category = searchParams.category ?? "";
+	const income_category_id = searchParams.income_category_id;
 	const date_from = searchParams.date_from ?? "";
 	const date_to = searchParams.date_to ?? "";
 	const page = searchParams.page ?? 1;
@@ -94,7 +81,7 @@ function PenerimaanListPage() {
 			page,
 			limit: 20,
 			academic_year_id: activeAy?.id,
-			...(category ? { category } : {}),
+			...(income_category_id ? { income_category_id } : {}),
 			...(date_from ? { start_date: date_from } : {}),
 			...(date_to ? { end_date: date_to } : {}),
 		},
@@ -162,15 +149,20 @@ function PenerimaanListPage() {
 							Kategori
 						</label>
 						<select
-							value={category}
+							value={income_category_id ?? ""}
 							onChange={(e) => {
-								updateSearch({ category: e.target.value, page: 1 });
+								const val = e.target.value;
+								updateSearch({
+									income_category_id: val ? Number(val) : undefined,
+									page: 1,
+								});
 							}}
 							className="block w-full sm:w-44 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						>
-							{CATEGORY_OPTIONS.map((opt) => (
-								<option key={opt.value} value={opt.value}>
-									{opt.label}
+							<option value="">Semua Kategori</option>
+							{categories.map((cat) => (
+								<option key={cat.id} value={cat.id}>
+									{cat.name}
 								</option>
 							))}
 						</select>
@@ -201,7 +193,7 @@ function PenerimaanListPage() {
 							className="block w-full sm:w-40 rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						/>
 					</div>
-					{(category || date_from || date_to) && (
+					{(income_category_id || date_from || date_to) && (
 						<button
 							type="button"
 							onClick={() => {
@@ -274,10 +266,8 @@ function PenerimaanListPage() {
 												{formatDate(item.transaction_date)}
 											</td>
 											<td className="px-3 py-3 text-sm">
-												<Badge
-													variant={CATEGORY_VARIANTS[item.category] || "info"}
-												>
-													{CATEGORY_LABELS[item.category] || item.category}
+												<Badge variant="info">
+													{item.income_category?.name || "-"}
 												</Badge>
 											</td>
 											<td className="px-3 py-3 text-sm text-gray-900">

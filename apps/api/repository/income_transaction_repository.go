@@ -36,13 +36,13 @@ func (r *incomeTransactionRepository) FindAll(params dto.IncomeTransactionQueryP
 	var txns []model.IncomeTransaction
 	var total int64
 
-	query := r.db.Model(&model.IncomeTransaction{}).Preload("AcademicYear").Preload("Creator")
+	query := r.db.Model(&model.IncomeTransaction{}).Preload("AcademicYear").Preload("Creator").Preload("IncomeCategory")
 
 	if params.AcademicYearID != 0 {
 		query = query.Where("academic_year_id = ?", params.AcademicYearID)
 	}
-	if params.Category != "" {
-		query = query.Where("category = ?", params.Category)
+	if params.IncomeCategoryID != 0 {
+		query = query.Where("income_category_id = ?", params.IncomeCategoryID)
 	}
 	if params.StartDate != "" {
 		if d, err := time.Parse("2006-01-02", params.StartDate); err == nil {
@@ -75,7 +75,7 @@ func (r *incomeTransactionRepository) FindAll(params dto.IncomeTransactionQueryP
 
 func (r *incomeTransactionRepository) FindByID(id uint) (*model.IncomeTransaction, error) {
 	var it model.IncomeTransaction
-	err := r.db.Preload("AcademicYear").Preload("Creator").First(&it, id).Error
+	err := r.db.Preload("AcademicYear").Preload("Creator").Preload("IncomeCategory").First(&it, id).Error
 	return &it, err
 }
 

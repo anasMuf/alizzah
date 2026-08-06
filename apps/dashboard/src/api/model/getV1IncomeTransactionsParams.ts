@@ -20,9 +20,9 @@ export type GetV1IncomeTransactionsParams = {
 	 */
 	academic_year_id?: number;
 	/**
-	 * Filter by category (bos, donasi, hibah, lainnya)
+	 * Filter by income category ID
 	 */
-	category?: string;
+	income_category_id?: number;
 	/**
 	 * Start Date (YYYY-MM-DD)
 	 */

@@ -20,13 +20,6 @@ type IncomeTransactionService interface {
 	Delete(id uint) error
 }
 
-var incomeCategoryLabels = map[string]string{
-	"bos":     "Dana BOS",
-	"donasi":  "Donasi",
-	"hibah":   "Hibah",
-	"lainnya": "Penerimaan Lainnya",
-}
-
 type incomeTransactionService struct {
 	db        *gorm.DB
 	repo      repository.IncomeTransactionRepository
@@ -88,24 +81,29 @@ func (s *incomeTransactionService) Create(createdBy uint, req dto.CreateIncomeTr
 		return nil, errors.New("Tanggal sudah dikunci oleh tutup buku")
 	}
 
+	// Resolve income category untuk deskripsi cash transaction
+	var incomeCat model.IncomeCategory
+	if err := s.db.First(&incomeCat, req.IncomeCategoryID).Error; err != nil {
+		return nil, errors.New("Kategori penerimaan tidak ditemukan")
+	}
+
 	var income model.IncomeTransaction
 	err = s.db.Transaction(func(tx *gorm.DB) error {
 		income = model.IncomeTransaction{
-			AcademicYearID:  req.AcademicYearID,
-			Category:        req.Category,
-			SourceName:      req.SourceName,
-			Amount:          req.Amount,
-			TransactionDate: txnDate,
-			ReferenceNumber: req.ReferenceNumber,
-			Notes:           req.Notes,
-			CreatedBy:       createdBy,
+			AcademicYearID:   req.AcademicYearID,
+			IncomeCategoryID: req.IncomeCategoryID,
+			SourceName:       req.SourceName,
+			Amount:           req.Amount,
+			TransactionDate:  txnDate,
+			ReferenceNumber:  req.ReferenceNumber,
+			Notes:            req.Notes,
+			CreatedBy:        createdBy,
 		}
 		if err := s.repo.CreateWithTx(&income, tx); err != nil {
 			return err
 		}
 
-		label := incomeCategoryLabels[req.Category]
-		desc := fmt.Sprintf("%s: %s", label, req.SourceName)
+		desc := fmt.Sprintf("%s: %s", incomeCat.Name, req.SourceName)
 		return s.txnWriter.WriteCashCredit(
 			req.AcademicYearID, txnDate, req.Amount,
 			"income", &income.ID, desc, createdBy, tx,
@@ -142,8 +140,14 @@ func (s *incomeTransactionService) Update(id uint, req dto.CreateIncomeTransacti
 		return nil, fmt.Errorf("Format transaction_date tidak valid (YYYY-MM-DD): %w", err)
 	}
 
+	// Resolve income category untuk deskripsi cash transaction
+	var incomeCat model.IncomeCategory
+	if err := s.db.First(&incomeCat, req.IncomeCategoryID).Error; err != nil {
+		return nil, errors.New("Kategori penerimaan tidak ditemukan")
+	}
+
 	it.AcademicYearID = req.AcademicYearID
-	it.Category = req.Category
+	it.IncomeCategoryID = req.IncomeCategoryID
 	it.SourceName = req.SourceName
 	it.Amount = req.Amount
 	it.TransactionDate = txnDate
@@ -162,8 +166,7 @@ func (s *incomeTransactionService) Update(id uint, req dto.CreateIncomeTransacti
 		}
 
 		// 3. Tulis CashTransaction baru
-		label := incomeCategoryLabels[req.Category]
-		desc := fmt.Sprintf("%s: %s", label, req.SourceName)
+		desc := fmt.Sprintf("%s: %s", incomeCat.Name, req.SourceName)
 		return s.txnWriter.WriteCashCredit(
 			req.AcademicYearID, txnDate, req.Amount,
 			"income", &it.ID, desc, it.CreatedBy, tx,
@@ -212,7 +215,11 @@ func mapIncomeTransactionToResponse(it model.IncomeTransaction) dto.IncomeTransa
 			ID:   it.AcademicYear.ID,
 			Name: it.AcademicYear.Name,
 		},
-		Category:        it.Category,
+		IncomeCategory: dto.IncomeCategoryBriefResponse{
+			ID:   it.IncomeCategory.ID,
+			Code: it.IncomeCategory.Code,
+			Name: it.IncomeCategory.Name,
+		},
 		SourceName:      it.SourceName,
 		Amount:          it.Amount,
 		TransactionDate: it.TransactionDate.Format("2006-01-02"),

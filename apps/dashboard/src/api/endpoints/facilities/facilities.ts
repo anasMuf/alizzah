@@ -26,6 +26,7 @@ import type {
 	DtoCreateFacilityRequest,
 	DtoEnrollFacilityRequest,
 	DtoSuccessResponse,
+	DtoUpdateStudentFacilityRequest,
 	GetV1Facilities200,
 	GetV1FacilitiesIdStudents200,
 	GetV1FacilitiesIdStudentsParams,
@@ -34,6 +35,7 @@ import type {
 	PostV1Facilities201,
 	PostV1StudentsIdFacilities201,
 	PutV1FacilitiesId200,
+	PutV1StudentsIdFacilitiesFacilityId200,
 } from "../../model";
 
 import { customInstance } from "../../mutator/custom-instance";
@@ -1038,6 +1040,124 @@ export const usePostV1StudentsIdFacilities = <
 > => {
 	return useMutation(
 		getPostV1StudentsIdFacilitiesMutationOptions(options),
+		queryClient,
+	);
+};
+export type putV1StudentsIdFacilitiesFacilityIdResponse200 = {
+	data: PutV1StudentsIdFacilitiesFacilityId200;
+	status: 200;
+};
+
+export type putV1StudentsIdFacilitiesFacilityIdResponseSuccess =
+	putV1StudentsIdFacilitiesFacilityIdResponse200 & {
+		headers: Headers;
+	};
+
+export type putV1StudentsIdFacilitiesFacilityIdResponse =
+	putV1StudentsIdFacilitiesFacilityIdResponseSuccess;
+
+export const getPutV1StudentsIdFacilitiesFacilityIdUrl = (
+	id: number,
+	facilityId: number,
+) => {
+	return `/v1/students/${id}/facilities/${facilityId}`;
+};
+
+/**
+ * @summary Update student facility enrollment (change zone/package)
+ */
+export const putV1StudentsIdFacilitiesFacilityId = async (
+	id: number,
+	facilityId: number,
+	dtoUpdateStudentFacilityRequest: DtoUpdateStudentFacilityRequest,
+	options?: RequestInit,
+): Promise<putV1StudentsIdFacilitiesFacilityIdResponse> => {
+	return customInstance<putV1StudentsIdFacilitiesFacilityIdResponse>(
+		getPutV1StudentsIdFacilitiesFacilityIdUrl(id, facilityId),
+		{
+			...options,
+			method: "PUT",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(dtoUpdateStudentFacilityRequest),
+		},
+	);
+};
+
+export const getPutV1StudentsIdFacilitiesFacilityIdMutationOptions = <
+	TError = unknown,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof putV1StudentsIdFacilitiesFacilityId>>,
+		TError,
+		{ id: number; facilityId: number; data: DtoUpdateStudentFacilityRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof putV1StudentsIdFacilitiesFacilityId>>,
+	TError,
+	{ id: number; facilityId: number; data: DtoUpdateStudentFacilityRequest },
+	TContext
+> => {
+	const mutationKey = ["putV1StudentsIdFacilitiesFacilityId"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof putV1StudentsIdFacilitiesFacilityId>>,
+		{ id: number; facilityId: number; data: DtoUpdateStudentFacilityRequest }
+	> = (props) => {
+		const { id, facilityId, data } = props ?? {};
+
+		return putV1StudentsIdFacilitiesFacilityId(
+			id,
+			facilityId,
+			data,
+			requestOptions,
+		);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type PutV1StudentsIdFacilitiesFacilityIdMutationResult = NonNullable<
+	Awaited<ReturnType<typeof putV1StudentsIdFacilitiesFacilityId>>
+>;
+export type PutV1StudentsIdFacilitiesFacilityIdMutationBody =
+	DtoUpdateStudentFacilityRequest;
+export type PutV1StudentsIdFacilitiesFacilityIdMutationError = unknown;
+
+/**
+ * @summary Update student facility enrollment (change zone/package)
+ */
+export const usePutV1StudentsIdFacilitiesFacilityId = <
+	TError = unknown,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof putV1StudentsIdFacilitiesFacilityId>>,
+			TError,
+			{ id: number; facilityId: number; data: DtoUpdateStudentFacilityRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof putV1StudentsIdFacilitiesFacilityId>>,
+	TError,
+	{ id: number; facilityId: number; data: DtoUpdateStudentFacilityRequest },
+	TContext
+> => {
+	return useMutation(
+		getPutV1StudentsIdFacilitiesFacilityIdMutationOptions(options),
 		queryClient,
 	);
 };

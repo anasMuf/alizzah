@@ -17,6 +17,7 @@ import {
 	useDeleteV1StudentsIdFacilitiesFacilityId,
 	useGetV1Facilities,
 	useGetV1FacilitiesIdStudents,
+	usePostV1StudentsIdFacilities,
 } from "#/api/endpoints/facilities/facilities";
 import {
 	getGetV1FeeConfigsIdItemsQueryKey,
@@ -26,6 +27,7 @@ import {
 	usePostV1FeeConfigsIdItems,
 	usePutV1FeeConfigsIdItemsItemId,
 } from "#/api/endpoints/fee-configs/fee-configs";
+import { useGetV1Students } from "#/api/endpoints/students/students";
 import type {
 	DtoFacilityResponse,
 	DtoFacilityStudentItemResponse,
@@ -217,6 +219,65 @@ function FacilityDetailPage() {
 		onError: (err: any) =>
 			addToast({ variant: "error", title: "Gagal", message: err.message }),
 	});
+
+	// Enroll student from facility detail
+	const [isEnrollOpen, setIsEnrollOpen] = useState(false);
+	const [enrollStudentSearch, setEnrollStudentSearch] = useState("");
+	const [enrollStudentId, setEnrollStudentId] = useState(0);
+	const [enrollZoneId, setEnrollZoneId] = useState(0);
+	const [enrollStartDate, setEnrollStartDate] = useState(
+		new Date().toISOString().split("T")[0],
+	);
+
+	const { data: studentsSearchResp } = useGetV1Students(
+		{ search: enrollStudentSearch || undefined, status: "active", limit: 20 },
+		{ query: { enabled: isEnrollOpen && enrollStudentSearch.length >= 2 } },
+	);
+	const searchResults: any[] =
+		((studentsSearchResp as any)?.data as any)?.data || [];
+
+	const enrollMutation = usePostV1StudentsIdFacilities({
+		mutation: {
+			onSuccess: () => {
+				addToast({
+					variant: "success",
+					title: "Berhasil",
+					message: "Siswa berhasil didaftarkan.",
+				});
+				queryClient.invalidateQueries({
+					queryKey: getGetV1FacilitiesIdStudentsQueryKey(id, {
+						academic_year_id: activeAy?.id,
+					}),
+				});
+				closeEnrollForm();
+			},
+			onError: (err: any) =>
+				addToast({ variant: "error", title: "Gagal", message: err.message }),
+		},
+	});
+
+	const openEnrollForm = () => {
+		setEnrollStudentSearch("");
+		setEnrollStudentId(0);
+		setEnrollZoneId(0);
+		setEnrollStartDate(new Date().toISOString().split("T")[0]);
+		setIsEnrollOpen(true);
+	};
+	const closeEnrollForm = () => setIsEnrollOpen(false);
+
+	const handleEnrollSubmit = (e: React.FormEvent) => {
+		e.preventDefault();
+		if (!enrollStudentId || !activeAy?.id) return;
+		enrollMutation.mutate({
+			id: enrollStudentId,
+			data: {
+				facility_id: id,
+				academic_year_id: activeAy.id,
+				fee_config_item_id: enrollZoneId || undefined,
+				start_date: enrollStartDate,
+			} as any,
+		});
+	};
 
 	const openAddZone = () => {
 		setZoneName("");
@@ -457,12 +518,17 @@ function FacilityDetailPage() {
 					<h3 className="text-base font-semibold text-gray-900">
 						Siswa Terdaftar
 					</h3>
-					<span className="text-sm text-gray-500">
-						Total:{" "}
-						<span className="font-semibold text-gray-900">
-							{meta?.total ?? 0}
+					<div className="flex items-center gap-3">
+						<span className="text-sm text-gray-500">
+							Total:{" "}
+							<span className="font-semibold text-gray-900">
+								{meta?.total ?? 0}
+							</span>
 						</span>
-					</span>
+						<Button variant="primary" onClick={openEnrollForm}>
+							<Plus className="w-4 h-4 mr-2" /> Tambah Siswa
+						</Button>
+					</div>
 				</div>
 
 				{/* Filter bar */}
@@ -738,6 +804,119 @@ function FacilityDetailPage() {
 				Apakah Anda yakin ingin menghapus zona{" "}
 				<strong>{deletingZone?.name}</strong>?
 			</ConfirmDialog>
+
+			{/* Enroll Student SlideOver */}
+			<SlideOver
+				isOpen={isEnrollOpen}
+				onClose={closeEnrollForm}
+				title={`Tambah Siswa ke ${facility?.name}`}
+			>
+				<form
+					onSubmit={handleEnrollSubmit}
+					className="flex h-full flex-col bg-white"
+				>
+					<div className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 space-y-6">
+						{/* Student search */}
+						<div>
+							<label className="block text-sm font-medium text-gray-900 mb-2">
+								Cari Siswa
+							</label>
+							<input
+								type="text"
+								value={enrollStudentSearch}
+								onChange={(e) => {
+									setEnrollStudentSearch(e.target.value);
+									setEnrollStudentId(0);
+								}}
+								placeholder="Ketik minimal 2 huruf untuk mencari..."
+								className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
+							/>
+							{enrollStudentSearch.length >= 2 && (
+								<div className="mt-2 border rounded-md max-h-48 overflow-y-auto">
+									{searchResults.length === 0 ? (
+										<p className="p-3 text-sm text-gray-400">
+											Tidak ada siswa ditemukan.
+										</p>
+									) : (
+										searchResults.map((s: any) => (
+											<button
+												key={s.id}
+												type="button"
+												onClick={() => {
+													setEnrollStudentId(s.id);
+													setEnrollStudentSearch(s.full_name);
+												}}
+												className={`w-full text-left px-3 py-2 text-sm hover:bg-indigo-50 ${
+													enrollStudentId === s.id
+														? "bg-indigo-100 text-indigo-900"
+														: "text-gray-700"
+												}`}
+											>
+												{s.full_name}
+												<span className="text-xs text-gray-400 ml-2">
+													{s.gender === "L" ? "L" : "P"}
+												</span>
+											</button>
+										))
+									)}
+								</div>
+							)}
+							{enrollStudentId > 0 && (
+								<p className="mt-1 text-xs text-green-600">
+									Siswa dipilih. Lanjutkan isi data di bawah.
+								</p>
+							)}
+						</div>
+
+						{/* Zone selector */}
+						{zones.length > 0 && (
+							<div>
+								<label className="block text-sm font-medium text-gray-900 mb-2">
+									Zona / Paket
+								</label>
+								<select
+									value={enrollZoneId}
+									onChange={(e) => setEnrollZoneId(Number(e.target.value))}
+									className="block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
+								>
+									<option value={0}>— Tanpa zona —</option>
+									{zones.map((z: any) => (
+										<option key={z.id} value={z.id}>
+											{z.name} — {formatPrice(z.amount)}
+										</option>
+									))}
+								</select>
+							</div>
+						)}
+
+						{/* Start date */}
+						<div>
+							<label className="block text-sm font-medium text-gray-900 mb-2">
+								Tanggal Mulai
+							</label>
+							<input
+								type="date"
+								value={enrollStartDate}
+								onChange={(e) => setEnrollStartDate(e.target.value)}
+								className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
+								required
+							/>
+						</div>
+					</div>
+					<div className="flex-shrink-0 border-t border-gray-200 px-4 py-5 sm:px-6 flex justify-end gap-3">
+						<Button type="button" variant="secondary" onClick={closeEnrollForm}>
+							Batal
+						</Button>
+						<Button
+							type="submit"
+							variant="primary"
+							disabled={!enrollStudentId || enrollMutation.isPending}
+						>
+							{enrollMutation.isPending ? "Mendaftarkan..." : "Daftarkan"}
+						</Button>
+					</div>
+				</form>
+			</SlideOver>
 		</div>
 	);
 }

@@ -578,6 +578,7 @@ func main() {
 	students.POST("/:id/extracurriculars", seHandler.Enroll, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.PUT("/:id/extracurriculars/:se_id", seHandler.Update, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.DELETE("/:id/extracurriculars/:se_id", seHandler.Unenroll, guard.RequireModule(middleware.ModuleAdministrasi))
+	students.POST("/:id/extracurriculars/:extracurricular_id/cleanup-invoices", seHandler.CleanupExtracurricularInvoices, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.GET("/:id/dispensations", dispensationHandler.ListByStudent, guard.RequireModule(middleware.ModuleKeuangan))
 	students.POST("/:id/dispensations", dispensationHandler.Create, guard.RequireModule(middleware.ModuleKeuangan))
 	students.GET("/:id/facilities", facilityHandler.ListByStudent, guard.RequireModule(middleware.ModuleAdministrasi))

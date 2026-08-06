@@ -367,3 +367,56 @@ func (h *StudentExtracurricularHandler) SyncInvoices(c echo.Context) error {
 		Data:    result,
 	})
 }
+
+// CleanupExtracurricularInvoices godoc
+// @Summary      Hapus item ekskul dari invoice bulan ini dan seterusnya
+// @Description  Recovery endpoint: menghapus item ekskul tertentu dari invoice
+//
+//	bulanan siswa tanpa menghapus riwayat pembayaran.
+//	Gunakan ketika siswa pindah/pindah ekskul dan invoice masih
+//	menampilkan tagihan ekskul lama.
+//
+// @Tags         student-extracurriculars
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id                  path  int  true  "Student ID"
+// @Param        extracurricular_id  path  int  true  "Extracurricular ID"
+// @Success      200  {object}  dto.SuccessResponse
+// @Failure      400  {object}  dto.ErrorResponse
+// @Failure      401  {object}  dto.ErrorResponse
+// @Failure      403  {object}  dto.ErrorResponse
+// @Failure      500  {object}  dto.ErrorResponse
+// @Router       /v1/students/{id}/extracurriculars/{extracurricular_id}/cleanup-invoices [post]
+func (h *StudentExtracurricularHandler) CleanupExtracurricularInvoices(c echo.Context) error {
+	studentID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status:  http.StatusBadRequest,
+			Code:    "BAD_REQUEST",
+			Message: "ID siswa tidak valid",
+		})
+	}
+
+	extracurricularID, err := strconv.Atoi(c.Param("extracurricular_id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status:  http.StatusBadRequest,
+			Code:    "BAD_REQUEST",
+			Message: "ID ekstrakurikuler tidak valid",
+		})
+	}
+
+	if err := h.invoiceGen.CleanupExtracurricularInvoices(uint(studentID), uint(extracurricularID)); err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{
+			Status:  status,
+			Code:    code,
+			Message: err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "Item ekstrakurikuler berhasil dibersihkan dari invoice mendatang",
+	})
+}

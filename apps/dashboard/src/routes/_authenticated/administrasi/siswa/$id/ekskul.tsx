@@ -1,16 +1,17 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Palette, Plus, ShieldCheck, Trophy } from "lucide-react";
+import { Eraser, Palette, Plus, ShieldCheck, Trophy } from "lucide-react";
 import { useState } from "react";
 import { useGetV1AcademicYears } from "#/api/endpoints/academic-years/academic-years";
 import { useGetV1Extracurriculars } from "#/api/endpoints/extracurriculars/extracurriculars";
+import { getGetV1InvoicesQueryKey } from "#/api/endpoints/invoices/invoices";
 import {
 	getGetV1StudentsIdExtracurricularsQueryKey,
 	useDeleteV1StudentsIdExtracurricularsSeId,
 	useGetV1StudentsIdExtracurriculars,
 	usePostV1StudentsIdExtracurriculars,
 } from "#/api/endpoints/student-extracurriculars/student-extracurriculars";
-import { ApiError } from "#/api/mutator/custom-instance";
+import { ApiError, customInstance } from "#/api/mutator/custom-instance";
 import {
 	Badge,
 	Button,
@@ -35,6 +36,7 @@ function SiswaEkskulPage() {
 	const [isUnenrollOpen, setIsUnenrollOpen] = useState(false);
 	const [selectedSeId, setSelectedSeId] = useState<number | null>(null);
 	const [selectedSeName, setSelectedSeName] = useState("");
+	const [cleanupLoading, setCleanupLoading] = useState<number | null>(null);
 
 	const [formData, setFormData] = useState({
 		extracurricular_id: 0,
@@ -142,6 +144,28 @@ function SiswaEkskulPage() {
 	const confirmUnenroll = () => {
 		if (selectedSeId) {
 			unenrollMutation.mutate({ id: studentId, seId: selectedSeId });
+		}
+	};
+
+	const handleCleanup = async (extracurricularId: number) => {
+		setCleanupLoading(extracurricularId);
+		try {
+			await customInstance(
+				`/v1/students/${studentId}/extracurriculars/${extracurricularId}/cleanup-invoices`,
+				{ method: "POST" },
+			);
+			addToast({
+				variant: "success",
+				title: "Berhasil",
+				message: "Tagihan PASTA berhasil dibersihkan dari invoice.",
+			});
+			queryClient.invalidateQueries({ queryKey: getGetV1InvoicesQueryKey() });
+		} catch (error: any) {
+			const msg =
+				error instanceof ApiError ? error.message : "Terjadi kesalahan";
+			addToast({ variant: "error", title: "Gagal", message: msg });
+		} finally {
+			setCleanupLoading(null);
 		}
 	};
 
@@ -332,7 +356,23 @@ function SiswaEkskulPage() {
 															</Button>
 														</>
 													) : (
-														<Badge variant="secondary">Tidak Aktif</Badge>
+														<>
+															<Badge variant="secondary">Tidak Aktif</Badge>
+															<Button
+																variant="ghost"
+																size="sm"
+																className="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+																disabled={
+																	cleanupLoading === se.extracurricular?.id
+																}
+																onClick={() =>
+																	handleCleanup(se.extracurricular?.id)
+																}
+																title="Bersihkan tagihan PASTA ini dari invoice"
+															>
+																<Eraser className="h-4 w-4" />
+															</Button>
+														</>
 													)}
 												</div>
 											</div>

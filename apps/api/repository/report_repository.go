@@ -38,6 +38,7 @@ type ReportRepository interface {
 	// Income transactions (for Saldo)
 	DailyIncomeTransactions(academicYearID uint, startDate, endDate time.Time, incomeCategories string) (map[string]float64, error)
 	SumIncomeTransactions(academicYearID uint, startDate, endDate time.Time, incomeCategories string) (float64, error)
+	GetIncomeCategoryLabelMap() (map[string]string, error)
 
 	// Savings deposits (Tabungan Umum)
 	DailySavingsDeposits(academicYearID uint, startDate, endDate time.Time) (map[string]float64, error)
@@ -260,7 +261,7 @@ func (r *reportRepository) SumPengeluaranByInvoiceCategory(academicYearID uint, 
 	return result, err
 }
 
-// SumIncomeTransactionsByCategory: total income_transactions grouped by category
+// SumIncomeTransactionsByCategory: total income_transactions grouped by income_categories.code
 func (r *reportRepository) SumIncomeTransactionsByCategory(academicYearID uint, startDate, endDate time.Time, incomeCategories string) (map[string]float64, error) {
 	type row struct {
 		Category string
@@ -268,16 +269,17 @@ func (r *reportRepository) SumIncomeTransactionsByCategory(academicYearID uint, 
 	}
 	var rows []row
 
-	query := r.db.Table("income_transactions").
-		Select("category, SUM(amount) as total").
-		Where("academic_year_id = ? AND transaction_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
+	query := r.db.Table("income_transactions it").
+		Select("ic.code as category, SUM(it.amount) as total").
+		Joins("JOIN income_categories ic ON ic.id = it.income_category_id").
+		Where("it.academic_year_id = ? AND it.transaction_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
 
 	if incomeCategories != "" {
 		cats := strings.Split(incomeCategories, ",")
-		query = query.Where("category IN ?", cats)
+		query = query.Where("ic.code IN ?", cats)
 	}
 
-	query = query.Group("category")
+	query = query.Group("ic.code")
 
 	err := query.Scan(&rows).Error
 
@@ -286,6 +288,24 @@ func (r *reportRepository) SumIncomeTransactionsByCategory(academicYearID uint, 
 		result[row.Category] = row.Total
 	}
 	return result, err
+}
+
+// GetIncomeCategoryLabelMap returns a map of income category code → display name
+func (r *reportRepository) GetIncomeCategoryLabelMap() (map[string]string, error) {
+	type row struct {
+		Code string
+		Name string
+	}
+	var rows []row
+	err := r.db.Table("income_categories").Select("code, name").Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[string]string)
+	for _, r := range rows {
+		result[r.Code] = r.Name
+	}
+	return result, nil
 }
 
 // DailyPenerimaan: penerimaan per hari (invoice payments + income transactions), optionally filtered by category
@@ -569,36 +589,25 @@ func (r *reportRepository) FindPemasukanSummary(academicYearID uint, startDate, 
 		var incomeRows []IncomeRow
 
 		incomeQuery := r.db.Table("income_transactions it").
-			Select("DATE(it.transaction_date) as date, it.category, it.source_name as description, it.amount").
+			Select("DATE(it.transaction_date) as date, ic.name as category, it.source_name as description, it.amount").
+			Joins("JOIN income_categories ic ON ic.id = it.income_category_id").
 			Where("it.academic_year_id = ? AND it.transaction_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
 
 		if incomeCategories != "" {
 			incomeCats := strings.Split(incomeCategories, ",")
-			incomeQuery = incomeQuery.Where("it.category IN ?", incomeCats)
+			incomeQuery = incomeQuery.Where("ic.code IN ?", incomeCats)
 		}
 
-		incomeQuery = incomeQuery.Order("DATE(it.transaction_date), it.category")
+		incomeQuery = incomeQuery.Order("DATE(it.transaction_date), ic.name")
 
 		if err := incomeQuery.Scan(&incomeRows).Error; err != nil {
 			return nil, err
 		}
 
-		// Map income categories to labels
-		incomeLabels := map[string]string{
-			"bos":     "Dana BOS",
-			"donasi":  "Donasi",
-			"hibah":   "Hibah",
-			"lainnya": "Lainnya",
-		}
-
 		for _, r := range incomeRows {
-			label := r.Category
-			if l, ok := incomeLabels[r.Category]; ok {
-				label = l
-			}
 			rows = append(rows, Row{
 				Date:        r.Date,
-				Category:    label,
+				Category:    r.Category,
 				Description: r.Description,
 				Amount:      r.Amount,
 			})

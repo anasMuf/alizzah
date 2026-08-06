@@ -844,6 +844,18 @@ definitions:
     - phone
     - relationship
     type: object
+  dto.CreateIncomeCategoryRequest:
+    properties:
+      code:
+        maxLength: 30
+        minLength: 2
+        type: string
+      name:
+        maxLength: 100
+        type: string
+    required:
+    - name
+    type: object
   dto.CreateIncomeTransactionRequest:
     properties:
       academic_year_id:
@@ -851,13 +863,8 @@ definitions:
       amount:
         minimum: 1
         type: number
-      category:
-        enum:
-        - bos
-        - donasi
-        - hibah
-        - lainnya
-        type: string
+      income_category_id:
+        type: integer
       notes:
         type: string
       reference_number:
@@ -871,7 +878,7 @@ definitions:
     required:
     - academic_year_id
     - amount
-    - category
+    - income_category_id
     - source_name
     - transaction_date
     type: object
@@ -1696,6 +1703,26 @@ definitions:
     - amount
     - name
     type: object
+  dto.IncomeCategoryBriefResponse:
+    properties:
+      code:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  dto.IncomeCategoryResponse:
+    properties:
+      code:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
   dto.IncomeSummaryResponse:
     properties:
       by_category:
@@ -1711,14 +1738,14 @@ definitions:
         $ref: '#/definitions/dto.AcademicYearBriefResponse'
       amount:
         type: number
-      category:
-        type: string
       created_at:
         type: string
       created_by:
         $ref: '#/definitions/dto.UserBriefResponse'
       id:
         type: integer
+      income_category:
+        $ref: '#/definitions/dto.IncomeCategoryBriefResponse'
       notes:
         type: string
       reference_number:
@@ -7606,12 +7633,200 @@ paths:
       summary: Update a guardian
       tags:
       - guardians
+  /v1/income-categories:
+    get:
+      consumes:
+      - application/json
+      description: Get all income categories (flat list)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.IncomeCategoryResponse'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get income category list
+      tags:
+      - income-categories
+    post:
+      consumes:
+      - application/json
+      description: Create a new income category
+      parameters:
+      - description: Create category request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateIncomeCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.IncomeCategoryResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create income category
+      tags:
+      - income-categories
+  /v1/income-categories/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an existing income category (only if no transactions use
+        it)
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete income category
+      tags:
+      - income-categories
+    put:
+      consumes:
+      - application/json
+      description: Update an existing income category
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update category request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateIncomeCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.IncomeCategoryResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update income category
+      tags:
+      - income-categories
   /v1/income-transactions:
     get:
       consumes:
       - application/json
-      description: Get a paginated list of income transactions (BOS, donasi, hibah,
-        etc.)
+      description: Get a paginated list of income transactions
       parameters:
       - description: Page number
         in: query
@@ -7625,10 +7840,10 @@ paths:
         in: query
         name: academic_year_id
         type: integer
-      - description: Filter by category (bos, donasi, hibah, lainnya)
+      - description: Filter by income category ID
         in: query
-        name: category
-        type: string
+        name: income_category_id
+        type: integer
       - description: Start Date (YYYY-MM-DD)
         in: query
         name: start_date
@@ -7671,7 +7886,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Record a new income transaction (BOS, donasi, hibah, etc.)
+      description: Record a new income transaction with income_category_id
       parameters:
       - description: Create income transaction
         in: body

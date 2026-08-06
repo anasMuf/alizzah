@@ -21,7 +21,7 @@ func NewIncomeTransactionHandler(service service.IncomeTransactionService) *Inco
 
 // List godoc
 // @Summary      List income transactions
-// @Description  Get a paginated list of income transactions (BOS, donasi, hibah, etc.)
+// @Description  Get a paginated list of income transactions
 // @Tags         income-transactions
 // @Accept       json
 // @Produce      json
@@ -29,7 +29,7 @@ func NewIncomeTransactionHandler(service service.IncomeTransactionService) *Inco
 // @Param        page              query   int     false  "Page number"
 // @Param        limit             query   int     false  "Limit per page"
 // @Param        academic_year_id  query   int     false  "Academic Year ID"
-// @Param        category          query   string  false  "Filter by category (bos, donasi, hibah, lainnya)"
+// @Param        income_category_id  query   int     false  "Filter by income category ID"
 // @Param        start_date        query   string  false  "Start Date (YYYY-MM-DD)"
 // @Param        end_date          query   string  false  "End Date (YYYY-MM-DD)"
 // @Success      200               {object}  dto.PaginatedResponse{data=[]dto.IncomeTransactionResponse}
@@ -40,14 +40,15 @@ func NewIncomeTransactionHandler(service service.IncomeTransactionService) *Inco
 func (h *IncomeTransactionHandler) List(c echo.Context) error {
 	page, limit := utility.ParsePagination(c)
 	academicYearID, _ := strconv.Atoi(c.QueryParam("academic_year_id"))
+	incomeCategoryID, _ := strconv.Atoi(c.QueryParam("income_category_id"))
 
 	params := dto.IncomeTransactionQueryParams{
-		AcademicYearID: uint(academicYearID),
-		Category:       c.QueryParam("category"),
-		StartDate:      c.QueryParam("start_date"),
-		EndDate:        c.QueryParam("end_date"),
-		Page:           page,
-		Limit:          limit,
+		AcademicYearID:   uint(academicYearID),
+		IncomeCategoryID: uint(incomeCategoryID),
+		StartDate:        c.QueryParam("start_date"),
+		EndDate:          c.QueryParam("end_date"),
+		Page:             page,
+		Limit:            limit,
 	}
 
 	txns, meta, err := h.service.GetAll(params)
@@ -65,7 +66,7 @@ func (h *IncomeTransactionHandler) List(c echo.Context) error {
 
 // Create godoc
 // @Summary      Create income transaction
-// @Description  Record a new income transaction (BOS, donasi, hibah, etc.)
+// @Description  Record a new income transaction with income_category_id
 // @Tags         income-transactions
 // @Accept       json
 // @Produce      json

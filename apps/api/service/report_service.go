@@ -387,6 +387,12 @@ func (s *reportService) GetPosisiKas(req dto.PosisiKasRequest) (*dto.PosisiKasRe
 		return nil, err
 	}
 
+	// Load income category labels from DB (ganti hardcode)
+	incomeCategoryLabels, err := s.reportRepo.GetIncomeCategoryLabelMap()
+	if err != nil {
+		return nil, fmt.Errorf("gagal memuat kategori penerimaan: %w", err)
+	}
+
 	// Date ranges: date_from/date_to take priority over month/year
 	var startDate, endDate, endPrevDate time.Time
 	if req.DateFrom != "" && req.DateTo != "" {

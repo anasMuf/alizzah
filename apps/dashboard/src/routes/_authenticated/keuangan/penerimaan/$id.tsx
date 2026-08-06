@@ -3,13 +3,14 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { ArrowLeft, Edit, Save, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useGetV1IncomeCategories } from "#/api/endpoints/income-categories/income-categories";
 import {
 	getGetV1IncomeTransactionsQueryKey,
 	useDeleteV1IncomeTransactionsId,
 	useGetV1IncomeTransactionsId,
 	usePutV1IncomeTransactionsId,
 } from "#/api/endpoints/income-transactions/income-transactions";
-import type { DtoCreateIncomeTransactionRequestCategory } from "#/api/model";
+import type { DtoIncomeCategoryResponse } from "#/api/model";
 import {
 	Alert,
 	Badge,
@@ -28,30 +29,6 @@ export const Route = createFileRoute("/_authenticated/keuangan/penerimaan/$id")(
 	},
 );
 
-const CATEGORY_LABELS: Record<string, string> = {
-	bos: "Dana BOS",
-	donasi: "Donasi",
-	hibah: "Hibah",
-	lainnya: "Lainnya",
-};
-
-const CATEGORY_VARIANTS: Record<
-	string,
-	"info" | "success" | "warning" | "danger"
-> = {
-	bos: "info",
-	donasi: "success",
-	hibah: "warning",
-	lainnya: "danger",
-};
-
-const CATEGORY_OPTIONS = [
-	{ value: "bos", label: "Dana BOS" },
-	{ value: "donasi", label: "Donasi" },
-	{ value: "hibah", label: "Hibah" },
-	{ value: "lainnya", label: "Lainnya" },
-];
-
 function PenerimaanDetailPage() {
 	const { id } = Route.useParams();
 	const incomeId = Number(id);
@@ -60,11 +37,15 @@ function PenerimaanDetailPage() {
 	const { addToast } = useToast();
 	const [activeAy] = useAtom(academicYearAtom);
 
+	// Fetch income categories from API
+	const { data: catResp } = useGetV1IncomeCategories();
+	const categories: DtoIncomeCategoryResponse[] =
+		((catResp as any)?.data as any)?.data || [];
+
 	const [isEditing, setIsEditing] = useState(false);
 	const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
-	const [category, setCategory] =
-		useState<DtoCreateIncomeTransactionRequestCategory>("bos");
+	const [categoryId, setCategoryId] = useState<number>(0);
 	const [sourceName, setSourceName] = useState("");
 	const [amount, setAmount] = useState<number>(0);
 	const [transactionDate, setTransactionDate] = useState("");
@@ -83,9 +64,7 @@ function PenerimaanDetailPage() {
 	// Sync edit form state when item loads
 	useEffect(() => {
 		if (item) {
-			setCategory(
-				(item.category as DtoCreateIncomeTransactionRequestCategory) || "bos",
-			);
+			setCategoryId(item.income_category?.id || 0);
 			setSourceName(item.source_name || "");
 			setAmount(Number(item.amount) || 0);
 			setTransactionDate(item.transaction_date || "");
@@ -168,6 +147,7 @@ function PenerimaanDetailPage() {
 		const errors: Record<string, string> = {};
 
 		if (!activeAy?.id) errors.academic_year_id = "Tahun ajaran belum dipilih.";
+		if (categoryId === 0) errors.income_category_id = "Kategori wajib dipilih.";
 		if (!sourceName.trim())
 			errors.source_name = "Sumber / pengirim wajib diisi.";
 		if (amount <= 0) errors.amount = "Nominal harus lebih dari 0.";
@@ -186,7 +166,7 @@ function PenerimaanDetailPage() {
 			id: incomeId,
 			data: {
 				academic_year_id: activeAy?.id || 0,
-				category,
+				income_category_id: categoryId,
 				source_name: sourceName.trim(),
 				amount,
 				transaction_date: transactionDate,
@@ -202,9 +182,7 @@ function PenerimaanDetailPage() {
 		setFieldErrors({});
 		// Reset to original values
 		if (item) {
-			setCategory(
-				(item.category as DtoCreateIncomeTransactionRequestCategory) || "bos",
-			);
+			setCategoryId(item.income_category?.id || 0);
 			setSourceName(item.source_name || "");
 			setAmount(Number(item.amount) || 0);
 			setTransactionDate(item.transaction_date || "");
@@ -299,29 +277,25 @@ function PenerimaanDetailPage() {
 					<Field label="Kategori">
 						{isEditing ? (
 							<select
-								value={category}
+								value={categoryId}
 								onChange={(e) => {
-									setCategory(
-										e.target.value as DtoCreateIncomeTransactionRequestCategory,
-									);
+									setCategoryId(Number(e.target.value));
 									setFieldErrors((prev) => {
 										const next = { ...prev };
-										delete next.category;
+										delete next.income_category_id;
 										return next;
 									});
 								}}
-								className={`block w-full sm:w-64 rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ${fieldErrors.category ? "ring-red-300 focus:ring-red-500" : "ring-gray-300 focus:ring-indigo-600"} focus:ring-2 sm:text-sm`}
+								className={`block w-full sm:w-64 rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ${fieldErrors.income_category_id ? "ring-red-300 focus:ring-red-500" : "ring-gray-300 focus:ring-indigo-600"} focus:ring-2 sm:text-sm`}
 							>
-								{CATEGORY_OPTIONS.map((opt) => (
-									<option key={opt.value} value={opt.value}>
-										{opt.label}
+								{categories.map((cat) => (
+									<option key={cat.id} value={cat.id}>
+										{cat.name}
 									</option>
 								))}
 							</select>
 						) : (
-							<Badge variant={CATEGORY_VARIANTS[item.category] || "info"}>
-								{CATEGORY_LABELS[item.category] || item.category}
-							</Badge>
+							<Badge variant="info">{item.income_category?.name || "-"}</Badge>
 						)}
 					</Field>
 

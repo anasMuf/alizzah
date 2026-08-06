@@ -23,7 +23,9 @@ type FacilityService interface {
 
 type StudentFacilityService interface {
 	GetByStudentID(studentID uint, params dto.StudentFacilityQueryParams) ([]dto.StudentFacilityResponse, error)
+	GetStudentsByFacility(facilityID uint, params dto.FacilityStudentQueryParams) (*dto.PaginatedFacilityStudentResponse, error)
 	Enroll(studentID uint, req dto.EnrollFacilityRequest) (*dto.StudentFacilityResponse, error)
+	UpdateEnrollment(studentID, sfID uint, req dto.UpdateStudentFacilityRequest) (*dto.StudentFacilityResponse, error)
 	Unenroll(studentID, sfID uint) error
 }
 
@@ -168,11 +170,12 @@ func mapFacilityToResponse(f model.Facility) dto.FacilityResponse {
 // ─── Student Facility Service ────────────────────────────────────────
 
 type studentFacilityService struct {
-	sfRepo       repository.StudentFacilityRepository
-	studentRepo  repository.StudentRepository
-	facilityRepo repository.FacilityRepository
-	acRepo       repository.AcademicYearRepository
-	invoiceGen   InvoiceGenerateService
+	sfRepo            repository.StudentFacilityRepository
+	studentRepo       repository.StudentRepository
+	facilityRepo      repository.FacilityRepository
+	acRepo            repository.AcademicYearRepository
+	feeConfigItemRepo repository.FeeConfigItemRepository
+	invoiceGen        InvoiceGenerateService
 }
 
 func NewStudentFacilityService(
@@ -180,14 +183,16 @@ func NewStudentFacilityService(
 	studentRepo repository.StudentRepository,
 	facilityRepo repository.FacilityRepository,
 	acRepo repository.AcademicYearRepository,
+	feeConfigItemRepo repository.FeeConfigItemRepository,
 	invoiceGen InvoiceGenerateService,
 ) StudentFacilityService {
 	return &studentFacilityService{
-		sfRepo:       sfRepo,
-		studentRepo:  studentRepo,
-		facilityRepo: facilityRepo,
-		acRepo:       acRepo,
-		invoiceGen:   invoiceGen,
+		sfRepo:            sfRepo,
+		studentRepo:       studentRepo,
+		facilityRepo:      facilityRepo,
+		acRepo:            acRepo,
+		feeConfigItemRepo: feeConfigItemRepo,
+		invoiceGen:        invoiceGen,
 	}
 }
 
@@ -230,16 +235,28 @@ func (s *studentFacilityService) Enroll(studentID uint, req dto.EnrollFacilityRe
 		return nil, errors.New("Siswa sudah terdaftar di fasilitas ini untuk tahun ajaran tersebut")
 	}
 
+	// Validate FeeConfigItemID if provided
+	if req.FeeConfigItemID != nil {
+		item, err := s.feeConfigItemRepo.FindByID(*req.FeeConfigItemID)
+		if err != nil {
+			return nil, errors.New("Paket/zona tidak ditemukan")
+		}
+		if !item.IsActive {
+			return nil, errors.New("Paket/zona sudah tidak aktif")
+		}
+	}
+
 	startDate, err := utility.ParseDate(req.StartDate)
 	if err != nil {
 		return nil, errors.New("Format start_date tidak valid (YYYY-MM-DD)")
 	}
 
 	sf := &model.StudentFacility{
-		StudentID:      studentID,
-		FacilityID:     req.FacilityID,
-		AcademicYearID: req.AcademicYearID,
-		StartDate:      startDate,
+		StudentID:       studentID,
+		FacilityID:      req.FacilityID,
+		AcademicYearID:  req.AcademicYearID,
+		FeeConfigItemID: req.FeeConfigItemID,
+		StartDate:       startDate,
 	}
 
 	if err := s.sfRepo.Create(sf); err != nil {
@@ -254,6 +271,49 @@ func (s *studentFacilityService) Enroll(studentID uint, req dto.EnrollFacilityRe
 	saved, err := s.sfRepo.FindByID(sf.ID)
 	if err != nil {
 		return nil, fmt.Errorf("gagal mengambil data fasilitas: %w", err)
+	}
+	resp := mapStudentFacilityToResponse(*saved)
+	return &resp, nil
+}
+
+func (s *studentFacilityService) UpdateEnrollment(studentID, sfID uint, req dto.UpdateStudentFacilityRequest) (*dto.StudentFacilityResponse, error) {
+	sf, err := s.sfRepo.FindByID(sfID)
+	if err != nil || sf.StudentID != studentID {
+		return nil, errors.New("Data pendaftaran fasilitas tidak ditemukan")
+	}
+
+	if sf.EndDate != nil {
+		return nil, errors.New("Siswa sudah tidak aktif di fasilitas ini")
+	}
+
+	// Validate FeeConfigItem if provided
+	if req.FeeConfigItemID != nil {
+		item, err := s.feeConfigItemRepo.FindByID(*req.FeeConfigItemID)
+		if err != nil {
+			return nil, errors.New("Paket/zona tidak ditemukan")
+		}
+		if !item.IsActive {
+			return nil, errors.New("Paket/zona sudah tidak aktif")
+		}
+	}
+
+	sf.FeeConfigItemID = req.FeeConfigItemID
+	if err := s.sfRepo.Update(sf); err != nil {
+		return nil, err
+	}
+
+	// Update invoices: remove old facility items, then re-add with new zone price
+	if s.invoiceGen != nil {
+		go func() {
+			s.invoiceGen.RemoveFacilityFromFutureInvoices(studentID, sf.FacilityID, sf.AcademicYearID)
+			s.invoiceGen.AddFacilityToMonthlyRange(studentID, sf.FacilityID, sf.AcademicYearID)
+		}()
+	}
+
+	// Reload with preloaded relations
+	saved, err := s.sfRepo.FindByID(sf.ID)
+	if err != nil {
+		return nil, err
 	}
 	resp := mapStudentFacilityToResponse(*saved)
 	return &resp, nil
@@ -285,7 +345,8 @@ func mapStudentFacilityToResponse(sf model.StudentFacility) dto.StudentFacilityR
 		ed := sf.EndDate.Format("2006-01-02")
 		endDateStr = &ed
 	}
-	return dto.StudentFacilityResponse{
+
+	resp := dto.StudentFacilityResponse{
 		ID: sf.ID,
 		Facility: dto.FacilityResponse{
 			ID:          sf.Facility.ID,
@@ -296,4 +357,77 @@ func mapStudentFacilityToResponse(sf model.StudentFacility) dto.StudentFacilityR
 		StartDate: sf.StartDate.Format("2006-01-02"),
 		EndDate:   endDateStr,
 	}
+
+	if sf.FeeConfigItem != nil {
+		resp.FeeConfigItem = &dto.FeeConfigItemBriefResponse{
+			ID:     sf.FeeConfigItem.ID,
+			Name:   sf.FeeConfigItem.Name,
+			Amount: sf.FeeConfigItem.Amount,
+			Unit:   sf.FeeConfigItem.Unit,
+		}
+	}
+
+	return resp
+}
+
+func (s *studentFacilityService) GetStudentsByFacility(facilityID uint, params dto.FacilityStudentQueryParams) (*dto.PaginatedFacilityStudentResponse, error) {
+	_, err := s.facilityRepo.FindByID(facilityID)
+	if err != nil {
+		return nil, errors.New("Fasilitas tidak ditemukan")
+	}
+
+	sfs, total, err := s.sfRepo.FindByFacilityID(facilityID, params)
+	if err != nil {
+		return nil, err
+	}
+
+	// Default pagination
+	page := params.Page
+	if page < 1 {
+		page = 1
+	}
+	limit := params.Limit
+	if limit < 1 {
+		limit = 20
+	}
+
+	var items []dto.FacilityStudentItemResponse
+	for _, sf := range sfs {
+		var endDateStr *string
+		if sf.EndDate != nil {
+			ed := sf.EndDate.Format("2006-01-02")
+			endDateStr = &ed
+		}
+
+		item := dto.FacilityStudentItemResponse{
+			ID: sf.ID,
+			Student: dto.StudentBriefResponse{
+				ID:       sf.Student.ID,
+				FullName: sf.Student.FullName,
+				Gender:   sf.Student.Gender,
+			},
+			StartDate: sf.StartDate.Format("2006-01-02"),
+			EndDate:   endDateStr,
+		}
+
+		if sf.FeeConfigItem != nil {
+			item.FeeConfigItem = &dto.FeeConfigItemBriefResponse{
+				ID:     sf.FeeConfigItem.ID,
+				Name:   sf.FeeConfigItem.Name,
+				Amount: sf.FeeConfigItem.Amount,
+				Unit:   sf.FeeConfigItem.Unit,
+			}
+		}
+
+		items = append(items, item)
+	}
+
+	return &dto.PaginatedFacilityStudentResponse{
+		Data: items,
+		Meta: dto.Meta{
+			Page:  page,
+			Limit: limit,
+			Total: total,
+		},
+	}, nil
 }

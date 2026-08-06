@@ -23,6 +23,8 @@ import type {
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 import type {
+	DeleteV1DaycareEnrollmentsId200,
+	DeleteV1DaycareEnrollmentsIdParams,
 	DtoCreateDaycareEnrollmentRequest,
 	DtoErrorResponse,
 	DtoGenerateDaycareMonthlyBulkRequest,
@@ -34,6 +36,8 @@ import type {
 	GetV1DaycareAttendance200,
 	GetV1DaycareAttendanceParams,
 	GetV1DaycareEnrollments200,
+	GetV1DaycareEnrollmentsCheckPremiumHistory200,
+	GetV1DaycareEnrollmentsCheckPremiumHistoryParams,
 	GetV1DaycareEnrollmentsId200,
 	GetV1DaycareEnrollmentsMonthlyAttendance200,
 	GetV1DaycareEnrollmentsMonthlyAttendanceParams,
@@ -415,6 +419,257 @@ export const usePostV1DaycareEnrollments = <
 		queryClient,
 	);
 };
+export type getV1DaycareEnrollmentsCheckPremiumHistoryResponse200 = {
+	data: GetV1DaycareEnrollmentsCheckPremiumHistory200;
+	status: 200;
+};
+
+export type getV1DaycareEnrollmentsCheckPremiumHistoryResponse400 = {
+	data: DtoErrorResponse;
+	status: 400;
+};
+
+export type getV1DaycareEnrollmentsCheckPremiumHistoryResponse401 = {
+	data: DtoErrorResponse;
+	status: 401;
+};
+
+export type getV1DaycareEnrollmentsCheckPremiumHistoryResponse403 = {
+	data: DtoErrorResponse;
+	status: 403;
+};
+
+export type getV1DaycareEnrollmentsCheckPremiumHistoryResponse404 = {
+	data: DtoErrorResponse;
+	status: 404;
+};
+
+export type getV1DaycareEnrollmentsCheckPremiumHistoryResponseSuccess =
+	getV1DaycareEnrollmentsCheckPremiumHistoryResponse200 & {
+		headers: Headers;
+	};
+export type getV1DaycareEnrollmentsCheckPremiumHistoryResponseError = (
+	| getV1DaycareEnrollmentsCheckPremiumHistoryResponse400
+	| getV1DaycareEnrollmentsCheckPremiumHistoryResponse401
+	| getV1DaycareEnrollmentsCheckPremiumHistoryResponse403
+	| getV1DaycareEnrollmentsCheckPremiumHistoryResponse404
+) & {
+	headers: Headers;
+};
+
+export type getV1DaycareEnrollmentsCheckPremiumHistoryResponse =
+	| getV1DaycareEnrollmentsCheckPremiumHistoryResponseSuccess
+	| getV1DaycareEnrollmentsCheckPremiumHistoryResponseError;
+
+export const getGetV1DaycareEnrollmentsCheckPremiumHistoryUrl = (
+	params: GetV1DaycareEnrollmentsCheckPremiumHistoryParams,
+) => {
+	const normalizedParams = new URLSearchParams();
+
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(key, value === null ? "null" : value.toString());
+		}
+	});
+
+	const stringifiedParams = normalizedParams.toString();
+
+	return stringifiedParams.length > 0
+		? `/v1/daycare-enrollments/check-premium-history?${stringifiedParams}`
+		: `/v1/daycare-enrollments/check-premium-history`;
+};
+
+/**
+ * Delete a daycare enrollment. If delete_invoices=true, also removes unpaid monthly invoices from current month onward.
+Check if a student has ever had a premium daycare enrollment (for auto-detect Lanjutan/Baru)
+ * @summary Check if student has premium history
+ */
+export const getV1DaycareEnrollmentsCheckPremiumHistory = async (
+	params: GetV1DaycareEnrollmentsCheckPremiumHistoryParams,
+	options?: RequestInit,
+): Promise<getV1DaycareEnrollmentsCheckPremiumHistoryResponse> => {
+	return customInstance<getV1DaycareEnrollmentsCheckPremiumHistoryResponse>(
+		getGetV1DaycareEnrollmentsCheckPremiumHistoryUrl(params),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
+
+export const getGetV1DaycareEnrollmentsCheckPremiumHistoryQueryKey = (
+	params?: GetV1DaycareEnrollmentsCheckPremiumHistoryParams,
+) => {
+	return [
+		`/v1/daycare-enrollments/check-premium-history`,
+		...(params ? [params] : []),
+	] as const;
+};
+
+export const getGetV1DaycareEnrollmentsCheckPremiumHistoryQueryOptions = <
+	TData = Awaited<
+		ReturnType<typeof getV1DaycareEnrollmentsCheckPremiumHistory>
+	>,
+	TError = DtoErrorResponse,
+>(
+	params: GetV1DaycareEnrollmentsCheckPremiumHistoryParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1DaycareEnrollmentsCheckPremiumHistory>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
+
+	const queryKey =
+		queryOptions?.queryKey ??
+		getGetV1DaycareEnrollmentsCheckPremiumHistoryQueryKey(params);
+
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1DaycareEnrollmentsCheckPremiumHistory>>
+	> = ({ signal }) =>
+		getV1DaycareEnrollmentsCheckPremiumHistory(params, {
+			signal,
+			...requestOptions,
+		});
+
+	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1DaycareEnrollmentsCheckPremiumHistory>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetV1DaycareEnrollmentsCheckPremiumHistoryQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1DaycareEnrollmentsCheckPremiumHistory>>
+>;
+export type GetV1DaycareEnrollmentsCheckPremiumHistoryQueryError =
+	DtoErrorResponse;
+
+export function useGetV1DaycareEnrollmentsCheckPremiumHistory<
+	TData = Awaited<
+		ReturnType<typeof getV1DaycareEnrollmentsCheckPremiumHistory>
+	>,
+	TError = DtoErrorResponse,
+>(
+	params: GetV1DaycareEnrollmentsCheckPremiumHistoryParams,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1DaycareEnrollmentsCheckPremiumHistory>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<
+						ReturnType<typeof getV1DaycareEnrollmentsCheckPremiumHistory>
+					>,
+					TError,
+					Awaited<ReturnType<typeof getV1DaycareEnrollmentsCheckPremiumHistory>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1DaycareEnrollmentsCheckPremiumHistory<
+	TData = Awaited<
+		ReturnType<typeof getV1DaycareEnrollmentsCheckPremiumHistory>
+	>,
+	TError = DtoErrorResponse,
+>(
+	params: GetV1DaycareEnrollmentsCheckPremiumHistoryParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1DaycareEnrollmentsCheckPremiumHistory>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<
+						ReturnType<typeof getV1DaycareEnrollmentsCheckPremiumHistory>
+					>,
+					TError,
+					Awaited<ReturnType<typeof getV1DaycareEnrollmentsCheckPremiumHistory>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1DaycareEnrollmentsCheckPremiumHistory<
+	TData = Awaited<
+		ReturnType<typeof getV1DaycareEnrollmentsCheckPremiumHistory>
+	>,
+	TError = DtoErrorResponse,
+>(
+	params: GetV1DaycareEnrollmentsCheckPremiumHistoryParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1DaycareEnrollmentsCheckPremiumHistory>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Check if student has premium history
+ */
+
+export function useGetV1DaycareEnrollmentsCheckPremiumHistory<
+	TData = Awaited<
+		ReturnType<typeof getV1DaycareEnrollmentsCheckPremiumHistory>
+	>,
+	TError = DtoErrorResponse,
+>(
+	params: GetV1DaycareEnrollmentsCheckPremiumHistoryParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1DaycareEnrollmentsCheckPremiumHistory>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions =
+		getGetV1DaycareEnrollmentsCheckPremiumHistoryQueryOptions(params, options);
+
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+	return { ...query, queryKey: queryOptions.queryKey };
+}
+
 export type postV1DaycareEnrollmentsGenerateMonthlyResponse200 = {
 	data: DtoSuccessResponse;
 	status: 200;
@@ -1473,6 +1728,158 @@ export const usePutV1DaycareEnrollmentsId = <
 > => {
 	return useMutation(
 		getPutV1DaycareEnrollmentsIdMutationOptions(options),
+		queryClient,
+	);
+};
+export type deleteV1DaycareEnrollmentsIdResponse200 = {
+	data: DeleteV1DaycareEnrollmentsId200;
+	status: 200;
+};
+
+export type deleteV1DaycareEnrollmentsIdResponse400 = {
+	data: DtoErrorResponse;
+	status: 400;
+};
+
+export type deleteV1DaycareEnrollmentsIdResponse401 = {
+	data: DtoErrorResponse;
+	status: 401;
+};
+
+export type deleteV1DaycareEnrollmentsIdResponse403 = {
+	data: DtoErrorResponse;
+	status: 403;
+};
+
+export type deleteV1DaycareEnrollmentsIdResponse404 = {
+	data: DtoErrorResponse;
+	status: 404;
+};
+
+export type deleteV1DaycareEnrollmentsIdResponseSuccess =
+	deleteV1DaycareEnrollmentsIdResponse200 & {
+		headers: Headers;
+	};
+export type deleteV1DaycareEnrollmentsIdResponseError = (
+	| deleteV1DaycareEnrollmentsIdResponse400
+	| deleteV1DaycareEnrollmentsIdResponse401
+	| deleteV1DaycareEnrollmentsIdResponse403
+	| deleteV1DaycareEnrollmentsIdResponse404
+) & {
+	headers: Headers;
+};
+
+export type deleteV1DaycareEnrollmentsIdResponse =
+	| deleteV1DaycareEnrollmentsIdResponseSuccess
+	| deleteV1DaycareEnrollmentsIdResponseError;
+
+export const getDeleteV1DaycareEnrollmentsIdUrl = (
+	id: number,
+	params: DeleteV1DaycareEnrollmentsIdParams,
+) => {
+	const normalizedParams = new URLSearchParams();
+
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(key, value === null ? "null" : value.toString());
+		}
+	});
+
+	const stringifiedParams = normalizedParams.toString();
+
+	return stringifiedParams.length > 0
+		? `/v1/daycare-enrollments/${id}?${stringifiedParams}`
+		: `/v1/daycare-enrollments/${id}`;
+};
+
+/**
+ * Delete a daycare enrollment. If delete_invoices=true, also removes unpaid monthly invoices from current month onward.
+Check if a student has ever had a premium daycare enrollment (for auto-detect Lanjutan/Baru)
+ * @summary Check if student has premium history
+ */
+export const deleteV1DaycareEnrollmentsId = async (
+	id: number,
+	params: DeleteV1DaycareEnrollmentsIdParams,
+	options?: RequestInit,
+): Promise<deleteV1DaycareEnrollmentsIdResponse> => {
+	return customInstance<deleteV1DaycareEnrollmentsIdResponse>(
+		getDeleteV1DaycareEnrollmentsIdUrl(id, params),
+		{
+			...options,
+			method: "DELETE",
+		},
+	);
+};
+
+export const getDeleteV1DaycareEnrollmentsIdMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof deleteV1DaycareEnrollmentsId>>,
+		TError,
+		{ id: number; params: DeleteV1DaycareEnrollmentsIdParams },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof deleteV1DaycareEnrollmentsId>>,
+	TError,
+	{ id: number; params: DeleteV1DaycareEnrollmentsIdParams },
+	TContext
+> => {
+	const mutationKey = ["deleteV1DaycareEnrollmentsId"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof deleteV1DaycareEnrollmentsId>>,
+		{ id: number; params: DeleteV1DaycareEnrollmentsIdParams }
+	> = (props) => {
+		const { id, params } = props ?? {};
+
+		return deleteV1DaycareEnrollmentsId(id, params, requestOptions);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteV1DaycareEnrollmentsIdMutationResult = NonNullable<
+	Awaited<ReturnType<typeof deleteV1DaycareEnrollmentsId>>
+>;
+
+export type DeleteV1DaycareEnrollmentsIdMutationError = DtoErrorResponse;
+
+/**
+ * @summary Check if student has premium history
+ */
+export const useDeleteV1DaycareEnrollmentsId = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof deleteV1DaycareEnrollmentsId>>,
+			TError,
+			{ id: number; params: DeleteV1DaycareEnrollmentsIdParams },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof deleteV1DaycareEnrollmentsId>>,
+	TError,
+	{ id: number; params: DeleteV1DaycareEnrollmentsIdParams },
+	TContext
+> => {
+	return useMutation(
+		getDeleteV1DaycareEnrollmentsIdMutationOptions(options),
 		queryClient,
 	);
 };

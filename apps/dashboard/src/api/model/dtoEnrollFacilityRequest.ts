@@ -9,5 +9,6 @@
 export interface DtoEnrollFacilityRequest {
 	academic_year_id: number;
 	facility_id: number;
+	fee_config_item_id?: number;
 	start_date: string;
 }

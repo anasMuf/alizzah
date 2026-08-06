@@ -6,11 +6,7 @@
  * OpenAPI spec version: 1.0
  */
 import type { DtoEnrollmentBriefResponse } from "./dtoEnrollmentBriefResponse";
-
-export interface DtoSavingsBalanceResponse {
-	type?: string;
-	balance?: number;
-}
+import type { DtoSavingsBalanceResponse } from "./dtoSavingsBalanceResponse";
 
 export interface DtoStudentListResponse {
 	active_enrollment?: DtoEnrollmentBriefResponse;

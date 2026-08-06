@@ -60,6 +60,13 @@ func (r *paymentRepository) FindAll(params dto.PaymentQueryParams) ([]model.Paym
 			query = query.Where("payment_date <= ?", d)
 		}
 	}
+	if params.Search != "" {
+		query = query.Where("student_id IN (?)",
+			r.db.Model(&model.Student{}).
+				Select("id").
+				Where("full_name ILIKE ?", "%"+params.Search+"%"),
+		)
+	}
 
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err

@@ -190,6 +190,29 @@ func (s *daycareEnrollmentService) Update(id uint, req dto.CreateDaycareEnrollme
 		return nil, errors.New("Format start_date tidak valid (YYYY-MM-DD)")
 	}
 
+	oldCategory := de.Category
+	oldTimeSlot := de.TimeSlot
+	oldAgeGroup := de.AgeGroup
+	categoryChanged := oldCategory != req.Category
+	// Untuk premium: perubahan time_slot/age_group juga perlu sync SPD
+	spdChanged := req.Category == "premium" && (oldTimeSlot != req.TimeSlot || oldAgeGroup != req.AgeGroup)
+	needsSync := categoryChanged || spdChanged
+
+	// Tentukan enrollment_type untuk premium SEBELUM update DB
+	// (HasPremiumHistory harus dicek sebelum enrollment disimpan sebagai premium)
+	var enrollmentType string
+	if categoryChanged && req.Category == "premium" {
+		enrollmentType = req.EnrollmentType
+		if enrollmentType == "" {
+			hasHistory, _ := s.daycareRepo.HasPremiumHistory(de.StudentID)
+			if hasHistory {
+				enrollmentType = "lanjutan"
+			} else {
+				enrollmentType = "baru"
+			}
+		}
+	}
+
 	de.StudentID = req.StudentID
 	de.AcademicYearID = req.AcademicYearID
 	de.Category = req.Category
@@ -200,6 +223,44 @@ func (s *daycareEnrollmentService) Update(id uint, req dto.CreateDaycareEnrollme
 
 	if err := s.daycareRepo.Update(de); err != nil {
 		return nil, err
+	}
+
+	// Handle perubahan yg mempengaruhi SPD: sync invoices accordingly
+	if needsSync && s.invoiceGen != nil {
+		fromMonth := uint(startDate.Month())
+		fromYear := uint(startDate.Year())
+
+		// Hapus item daycare dari invoice bulanan ke depan (regular/meal/premium)
+		if err := s.invoiceGen.RemoveDaycareFromFutureInvoices(de.StudentID, fromMonth, fromYear); err != nil {
+			return nil, fmt.Errorf("gagal menghapus tagihan daycare lama: %w", err)
+		}
+
+		if req.Category == "premium" {
+			// Inject premium SPD ke invoice bulanan
+			if err := s.invoiceGen.InjectPremiumDaycareToMonthlyInvoices(*de); err != nil {
+				return nil, err
+			}
+
+			// Generate initial invoice (Biaya Awal) hanya untuk premium baru (category changed)
+			if categoryChanged && enrollmentType == "baru" {
+				student, _ := s.studentRepo.FindByID(de.StudentID)
+				gender := "all"
+				if student != nil {
+					gender = student.Gender
+				}
+				if err := s.invoiceGen.GenerateDaycareInitial(dto.GenerateInitialInvoiceParams{
+					StudentID:      de.StudentID,
+					AcademicYearID: de.AcademicYearID,
+					Level:          "all",
+					Gender:         gender,
+					CreatedBy:      de.CreatedBy,
+				}); err != nil {
+					return nil, err
+				}
+			}
+		}
+		// Jika pindah ke regular: RemoveDaycareFromFutureInvoices sudah cukup
+		// (item regular akan ditambahkan via GenerateDaycareMonthlyInvoices berbasis absensi)
 	}
 
 	savedDe, err := s.daycareRepo.FindByID(de.ID)

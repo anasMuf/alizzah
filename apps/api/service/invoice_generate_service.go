@@ -534,8 +534,8 @@ func (s *invoiceGenerateService) GenerateDaycareInitial(params dto.GenerateIniti
 	var count int64
 	s.db.Table("invoice_items").
 		Joins("JOIN invoices ON invoices.id = invoice_items.invoice_id").
-		Where("invoices.student_id = ? AND invoices.academic_year_id = ? AND invoice_items.category = ?",
-			params.StudentID, params.AcademicYearID, "daycare").
+		Where("invoices.student_id = ? AND invoices.academic_year_id = ? AND invoice_items.category = ? AND invoices.type IN ?",
+			params.StudentID, params.AcademicYearID, "daycare", []string{"initial", "daycare_initial"}).
 		Count(&count)
 	if count > 0 {
 		return nil // idempotent
@@ -1143,6 +1143,10 @@ func (s *invoiceGenerateService) InjectPremiumDaycareToMonthlyInvoices(de model.
 		if *inv.Year < startYear || (*inv.Year == startYear && *inv.Month < startMonth) {
 			continue
 		}
+
+		// Hapus item daycare lama (unpaid) sebelum inject SPD baru — mencegah akumulasi
+		// jika time_slot/age_group berubah tanpa melalui Update (misal: SyncDaycareMonthlyInvoices)
+		s.invoiceItemRepo.DeleteUnpaidByInvoiceAndCategory(inv.ID, "daycare")
 
 		// SPD (flat dari enrollment)
 		if err := s.addDaycareItemToInvoice(inv.ID, spdItem.Name, spdItem.Amount, nil, nil); err != nil {

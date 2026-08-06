@@ -52,6 +52,7 @@ export const Route = createFileRoute("/_authenticated/administrasi/daycare/")({
 				? Number.parseInt(params.page, 10) || 1
 				: undefined) as number | undefined,
 		search: typeof params.search === "string" ? params.search : undefined,
+		status: typeof params.status === "string" ? params.status : undefined,
 	}),
 });
 
@@ -91,6 +92,7 @@ function EnrollmentTab() {
 	const page = searchParams.page ?? 1;
 	const limit = 10;
 	const searchInput = searchParams.search ?? "";
+	const statusFilter = searchParams.status ?? "active"; // default: aktif
 
 	const [debouncedSearch, setDebouncedSearch] = useState(searchInput);
 	useEffect(() => {
@@ -135,11 +137,13 @@ function EnrollmentTab() {
 			page,
 			limit,
 			search: debouncedSearch,
+			status: statusFilter !== "all" ? statusFilter : undefined,
 		},
 		{ query: { enabled: !!activeAy?.id, keepPreviousData: true } as any },
 	);
 	const enrollments = (response?.data as any)?.data || [];
 	const meta = (response?.data as any)?.meta;
+	const totalPages = meta?.total ? Math.ceil(meta.total / limit) : 0;
 
 	const updateStatusMutation = usePatchV1DaycareEnrollmentsIdStatus({
 		mutation: {
@@ -298,7 +302,7 @@ function EnrollmentTab() {
 				</div>
 			</div>
 
-			<div className="bg-white p-4 rounded-xl shadow-sm ring-1 ring-gray-900/5 flex gap-4">
+			<div className="bg-white p-4 rounded-xl shadow-sm ring-1 ring-gray-900/5 flex gap-4 items-center">
 				<div className="relative w-full sm:max-w-xs">
 					<div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
 						<Search className="h-4 w-4 text-gray-400" />
@@ -311,6 +315,15 @@ function EnrollmentTab() {
 						onChange={(e) => updateSearch({ search: e.target.value, page: 1 })}
 					/>
 				</div>
+				<select
+					value={statusFilter}
+					onChange={(e) => updateSearch({ status: e.target.value, page: 1 })}
+					className="rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-gray-300 text-sm"
+				>
+					<option value="all">Semua Status</option>
+					<option value="active">Aktif</option>
+					<option value="inactive">Nonaktif</option>
+				</select>
 			</div>
 
 			{isLoading ? (
@@ -440,7 +453,7 @@ function EnrollmentTab() {
 							))}
 						</tbody>
 					</table>
-					{meta?.total_pages > 1 && (
+					{totalPages > 1 && (
 						<div className="flex justify-between px-4 py-3 border-t">
 							<button
 								disabled={page === 1}
@@ -450,10 +463,10 @@ function EnrollmentTab() {
 								&laquo; Prev
 							</button>
 							<span className="text-sm text-gray-500">
-								Halaman {page} dari {meta.total_pages}
+								Halaman {page} dari {totalPages}
 							</span>
 							<button
-								disabled={page === meta.total_pages}
+								disabled={page === totalPages}
 								onClick={() => updateSearch({ page: page + 1 })}
 								className="text-sm text-indigo-600 disabled:text-gray-300"
 							>
@@ -585,6 +598,8 @@ function AttendanceTab() {
 
 	// Sync monthly attendance data into local state on initial load or month/year change
 	useEffect(() => {
+		// Skip if enrollments haven't loaded yet
+		if (enrollments.length === 0) return;
 		if (!monthlyData) return;
 		// Skip if already synced for this month/year (prevents overwriting user input)
 		if (

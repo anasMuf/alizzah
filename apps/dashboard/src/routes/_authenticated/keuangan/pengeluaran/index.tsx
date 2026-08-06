@@ -83,19 +83,6 @@ function PengeluaranListPage() {
 	const expenses: any[] = (expensesData?.data as any)?.data || [];
 	const meta = (expensesData?.data as any)?.meta;
 
-	const categoryMap = useMemo(() => {
-		const map: Record<number, { parentName: string; childName: string }> = {};
-		categories.forEach((parent: any) => {
-			if (parent.children) {
-				parent.children.forEach((child: any) => {
-					map[child.id] = { parentName: parent.name, childName: child.name };
-				});
-			}
-			map[parent.id] = { parentName: parent.name, childName: "" };
-		});
-		return map;
-	}, [categories]);
-
 	const filteredExpenses = useMemo(() => {
 		if (!search) return expenses;
 		const q = search.toLowerCase();
@@ -143,21 +130,12 @@ function PengeluaranListPage() {
 	});
 
 	const getCategoryLabel = (expense: any) => {
-		const catId = expense.expense_category_id;
-		const mapped = categoryMap[catId];
-		if (mapped) {
-			return mapped.childName
-				? `${mapped.parentName} > ${mapped.childName}`
-				: mapped.parentName;
+		const cat = expense.category;
+		if (!cat) return "-";
+		if (cat.parent_name) {
+			return `${cat.parent_name} > ${cat.name}`;
 		}
-		if (expense.expense_category) {
-			const cat = expense.expense_category;
-			if (cat.parent) {
-				return `${cat.parent.name} > ${cat.name}`;
-			}
-			return cat.name;
-		}
-		return "-";
+		return cat.name;
 	};
 
 	return (
@@ -297,32 +275,29 @@ function PengeluaranListPage() {
 									<tr>
 										<th
 											scope="col"
-											className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6 w-16"
+											className="py-2 pl-4 pr-2 text-left text-xs font-semibold text-gray-900 sm:pl-6 w-10"
 										>
 											#
 										</th>
 										<th
 											scope="col"
-											className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+											className="px-2 py-2 text-left text-xs font-semibold text-gray-900"
 										>
 											Tanggal
 										</th>
 										<th
 											scope="col"
-											className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+											className="px-2 py-2 text-left text-xs font-semibold text-gray-900"
 										>
 											Kategori
 										</th>
 										<th
 											scope="col"
-											className="px-3 py-3.5 text-right text-sm font-semibold text-gray-900"
+											className="px-2 py-2 text-right text-xs font-semibold text-gray-900"
 										>
 											Nominal
 										</th>
-										<th
-											scope="col"
-											className="relative py-3.5 pl-3 pr-4 sm:pr-6"
-										>
+										<th scope="col" className="relative py-2 pl-2 pr-4 sm:pr-6">
 											<span className="sr-only">Aksi</span>
 										</th>
 									</tr>
@@ -331,20 +306,20 @@ function PengeluaranListPage() {
 									{isLoading ? (
 										Array.from({ length: 5 }).map((_, i) => (
 											<tr key={i}>
-												<td className="py-4 pl-4 pr-3 sm:pl-6">
-													<div className="h-4 w-6 bg-gray-200 rounded animate-pulse" />
+												<td className="py-2 pl-4 pr-2 sm:pl-6">
+													<div className="h-3.5 w-5 bg-gray-200 rounded animate-pulse" />
 												</td>
-												<td className="px-3 py-4">
-													<div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+												<td className="px-2 py-2">
+													<div className="h-3.5 w-20 bg-gray-200 rounded animate-pulse" />
 												</td>
-												<td className="px-3 py-4">
-													<div className="h-4 w-40 bg-gray-200 rounded animate-pulse" />
+												<td className="px-2 py-2">
+													<div className="h-3.5 w-32 bg-gray-200 rounded animate-pulse" />
 												</td>
-												<td className="px-3 py-4 text-right">
-													<div className="h-4 w-24 bg-gray-200 rounded animate-pulse ml-auto" />
+												<td className="px-2 py-2 text-right">
+													<div className="h-3.5 w-20 bg-gray-200 rounded animate-pulse ml-auto" />
 												</td>
-												<td className="py-4 pl-3 pr-4 sm:pr-6">
-													<div className="h-4 w-12 bg-gray-200 rounded animate-pulse ml-auto" />
+												<td className="py-2 pl-2 pr-4 sm:pr-6">
+													<div className="h-3.5 w-10 bg-gray-200 rounded animate-pulse ml-auto" />
 												</td>
 											</tr>
 										))
@@ -368,24 +343,24 @@ function PengeluaranListPage() {
 									) : (
 										filteredExpenses.map((expense: any, index: number) => (
 											<tr key={expense.id} className="hover:bg-gray-50 group">
-												<td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+												<td className="whitespace-nowrap py-2 pl-4 pr-2 text-sm font-medium text-gray-900 sm:pl-6">
 													{(page - 1) * 20 + index + 1}
 												</td>
-												<td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+												<td className="whitespace-nowrap px-2 py-2 text-sm text-gray-500">
 													{formatDate(expense.expense_date)}
 												</td>
-												<td className="px-3 py-4 text-sm text-gray-900">
+												<td className="px-2 py-2 text-sm text-gray-900">
 													{getCategoryLabel(expense)}
 													{expense.description && (
-														<div className="text-xs text-gray-500 mt-1 truncate max-w-xs">
+														<div className="text-xs text-gray-500 mt-0.5 truncate max-w-xs">
 															{expense.description}
 														</div>
 													)}
 												</td>
-												<td className="whitespace-nowrap px-3 py-4 text-sm font-semibold text-gray-900 text-right">
+												<td className="whitespace-nowrap px-2 py-2 text-sm font-semibold text-gray-900 text-right">
 													{formatCurrency(Number(expense.amount))}
 												</td>
-												<td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+												<td className="relative whitespace-nowrap py-2 pl-2 pr-4 text-right text-sm font-medium sm:pr-6">
 													<div className="flex gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
 														<Link
 															to="/keuangan/pengeluaran/$id"

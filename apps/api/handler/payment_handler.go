@@ -33,6 +33,7 @@ func NewPaymentHandler(service service.PaymentService) *PaymentHandler {
 // @Param        source            query   string  false  "Payment Source (cash/savings)"
 // @Param        start_date        query   string  false  "Start Date (YYYY-MM-DD)"
 // @Param        end_date          query   string  false  "End Date (YYYY-MM-DD)"
+// @Param        search            query   string  false  "Search by student name"
 // @Success      200               {object}  dto.PaginatedResponse{data=[]dto.PaymentListResponse}
 // @Failure      401               {object}  dto.ErrorResponse
 // @Failure      403               {object}  dto.ErrorResponse
@@ -49,6 +50,7 @@ func (h *PaymentHandler) List(c echo.Context) error {
 		StartDate:      c.QueryParam("start_date"),
 		EndDate:        c.QueryParam("end_date"),
 		Source:         c.QueryParam("source"),
+		Search:         c.QueryParam("search"),
 		Page:           page,
 		Limit:          limit,
 	}

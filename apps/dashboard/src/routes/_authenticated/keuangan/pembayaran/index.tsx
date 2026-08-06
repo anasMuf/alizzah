@@ -1,7 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
-import { ChevronRight, Filter, Plus, Receipt } from "lucide-react";
+import { ChevronRight, Filter, Plus, Receipt, Search } from "lucide-react";
 import { useCallback } from "react";
+import { useDebounce } from "use-debounce";
 import { useGetV1Payments } from "#/api/endpoints/payments/payments";
 import type { DtoPaymentListResponse } from "#/api/model/dtoPaymentListResponse";
 import { Badge, Button, Pagination } from "#/components/ui";
@@ -16,6 +17,7 @@ export const Route = createFileRoute("/_authenticated/keuangan/pembayaran/")({
 		start_date:
 			typeof search.start_date === "string" ? search.start_date : undefined,
 		end_date: typeof search.end_date === "string" ? search.end_date : undefined,
+		search: typeof search.search === "string" ? search.search : undefined,
 		page: (typeof search.page === "number"
 			? search.page
 			: typeof search.page === "string"
@@ -32,7 +34,10 @@ function PembayaranListPage() {
 	const source = searchParams.source ?? "";
 	const start_date = searchParams.start_date ?? "";
 	const end_date = searchParams.end_date ?? "";
+	const search = searchParams.search ?? "";
 	const page = searchParams.page ?? 1;
+
+	const [debouncedSearch] = useDebounce(search, 500);
 
 	const updateSearch = useCallback(
 		(updates: Partial<typeof searchParams>) => {
@@ -51,6 +56,7 @@ function PembayaranListPage() {
 			page,
 			limit: 20,
 			academic_year_id: activeAy?.id,
+			...(debouncedSearch ? { search: debouncedSearch } : {}),
 			...(source ? { source } : {}),
 			...(start_date ? { start_date } : {}),
 			...(end_date ? { end_date } : {}),
@@ -104,6 +110,30 @@ function PembayaranListPage() {
 			{/* Filters */}
 			<div className="bg-white p-4 rounded-xl shadow-sm ring-1 ring-gray-900/5 space-y-4">
 				<div className="flex flex-wrap gap-4 items-end">
+					<div className="w-full sm:w-auto flex-1 min-w-[200px]">
+						<label
+							htmlFor="search-input"
+							className="block text-sm font-medium leading-6 text-gray-900 mb-1"
+						>
+							Pencarian (Nama)
+						</label>
+						<div className="relative rounded-md shadow-sm">
+							<div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+								<Search className="h-5 w-5 text-gray-400" />
+							</div>
+							<input
+								id="search-input"
+								type="text"
+								className="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+								placeholder="Cari nama siswa..."
+								value={search}
+								onChange={(e) =>
+									updateSearch({ search: e.target.value, page: 1 })
+								}
+							/>
+						</div>
+					</div>
+
 					<div className="w-full sm:w-auto">
 						<label className="block text-sm font-medium leading-6 text-gray-900 mb-1">
 							Sumber Dana

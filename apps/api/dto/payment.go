@@ -7,6 +7,7 @@ type PaymentQueryParams struct {
 	StartDate      string
 	EndDate        string
 	Source         string
+	Search         string
 	Page           int
 	Limit          int
 }

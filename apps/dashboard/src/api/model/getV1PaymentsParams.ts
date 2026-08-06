@@ -35,4 +35,8 @@ export type GetV1PaymentsParams = {
 	 * End Date (YYYY-MM-DD)
 	 */
 	end_date?: string;
+	/**
+	 * Search by student name
+	 */
+	search?: string;
 };

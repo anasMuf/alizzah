@@ -539,37 +539,24 @@ function DetailTagihanPage() {
 						</div>
 						{!isPaid && (
 							<div className="mt-2 flex gap-2 justify-end">
-								<button
-									type="button"
-									className={`text-xs flex items-center font-medium ${itemPaid > 0 ? "text-gray-400 cursor-not-allowed" : "text-indigo-600 hover:text-indigo-800"}`}
-									onClick={() => handleOpenEditItem(item)}
-									disabled={itemPaid > 0}
-									title={
-										itemPaid > 0
-											? "Item sudah sebagian dibayar, tidak dapat diedit"
-											: ""
-									}
-								>
-									<Edit2 className="w-3 h-3 mr-1" /> Edit
-								</button>
-								<button
-									type="button"
-									className={`text-xs flex items-center font-medium ${itemPaid > 0 || item.is_mandatory ? "text-gray-400 cursor-not-allowed" : "text-rose-600 hover:text-rose-800"}`}
-									onClick={() => {
-										if (itemPaid === 0 && !item.is_mandatory)
-											setDeletingItem(item);
-									}}
-									disabled={itemPaid > 0 || item.is_mandatory}
-									title={
-										item.is_mandatory
-											? "Item wajib tidak dapat dihapus"
-											: itemPaid > 0
-												? "Item sudah sebagian dibayar"
-												: ""
-									}
-								>
-									<Trash2 className="w-3 h-3 mr-1" /> Hapus
-								</button>
+								{itemPaid === 0 && (
+									<button
+										type="button"
+										className="text-xs flex items-center font-medium text-indigo-600 hover:text-indigo-800"
+										onClick={() => handleOpenEditItem(item)}
+									>
+										<Edit2 className="w-3 h-3 mr-1" /> Edit
+									</button>
+								)}
+								{itemPaid === 0 && !item.is_mandatory && (
+									<button
+										type="button"
+										className="text-xs flex items-center font-medium text-rose-600 hover:text-rose-800"
+										onClick={() => setDeletingItem(item)}
+									>
+										<Trash2 className="w-3 h-3 mr-1" /> Hapus
+									</button>
+								)}
 							</div>
 						)}
 					</div>
@@ -804,17 +791,17 @@ function DetailTagihanPage() {
 					<Button variant="secondary" onClick={handlePrint}>
 						<Printer className="w-4 h-4 mr-2" /> Cetak Tagihan
 					</Button>
-					<Link
-						to="/keuangan/pembayaran/baru"
-						search={{
-							student_id: invoice.student?.id,
-							invoice_id: invoice.id,
-						}}
-					>
-						<Button variant="primary" disabled={invoice.status === "paid"}>
-							+ Catat Pembayaran
-						</Button>
-					</Link>
+					{invoice.status !== "paid" && (
+						<Link
+							to="/keuangan/pembayaran/baru"
+							search={{
+								student_id: invoice.student?.id,
+								invoice_id: invoice.id,
+							}}
+						>
+							<Button variant="primary">+ Catat Pembayaran</Button>
+						</Link>
+					)}
 				</div>
 			</div>
 

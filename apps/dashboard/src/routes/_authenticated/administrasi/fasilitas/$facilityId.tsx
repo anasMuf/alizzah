@@ -438,13 +438,11 @@ function FacilityDetailPage() {
 						<Bus className="w-5 h-5 text-indigo-600" />
 					</div>
 					<div>
-						<h2 className="text-2xl font-bold leading-7 text-gray-900">
+						<h1 className="text-2xl font-bold text-gray-900">
 							{facility.name}
-						</h2>
+						</h1>
 						{facility.description && (
-							<p className="mt-0.5 text-sm text-gray-500">
-								{facility.description}
-							</p>
+							<p className="text-sm text-gray-500">{facility.description}</p>
 						)}
 					</div>
 					<Badge variant={facility.is_active ? "success" : "secondary"}>
@@ -454,7 +452,7 @@ function FacilityDetailPage() {
 			</div>
 
 			{/* Zone / Package Management */}
-			<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-6">
+			<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-4">
 				<div className="flex items-center justify-between mb-4">
 					<h3 className="text-base font-semibold text-gray-900">
 						Zona / Paket Harga
@@ -535,9 +533,11 @@ function FacilityDetailPage() {
 				</div>
 
 				{/* Filter bar */}
-				<div className="flex items-center gap-3 mb-4">
-					<div className="relative flex-1 max-w-sm">
-						<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+				<div className="bg-white p-4 rounded-xl shadow-sm ring-1 ring-gray-900/5 flex gap-4 mb-4">
+					<div className="relative w-full sm:max-w-xs">
+						<div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+							<Search className="h-5 w-5 text-gray-400" />
+						</div>
 						<input
 							type="text"
 							value={searchInput}
@@ -546,7 +546,7 @@ function FacilityDetailPage() {
 								if (e.key === "Enter") handleSearch();
 							}}
 							placeholder="Cari nama siswa..."
-							className="block w-full rounded-md border-0 py-1.5 pl-10 pr-4 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
+							className="block w-full rounded-md border-0 py-2 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						/>
 					</div>
 					<Button variant="secondary" onClick={handleSearch}>
@@ -580,23 +580,23 @@ function FacilityDetailPage() {
 						}
 					/>
 				) : (
-					<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden">
-						<table className="min-w-full divide-y divide-gray-300">
+					<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-x-auto">
+						<table className="min-w-full divide-y divide-gray-200">
 							<thead className="bg-gray-50">
 								<tr>
-									<th className="py-3 pl-6 pr-3 text-left text-sm font-semibold text-gray-900">
+									<th className="py-3 px-4 text-left text-xs font-semibold text-gray-900">
 										Nama
 									</th>
-									<th className="px-3 py-3 text-left text-sm font-semibold text-gray-900">
+									<th className="py-3 px-4 text-left text-xs font-semibold text-gray-900">
 										Zona / Paket
 									</th>
-									<th className="px-3 py-3 text-left text-sm font-semibold text-gray-900">
+									<th className="py-3 px-4 text-left text-xs font-semibold text-gray-900">
 										Mulai
 									</th>
-									<th className="px-3 py-3 text-center text-sm font-semibold text-gray-900">
+									<th className="py-3 px-4 text-center text-xs font-semibold text-gray-900">
 										Status
 									</th>
-									<th className="px-3 py-3 text-right text-sm font-semibold text-gray-900 pr-6">
+									<th className="py-3 px-4 text-right text-xs font-semibold text-gray-900">
 										Aksi
 									</th>
 								</tr>
@@ -604,7 +604,7 @@ function FacilityDetailPage() {
 							<tbody className="divide-y divide-gray-100">
 								{studentsData.map((sf) => (
 									<tr key={sf.id} className="hover:bg-gray-50">
-										<td className="py-3 pl-6 pr-3">
+										<td className="py-3 px-4">
 											<div className="text-sm font-medium text-gray-900">
 												{sf.student?.full_name}
 											</div>
@@ -612,7 +612,7 @@ function FacilityDetailPage() {
 												{sf.student?.gender === "L" ? "Laki-laki" : "Perempuan"}
 											</div>
 										</td>
-										<td className="px-3 py-3 text-sm text-gray-500">
+										<td className="py-3 px-4 text-sm text-gray-500">
 											{editingEnrollmentId === sf.id ? (
 												<div className="flex items-center gap-1">
 													<select
@@ -669,10 +669,10 @@ function FacilityDetailPage() {
 												</span>
 											)}
 										</td>
-										<td className="px-3 py-3 text-sm text-gray-500">
+										<td className="py-3 px-4 text-sm text-gray-500">
 											{sf.start_date ? formatDate(sf.start_date) : "-"}
 										</td>
-										<td className="px-3 py-3 text-sm text-center">
+										<td className="py-3 px-4 text-sm text-center">
 											<span
 												className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
 													sf.end_date
@@ -683,7 +683,7 @@ function FacilityDetailPage() {
 												{sf.end_date ? "Berhenti" : "Aktif"}
 											</span>
 										</td>
-										<td className="px-3 py-3 text-right pr-6">
+										<td className="py-3 px-4 text-right">
 											{!sf.end_date && (
 												<button
 													type="button"

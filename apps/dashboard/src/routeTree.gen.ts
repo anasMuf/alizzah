@@ -77,6 +77,7 @@ import { Route as AuthenticatedAdministrasiSiklusKeluarRouteImport } from './rou
 import { Route as AuthenticatedAdministrasiRombelHariEfektifJenjangRouteImport } from './routes/_authenticated/administrasi/rombel/hari-efektif-jenjang'
 import { Route as AuthenticatedAdministrasiRombelHariEfektifGridRouteImport } from './routes/_authenticated/administrasi/rombel/hari-efektif-grid'
 import { Route as AuthenticatedAdministrasiRombelBaruRouteImport } from './routes/_authenticated/administrasi/rombel/baru'
+import { Route as AuthenticatedAdministrasiFasilitasFacilityIdRouteImport } from './routes/_authenticated/administrasi/fasilitas/$facilityId'
 import { Route as AuthenticatedAdministrasiEkskulIdRouteImport } from './routes/_authenticated/administrasi/ekskul/$id'
 import { Route as AuthenticatedAdministrasiDaycareBaruRouteImport } from './routes/_authenticated/administrasi/daycare/baru'
 import { Route as AuthenticatedKeuanganKasTutupBukuIndexRouteImport } from './routes/_authenticated/keuangan/kas/tutup-buku/index'
@@ -501,6 +502,12 @@ const AuthenticatedAdministrasiRombelBaruRoute =
     path: '/rombel/baru',
     getParentRoute: () => AuthenticatedAdministrasiRoute,
   } as any)
+const AuthenticatedAdministrasiFasilitasFacilityIdRoute =
+  AuthenticatedAdministrasiFasilitasFacilityIdRouteImport.update({
+    id: '/fasilitas/$facilityId',
+    path: '/fasilitas/$facilityId',
+    getParentRoute: () => AuthenticatedAdministrasiRoute,
+  } as any)
 const AuthenticatedAdministrasiEkskulIdRoute =
   AuthenticatedAdministrasiEkskulIdRouteImport.update({
     id: '/ekskul/$id',
@@ -654,6 +661,7 @@ export interface FileRoutesByFullPath {
   '/koperasi/': typeof AuthenticatedKoperasiIndexRoute
   '/administrasi/daycare/baru': typeof AuthenticatedAdministrasiDaycareBaruRoute
   '/administrasi/ekskul/$id': typeof AuthenticatedAdministrasiEkskulIdRoute
+  '/administrasi/fasilitas/$facilityId': typeof AuthenticatedAdministrasiFasilitasFacilityIdRoute
   '/administrasi/rombel/baru': typeof AuthenticatedAdministrasiRombelBaruRoute
   '/administrasi/rombel/hari-efektif-grid': typeof AuthenticatedAdministrasiRombelHariEfektifGridRoute
   '/administrasi/rombel/hari-efektif-jenjang': typeof AuthenticatedAdministrasiRombelHariEfektifJenjangRoute
@@ -743,6 +751,7 @@ export interface FileRoutesByTo {
   '/koperasi': typeof AuthenticatedKoperasiIndexRoute
   '/administrasi/daycare/baru': typeof AuthenticatedAdministrasiDaycareBaruRoute
   '/administrasi/ekskul/$id': typeof AuthenticatedAdministrasiEkskulIdRoute
+  '/administrasi/fasilitas/$facilityId': typeof AuthenticatedAdministrasiFasilitasFacilityIdRoute
   '/administrasi/rombel/baru': typeof AuthenticatedAdministrasiRombelBaruRoute
   '/administrasi/rombel/hari-efektif-grid': typeof AuthenticatedAdministrasiRombelHariEfektifGridRoute
   '/administrasi/rombel/hari-efektif-jenjang': typeof AuthenticatedAdministrasiRombelHariEfektifJenjangRoute
@@ -835,6 +844,7 @@ export interface FileRoutesById {
   '/_authenticated/koperasi/': typeof AuthenticatedKoperasiIndexRoute
   '/_authenticated/administrasi/daycare/baru': typeof AuthenticatedAdministrasiDaycareBaruRoute
   '/_authenticated/administrasi/ekskul/$id': typeof AuthenticatedAdministrasiEkskulIdRoute
+  '/_authenticated/administrasi/fasilitas/$facilityId': typeof AuthenticatedAdministrasiFasilitasFacilityIdRoute
   '/_authenticated/administrasi/rombel/baru': typeof AuthenticatedAdministrasiRombelBaruRoute
   '/_authenticated/administrasi/rombel/hari-efektif-grid': typeof AuthenticatedAdministrasiRombelHariEfektifGridRoute
   '/_authenticated/administrasi/rombel/hari-efektif-jenjang': typeof AuthenticatedAdministrasiRombelHariEfektifJenjangRoute
@@ -928,6 +938,7 @@ export interface FileRouteTypes {
     | '/koperasi/'
     | '/administrasi/daycare/baru'
     | '/administrasi/ekskul/$id'
+    | '/administrasi/fasilitas/$facilityId'
     | '/administrasi/rombel/baru'
     | '/administrasi/rombel/hari-efektif-grid'
     | '/administrasi/rombel/hari-efektif-jenjang'
@@ -1017,6 +1028,7 @@ export interface FileRouteTypes {
     | '/koperasi'
     | '/administrasi/daycare/baru'
     | '/administrasi/ekskul/$id'
+    | '/administrasi/fasilitas/$facilityId'
     | '/administrasi/rombel/baru'
     | '/administrasi/rombel/hari-efektif-grid'
     | '/administrasi/rombel/hari-efektif-jenjang'
@@ -1108,6 +1120,7 @@ export interface FileRouteTypes {
     | '/_authenticated/koperasi/'
     | '/_authenticated/administrasi/daycare/baru'
     | '/_authenticated/administrasi/ekskul/$id'
+    | '/_authenticated/administrasi/fasilitas/$facilityId'
     | '/_authenticated/administrasi/rombel/baru'
     | '/_authenticated/administrasi/rombel/hari-efektif-grid'
     | '/_authenticated/administrasi/rombel/hari-efektif-jenjang'
@@ -1664,6 +1677,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdministrasiRombelBaruRouteImport
       parentRoute: typeof AuthenticatedAdministrasiRoute
     }
+    '/_authenticated/administrasi/fasilitas/$facilityId': {
+      id: '/_authenticated/administrasi/fasilitas/$facilityId'
+      path: '/fasilitas/$facilityId'
+      fullPath: '/administrasi/fasilitas/$facilityId'
+      preLoaderRoute: typeof AuthenticatedAdministrasiFasilitasFacilityIdRouteImport
+      parentRoute: typeof AuthenticatedAdministrasiRoute
+    }
     '/_authenticated/administrasi/ekskul/$id': {
       id: '/_authenticated/administrasi/ekskul/$id'
       path: '/ekskul/$id'
@@ -1858,6 +1878,7 @@ interface AuthenticatedAdministrasiRouteChildren {
   AuthenticatedAdministrasiTahunAjaranRoute: typeof AuthenticatedAdministrasiTahunAjaranRoute
   AuthenticatedAdministrasiDaycareBaruRoute: typeof AuthenticatedAdministrasiDaycareBaruRoute
   AuthenticatedAdministrasiEkskulIdRoute: typeof AuthenticatedAdministrasiEkskulIdRoute
+  AuthenticatedAdministrasiFasilitasFacilityIdRoute: typeof AuthenticatedAdministrasiFasilitasFacilityIdRoute
   AuthenticatedAdministrasiRombelBaruRoute: typeof AuthenticatedAdministrasiRombelBaruRoute
   AuthenticatedAdministrasiRombelHariEfektifGridRoute: typeof AuthenticatedAdministrasiRombelHariEfektifGridRoute
   AuthenticatedAdministrasiRombelHariEfektifJenjangRoute: typeof AuthenticatedAdministrasiRombelHariEfektifJenjangRoute
@@ -1887,6 +1908,8 @@ const AuthenticatedAdministrasiRouteChildren: AuthenticatedAdministrasiRouteChil
       AuthenticatedAdministrasiDaycareBaruRoute,
     AuthenticatedAdministrasiEkskulIdRoute:
       AuthenticatedAdministrasiEkskulIdRoute,
+    AuthenticatedAdministrasiFasilitasFacilityIdRoute:
+      AuthenticatedAdministrasiFasilitasFacilityIdRoute,
     AuthenticatedAdministrasiRombelBaruRoute:
       AuthenticatedAdministrasiRombelBaruRoute,
     AuthenticatedAdministrasiRombelHariEfektifGridRoute:

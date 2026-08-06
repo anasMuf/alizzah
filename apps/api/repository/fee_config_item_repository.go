@@ -63,7 +63,10 @@ func (r *feeConfigItemRepository) FindByID(id uint) (*model.FeeConfigItem, error
 func (r *feeConfigItemRepository) FindByItemKey(feeConfigID uint, itemKey, level, gender string) (*model.FeeConfigItem, error) {
 	var item model.FeeConfigItem
 	err := r.db.Where("fee_config_id = ? AND item_key = ? AND level = ? AND gender = ?", feeConfigID, itemKey, level, gender).First(&item).Error
-	return &item, err
+	if err != nil {
+		return nil, err
+	}
+	return &item, nil
 }
 
 func (r *feeConfigItemRepository) FindByCategory(feeConfigID uint, category string) ([]model.FeeConfigItem, error) {

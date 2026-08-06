@@ -113,6 +113,43 @@ func (h *FacilityHandler) Delete(c echo.Context) error {
 	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil menghapus fasilitas"})
 }
 
+// ListStudents godoc
+// @Summary      List students enrolled in a facility
+// @Tags         facilities
+// @Security     ApiKeyAuth
+// @Param        id                path  int   true   "Facility ID"
+// @Param        academic_year_id  query int   false  "Academic Year ID"
+// @Param        search            query string false "Search by student name"
+// @Param        page              query int   false  "Page (default 1)"
+// @Param        limit             query int   false  "Limit (default 20)"
+// @Success      200  {object}  dto.SuccessResponse{data=dto.PaginatedFacilityStudentResponse}
+// @Router       /v1/facilities/{id}/students [get]
+func (h *FacilityHandler) ListStudents(c echo.Context) error {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: "ID tidak valid"})
+	}
+
+	ayID, _ := strconv.Atoi(c.QueryParam("academic_year_id"))
+	page, _ := strconv.Atoi(c.QueryParam("page"))
+	limit, _ := strconv.Atoi(c.QueryParam("limit"))
+
+	params := dto.FacilityStudentQueryParams{
+		AcademicYearID: uint(ayID),
+		Search:         c.QueryParam("search"),
+		Page:           page,
+		Limit:          limit,
+	}
+
+	result, err := h.sfService.GetStudentsByFacility(uint(id), params)
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{Status: status, Code: code, Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil mengambil daftar siswa", Data: result})
+}
+
 // ─── Student Facility ────────────────────────────────────────────────
 
 // ListByStudent godoc
@@ -170,6 +207,40 @@ func (h *FacilityHandler) Enroll(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusCreated, dto.SuccessResponse{Message: "Berhasil mendaftarkan siswa ke fasilitas", Data: sf})
+}
+
+// UpdateEnrollment godoc
+// @Summary      Update student facility enrollment (change zone/package)
+// @Tags         facilities
+// @Security     ApiKeyAuth
+// @Param        id          path  int                                true  "Student ID"
+// @Param        facilityId  path  int                                true  "Student Facility enrollment ID"
+// @Param        request     body  dto.UpdateStudentFacilityRequest   true  "Update enrollment"
+// @Success      200  {object}  dto.SuccessResponse{data=dto.StudentFacilityResponse}
+// @Router       /v1/students/{id}/facilities/{facilityId} [put]
+func (h *FacilityHandler) UpdateEnrollment(c echo.Context) error {
+	studentID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: "ID tidak valid"})
+	}
+
+	sfID, err := strconv.Atoi(c.Param("facilityId"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: "ID fasilitas tidak valid"})
+	}
+
+	var req dto.UpdateStudentFacilityRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: err.Error()})
+	}
+
+	sf, err := h.sfService.UpdateEnrollment(uint(studentID), uint(sfID), req)
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{Status: status, Code: code, Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil memperbarui fasilitas siswa", Data: sf})
 }
 
 // Unenroll godoc

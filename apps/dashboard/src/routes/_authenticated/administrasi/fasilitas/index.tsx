@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-import { Bus, Edit2, Plus, Trash2 } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Bus, Edit2, ExternalLink, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import {
 	getGetV1FacilitiesQueryKey,
@@ -184,6 +184,15 @@ function FasilitasPage() {
 									</td>
 									<td className="px-3 py-3 text-right pr-6">
 										<div className="flex gap-2 justify-end">
+											<Link
+												to="/administrasi/fasilitas/$facilityId"
+												params={{ facilityId: String(f.id) }}
+												search={{ page: undefined, search: undefined }}
+												className="text-gray-500 hover:text-indigo-600"
+												title="Lihat detail"
+											>
+												<ExternalLink className="w-4 h-4" />
+											</Link>
 											<button
 												type="button"
 												onClick={() => openEdit(f)}

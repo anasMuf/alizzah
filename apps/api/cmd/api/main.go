@@ -477,7 +477,7 @@ func main() {
 
 	// Facilities
 	facilityService := service.NewFacilityService(facilityRepo, fcRepo, fcItemRepo)
-	sfService := service.NewStudentFacilityService(sfRepo, studentRepo, facilityRepo, ayRepo, invoiceGenService)
+	sfService := service.NewStudentFacilityService(sfRepo, studentRepo, facilityRepo, ayRepo, fcItemRepo, invoiceGenService)
 	facilityHandler := handler.NewFacilityHandler(facilityService, sfService)
 
 	// Batch 7
@@ -569,6 +569,7 @@ func main() {
 	students.POST("/:id/dispensations", dispensationHandler.Create, guard.RequireModule(middleware.ModuleKeuangan))
 	students.GET("/:id/facilities", facilityHandler.ListByStudent, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.POST("/:id/facilities", facilityHandler.Enroll, guard.RequireModule(middleware.ModuleAdministrasi))
+	students.PUT("/:id/facilities/:facilityId", facilityHandler.UpdateEnrollment, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.DELETE("/:id/facilities/:facilityId", facilityHandler.Unenroll, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.GET("/:id/academic-events", eventHandler.GetByStudent, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.POST("/:id/regenerate-invoices", studentHandler.RegenerateInvoices, guard.RequireModule(middleware.ModuleAdministrasi))
@@ -723,6 +724,7 @@ func main() {
 	facilities.POST("", facilityHandler.Create, guard.RequireModule(middleware.ModuleAdministrasi))
 	facilities.PUT("/:id", facilityHandler.Update, guard.RequireModule(middleware.ModuleAdministrasi))
 	facilities.DELETE("/:id", facilityHandler.Delete, guard.RequireModule(middleware.ModuleAdministrasi))
+	facilities.GET("/:id/students", facilityHandler.ListStudents, guard.RequireModule(middleware.ModuleAdministrasi))
 
 	// Income Transactions (Dana Bantuan)
 	incomes := api.Group("/income-transactions", middleware.JWTAuth(tokenBlacklistRepo), guard.RequireModule(middleware.ModuleKeuangan))

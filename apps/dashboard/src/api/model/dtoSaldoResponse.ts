@@ -10,9 +10,12 @@ import type { DtoSaldoTotalBulan } from "./dtoSaldoTotalBulan";
 
 export interface DtoSaldoResponse {
 	academic_year?: string;
+	/** multiple selected categories */
+	categories?: string[];
 	category?: string;
+	date_from?: string;
+	date_to?: string;
 	month?: number;
-	/** hanya jika semua pos */
 	post_list?: string[];
 	post_name?: string;
 	rows?: DtoSaldoRow[];

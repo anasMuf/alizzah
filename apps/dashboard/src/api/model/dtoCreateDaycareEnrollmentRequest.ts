@@ -7,12 +7,15 @@
  */
 import type { DtoCreateDaycareEnrollmentRequestAgeGroup } from "./dtoCreateDaycareEnrollmentRequestAgeGroup";
 import type { DtoCreateDaycareEnrollmentRequestCategory } from "./dtoCreateDaycareEnrollmentRequestCategory";
+import type { DtoCreateDaycareEnrollmentRequestEnrollmentType } from "./dtoCreateDaycareEnrollmentRequestEnrollmentType";
 import type { DtoCreateDaycareEnrollmentRequestTimeSlot } from "./dtoCreateDaycareEnrollmentRequestTimeSlot";
 
 export interface DtoCreateDaycareEnrollmentRequest {
 	academic_year_id: number;
 	age_group: DtoCreateDaycareEnrollmentRequestAgeGroup;
 	category: DtoCreateDaycareEnrollmentRequestCategory;
+	/** hanya untuk premium */
+	enrollment_type?: DtoCreateDaycareEnrollmentRequestEnrollmentType;
 	start_date: string;
 	student_id: number;
 	time_slot: DtoCreateDaycareEnrollmentRequestTimeSlot;

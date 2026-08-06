@@ -27,6 +27,8 @@ import type {
 	DtoEnrollFacilityRequest,
 	DtoSuccessResponse,
 	GetV1Facilities200,
+	GetV1FacilitiesIdStudents200,
+	GetV1FacilitiesIdStudentsParams,
 	GetV1StudentsIdFacilities200,
 	GetV1StudentsIdFacilitiesParams,
 	PostV1Facilities201,
@@ -497,6 +499,223 @@ export const useDeleteV1FacilitiesId = <TError = unknown, TContext = unknown>(
 		queryClient,
 	);
 };
+export type getV1FacilitiesIdStudentsResponse200 = {
+	data: GetV1FacilitiesIdStudents200;
+	status: 200;
+};
+
+export type getV1FacilitiesIdStudentsResponseSuccess =
+	getV1FacilitiesIdStudentsResponse200 & {
+		headers: Headers;
+	};
+
+export type getV1FacilitiesIdStudentsResponse =
+	getV1FacilitiesIdStudentsResponseSuccess;
+
+export const getGetV1FacilitiesIdStudentsUrl = (
+	id: number,
+	params?: GetV1FacilitiesIdStudentsParams,
+) => {
+	const normalizedParams = new URLSearchParams();
+
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(key, value === null ? "null" : value.toString());
+		}
+	});
+
+	const stringifiedParams = normalizedParams.toString();
+
+	return stringifiedParams.length > 0
+		? `/v1/facilities/${id}/students?${stringifiedParams}`
+		: `/v1/facilities/${id}/students`;
+};
+
+/**
+ * @summary List students enrolled in a facility
+ */
+export const getV1FacilitiesIdStudents = async (
+	id: number,
+	params?: GetV1FacilitiesIdStudentsParams,
+	options?: RequestInit,
+): Promise<getV1FacilitiesIdStudentsResponse> => {
+	return customInstance<getV1FacilitiesIdStudentsResponse>(
+		getGetV1FacilitiesIdStudentsUrl(id, params),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
+
+export const getGetV1FacilitiesIdStudentsQueryKey = (
+	id: number,
+	params?: GetV1FacilitiesIdStudentsParams,
+) => {
+	return [
+		`/v1/facilities/${id}/students`,
+		...(params ? [params] : []),
+	] as const;
+};
+
+export const getGetV1FacilitiesIdStudentsQueryOptions = <
+	TData = Awaited<ReturnType<typeof getV1FacilitiesIdStudents>>,
+	TError = unknown,
+>(
+	id: number,
+	params?: GetV1FacilitiesIdStudentsParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1FacilitiesIdStudents>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
+
+	const queryKey =
+		queryOptions?.queryKey ?? getGetV1FacilitiesIdStudentsQueryKey(id, params);
+
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getV1FacilitiesIdStudents>>
+	> = ({ signal }) =>
+		getV1FacilitiesIdStudents(id, params, { signal, ...requestOptions });
+
+	return {
+		queryKey,
+		queryFn,
+		enabled: !!id,
+		...queryOptions,
+	} as UseQueryOptions<
+		Awaited<ReturnType<typeof getV1FacilitiesIdStudents>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetV1FacilitiesIdStudentsQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getV1FacilitiesIdStudents>>
+>;
+export type GetV1FacilitiesIdStudentsQueryError = unknown;
+
+export function useGetV1FacilitiesIdStudents<
+	TData = Awaited<ReturnType<typeof getV1FacilitiesIdStudents>>,
+	TError = unknown,
+>(
+	id: number,
+	params: undefined | GetV1FacilitiesIdStudentsParams,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1FacilitiesIdStudents>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1FacilitiesIdStudents>>,
+					TError,
+					Awaited<ReturnType<typeof getV1FacilitiesIdStudents>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1FacilitiesIdStudents<
+	TData = Awaited<ReturnType<typeof getV1FacilitiesIdStudents>>,
+	TError = unknown,
+>(
+	id: number,
+	params?: GetV1FacilitiesIdStudentsParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1FacilitiesIdStudents>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getV1FacilitiesIdStudents>>,
+					TError,
+					Awaited<ReturnType<typeof getV1FacilitiesIdStudents>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1FacilitiesIdStudents<
+	TData = Awaited<ReturnType<typeof getV1FacilitiesIdStudents>>,
+	TError = unknown,
+>(
+	id: number,
+	params?: GetV1FacilitiesIdStudentsParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1FacilitiesIdStudents>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary List students enrolled in a facility
+ */
+
+export function useGetV1FacilitiesIdStudents<
+	TData = Awaited<ReturnType<typeof getV1FacilitiesIdStudents>>,
+	TError = unknown,
+>(
+	id: number,
+	params?: GetV1FacilitiesIdStudentsParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getV1FacilitiesIdStudents>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions = getGetV1FacilitiesIdStudentsQueryOptions(
+		id,
+		params,
+		options,
+	);
+
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+	return { ...query, queryKey: queryOptions.queryKey };
+}
+
 export type getV1StudentsIdFacilitiesResponse200 = {
 	data: GetV1StudentsIdFacilities200;
 	status: 200;

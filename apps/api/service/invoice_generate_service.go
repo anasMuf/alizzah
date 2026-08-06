@@ -27,7 +27,8 @@ type InvoiceGenerateService interface {
 	SyncDaycareMonthlyInvoices() (*dto.DaycareSyncResult, error)
 	RecalculateInfaqHarian(classGroupID, month, year uint) error
 	AddExtracurricularToMonthlyRange(studentID, extracurricularID, academicYearID uint) error
-	RemoveExtracurricularFromFutureInvoices(studentID, extracurricularID, academicYearID uint) error
+	RemoveExtracurricularFromFutureInvoices(studentID, extracurricularID, academicYearID uint, endDate time.Time) error
+	CleanupExtracurricularInvoices(studentID, extracurricularID uint) error
 	SyncExtracurricularMonthlyInvoices() (*dto.ExtracurricularSyncResult, error)
 	AddFacilityToMonthlyRange(studentID, facilityID, academicYearID uint) error
 	RemoveFacilityFromFutureInvoices(studentID, facilityID, academicYearID uint) error
@@ -815,7 +816,7 @@ func (s *invoiceGenerateService) addExtracurricularItemToMonthly(studentID, acad
 	return s.recalculateInvoiceTotal(invoice.ID)
 }
 
-func (s *invoiceGenerateService) RemoveExtracurricularFromFutureInvoices(studentID, extracurricularID, academicYearID uint) error {
+func (s *invoiceGenerateService) RemoveExtracurricularFromFutureInvoices(studentID, extracurricularID, academicYearID uint, endDate time.Time) error {
 	ex, err := s.extracurricularRepo.FindByID(extracurricularID)
 	if err != nil {
 		return err
@@ -831,12 +832,11 @@ func (s *invoiceGenerateService) RemoveExtracurricularFromFutureInvoices(student
 		return nil
 	}
 
-	// Get current month onwards
-	now := time.Now()
-	curMonth := uint(now.Month())
-	curYear := uint(now.Year())
+	// Gunakan end_date (bukan time.Now()) agar akurat meskipun di-backdate
+	fromMonth := uint(endDate.Month())
+	fromYear := uint(endDate.Year())
 
-	invoices, err := s.invoiceRepo.FindMonthlyByStudentFromMonth(studentID, curMonth, curYear)
+	invoices, err := s.invoiceRepo.FindMonthlyByStudentFromMonth(studentID, fromMonth, fromYear)
 	if err != nil {
 		return nil
 	}
@@ -858,6 +858,20 @@ func (s *invoiceGenerateService) RemoveExtracurricularFromFutureInvoices(student
 	}
 
 	return nil
+}
+
+// CleanupExtracurricularInvoices adalah recovery endpoint untuk admin.
+// Menghapus item ekskul dari invoice bulan ini dan seterusnya tanpa harus
+// regenerate seluruh invoice (yang akan menghapus riwayat pembayaran).
+func (s *invoiceGenerateService) CleanupExtracurricularInvoices(studentID, extracurricularID uint) error {
+	// Cari tahun ajaran aktif dari enrollment
+	enr, err := s.enrollmentRepo.FindActiveByStudentID(studentID)
+	if err != nil {
+		return fmt.Errorf("enrollment aktif tidak ditemukan untuk siswa %d: %w", studentID, err)
+	}
+	return s.RemoveExtracurricularFromFutureInvoices(
+		studentID, extracurricularID, enr.AcademicYearID, time.Now(),
+	)
 }
 
 // SyncExtracurricularMonthlyInvoices backfills extracurricular items into existing monthly invoices.

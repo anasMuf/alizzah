@@ -7,6 +7,7 @@ import (
 	"api/utility"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -160,14 +161,21 @@ func (s *studentExtracurricularService) Unenroll(studentID, seID uint) error {
 	now := time.Now()
 	se.EndDate = &now
 
-	// Unenrollment harus selalu berhasil. Invoice cleanup bersifat best-effort —
-	// jika gagal, admin bisa menjalankan ulang sync endpoint.
 	if err := s.seRepo.Update(se); err != nil {
 		return fmt.Errorf("gagal mencabut pendaftaran: %w", err)
 	}
 
+	// Bersihkan item ekskul dari invoice bulan berjalan dan seterusnya.
+	// Gunakan end_date (bukan time.Now()) agar cleanup akurat meskipun
+	// unenroll di-backdate oleh admin.
 	if s.invoiceGen != nil {
-		_ = s.invoiceGen.RemoveExtracurricularFromFutureInvoices(studentID, se.ExtracurricularID, se.AcademicYearID)
+		if err := s.invoiceGen.RemoveExtracurricularFromFutureInvoices(
+			studentID, se.ExtracurricularID, se.AcademicYearID, *se.EndDate,
+		); err != nil {
+			log.Printf("[WARNING] Gagal membersihkan invoice untuk ekskul %d siswa %d: %v. "+
+				"Silakan jalankan regenerate invoice manual via dashboard.",
+				se.ExtracurricularID, studentID, err)
+		}
 	}
 
 	return nil

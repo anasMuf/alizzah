@@ -24,6 +24,7 @@ type FacilityService interface {
 type StudentFacilityService interface {
 	GetByStudentID(studentID uint, params dto.StudentFacilityQueryParams) ([]dto.StudentFacilityResponse, error)
 	GetStudentsByFacility(facilityID uint, params dto.FacilityStudentQueryParams) (*dto.PaginatedFacilityStudentResponse, error)
+	GetCurrentMonthDays(studentID, sfID uint) (*dto.FacilityCurrentMonthDaysResponse, error)
 	Enroll(studentID uint, req dto.EnrollFacilityRequest) (*dto.StudentFacilityResponse, error)
 	UpdateEnrollment(studentID, sfID uint, req dto.UpdateStudentFacilityRequest) (*dto.StudentFacilityResponse, error)
 	Unenroll(studentID, sfID uint) error
@@ -175,6 +176,10 @@ type studentFacilityService struct {
 	facilityRepo      repository.FacilityRepository
 	acRepo            repository.AcademicYearRepository
 	feeConfigItemRepo repository.FeeConfigItemRepository
+	invoiceRepo       repository.InvoiceRepository
+	invoiceItemRepo   repository.InvoiceItemRepository
+	enrollmentRepo    repository.StudentEnrollmentRepository
+	effectiveDayRepo  repository.EffectiveDayRepository
 	invoiceGen        InvoiceGenerateService
 }
 
@@ -184,6 +189,10 @@ func NewStudentFacilityService(
 	facilityRepo repository.FacilityRepository,
 	acRepo repository.AcademicYearRepository,
 	feeConfigItemRepo repository.FeeConfigItemRepository,
+	invoiceRepo repository.InvoiceRepository,
+	invoiceItemRepo repository.InvoiceItemRepository,
+	enrollmentRepo repository.StudentEnrollmentRepository,
+	effectiveDayRepo repository.EffectiveDayRepository,
 	invoiceGen InvoiceGenerateService,
 ) StudentFacilityService {
 	return &studentFacilityService{
@@ -192,6 +201,10 @@ func NewStudentFacilityService(
 		facilityRepo:      facilityRepo,
 		acRepo:            acRepo,
 		feeConfigItemRepo: feeConfigItemRepo,
+		invoiceRepo:       invoiceRepo,
+		invoiceItemRepo:   invoiceItemRepo,
+		enrollmentRepo:    enrollmentRepo,
+		effectiveDayRepo:  effectiveDayRepo,
 		invoiceGen:        invoiceGen,
 	}
 }
@@ -319,6 +332,71 @@ func (s *studentFacilityService) UpdateEnrollment(studentID, sfID uint, req dto.
 	return &resp, nil
 }
 
+func (s *studentFacilityService) GetCurrentMonthDays(studentID, sfID uint) (*dto.FacilityCurrentMonthDaysResponse, error) {
+	sf, err := s.sfRepo.FindByID(sfID)
+	if err != nil || sf.StudentID != studentID {
+		return nil, errors.New("Data pendaftaran fasilitas tidak ditemukan")
+	}
+
+	now := time.Now()
+	month := uint(now.Month())
+	year := uint(now.Year())
+
+	// Get student's monthly invoice for current month
+	invoice, err := s.invoiceRepo.FindMonthlyByStudent(studentID, month, year)
+	if err != nil {
+		return &dto.FacilityCurrentMonthDaysResponse{
+			DefaultDays: 0,
+			CurrentDays: 0,
+			ZoneAmount:  0,
+		}, nil
+	}
+
+	// Find the facility item in this invoice
+	items, _ := s.invoiceItemRepo.FindByInvoiceID(invoice.ID)
+	var facilityItemID uint
+	var currentQty uint
+	for _, item := range items {
+		if item.Category == "facility" && strings.Contains(item.Name, sf.Facility.Name) {
+			facilityItemID = item.ID
+			if item.Quantity != nil {
+				currentQty = *item.Quantity
+			}
+			break
+		}
+	}
+
+	// Get default effective days
+	var defaultDays uint
+	enrollment, _ := s.enrollmentRepo.FindActiveByStudentID(studentID)
+	if enrollment != nil {
+		ed, _ := s.effectiveDayRepo.FindByClassGroupMonthYear(enrollment.ClassGroupID, month, year)
+		if ed == nil || ed.ID == 0 {
+			ed, _ = s.effectiveDayRepo.FindByLevelMonthYear(enrollment.ClassGroup.Level, month, year)
+		}
+		if ed != nil && ed.ID != 0 {
+			defaultDays = ed.TotalDays
+		}
+	}
+
+	// Get zone amount
+	var zoneAmount float64
+	if sf.FeeConfigItem != nil {
+		zoneAmount = sf.FeeConfigItem.Amount
+	}
+
+	resp := &dto.FacilityCurrentMonthDaysResponse{
+		DefaultDays: defaultDays,
+		CurrentDays: currentQty,
+		ZoneAmount:  zoneAmount,
+		InvoiceID:   &invoice.ID,
+	}
+	if facilityItemID > 0 {
+		resp.InvoiceItemID = &facilityItemID
+	}
+	return resp, nil
+}
+
 func (s *studentFacilityService) Unenroll(studentID, sfID uint) error {
 	sf, err := s.sfRepo.FindByID(sfID)
 	if err != nil || sf.StudentID != studentID {
@@ -392,6 +470,10 @@ func (s *studentFacilityService) GetStudentsByFacility(facilityID uint, params d
 	}
 
 	var items []dto.FacilityStudentItemResponse
+	now := time.Now()
+	curMonth := uint(now.Month())
+	curYear := uint(now.Year())
+
 	for _, sf := range sfs {
 		var endDateStr *string
 		if sf.EndDate != nil {
@@ -416,6 +498,17 @@ func (s *studentFacilityService) GetStudentsByFacility(facilityID uint, params d
 				Name:   sf.FeeConfigItem.Name,
 				Amount: sf.FeeConfigItem.Amount,
 				Unit:   sf.FeeConfigItem.Unit,
+			}
+		}
+
+		// Populate current month invoice item quantity
+		if invoice, err := s.invoiceRepo.FindMonthlyByStudent(sf.StudentID, curMonth, curYear); err == nil {
+			invItems, _ := s.invoiceItemRepo.FindByInvoiceID(invoice.ID)
+			for _, invItem := range invItems {
+				if invItem.Category == "facility" && strings.Contains(invItem.Name, sf.Facility.Name) && invItem.Quantity != nil {
+					item.CurrentMonthDays = invItem.Quantity
+					break
+				}
 			}
 		}
 

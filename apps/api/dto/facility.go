@@ -46,6 +46,15 @@ type UpdateStudentFacilityRequest struct {
 	FeeConfigItemID *uint `json:"fee_config_item_id"`
 }
 
+// Current month facility invoice item days info
+type FacilityCurrentMonthDaysResponse struct {
+	InvoiceItemID *uint   `json:"invoice_item_id"`
+	DefaultDays   uint    `json:"default_days"`
+	CurrentDays   uint    `json:"current_days"`
+	ZoneAmount    float64 `json:"zone_amount"`
+	InvoiceID     *uint   `json:"invoice_id"`
+}
+
 // --- Facility detail: list students by facility ---
 
 type FacilityStudentQueryParams struct {
@@ -56,11 +65,12 @@ type FacilityStudentQueryParams struct {
 }
 
 type FacilityStudentItemResponse struct {
-	ID            uint                        `json:"id"`
-	Student       StudentBriefResponse        `json:"student"`
-	FeeConfigItem *FeeConfigItemBriefResponse `json:"fee_config_item,omitempty"`
-	StartDate     string                      `json:"start_date"`
-	EndDate       *string                     `json:"end_date"`
+	ID               uint                        `json:"id"`
+	Student          StudentBriefResponse        `json:"student"`
+	FeeConfigItem    *FeeConfigItemBriefResponse `json:"fee_config_item,omitempty"`
+	StartDate        string                      `json:"start_date"`
+	EndDate          *string                     `json:"end_date"`
+	CurrentMonthDays *uint                       `json:"current_month_days,omitempty"`
 }
 
 type PaginatedFacilityStudentResponse struct {

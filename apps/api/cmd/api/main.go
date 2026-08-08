@@ -490,7 +490,7 @@ func main() {
 
 	// Facilities
 	facilityService := service.NewFacilityService(facilityRepo, fcRepo, fcItemRepo)
-	sfService := service.NewStudentFacilityService(sfRepo, studentRepo, facilityRepo, ayRepo, fcItemRepo, invoiceGenService)
+	sfService := service.NewStudentFacilityService(sfRepo, studentRepo, facilityRepo, ayRepo, fcItemRepo, invoiceRepo, invoiceItemRepo, enrollmentRepo, effectiveDayRepo, invoiceGenService)
 	facilityHandler := handler.NewFacilityHandler(facilityService, sfService)
 
 	// Batch 7
@@ -584,6 +584,7 @@ func main() {
 	students.GET("/:id/facilities", facilityHandler.ListByStudent, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.POST("/:id/facilities", facilityHandler.Enroll, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.PUT("/:id/facilities/:facilityId", facilityHandler.UpdateEnrollment, guard.RequireModule(middleware.ModuleAdministrasi))
+	students.GET("/:id/facilities/:facilityId/current-month-days", facilityHandler.GetCurrentMonthDays, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.DELETE("/:id/facilities/:facilityId", facilityHandler.Unenroll, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.GET("/:id/academic-events", eventHandler.GetByStudent, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.POST("/:id/regenerate-invoices", studentHandler.RegenerateInvoices, guard.RequireModule(middleware.ModuleAdministrasi))

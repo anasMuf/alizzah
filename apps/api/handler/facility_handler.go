@@ -243,6 +243,34 @@ func (h *FacilityHandler) UpdateEnrollment(c echo.Context) error {
 	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil memperbarui fasilitas siswa", Data: sf})
 }
 
+// GetCurrentMonthDays godoc
+// @Summary      Get current month effective days & invoice item quantity for a facility enrollment
+// @Tags         facilities
+// @Security     ApiKeyAuth
+// @Param        id          path  int  true  "Student ID"
+// @Param        facilityId  path  int  true  "Student Facility enrollment ID"
+// @Success      200  {object}  dto.SuccessResponse{data=dto.FacilityCurrentMonthDaysResponse}
+// @Router       /v1/students/{id}/facilities/{facilityId}/current-month-days [get]
+func (h *FacilityHandler) GetCurrentMonthDays(c echo.Context) error {
+	studentID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: "ID tidak valid"})
+	}
+
+	sfID, err := strconv.Atoi(c.Param("facilityId"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: "ID fasilitas tidak valid"})
+	}
+
+	result, err := h.sfService.GetCurrentMonthDays(uint(studentID), uint(sfID))
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{Status: status, Code: code, Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil mengambil data hari", Data: result})
+}
+
 // Unenroll godoc
 // @Summary      Unenroll student from facility
 // @Tags         facilities

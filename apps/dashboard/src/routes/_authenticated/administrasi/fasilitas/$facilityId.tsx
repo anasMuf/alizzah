@@ -220,6 +220,46 @@ function FacilityDetailPage() {
 			addToast({ variant: "error", title: "Gagal", message: err.message }),
 	});
 
+	// Override jumlah hari
+	const [editingDaysSfId, setEditingDaysSfId] = useState<number | null>(null);
+	const [editingDaysValue, setEditingDaysValue] = useState("");
+
+	const saveDaysMutation = useMutation({
+		mutationFn: async ({
+			invoiceId,
+			itemId,
+			quantity,
+		}: {
+			invoiceId: number;
+			itemId: number;
+			quantity: number;
+		}) => {
+			return customInstance(
+				`/v1/invoices/${invoiceId}/items/${itemId}/quantity`,
+				{
+					method: "PUT",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ quantity }),
+				},
+			);
+		},
+		onSuccess: () => {
+			addToast({
+				variant: "success",
+				title: "Berhasil",
+				message: "Jumlah hari berhasil diubah.",
+			});
+			queryClient.invalidateQueries({
+				queryKey: getGetV1FacilitiesIdStudentsQueryKey(id, {
+					academic_year_id: activeAy?.id,
+				}),
+			});
+			setEditingDaysSfId(null);
+		},
+		onError: (err: any) =>
+			addToast({ variant: "error", title: "Gagal", message: err.message }),
+	});
+
 	// Enroll student from facility detail
 	const [isEnrollOpen, setIsEnrollOpen] = useState(false);
 	const [enrollStudentSearch, setEnrollStudentSearch] = useState("");
@@ -594,6 +634,9 @@ function FacilityDetailPage() {
 										Mulai
 									</th>
 									<th className="py-3 px-4 text-center text-xs font-semibold text-gray-900">
+										Jumlah Hari
+									</th>
+									<th className="py-3 px-4 text-center text-xs font-semibold text-gray-900">
 										Status
 									</th>
 									<th className="py-3 px-4 text-right text-xs font-semibold text-gray-900">
@@ -671,6 +714,70 @@ function FacilityDetailPage() {
 										</td>
 										<td className="py-3 px-4 text-sm text-gray-500">
 											{sf.start_date ? formatDate(sf.start_date) : "-"}
+										</td>
+										<td className="py-3 px-4 text-sm text-center">
+											{editingDaysSfId === sf.id ? (
+												<div className="flex items-center justify-center gap-1">
+													<input
+														type="number"
+														min={1}
+														value={editingDaysValue}
+														onChange={(e) =>
+															setEditingDaysValue(e.target.value)
+														}
+														className="w-16 rounded border-0 py-0.5 text-center text-xs ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+													/>
+													<button
+														type="button"
+														onClick={async () => {
+															const qty = Number(editingDaysValue);
+															if (qty <= 0) return;
+															const resp = await customInstance<{ data: any }>(
+																`/v1/students/${sf.student?.id}/facilities/${sf.id}/current-month-days`,
+															);
+															const info = (resp as any).data?.data;
+															if (info?.invoice_item_id && info?.invoice_id) {
+																saveDaysMutation.mutate({
+																	invoiceId: info.invoice_id,
+																	itemId: info.invoice_item_id,
+																	quantity: qty,
+																});
+															}
+														}}
+														className="text-xs text-indigo-600 hover:text-indigo-800"
+													>
+														Simpan
+													</button>
+													<button
+														type="button"
+														onClick={() => setEditingDaysSfId(null)}
+														className="text-xs text-gray-400 hover:text-gray-600"
+													>
+														Batal
+													</button>
+												</div>
+											) : (
+												<span className="inline-flex items-center gap-1">
+													{(sf as any).current_month_days != null
+														? (sf as any).current_month_days
+														: "—"}
+													{!sf.end_date && (
+														<button
+															type="button"
+															onClick={() => {
+																setEditingDaysSfId(sf.id ?? null);
+																setEditingDaysValue(
+																	String((sf as any).current_month_days ?? 0),
+																);
+															}}
+															className="p-0.5 text-gray-400 hover:text-indigo-600 rounded"
+															title="Ubah jumlah hari"
+														>
+															<Edit2 className="w-3 h-3" />
+														</button>
+													)}
+												</span>
+											)}
 										</td>
 										<td className="py-3 px-4 text-sm text-center">
 											<span

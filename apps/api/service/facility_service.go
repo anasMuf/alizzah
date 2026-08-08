@@ -264,6 +264,28 @@ func (s *studentFacilityService) Enroll(studentID uint, req dto.EnrollFacilityRe
 		return nil, errors.New("Format start_date tidak valid (YYYY-MM-DD)")
 	}
 
+	// Check if student was previously enrolled (inactive record exists)
+	existing, _ := s.sfRepo.FindByStudentFacilityAcademicYear(studentID, req.FacilityID, req.AcademicYearID)
+	if existing != nil {
+		// Reactivate: clear end_date, update zone & start date
+		existing.EndDate = nil
+		existing.FeeConfigItemID = req.FeeConfigItemID
+		existing.StartDate = startDate
+		if err := s.sfRepo.Update(existing); err != nil {
+			return nil, err
+		}
+		// Re-add to invoices
+		if s.invoiceGen != nil {
+			go s.invoiceGen.AddFacilityToMonthlyRange(studentID, req.FacilityID, req.AcademicYearID)
+		}
+		saved, err := s.sfRepo.FindByID(existing.ID)
+		if err != nil {
+			return nil, fmt.Errorf("gagal mengambil data fasilitas: %w", err)
+		}
+		resp := mapStudentFacilityToResponse(*saved)
+		return &resp, nil
+	}
+
 	sf := &model.StudentFacility{
 		StudentID:       studentID,
 		FacilityID:      req.FacilityID,

@@ -10,6 +10,7 @@ import (
 type StudentFacilityRepository interface {
 	FindByStudentID(studentID uint, params dto.StudentFacilityQueryParams) ([]model.StudentFacility, error)
 	FindByID(id uint) (*model.StudentFacility, error)
+	FindByStudentFacilityAcademicYear(studentID, facilityID, academicYearID uint) (*model.StudentFacility, error)
 	FindByFacilityID(facilityID uint, params dto.FacilityStudentQueryParams) ([]model.StudentFacility, int64, error)
 	FindActiveByStudentID(studentID, academicYearID uint) ([]model.StudentFacility, error)
 	FindAllActiveByAcademicYear(academicYearID uint) ([]model.StudentFacility, error)
@@ -77,6 +78,16 @@ func (r *studentFacilityRepository) AlreadyEnrolled(studentID, facilityID, acade
 		Where("student_id = ? AND facility_id = ? AND academic_year_id = ? AND end_date IS NULL", studentID, facilityID, academicYearID).
 		Count(&count).Error
 	return count > 0, err
+}
+
+// FindByStudentFacilityAcademicYear finds ANY record (active or inactive) by unique key.
+func (r *studentFacilityRepository) FindByStudentFacilityAcademicYear(studentID, facilityID, academicYearID uint) (*model.StudentFacility, error) {
+	var sf model.StudentFacility
+	err := r.db.Where("student_id = ? AND facility_id = ? AND academic_year_id = ?", studentID, facilityID, academicYearID).First(&sf).Error
+	if err != nil {
+		return nil, err
+	}
+	return &sf, nil
 }
 
 func (r *studentFacilityRepository) FindByFacilityID(facilityID uint, params dto.FacilityStudentQueryParams) ([]model.StudentFacility, int64, error) {

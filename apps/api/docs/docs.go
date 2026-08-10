@@ -10365,6 +10365,12 @@ const docTemplate = `{
                         "description": "End Date (YYYY-MM-DD)",
                         "name": "end_date",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by student name",
+                        "name": "search",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -12776,6 +12782,74 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/students/{id}/extracurriculars/{extracurricular_id}/cleanup-invoices": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Recovery endpoint: menghapus item ekskul tertentu dari invoice",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "student-extracurriculars"
+                ],
+                "summary": "Hapus item ekskul dari invoice bulan ini dan seterusnya",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Student ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Extracurricular ID",
+                        "name": "extracurricular_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/students/{id}/extracurriculars/{se_id}": {
             "put": {
                 "security": [
@@ -13131,6 +13205,55 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/dto.SuccessResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/students/{id}/facilities/{facilityId}/current-month-days": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "tags": [
+                    "facilities"
+                ],
+                "summary": "Get current month effective days \u0026 invoice item quantity for a facility enrollment",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Student ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Student Facility enrollment ID",
+                        "name": "facilityId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/dto.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.FacilityCurrentMonthDaysResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -16065,6 +16188,12 @@ const docTemplate = `{
                 "month": {
                     "type": "integer"
                 },
+                "overtime_amount": {
+                    "type": "number"
+                },
+                "overtime_minutes": {
+                    "type": "integer"
+                },
                 "spd_days": {
                     "type": "integer"
                 },
@@ -16622,6 +16751,26 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.FacilityCurrentMonthDaysResponse": {
+            "type": "object",
+            "properties": {
+                "current_days": {
+                    "type": "integer"
+                },
+                "default_days": {
+                    "type": "integer"
+                },
+                "invoice_id": {
+                    "type": "integer"
+                },
+                "invoice_item_id": {
+                    "type": "integer"
+                },
+                "zone_amount": {
+                    "type": "number"
+                }
+            }
+        },
         "dto.FacilityResponse": {
             "type": "object",
             "properties": {
@@ -16642,6 +16791,9 @@ const docTemplate = `{
         "dto.FacilityStudentItemResponse": {
             "type": "object",
             "properties": {
+                "current_month_days": {
+                    "type": "integer"
+                },
                 "end_date": {
                     "type": "string"
                 },
@@ -18837,6 +18989,11 @@ const docTemplate = `{
                     "type": "integer",
                     "maximum": 12,
                     "minimum": 1
+                },
+                "overtime_minutes": {
+                    "description": "max 100 jam ≈ 6000 menit",
+                    "type": "integer",
+                    "maximum": 6000
                 },
                 "spd_days": {
                     "type": "integer",

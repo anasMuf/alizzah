@@ -15,6 +15,8 @@ export interface DtoUpsertDaycareMonthlyAttendanceRequest {
 	 * @maximum 12
 	 */
 	month: number;
+	/** @maximum 6000 (100 jam) */
+	overtime_minutes?: number;
 	/** @maximum 30 */
 	spd_days?: number;
 	student_id: number;

@@ -570,11 +570,17 @@ function AttendanceTab() {
 	const [month, setMonth] = useState(new Date().getMonth() + 1);
 	const [year, setYear] = useState(new Date().getFullYear());
 	const [monthlyAtt, setMonthlyAtt] = useState<
-		Record<number, { spdDays: number; mealDays: number }>
+		Record<
+			number,
+			{ spdDays: number; mealDays: number; overtimeMinutes: number }
+		>
 	>({});
 	// Track original saved values to detect changes
 	const [originalAtt, setOriginalAtt] = useState<
-		Record<number, { spdDays: number; mealDays: number }>
+		Record<
+			number,
+			{ spdDays: number; mealDays: number; overtimeMinutes: number }
+		>
 	>({});
 	const [saving, setSaving] = useState(false);
 	// Track whether we've already loaded data for the current month/year
@@ -611,15 +617,19 @@ function AttendanceTab() {
 		const responseData = (monthlyData as any)?.data;
 		const items = responseData?.data || [];
 		const itemsList = Array.isArray(items) ? items : [];
-		const newAtt: Record<number, { spdDays: number; mealDays: number }> = {};
+		const newAtt: Record<
+			number,
+			{ spdDays: number; mealDays: number; overtimeMinutes: number }
+		> = {};
 		for (const enr of enrollments) {
-			newAtt[enr.student.id] = { spdDays: 0, mealDays: 0 };
+			newAtt[enr.student.id] = { spdDays: 0, mealDays: 0, overtimeMinutes: 0 };
 		}
 		for (const item of itemsList) {
 			if (item.student_id) {
 				newAtt[item.student_id] = {
 					spdDays: item.spd_days || 0,
 					mealDays: item.meal_days || 0,
+					overtimeMinutes: item.overtime_minutes || 0,
 				};
 			}
 		}
@@ -650,8 +660,15 @@ function AttendanceTab() {
 			const curr = monthlyAtt[enr.student.id];
 			const orig = originalAtt[enr.student.id];
 			if (!curr) return false;
-			if (!orig) return curr.spdDays > 0 || curr.mealDays > 0; // new entry
-			return curr.spdDays !== orig.spdDays || curr.mealDays !== orig.mealDays;
+			if (!orig)
+				return (
+					curr.spdDays > 0 || curr.mealDays > 0 || curr.overtimeMinutes > 0
+				);
+			return (
+				curr.spdDays !== orig.spdDays ||
+				curr.mealDays !== orig.mealDays ||
+				curr.overtimeMinutes !== orig.overtimeMinutes
+			);
 		});
 
 		if (changed.length === 0) {
@@ -678,6 +695,7 @@ function AttendanceTab() {
 							year,
 							spd_days: a.spdDays,
 							meal_days: a.mealDays,
+							overtime_minutes: a.overtimeMinutes,
 						},
 					});
 				} catch (e: any) {
@@ -750,8 +768,8 @@ function AttendanceTab() {
 					Kehadiran Bulanan Daycare
 				</h1>
 				<p className="text-sm text-gray-500">
-					Input jumlah hari SPD dan konsumsi per bulan. Data ini digunakan untuk
-					generate tagihan.
+					Input jumlah hari SPD, konsumsi, dan menit overtime per bulan. Data
+					ini digunakan untuk generate tagihan.
 				</p>
 			</div>
 
@@ -786,10 +804,11 @@ function AttendanceTab() {
 					<>
 						{/* Header */}
 						<div className="grid grid-cols-12 gap-2 text-xs font-medium text-gray-500 border-b pb-2 mb-2">
-							<div className="col-span-4">Nama Siswa</div>
+							<div className="col-span-3">Nama Siswa</div>
 							<div className="col-span-2">Kategori</div>
 							<div className="col-span-2">Hari SPD</div>
 							<div className="col-span-2">Hari Konsumsi</div>
+							<div className="col-span-3">Overtime (menit)</div>
 						</div>
 
 						<div className="space-y-2 max-h-96 overflow-y-auto">
@@ -801,7 +820,7 @@ function AttendanceTab() {
 										key={enr.student.id}
 										className="grid grid-cols-12 gap-2 items-center py-2 border-b border-gray-100"
 									>
-										<div className="col-span-4">
+										<div className="col-span-3">
 											<span className="text-sm font-medium text-gray-900">
 												{enr.student.full_name}
 											</span>
@@ -831,6 +850,7 @@ function AttendanceTab() {
 																...(prev[enr.student.id] || {
 																	spdDays: 0,
 																	mealDays: 0,
+																	overtimeMinutes: 0,
 																}),
 																spdDays: val,
 															},
@@ -857,6 +877,7 @@ function AttendanceTab() {
 															...(prev[enr.student.id] || {
 																spdDays: 0,
 																mealDays: 0,
+																overtimeMinutes: 0,
 															}),
 															mealDays: val,
 														},
@@ -864,6 +885,36 @@ function AttendanceTab() {
 												}}
 												className="w-16 rounded-md border-gray-300 text-sm text-center"
 											/>
+										</div>
+										<div className="col-span-3 flex items-center gap-1">
+											<input
+												type="number"
+												min={0}
+												max={6000}
+												step={30}
+												value={a?.overtimeMinutes ?? 0}
+												onChange={(e) => {
+													const val = Math.min(
+														6000,
+														Math.max(0, Number.parseInt(e.target.value) || 0),
+													);
+													setMonthlyAtt((prev) => ({
+														...prev,
+														[enr.student.id]: {
+															...(prev[enr.student.id] || {
+																spdDays: 0,
+																mealDays: 0,
+																overtimeMinutes: 0,
+															}),
+															overtimeMinutes: val,
+														},
+													}));
+												}}
+												className="w-20 rounded-md border-gray-300 text-sm text-center"
+											/>
+											<span className="text-xs text-gray-400">
+												= {Math.floor((a?.overtimeMinutes ?? 0) / 30)} unit
+											</span>
 										</div>
 									</div>
 								);

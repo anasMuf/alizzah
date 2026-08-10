@@ -80,10 +80,11 @@ func (r *studentFacilityRepository) AlreadyEnrolled(studentID, facilityID, acade
 	return count > 0, err
 }
 
-// FindByStudentFacilityAcademicYear finds ANY record (active or inactive) by unique key.
+// FindByStudentFacilityAcademicYear finds ANY record (active, soft-closed, or soft-deleted) by unique key.
+// Uses Unscoped() so soft-deleted records can be found and reactivated.
 func (r *studentFacilityRepository) FindByStudentFacilityAcademicYear(studentID, facilityID, academicYearID uint) (*model.StudentFacility, error) {
 	var sf model.StudentFacility
-	err := r.db.Where("student_id = ? AND facility_id = ? AND academic_year_id = ?", studentID, facilityID, academicYearID).First(&sf).Error
+	err := r.db.Unscoped().Where("student_id = ? AND facility_id = ? AND academic_year_id = ?", studentID, facilityID, academicYearID).First(&sf).Error
 	if err != nil {
 		return nil, err
 	}

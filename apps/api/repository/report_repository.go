@@ -338,16 +338,12 @@ func (r *reportRepository) DailyPenerimaan(academicYearID uint, startDate, endDa
 		}
 	}
 
-	// Income transactions
-	{
+	// Income transactions (only included when no invoice category filter)
+	if category == "" {
 		var rows []row
 		query := r.db.Table("income_transactions").
 			Select("transaction_date as date, SUM(amount) as total").
 			Where("academic_year_id = ? AND transaction_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
-
-		if category != "" {
-			query = query.Where("category = ?", category)
-		}
 
 		if err := query.Group("transaction_date").Scan(&rows).Error; err != nil {
 			return nil, err
@@ -410,21 +406,20 @@ func (r *reportRepository) SumPenerimaan(academicYearID uint, startDate, endDate
 		return 0, err
 	}
 
-	// Income transactions
-	var incomeTotal float64
-	incomeQuery := r.db.Table("income_transactions").
-		Select("COALESCE(SUM(amount), 0)").
-		Where("academic_year_id = ? AND transaction_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
+	// Income transactions (only included when no invoice category filter)
+	if category == "" {
+		var incomeTotal float64
+		incomeQuery := r.db.Table("income_transactions").
+			Select("COALESCE(SUM(amount), 0)").
+			Where("academic_year_id = ? AND transaction_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
 
-	if category != "" {
-		incomeQuery = incomeQuery.Where("category = ?", category)
+		if err := incomeQuery.Scan(&incomeTotal).Error; err != nil {
+			return 0, err
+		}
+		total += incomeTotal
 	}
 
-	if err := incomeQuery.Scan(&incomeTotal).Error; err != nil {
-		return 0, err
-	}
-
-	return total + incomeTotal, nil
+	return total, nil
 }
 
 // SumPengeluaran: total pengeluaran in range, optionally filtered by parent category
@@ -720,7 +715,9 @@ func (r *reportRepository) DailyIncomeTransactions(academicYearID uint, startDat
 
 	if incomeCategories != "" {
 		cats := strings.Split(incomeCategories, ",")
-		query = query.Where("category IN ?", cats)
+		query = query.
+			Joins("JOIN income_categories ic ON ic.id = income_transactions.income_category_id").
+			Where("ic.code IN ?", cats)
 	}
 
 	query = query.Group("DATE(transaction_date)")
@@ -745,7 +742,9 @@ func (r *reportRepository) SumIncomeTransactions(academicYearID uint, startDate,
 
 	if incomeCategories != "" {
 		cats := strings.Split(incomeCategories, ",")
-		query = query.Where("category IN ?", cats)
+		query = query.
+			Joins("JOIN income_categories ic ON ic.id = income_transactions.income_category_id").
+			Where("ic.code IN ?", cats)
 	}
 
 	err := query.Scan(&total).Error

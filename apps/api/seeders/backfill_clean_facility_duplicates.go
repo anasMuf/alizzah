@@ -75,14 +75,16 @@ func BackfillCleanFacilityDuplicates(db *gorm.DB) {
 		db.Table("invoice_items ii").
 			Select("ii.id, ii.invoice_id").
 			Joins("JOIN invoices i ON i.id = ii.invoice_id").
-			Where("i.student_id = ? AND ii.category = ? AND ii.deleted_at IS NULL", enr.StudentID, "facility").
+			Where("i.student_id = ? AND ii.category = ? AND ii.deleted_at IS NULL AND ii.paid_amount = 0", enr.StudentID, "facility").
 			Where("i.type = 'monthly'").
 			// bulan invoice < bulan start_date
 			Where("(i.year < ? OR (i.year = ? AND i.month < ?))", enr.StartYear, enr.StartYear, enr.StartMonth).
 			Where("ii.name ILIKE ?", "%"+enr.FacilityName+"%").
 			Find(&items)
 
-		itemsToDelete = append(itemsToDelete, items...)
+		if len(items) > 0 {
+			itemsToDelete = append(itemsToDelete, items...)
+		}
 	}
 
 	if len(itemsToDelete) > 0 {
@@ -94,8 +96,8 @@ func BackfillCleanFacilityDuplicates(db *gorm.DB) {
 			invoiceIDSet[it.InvoiceID] = true
 		}
 
-		// Hapus item
-		db.Where("id IN ?", ids).Delete(&model.InvoiceItem{})
+		// Hapus item (hard delete — bypass GORM soft-delete)
+		db.Unscoped().Where("id IN ?", ids).Delete(&model.InvoiceItem{})
 
 		var invoiceIDs []uint
 		for invID := range invoiceIDSet {
@@ -123,10 +125,13 @@ func recalculateInvoices(db *gorm.DB, invoiceIDs []uint) {
 	recalculated := 0
 	for _, invID := range invoiceIDs {
 		var total, paid float64
-		db.Model(&model.InvoiceItem{}).
+		if err := db.Model(&model.InvoiceItem{}).
 			Where("invoice_id = ?", invID).
 			Select("COALESCE(SUM(amount), 0), COALESCE(SUM(paid_amount), 0)").
-			Row().Scan(&total, &paid)
+			Row().Scan(&total, &paid); err != nil {
+			log.Printf("[CleanFacility] Gagal scan invoice %d: %v", invID, err)
+			continue
+		}
 
 		status := "unpaid"
 		if paid > 0 && paid < total {

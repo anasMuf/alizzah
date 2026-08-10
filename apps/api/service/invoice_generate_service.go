@@ -1650,7 +1650,7 @@ func (s *invoiceGenerateService) AddFacilityToMonthlyRange(studentID, facilityID
 
 	// Hapus item fasilitas (unpaid) di bulan SEBELUM start_date —
 	// menangani kasus start_date berubah mundur (misal Juli → Agustus)
-	s.db.
+	s.db.Unscoped().
 		Where("category = ? AND name ILIKE ? AND paid_amount = 0 AND deleted_at IS NULL", "facility", "%"+facility.Name+"%").
 		Where("invoice_id IN (SELECT id FROM invoices WHERE student_id = ? AND type = 'monthly' AND academic_year_id = ? AND ((year < ?) OR (year = ? AND month < ?)))",
 			studentID, academicYearID, uint(startDate.Year()), uint(startDate.Year()), uint(startDate.Month())).

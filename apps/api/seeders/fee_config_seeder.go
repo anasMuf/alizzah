@@ -341,6 +341,11 @@ func buildFeeConfigItems() []feeItemDef {
 		feeItemDef{"daycare", "daycare_regular_meal", "Paket Konsumsi", "all", "all", 20000, "per_day", false, nil},
 	)
 
+	// Overtime (semua kategori: Rp 10.000 per 30 menit)
+	items = append(items,
+		feeItemDef{"daycare", "daycare_overtime", "Overtime Daycare", "all", "all", 10000, "per_30min", false, nil},
+	)
+
 	// TPQ & premium meal flat sudah dihapus dari kalkulasi tagihan
 
 	// === Wisuda (placeholder) ===

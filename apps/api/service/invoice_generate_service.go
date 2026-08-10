@@ -1221,12 +1221,13 @@ func (s *invoiceGenerateService) GenerateDaycareMonthlyInvoices(params dto.Gener
 	// Try monthly attendance first
 	monthlyAtt, _ := s.daycareMonthlyAttRepo.FindByStudentMonthYear(params.StudentID, params.Month, params.Year)
 
-	var spdDays, mealDays uint
+	var spdDays, mealDays, overtimeMinutes uint
 
-	if monthlyAtt != nil && (monthlyAtt.SPDDays > 0 || monthlyAtt.MealDays > 0) {
+	if monthlyAtt != nil && (monthlyAtt.SPDDays > 0 || monthlyAtt.MealDays > 0 || monthlyAtt.OvertimeMinutes > 0) {
 		spdDays = monthlyAtt.SPDDays
 		mealDays = monthlyAtt.MealDays
-		log.Printf("[Daycare SPD] Menggunakan data kehadiran bulanan: spd=%d meal=%d", spdDays, mealDays)
+		overtimeMinutes = monthlyAtt.OvertimeMinutes
+		log.Printf("[Daycare SPD] Menggunakan data kehadiran bulanan: spd=%d meal=%d overtime=%d", spdDays, mealDays, overtimeMinutes)
 	} else {
 		// Fallback: hitung dari absensi harian
 		start := time.Date(int(params.Year), time.Month(params.Month), 1, 0, 0, 0, 0, time.UTC)
@@ -1362,6 +1363,24 @@ func (s *invoiceGenerateService) GenerateDaycareMonthlyInvoices(params dto.Gener
 			}
 		} else {
 			log.Printf("[Daycare SPD] Meal: fee item daycare_regular_meal tidak ditemukan")
+		}
+	}
+
+	// Overtime (both categories: monthly overtime × per-30min rate)
+	if overtimeMinutes > 0 {
+		overtimeItem, err := s.feeConfigItemRepo.FindByItemKey(feeConfig.ID, "daycare_overtime", "all", "all")
+		if err == nil && overtimeItem != nil {
+			overtimeUnits := overtimeMinutes / 30 // pembulatan ke bawah
+			if overtimeUnits > 0 {
+				rate := overtimeItem.Amount
+				name := fmt.Sprintf("%s (%d unit)", overtimeItem.Name, overtimeUnits)
+				log.Printf("[Daycare SPD] Overtime: %d menit = %d unit x %.0f = %.0f", overtimeMinutes, overtimeUnits, rate, rate*float64(overtimeUnits))
+				if err := s.upsertDaycareAttendanceItem(invoice.ID, overtimeItem.Name, name, rate*float64(overtimeUnits), &overtimeUnits, &rate, "daycare_overtime"); err != nil {
+					return err
+				}
+			}
+		} else {
+			log.Printf("[Daycare SPD] Overtime: fee item daycare_overtime tidak ditemukan")
 		}
 	}
 

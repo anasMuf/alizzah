@@ -78,23 +78,26 @@ type GenerateDaycareMonthlyBulkRequest struct {
 // ─── Monthly Attendance ──────────────────────────────────────
 
 type UpsertDaycareMonthlyAttendanceRequest struct {
-	StudentID      uint `json:"student_id" validate:"required"`
-	AcademicYearID uint `json:"academic_year_id" validate:"required"`
-	Month          uint `json:"month" validate:"required,min=1,max=12"`
-	Year           uint `json:"year" validate:"required"`
-	SPDDays        uint `json:"spd_days" validate:"max=30"`
-	MealDays       uint `json:"meal_days" validate:"max=30"`
+	StudentID       uint `json:"student_id" validate:"required"`
+	AcademicYearID  uint `json:"academic_year_id" validate:"required"`
+	Month           uint `json:"month" validate:"required,min=1,max=12"`
+	Year            uint `json:"year" validate:"required"`
+	SPDDays         uint `json:"spd_days" validate:"max=30"`
+	MealDays        uint `json:"meal_days" validate:"max=30"`
+	OvertimeMinutes uint `json:"overtime_minutes" validate:"max=6000"` // max 100 jam ≈ 6000 menit
 }
 
 type DaycareMonthlyAttendanceResponse struct {
-	ID             uint   `json:"id"`
-	StudentID      uint   `json:"student_id"`
-	StudentName    string `json:"student_name"`
-	AcademicYearID uint   `json:"academic_year_id"`
-	Month          uint   `json:"month"`
-	Year           uint   `json:"year"`
-	SPDDays        uint   `json:"spd_days"`
-	MealDays       uint   `json:"meal_days"`
+	ID              uint    `json:"id"`
+	StudentID       uint    `json:"student_id"`
+	StudentName     string  `json:"student_name"`
+	AcademicYearID  uint    `json:"academic_year_id"`
+	Month           uint    `json:"month"`
+	Year            uint    `json:"year"`
+	SPDDays         uint    `json:"spd_days"`
+	MealDays        uint    `json:"meal_days"`
+	OvertimeMinutes uint    `json:"overtime_minutes"`
+	OvertimeAmount  float64 `json:"overtime_amount"`
 }
 
 // ─── Delete ──────────────────────────────────────────────────

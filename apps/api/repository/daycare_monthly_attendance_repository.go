@@ -33,7 +33,7 @@ func (r *daycareMonthlyAttendanceRepository) Upsert(att *model.DaycareMonthlyAtt
 	return r.db.Clauses(clause.OnConflict{
 		Columns: []clause.Column{{Name: "student_id"}, {Name: "month"}, {Name: "year"}},
 		DoUpdates: clause.AssignmentColumns([]string{
-			"spd_days", "meal_days", "created_by", "updated_at",
+			"spd_days", "meal_days", "overtime_minutes", "created_by", "updated_at",
 		}),
 	}).Create(att).Error
 }

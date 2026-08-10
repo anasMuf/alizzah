@@ -507,13 +507,14 @@ func (s *daycareEnrollmentService) GetAttendance(studentID, month, year uint) ([
 
 func (s *daycareEnrollmentService) UpsertMonthlyAttendance(createdBy uint, req dto.UpsertDaycareMonthlyAttendanceRequest) (*dto.DaycareMonthlyAttendanceResponse, error) {
 	att := &model.DaycareMonthlyAttendance{
-		StudentID:      req.StudentID,
-		AcademicYearID: req.AcademicYearID,
-		Month:          req.Month,
-		Year:           req.Year,
-		SPDDays:        req.SPDDays,
-		MealDays:       req.MealDays,
-		CreatedBy:      createdBy,
+		StudentID:       req.StudentID,
+		AcademicYearID:  req.AcademicYearID,
+		Month:           req.Month,
+		Year:            req.Year,
+		SPDDays:         req.SPDDays,
+		MealDays:        req.MealDays,
+		OvertimeMinutes: req.OvertimeMinutes,
+		CreatedBy:       createdBy,
 	}
 
 	if err := s.monthlyAttRepo.Upsert(att); err != nil {
@@ -570,15 +571,22 @@ func mapMonthlyAttendanceToResponse(a model.DaycareMonthlyAttendance) *dto.Dayca
 	if a.Student.ID != 0 {
 		studentName = a.Student.FullName
 	}
+
+	// Overtime: Rp 10.000 per 30 menit, pembulatan ke bawah
+	overtimeUnits := a.OvertimeMinutes / 30
+	overtimeAmount := float64(overtimeUnits) * 10000
+
 	return &dto.DaycareMonthlyAttendanceResponse{
-		ID:             a.ID,
-		StudentID:      a.StudentID,
-		StudentName:    studentName,
-		AcademicYearID: a.AcademicYearID,
-		Month:          a.Month,
-		Year:           a.Year,
-		SPDDays:        a.SPDDays,
-		MealDays:       a.MealDays,
+		ID:              a.ID,
+		StudentID:       a.StudentID,
+		StudentName:     studentName,
+		AcademicYearID:  a.AcademicYearID,
+		Month:           a.Month,
+		Year:            a.Year,
+		SPDDays:         a.SPDDays,
+		MealDays:        a.MealDays,
+		OvertimeMinutes: a.OvertimeMinutes,
+		OvertimeAmount:  overtimeAmount,
 	}
 }
 

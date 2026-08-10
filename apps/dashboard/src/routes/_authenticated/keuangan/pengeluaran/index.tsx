@@ -1,13 +1,15 @@
-import { useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
-import { ChevronRight, Filter, Plus, Search, Trash2 } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { Filter, Loader2, Plus, Search, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useGetV1ExpenseCategories } from "#/api/endpoints/expense-categories/expense-categories";
 import {
+	getGetV1ExpensesQueryKey,
+	getV1Expenses,
 	useDeleteV1ExpensesId,
-	useGetV1Expenses,
 } from "#/api/endpoints/expenses/expenses";
+import type { GetV1ExpensesParams } from "#/api/model";
 import {
 	Alert,
 	Button,
@@ -27,11 +29,6 @@ export const Route = createFileRoute("/_authenticated/keuangan/pengeluaran/")({
 		date_from:
 			typeof search.date_from === "string" ? search.date_from : undefined,
 		date_to: typeof search.date_to === "string" ? search.date_to : undefined,
-		page: (typeof search.page === "number"
-			? search.page
-			: typeof search.page === "string"
-				? Number.parseInt(search.page, 10) || 1
-				: undefined) as number | undefined,
 	}),
 });
 
@@ -48,7 +45,9 @@ function PengeluaranListPage() {
 	const category_id = searchParams.category_id ?? "";
 	const date_from = searchParams.date_from ?? "";
 	const date_to = searchParams.date_to ?? "";
-	const page = searchParams.page ?? 1;
+
+	// Sentinel ref for Intersection Observer
+	const sentinelRef = useRef<HTMLDivElement>(null);
 
 	const updateSearch = useCallback(
 		(updates: Partial<typeof searchParams>) => {
@@ -61,27 +60,52 @@ function PengeluaranListPage() {
 		[navigate, searchParams],
 	);
 
-	const {
-		data: expensesData,
-		isLoading,
-		isError,
-	} = useGetV1Expenses(
-		{
-			page,
+	// Build query params (without page — handled by pageParam)
+	const queryParams: GetV1ExpensesParams = useMemo(
+		() => ({
 			limit: 20,
 			academic_year_id: activeAy?.id,
 			...(category_id ? { expense_category_id: Number(category_id) } : {}),
 			...(date_from ? { start_date: date_from } : {}),
 			...(date_to ? { end_date: date_to } : {}),
-		},
-		{ query: { enabled: !!activeAy?.id } },
+		}),
+		[activeAy?.id, category_id, date_from, date_to],
 	);
+
+	const {
+		data: infiniteData,
+		isLoading,
+		isError,
+		fetchNextPage,
+		hasNextPage,
+		isFetchingNextPage,
+	} = useInfiniteQuery({
+		queryKey: getGetV1ExpensesQueryKey(queryParams),
+		queryFn: ({ pageParam, signal }) =>
+			getV1Expenses({ ...queryParams, page: pageParam }, { signal }),
+		initialPageParam: 1,
+		getNextPageParam: (lastPage) => {
+			const meta = (lastPage.data as any)?.meta;
+			if (!meta) return undefined;
+			const totalPages = Math.ceil((meta.total ?? 0) / (meta.limit ?? 20));
+			const nextPage = (meta.page ?? 1) + 1;
+			return nextPage <= totalPages ? nextPage : undefined;
+		},
+		enabled: !!activeAy?.id,
+	});
 
 	const { data: categoriesData } = useGetV1ExpenseCategories();
 	const categories: any[] = (categoriesData?.data as any)?.data || [];
 
-	const expenses: any[] = (expensesData?.data as any)?.data || [];
-	const meta = (expensesData?.data as any)?.meta;
+	// Flatten all pages into a single array
+	const expenses: any[] = useMemo(() => {
+		if (!infiniteData?.pages) return [];
+		return infiniteData.pages.flatMap(
+			(page) => ((page.data as any)?.data as any[]) || [],
+		);
+	}, [infiniteData]);
+
+	const meta = (infiniteData?.pages?.[0]?.data as any)?.meta;
 
 	const filteredExpenses = useMemo(() => {
 		if (!search) return expenses;
@@ -97,6 +121,38 @@ function PengeluaranListPage() {
 			0,
 		);
 	}, [filteredExpenses]);
+
+	// Intersection Observer: trigger fetchNextPage when sentinel is visible.
+	// Values captured in a ref to avoid recreating the observer on every render
+	// (e.g. when isFetchingNextPage toggles).
+	const scrollState = useRef({
+		hasNextPage,
+		isFetchingNextPage,
+		fetchNextPage,
+	});
+	scrollState.current = { hasNextPage, isFetchingNextPage, fetchNextPage };
+
+	useEffect(() => {
+		const sentinel = sentinelRef.current;
+		if (!sentinel) return;
+
+		const observer = new IntersectionObserver(
+			(entries) => {
+				const {
+					hasNextPage: has,
+					isFetchingNextPage: fetching,
+					fetchNextPage: fetchFn,
+				} = scrollState.current;
+				if (entries[0]?.isIntersecting && has && !fetching) {
+					fetchFn();
+				}
+			},
+			{ threshold: 0.1 },
+		);
+
+		observer.observe(sentinel);
+		return () => observer.disconnect();
+	}, []);
 
 	const handleReset = () => {
 		navigate({
@@ -175,9 +231,7 @@ function PengeluaranListPage() {
 									className="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
 									placeholder="Cari keterangan..."
 									value={search}
-									onChange={(e) =>
-										updateSearch({ search: e.target.value, page: 1 })
-									}
+									onChange={(e) => updateSearch({ search: e.target.value })}
 								/>
 							</div>
 						</div>
@@ -189,7 +243,7 @@ function PengeluaranListPage() {
 							<select
 								value={category_id}
 								onChange={(e) => {
-									updateSearch({ category_id: e.target.value, page: 1 });
+									updateSearch({ category_id: e.target.value });
 								}}
 								className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 							>
@@ -214,7 +268,7 @@ function PengeluaranListPage() {
 								type="date"
 								value={date_from}
 								onChange={(e) => {
-									updateSearch({ date_from: e.target.value, page: 1 });
+									updateSearch({ date_from: e.target.value });
 								}}
 								className="block w-full rounded-md border-0 py-1.5 pl-3 pr-3 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 							/>
@@ -228,7 +282,7 @@ function PengeluaranListPage() {
 								type="date"
 								value={date_to}
 								onChange={(e) => {
-									updateSearch({ date_to: e.target.value, page: 1 });
+									updateSearch({ date_to: e.target.value });
 								}}
 								className="block w-full rounded-md border-0 py-1.5 pl-3 pr-3 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 							/>
@@ -258,7 +312,9 @@ function PengeluaranListPage() {
 							</p>
 						</div>
 						<div className="text-sm text-gray-500">
-							{filteredExpenses.length} transaksi
+							{meta
+								? `${meta.total ?? expenses.length} transaksi`
+								: `${filteredExpenses.length} transaksi`}
 						</div>
 					</div>
 				</div>
@@ -326,25 +382,43 @@ function PengeluaranListPage() {
 									) : filteredExpenses.length === 0 ? (
 										<tr>
 											<td colSpan={5} className="px-3 py-12">
-												<EmptyState
-													title="Belum Ada Pengeluaran"
-													description="Belum ada data pengeluaran yang sesuai dengan filter."
-													action={
-														<Link to="/keuangan/pengeluaran/baru">
-															<Button variant="primary" size="sm">
-																<Plus className="w-4 h-4 mr-1" />
-																Catat Pengeluaran Baru
-															</Button>
-														</Link>
-													}
-												/>
+												{hasNextPage && expenses.length === 0 ? (
+													<EmptyState
+														title="Belum Ada Data"
+														description="Data belum selesai dimuat. Gulir ke bawah atau tunggu sebentar."
+													/>
+												) : hasNextPage && expenses.length > 0 ? (
+													<div className="text-center">
+														<p className="text-sm text-gray-500">
+															Tidak ada hasil di {expenses.length} data yang
+															sudah dimuat.
+														</p>
+														<p className="text-xs text-gray-400 mt-1">
+															Gulir ke bawah untuk memuat lebih banyak data,
+															atau persempit filter.
+														</p>
+													</div>
+												) : (
+													<EmptyState
+														title="Belum Ada Pengeluaran"
+														description="Belum ada data pengeluaran yang sesuai dengan filter."
+														action={
+															<Link to="/keuangan/pengeluaran/baru">
+																<Button variant="primary" size="sm">
+																	<Plus className="w-4 h-4 mr-1" />
+																	Catat Pengeluaran Baru
+																</Button>
+															</Link>
+														}
+													/>
+												)}
 											</td>
 										</tr>
 									) : (
 										filteredExpenses.map((expense: any, index: number) => (
 											<tr key={expense.id} className="hover:bg-gray-50 group">
 												<td className="whitespace-nowrap py-2 pl-4 pr-2 text-sm font-medium text-gray-900 sm:pl-6">
-													{(page - 1) * 20 + index + 1}
+													{index + 1}
 												</td>
 												<td className="whitespace-nowrap px-2 py-2 text-sm text-gray-500">
 													{formatDate(expense.expense_date)}
@@ -385,74 +459,20 @@ function PengeluaranListPage() {
 							</table>
 						</div>
 
-						{meta && meta.total_pages > 1 && (
-							<div className="border-t border-gray-200 px-4 py-3 flex items-center justify-between sm:px-6">
-								<div className="flex flex-1 justify-between sm:hidden">
-									<Button
-										variant="secondary"
-										onClick={() =>
-											updateSearch({ page: Math.max(1, page - 1) })
-										}
-										disabled={page === 1}
-									>
-										Previous
-									</Button>
-									<Button
-										variant="secondary"
-										onClick={() => updateSearch({ page: page + 1 })}
-										disabled={page >= meta.total_pages}
-									>
-										Next
-									</Button>
+						{/* Infinite scroll sentinel + loading indicator */}
+						<div ref={sentinelRef} className="flex justify-center py-4">
+							{isFetchingNextPage && (
+								<div className="flex items-center gap-2 text-sm text-gray-500">
+									<Loader2 className="w-4 h-4 animate-spin" />
+									Memuat data...
 								</div>
-								<div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-									<div>
-										<p className="text-sm text-gray-700">
-											Menampilkan{" "}
-											<span className="font-medium">{(page - 1) * 20 + 1}</span>{" "}
-											sampai{" "}
-											<span className="font-medium">
-												{Math.min(page * 20, meta.total_items)}
-											</span>{" "}
-											dari{" "}
-											<span className="font-medium">{meta.total_items}</span>{" "}
-											pengeluaran
-										</p>
-									</div>
-									<div>
-										<nav
-											className="isolate inline-flex -space-x-px rounded-md shadow-sm"
-											aria-label="Pagination"
-										>
-											<button
-												onClick={() =>
-													updateSearch({ page: Math.max(1, page - 1) })
-												}
-												disabled={page === 1}
-												className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-											>
-												<span className="sr-only">Previous</span>
-												<ChevronRight
-													className="h-5 w-5 rotate-180"
-													aria-hidden="true"
-												/>
-											</button>
-											<span className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300">
-												{page}
-											</span>
-											<button
-												onClick={() => updateSearch({ page: page + 1 })}
-												disabled={page >= meta.total_pages}
-												className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-											>
-												<span className="sr-only">Next</span>
-												<ChevronRight className="h-5 w-5" aria-hidden="true" />
-											</button>
-										</nav>
-									</div>
-								</div>
-							</div>
-						)}
+							)}
+							{!hasNextPage && expenses.length > 0 && !isLoading && (
+								<p className="text-sm text-gray-400">
+									Semua data telah dimuat.
+								</p>
+							)}
+						</div>
 					</div>
 				)}
 			</div>

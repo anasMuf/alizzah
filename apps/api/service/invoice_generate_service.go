@@ -847,7 +847,8 @@ func (s *invoiceGenerateService) RemoveExtracurricularFromFutureInvoices(student
 		for _, item := range items {
 			for _, feeItem := range feeItems {
 				if item.Name == feeItem.Name && item.Category == feeItem.Category && item.PaidAmount == 0 {
-					s.invoiceItemRepo.Delete(item.ID)
+					// Hard delete — hindari soft-delete agar tidak menyebabkan duplikat saat enrollment ulang.
+					s.db.Unscoped().Delete(&model.InvoiceItem{}, item.ID)
 					deleted = true
 				}
 			}
@@ -1641,6 +1642,20 @@ func (s *invoiceGenerateService) AddFacilityToMonthlyRange(studentID, facilityID
 		}
 	}
 
+	// Bersihkan item fasilitas yang sudah soft-deleted (defense in depth)
+	s.db.Unscoped().
+		Where("category = ? AND name ILIKE ? AND deleted_at IS NOT NULL", "facility", "%"+facility.Name+"%").
+		Where("invoice_id IN (SELECT id FROM invoices WHERE student_id = ? AND type = 'monthly' AND academic_year_id = ?)", studentID, academicYearID).
+		Delete(&model.InvoiceItem{})
+
+	// Hapus item fasilitas (unpaid) di bulan SEBELUM start_date —
+	// menangani kasus start_date berubah mundur (misal Juli → Agustus)
+	s.db.
+		Where("category = ? AND name ILIKE ? AND paid_amount = 0 AND deleted_at IS NULL", "facility", "%"+facility.Name+"%").
+		Where("invoice_id IN (SELECT id FROM invoices WHERE student_id = ? AND type = 'monthly' AND academic_year_id = ? AND ((year < ?) OR (year = ? AND month < ?)))",
+			studentID, academicYearID, uint(startDate.Year()), uint(startDate.Year()), uint(startDate.Month())).
+		Delete(&model.InvoiceItem{})
+
 	months := utility.MonthRangeFromDate(startDate, ay.EndDate)
 
 	for _, m := range months {
@@ -1721,7 +1736,9 @@ func (s *invoiceGenerateService) RemoveFacilityFromFutureInvoices(studentID, fac
 		deleted := false
 		for _, item := range items {
 			if item.Category == "facility" && strings.Contains(item.Name, facility.Name) && item.PaidAmount == 0 {
-				s.invoiceItemRepo.Delete(item.ID)
+				// Hard delete — hindari soft-delete agar item benar-benar hilang
+				// dan tidak menyebabkan duplikat saat enrollment ulang.
+				s.db.Unscoped().Delete(&model.InvoiceItem{}, item.ID)
 				deleted = true
 			}
 		}

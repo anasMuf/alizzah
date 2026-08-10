@@ -7,6 +7,7 @@ import (
 	"api/utility"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -276,7 +277,11 @@ func (s *studentFacilityService) Enroll(studentID uint, req dto.EnrollFacilityRe
 		}
 		// Re-add to invoices
 		if s.invoiceGen != nil {
-			go s.invoiceGen.AddFacilityToMonthlyRange(studentID, req.FacilityID, req.AcademicYearID)
+			go func() {
+				if err := s.invoiceGen.AddFacilityToMonthlyRange(studentID, req.FacilityID, req.AcademicYearID); err != nil {
+					log.Printf("[Facility] Gagal add facility ke invoice (reactivation) student=%d facility=%d: %v", studentID, req.FacilityID, err)
+				}
+			}()
 		}
 		saved, err := s.sfRepo.FindByID(existing.ID)
 		if err != nil {
@@ -300,7 +305,11 @@ func (s *studentFacilityService) Enroll(studentID uint, req dto.EnrollFacilityRe
 
 	// Tambahkan item fasilitas ke invoice bulanan (dari start_date sampai akhir TA)
 	if s.invoiceGen != nil {
-		go s.invoiceGen.AddFacilityToMonthlyRange(studentID, req.FacilityID, req.AcademicYearID)
+		go func() {
+			if err := s.invoiceGen.AddFacilityToMonthlyRange(studentID, req.FacilityID, req.AcademicYearID); err != nil {
+				log.Printf("[Facility] Gagal add facility ke invoice (new enroll) student=%d facility=%d: %v", studentID, req.FacilityID, err)
+			}
+		}()
 	}
 
 	saved, err := s.sfRepo.FindByID(sf.ID)
@@ -340,8 +349,12 @@ func (s *studentFacilityService) UpdateEnrollment(studentID, sfID uint, req dto.
 	// Update invoices: remove old facility items, then re-add with new zone price
 	if s.invoiceGen != nil {
 		go func() {
-			s.invoiceGen.RemoveFacilityFromFutureInvoices(studentID, sf.FacilityID, sf.AcademicYearID)
-			s.invoiceGen.AddFacilityToMonthlyRange(studentID, sf.FacilityID, sf.AcademicYearID)
+			if err := s.invoiceGen.RemoveFacilityFromFutureInvoices(studentID, sf.FacilityID, sf.AcademicYearID); err != nil {
+				log.Printf("[Facility] Gagal remove facility dari invoice (update) student=%d facility=%d: %v", studentID, sf.FacilityID, err)
+			}
+			if err := s.invoiceGen.AddFacilityToMonthlyRange(studentID, sf.FacilityID, sf.AcademicYearID); err != nil {
+				log.Printf("[Facility] Gagal add facility ke invoice (update) student=%d facility=%d: %v", studentID, sf.FacilityID, err)
+			}
 		}()
 	}
 
@@ -433,7 +446,11 @@ func (s *studentFacilityService) Unenroll(studentID, sfID uint) error {
 
 	// Hapus item fasilitas dari invoice bulan ini ke depan yang belum dibayar
 	if s.invoiceGen != nil {
-		go s.invoiceGen.RemoveFacilityFromFutureInvoices(studentID, sf.FacilityID, sf.AcademicYearID)
+		go func() {
+			if err := s.invoiceGen.RemoveFacilityFromFutureInvoices(studentID, sf.FacilityID, sf.AcademicYearID); err != nil {
+				log.Printf("[Facility] Gagal remove facility dari invoice (unenroll) student=%d facility=%d: %v", studentID, sf.FacilityID, err)
+			}
+		}()
 	}
 
 	return nil

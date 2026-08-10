@@ -1,22 +1,24 @@
-import { useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
-import { Edit, Plus, Tag, Trash2 } from "lucide-react";
-import { useCallback, useState } from "react";
+import { Edit, Loader2, Plus, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useGetV1IncomeCategories } from "#/api/endpoints/income-categories/income-categories";
 import {
 	getGetV1IncomeTransactionsQueryKey,
+	getV1IncomeTransactions,
 	useDeleteV1IncomeTransactionsId,
-	useGetV1IncomeTransactions,
 } from "#/api/endpoints/income-transactions/income-transactions";
-import type { DtoIncomeCategoryResponse } from "#/api/model";
+import type {
+	DtoIncomeCategoryResponse,
+	GetV1IncomeTransactionsParams,
+} from "#/api/model";
 import {
 	Alert,
 	Badge,
 	Button,
 	ConfirmDialog,
 	EmptyState,
-	Pagination,
 	useToast,
 } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
@@ -34,11 +36,6 @@ export const Route = createFileRoute("/_authenticated/keuangan/penerimaan/")({
 		date_from:
 			typeof search.date_from === "string" ? search.date_from : undefined,
 		date_to: typeof search.date_to === "string" ? search.date_to : undefined,
-		page: (typeof search.page === "number"
-			? search.page
-			: typeof search.page === "string"
-				? Number.parseInt(search.page, 10) || 1
-				: undefined) as number | undefined,
 	}),
 });
 
@@ -48,7 +45,6 @@ function PenerimaanListPage() {
 	const { addToast } = useToast();
 	const navigate = useNavigate();
 
-	// Fetch income categories from API
 	const { data: catResp } = useGetV1IncomeCategories();
 	const categories: DtoIncomeCategoryResponse[] =
 		((catResp as any)?.data as any)?.data || [];
@@ -57,9 +53,11 @@ function PenerimaanListPage() {
 	const income_category_id = searchParams.income_category_id;
 	const date_from = searchParams.date_from ?? "";
 	const date_to = searchParams.date_to ?? "";
-	const page = searchParams.page ?? 1;
 
 	const [deletingItem, setDeletingItem] = useState<any>(null);
+
+	// Sentinel ref for Intersection Observer
+	const sentinelRef = useRef<HTMLDivElement>(null);
 
 	const updateSearch = useCallback(
 		(updates: Partial<typeof searchParams>) => {
@@ -72,24 +70,79 @@ function PenerimaanListPage() {
 		[navigate, searchParams],
 	);
 
-	const {
-		data: listData,
-		isLoading,
-		isError,
-	} = useGetV1IncomeTransactions(
-		{
-			page,
+	// Build query params (without page — handled by pageParam)
+	const queryParams: GetV1IncomeTransactionsParams = useMemo(
+		() => ({
 			limit: 20,
 			academic_year_id: activeAy?.id,
 			...(income_category_id ? { income_category_id } : {}),
 			...(date_from ? { start_date: date_from } : {}),
 			...(date_to ? { end_date: date_to } : {}),
-		},
-		{ query: { enabled: !!activeAy?.id } },
+		}),
+		[activeAy?.id, income_category_id, date_from, date_to],
 	);
 
-	const items: any[] = ((listData as any)?.data as any)?.data || [];
-	const meta = ((listData as any)?.data as any)?.meta;
+	const {
+		data: infiniteData,
+		isLoading,
+		isError,
+		fetchNextPage,
+		hasNextPage,
+		isFetchingNextPage,
+	} = useInfiniteQuery({
+		queryKey: getGetV1IncomeTransactionsQueryKey(queryParams),
+		queryFn: ({ pageParam, signal }) =>
+			getV1IncomeTransactions({ ...queryParams, page: pageParam }, { signal }),
+		initialPageParam: 1,
+		getNextPageParam: (lastPage) => {
+			const meta = (lastPage.data as any)?.meta;
+			if (!meta) return undefined;
+			const totalPages = Math.ceil((meta.total ?? 0) / (meta.limit ?? 20));
+			const nextPage = (meta.page ?? 1) + 1;
+			return nextPage <= totalPages ? nextPage : undefined;
+		},
+		enabled: !!activeAy?.id,
+	});
+
+	// Flatten all pages into a single array
+	const items: any[] = useMemo(() => {
+		if (!infiniteData?.pages) return [];
+		return infiniteData.pages.flatMap(
+			(page) => ((page.data as any)?.data as any[]) || [],
+		);
+	}, [infiniteData]);
+
+	// Intersection Observer: trigger fetchNextPage when sentinel is visible.
+	// Values captured in a ref to avoid recreating the observer on every render
+	// (e.g. when isFetchingNextPage toggles).
+	const scrollState = useRef({
+		hasNextPage,
+		isFetchingNextPage,
+		fetchNextPage,
+	});
+	scrollState.current = { hasNextPage, isFetchingNextPage, fetchNextPage };
+
+	useEffect(() => {
+		const sentinel = sentinelRef.current;
+		if (!sentinel) return;
+
+		const observer = new IntersectionObserver(
+			(entries) => {
+				const {
+					hasNextPage: has,
+					isFetchingNextPage: fetching,
+					fetchNextPage: fetchFn,
+				} = scrollState.current;
+				if (entries[0]?.isIntersecting && has && !fetching) {
+					fetchFn();
+				}
+			},
+			{ threshold: 0.1 },
+		);
+
+		observer.observe(sentinel);
+		return () => observer.disconnect();
+	}, []);
 
 	const deleteMutation = useDeleteV1IncomeTransactionsId({
 		mutation: {
@@ -116,11 +169,13 @@ function PenerimaanListPage() {
 		},
 	});
 
-	// Summary
-	const totalAmount = items.reduce(
-		(sum: number, t: any) => sum + Number(t.amount),
-		0,
-	);
+	// Summary across all loaded pages
+	const totalAmount = useMemo(() => {
+		return items.reduce(
+			(sum: number, t: any) => sum + Number(t.amount || 0),
+			0,
+		);
+	}, [items]);
 
 	return (
 		<div className="space-y-6">
@@ -154,7 +209,6 @@ function PenerimaanListPage() {
 								const val = e.target.value;
 								updateSearch({
 									income_category_id: val ? Number(val) : undefined,
-									page: 1,
 								});
 							}}
 							className="block w-full sm:w-44 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
@@ -175,7 +229,7 @@ function PenerimaanListPage() {
 							type="date"
 							value={date_from}
 							onChange={(e) => {
-								updateSearch({ date_from: e.target.value, page: 1 });
+								updateSearch({ date_from: e.target.value });
 							}}
 							className="block w-full sm:w-40 rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						/>
@@ -188,7 +242,7 @@ function PenerimaanListPage() {
 							type="date"
 							value={date_to}
 							onChange={(e) => {
-								updateSearch({ date_to: e.target.value, page: 1 });
+								updateSearch({ date_to: e.target.value });
 							}}
 							className="block w-full sm:w-40 rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						/>
@@ -311,7 +365,7 @@ function PenerimaanListPage() {
 											colSpan={4}
 											className="py-3 pl-6 text-sm font-bold text-gray-900 text-right"
 										>
-											Total Halaman Ini
+											Total ({items.length} transaksi)
 										</td>
 										<td className="py-3 px-3 text-sm text-right font-bold text-gray-900 tabular-nums">
 											{formatCurrency(totalAmount)}
@@ -322,16 +376,20 @@ function PenerimaanListPage() {
 							</table>
 						</div>
 
-						{meta && meta.total > meta.limit && (
-							<div className="border-t border-gray-200 px-4 py-3">
-								<Pagination
-									page={meta.page}
-									limit={meta.limit}
-									total={meta.total}
-									onPageChange={(newPage) => updateSearch({ page: newPage })}
-								/>
-							</div>
-						)}
+						{/* Infinite scroll sentinel + loading indicator */}
+						<div ref={sentinelRef} className="flex justify-center py-4">
+							{isFetchingNextPage && (
+								<div className="flex items-center gap-2 text-sm text-gray-500">
+									<Loader2 className="w-4 h-4 animate-spin" />
+									Memuat data...
+								</div>
+							)}
+							{!hasNextPage && items.length > 0 && !isLoading && (
+								<p className="text-sm text-gray-400">
+									Semua data telah dimuat.
+								</p>
+							)}
+						</div>
 					</div>
 				))}
 

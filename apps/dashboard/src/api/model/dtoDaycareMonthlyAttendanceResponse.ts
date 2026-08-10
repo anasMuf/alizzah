@@ -11,6 +11,8 @@ export interface DtoDaycareMonthlyAttendanceResponse {
 	id?: number;
 	meal_days?: number;
 	month?: number;
+	overtime_amount?: number;
+	overtime_minutes?: number;
 	spd_days?: number;
 	student_id?: number;
 	student_name?: string;

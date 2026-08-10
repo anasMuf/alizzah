@@ -1099,6 +1099,10 @@ definitions:
         type: integer
       month:
         type: integer
+      overtime_amount:
+        type: number
+      overtime_minutes:
+        type: integer
       spd_days:
         type: integer
       student_id:
@@ -1464,6 +1468,19 @@ definitions:
       total_synced:
         type: integer
     type: object
+  dto.FacilityCurrentMonthDaysResponse:
+    properties:
+      current_days:
+        type: integer
+      default_days:
+        type: integer
+      invoice_id:
+        type: integer
+      invoice_item_id:
+        type: integer
+      zone_amount:
+        type: number
+    type: object
   dto.FacilityResponse:
     properties:
       description:
@@ -1477,6 +1494,8 @@ definitions:
     type: object
   dto.FacilityStudentItemResponse:
     properties:
+      current_month_days:
+        type: integer
       end_date:
         type: string
       fee_config_item:
@@ -2934,6 +2953,10 @@ definitions:
       month:
         maximum: 12
         minimum: 1
+        type: integer
+      overtime_minutes:
+        description: max 100 jam ≈ 6000 menit
+        maximum: 6000
         type: integer
       spd_days:
         maximum: 30
@@ -9951,6 +9974,10 @@ paths:
         in: query
         name: end_date
         type: string
+      - description: Search by student name
+        in: query
+        name: search
+        type: string
       produces:
       - application/json
       responses:
@@ -11372,6 +11399,50 @@ paths:
       summary: Enroll student in extracurricular
       tags:
       - student-extracurriculars
+  /v1/students/{id}/extracurriculars/{extracurricular_id}/cleanup-invoices:
+    post:
+      consumes:
+      - application/json
+      description: 'Recovery endpoint: menghapus item ekskul tertentu dari invoice'
+      parameters:
+      - description: Student ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Extracurricular ID
+        in: path
+        name: extracurricular_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Hapus item ekskul dari invoice bulan ini dan seterusnya
+      tags:
+      - student-extracurriculars
   /v1/students/{id}/extracurriculars/{se_id}:
     delete:
       consumes:
@@ -11589,6 +11660,35 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Update student facility enrollment (change zone/package)
+      tags:
+      - facilities
+  /v1/students/{id}/facilities/{facilityId}/current-month-days:
+    get:
+      parameters:
+      - description: Student ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Student Facility enrollment ID
+        in: path
+        name: facilityId
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.FacilityCurrentMonthDaysResponse'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Get current month effective days & invoice item quantity for a facility
+        enrollment
       tags:
       - facilities
   /v1/students/{id}/guardians:

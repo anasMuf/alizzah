@@ -1065,7 +1065,8 @@ func (s *invoiceGenerateService) addDaycareItemToInvoice(invoiceID uint, name st
 // Keeps paid items untouched. Deletes old unpaid items, creates one new unpaid
 // item with the remaining amount (total - totalPaid).
 // itemCategory allows distinguishing SPD ("daycare") from konsumsi ("daycare_meal").
-func (s *invoiceGenerateService) upsertDaycareAttendanceItem(invoiceID uint, namePrefix string, name string, amount float64, quantity *uint, unitPrice *float64, itemCategory string) error {
+// unitLabel is used for partial-payment suffix (e.g. "hari", "unit").
+func (s *invoiceGenerateService) upsertDaycareAttendanceItem(invoiceID uint, namePrefix string, name string, amount float64, quantity *uint, unitPrice *float64, itemCategory string, unitLabel string) error {
 	items, _ := s.invoiceItemRepo.FindByInvoiceID(invoiceID)
 
 	var totalPaidAmount float64
@@ -1111,10 +1112,10 @@ func (s *invoiceGenerateService) upsertDaycareAttendanceItem(invoiceID uint, nam
 		return nil // sudah lunas semua
 	}
 
-	// Nama item: kalau ada yg paid, pakai "+X hari", kalau tidak pakai full name
+	// Nama item: kalau ada yg paid, pakai "+X <unit>", kalau tidak pakai full name
 	itemName := name
 	if totalPaidAmount > 0 {
-		itemName = fmt.Sprintf("%s (+%d hari)", namePrefix, unpaidQty)
+		itemName = fmt.Sprintf("%s (+%d %s)", namePrefix, unpaidQty, unitLabel)
 	}
 
 	return s.invoiceItemRepo.Create(&model.InvoiceItem{
@@ -1162,6 +1163,7 @@ func (s *invoiceGenerateService) InjectPremiumDaycareToMonthlyInvoices(de model.
 		// Hapus item daycare lama (unpaid) sebelum inject SPD baru — mencegah akumulasi
 		// jika time_slot/age_group berubah tanpa melalui Update (misal: SyncDaycareMonthlyInvoices)
 		s.invoiceItemRepo.DeleteUnpaidByInvoiceAndCategory(inv.ID, "daycare")
+		s.invoiceItemRepo.DeleteUnpaidByInvoiceAndCategory(inv.ID, "daycare_overtime")
 
 		// SPD (flat dari enrollment)
 		if err := s.addDaycareItemToInvoice(inv.ID, spdItem.Name, spdItem.Amount, nil, nil); err != nil {
@@ -1221,12 +1223,13 @@ func (s *invoiceGenerateService) GenerateDaycareMonthlyInvoices(params dto.Gener
 	// Try monthly attendance first
 	monthlyAtt, _ := s.daycareMonthlyAttRepo.FindByStudentMonthYear(params.StudentID, params.Month, params.Year)
 
-	var spdDays, mealDays uint
+	var spdDays, mealDays, overtimeMinutes uint
 
-	if monthlyAtt != nil && (monthlyAtt.SPDDays > 0 || monthlyAtt.MealDays > 0) {
+	if monthlyAtt != nil && (monthlyAtt.SPDDays > 0 || monthlyAtt.MealDays > 0 || monthlyAtt.OvertimeMinutes > 0) {
 		spdDays = monthlyAtt.SPDDays
 		mealDays = monthlyAtt.MealDays
-		log.Printf("[Daycare SPD] Menggunakan data kehadiran bulanan: spd=%d meal=%d", spdDays, mealDays)
+		overtimeMinutes = monthlyAtt.OvertimeMinutes
+		log.Printf("[Daycare SPD] Menggunakan data kehadiran bulanan: spd=%d meal=%d overtime=%d", spdDays, mealDays, overtimeMinutes)
 	} else {
 		// Fallback: hitung dari absensi harian
 		start := time.Date(int(params.Year), time.Month(params.Month), 1, 0, 0, 0, 0, time.UTC)
@@ -1284,7 +1287,7 @@ func (s *invoiceGenerateService) GenerateDaycareMonthlyInvoices(params dto.Gener
 				qty := uint(count)
 				name := fmt.Sprintf("%s (%d hari)", spdItem.Name, count)
 				log.Printf("[Daycare SPD] Regular fallback: %s = %d x %.0f", name, count, dailyRate)
-				if err := s.upsertDaycareAttendanceItem(invoice.ID, spdItem.Name, name, dailyRate*float64(count), &qty, &dailyRate, "daycare"); err != nil {
+				if err := s.upsertDaycareAttendanceItem(invoice.ID, spdItem.Name, name, dailyRate*float64(count), &qty, &dailyRate, "daycare", "hari"); err != nil {
 					return err
 				}
 			}
@@ -1298,7 +1301,7 @@ func (s *invoiceGenerateService) GenerateDaycareMonthlyInvoices(params dto.Gener
 				qty := uint(mealDays)
 				name := fmt.Sprintf("%s (%d hari)", mealItem.Name, mealDays)
 				log.Printf("[Daycare SPD] Meal fallback: %d hari x %.0f", mealDays, dailyRate)
-				if err := s.upsertDaycareAttendanceItem(invoice.ID, mealItem.Name, name, dailyRate*float64(mealDays), &qty, &dailyRate, "daycare_meal"); err != nil {
+				if err := s.upsertDaycareAttendanceItem(invoice.ID, mealItem.Name, name, dailyRate*float64(mealDays), &qty, &dailyRate, "daycare_meal", "hari"); err != nil {
 					return err
 				}
 			}
@@ -1343,7 +1346,7 @@ func (s *invoiceGenerateService) GenerateDaycareMonthlyInvoices(params dto.Gener
 			qty := spdDays
 			name := fmt.Sprintf("%s (%d hari)", spdItem.Name, spdDays)
 			log.Printf("[Daycare SPD] Regular monthly: %s = %d x %.0f = %.0f", name, spdDays, dailyRate, dailyRate*float64(spdDays))
-			if err := s.upsertDaycareAttendanceItem(invoice.ID, spdItem.Name, name, dailyRate*float64(spdDays), &qty, &dailyRate, "daycare"); err != nil {
+			if err := s.upsertDaycareAttendanceItem(invoice.ID, spdItem.Name, name, dailyRate*float64(spdDays), &qty, &dailyRate, "daycare", "hari"); err != nil {
 				return err
 			}
 		}
@@ -1357,11 +1360,29 @@ func (s *invoiceGenerateService) GenerateDaycareMonthlyInvoices(params dto.Gener
 			qty := mealDays
 			name := fmt.Sprintf("%s (%d hari)", mealItem.Name, mealDays)
 			log.Printf("[Daycare SPD] Meal monthly: %d hari x %.0f = %.0f", mealDays, dailyRate, dailyRate*float64(mealDays))
-			if err := s.upsertDaycareAttendanceItem(invoice.ID, mealItem.Name, name, dailyRate*float64(mealDays), &qty, &dailyRate, "daycare_meal"); err != nil {
+			if err := s.upsertDaycareAttendanceItem(invoice.ID, mealItem.Name, name, dailyRate*float64(mealDays), &qty, &dailyRate, "daycare_meal", "hari"); err != nil {
 				return err
 			}
 		} else {
 			log.Printf("[Daycare SPD] Meal: fee item daycare_regular_meal tidak ditemukan")
+		}
+	}
+
+	// Overtime (both categories: monthly overtime × per-30min rate)
+	if overtimeMinutes > 0 {
+		overtimeItem, err := s.feeConfigItemRepo.FindByItemKey(feeConfig.ID, "daycare_overtime", "all", "all")
+		if err == nil && overtimeItem != nil {
+			overtimeUnits := overtimeMinutes / 30 // pembulatan ke bawah
+			if overtimeUnits > 0 {
+				rate := overtimeItem.Amount
+				name := fmt.Sprintf("%s (%d unit)", overtimeItem.Name, overtimeUnits)
+				log.Printf("[Daycare SPD] Overtime: %d menit = %d unit x %.0f = %.0f", overtimeMinutes, overtimeUnits, rate, rate*float64(overtimeUnits))
+				if err := s.upsertDaycareAttendanceItem(invoice.ID, overtimeItem.Name, name, rate*float64(overtimeUnits), &overtimeUnits, &rate, "daycare_overtime", "unit"); err != nil {
+					return err
+				}
+			}
+		} else {
+			log.Printf("[Daycare SPD] Overtime: fee item daycare_overtime tidak ditemukan")
 		}
 	}
 
@@ -1540,7 +1561,7 @@ func (s *invoiceGenerateService) RemoveDaycareFromFutureInvoices(studentID uint,
 	}
 
 	for _, inv := range invoices {
-		for _, cat := range []string{"daycare", "daycare_meal"} {
+		for _, cat := range []string{"daycare", "daycare_meal", "daycare_overtime"} {
 			deleted, err := s.invoiceItemRepo.DeleteUnpaidByInvoiceAndCategory(inv.ID, cat)
 			if err != nil {
 				return err

@@ -851,17 +851,18 @@ func (s *invoiceGenerateService) RemoveExtracurricularFromFutureInvoices(student
 
 	for _, inv := range invoices {
 		items, _ := s.invoiceItemRepo.FindByInvoiceID(inv.ID)
-		deleted := false
+		anyChange := false
 		for _, item := range items {
 			for _, feeItem := range feeItems {
 				if item.Name == feeItem.Name && item.Category == feeItem.Category && item.PaidAmount == 0 {
 					// Hard delete — hindari soft-delete agar tidak menyebabkan duplikat saat enrollment ulang.
 					s.db.Unscoped().Delete(&model.InvoiceItem{}, item.ID)
-					deleted = true
+					anyChange = true
 				}
 			}
 		}
-		if deleted {
+		// Selalu recalculate jika ada perubahan — mencegah total mismatch
+		if anyChange {
 			s.recalculateInvoiceTotal(inv.ID)
 		}
 	}
@@ -1790,16 +1791,17 @@ func (s *invoiceGenerateService) RemoveFacilityFromFutureInvoices(studentID, fac
 
 	for _, inv := range invoices {
 		items, _ := s.invoiceItemRepo.FindByInvoiceID(inv.ID)
-		deleted := false
+		anyChange := false
 		for _, item := range items {
 			if item.Category == "facility" && strings.Contains(item.Name, facility.Name) && item.PaidAmount == 0 {
 				// Hard delete — hindari soft-delete agar item benar-benar hilang
 				// dan tidak menyebabkan duplikat saat enrollment ulang.
 				s.db.Unscoped().Delete(&model.InvoiceItem{}, item.ID)
-				deleted = true
+				anyChange = true
 			}
 		}
-		if deleted {
+		// Selalu recalculate jika ada perubahan — mencegah total mismatch
+		if anyChange {
 			s.recalculateInvoiceTotal(inv.ID)
 		}
 	}

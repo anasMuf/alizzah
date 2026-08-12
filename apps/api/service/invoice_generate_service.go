@@ -24,6 +24,7 @@ type InvoiceGenerateService interface {
 	GenerateDaycareMonthlyBulk(params dto.GenerateDaycareMonthlyParams) (*dto.DaycareSyncResult, error)
 	InjectPremiumDaycareToMonthlyInvoices(de model.DaycareEnrollment) error
 	RemoveDaycareFromFutureInvoices(studentID uint, fromMonth, fromYear uint) error
+	DeleteDaycareInitial(studentID, academicYearID uint) error
 	SyncDaycareMonthlyInvoices() (*dto.DaycareSyncResult, error)
 	RecalculateInfaqHarian(classGroupID, month, year uint) error
 	AddExtracurricularToMonthlyRange(studentID, extracurricularID, academicYearID uint) error
@@ -540,6 +541,13 @@ func (s *invoiceGenerateService) GenerateDaycareInitial(params dto.GenerateIniti
 		Count(&count)
 	if count > 0 {
 		return nil // idempotent
+	}
+
+	// Defensive: pastikan enrollment daycare benar-benar premium
+	de, err := s.daycareRepo.FindActiveByStudentID(params.StudentID, params.AcademicYearID)
+	if err != nil || de == nil || de.Category != "premium" {
+		log.Printf("[Daycare] GenerateDaycareInitial: skip student=%d (bukan premium)", params.StudentID)
+		return nil
 	}
 
 	feeConfig, err := s.feeConfigRepo.FindByAcademicYearID(params.AcademicYearID)
@@ -1162,6 +1170,8 @@ func (s *invoiceGenerateService) InjectPremiumDaycareToMonthlyInvoices(de model.
 
 		// Hapus item daycare lama (unpaid) sebelum inject SPD baru — mencegah akumulasi
 		// jika time_slot/age_group berubah tanpa melalui Update (misal: SyncDaycareMonthlyInvoices)
+		// Catatan: daycare_meal TIDAK dihapus di sini karena meal diregenerasi via attendance
+		// processing di GenerateDaycareMonthlyInvoices, bukan di Sync.
 		s.invoiceItemRepo.DeleteUnpaidByInvoiceAndCategory(inv.ID, "daycare")
 		s.invoiceItemRepo.DeleteUnpaidByInvoiceAndCategory(inv.ID, "daycare_overtime")
 
@@ -1561,19 +1571,45 @@ func (s *invoiceGenerateService) RemoveDaycareFromFutureInvoices(studentID uint,
 	}
 
 	for _, inv := range invoices {
+		anyChange := false
 		for _, cat := range []string{"daycare", "daycare_meal", "daycare_overtime"} {
 			deleted, err := s.invoiceItemRepo.DeleteUnpaidByInvoiceAndCategory(inv.ID, cat)
 			if err != nil {
 				return err
 			}
 			if deleted > 0 {
-				if err := s.recalculateInvoiceTotal(inv.ID); err != nil {
-					return err
-				}
+				anyChange = true
+			}
+		}
+		// Selalu recalculate total untuk memastikan konsistensi data
+		if anyChange {
+			if err := s.recalculateInvoiceTotal(inv.ID); err != nil {
+				return err
 			}
 		}
 	}
 	return nil
+}
+
+// DeleteDaycareInitial menghapus invoice daycare_initial beserta item-nya.
+// Dipanggil saat enrollment daycare di-downgrade dari premium ke regular.
+func (s *invoiceGenerateService) DeleteDaycareInitial(studentID, academicYearID uint) error {
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		// Hapus invoice items dulu
+		if err := tx.Where("invoice_id IN (SELECT id FROM invoices WHERE student_id = ? AND academic_year_id = ? AND type = ?)",
+			studentID, academicYearID, "daycare_initial").
+			Delete(&model.InvoiceItem{}).Error; err != nil {
+			return err
+		}
+		// Hapus invoice
+		if err := tx.Where("student_id = ? AND academic_year_id = ? AND type = ?",
+			studentID, academicYearID, "daycare_initial").
+			Delete(&model.Invoice{}).Error; err != nil {
+			return err
+		}
+		log.Printf("[Daycare] DeleteDaycareInitial: student=%d ay=%d", studentID, academicYearID)
+		return nil
+	})
 }
 
 // SyncDaycareMonthlyInvoices syncs daycare SPD items for all active enrollments.

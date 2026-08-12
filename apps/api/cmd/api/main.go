@@ -207,6 +207,7 @@ func main() {
 	seeders.BackfillExpenseCategoryMapping(db)  // Perbaiki mapping invoice_category & tambah kategori income
 	seeders.BackfillRemoveAslinFromJuly(db)     // Hapus item Aslin dari invoice Juli (start_month=8)
 	seeders.BackfillCleanFacilityDuplicates(db) // Bersihkan item fasilitas duplikat/sebelum start_date
+	seeders.BackfillDaycareRegularCleanup(db)   // Hapus daycare_initial regular + recalculate invoice mismatch
 	seeders.BackfillMandatorySavingsDeposit(db) // Setoran tabungan wajib untuk payment historical
 
 	// Backfill flag is_koperasi — hanya relevan jika seam koperasi aktif

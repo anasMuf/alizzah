@@ -259,8 +259,12 @@ func (s *daycareEnrollmentService) Update(id uint, req dto.CreateDaycareEnrollme
 				}
 			}
 		}
-		// Jika pindah ke regular: RemoveDaycareFromFutureInvoices sudah cukup
-		// (item regular akan ditambahkan via GenerateDaycareMonthlyInvoices berbasis absensi)
+		// Jika downgrade dari premium ke regular: hapus invoice daycare_initial
+		if categoryChanged && oldCategory == "premium" && req.Category == "regular" {
+			if err := s.invoiceGen.DeleteDaycareInitial(de.StudentID, de.AcademicYearID); err != nil {
+				log.Printf("[Daycare] Gagal hapus daycare_initial saat downgrade student=%d: %v", de.StudentID, err)
+			}
+		}
 	}
 
 	savedDe, err := s.daycareRepo.FindByID(de.ID)

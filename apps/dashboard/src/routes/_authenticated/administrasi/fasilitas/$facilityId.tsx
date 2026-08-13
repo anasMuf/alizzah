@@ -732,15 +732,37 @@ function FacilityDetailPage() {
 														onClick={async () => {
 															const qty = Number(editingDaysValue);
 															if (qty <= 0) return;
-															const resp = await customInstance<{ data: any }>(
-																`/v1/students/${sf.student?.id}/facilities/${sf.id}/current-month-days`,
-															);
-															const info = (resp as any).data?.data;
-															if (info?.invoice_item_id && info?.invoice_id) {
+															try {
+																const resp = await customInstance<{
+																	data: any;
+																}>(
+																	`/v1/students/${sf.student?.id}/facilities/${sf.id}/current-month-days`,
+																);
+																const info = (resp as any).data?.data;
+																if (
+																	!info?.invoice_item_id ||
+																	!info?.invoice_id
+																) {
+																	addToast({
+																		variant: "error",
+																		title: "Gagal",
+																		message:
+																			"Item fasilitas tidak ditemukan di invoice bulan ini.",
+																	});
+																	return;
+																}
 																saveDaysMutation.mutate({
 																	invoiceId: info.invoice_id,
 																	itemId: info.invoice_item_id,
 																	quantity: qty,
+																});
+															} catch (err: any) {
+																addToast({
+																	variant: "error",
+																	title: "Gagal",
+																	message:
+																		err?.message ??
+																		"Gagal mengambil data jumlah hari.",
 																});
 															}
 														}}

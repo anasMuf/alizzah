@@ -150,9 +150,13 @@ function LogAktivitasComponent() {
 		{ query: { enabled: isDetailOpen && !!selectedId } },
 	);
 
-	const entries = (response as any)?.data ?? [];
-	const meta = (response as any)?.meta ?? { page: 1, limit: 20, total: 0 };
-	const detail = (detailResponse as any)?.data;
+	const entries = (response as any)?.data?.data ?? [];
+	const meta = (response as any)?.data?.meta ?? {
+		page: 1,
+		limit: 20,
+		total: 0,
+	};
+	const detail = (detailResponse as any)?.data?.data;
 
 	const hasFilters =
 		search ||

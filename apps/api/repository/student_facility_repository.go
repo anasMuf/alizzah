@@ -40,7 +40,7 @@ func (r *studentFacilityRepository) FindByStudentID(studentID uint, params dto.S
 
 func (r *studentFacilityRepository) FindByID(id uint) (*model.StudentFacility, error) {
 	var sf model.StudentFacility
-	err := r.db.Preload("Facility").First(&sf, id).Error
+	err := r.db.Preload("Facility").Preload("FeeConfigItem").First(&sf, id).Error
 	return &sf, err
 }
 
@@ -97,6 +97,7 @@ func (r *studentFacilityRepository) FindByFacilityID(facilityID uint, params dto
 
 	query := r.db.Model(&model.StudentFacility{}).
 		Preload("Student").
+		Preload("Facility").
 		Preload("FeeConfigItem").
 		Where("facility_id = ?", facilityID)
 

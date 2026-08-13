@@ -10,6 +10,7 @@ import (
 type FeeConfigItemRepository interface {
 	FindByFeeConfigID(feeConfigID uint, params dto.FeeConfigItemQueryParams) ([]model.FeeConfigItem, error)
 	FindByID(id uint) (*model.FeeConfigItem, error)
+	FindByIDIncludingDeleted(id uint) (*model.FeeConfigItem, error)
 	FindByItemKey(feeConfigID uint, itemKey, level, gender string) (*model.FeeConfigItem, error)
 	FindByCategory(feeConfigID uint, category string) ([]model.FeeConfigItem, error)
 	FindForStudent(feeConfigID uint, level, gender string) ([]model.FeeConfigItem, error)
@@ -57,6 +58,12 @@ func (r *feeConfigItemRepository) FindByFeeConfigID(feeConfigID uint, params dto
 func (r *feeConfigItemRepository) FindByID(id uint) (*model.FeeConfigItem, error) {
 	var item model.FeeConfigItem
 	err := r.db.First(&item, id).Error
+	return &item, err
+}
+
+func (r *feeConfigItemRepository) FindByIDIncludingDeleted(id uint) (*model.FeeConfigItem, error) {
+	var item model.FeeConfigItem
+	err := r.db.Unscoped().First(&item, id).Error
 	return &item, err
 }
 

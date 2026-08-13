@@ -17354,6 +17354,9 @@ const docTemplate = `{
                 "category": {
                     "type": "string"
                 },
+                "facility_id": {
+                    "type": "integer"
+                },
                 "id": {
                     "type": "integer"
                 },

@@ -508,6 +508,7 @@ func mapInvoiceItemToResponse(item model.InvoiceItem) dto.InvoiceItemResponse {
 		IsKoperasi:        item.IsKoperasi,
 		KoperasiProductID: item.KoperasiProductID,
 		KoperasiVariantID: item.KoperasiVariantID,
+		FacilityID:        item.FacilityID,
 	}
 	return resp
 }

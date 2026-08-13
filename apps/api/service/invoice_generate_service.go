@@ -32,7 +32,7 @@ type InvoiceGenerateService interface {
 	CleanupExtracurricularInvoices(studentID, extracurricularID uint) error
 	SyncExtracurricularMonthlyInvoices() (*dto.ExtracurricularSyncResult, error)
 	AddFacilityToMonthlyRange(studentID, facilityID, academicYearID uint) error
-	RemoveFacilityFromFutureInvoices(studentID, facilityID, academicYearID uint) error
+	RemoveFacilityFromFutureInvoices(studentID, facilityID, academicYearID uint, extraZoneNames ...string) error
 	ApplyDispensationToExistingInvoices(studentID, academicYearID uint) error
 	// RegenerateForStudent menghapus semua invoice (initial, registration, monthly)
 	// untuk student di tahun ajaran aktif lalu generate ulang dengan data terbaru.
@@ -398,7 +398,19 @@ func (s *invoiceGenerateService) GenerateMonthly(params dto.GenerateMonthlyInvoi
 	if s.sfRepo != nil {
 		activeFacilities, _ := s.sfRepo.FindActiveByStudentID(params.StudentID, params.AcademicYearID)
 		for _, sf := range activeFacilities {
-			facilityFeeItems, _ := s.feeConfigItemRepo.FindByItemKeys(feeConfig.ID, []string{facilityItemKey(sf.Facility.Name)})
+			// Prioritas: zona/paket yang dipilih siswa saat enroll (konsisten
+			// dengan AddFacilityToMonthlyRange); fallback ke item dasar fasilitas.
+			var facilityFeeItems []model.FeeConfigItem
+			if sf.FeeConfigItemID != nil {
+				item, err := s.feeConfigItemRepo.FindByID(*sf.FeeConfigItemID)
+				// Hanya pakai zona jika masih milik fee config tahun ajaran yang sama.
+				if err == nil && item != nil && item.FeeConfigID == feeConfig.ID {
+					facilityFeeItems = []model.FeeConfigItem{*item}
+				}
+			}
+			if len(facilityFeeItems) == 0 {
+				facilityFeeItems, _ = s.feeConfigItemRepo.FindByItemKeys(feeConfig.ID, []string{facilityItemKey(sf.Facility.Name)})
+			}
 			for _, feeItem := range facilityFeeItems {
 				amount := feeItem.Amount
 				itemName := feeItem.Name
@@ -421,6 +433,7 @@ func (s *invoiceGenerateService) GenerateMonthly(params dto.GenerateMonthlyInvoi
 					Quantity:    qty,
 					UnitPrice:   unitPx,
 					IsMandatory: true,
+					FacilityID:  &sf.FacilityID,
 				})
 			}
 		}
@@ -1654,6 +1667,30 @@ func facilityItemKey(facilityName string) string {
 	return "facility_" + slug
 }
 
+// facilityItemNameCondition membuat kondisi SQL untuk mencocokkan item
+// fasilitas di invoice berdasarkan nama fasilitas ATAU nama zona/paket.
+// Format nama item: "<nama> (N hari)" atau persis "<nama>", jadi pencocokan
+// dilakukan pada nama dasar (bukan substring) supaya "ZONA 1" tidak ikut
+// cocok dengan item "ZONA 10 (24 hari)".
+func facilityItemNameCondition(facilityName string, zoneNames []string) (string, []any) {
+	parts := []string{}
+	args := []any{}
+	for _, base := range append([]string{facilityName}, zoneNames...) {
+		if base == "" {
+			continue
+		}
+		escaped := utility.EscapeLikePattern(base)
+		// ILIKE: pencocokan case-insensitive (konsisten dengan perilaku lama);
+		// pola pertama tanpa wildcard = kesetaraan, pola kedua format "<base> (N hari)".
+		parts = append(parts, "name ILIKE ?", "name ILIKE ?")
+		args = append(args, escaped, escaped+" (%")
+	}
+	if len(parts) == 0 {
+		return "1=0", nil
+	}
+	return "(" + strings.Join(parts, " OR ") + ")", args
+}
+
 func (s *invoiceGenerateService) AddFacilityToMonthlyRange(studentID, facilityID, academicYearID uint) error {
 	facility, err := s.facilityRepo.FindByID(facilityID)
 	if err != nil {
@@ -1688,7 +1725,9 @@ func (s *invoiceGenerateService) AddFacilityToMonthlyRange(studentID, facilityID
 	var feeItems []model.FeeConfigItem
 	if feeConfigItemID != nil {
 		item, err := s.feeConfigItemRepo.FindByID(*feeConfigItemID)
-		if err == nil && item != nil {
+		// Hanya pakai zona jika masih milik fee config tahun ajaran yang sama
+		// (mencegah tarif tahun lama bocor ke invoice tahun baru).
+		if err == nil && item != nil && item.FeeConfigID == feeConfig.ID {
 			feeItems = []model.FeeConfigItem{*item}
 		}
 	}
@@ -1700,16 +1739,27 @@ func (s *invoiceGenerateService) AddFacilityToMonthlyRange(studentID, facilityID
 		}
 	}
 
+	// Item fasilitas di invoice dinamai sesuai nama fasilitas ATAU nama
+	// zona/paket, jadi pencocokan legacy (facility_id NULL) harus mencakup
+	// keduanya. Baris baru dicocokkan langsung via facility_id.
+	zoneNames := make([]string, 0, len(feeItems))
+	for _, fi := range feeItems {
+		zoneNames = append(zoneNames, fi.Name)
+	}
+	nameCond, nameArgs := facilityItemNameCondition(facility.Name, zoneNames)
+	facilityCond := "(facility_id = ? OR (facility_id IS NULL AND " + nameCond + "))"
+	facilityArgs := append([]any{facility.ID}, nameArgs...)
+
 	// Bersihkan item fasilitas yang sudah soft-deleted (defense in depth)
 	s.db.Unscoped().
-		Where("category = ? AND name ILIKE ? AND deleted_at IS NOT NULL", "facility", "%"+facility.Name+"%").
+		Where("category = ? AND "+facilityCond+" AND deleted_at IS NOT NULL", append([]any{"facility"}, facilityArgs...)...).
 		Where("invoice_id IN (SELECT id FROM invoices WHERE student_id = ? AND type = 'monthly' AND academic_year_id = ?)", studentID, academicYearID).
 		Delete(&model.InvoiceItem{})
 
 	// Hapus item fasilitas (unpaid) di bulan SEBELUM start_date —
 	// menangani kasus start_date berubah mundur (misal Juli → Agustus)
 	s.db.Unscoped().
-		Where("category = ? AND name ILIKE ? AND paid_amount = 0 AND deleted_at IS NULL", "facility", "%"+facility.Name+"%").
+		Where("category = ? AND "+facilityCond+" AND paid_amount = 0 AND deleted_at IS NULL", append([]any{"facility"}, facilityArgs...)...).
 		Where("invoice_id IN (SELECT id FROM invoices WHERE student_id = ? AND type = 'monthly' AND academic_year_id = ? AND ((year < ?) OR (year = ? AND month < ?)))",
 			studentID, academicYearID, uint(startDate.Year()), uint(startDate.Year()), uint(startDate.Month())).
 		Delete(&model.InvoiceItem{})
@@ -1725,7 +1775,18 @@ func (s *invoiceGenerateService) AddFacilityToMonthlyRange(studentID, facilityID
 		existingItems, _ := s.invoiceItemRepo.FindByInvoiceID(invoice.ID)
 		facilityExists := false
 		for _, existing := range existingItems {
-			if existing.Category == "facility" && strings.Contains(existing.Name, facility.Name) {
+			if existing.Category != "facility" {
+				continue
+			}
+			if existing.FacilityID != nil {
+				if *existing.FacilityID == facility.ID {
+					facilityExists = true
+					break
+				}
+				continue
+			}
+			// Baris legacy tanpa facility_id → fallback nama
+			if facilityItemNameMatches(existing.Name, facility.Name, zoneNames...) {
 				facilityExists = true
 				break
 			}
@@ -1767,6 +1828,7 @@ func (s *invoiceGenerateService) AddFacilityToMonthlyRange(studentID, facilityID
 				Quantity:    qty,
 				UnitPrice:   unitPx,
 				IsMandatory: true,
+				FacilityID:  &facility.ID,
 			}
 			s.invoiceItemRepo.Create(item)
 		}
@@ -1777,23 +1839,55 @@ func (s *invoiceGenerateService) AddFacilityToMonthlyRange(studentID, facilityID
 	return nil
 }
 
-func (s *invoiceGenerateService) RemoveFacilityFromFutureInvoices(studentID, facilityID, academicYearID uint) error {
+func (s *invoiceGenerateService) RemoveFacilityFromFutureInvoices(studentID, facilityID, academicYearID uint, extraZoneNames ...string) error {
 	facility, err := s.facilityRepo.FindByID(facilityID)
 	if err != nil {
 		return err
+	}
+
+	// Item fasilitas di invoice bisa dinamai sesuai zona/paket. Enrollment
+	// bisa saja sudah non-aktif saat fungsi ini dipanggil (alur unenroll),
+	// jadi ambil record apa pun (unscoped), lalu gabung dengan nama zona
+	// lama yang dikirim pemanggil (alur ganti zona).
+	zoneNames := append([]string{}, extraZoneNames...)
+	if en, err := s.sfRepo.FindByStudentFacilityAcademicYear(studentID, facilityID, academicYearID); err == nil && en != nil && en.FeeConfigItemID != nil {
+		if item, err := s.feeConfigItemRepo.FindByIDIncludingDeleted(*en.FeeConfigItemID); err == nil && item != nil {
+			zoneNames = append(zoneNames, item.Name)
+		}
 	}
 
 	now := time.Now()
 	curMonth := uint(now.Month())
 	curYear := uint(now.Year())
 
-	invoices, _ := s.invoiceRepo.FindMonthlyByStudentFromMonth(studentID, curMonth, curYear)
+	// Scope ke TAHUN AJARAN yang sama — jangan sampai unenroll fasilitas di
+	// tahun ajaran lama menghapus item fasilitas di invoice tahun ajaran baru.
+	allInvoices, _ := s.invoiceRepo.FindMonthlyByStudentAcademicYear(studentID, academicYearID)
+	invoices := make([]model.Invoice, 0, len(allInvoices))
+	for _, inv := range allInvoices {
+		if inv.Month == nil || inv.Year == nil {
+			continue
+		}
+		if *inv.Year > curYear || (*inv.Year == curYear && *inv.Month >= curMonth) {
+			invoices = append(invoices, inv)
+		}
+	}
 
 	for _, inv := range invoices {
 		items, _ := s.invoiceItemRepo.FindByInvoiceID(inv.ID)
 		anyChange := false
 		for _, item := range items {
-			if item.Category == "facility" && strings.Contains(item.Name, facility.Name) && item.PaidAmount == 0 {
+			if item.Category != "facility" || item.PaidAmount != 0 {
+				continue
+			}
+			isMatch := false
+			if item.FacilityID != nil {
+				isMatch = *item.FacilityID == facility.ID
+			} else {
+				// Baris legacy tanpa facility_id → fallback nama
+				isMatch = facilityItemNameMatches(item.Name, facility.Name, zoneNames...)
+			}
+			if isMatch {
 				// Hard delete — hindari soft-delete agar item benar-benar hilang
 				// dan tidak menyebabkan duplikat saat enrollment ulang.
 				s.db.Unscoped().Delete(&model.InvoiceItem{}, item.ID)

@@ -70,6 +70,7 @@ type InvoiceItemResponse struct {
 	IsKoperasi        bool     `json:"is_koperasi"`
 	KoperasiProductID *uint    `json:"koperasi_product_id,omitempty"`
 	KoperasiVariantID *uint    `json:"koperasi_variant_id,omitempty"`
+	FacilityID        *uint    `json:"facility_id,omitempty"`
 }
 
 // Request — Add Item

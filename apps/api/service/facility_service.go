@@ -269,15 +269,29 @@ func (s *studentFacilityService) Enroll(studentID uint, req dto.EnrollFacilityRe
 	existing, _ := s.sfRepo.FindByStudentFacilityAcademicYear(studentID, req.FacilityID, req.AcademicYearID)
 	if existing != nil {
 		// Reactivate: clear end_date, update zone & start date
+		oldFeeConfigItemID := existing.FeeConfigItemID
 		existing.EndDate = nil
 		existing.FeeConfigItemID = req.FeeConfigItemID
 		existing.StartDate = startDate
 		if err := s.sfRepo.Update(existing); err != nil {
 			return nil, err
 		}
-		// Re-add to invoices
+		// Sinkronkan invoice. Hapus item zona lama HANYA jika zona berubah;
+		// Add tetap jalan (unenroll sudah menghapus item bulan berjalan+depan).
+		zoneChanged := !sameUintPtr(oldFeeConfigItemID, req.FeeConfigItemID)
 		if s.invoiceGen != nil {
+			var oldZoneNames []string
+			if zoneChanged && oldFeeConfigItemID != nil {
+				if oldItem, err := s.feeConfigItemRepo.FindByIDIncludingDeleted(*oldFeeConfigItemID); err == nil && oldItem != nil {
+					oldZoneNames = append(oldZoneNames, oldItem.Name)
+				}
+			}
 			go func() {
+				if zoneChanged {
+					if err := s.invoiceGen.RemoveFacilityFromFutureInvoices(studentID, req.FacilityID, req.AcademicYearID, oldZoneNames...); err != nil {
+						log.Printf("[Facility] Gagal remove facility dari invoice (reactivation) student=%d facility=%d: %v", studentID, req.FacilityID, err)
+					}
+				}
 				if err := s.invoiceGen.AddFacilityToMonthlyRange(studentID, req.FacilityID, req.AcademicYearID); err != nil {
 					log.Printf("[Facility] Gagal add facility ke invoice (reactivation) student=%d facility=%d: %v", studentID, req.FacilityID, err)
 				}
@@ -341,6 +355,10 @@ func (s *studentFacilityService) UpdateEnrollment(studentID, sfID uint, req dto.
 		}
 	}
 
+	// Simpan zona LAMA sebelum diganti — dipakai untuk menghapus item
+	// invoice lama yang dinamai sesuai zona lama.
+	oldFeeConfigItemID := sf.FeeConfigItemID
+
 	sf.FeeConfigItemID = req.FeeConfigItemID
 	if err := s.sfRepo.Update(sf); err != nil {
 		return nil, err
@@ -348,8 +366,14 @@ func (s *studentFacilityService) UpdateEnrollment(studentID, sfID uint, req dto.
 
 	// Update invoices: remove old facility items, then re-add with new zone price
 	if s.invoiceGen != nil {
+		var oldZoneNames []string
+		if oldFeeConfigItemID != nil {
+			if oldItem, err := s.feeConfigItemRepo.FindByIDIncludingDeleted(*oldFeeConfigItemID); err == nil && oldItem != nil {
+				oldZoneNames = append(oldZoneNames, oldItem.Name)
+			}
+		}
 		go func() {
-			if err := s.invoiceGen.RemoveFacilityFromFutureInvoices(studentID, sf.FacilityID, sf.AcademicYearID); err != nil {
+			if err := s.invoiceGen.RemoveFacilityFromFutureInvoices(studentID, sf.FacilityID, sf.AcademicYearID, oldZoneNames...); err != nil {
 				log.Printf("[Facility] Gagal remove facility dari invoice (update) student=%d facility=%d: %v", studentID, sf.FacilityID, err)
 			}
 			if err := s.invoiceGen.AddFacilityToMonthlyRange(studentID, sf.FacilityID, sf.AcademicYearID); err != nil {
@@ -365,6 +389,29 @@ func (s *studentFacilityService) UpdateEnrollment(studentID, sfID uint, req dto.
 	}
 	resp := mapStudentFacilityToResponse(*saved)
 	return &resp, nil
+}
+
+// facilityItemNameMatches menentukan apakah sebuah item invoice fasilitas
+// milik pendaftaran fasilitas tertentu. Item fasilitas di invoice dinamai
+// sesuai NAMA FASILITAS atau NAMA ZONA/PAKET yang dipilih saat enroll,
+// dengan format "<nama> (N hari)" atau persis "<nama>". Pencocokan dilakukan
+// pada nama dasar (bukan substring bebas) supaya "ZONA 1" tidak ikut cocok
+// dengan item "ZONA 10 (24 hari)".
+func facilityItemNameMatches(itemName, facilityName string, zoneNames ...string) bool {
+	for _, base := range append([]string{facilityName}, zoneNames...) {
+		if utility.InvoiceItemNameHasBase(itemName, base) {
+			return true
+		}
+	}
+	return false
+}
+
+// sameUintPtr membandingkan dua pointer uint (nil-safe).
+func sameUintPtr(a, b *uint) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+	return *a == *b
 }
 
 func (s *studentFacilityService) GetCurrentMonthDays(studentID, sfID uint) (*dto.FacilityCurrentMonthDaysResponse, error) {
@@ -387,18 +434,34 @@ func (s *studentFacilityService) GetCurrentMonthDays(studentID, sfID uint) (*dto
 		}, nil
 	}
 
-	// Find the facility item in this invoice
+	// Find the facility item in this invoice.
+	// Nama item bisa memakai nama fasilitas ATAU nama zona/paket siswa.
+	var zoneName string
+	if sf.FeeConfigItem != nil {
+		zoneName = sf.FeeConfigItem.Name
+	}
+
 	items, _ := s.invoiceItemRepo.FindByInvoiceID(invoice.ID)
 	var facilityItemID uint
 	var currentQty uint
 	for _, item := range items {
-		if item.Category == "facility" && strings.Contains(item.Name, sf.Facility.Name) {
-			facilityItemID = item.ID
-			if item.Quantity != nil {
-				currentQty = *item.Quantity
-			}
-			break
+		if item.Category != "facility" {
+			continue
 		}
+		// Prioritas: relasi facility_id (akurat). Baris legacy tanpa
+		// facility_id tetap dicocokkan via nama fasilitas/zona.
+		if item.FacilityID != nil {
+			if *item.FacilityID != sf.FacilityID {
+				continue
+			}
+		} else if !facilityItemNameMatches(item.Name, sf.Facility.Name, zoneName) {
+			continue
+		}
+		facilityItemID = item.ID
+		if item.Quantity != nil {
+			currentQty = *item.Quantity
+		}
+		break
 	}
 
 	// Get default effective days
@@ -540,14 +603,29 @@ func (s *studentFacilityService) GetStudentsByFacility(facilityID uint, params d
 			}
 		}
 
-		// Populate current month invoice item quantity
+		// Populate current month invoice item quantity.
+		// Nama item bisa memakai nama fasilitas ATAU nama zona/paket siswa.
+		var zoneName string
+		if sf.FeeConfigItem != nil {
+			zoneName = sf.FeeConfigItem.Name
+		}
 		if invoice, err := s.invoiceRepo.FindMonthlyByStudent(sf.StudentID, curMonth, curYear); err == nil {
 			invItems, _ := s.invoiceItemRepo.FindByInvoiceID(invoice.ID)
 			for _, invItem := range invItems {
-				if invItem.Category == "facility" && strings.Contains(invItem.Name, sf.Facility.Name) && invItem.Quantity != nil {
-					item.CurrentMonthDays = invItem.Quantity
-					break
+				if invItem.Category != "facility" || invItem.Quantity == nil {
+					continue
 				}
+				// Prioritas: relasi facility_id. Baris legacy tanpa
+				// facility_id tetap dicocokkan via nama fasilitas/zona.
+				if invItem.FacilityID != nil {
+					if *invItem.FacilityID != sf.FacilityID {
+						continue
+					}
+				} else if !facilityItemNameMatches(invItem.Name, sf.Facility.Name, zoneName) {
+					continue
+				}
+				item.CurrentMonthDays = invItem.Quantity
+				break
 			}
 		}
 

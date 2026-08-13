@@ -2,8 +2,30 @@ package utility
 
 import (
 	"api/model"
+	"strings"
 	"time"
 )
+
+// InvoiceItemNameHasBase mengecek apakah nama item invoice ber-dasar base:
+// sama persis dengan base, atau mengikuti format baku "<base> (N hari)".
+// Pencocokan nama dasar (bukan substring) mencegah "ZONA 1" ikut cocok
+// dengan item "ZONA 10 (24 hari)".
+func InvoiceItemNameHasBase(itemName, base string) bool {
+	if base == "" {
+		return false
+	}
+	if itemName == base {
+		return true
+	}
+	return strings.HasPrefix(itemName, base) &&
+		strings.HasPrefix(itemName[len(base):], " (")
+}
+
+// EscapeLikePattern meng-escape karakter wildcard LIKE (% _ \) agar nama
+// yang mengandung karakter tersebut dicocokkan secara literal.
+func EscapeLikePattern(s string) string {
+	return strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(s)
+}
 
 // MapFeeItemsToInvoiceItems converts fee config items to invoice items.
 func MapFeeItemsToInvoiceItems(invoiceID uint, items []model.FeeConfigItem) []model.InvoiceItem {

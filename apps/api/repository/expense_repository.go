@@ -3,6 +3,7 @@ package repository
 import (
 	"api/dto"
 	"api/model"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -65,7 +66,50 @@ func (r *expenseRepository) FindAll(params dto.ExpenseQueryParams) ([]model.Expe
 		limit = 20
 	}
 
-	err := query.Order("expense_date DESC").Offset((page - 1) * limit).Limit(limit).Find(&expenses).Error
+	// Apply dynamic multi-sort if provided
+	if params.SortBy != "" {
+		sortFields := strings.Split(params.SortBy, ",")
+		sortDirs := strings.Split(params.SortDir, ",")
+
+		fieldMap := map[string]string{
+			"expense_date":        "expenses.expense_date",
+			"created_at":          "expenses.created_at",
+			"amount":              "expenses.amount",
+			"expense_category_id": "expenses.expense_category_id",
+			"category":            "expenses.expense_category_id",
+			"id":                  "expenses.id",
+		}
+
+		for i, field := range sortFields {
+			field = strings.TrimSpace(field)
+			column, ok := fieldMap[field]
+			if !ok {
+				continue
+			}
+
+			dir := "DESC"
+			if i < len(sortDirs) {
+				d := strings.ToUpper(strings.TrimSpace(sortDirs[i]))
+				if d == "ASC" || d == "DESC" {
+					dir = d
+				}
+			} else if len(sortDirs) > 0 {
+				d := strings.ToUpper(strings.TrimSpace(sortDirs[0]))
+				if d == "ASC" || d == "DESC" {
+					dir = d
+				}
+			}
+
+			query = query.Order(column + " " + dir)
+		}
+		// Deterministic tie-breaker
+		query = query.Order("expenses.id DESC")
+	} else {
+		// Default fallback order
+		query = query.Order("expenses.expense_date DESC, expenses.created_at DESC, expenses.id DESC")
+	}
+
+	err := query.Offset((page - 1) * limit).Limit(limit).Find(&expenses).Error
 	return expenses, total, err
 }
 

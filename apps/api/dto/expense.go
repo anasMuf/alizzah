@@ -6,6 +6,8 @@ type ExpenseQueryParams struct {
 	ExpenseCategoryID uint
 	StartDate         string
 	EndDate           string
+	SortBy            string
+	SortDir           string
 	Page              int
 	Limit             int
 }

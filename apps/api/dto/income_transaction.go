@@ -6,6 +6,8 @@ type IncomeTransactionQueryParams struct {
 	IncomeCategoryID uint
 	StartDate        string
 	EndDate          string
+	SortBy           string
+	SortDir          string
 	Page             int
 	Limit            int
 }

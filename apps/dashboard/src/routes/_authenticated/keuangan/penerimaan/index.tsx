@@ -1,7 +1,16 @@
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
-import { Edit, Loader2, Plus, Trash2 } from "lucide-react";
+import {
+	ArrowDown,
+	ArrowUp,
+	ArrowUpDown,
+	Edit,
+	Loader2,
+	Plus,
+	RotateCcw,
+	Trash2,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useGetV1IncomeCategories } from "#/api/endpoints/income-categories/income-categories";
 import {
@@ -22,7 +31,13 @@ import {
 	useToast,
 } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
-import { formatCurrency, formatDate } from "../../../../utils/format";
+import {
+	formatCurrency,
+	formatDate,
+	formatDateTime,
+} from "../../../../utils/format";
+
+const INCOME_SORT_STORAGE_KEY = "alizzah_income_sort";
 
 export const Route = createFileRoute("/_authenticated/keuangan/penerimaan/")({
 	component: PenerimaanListPage,
@@ -36,8 +51,71 @@ export const Route = createFileRoute("/_authenticated/keuangan/penerimaan/")({
 		date_from:
 			typeof search.date_from === "string" ? search.date_from : undefined,
 		date_to: typeof search.date_to === "string" ? search.date_to : undefined,
+		sort_by: typeof search.sort_by === "string" ? search.sort_by : undefined,
+		sort_dir: typeof search.sort_dir === "string" ? search.sort_dir : undefined,
 	}),
 });
+
+interface SortRule {
+	field: string;
+	dir: "asc" | "desc";
+}
+
+function SortHeaderCell({
+	field,
+	label,
+	sortRules,
+	onSort,
+	align = "left",
+	className = "",
+}: {
+	field: string;
+	label: string;
+	sortRules: SortRule[];
+	onSort: (field: string) => void;
+	align?: "left" | "right";
+	className?: string;
+}) {
+	const index = sortRules.findIndex((s) => s.field === field);
+	const activeRule = index !== -1 ? sortRules[index] : undefined;
+	const isMulti = sortRules.length > 1;
+
+	return (
+		<th
+			scope="col"
+			onClick={() => onSort(field)}
+			className={`py-3 px-3 text-xs font-semibold text-gray-900 cursor-pointer hover:bg-gray-100 transition-colors select-none group/col ${
+				align === "right" ? "text-right" : "text-left"
+			} ${className}`}
+		>
+			<div
+				className={`flex items-center gap-1.5 ${
+					align === "right" ? "justify-end" : "justify-start"
+				}`}
+			>
+				<span>{label}</span>
+				<div className="flex items-center gap-0.5">
+					{activeRule ? (
+						<>
+							{activeRule.dir === "asc" ? (
+								<ArrowUp className="w-3.5 h-3.5 text-indigo-600 font-bold" />
+							) : (
+								<ArrowDown className="w-3.5 h-3.5 text-indigo-600 font-bold" />
+							)}
+							{isMulti && (
+								<span className="inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold bg-indigo-100 text-indigo-700 rounded-full">
+									{index + 1}
+								</span>
+							)}
+						</>
+					) : (
+						<ArrowUpDown className="w-3.5 h-3.5 text-gray-400 opacity-40 group-hover/col:opacity-100 transition-opacity" />
+					)}
+				</div>
+			</div>
+		</th>
+	);
+}
 
 function PenerimaanListPage() {
 	const [activeAy] = useAtom(academicYearAtom);
@@ -53,6 +131,8 @@ function PenerimaanListPage() {
 	const income_category_id = searchParams.income_category_id;
 	const date_from = searchParams.date_from ?? "";
 	const date_to = searchParams.date_to ?? "";
+	const sort_by = searchParams.sort_by;
+	const sort_dir = searchParams.sort_dir;
 
 	const [deletingItem, setDeletingItem] = useState<any>(null);
 
@@ -70,16 +150,121 @@ function PenerimaanListPage() {
 		[navigate, searchParams],
 	);
 
+	// Parse multi-sort rules from query params
+	const sortRules: SortRule[] = useMemo(() => {
+		if (!sort_by) return [];
+		const fields = sort_by.split(",");
+		const dirs = (sort_dir || "").split(",");
+		return fields
+			.map((field, idx) => ({
+				field: field.trim(),
+				dir: (dirs[idx]?.trim() === "asc" ? "asc" : "desc") as "asc" | "desc",
+			}))
+			.filter((s) => s.field.length > 0);
+	}, [sort_by, sort_dir]);
+
+	// Initialize sort from localStorage if not present in URL
+	useEffect(() => {
+		if (!searchParams.sort_by && !searchParams.sort_dir) {
+			try {
+				const saved = localStorage.getItem(INCOME_SORT_STORAGE_KEY);
+				if (saved) {
+					const parsed = JSON.parse(saved);
+					if (Array.isArray(parsed) && parsed.length > 0) {
+						const nextSortBy = parsed.map((s: any) => s.field).join(",");
+						const nextSortDir = parsed
+							.map((s: any) => s.dir || "desc")
+							.join(",");
+						updateSearch({
+							sort_by: nextSortBy,
+							sort_dir: nextSortDir,
+						});
+					} else if (parsed.sort_by) {
+						updateSearch({
+							sort_by: parsed.sort_by,
+							sort_dir: parsed.sort_dir || "desc",
+						});
+					}
+				}
+			} catch (e) {
+				console.error("Failed to read sort preference from localStorage", e);
+			}
+		}
+	}, [searchParams.sort_by, searchParams.sort_dir, updateSearch]);
+
+	const handleSort = (field: string) => {
+		const existingIndex = sortRules.findIndex((s) => s.field === field);
+		let nextRules: SortRule[];
+
+		if (existingIndex === -1) {
+			// Append new sort rule
+			nextRules = [...sortRules, { field, dir: "desc" }];
+		} else if (sortRules[existingIndex].dir === "desc") {
+			// Switch to asc
+			nextRules = sortRules.map((s, idx) =>
+				idx === existingIndex ? { ...s, dir: "asc" as const } : s,
+			);
+		} else {
+			// Remove from sort list
+			nextRules = sortRules.filter((_, idx) => idx !== existingIndex);
+		}
+
+		const nextSortBy =
+			nextRules.length > 0
+				? nextRules.map((s) => s.field).join(",")
+				: undefined;
+		const nextSortDir =
+			nextRules.length > 0 ? nextRules.map((s) => s.dir).join(",") : undefined;
+
+		if (nextRules.length > 0) {
+			try {
+				localStorage.setItem(
+					INCOME_SORT_STORAGE_KEY,
+					JSON.stringify(nextRules),
+				);
+			} catch (e) {
+				console.error("Failed to save sort preference to localStorage", e);
+			}
+		} else {
+			try {
+				localStorage.removeItem(INCOME_SORT_STORAGE_KEY);
+			} catch (e) {
+				console.error("Failed to remove sort preference from localStorage", e);
+			}
+		}
+
+		updateSearch({
+			sort_by: nextSortBy,
+			sort_dir: nextSortDir,
+		});
+	};
+
+	const handleResetSort = () => {
+		try {
+			localStorage.removeItem(INCOME_SORT_STORAGE_KEY);
+		} catch (e) {
+			console.error("Failed to remove sort preference from localStorage", e);
+		}
+		updateSearch({
+			sort_by: undefined,
+			sort_dir: undefined,
+		});
+	};
+
 	// Build query params (without page — handled by pageParam)
-	const queryParams: GetV1IncomeTransactionsParams = useMemo(
+	const queryParams: GetV1IncomeTransactionsParams & {
+		sort_by?: string;
+		sort_dir?: string;
+	} = useMemo(
 		() => ({
 			limit: 20,
 			academic_year_id: activeAy?.id,
 			...(income_category_id ? { income_category_id } : {}),
 			...(date_from ? { start_date: date_from } : {}),
 			...(date_to ? { end_date: date_to } : {}),
+			...(sort_by ? { sort_by, sort_dir: sort_dir || "desc" } : {}),
 		}),
-		[activeAy?.id, income_category_id, date_from, date_to],
+		[activeAy?.id, income_category_id, date_from, date_to, sort_by, sort_dir],
 	);
 
 	const {
@@ -90,9 +275,11 @@ function PenerimaanListPage() {
 		hasNextPage,
 		isFetchingNextPage,
 	} = useInfiniteQuery({
-		queryKey: getGetV1IncomeTransactionsQueryKey(queryParams),
+		queryKey: getGetV1IncomeTransactionsQueryKey(queryParams as any),
 		queryFn: ({ pageParam, signal }) =>
-			getV1IncomeTransactions({ ...queryParams, page: pageParam }, { signal }),
+			getV1IncomeTransactions({ ...queryParams, page: pageParam } as any, {
+				signal,
+			}),
 		initialPageParam: 1,
 		getNextPageParam: (lastPage) => {
 			const meta = (lastPage.data as any)?.meta;
@@ -113,8 +300,6 @@ function PenerimaanListPage() {
 	}, [infiniteData]);
 
 	// Intersection Observer: trigger fetchNextPage when sentinel is visible.
-	// Values captured in a ref to avoid recreating the observer on every render
-	// (e.g. when isFetchingNextPage toggles).
 	const scrollState = useRef({
 		hasNextPage,
 		isFetchingNextPage,
@@ -143,6 +328,19 @@ function PenerimaanListPage() {
 		observer.observe(sentinel);
 		return () => observer.disconnect();
 	}, []);
+
+	const handleResetFilter = () => {
+		try {
+			localStorage.removeItem(INCOME_SORT_STORAGE_KEY);
+		} catch (e) {
+			console.error("Failed to remove sort preference from localStorage", e);
+		}
+		navigate({
+			from: Route.fullPath,
+			search: {} as typeof searchParams,
+			replace: true,
+		});
+	};
 
 	const deleteMutation = useDeleteV1IncomeTransactionsId({
 		mutation: {
@@ -176,6 +374,26 @@ function PenerimaanListPage() {
 			0,
 		);
 	}, [items]);
+
+	const getSortLabel = (field?: string) => {
+		switch (field) {
+			case "transaction_date":
+				return "Tanggal Transaksi";
+			case "created_at":
+				return "Tanggal Input";
+			case "category":
+			case "income_category_id":
+				return "Kategori";
+			case "source_name":
+				return "Sumber / Pengirim";
+			case "reference_number":
+				return "Ref";
+			case "amount":
+				return "Nominal";
+			default:
+				return field || "";
+		}
+	};
 
 	return (
 		<div className="space-y-6">
@@ -250,13 +468,7 @@ function PenerimaanListPage() {
 					{(income_category_id || date_from || date_to) && (
 						<button
 							type="button"
-							onClick={() => {
-								navigate({
-									from: Route.fullPath,
-									search: {} as typeof searchParams,
-									replace: true,
-								});
-							}}
+							onClick={handleResetFilter}
 							className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
 						>
 							Reset Filter
@@ -264,6 +476,36 @@ function PenerimaanListPage() {
 					)}
 				</div>
 			</div>
+
+			{/* Sort Badges Bar */}
+			{sortRules.length > 0 && (
+				<div className="flex flex-wrap items-center gap-1.5 text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 px-3.5 py-2 rounded-xl shadow-sm">
+					<span className="font-medium text-gray-600">Urutan:</span>
+					{sortRules.map((rule, idx) => (
+						<span
+							key={rule.field}
+							className="inline-flex items-center gap-1 bg-white border border-indigo-200 text-indigo-800 px-2 py-0.5 rounded text-xs font-medium"
+						>
+							{sortRules.length > 1 && (
+								<span className="text-[10px] text-indigo-600 font-bold font-mono">
+									#{idx + 1}
+								</span>
+							)}
+							{getSortLabel(rule.field)}
+							{rule.dir === "asc" ? "🔼" : "🔽"}
+						</span>
+					))}
+					<button
+						type="button"
+						onClick={handleResetSort}
+						className="text-indigo-600 hover:text-indigo-900 font-medium inline-flex items-center gap-1 ml-1 hover:underline"
+						title="Reset semua urutan"
+					>
+						<RotateCcw className="w-3 h-3" />
+						Reset
+					</button>
+				</div>
+			)}
 
 			{/* Loading / Error */}
 			{isLoading && (
@@ -293,22 +535,45 @@ function PenerimaanListPage() {
 							<table className="min-w-full divide-y divide-gray-300">
 								<thead className="bg-gray-50">
 									<tr>
-										<th className="py-3 pl-6 pr-3 text-left text-sm font-semibold text-gray-900">
-											Tanggal
-										</th>
-										<th className="px-3 py-3 text-left text-sm font-semibold text-gray-900">
-											Kategori
-										</th>
-										<th className="px-3 py-3 text-left text-sm font-semibold text-gray-900">
-											Sumber / Pengirim
-										</th>
-										<th className="px-3 py-3 text-left text-sm font-semibold text-gray-900">
-											Ref
-										</th>
-										<th className="px-3 py-3 text-right text-sm font-semibold text-gray-900">
-											Nominal
-										</th>
-										<th className="px-3 py-3 text-right text-sm font-semibold text-gray-900 pr-6">
+										<SortHeaderCell
+											field="transaction_date"
+											label="Tanggal Transaksi"
+											sortRules={sortRules}
+											onSort={handleSort}
+											className="pl-6"
+										/>
+										<SortHeaderCell
+											field="created_at"
+											label="Tanggal Input"
+											sortRules={sortRules}
+											onSort={handleSort}
+										/>
+										<SortHeaderCell
+											field="category"
+											label="Kategori"
+											sortRules={sortRules}
+											onSort={handleSort}
+										/>
+										<SortHeaderCell
+											field="source_name"
+											label="Sumber / Pengirim"
+											sortRules={sortRules}
+											onSort={handleSort}
+										/>
+										<SortHeaderCell
+											field="reference_number"
+											label="Ref"
+											sortRules={sortRules}
+											onSort={handleSort}
+										/>
+										<SortHeaderCell
+											field="amount"
+											label="Nominal"
+											sortRules={sortRules}
+											onSort={handleSort}
+											align="right"
+										/>
+										<th className="px-3 py-3 text-right text-xs font-semibold text-gray-900 pr-6">
 											Aksi
 										</th>
 									</tr>
@@ -318,6 +583,9 @@ function PenerimaanListPage() {
 										<tr key={item.id} className="hover:bg-gray-50">
 											<td className="py-3 pl-6 pr-3 text-sm text-gray-900 tabular-nums whitespace-nowrap">
 												{formatDate(item.transaction_date)}
+											</td>
+											<td className="px-3 py-3 text-sm text-gray-500 tabular-nums whitespace-nowrap">
+												{formatDateTime(item.created_at)}
 											</td>
 											<td className="px-3 py-3 text-sm">
 												<Badge variant="info">
@@ -362,7 +630,7 @@ function PenerimaanListPage() {
 								<tfoot>
 									<tr className="bg-gray-50 border-t-2 border-gray-300">
 										<td
-											colSpan={4}
+											colSpan={5}
 											className="py-3 pl-6 text-sm font-bold text-gray-900 text-right"
 										>
 											Total ({items.length} transaksi)

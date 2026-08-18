@@ -47,6 +47,8 @@ func (h *IncomeTransactionHandler) List(c echo.Context) error {
 		IncomeCategoryID: uint(incomeCategoryID),
 		StartDate:        c.QueryParam("start_date"),
 		EndDate:          c.QueryParam("end_date"),
+		SortBy:           c.QueryParam("sort_by"),
+		SortDir:          c.QueryParam("sort_dir"),
 		Page:             page,
 		Limit:            limit,
 	}

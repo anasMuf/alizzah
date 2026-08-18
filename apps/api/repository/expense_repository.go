@@ -102,10 +102,12 @@ func (r *expenseRepository) FindAll(params dto.ExpenseQueryParams) ([]model.Expe
 
 			query = query.Order(column + " " + dir)
 		}
+		// Deterministic tie-breaker
+		query = query.Order("expenses.id DESC")
+	} else {
+		// Default fallback order
+		query = query.Order("expenses.expense_date DESC, expenses.created_at DESC, expenses.id DESC")
 	}
-
-	// Default fallback order
-	query = query.Order("expenses.expense_date DESC, expenses.created_at DESC, expenses.id DESC")
 
 	err := query.Offset((page - 1) * limit).Limit(limit).Find(&expenses).Error
 	return expenses, total, err

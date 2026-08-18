@@ -1,7 +1,17 @@
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
-import { Filter, Loader2, Plus, Search, Trash2 } from "lucide-react";
+import {
+	ArrowDown,
+	ArrowUp,
+	ArrowUpDown,
+	Filter,
+	Loader2,
+	Plus,
+	RotateCcw,
+	Search,
+	Trash2,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useGetV1ExpenseCategories } from "#/api/endpoints/expense-categories/expense-categories";
 import {
@@ -18,7 +28,13 @@ import {
 	useToast,
 } from "#/components/ui";
 import { academicYearAtom } from "../../../../store/global";
-import { formatCurrency, formatDate } from "../../../../utils/format";
+import {
+	formatCurrency,
+	formatDate,
+	formatDateTime,
+} from "../../../../utils/format";
+
+const EXPENSE_SORT_STORAGE_KEY = "alizzah_expense_sort";
 
 export const Route = createFileRoute("/_authenticated/keuangan/pengeluaran/")({
 	component: PengeluaranListPage,
@@ -29,8 +45,71 @@ export const Route = createFileRoute("/_authenticated/keuangan/pengeluaran/")({
 		date_from:
 			typeof search.date_from === "string" ? search.date_from : undefined,
 		date_to: typeof search.date_to === "string" ? search.date_to : undefined,
+		sort_by: typeof search.sort_by === "string" ? search.sort_by : undefined,
+		sort_dir: typeof search.sort_dir === "string" ? search.sort_dir : undefined,
 	}),
 });
+
+interface SortRule {
+	field: string;
+	dir: "asc" | "desc";
+}
+
+function SortHeaderCell({
+	field,
+	label,
+	sortRules,
+	onSort,
+	align = "left",
+	className = "",
+}: {
+	field: string;
+	label: string;
+	sortRules: SortRule[];
+	onSort: (field: string) => void;
+	align?: "left" | "right";
+	className?: string;
+}) {
+	const index = sortRules.findIndex((s) => s.field === field);
+	const activeRule = index !== -1 ? sortRules[index] : undefined;
+	const isMulti = sortRules.length > 1;
+
+	return (
+		<th
+			scope="col"
+			onClick={() => onSort(field)}
+			className={`py-2.5 px-2 text-xs font-semibold text-gray-900 cursor-pointer hover:bg-gray-100 transition-colors select-none group/col ${
+				align === "right" ? "text-right" : "text-left"
+			} ${className}`}
+		>
+			<div
+				className={`flex items-center gap-1.5 ${
+					align === "right" ? "justify-end" : "justify-start"
+				}`}
+			>
+				<span>{label}</span>
+				<div className="flex items-center gap-0.5">
+					{activeRule ? (
+						<>
+							{activeRule.dir === "asc" ? (
+								<ArrowUp className="w-3.5 h-3.5 text-indigo-600 font-bold" />
+							) : (
+								<ArrowDown className="w-3.5 h-3.5 text-indigo-600 font-bold" />
+							)}
+							{isMulti && (
+								<span className="inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold bg-indigo-100 text-indigo-700 rounded-full">
+									{index + 1}
+								</span>
+							)}
+						</>
+					) : (
+						<ArrowUpDown className="w-3.5 h-3.5 text-gray-400 opacity-40 group-hover/col:opacity-100 transition-opacity" />
+					)}
+				</div>
+			</div>
+		</th>
+	);
+}
 
 function PengeluaranListPage() {
 	const [activeAy] = useAtom(academicYearAtom);
@@ -45,6 +124,8 @@ function PengeluaranListPage() {
 	const category_id = searchParams.category_id ?? "";
 	const date_from = searchParams.date_from ?? "";
 	const date_to = searchParams.date_to ?? "";
+	const sort_by = searchParams.sort_by;
+	const sort_dir = searchParams.sort_dir;
 
 	// Sentinel ref for Intersection Observer
 	const sentinelRef = useRef<HTMLDivElement>(null);
@@ -60,16 +141,121 @@ function PengeluaranListPage() {
 		[navigate, searchParams],
 	);
 
+	// Parse multi-sort rules from query params
+	const sortRules: SortRule[] = useMemo(() => {
+		if (!sort_by) return [];
+		const fields = sort_by.split(",");
+		const dirs = (sort_dir || "").split(",");
+		return fields
+			.map((field, idx) => ({
+				field: field.trim(),
+				dir: (dirs[idx]?.trim() === "asc" ? "asc" : "desc") as "asc" | "desc",
+			}))
+			.filter((s) => s.field.length > 0);
+	}, [sort_by, sort_dir]);
+
+	// Initialize sort from localStorage if not present in URL
+	useEffect(() => {
+		if (!searchParams.sort_by && !searchParams.sort_dir) {
+			try {
+				const saved = localStorage.getItem(EXPENSE_SORT_STORAGE_KEY);
+				if (saved) {
+					const parsed = JSON.parse(saved);
+					if (Array.isArray(parsed) && parsed.length > 0) {
+						const nextSortBy = parsed.map((s: any) => s.field).join(",");
+						const nextSortDir = parsed
+							.map((s: any) => s.dir || "desc")
+							.join(",");
+						updateSearch({
+							sort_by: nextSortBy,
+							sort_dir: nextSortDir,
+						});
+					} else if (parsed.sort_by) {
+						updateSearch({
+							sort_by: parsed.sort_by,
+							sort_dir: parsed.sort_dir || "desc",
+						});
+					}
+				}
+			} catch (e) {
+				console.error("Failed to read sort preference from localStorage", e);
+			}
+		}
+	}, [searchParams.sort_by, searchParams.sort_dir, updateSearch]);
+
+	const handleSort = (field: string) => {
+		const existingIndex = sortRules.findIndex((s) => s.field === field);
+		let nextRules: SortRule[];
+
+		if (existingIndex === -1) {
+			// Append new sort rule
+			nextRules = [...sortRules, { field, dir: "desc" }];
+		} else if (sortRules[existingIndex].dir === "desc") {
+			// Switch to asc
+			nextRules = sortRules.map((s, idx) =>
+				idx === existingIndex ? { ...s, dir: "asc" as const } : s,
+			);
+		} else {
+			// Remove from sort list
+			nextRules = sortRules.filter((_, idx) => idx !== existingIndex);
+		}
+
+		const nextSortBy =
+			nextRules.length > 0
+				? nextRules.map((s) => s.field).join(",")
+				: undefined;
+		const nextSortDir =
+			nextRules.length > 0 ? nextRules.map((s) => s.dir).join(",") : undefined;
+
+		if (nextRules.length > 0) {
+			try {
+				localStorage.setItem(
+					EXPENSE_SORT_STORAGE_KEY,
+					JSON.stringify(nextRules),
+				);
+			} catch (e) {
+				console.error("Failed to save sort preference to localStorage", e);
+			}
+		} else {
+			try {
+				localStorage.removeItem(EXPENSE_SORT_STORAGE_KEY);
+			} catch (e) {
+				console.error("Failed to remove sort preference from localStorage", e);
+			}
+		}
+
+		updateSearch({
+			sort_by: nextSortBy,
+			sort_dir: nextSortDir,
+		});
+	};
+
+	const handleResetSort = () => {
+		try {
+			localStorage.removeItem(EXPENSE_SORT_STORAGE_KEY);
+		} catch (e) {
+			console.error("Failed to remove sort preference from localStorage", e);
+		}
+		updateSearch({
+			sort_by: undefined,
+			sort_dir: undefined,
+		});
+	};
+
 	// Build query params (without page — handled by pageParam)
-	const queryParams: GetV1ExpensesParams = useMemo(
+	const queryParams: GetV1ExpensesParams & {
+		sort_by?: string;
+		sort_dir?: string;
+	} = useMemo(
 		() => ({
 			limit: 20,
 			academic_year_id: activeAy?.id,
 			...(category_id ? { expense_category_id: Number(category_id) } : {}),
 			...(date_from ? { start_date: date_from } : {}),
 			...(date_to ? { end_date: date_to } : {}),
+			...(sort_by ? { sort_by, sort_dir: sort_dir || "desc" } : {}),
 		}),
-		[activeAy?.id, category_id, date_from, date_to],
+		[activeAy?.id, category_id, date_from, date_to, sort_by, sort_dir],
 	);
 
 	const {
@@ -80,9 +266,9 @@ function PengeluaranListPage() {
 		hasNextPage,
 		isFetchingNextPage,
 	} = useInfiniteQuery({
-		queryKey: getGetV1ExpensesQueryKey(queryParams),
+		queryKey: getGetV1ExpensesQueryKey(queryParams as any),
 		queryFn: ({ pageParam, signal }) =>
-			getV1Expenses({ ...queryParams, page: pageParam }, { signal }),
+			getV1Expenses({ ...queryParams, page: pageParam } as any, { signal }),
 		initialPageParam: 1,
 		getNextPageParam: (lastPage) => {
 			const meta = (lastPage.data as any)?.meta;
@@ -123,8 +309,6 @@ function PengeluaranListPage() {
 	}, [filteredExpenses]);
 
 	// Intersection Observer: trigger fetchNextPage when sentinel is visible.
-	// Values captured in a ref to avoid recreating the observer on every render
-	// (e.g. when isFetchingNextPage toggles).
 	const scrollState = useRef({
 		hasNextPage,
 		isFetchingNextPage,
@@ -155,6 +339,11 @@ function PengeluaranListPage() {
 	}, []);
 
 	const handleReset = () => {
+		try {
+			localStorage.removeItem(EXPENSE_SORT_STORAGE_KEY);
+		} catch (e) {
+			console.error("Failed to remove sort preference from localStorage", e);
+		}
 		navigate({
 			from: Route.fullPath,
 			search: {} as typeof searchParams,
@@ -192,6 +381,21 @@ function PengeluaranListPage() {
 			return `${cat.parent_name} > ${cat.name}`;
 		}
 		return cat.name;
+	};
+
+	const getSortLabel = (field?: string) => {
+		switch (field) {
+			case "expense_date":
+				return "Tanggal Transaksi";
+			case "created_at":
+				return "Tanggal Input";
+			case "category":
+				return "Kategori";
+			case "amount":
+				return "Nominal";
+			default:
+				return field || "";
+		}
 	};
 
 	return (
@@ -302,7 +506,7 @@ function PengeluaranListPage() {
 				</div>
 
 				<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-4">
-					<div className="flex items-center justify-between">
+					<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
 						<div>
 							<p className="text-sm text-gray-500">
 								Total Pengeluaran Periode Ini
@@ -311,10 +515,40 @@ function PengeluaranListPage() {
 								{formatCurrency(totalAmount)}
 							</p>
 						</div>
-						<div className="text-sm text-gray-500">
-							{meta
-								? `${meta.total ?? expenses.length} transaksi`
-								: `${filteredExpenses.length} transaksi`}
+						<div className="flex flex-wrap items-center gap-3">
+							{sortRules.length > 0 && (
+								<div className="flex flex-wrap items-center gap-1.5 text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 px-3 py-1.5 rounded-lg shadow-sm">
+									<span className="font-medium text-gray-600">Urutan:</span>
+									{sortRules.map((rule, idx) => (
+										<span
+											key={rule.field}
+											className="inline-flex items-center gap-1 bg-white border border-indigo-200 text-indigo-800 px-2 py-0.5 rounded text-xs font-medium"
+										>
+											{sortRules.length > 1 && (
+												<span className="text-[10px] text-indigo-600 font-bold font-mono">
+													#{idx + 1}
+												</span>
+											)}
+											{getSortLabel(rule.field)}
+											{rule.dir === "asc" ? "🔼" : "🔽"}
+										</span>
+									))}
+									<button
+										type="button"
+										onClick={handleResetSort}
+										className="text-indigo-600 hover:text-indigo-900 font-medium inline-flex items-center gap-1 ml-1 hover:underline"
+										title="Reset semua urutan"
+									>
+										<RotateCcw className="w-3 h-3" />
+										Reset
+									</button>
+								</div>
+							)}
+							<div className="text-sm text-gray-500">
+								{meta
+									? `${meta.total ?? expenses.length} transaksi`
+									: `${filteredExpenses.length} transaksi`}
+							</div>
 						</div>
 					</div>
 				</div>
@@ -331,29 +565,39 @@ function PengeluaranListPage() {
 									<tr>
 										<th
 											scope="col"
-											className="py-2 pl-4 pr-2 text-left text-xs font-semibold text-gray-900 sm:pl-6 w-10"
+											className="py-2.5 pl-4 pr-2 text-left text-xs font-semibold text-gray-900 sm:pl-6 w-10"
 										>
 											#
 										</th>
+										<SortHeaderCell
+											field="expense_date"
+											label="Tanggal Transaksi"
+											sortRules={sortRules}
+											onSort={handleSort}
+										/>
+										<SortHeaderCell
+											field="created_at"
+											label="Tanggal Input"
+											sortRules={sortRules}
+											onSort={handleSort}
+										/>
+										<SortHeaderCell
+											field="category"
+											label="Kategori"
+											sortRules={sortRules}
+											onSort={handleSort}
+										/>
+										<SortHeaderCell
+											field="amount"
+											label="Nominal"
+											sortRules={sortRules}
+											onSort={handleSort}
+											align="right"
+										/>
 										<th
 											scope="col"
-											className="px-2 py-2 text-left text-xs font-semibold text-gray-900"
+											className="relative py-2.5 pl-2 pr-4 sm:pr-6"
 										>
-											Tanggal
-										</th>
-										<th
-											scope="col"
-											className="px-2 py-2 text-left text-xs font-semibold text-gray-900"
-										>
-											Kategori
-										</th>
-										<th
-											scope="col"
-											className="px-2 py-2 text-right text-xs font-semibold text-gray-900"
-										>
-											Nominal
-										</th>
-										<th scope="col" className="relative py-2 pl-2 pr-4 sm:pr-6">
 											<span className="sr-only">Aksi</span>
 										</th>
 									</tr>
@@ -366,7 +610,10 @@ function PengeluaranListPage() {
 													<div className="h-3.5 w-5 bg-gray-200 rounded animate-pulse" />
 												</td>
 												<td className="px-2 py-2">
-													<div className="h-3.5 w-20 bg-gray-200 rounded animate-pulse" />
+													<div className="h-3.5 w-24 bg-gray-200 rounded animate-pulse" />
+												</td>
+												<td className="px-2 py-2">
+													<div className="h-3.5 w-24 bg-gray-200 rounded animate-pulse" />
 												</td>
 												<td className="px-2 py-2">
 													<div className="h-3.5 w-32 bg-gray-200 rounded animate-pulse" />
@@ -381,7 +628,7 @@ function PengeluaranListPage() {
 										))
 									) : filteredExpenses.length === 0 ? (
 										<tr>
-											<td colSpan={5} className="px-3 py-12">
+											<td colSpan={6} className="px-3 py-12">
 												{hasNextPage && expenses.length === 0 ? (
 													<EmptyState
 														title="Belum Ada Data"
@@ -420,8 +667,11 @@ function PengeluaranListPage() {
 												<td className="whitespace-nowrap py-2 pl-4 pr-2 text-sm font-medium text-gray-900 sm:pl-6">
 													{index + 1}
 												</td>
-												<td className="whitespace-nowrap px-2 py-2 text-sm text-gray-500">
+												<td className="whitespace-nowrap px-2 py-2 text-sm text-gray-700">
 													{formatDate(expense.expense_date)}
+												</td>
+												<td className="whitespace-nowrap px-2 py-2 text-sm text-gray-500">
+													{formatDateTime(expense.created_at)}
 												</td>
 												<td className="px-2 py-2 text-sm text-gray-900">
 													{getCategoryLabel(expense)}

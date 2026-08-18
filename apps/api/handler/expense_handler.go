@@ -47,6 +47,8 @@ func (h *ExpenseHandler) List(c echo.Context) error {
 		ExpenseCategoryID: uint(categoryID),
 		StartDate:         c.QueryParam("start_date"),
 		EndDate:           c.QueryParam("end_date"),
+		SortBy:            c.QueryParam("sort_by"),
+		SortDir:           c.QueryParam("sort_dir"),
 		Page:              page,
 		Limit:             limit,
 	}

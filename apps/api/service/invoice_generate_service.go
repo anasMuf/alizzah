@@ -1448,6 +1448,18 @@ func (s *invoiceGenerateService) applyDispensationToInvoice(invoice *model.Invoi
 		return err
 	}
 
+	// Dedupe: kumpulkan kunci item dispensasi yang SUDAH ADA (termasuk yang
+	// sudah mendapat alokasi negatif dari payment, karena item seperti itu
+	// tidak dihapus oleh DeleteUnpaidByInvoiceAndCategory di atas). Tanpa ini,
+	// setiap pemanggilan ulang fungsi akan menambah item dispensasi baru yang
+	// identik → potongan bertumpuk → total invoice bisa menjadi negatif.
+	existingDispensation := make(map[string]bool)
+	for _, item := range items {
+		if item.Category == "dispensation" {
+			existingDispensation[dispensationItemKey(item.Name, item.Amount)] = true
+		}
+	}
+
 	for _, cat := range categories {
 		// Map dispensation fee_category to the invoice item category it affects.
 		// "daycare" dispensation only targets konsumsi ("daycare_meal"), not SPD.
@@ -1538,6 +1550,11 @@ func (s *invoiceGenerateService) applyDispensationToInvoice(invoice *model.Invoi
 		}
 
 		for i := range newItems {
+			if existingDispensation[dispensationItemKey(newItems[i].Name, newItems[i].Amount)] {
+				// Item dispensasi identik sudah ada (mis. sudah mendapat alokasi
+				// negatif dari pembayaran) — jangan buat duplikat.
+				continue
+			}
 			if err := s.invoiceItemRepo.Create(&newItems[i]); err != nil {
 				return err
 			}
@@ -1545,6 +1562,13 @@ func (s *invoiceGenerateService) applyDispensationToInvoice(invoice *model.Invoi
 	}
 
 	return nil
+}
+
+// dispensationItemKey menghasilkan kunci unik untuk item dispensasi
+// berdasarkan nama dan jumlah, dipakai untuk mencegah duplikat saat
+// dispensasi diterapkan ulang ke invoice yang sudah ada.
+func dispensationItemKey(name string, amount float64) string {
+	return fmt.Sprintf("%s|%.2f", name, amount)
 }
 
 // GenerateDaycareMonthlyBulk generates SPD for all active daycare students in a given month.

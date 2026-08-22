@@ -6,6 +6,7 @@ import (
 	"api/repository"
 	"errors"
 	"fmt"
+	"log"
 
 	"gorm.io/gorm"
 )
@@ -115,9 +116,12 @@ func (s *dispensationService) Create(studentID, createdBy uint, req dto.CreateDi
 		return nil, err
 	}
 
-	// Apply to existing unpaid invoices
+	// Apply to existing unpaid invoices. Sinkron (bukan `go ...`) supaya
+	// panggilan berurutan tidak saling tumpang tindih dan error terlihat.
 	if s.invoiceGen != nil {
-		go s.invoiceGen.ApplyDispensationToExistingInvoices(studentID, req.AcademicYearID)
+		if err := s.invoiceGen.ApplyDispensationToExistingInvoices(studentID, req.AcademicYearID); err != nil {
+			log.Printf("[Dispensasi] Gagal apply ke invoice siswa %d: %v", studentID, err)
+		}
 	}
 
 	saved, err := s.repo.FindByID(d.ID)
@@ -156,9 +160,12 @@ func (s *dispensationService) Update(id uint, req dto.UpdateDispensationRequest)
 		return nil, err
 	}
 
-	// Re-apply to existing invoices
+	// Re-apply to existing invoices. Sinkron supaya tidak terjadi race
+	// antar panggilan dan error terlihat di log.
 	if s.invoiceGen != nil {
-		go s.invoiceGen.ApplyDispensationToExistingInvoices(d.StudentID, d.AcademicYearID)
+		if err := s.invoiceGen.ApplyDispensationToExistingInvoices(d.StudentID, d.AcademicYearID); err != nil {
+			log.Printf("[Dispensasi] Gagal apply ke invoice siswa %d: %v", d.StudentID, err)
+		}
 	}
 
 	saved, err := s.repo.FindByID(id)
@@ -180,9 +187,12 @@ func (s *dispensationService) Toggle(id uint) (*dto.DispensationResponse, error)
 		return nil, err
 	}
 
-	// Re-apply to existing invoices
+	// Re-apply to existing invoices. Sinkron supaya tidak terjadi race
+	// antar panggilan dan error terlihat di log.
 	if s.invoiceGen != nil {
-		go s.invoiceGen.ApplyDispensationToExistingInvoices(d.StudentID, d.AcademicYearID)
+		if err := s.invoiceGen.ApplyDispensationToExistingInvoices(d.StudentID, d.AcademicYearID); err != nil {
+			log.Printf("[Dispensasi] Gagal apply ke invoice siswa %d: %v", d.StudentID, err)
+		}
 	}
 
 	saved, err := s.repo.FindByID(id)
@@ -206,9 +216,12 @@ func (s *dispensationService) Delete(id uint) error {
 		return err
 	}
 
-	// Re-apply to existing invoices (removes deleted dispensation items)
+	// Re-apply to existing invoices (removes deleted dispensation items).
+	// Sinkron supaya tidak terjadi race antar panggilan dan error terlihat.
 	if s.invoiceGen != nil {
-		go s.invoiceGen.ApplyDispensationToExistingInvoices(studentID, ayID)
+		if err := s.invoiceGen.ApplyDispensationToExistingInvoices(studentID, ayID); err != nil {
+			log.Printf("[Dispensasi] Gagal apply ke invoice siswa %d: %v", studentID, err)
+		}
 	}
 
 	return nil

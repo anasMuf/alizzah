@@ -292,7 +292,7 @@ function SiswaDispensasiPage() {
 									<div className="mt-1 flex items-center gap-1 text-sm">
 										{d.discount_type === "percent" ? (
 											<>
-												<Percent className="w-3.5 h-3.5 text-indigo-500" />
+												{/*<Percent className="w-3.5 h-3.5 text-indigo-500" />*/}
 												<span className="font-medium text-indigo-700">
 													{d.discount_value}%{" "}
 													{d.fee_category === "monthly_spp"
@@ -304,7 +304,7 @@ function SiswaDispensasiPage() {
 											</>
 										) : (
 											<>
-												<DollarSign className="w-3.5 h-3.5 text-green-500" />
+												{/*<DollarSign className="w-3.5 h-3.5 text-green-500" />*/}
 												<span className="font-medium text-green-700">
 													{formatCurrency(d.discount_value)}{" "}
 													{d.fee_category === "monthly_spp"

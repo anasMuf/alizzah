@@ -99,7 +99,18 @@ SET total_amount = 252000.00,
 WHERE id = 453;
 
 -- ============================================================
--- STEP 5: Verifikasi — tidak boleh ada sisa negatif lagi
+-- STEP 5: Pulihkan dispensasi 28 (initial fixed 500.000) siswa 65
+--         yang terhapus 2026-08-22 08:03 (padahal potongannya
+--         tetap berlaku di invoice). Idempotent: jika sudah aktif
+--         kembali, UPDATE tidak mengubah baris apa pun.
+-- ============================================================
+UPDATE dispensations
+SET deleted_at = NULL,
+    updated_at = now()
+WHERE id = 28;
+
+-- ============================================================
+-- STEP 6: Verifikasi — tidak boleh ada sisa negatif lagi
 -- ============================================================
 SELECT inv.id AS invoice_id,
        inv.student_id,
@@ -122,5 +133,11 @@ SELECT ii.invoice_id, ii.id AS item_id, ii.name, ii.category,
 FROM invoice_items ii
 WHERE ii.invoice_id IN (121, 440, 453) AND ii.deleted_at IS NULL
 ORDER BY ii.invoice_id, ii.id;
+
+-- Sanity: dispensasi aktif siswa 65 (harus 27 SPP 50% + 28 initial 500k)
+SELECT id, fee_category, discount_type, discount_value, reason, is_active, deleted_at
+FROM dispensations
+WHERE student_id = 65
+ORDER BY id;
 
 COMMIT;

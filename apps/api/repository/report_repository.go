@@ -477,7 +477,7 @@ func (r *reportRepository) DailySavingsCredit(startDate, endDate time.Time, savi
 
 	query := r.db.Table("savings_transactions st").
 		Select("DATE(st.created_at) as date, SUM(st.net_amount) as total").
-		Where("st.transaction_type = 'credit' AND st.created_at >= ? AND st.created_at < ?", startDate, endDate.Add(24*time.Hour))
+		Where("st.deleted_at IS NULL AND st.transaction_type = 'credit' AND st.created_at >= ? AND st.created_at < ?", startDate, endDate.Add(24*time.Hour))
 
 	query = savingsTypeFilter(query, savingsType)
 	err := query.Group("DATE(st.created_at)").Scan(&rows).Error
@@ -499,7 +499,7 @@ func (r *reportRepository) DailySavingsDebit(startDate, endDate time.Time, savin
 
 	query := r.db.Table("savings_transactions st").
 		Select("DATE(st.created_at) as date, SUM(st.net_amount) as total").
-		Where("st.transaction_type = 'debit' AND st.created_at >= ? AND st.created_at < ?", startDate, endDate.Add(24*time.Hour))
+		Where("st.deleted_at IS NULL AND st.transaction_type = 'debit' AND st.created_at >= ? AND st.created_at < ?", startDate, endDate.Add(24*time.Hour))
 
 	query = savingsTypeFilter(query, savingsType)
 	err := query.Group("DATE(st.created_at)").Scan(&rows).Error
@@ -516,7 +516,7 @@ func (r *reportRepository) SumSavingsCredit(startDate, endDate time.Time, saving
 	var total float64
 	query := r.db.Table("savings_transactions st").
 		Select("COALESCE(SUM(st.net_amount), 0)").
-		Where("st.transaction_type = 'credit' AND st.created_at >= ? AND st.created_at < ?", startDate, endDate.Add(24*time.Hour))
+		Where("st.deleted_at IS NULL AND st.transaction_type = 'credit' AND st.created_at >= ? AND st.created_at < ?", startDate, endDate.Add(24*time.Hour))
 
 	query = savingsTypeFilter(query, savingsType)
 	err := query.Scan(&total).Error
@@ -528,7 +528,7 @@ func (r *reportRepository) SumSavingsDebit(startDate, endDate time.Time, savings
 	var total float64
 	query := r.db.Table("savings_transactions st").
 		Select("COALESCE(SUM(st.net_amount), 0)").
-		Where("st.transaction_type = 'debit' AND st.created_at >= ? AND st.created_at < ?", startDate, endDate.Add(24*time.Hour))
+		Where("st.deleted_at IS NULL AND st.transaction_type = 'debit' AND st.created_at >= ? AND st.created_at < ?", startDate, endDate.Add(24*time.Hour))
 
 	query = savingsTypeFilter(query, savingsType)
 	err := query.Scan(&total).Error

@@ -487,24 +487,37 @@ func (s *paymentService) reversePayment(tx *gorm.DB, paymentID uint) error {
 		}
 	}
 
-	// 4. REVERSE SAVINGS — balikkan balance + hapus savings_transactions
+	// 4. REVERSE SAVINGS — balikkan balance lalu soft-delete savings_transactions.
+	// Reversal dihitung sebagai net delta per akun tabungan lalu diterapkan atomik
+	// (AddBalance/SubtractBalance). Tidak boleh membuat saldo negatif: jika setoran
+	// sudah terpakai, seluruh transaksi dibatalkan agar operator melakukan rekonsiliasi
+	// terlebih dahulu — bukan di-clamp diam-diam ke 0 seperti sebelumnya.
 	var savingsTxns []model.SavingsTransaction
 	tx.Where("source_id = ? AND source_type IN ?", paymentID,
 		[]string{"payment_usage", "payment_deposit", "payment_mandatory"}).Find(&savingsTxns)
+
+	deltas := make(map[uint]float64, len(savingsTxns))
 	for _, st := range savingsTxns {
-		var sv model.StudentSavings
-		if err := tx.First(&sv, st.StudentSavingsID).Error; err != nil {
-			continue
-		}
 		if st.TransactionType == "credit" {
-			sv.Balance += st.NetAmount
+			deltas[st.StudentSavingsID] += st.NetAmount
 		} else {
-			sv.Balance -= st.NetAmount
-			if sv.Balance < 0 {
-				sv.Balance = 0
+			deltas[st.StudentSavingsID] -= st.NetAmount
+		}
+	}
+	for savingsID, delta := range deltas {
+		switch {
+		case delta > 0:
+			if err := s.savingsRepo.AddBalance(tx, savingsID, delta); err != nil {
+				return fmt.Errorf("gagal mengembalikan saldo tabungan saat reverse payment %d: %w", paymentID, err)
+			}
+		case delta < 0:
+			if err := s.savingsRepo.SubtractBalance(tx, savingsID, -delta); err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					return fmt.Errorf("gagal membalik setoran tabungan payment %d: saldo sudah terpakai (tidak mencukupi). Lakukan rekonsiliasi sebelum menghapus/mengubah payment ini", paymentID)
+				}
+				return fmt.Errorf("gagal membalik setoran tabungan payment %d: %w", paymentID, err)
 			}
 		}
-		tx.Save(&sv)
 	}
 	tx.Where("source_id = ? AND source_type IN ?", paymentID,
 		[]string{"payment_usage", "payment_deposit", "payment_mandatory"}).Delete(&model.SavingsTransaction{})

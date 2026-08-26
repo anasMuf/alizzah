@@ -91,9 +91,10 @@ UNION ALL
 SELECT 'B4 item status', ii.id, ii.status, ii.paid_amount, ii.amount
 FROM invoice_items ii
 WHERE ii.deleted_at IS NULL
+  AND ii.amount > 0  -- item diskon/dispensasi (amount <= 0) dilewati: dianggap valid saat berstatus 'paid'
   AND NOT (
         (ii.status = 'unpaid' AND ii.paid_amount <= 0)
-     OR (ii.status = 'paid' AND ii.paid_amount >= ii.amount AND ii.amount > 0)
+     OR (ii.status = 'paid' AND ii.paid_amount >= ii.amount)
      OR (ii.status = 'partial' AND ii.paid_amount > 0 AND ii.paid_amount < ii.amount)
   )
 ORDER BY rule, ref_id;

@@ -65,7 +65,7 @@ func (r *reportRepository) SumInvoiceByCategory(academicYearID uint, month, year
 	query := r.db.Table("invoice_items ii").
 		Select("ii.category, SUM(ii.amount) as billed, SUM(ii.paid_amount) as paid").
 		Joins("JOIN invoices i ON i.id = ii.invoice_id").
-		Where("i.academic_year_id = ?", academicYearID)
+		Where("ii.deleted_at IS NULL AND i.deleted_at IS NULL AND i.academic_year_id = ?", academicYearID)
 
 	if month != 0 {
 		query = query.Where("i.month = ?", month)
@@ -90,7 +90,7 @@ func (r *reportRepository) SumExpenseByCategory(academicYearID uint, startDate, 
 		Select("COALESCE(ec_parent.name, 'Tanpa Kategori') as category, COALESCE(ec.name, 'Tanpa Sub-Kategori') as sub_category, SUM(e.amount) as amount").
 		Joins("LEFT JOIN expense_categories ec ON ec.id = e.expense_category_id").
 		Joins("LEFT JOIN expense_categories ec_parent ON ec_parent.id = ec.parent_id").
-		Where("e.academic_year_id = ? AND e.expense_date BETWEEN ? AND ?", academicYearID, startDate, endDate).
+		Where("e.deleted_at IS NULL AND e.academic_year_id = ? AND e.expense_date BETWEEN ? AND ?", academicYearID, startDate, endDate).
 		Group("ec_parent.name, ec.name").
 		Scan(&results).Error
 
@@ -104,7 +104,7 @@ func (r *reportRepository) GetArrearsByClass(academicYearID uint, month, year ui
 		Select("cg.name as class_group_name, SUM(i.total_amount - i.paid_amount) as total_unpaid, COUNT(DISTINCT i.student_id) as student_count").
 		Joins("JOIN student_enrollments se ON se.student_id = i.student_id AND se.academic_year_id = i.academic_year_id").
 		Joins("JOIN class_groups cg ON cg.id = se.class_group_id").
-		Where("i.academic_year_id = ? AND i.status != 'paid'", academicYearID).
+		Where("i.deleted_at IS NULL AND i.academic_year_id = ? AND i.status != 'paid'", academicYearID).
 		Where("i.month = ? AND i.year = ?", month, year).
 		Group("cg.name").
 		Scan(&results).Error
@@ -126,7 +126,7 @@ func (r *reportRepository) GetMonthlyBreakdown(academicYearID uint) ([]dto.Month
 	var incomes []MonthlyAmount
 	err := r.db.Table("payments p").
 		Select("EXTRACT(MONTH FROM p.payment_date) as month, EXTRACT(YEAR FROM p.payment_date) as year, SUM(p.total_amount) as amount").
-		Where("p.academic_year_id = ?", academicYearID).
+		Where("p.deleted_at IS NULL AND p.academic_year_id = ?", academicYearID).
 		Group("year, month").
 		Scan(&incomes).Error
 	if err != nil {
@@ -136,7 +136,7 @@ func (r *reportRepository) GetMonthlyBreakdown(academicYearID uint) ([]dto.Month
 	var expenses []MonthlyAmount
 	err = r.db.Table("expenses e").
 		Select("EXTRACT(MONTH FROM e.expense_date) as month, EXTRACT(YEAR FROM e.expense_date) as year, SUM(e.amount) as amount").
-		Where("e.academic_year_id = ?", academicYearID).
+		Where("e.deleted_at IS NULL AND e.academic_year_id = ?", academicYearID).
 		Group("year, month").
 		Scan(&expenses).Error
 	if err != nil {
@@ -173,7 +173,7 @@ func (r *reportRepository) GetInvoiceSummaryByStudent(studentID uint, academicYe
 
 	query := r.db.Table("invoices").
 		Select("COALESCE(SUM(total_amount), 0) as total_billed, COALESCE(SUM(paid_amount), 0) as total_paid").
-		Where("student_id = ?", studentID)
+		Where("deleted_at IS NULL AND student_id = ?", studentID)
 
 	if academicYearID != 0 {
 		query = query.Where("academic_year_id = ?", academicYearID)
@@ -194,7 +194,7 @@ func (r *reportRepository) GetStudentsByClassGroupForMonth(classGroupID uint, mo
 		Select("se.student_id, s.full_name as student_name, COALESCE(i.status, 'unbilled') as invoice_status, COALESCE(i.total_amount, 0) as total_amount, COALESCE(i.paid_amount, 0) as paid_amount, COALESCE(i.total_amount - i.paid_amount, 0) as unpaid_amount").
 		Joins("JOIN students s ON s.id = se.student_id").
 		Joins("LEFT JOIN invoices i ON i.student_id = se.student_id AND i.month = ? AND i.year = ? AND i.academic_year_id = ?", month, year, academicYearID).
-		Where("se.class_group_id = ? AND se.academic_year_id = ?", classGroupID, academicYearID).
+		Where("se.deleted_at IS NULL AND (i.id IS NULL OR i.deleted_at IS NULL) AND se.class_group_id = ? AND se.academic_year_id = ?", classGroupID, academicYearID).
 		Scan(&results).Error
 
 	return results, err
@@ -212,7 +212,7 @@ func (r *reportRepository) SumPenerimaanByInvoiceCategory(academicYearID uint, s
 		Select("ii.category, SUM(pi.amount) as total").
 		Joins("JOIN invoice_items ii ON ii.id = pi.invoice_item_id").
 		Joins("JOIN payments p ON p.id = pi.payment_id").
-		Where("p.academic_year_id = ? AND p.payment_date BETWEEN ? AND ?", academicYearID, startDate, endDate).
+		Where("pi.deleted_at IS NULL AND ii.deleted_at IS NULL AND p.deleted_at IS NULL AND p.academic_year_id = ? AND p.payment_date BETWEEN ? AND ?", academicYearID, startDate, endDate).
 		Group("ii.category").
 		Scan(&rows).Error
 
@@ -236,7 +236,7 @@ func (r *reportRepository) SumPengeluaranByInvoiceCategory(academicYearID uint, 
 		Select("pec.invoice_category, COALESCE(ec.name, 'Tanpa Sub-Kategori') as child_name, SUM(e.amount) as total").
 		Joins("LEFT JOIN expense_categories ec ON ec.id = e.expense_category_id").
 		Joins("LEFT JOIN expense_categories pec ON pec.id = ec.parent_id").
-		Where("e.academic_year_id = ? AND e.expense_date BETWEEN ? AND ?", academicYearID, startDate, endDate).
+		Where("e.deleted_at IS NULL AND e.academic_year_id = ? AND e.expense_date BETWEEN ? AND ?", academicYearID, startDate, endDate).
 		Where("pec.invoice_category IS NOT NULL AND pec.invoice_category != ''")
 
 	if expenseCategoryIDs != "" {
@@ -272,7 +272,7 @@ func (r *reportRepository) SumIncomeTransactionsByCategory(academicYearID uint, 
 	query := r.db.Table("income_transactions it").
 		Select("ic.code as category, SUM(it.amount) as total").
 		Joins("JOIN income_categories ic ON ic.id = it.income_category_id").
-		Where("it.academic_year_id = ? AND it.transaction_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
+		Where("it.deleted_at IS NULL AND it.academic_year_id = ? AND it.transaction_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
 
 	if incomeCategories != "" {
 		cats := strings.Split(incomeCategories, ",")
@@ -324,7 +324,7 @@ func (r *reportRepository) DailyPenerimaan(academicYearID uint, startDate, endDa
 			Select("p.payment_date as date, SUM(pi.amount) as total").
 			Joins("JOIN invoice_items ii ON ii.id = pi.invoice_item_id").
 			Joins("JOIN payments p ON p.id = pi.payment_id").
-			Where("p.academic_year_id = ? AND p.payment_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
+			Where("pi.deleted_at IS NULL AND ii.deleted_at IS NULL AND p.deleted_at IS NULL AND p.academic_year_id = ? AND p.payment_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
 
 		if category != "" {
 			query = query.Where("ii.category = ?", category)
@@ -343,7 +343,7 @@ func (r *reportRepository) DailyPenerimaan(academicYearID uint, startDate, endDa
 		var rows []row
 		query := r.db.Table("income_transactions").
 			Select("transaction_date as date, SUM(amount) as total").
-			Where("academic_year_id = ? AND transaction_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
+			Where("deleted_at IS NULL AND academic_year_id = ? AND transaction_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
 
 		if err := query.Group("transaction_date").Scan(&rows).Error; err != nil {
 			return nil, err
@@ -371,11 +371,11 @@ func (r *reportRepository) DailyPengeluaran(academicYearID uint, startDate, endD
 		query = query.
 			Joins("LEFT JOIN expense_categories ec ON ec.id = e.expense_category_id").
 			Joins("LEFT JOIN expense_categories pec ON pec.id = ec.parent_id").
-			Where("e.academic_year_id = ? AND e.expense_date BETWEEN ? AND ?", academicYearID, startDate, endDate).
+			Where("e.deleted_at IS NULL AND e.academic_year_id = ? AND e.expense_date BETWEEN ? AND ?", academicYearID, startDate, endDate).
 			Where("pec.invoice_category = ?", category)
 	} else {
 		query = query.
-			Where("e.academic_year_id = ? AND e.expense_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
+			Where("e.deleted_at IS NULL AND e.academic_year_id = ? AND e.expense_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
 	}
 
 	err := query.Group("e.expense_date").Scan(&rows).Error
@@ -396,7 +396,7 @@ func (r *reportRepository) SumPenerimaan(academicYearID uint, startDate, endDate
 		Select("COALESCE(SUM(pi.amount), 0)").
 		Joins("JOIN invoice_items ii ON ii.id = pi.invoice_item_id").
 		Joins("JOIN payments p ON p.id = pi.payment_id").
-		Where("p.academic_year_id = ? AND p.payment_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
+		Where("pi.deleted_at IS NULL AND ii.deleted_at IS NULL AND p.deleted_at IS NULL AND p.academic_year_id = ? AND p.payment_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
 
 	if category != "" {
 		query = query.Where("ii.category = ?", category)
@@ -411,7 +411,7 @@ func (r *reportRepository) SumPenerimaan(academicYearID uint, startDate, endDate
 		var incomeTotal float64
 		incomeQuery := r.db.Table("income_transactions").
 			Select("COALESCE(SUM(amount), 0)").
-			Where("academic_year_id = ? AND transaction_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
+			Where("deleted_at IS NULL AND academic_year_id = ? AND transaction_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
 
 		if err := incomeQuery.Scan(&incomeTotal).Error; err != nil {
 			return 0, err
@@ -433,11 +433,11 @@ func (r *reportRepository) SumPengeluaran(academicYearID uint, startDate, endDat
 		query = query.
 			Joins("LEFT JOIN expense_categories ec ON ec.id = e.expense_category_id").
 			Joins("LEFT JOIN expense_categories pec ON pec.id = ec.parent_id").
-			Where("e.academic_year_id = ? AND e.expense_date BETWEEN ? AND ?", academicYearID, startDate, endDate).
+			Where("e.deleted_at IS NULL AND e.academic_year_id = ? AND e.expense_date BETWEEN ? AND ?", academicYearID, startDate, endDate).
 			Where("pec.invoice_category = ?", category)
 	} else {
 		query = query.
-			Where("e.academic_year_id = ? AND e.expense_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
+			Where("e.deleted_at IS NULL AND e.academic_year_id = ? AND e.expense_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
 	}
 
 	err := query.Scan(&total).Error
@@ -554,7 +554,7 @@ func (r *reportRepository) FindPemasukanSummary(academicYearID uint, startDate, 
 			Joins("JOIN invoice_items ii ON ii.id = pi.invoice_item_id").
 			Joins("JOIN invoices i ON i.id = ii.invoice_id").
 			Joins("JOIN students s ON s.id = i.student_id").
-			Where("p.academic_year_id = ? AND p.payment_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
+			Where("pi.deleted_at IS NULL AND p.deleted_at IS NULL AND ii.deleted_at IS NULL AND i.deleted_at IS NULL AND p.academic_year_id = ? AND p.payment_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
 
 		if len(categories) > 0 {
 			payQuery = payQuery.Where("ii.category IN ?", categories)
@@ -586,7 +586,7 @@ func (r *reportRepository) FindPemasukanSummary(academicYearID uint, startDate, 
 		incomeQuery := r.db.Table("income_transactions it").
 			Select("DATE(it.transaction_date) as date, ic.name as category, it.source_name as description, it.amount").
 			Joins("JOIN income_categories ic ON ic.id = it.income_category_id").
-			Where("it.academic_year_id = ? AND it.transaction_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
+			Where("it.deleted_at IS NULL AND it.academic_year_id = ? AND it.transaction_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
 
 		if incomeCategories != "" {
 			incomeCats := strings.Split(incomeCategories, ",")
@@ -623,7 +623,7 @@ func (r *reportRepository) FindPemasukanSummary(academicYearID uint, startDate, 
 		savingsQuery := r.db.Table("payments p").
 			Select("DATE(p.payment_date) as date, 'Tabungan Umum' as category, CONCAT(COALESCE(s.full_name, 'Siswa #' || s.id), ' - Setoran Tabungan') as description, p.savings_deposit as amount").
 			Joins("JOIN students s ON s.id = p.student_id").
-			Where("p.academic_year_id = ? AND p.payment_date BETWEEN ? AND ? AND p.savings_deposit > 0", academicYearID, startDate, endDate)
+			Where("p.deleted_at IS NULL AND p.academic_year_id = ? AND p.payment_date BETWEEN ? AND ? AND p.savings_deposit > 0", academicYearID, startDate, endDate)
 
 		if paymentMethod == "tunai" {
 			savingsQuery = savingsQuery.Where("p.source = ?", "cash")
@@ -676,7 +676,7 @@ func (r *reportRepository) FindPengeluaranRows(academicYearID uint, startDate, e
 		Select("DATE(e.expense_date) as date, ec.name as category, CONCAT(COALESCE(e.description, ''), ' - ', COALESCE(u.full_name, '')) as description, e.amount").
 		Joins("LEFT JOIN expense_categories ec ON ec.id = e.expense_category_id").
 		Joins("LEFT JOIN users u ON u.id = e.created_by").
-		Where("e.academic_year_id = ? AND e.expense_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
+		Where("e.deleted_at IS NULL AND e.academic_year_id = ? AND e.expense_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
 
 	if len(expenseIDs) > 0 {
 		query = query.Where("e.expense_category_id IN ?", expenseIDs)
@@ -711,7 +711,7 @@ func (r *reportRepository) DailyIncomeTransactions(academicYearID uint, startDat
 
 	query := r.db.Table("income_transactions").
 		Select("transaction_date as date, SUM(amount) as total").
-		Where("academic_year_id = ? AND transaction_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
+		Where("deleted_at IS NULL AND academic_year_id = ? AND transaction_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
 
 	if incomeCategories != "" {
 		cats := strings.Split(incomeCategories, ",")
@@ -738,7 +738,7 @@ func (r *reportRepository) SumIncomeTransactions(academicYearID uint, startDate,
 	var total float64
 	query := r.db.Table("income_transactions").
 		Select("COALESCE(SUM(amount), 0)").
-		Where("academic_year_id = ? AND transaction_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
+		Where("deleted_at IS NULL AND academic_year_id = ? AND transaction_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
 
 	if incomeCategories != "" {
 		cats := strings.Split(incomeCategories, ",")
@@ -761,7 +761,7 @@ func (r *reportRepository) DailySavingsDeposits(academicYearID uint, startDate, 
 
 	err := r.db.Table("payments").
 		Select("payment_date as date, SUM(savings_deposit) as total").
-		Where("academic_year_id = ? AND payment_date BETWEEN ? AND ? AND savings_deposit > 0", academicYearID, startDate, endDate).
+		Where("deleted_at IS NULL AND academic_year_id = ? AND payment_date BETWEEN ? AND ? AND savings_deposit > 0", academicYearID, startDate, endDate).
 		Group("DATE(payment_date)").
 		Scan(&rows).Error
 	if err != nil {
@@ -780,7 +780,7 @@ func (r *reportRepository) SumSavingsDeposits(academicYearID uint, startDate, en
 	var total float64
 	err := r.db.Table("payments").
 		Select("COALESCE(SUM(savings_deposit), 0)").
-		Where("academic_year_id = ? AND payment_date BETWEEN ? AND ?", academicYearID, startDate, endDate).
+		Where("deleted_at IS NULL AND academic_year_id = ? AND payment_date BETWEEN ? AND ?", academicYearID, startDate, endDate).
 		Scan(&total).Error
 	return total, err
 }

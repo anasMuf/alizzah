@@ -134,10 +134,22 @@ func recalculateInvoices(db *gorm.DB, invoiceIDs []uint) {
 		}
 
 		status := "unpaid"
-		if paid > 0 && paid < total {
-			status = "partial"
-		} else if paid >= total && total > 0 {
-			status = "paid"
+		if paid > 0 {
+			// Kanonik: lunas hanya jika SEMUA item lunas, bukan paid >= total.
+			// Dispensasi negatif / item bernilai 0 membuat paid bisa == total
+			// padahal masih ada item yang belum dibayar.
+			var unpaidItems int64
+			if err := db.Model(&model.InvoiceItem{}).
+				Where("invoice_id = ? AND status != 'paid'", invID).
+				Count(&unpaidItems).Error; err != nil {
+				log.Printf("[CleanFacility] Gagal hitung item unpaid invoice %d: %v", invID, err)
+				continue
+			}
+			if unpaidItems == 0 {
+				status = "paid"
+			} else {
+				status = "partial"
+			}
 		}
 
 		if err := db.Model(&model.Invoice{}).

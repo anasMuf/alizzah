@@ -448,7 +448,10 @@ func (s *paymentService) reversePayment(tx *gorm.DB, paymentID uint) error {
 		}
 		newPaid := invItem.PaidAmount - item.Amount
 		if newPaid < 0 {
-			newPaid = 0
+			// Sebelumnya di-clamp ke 0 (menyembunyikan anomali). Sekarang gagal
+			// dengan jelas: paid_amount item tidak boleh kurang dari jumlah item
+			// payment yang dibatalkan.
+			return fmt.Errorf("gagal reverse invoice item %d: paid_amount (%.2f) < jumlah item payment (%.2f). Lakukan rekonsiliasi sebelum menghapus/mengubah payment ini", invItem.ID, invItem.PaidAmount, item.Amount)
 		}
 		newStatus := "unpaid"
 		if newPaid > 0 && newPaid < invItem.Amount {

@@ -1,6 +1,10 @@
 package barang
 
-import "gorm.io/gorm"
+import (
+	"errors"
+
+	"gorm.io/gorm"
+)
 
 type Repository interface {
 	FindAll(search string, activeOnly bool) ([]Product, error)
@@ -94,6 +98,18 @@ func (r *repository) DefaultVariantWithTx(tx *gorm.DB, productID uint) (*Variant
 }
 
 func (r *repository) AdjustVariantStockWithTx(tx *gorm.DB, variantID uint, delta int) error {
-	return tx.Model(&Variant{}).Where("id = ?", variantID).
-		UpdateColumn("stock", gorm.Expr("stock + ?", delta)).Error
+	query := tx.Model(&Variant{}).Where("id = ?", variantID)
+	if delta < 0 {
+		// Guard optimistik: klaim stok hanya jika mencukupi. Mencegah stok
+		// negatif saat ada penjualan bersamaan (race check-then-update).
+		query = query.Where("stock >= ?", -delta)
+	}
+	result := query.UpdateColumn("stock", gorm.Expr("stock + ?", delta))
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return errors.New("stok varian tidak mencukupi atau varian tidak ditemukan")
+	}
+	return nil
 }

@@ -2,6 +2,7 @@ package anggota
 
 import (
 	"errors"
+	"fmt"
 
 	"gorm.io/gorm"
 )
@@ -100,7 +101,7 @@ func (s *service) BulkCreate(req BulkCreateRequest) ([]Response, error) {
 	if err := s.repo.BulkCreate(members); err != nil {
 		return nil, err
 	}
-	
+
 	out := make([]Response, 0, len(members))
 	for _, m := range members {
 		out = append(out, toResponse(m))
@@ -131,6 +132,16 @@ func (s *service) Update(id uint, req CreateRequest) (*Response, error) {
 func (s *service) Delete(id uint) error {
 	if _, err := s.repo.FindByID(id); err != nil {
 		return errors.New("Anggota tidak ditemukan")
+	}
+	// Cegah menghapus anggota yang masih punya pinjaman belum lunas —
+	// pinjaman miliknya tetap tampil di laporan (JOIN ke koperasi_members
+	// tanpa filter deleted_at), sehingga hapus hanya jika sudah bersih.
+	summary, err := s.repo.GetLoanSummary(id)
+	if err != nil {
+		return fmt.Errorf("gagal memeriksa pinjaman anggota: %w", err)
+	}
+	if summary.ActiveLoanCount > 0 {
+		return errors.New("Tidak bisa menghapus anggota yang masih memiliki pinjaman belum lunas")
 	}
 	return s.repo.Delete(id)
 }

@@ -156,7 +156,7 @@ func (r *feeConfigItemRepository) GetProductNames(ids []uint) (map[uint]string, 
 		ID   uint
 		Name string
 	}
-	err := r.db.Table("koperasi_products").Select("id, name").Where("id IN ?", ids).Find(&results).Error
+	err := r.db.Table("koperasi_products").Select("id, name").Where("deleted_at IS NULL AND id IN ?", ids).Find(&results).Error
 	if err != nil {
 		return nil, err
 	}

@@ -1,7 +1,5 @@
 package model
 
-import "gorm.io/gorm"
-
 type SavingsTransaction struct {
 	PrimaryKey
 	StudentSavingsID uint    `gorm:"not null;index"`
@@ -15,9 +13,6 @@ type SavingsTransaction struct {
 	Notes     string `gorm:"type:text"`
 	CreatedBy uint   `gorm:"not null"`
 	BaseModelTimeAt
-	// Soft delete: transaksi yang dibatalkan (mis. saat payment dihapus/di-update)
-	// diset deleted_at, bukan dihapus permanen, agar jejak audit tetap ada.
-	DeletedAt gorm.DeletedAt `gorm:"index"`
 
 	StudentSavings StudentSavings `gorm:"foreignKey:StudentSavingsID"`
 	Creator        User           `gorm:"foreignKey:CreatedBy"`

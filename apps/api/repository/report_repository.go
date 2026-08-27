@@ -710,8 +710,8 @@ func (r *reportRepository) DailyIncomeTransactions(academicYearID uint, startDat
 	var rows []row
 
 	query := r.db.Table("income_transactions").
-		Select("transaction_date as date, SUM(amount) as total").
-		Where("deleted_at IS NULL AND academic_year_id = ? AND transaction_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
+		Select("income_transactions.transaction_date as date, SUM(income_transactions.amount) as total").
+		Where("income_transactions.deleted_at IS NULL AND income_transactions.academic_year_id = ? AND income_transactions.transaction_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
 
 	if incomeCategories != "" {
 		cats := strings.Split(incomeCategories, ",")
@@ -720,7 +720,7 @@ func (r *reportRepository) DailyIncomeTransactions(academicYearID uint, startDat
 			Where("ic.code IN ?", cats)
 	}
 
-	query = query.Group("DATE(transaction_date)")
+	query = query.Group("DATE(income_transactions.transaction_date)")
 
 	if err := query.Scan(&rows).Error; err != nil {
 		return nil, err
@@ -737,8 +737,8 @@ func (r *reportRepository) DailyIncomeTransactions(academicYearID uint, startDat
 func (r *reportRepository) SumIncomeTransactions(academicYearID uint, startDate, endDate time.Time, incomeCategories string) (float64, error) {
 	var total float64
 	query := r.db.Table("income_transactions").
-		Select("COALESCE(SUM(amount), 0)").
-		Where("deleted_at IS NULL AND academic_year_id = ? AND transaction_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
+		Select("COALESCE(SUM(income_transactions.amount), 0)").
+		Where("income_transactions.deleted_at IS NULL AND income_transactions.academic_year_id = ? AND income_transactions.transaction_date BETWEEN ? AND ?", academicYearID, startDate, endDate)
 
 	if incomeCategories != "" {
 		cats := strings.Split(incomeCategories, ",")

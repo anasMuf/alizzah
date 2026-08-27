@@ -151,3 +151,61 @@ func TestSumExpense_ExcludesSoftDeleted(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 15000.0, sum)
 }
+
+// TestIncomeTransactions_WithIncomeCategoryFilter: memastikan filter income category
+// (yang memicu JOIN ke income_categories) tidak membuat kolom deleted_at ambigu
+// (regresi: SQLSTATE 42702 "column reference deleted_at is ambiguous").
+func TestIncomeTransactions_WithIncomeCategoryFilter(t *testing.T) {
+	db := setupReportSoftDeleteTestDB(t)
+
+	user := model.User{Email: "admin@test.com", Password: "hashed", Role: "superadmin", FullName: "Admin"}
+	assert.NoError(t, db.Create(&user).Error)
+
+	ay := model.AcademicYear{
+		Name:      "2026/2027",
+		StartDate: time.Date(2026, 7, 13, 0, 0, 0, 0, time.UTC),
+		EndDate:   time.Date(2027, 6, 30, 0, 0, 0, 0, time.UTC),
+		IsActive:  true,
+	}
+	assert.NoError(t, db.Create(&ay).Error)
+
+	catBos := model.IncomeCategory{Code: "bos", Name: "Dana BOS"}
+	assert.NoError(t, db.Create(&catBos).Error)
+
+	itValid := model.IncomeTransaction{
+		AcademicYearID:   ay.ID,
+		IncomeCategoryID: catBos.ID,
+		SourceName:       "BOS Pusat",
+		Amount:           100000,
+		TransactionDate:  time.Date(2026, 8, 5, 0, 0, 0, 0, time.UTC),
+		CreatedBy:        user.ID,
+	}
+	assert.NoError(t, db.Create(&itValid).Error)
+	itDeleted := model.IncomeTransaction{
+		AcademicYearID:   ay.ID,
+		IncomeCategoryID: catBos.ID,
+		SourceName:       "BOS Lama",
+		Amount:           50000,
+		TransactionDate:  time.Date(2026, 8, 6, 0, 0, 0, 0, time.UTC),
+		CreatedBy:        user.ID,
+	}
+	assert.NoError(t, db.Create(&itDeleted).Error)
+	assert.NoError(t, db.Delete(&itDeleted).Error) // soft-delete income transaction
+
+	repo := NewReportRepository(db)
+	start := time.Date(2026, 7, 1, 0, 0, 0, 0, time.UTC)
+	end := time.Date(2026, 9, 30, 0, 0, 0, 0, time.UTC)
+
+	// incomeCategories non-kosong → memicu JOIN ke income_categories
+	daily, err := repo.DailyIncomeTransactions(ay.ID, start, end, "bos")
+	assert.NoError(t, err)
+	var dailyTotal float64
+	for _, v := range daily {
+		dailyTotal += v
+	}
+	assert.Equal(t, 100000.0, dailyTotal, "income transaction soft-deleted tidak boleh dihitung")
+
+	sum, err := repo.SumIncomeTransactions(ay.ID, start, end, "bos")
+	assert.NoError(t, err)
+	assert.Equal(t, 100000.0, sum, "income transaction soft-deleted tidak boleh dihitung")
+}

@@ -31,9 +31,10 @@ type studentExtracurricularService struct {
 	acRepo         repository.AcademicYearRepository
 	enrollmentRepo repository.StudentEnrollmentRepository
 	invoiceGen     InvoiceGenerateService
+	exclRepo       repository.BillingMonthExclusionRepository
 }
 
-func NewStudentExtracurricularService(db *gorm.DB, seRepo repository.StudentExtracurricularRepository, studentRepo repository.StudentRepository, exRepo repository.ExtracurricularRepository, acRepo repository.AcademicYearRepository, enrollmentRepo repository.StudentEnrollmentRepository, invoiceGen InvoiceGenerateService) StudentExtracurricularService {
+func NewStudentExtracurricularService(db *gorm.DB, seRepo repository.StudentExtracurricularRepository, studentRepo repository.StudentRepository, exRepo repository.ExtracurricularRepository, acRepo repository.AcademicYearRepository, enrollmentRepo repository.StudentEnrollmentRepository, invoiceGen InvoiceGenerateService, exclRepo repository.BillingMonthExclusionRepository) StudentExtracurricularService {
 	return &studentExtracurricularService{
 		db:             db,
 		seRepo:         seRepo,
@@ -42,6 +43,7 @@ func NewStudentExtracurricularService(db *gorm.DB, seRepo repository.StudentExtr
 		acRepo:         acRepo,
 		enrollmentRepo: enrollmentRepo,
 		invoiceGen:     invoiceGen,
+		exclRepo:       exclRepo,
 	}
 }
 
@@ -175,6 +177,14 @@ func (s *studentExtracurricularService) Unenroll(studentID, seID uint) error {
 			log.Printf("[WARNING] Gagal membersihkan invoice untuk ekskul %d siswa %d: %v. "+
 				"Silakan jalankan regenerate invoice manual via dashboard.",
 				se.ExtracurricularID, studentID, err)
+		}
+	}
+
+	// R.8: hapus semua skip tagihan (billing exclusions) enrollment ini —
+	// enrollment sudah nonaktif, data skip tidak boleh menggantung.
+	if s.exclRepo != nil {
+		if err := s.exclRepo.DeleteByStudentAndEntity(studentID, "extracurricular", se.ExtracurricularID); err != nil {
+			log.Printf("[WARNING] Gagal menghapus billing exclusions ekskul %d siswa %d: %v", se.ExtracurricularID, studentID, err)
 		}
 	}
 

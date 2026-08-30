@@ -171,12 +171,12 @@ export function BillingMonthsDialog({
 										isChecked
 											? "border-indigo-600 bg-indigo-50"
 											: "border-gray-200 bg-white hover:bg-gray-50"
-									} ${paid ? "cursor-not-allowed opacity-50" : ""}`}
+									} ${paid && !isChecked ? "cursor-not-allowed opacity-50" : ""}`}
 								>
 									<input
 										type="checkbox"
 										checked={isChecked}
-										disabled={paid || saving}
+										disabled={saving || (paid && !isChecked)}
 										onChange={() => toggle(key)}
 										className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
 									/>
@@ -197,7 +197,8 @@ export function BillingMonthsDialog({
 
 				<p className="text-xs text-gray-400">
 					Bulan yang dicentang tidak akan ditagihkan untuk kegiatan ini. Bulan
-					yang sudah dibayar tidak bisa diubah.
+					yang sudah dibayar tidak bisa ditambahkan sebagai skip, tapi tetap
+					bisa dicabut skip-nya.
 				</p>
 			</div>
 		</SlideOver>

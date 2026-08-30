@@ -3251,6 +3251,64 @@
                 }
             }
         },
+        "/v1/daycare-enrollments/preview-sync-invoices": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Hitung rencana sinkronisasi tagihan daycare bulanan TANPA",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "daycare-enrollments"
+                ],
+                "summary": "Preview daycare sync (dry-run)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/dto.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.DaycarePreviewResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/daycare-enrollments/sync-invoices": {
             "post": {
                 "security": [
@@ -4979,6 +5037,64 @@
                         "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/extracurriculars/preview-sync-invoices": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Hitung rencana sinkronisasi tagihan ekstrakurikuler bulanan",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "student-extracurriculars"
+                ],
+                "summary": "Preview extracurricular sync (dry-run)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/dto.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.ExtracurricularPreviewResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "401": {
@@ -16308,6 +16424,41 @@
                 }
             }
         },
+        "dto.DaycarePreviewItem": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "description": "premium | regular",
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "student_id": {
+                    "type": "integer"
+                },
+                "student_name": {
+                    "type": "string"
+                },
+                "will_sync": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "dto.DaycarePreviewResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.DaycarePreviewItem"
+                    }
+                },
+                "total_enrollments": {
+                    "type": "integer"
+                }
+            }
+        },
         "dto.DaycareSyncError": {
             "type": "object",
             "properties": {
@@ -16794,6 +16945,52 @@
                 },
                 "status": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.ExtracurricularPreviewItem": {
+            "type": "object",
+            "properties": {
+                "extracurricular_id": {
+                    "type": "integer"
+                },
+                "extracurricular_name": {
+                    "type": "string"
+                },
+                "months_to_add": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.MonthYearBrief"
+                    }
+                },
+                "skipped_excluded": {
+                    "type": "integer"
+                },
+                "skipped_exists": {
+                    "type": "integer"
+                },
+                "skipped_no_invoice": {
+                    "type": "integer"
+                },
+                "student_id": {
+                    "type": "integer"
+                },
+                "student_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ExtracurricularPreviewResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ExtracurricularPreviewItem"
+                    }
+                },
+                "total_enrollments": {
+                    "type": "integer"
                 }
             }
         },
@@ -17625,6 +17822,17 @@
                 "total_outstanding": {
                     "description": "sum sisa tagihan terfilter; diisi pada daftar invoice",
                     "type": "number"
+                }
+            }
+        },
+        "dto.MonthYearBrief": {
+            "type": "object",
+            "properties": {
+                "month": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "integer"
                 }
             }
         },

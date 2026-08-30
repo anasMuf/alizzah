@@ -936,6 +936,29 @@ definitions:
       year:
         type: integer
     type: object
+  dto.DaycarePreviewItem:
+    properties:
+      category:
+        description: premium | regular
+        type: string
+      reason:
+        type: string
+      student_id:
+        type: integer
+      student_name:
+        type: string
+      will_sync:
+        type: boolean
+    type: object
+  dto.DaycarePreviewResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.DaycarePreviewItem'
+        type: array
+      total_enrollments:
+        type: integer
+    type: object
   dto.DaycareSyncError:
     properties:
       message:
@@ -1256,6 +1279,36 @@ definitions:
         type: integer
       status:
         type: string
+    type: object
+  dto.ExtracurricularPreviewItem:
+    properties:
+      extracurricular_id:
+        type: integer
+      extracurricular_name:
+        type: string
+      months_to_add:
+        items:
+          $ref: '#/definitions/dto.MonthYearBrief'
+        type: array
+      skipped_excluded:
+        type: integer
+      skipped_exists:
+        type: integer
+      skipped_no_invoice:
+        type: integer
+      student_id:
+        type: integer
+      student_name:
+        type: string
+    type: object
+  dto.ExtracurricularPreviewResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.ExtracurricularPreviewItem'
+        type: array
+      total_enrollments:
+        type: integer
     type: object
   dto.ExtracurricularResponse:
     properties:
@@ -1806,6 +1859,13 @@ definitions:
       total_outstanding:
         description: sum sisa tagihan terfilter; diisi pada daftar invoice
         type: number
+    type: object
+  dto.MonthYearBrief:
+    properties:
+      month:
+        type: integer
+      year:
+        type: integer
     type: object
   dto.MonthlyBreakdown:
     properties:
@@ -5954,6 +6014,40 @@ paths:
       summary: Upsert daycare monthly attendance
       tags:
       - daycare-enrollments
+  /v1/daycare-enrollments/preview-sync-invoices:
+    post:
+      consumes:
+      - application/json
+      description: Hitung rencana sinkronisasi tagihan daycare bulanan TANPA
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.DaycarePreviewResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Preview daycare sync (dry-run)
+      tags:
+      - daycare-enrollments
   /v1/daycare-enrollments/sync-invoices:
     post:
       consumes:
@@ -6968,6 +7062,40 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Export extracurriculars with students
+      tags:
+      - student-extracurriculars
+  /v1/extracurriculars/preview-sync-invoices:
+    post:
+      consumes:
+      - application/json
+      description: Hitung rencana sinkronisasi tagihan ekstrakurikuler bulanan
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.ExtracurricularPreviewResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Preview extracurricular sync (dry-run)
       tags:
       - student-extracurriculars
   /v1/extracurriculars/sync-invoices:

@@ -648,6 +648,7 @@ func main() {
 	// Extracurriculars
 	extracurriculars := api.Group("/extracurriculars", middleware.JWTAuth(tokenBlacklistRepo), guard.RequireModule(middleware.ModuleAdministrasi))
 	extracurriculars.POST("/sync-invoices", seHandler.SyncInvoices)
+	extracurriculars.POST("/preview-sync-invoices", seHandler.PreviewSyncInvoices)
 	extracurriculars.GET("/export", seHandler.Export)
 	extracurriculars.GET("/:id/students", seHandler.GetStudentsByExtracurricular)
 	extracurriculars.GET("", extracurricularHandler.List)
@@ -660,6 +661,7 @@ func main() {
 	daycare.GET("", daycareHandler.List)
 	daycare.POST("", daycareHandler.Create)
 	daycare.POST("/sync-invoices", daycareHandler.SyncInvoices)
+	daycare.POST("/preview-sync-invoices", daycareHandler.PreviewSyncInvoices)
 	daycare.POST("/generate-monthly", daycareHandler.GenerateMonthlyInvoices)
 	daycare.POST("/generate-monthly-bulk", daycareHandler.GenerateMonthlyBulk)
 	daycare.GET("/:id", daycareHandler.Get)

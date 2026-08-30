@@ -19,6 +19,15 @@ func setupBillingExclusionInvoiceTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	require.NoError(t, err)
+
+	// sqlite :memory: adalah PER-KONEKSI. Pin ke satu koneksi agar query dari
+	// goroutine (mis. RemoveFacilityFromFutureInvoices saat Unenroll) dan query
+	// test berbagi database yang sama — mencegah flaky "no such table" di CI
+	// (setiap koneksi baru melihat :memory: yang kosong).
+	sqlDB, err := db.DB()
+	require.NoError(t, err)
+	sqlDB.SetMaxOpenConns(1)
+
 	err = db.AutoMigrate(
 		&model.User{},
 		&model.AcademicYear{},

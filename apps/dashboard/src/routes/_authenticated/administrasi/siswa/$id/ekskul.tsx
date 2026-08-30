@@ -598,7 +598,7 @@ function SiswaEkskulPage() {
 						? `Kelola Bulan — ${billingTarget.name}`
 						: "Kelola Bulan"
 				}
-				description="Bulan yang dicentang tidak akan ditagihkan untuk PASTA ini. Enrollment siswa tetap aktif."
+				description="Bulan yang dicentang tetap ditagihkan untuk PASTA ini. Bulan yang tidak dicentang di-skip (tidak ditagih). Enrollment siswa tetap aktif."
 				months={activeYearMonths}
 				paidKeys={paidMonthKeys}
 				loadExclusions={async () => {

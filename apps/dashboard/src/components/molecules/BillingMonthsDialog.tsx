@@ -74,8 +74,8 @@ export function BillingMonthsDialog({
 	const [loading, setLoading] = useState(false);
 	const [saving, setSaving] = useState(false);
 
-	// Muat daftar exclusion saat dialog dibuka — sengaja hanya bergantung pada
-	// `open`; loadExclusions/addToast adalah closure stabil dari halaman pemanggil.
+	// Centang = bulan DITAGIH (aktif). Bulan yang di-skip = tidak dicentang.
+	// Saat dialog dibuka, isi checked dengan komplemen dari daftar exclusion.
 	// biome-ignore lint/correctness/useExhaustiveDependencies: load hanya saat dialog dibuka
 	useEffect(() => {
 		if (!open) return;
@@ -85,7 +85,14 @@ export function BillingMonthsDialog({
 		loadExclusions()
 			.then((list) => {
 				if (cancelled) return;
-				setChecked(new Set(list.map((m) => monthKey(m.month, m.year))));
+				const excluded = new Set(list.map((m) => monthKey(m.month, m.year)));
+				setChecked(
+					new Set(
+						months
+							.map((m) => monthKey(m.month, m.year))
+							.filter((key) => !excluded.has(key)),
+					),
+				);
 			})
 			.catch((err: Error) => {
 				if (cancelled) return;
@@ -116,13 +123,11 @@ export function BillingMonthsDialog({
 	const handleSave = async () => {
 		setSaving(true);
 		try {
-			const selected = [...checked]
-				.map((key) => {
-					const [month, year] = key.split("-");
-					return { month: Number(month), year: Number(year) };
-				})
-				.sort((a, b) => a.year - b.year || a.month - b.month);
-			await saveExclusions(selected);
+			// Yang dikirim = bulan yang TIDAK dicentang (skip)
+			const skipped = months.filter(
+				(m) => !checked.has(monthKey(m.month, m.year)),
+			);
+			await saveExclusions(skipped);
 			onClose();
 		} catch {
 			// Toast error ditangani oleh mutation di halaman pemanggil
@@ -171,12 +176,12 @@ export function BillingMonthsDialog({
 										isChecked
 											? "border-indigo-600 bg-indigo-50"
 											: "border-gray-200 bg-white hover:bg-gray-50"
-									} ${paid && !isChecked ? "cursor-not-allowed opacity-50" : ""}`}
+									} ${paid && isChecked ? "cursor-not-allowed opacity-50" : ""}`}
 								>
 									<input
 										type="checkbox"
 										checked={isChecked}
-										disabled={saving || (paid && !isChecked)}
+										disabled={saving || (paid && isChecked)}
 										onChange={() => toggle(key)}
 										className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
 									/>
@@ -196,9 +201,9 @@ export function BillingMonthsDialog({
 				)}
 
 				<p className="text-xs text-gray-400">
-					Bulan yang dicentang tidak akan ditagihkan untuk kegiatan ini. Bulan
-					yang sudah dibayar tidak bisa ditambahkan sebagai skip, tapi tetap
-					bisa dicabut skip-nya.
+					Bulan yang dicentang tetap ditagihkan (aktif). Bulan yang tidak
+					dicentang akan di-skip (tidak ditagih). Bulan yang sudah dibayar tidak
+					bisa di-skip.
 				</p>
 			</div>
 		</SlideOver>

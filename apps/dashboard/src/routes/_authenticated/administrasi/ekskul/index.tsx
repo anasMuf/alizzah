@@ -6,6 +6,7 @@ import {
 	Edit,
 	Loader2,
 	Plus,
+	RefreshCw,
 	Search,
 	Trash2,
 	Users,
@@ -16,8 +17,16 @@ import {
 	useDeleteV1ExtracurricularsId,
 	useGetV1Extracurriculars,
 } from "#/api/endpoints/extracurriculars/extracurriculars";
+import { getGetV1InvoicesQueryKey } from "#/api/endpoints/invoices/invoices";
+import { usePostV1ExtracurricularsSyncInvoices } from "#/api/endpoints/student-extracurriculars/student-extracurriculars";
+import { postV1ExtracurricularsPreviewSyncInvoices } from "#/api/endpoints/sync-invoices/sync-invoices";
 import type { DtoExtracurricularResponse } from "#/api/model";
 import { customInstance } from "#/api/mutator/custom-instance";
+import {
+	SyncPreviewDialog,
+	type SyncPreviewRow,
+	type SyncPreviewSummaryItem,
+} from "#/components/molecules/SyncPreviewDialog";
 import { Button, ConfirmDialog, EmptyState, useToast } from "#/components/ui";
 import { academicYearAtom } from "#/store/global";
 import {
@@ -28,6 +37,21 @@ import {
 	formatStatus,
 } from "#/utils/excel";
 import { EkskulForm } from "../../../../features/administrasi/components/EkskulForm";
+
+const MONTH_SHORT = [
+	"Jan",
+	"Feb",
+	"Mar",
+	"Apr",
+	"Mei",
+	"Jun",
+	"Jul",
+	"Agu",
+	"Sep",
+	"Okt",
+	"Nov",
+	"Des",
+];
 
 export const Route = createFileRoute("/_authenticated/administrasi/ekskul/")({
 	component: EkskulPage,
@@ -63,6 +87,7 @@ function EkskulPage() {
 	const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 	const [ekskulToDelete, setEkskulToDelete] =
 		useState<DtoExtracurricularResponse | null>(null);
+	const [syncOpen, setSyncOpen] = useState(false);
 
 	const { data: response, isLoading, isError } = useGetV1Extracurriculars();
 	const ekskuls = (response?.data as any)?.data || [];
@@ -92,6 +117,68 @@ function EkskulPage() {
 			},
 		},
 	});
+
+	const syncMutation = usePostV1ExtracurricularsSyncInvoices({
+		mutation: {
+			onSuccess: (res: any) => {
+				const d = res?.data?.data;
+				addToast({
+					variant: "success",
+					title: "Berhasil",
+					message: d
+						? `Sinkron selesai — ${d.total_synced} dari ${d.total_enrollments} enrollment diproses, ${d.total_skipped} dilewati.`
+						: "Sinkronisasi tagihan selesai.",
+				});
+				queryClient.invalidateQueries({
+					queryKey: getGetV1ExtracurricularsQueryKey(),
+				});
+				queryClient.invalidateQueries({ queryKey: getGetV1InvoicesQueryKey() });
+				setSyncOpen(false);
+			},
+			onError: (err: any) =>
+				addToast({ variant: "error", title: "Gagal", message: err?.message }),
+		},
+	});
+
+	const loadSyncPreview = async () => {
+		const res = await postV1ExtracurricularsPreviewSyncInvoices();
+		const d = res.data.data;
+
+		const rows: SyncPreviewRow[] = d.items.map((it) => {
+			const monthLabels = it.months_to_add
+				.map((m) => `${MONTH_SHORT[m.month - 1]} ${m.year}`)
+				.join(", ");
+			const skips: string[] = [];
+			if (it.skipped_excluded > 0)
+				skips.push(`${it.skipped_excluded} bulan di-skip`);
+			if (it.skipped_exists > 0) skips.push(`${it.skipped_exists} sudah ada`);
+			if (it.skipped_no_invoice > 0)
+				skips.push(`${it.skipped_no_invoice} invoice belum ada`);
+			const skipNote = skips.length > 0 ? ` · ${skips.join(", ")}` : "";
+			return {
+				key: `${it.student_id}-${it.extracurricular_id}`,
+				student_name: it.student_name,
+				action: `${it.extracurricular_name} — ${it.months_to_add.length} bulan ditambah${it.months_to_add.length > 0 ? `: ${monthLabels}` : ""}${skipNote}`,
+				status: it.months_to_add.length > 0 ? "change" : "skip",
+			};
+		});
+
+		const totalMonths = d.items.reduce(
+			(acc, it) => acc + it.months_to_add.length,
+			0,
+		);
+		const totalSkipped = d.items.reduce(
+			(acc, it) =>
+				acc + it.skipped_excluded + it.skipped_exists + it.skipped_no_invoice,
+			0,
+		);
+		const summary: SyncPreviewSummaryItem[] = [
+			{ label: "Enrollment", value: d.total_enrollments },
+			{ label: "Bulan akan ditambah", value: totalMonths },
+			{ label: "Bulan dilewati", value: totalSkipped },
+		];
+		return { summary, rows };
+	};
 
 	const filteredEkskuls = useMemo(() => {
 		return ekskuls.filter((e: any) => {
@@ -213,6 +300,14 @@ function EkskulPage() {
 					</p>
 				</div>
 				<div className="mt-4 sm:ml-4 sm:mt-0 flex gap-3">
+					<Button
+						variant="secondary"
+						onClick={() => setSyncOpen(true)}
+						title="Backfill item PASTA ke invoice bulanan semua enrollment aktif"
+					>
+						<RefreshCw className="h-4 w-4" />
+						Sinkronkan Tagihan
+					</Button>
 					<Button
 						variant="secondary"
 						onClick={handleExportExcel}
@@ -364,6 +459,18 @@ function EkskulPage() {
 					Data ini tidak dapat dikembalikan.
 				</p>
 			</ConfirmDialog>
+
+			{/* Dialog Preview Sinkronisasi Tagihan */}
+			<SyncPreviewDialog
+				open={syncOpen}
+				onClose={() => setSyncOpen(false)}
+				title="Sinkronkan Tagihan PASTA"
+				description="Backfill item PASTA ke invoice bulanan semua enrollment aktif. Bulan yang di-skip (Kelola Bulan) tidak disentuh."
+				loadPreview={loadSyncPreview}
+				runSync={async () => {
+					await syncMutation.mutateAsync();
+				}}
+			/>
 		</div>
 	);
 }

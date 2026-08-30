@@ -1,10 +1,24 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Eraser, Palette, Plus, ShieldCheck, Trophy } from "lucide-react";
-import { useState } from "react";
+import {
+	CalendarDays,
+	Eraser,
+	Palette,
+	Plus,
+	ShieldCheck,
+	Trophy,
+} from "lucide-react";
+import { useMemo, useState } from "react";
 import { useGetV1AcademicYears } from "#/api/endpoints/academic-years/academic-years";
+import {
+	getV1StudentsIdExtracurricularsSeIdBillingExclusions,
+	usePutV1StudentsIdExtracurricularsSeIdBillingExclusions,
+} from "#/api/endpoints/billing-exclusions/billing-exclusions";
 import { useGetV1Extracurriculars } from "#/api/endpoints/extracurriculars/extracurriculars";
-import { getGetV1InvoicesQueryKey } from "#/api/endpoints/invoices/invoices";
+import {
+	getGetV1InvoicesQueryKey,
+	useGetV1Invoices,
+} from "#/api/endpoints/invoices/invoices";
 import {
 	getGetV1StudentsIdExtracurricularsQueryKey,
 	useDeleteV1StudentsIdExtracurricularsSeId,
@@ -12,6 +26,10 @@ import {
 	usePostV1StudentsIdExtracurriculars,
 } from "#/api/endpoints/student-extracurriculars/student-extracurriculars";
 import { ApiError, customInstance } from "#/api/mutator/custom-instance";
+import {
+	BillingMonthsDialog,
+	buildAcademicYearMonths,
+} from "#/components/molecules/BillingMonthsDialog";
 import {
 	Badge,
 	Button,
@@ -37,6 +55,10 @@ function SiswaEkskulPage() {
 	const [selectedSeId, setSelectedSeId] = useState<number | null>(null);
 	const [selectedSeName, setSelectedSeName] = useState("");
 	const [cleanupLoading, setCleanupLoading] = useState<number | null>(null);
+	const [billingTarget, setBillingTarget] = useState<{
+		seId: number;
+		name: string;
+	} | null>(null);
 
 	const [formData, setFormData] = useState({
 		extracurricular_id: 0,
@@ -57,6 +79,30 @@ function SiswaEkskulPage() {
 	const { data: ayResponse } = useGetV1AcademicYears();
 	const academicYears = (ayResponse?.data as any)?.data || [];
 	const activeYear = academicYears.find((ay: any) => ay.is_active);
+
+	// Bulan-bulan tahun ajaran aktif (untuk grid dialog "Kelola Bulan")
+	const activeYearMonths = useMemo(
+		() => buildAcademicYearMonths(activeYear?.start_date, activeYear?.end_date),
+		[activeYear],
+	);
+
+	// Bulan yang invoice-nya sudah ada pembayaran → checkbox disabled (item paid
+	// tidak bisa dihapus backend). Approximasi per-invoice, konservatif.
+	const { data: invoicesResp } = useGetV1Invoices({
+		student_id: studentId,
+		type: "monthly",
+		limit: 60,
+	});
+	const paidMonthKeys = useMemo(() => {
+		const keys = new Set<string>();
+		const list = (invoicesResp?.data as any)?.data ?? [];
+		for (const inv of list) {
+			if (inv.paid_amount > 0 && inv.month && inv.year) {
+				keys.add(`${inv.month}-${inv.year}`);
+			}
+		}
+		return keys;
+	}, [invoicesResp]);
 
 	const enrollMutation = usePostV1StudentsIdExtracurriculars({
 		mutation: {
@@ -101,6 +147,28 @@ function SiswaEkskulPage() {
 			},
 		},
 	});
+
+	const billingMutation =
+		usePutV1StudentsIdExtracurricularsSeIdBillingExclusions({
+			mutation: {
+				onSuccess: () => {
+					addToast({
+						variant: "success",
+						title: "Berhasil",
+						message: "Daftar bulan skip tersimpan.",
+					});
+					queryClient.invalidateQueries({
+						queryKey: getGetV1InvoicesQueryKey(),
+					});
+					setBillingTarget(null);
+				},
+				onError: (error: Error) => {
+					const msg =
+						error instanceof ApiError ? error.message : "Terjadi kesalahan";
+					addToast({ variant: "error", title: "Gagal", message: msg });
+				},
+			},
+		});
 
 	const resetForm = () => {
 		setFormData({
@@ -349,6 +417,21 @@ function SiswaEkskulPage() {
 															<Button
 																variant="ghost"
 																size="sm"
+																className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+																onClick={() =>
+																	setBillingTarget({
+																		seId: se.id,
+																		name: se.extracurricular?.name || "PASTA",
+																	})
+																}
+																title="Atur bulan yang tagihannya di-skip"
+															>
+																<CalendarDays className="h-4 w-4" />
+																Kelola Bulan
+															</Button>
+															<Button
+																variant="ghost"
+																size="sm"
 																className="text-red-600 hover:text-red-700 hover:bg-red-50"
 																onClick={() => handleUnenroll(se)}
 															>
@@ -505,6 +588,37 @@ function SiswaEkskulPage() {
 					belum dibayar akan otomatis dihapus.
 				</p>
 			</ConfirmDialog>
+
+			{/* Dialog Kelola Bulan — skip tagihan bulanan PASTA */}
+			<BillingMonthsDialog
+				open={!!billingTarget}
+				onClose={() => setBillingTarget(null)}
+				title={
+					billingTarget
+						? `Kelola Bulan — ${billingTarget.name}`
+						: "Kelola Bulan"
+				}
+				description="Bulan yang dicentang tetap ditagihkan untuk PASTA ini. Bulan yang tidak dicentang di-skip (tidak ditagih). Enrollment siswa tetap aktif."
+				months={activeYearMonths}
+				paidKeys={paidMonthKeys}
+				loadExclusions={async () => {
+					if (!billingTarget) return [];
+					const res =
+						await getV1StudentsIdExtracurricularsSeIdBillingExclusions(
+							studentId,
+							billingTarget.seId,
+						);
+					return res.data.data.months ?? [];
+				}}
+				saveExclusions={async (months) => {
+					if (!billingTarget) return;
+					await billingMutation.mutateAsync({
+						id: studentId,
+						seId: billingTarget.seId,
+						data: { months },
+					});
+				}}
+			/>
 		</>
 	);
 }

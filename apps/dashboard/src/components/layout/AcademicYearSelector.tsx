@@ -14,6 +14,7 @@ export function AcademicYearSelector() {
 			name: ay.name as string,
 			is_active: ay.is_active as boolean,
 			start_date: ay.start_date as string,
+			end_date: ay.end_date as string,
 		}));
 	}, [resp?.data]);
 

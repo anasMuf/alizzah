@@ -1,200 +1,5 @@
 basePath: /api
 definitions:
-  anggota.BulkCreateRequest:
-    properties:
-      members:
-        items:
-          $ref: '#/definitions/anggota.CreateRequest'
-        minItems: 1
-        type: array
-    required:
-    - members
-    type: object
-  anggota.CreateRequest:
-    properties:
-      address:
-        type: string
-      employee_id:
-        type: integer
-      full_name:
-        maxLength: 100
-        type: string
-      is_active:
-        type: boolean
-      member_type:
-        enum:
-        - pegawai
-        - pengurus_yayasan
-        - pihak_luar
-        type: string
-      phone:
-        maxLength: 20
-        type: string
-    required:
-    - full_name
-    - member_type
-    type: object
-  anggota.DetailResponse:
-    properties:
-      address:
-        type: string
-      employee_id:
-        type: integer
-      employee_name:
-        type: string
-      full_name:
-        type: string
-      id:
-        type: integer
-      is_active:
-        type: boolean
-      loan_summary:
-        $ref: '#/definitions/anggota.LoanSummary'
-      member_type:
-        type: string
-      phone:
-        type: string
-    type: object
-  anggota.EmployeeResponse:
-    properties:
-      full_name:
-        type: string
-      id:
-        type: integer
-      is_active:
-        type: boolean
-      join_date:
-        type: string
-      legacy_id:
-        type: integer
-    type: object
-  anggota.LoanSummary:
-    properties:
-      active_loan_count:
-        type: integer
-      total_paid:
-        type: number
-      total_principal:
-        type: number
-      total_remaining:
-        type: number
-    type: object
-  anggota.Response:
-    properties:
-      address:
-        type: string
-      employee_id:
-        type: integer
-      employee_name:
-        type: string
-      full_name:
-        type: string
-      id:
-        type: integer
-      is_active:
-        type: boolean
-      member_type:
-        type: string
-      phone:
-        type: string
-    type: object
-  barang.CreateRequest:
-    properties:
-      category:
-        maxLength: 50
-        type: string
-      cost_price:
-        description: 'Legacy single-variant (form barang lama): harga & stok satu
-          varian default.'
-        minimum: 0
-        type: number
-      is_active:
-        type: boolean
-      name:
-        maxLength: 100
-        type: string
-      sale_price:
-        minimum: 0
-        type: number
-      stock:
-        minimum: 0
-        type: integer
-      unit:
-        maxLength: 20
-        type: string
-      variants:
-        description: |-
-          Varian eksplisit (form barang ber-varian). Bila kosong, field legacy di bawah
-          dipakai untuk membuat/memperbarui satu varian "Default" (kompatibilitas form lama).
-        items:
-          $ref: '#/definitions/barang.VariantRequest'
-        type: array
-    required:
-    - name
-    type: object
-  barang.Response:
-    properties:
-      category:
-        type: string
-      cost_price:
-        description: |-
-          Agregat kompatibilitas (sampai FE varian): harga varian default/pertama &
-          total stok seluruh varian — agar tabel & picker lama tetap berfungsi.
-        type: number
-      id:
-        type: integer
-      is_active:
-        type: boolean
-      name:
-        type: string
-      sale_price:
-        type: number
-      stock:
-        type: integer
-      unit:
-        type: string
-      variant_count:
-        type: integer
-      variants:
-        items:
-          $ref: '#/definitions/barang.VariantResponse'
-        type: array
-    type: object
-  barang.VariantRequest:
-    properties:
-      cost_price:
-        minimum: 0
-        type: number
-      id:
-        type: integer
-      is_active:
-        type: boolean
-      name:
-        maxLength: 50
-        type: string
-      sale_price:
-        minimum: 0
-        type: number
-      stock:
-        description: stok awal varian baru; update diabaikan
-        minimum: 0
-        type: integer
-    type: object
-  barang.VariantResponse:
-    properties:
-      cost_price:
-        type: number
-      id:
-        type: integer
-      is_active:
-        type: boolean
-      name:
-        type: string
-      sale_price:
-        type: number
-      stock:
-        type: integer
-    type: object
   dto.AcademicEventResponse:
     properties:
       academic_year:
@@ -325,6 +130,25 @@ definitions:
         type: string
       paid:
         type: number
+    type: object
+  dto.BillingExclusionMonth:
+    properties:
+      month:
+        maximum: 12
+        minimum: 1
+        type: integer
+      year:
+        type: integer
+    required:
+    - month
+    - year
+    type: object
+  dto.BillingExclusionsResponse:
+    properties:
+      months:
+        items:
+          $ref: '#/definitions/dto.BillingExclusionMonth'
+        type: array
     type: object
   dto.CashBalanceResponse:
     properties:
@@ -1112,6 +936,29 @@ definitions:
       year:
         type: integer
     type: object
+  dto.DaycarePreviewItem:
+    properties:
+      category:
+        description: premium | regular
+        type: string
+      reason:
+        type: string
+      student_id:
+        type: integer
+      student_name:
+        type: string
+      will_sync:
+        type: boolean
+    type: object
+  dto.DaycarePreviewResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.DaycarePreviewItem'
+        type: array
+      total_enrollments:
+        type: integer
+    type: object
   dto.DaycareSyncError:
     properties:
       message:
@@ -1432,6 +1279,36 @@ definitions:
         type: integer
       status:
         type: string
+    type: object
+  dto.ExtracurricularPreviewItem:
+    properties:
+      extracurricular_id:
+        type: integer
+      extracurricular_name:
+        type: string
+      months_to_add:
+        items:
+          $ref: '#/definitions/dto.MonthYearBrief'
+        type: array
+      skipped_excluded:
+        type: integer
+      skipped_exists:
+        type: integer
+      skipped_no_invoice:
+        type: integer
+      student_id:
+        type: integer
+      student_name:
+        type: string
+    type: object
+  dto.ExtracurricularPreviewResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.ExtracurricularPreviewItem'
+        type: array
+      total_enrollments:
+        type: integer
     type: object
   dto.ExtracurricularResponse:
     properties:
@@ -1983,6 +1860,13 @@ definitions:
         description: sum sisa tagihan terfilter; diisi pada daftar invoice
         type: number
     type: object
+  dto.MonthYearBrief:
+    properties:
+      month:
+        type: integer
+      year:
+        type: integer
+    type: object
   dto.MonthlyBreakdown:
     properties:
       expense:
@@ -2437,6 +2321,13 @@ definitions:
         type: string
       time_out_calisan:
         type: string
+    type: object
+  dto.SetBillingExclusionsRequest:
+    properties:
+      months:
+        items:
+          $ref: '#/definitions/dto.BillingExclusionMonth'
+        type: array
     type: object
   dto.StudentBriefResponse:
     properties:
@@ -3111,14 +3002,209 @@ definitions:
     - class_group_id
     - start_date
     type: object
-  kas.BalanceResponse:
+  internal_modules_koperasi_anggota.BulkCreateRequest:
+    properties:
+      members:
+        items:
+          $ref: '#/definitions/internal_modules_koperasi_anggota.CreateRequest'
+        minItems: 1
+        type: array
+    required:
+    - members
+    type: object
+  internal_modules_koperasi_anggota.CreateRequest:
+    properties:
+      address:
+        type: string
+      employee_id:
+        type: integer
+      full_name:
+        maxLength: 100
+        type: string
+      is_active:
+        type: boolean
+      member_type:
+        enum:
+        - pegawai
+        - pengurus_yayasan
+        - pihak_luar
+        type: string
+      phone:
+        maxLength: 20
+        type: string
+    required:
+    - full_name
+    - member_type
+    type: object
+  internal_modules_koperasi_anggota.DetailResponse:
+    properties:
+      address:
+        type: string
+      employee_id:
+        type: integer
+      employee_name:
+        type: string
+      full_name:
+        type: string
+      id:
+        type: integer
+      is_active:
+        type: boolean
+      loan_summary:
+        $ref: '#/definitions/internal_modules_koperasi_anggota.LoanSummary'
+      member_type:
+        type: string
+      phone:
+        type: string
+    type: object
+  internal_modules_koperasi_anggota.EmployeeResponse:
+    properties:
+      full_name:
+        type: string
+      id:
+        type: integer
+      is_active:
+        type: boolean
+      join_date:
+        type: string
+      legacy_id:
+        type: integer
+    type: object
+  internal_modules_koperasi_anggota.LoanSummary:
+    properties:
+      active_loan_count:
+        type: integer
+      total_paid:
+        type: number
+      total_principal:
+        type: number
+      total_remaining:
+        type: number
+    type: object
+  internal_modules_koperasi_anggota.Response:
+    properties:
+      address:
+        type: string
+      employee_id:
+        type: integer
+      employee_name:
+        type: string
+      full_name:
+        type: string
+      id:
+        type: integer
+      is_active:
+        type: boolean
+      member_type:
+        type: string
+      phone:
+        type: string
+    type: object
+  internal_modules_koperasi_barang.CreateRequest:
+    properties:
+      category:
+        maxLength: 50
+        type: string
+      cost_price:
+        description: 'Legacy single-variant (form barang lama): harga & stok satu
+          varian default.'
+        minimum: 0
+        type: number
+      is_active:
+        type: boolean
+      name:
+        maxLength: 100
+        type: string
+      sale_price:
+        minimum: 0
+        type: number
+      stock:
+        minimum: 0
+        type: integer
+      unit:
+        maxLength: 20
+        type: string
+      variants:
+        description: |-
+          Varian eksplisit (form barang ber-varian). Bila kosong, field legacy di bawah
+          dipakai untuk membuat/memperbarui satu varian "Default" (kompatibilitas form lama).
+        items:
+          $ref: '#/definitions/internal_modules_koperasi_barang.VariantRequest'
+        type: array
+    required:
+    - name
+    type: object
+  internal_modules_koperasi_barang.Response:
+    properties:
+      category:
+        type: string
+      cost_price:
+        description: |-
+          Agregat kompatibilitas (sampai FE varian): harga varian default/pertama &
+          total stok seluruh varian — agar tabel & picker lama tetap berfungsi.
+        type: number
+      id:
+        type: integer
+      is_active:
+        type: boolean
+      name:
+        type: string
+      sale_price:
+        type: number
+      stock:
+        type: integer
+      unit:
+        type: string
+      variant_count:
+        type: integer
+      variants:
+        items:
+          $ref: '#/definitions/internal_modules_koperasi_barang.VariantResponse'
+        type: array
+    type: object
+  internal_modules_koperasi_barang.VariantRequest:
+    properties:
+      cost_price:
+        minimum: 0
+        type: number
+      id:
+        type: integer
+      is_active:
+        type: boolean
+      name:
+        maxLength: 50
+        type: string
+      sale_price:
+        minimum: 0
+        type: number
+      stock:
+        description: stok awal varian baru; update diabaikan
+        minimum: 0
+        type: integer
+    type: object
+  internal_modules_koperasi_barang.VariantResponse:
+    properties:
+      cost_price:
+        type: number
+      id:
+        type: integer
+      is_active:
+        type: boolean
+      name:
+        type: string
+      sale_price:
+        type: number
+      stock:
+        type: integer
+    type: object
+  internal_modules_koperasi_kas.BalanceResponse:
     properties:
       academic_year_id:
         type: integer
       balance:
         type: number
     type: object
-  kas.TransactionResponse:
+  internal_modules_koperasi_kas.TransactionResponse:
     properties:
       amount:
         type: number
@@ -3139,7 +3225,7 @@ definitions:
       transaction_type:
         type: string
     type: object
-  lainlain.CreateRequest:
+  internal_modules_koperasi_lainlain.CreateRequest:
     properties:
       academic_year_id:
         type: integer
@@ -3164,7 +3250,7 @@ definitions:
     - flow
     - transaction_date
     type: object
-  lainlain.Response:
+  internal_modules_koperasi_lainlain.Response:
     properties:
       academic_year_id:
         type: integer
@@ -3185,7 +3271,7 @@ definitions:
       transaction_date:
         type: string
     type: object
-  laporan.CategoryLine:
+  internal_modules_koperasi_laporan.CategoryLine:
     properties:
       category:
         type: string
@@ -3196,11 +3282,11 @@ definitions:
       net:
         type: number
     type: object
-  laporan.MonthlyReport:
+  internal_modules_koperasi_laporan.MonthlyReport:
     properties:
       categories:
         items:
-          $ref: '#/definitions/laporan.CategoryLine'
+          $ref: '#/definitions/internal_modules_koperasi_laporan.CategoryLine'
         type: array
       month:
         type: integer
@@ -3213,7 +3299,7 @@ definitions:
       year:
         type: integer
     type: object
-  laporan.OutstandingItem:
+  internal_modules_koperasi_laporan.OutstandingItem:
     properties:
       date:
         type: string
@@ -3230,16 +3316,16 @@ definitions:
       total_amount:
         type: number
     type: object
-  laporan.OutstandingReport:
+  internal_modules_koperasi_laporan.OutstandingReport:
     properties:
       items:
         items:
-          $ref: '#/definitions/laporan.OutstandingItem'
+          $ref: '#/definitions/internal_modules_koperasi_laporan.OutstandingItem'
         type: array
       total_remaining:
         type: number
     type: object
-  laporan.ProfitLoss:
+  internal_modules_koperasi_laporan.ProfitLoss:
     properties:
       cost_of_goods:
         type: number
@@ -3256,7 +3342,7 @@ definitions:
       start_date:
         type: string
     type: object
-  laporan.StockItem:
+  internal_modules_koperasi_laporan.StockItem:
     properties:
       cost_price:
         type: number
@@ -3275,16 +3361,16 @@ definitions:
       variant_name:
         type: string
     type: object
-  laporan.StockReport:
+  internal_modules_koperasi_laporan.StockReport:
     properties:
       items:
         items:
-          $ref: '#/definitions/laporan.StockItem'
+          $ref: '#/definitions/internal_modules_koperasi_laporan.StockItem'
         type: array
       total_stock_value:
         type: number
     type: object
-  pemasok.CreateRequest:
+  internal_modules_koperasi_pemasok.CreateRequest:
     properties:
       address:
         type: string
@@ -3300,7 +3386,7 @@ definitions:
     required:
     - name
     type: object
-  pemasok.Response:
+  internal_modules_koperasi_pemasok.Response:
     properties:
       address:
         type: string
@@ -3313,7 +3399,7 @@ definitions:
       phone:
         type: string
     type: object
-  pembelian.CreateItemRequest:
+  internal_modules_koperasi_pembelian.CreateItemRequest:
     properties:
       product_id:
         description: |-
@@ -3330,7 +3416,7 @@ definitions:
     required:
     - quantity
     type: object
-  pembelian.CreateRequest:
+  internal_modules_koperasi_pembelian.CreateRequest:
     properties:
       academic_year_id:
         type: integer
@@ -3339,7 +3425,7 @@ definitions:
         type: number
       items:
         items:
-          $ref: '#/definitions/pembelian.CreateItemRequest'
+          $ref: '#/definitions/internal_modules_koperasi_pembelian.CreateItemRequest'
         minItems: 1
         type: array
       notes:
@@ -3361,7 +3447,7 @@ definitions:
     - purchase_date
     - supplier_id
     type: object
-  pembelian.ItemResponse:
+  internal_modules_koperasi_pembelian.ItemResponse:
     properties:
       product_id:
         type: integer
@@ -3378,7 +3464,7 @@ definitions:
       variant_name:
         type: string
     type: object
-  pembelian.PaymentRequest:
+  internal_modules_koperasi_pembelian.PaymentRequest:
     properties:
       amount:
         type: number
@@ -3394,7 +3480,7 @@ definitions:
     - amount
     - payment_date
     type: object
-  pembelian.Response:
+  internal_modules_koperasi_pembelian.Response:
     properties:
       academic_year_id:
         type: integer
@@ -3406,7 +3492,7 @@ definitions:
         type: integer
       items:
         items:
-          $ref: '#/definitions/pembelian.ItemResponse'
+          $ref: '#/definitions/internal_modules_koperasi_pembelian.ItemResponse'
         type: array
       notes:
         type: string
@@ -3427,7 +3513,7 @@ definitions:
       total_amount:
         type: number
     type: object
-  penjualan.CreateItemRequest:
+  internal_modules_koperasi_penjualan.CreateItemRequest:
     properties:
       product_id:
         description: |-
@@ -3445,7 +3531,7 @@ definitions:
     required:
     - quantity
     type: object
-  penjualan.CreateRequest:
+  internal_modules_koperasi_penjualan.CreateRequest:
     properties:
       academic_year_id:
         type: integer
@@ -3457,7 +3543,7 @@ definitions:
         type: number
       items:
         items:
-          $ref: '#/definitions/penjualan.CreateItemRequest'
+          $ref: '#/definitions/internal_modules_koperasi_penjualan.CreateItemRequest'
         minItems: 1
         type: array
       notes:
@@ -3475,7 +3561,7 @@ definitions:
     - items
     - sale_date
     type: object
-  penjualan.ItemResponse:
+  internal_modules_koperasi_penjualan.ItemResponse:
     properties:
       product_id:
         type: integer
@@ -3494,7 +3580,7 @@ definitions:
       variant_name:
         type: string
     type: object
-  penjualan.PaymentRequest:
+  internal_modules_koperasi_penjualan.PaymentRequest:
     properties:
       amount:
         type: number
@@ -3510,7 +3596,7 @@ definitions:
     - amount
     - payment_date
     type: object
-  penjualan.Response:
+  internal_modules_koperasi_penjualan.Response:
     properties:
       academic_year_id:
         type: integer
@@ -3524,7 +3610,7 @@ definitions:
         type: integer
       items:
         items:
-          $ref: '#/definitions/penjualan.ItemResponse'
+          $ref: '#/definitions/internal_modules_koperasi_penjualan.ItemResponse'
         type: array
       notes:
         type: string
@@ -3548,7 +3634,7 @@ definitions:
       total_amount:
         type: number
     type: object
-  pinjaman.CreateRequest:
+  internal_modules_koperasi_pinjaman.CreateRequest:
     properties:
       academic_year_id:
         type: integer
@@ -3580,7 +3666,7 @@ definitions:
     - repayment_method
     - tenor
     type: object
-  pinjaman.InstallmentResponse:
+  internal_modules_koperasi_pinjaman.InstallmentResponse:
     properties:
       amount_due:
         type: number
@@ -3591,7 +3677,7 @@ definitions:
       status:
         type: string
     type: object
-  pinjaman.PaymentRequest:
+  internal_modules_koperasi_pinjaman.PaymentRequest:
     properties:
       amount:
         type: number
@@ -3608,7 +3694,7 @@ definitions:
     - amount
     - payment_date
     type: object
-  pinjaman.Response:
+  internal_modules_koperasi_pinjaman.Response:
     properties:
       academic_year_id:
         type: integer
@@ -3620,7 +3706,7 @@ definitions:
         type: integer
       installments:
         items:
-          $ref: '#/definitions/pinjaman.InstallmentResponse'
+          $ref: '#/definitions/internal_modules_koperasi_pinjaman.InstallmentResponse'
         type: array
       loan_date:
         type: string
@@ -3645,7 +3731,7 @@ definitions:
       tenor:
         type: integer
     type: object
-  pinjaman.SummaryItem:
+  internal_modules_koperasi_pinjaman.SummaryItem:
     properties:
       loan_count:
         type: integer
@@ -5928,6 +6014,40 @@ paths:
       summary: Upsert daycare monthly attendance
       tags:
       - daycare-enrollments
+  /v1/daycare-enrollments/preview-sync-invoices:
+    post:
+      consumes:
+      - application/json
+      description: Hitung rencana sinkronisasi tagihan daycare bulanan TANPA
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.DaycarePreviewResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Preview daycare sync (dry-run)
+      tags:
+      - daycare-enrollments
   /v1/daycare-enrollments/sync-invoices:
     post:
       consumes:
@@ -6942,6 +7062,40 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Export extracurriculars with students
+      tags:
+      - student-extracurriculars
+  /v1/extracurriculars/preview-sync-invoices:
+    post:
+      consumes:
+      - application/json
+      description: Hitung rencana sinkronisasi tagihan ekstrakurikuler bulanan
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.ExtracurricularPreviewResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Preview extracurricular sync (dry-run)
       tags:
       - student-extracurriculars
   /v1/extracurriculars/sync-invoices:
@@ -8769,7 +8923,7 @@ paths:
             - $ref: '#/definitions/dto.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/kas.BalanceResponse'
+                  $ref: '#/definitions/internal_modules_koperasi_kas.BalanceResponse'
               type: object
       security:
       - ApiKeyAuth: []
@@ -8816,7 +8970,7 @@ paths:
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/kas.TransactionResponse'
+                    $ref: '#/definitions/internal_modules_koperasi_kas.TransactionResponse'
                   type: array
               type: object
       security:
@@ -8840,7 +8994,7 @@ paths:
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/anggota.EmployeeResponse'
+                    $ref: '#/definitions/internal_modules_koperasi_anggota.EmployeeResponse'
                   type: array
               type: object
       security:
@@ -8864,7 +9018,7 @@ paths:
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/anggota.EmployeeResponse'
+                    $ref: '#/definitions/internal_modules_koperasi_anggota.EmployeeResponse'
                   type: array
               type: object
       security:
@@ -8904,7 +9058,7 @@ paths:
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/pinjaman.Response'
+                    $ref: '#/definitions/internal_modules_koperasi_pinjaman.Response'
                   type: array
               type: object
       security:
@@ -8919,7 +9073,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pinjaman.CreateRequest'
+          $ref: '#/definitions/internal_modules_koperasi_pinjaman.CreateRequest'
       responses:
         "201":
           description: Created
@@ -8928,7 +9082,7 @@ paths:
             - $ref: '#/definitions/dto.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/pinjaman.Response'
+                  $ref: '#/definitions/internal_modules_koperasi_pinjaman.Response'
               type: object
       security:
       - ApiKeyAuth: []
@@ -8951,7 +9105,7 @@ paths:
             - $ref: '#/definitions/dto.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/pinjaman.Response'
+                  $ref: '#/definitions/internal_modules_koperasi_pinjaman.Response'
               type: object
       security:
       - ApiKeyAuth: []
@@ -8975,7 +9129,7 @@ paths:
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/pinjaman.InstallmentResponse'
+                    $ref: '#/definitions/internal_modules_koperasi_pinjaman.InstallmentResponse'
                   type: array
               type: object
       security:
@@ -8996,7 +9150,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pinjaman.PaymentRequest'
+          $ref: '#/definitions/internal_modules_koperasi_pinjaman.PaymentRequest'
       responses:
         "200":
           description: OK
@@ -9005,7 +9159,7 @@ paths:
             - $ref: '#/definitions/dto.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/pinjaman.Response'
+                  $ref: '#/definitions/internal_modules_koperasi_pinjaman.Response'
               type: object
       security:
       - ApiKeyAuth: []
@@ -9028,7 +9182,7 @@ paths:
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/pinjaman.SummaryItem'
+                    $ref: '#/definitions/internal_modules_koperasi_pinjaman.SummaryItem'
                   type: array
               type: object
       security:
@@ -9056,7 +9210,7 @@ paths:
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/anggota.Response'
+                    $ref: '#/definitions/internal_modules_koperasi_anggota.Response'
                   type: array
               type: object
       security:
@@ -9071,7 +9225,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/anggota.CreateRequest'
+          $ref: '#/definitions/internal_modules_koperasi_anggota.CreateRequest'
       responses:
         "201":
           description: Created
@@ -9080,7 +9234,7 @@ paths:
             - $ref: '#/definitions/dto.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/anggota.Response'
+                  $ref: '#/definitions/internal_modules_koperasi_anggota.Response'
               type: object
       security:
       - ApiKeyAuth: []
@@ -9120,7 +9274,7 @@ paths:
             - $ref: '#/definitions/dto.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/anggota.Response'
+                  $ref: '#/definitions/internal_modules_koperasi_anggota.Response'
               type: object
       security:
       - ApiKeyAuth: []
@@ -9139,7 +9293,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/anggota.CreateRequest'
+          $ref: '#/definitions/internal_modules_koperasi_anggota.CreateRequest'
       responses:
         "200":
           description: OK
@@ -9148,7 +9302,7 @@ paths:
             - $ref: '#/definitions/dto.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/anggota.Response'
+                  $ref: '#/definitions/internal_modules_koperasi_anggota.Response'
               type: object
       security:
       - ApiKeyAuth: []
@@ -9171,7 +9325,7 @@ paths:
             - $ref: '#/definitions/dto.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/anggota.DetailResponse'
+                  $ref: '#/definitions/internal_modules_koperasi_anggota.DetailResponse'
               type: object
       security:
       - ApiKeyAuth: []
@@ -9186,7 +9340,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/anggota.BulkCreateRequest'
+          $ref: '#/definitions/internal_modules_koperasi_anggota.BulkCreateRequest'
       responses:
         "201":
           description: Created
@@ -9196,7 +9350,7 @@ paths:
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/anggota.Response'
+                    $ref: '#/definitions/internal_modules_koperasi_anggota.Response'
                   type: array
               type: object
       security:
@@ -9232,7 +9386,7 @@ paths:
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/lainlain.Response'
+                    $ref: '#/definitions/internal_modules_koperasi_lainlain.Response'
                   type: array
               type: object
       security:
@@ -9247,7 +9401,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/lainlain.CreateRequest'
+          $ref: '#/definitions/internal_modules_koperasi_lainlain.CreateRequest'
       responses:
         "201":
           description: Created
@@ -9256,7 +9410,7 @@ paths:
             - $ref: '#/definitions/dto.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/lainlain.Response'
+                  $ref: '#/definitions/internal_modules_koperasi_lainlain.Response'
               type: object
       security:
       - ApiKeyAuth: []
@@ -9279,7 +9433,7 @@ paths:
             - $ref: '#/definitions/dto.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/lainlain.Response'
+                  $ref: '#/definitions/internal_modules_koperasi_lainlain.Response'
               type: object
       security:
       - ApiKeyAuth: []
@@ -9306,7 +9460,7 @@ paths:
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/barang.Response'
+                    $ref: '#/definitions/internal_modules_koperasi_barang.Response'
                   type: array
               type: object
       security:
@@ -9321,7 +9475,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/barang.CreateRequest'
+          $ref: '#/definitions/internal_modules_koperasi_barang.CreateRequest'
       responses:
         "201":
           description: Created
@@ -9330,7 +9484,7 @@ paths:
             - $ref: '#/definitions/dto.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/barang.Response'
+                  $ref: '#/definitions/internal_modules_koperasi_barang.Response'
               type: object
       security:
       - ApiKeyAuth: []
@@ -9370,7 +9524,7 @@ paths:
             - $ref: '#/definitions/dto.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/barang.Response'
+                  $ref: '#/definitions/internal_modules_koperasi_barang.Response'
               type: object
       security:
       - ApiKeyAuth: []
@@ -9389,7 +9543,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/barang.CreateRequest'
+          $ref: '#/definitions/internal_modules_koperasi_barang.CreateRequest'
       responses:
         "200":
           description: OK
@@ -9398,7 +9552,7 @@ paths:
             - $ref: '#/definitions/dto.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/barang.Response'
+                  $ref: '#/definitions/internal_modules_koperasi_barang.Response'
               type: object
       security:
       - ApiKeyAuth: []
@@ -9437,7 +9591,7 @@ paths:
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/pembelian.Response'
+                    $ref: '#/definitions/internal_modules_koperasi_pembelian.Response'
                   type: array
               type: object
       security:
@@ -9452,7 +9606,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pembelian.CreateRequest'
+          $ref: '#/definitions/internal_modules_koperasi_pembelian.CreateRequest'
       responses:
         "201":
           description: Created
@@ -9461,7 +9615,7 @@ paths:
             - $ref: '#/definitions/dto.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/pembelian.Response'
+                  $ref: '#/definitions/internal_modules_koperasi_pembelian.Response'
               type: object
       security:
       - ApiKeyAuth: []
@@ -9484,7 +9638,7 @@ paths:
             - $ref: '#/definitions/dto.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/pembelian.Response'
+                  $ref: '#/definitions/internal_modules_koperasi_pembelian.Response'
               type: object
       security:
       - ApiKeyAuth: []
@@ -9504,7 +9658,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pembelian.PaymentRequest'
+          $ref: '#/definitions/internal_modules_koperasi_pembelian.PaymentRequest'
       responses:
         "200":
           description: OK
@@ -9513,7 +9667,7 @@ paths:
             - $ref: '#/definitions/dto.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/pembelian.Response'
+                  $ref: '#/definitions/internal_modules_koperasi_pembelian.Response'
               type: object
       security:
       - ApiKeyAuth: []
@@ -9543,7 +9697,7 @@ paths:
             - $ref: '#/definitions/dto.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/laporan.MonthlyReport'
+                  $ref: '#/definitions/internal_modules_koperasi_laporan.MonthlyReport'
               type: object
       security:
       - ApiKeyAuth: []
@@ -9565,7 +9719,7 @@ paths:
             - $ref: '#/definitions/dto.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/laporan.OutstandingReport'
+                  $ref: '#/definitions/internal_modules_koperasi_laporan.OutstandingReport'
               type: object
       security:
       - ApiKeyAuth: []
@@ -9595,7 +9749,7 @@ paths:
             - $ref: '#/definitions/dto.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/laporan.ProfitLoss'
+                  $ref: '#/definitions/internal_modules_koperasi_laporan.ProfitLoss'
               type: object
       security:
       - ApiKeyAuth: []
@@ -9617,7 +9771,7 @@ paths:
             - $ref: '#/definitions/dto.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/laporan.OutstandingReport'
+                  $ref: '#/definitions/internal_modules_koperasi_laporan.OutstandingReport'
               type: object
       security:
       - ApiKeyAuth: []
@@ -9634,7 +9788,7 @@ paths:
             - $ref: '#/definitions/dto.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/laporan.StockReport'
+                  $ref: '#/definitions/internal_modules_koperasi_laporan.StockReport'
               type: object
       security:
       - ApiKeyAuth: []
@@ -9673,7 +9827,7 @@ paths:
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/penjualan.Response'
+                    $ref: '#/definitions/internal_modules_koperasi_penjualan.Response'
                   type: array
               type: object
       security:
@@ -9688,7 +9842,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/penjualan.CreateRequest'
+          $ref: '#/definitions/internal_modules_koperasi_penjualan.CreateRequest'
       responses:
         "201":
           description: Created
@@ -9697,7 +9851,7 @@ paths:
             - $ref: '#/definitions/dto.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/penjualan.Response'
+                  $ref: '#/definitions/internal_modules_koperasi_penjualan.Response'
               type: object
       security:
       - ApiKeyAuth: []
@@ -9720,7 +9874,7 @@ paths:
             - $ref: '#/definitions/dto.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/penjualan.Response'
+                  $ref: '#/definitions/internal_modules_koperasi_penjualan.Response'
               type: object
       security:
       - ApiKeyAuth: []
@@ -9740,7 +9894,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/penjualan.PaymentRequest'
+          $ref: '#/definitions/internal_modules_koperasi_penjualan.PaymentRequest'
       responses:
         "200":
           description: OK
@@ -9749,7 +9903,7 @@ paths:
             - $ref: '#/definitions/dto.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/penjualan.Response'
+                  $ref: '#/definitions/internal_modules_koperasi_penjualan.Response'
               type: object
       security:
       - ApiKeyAuth: []
@@ -9772,7 +9926,7 @@ paths:
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/pemasok.Response'
+                    $ref: '#/definitions/internal_modules_koperasi_pemasok.Response'
                   type: array
               type: object
       security:
@@ -9787,7 +9941,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pemasok.CreateRequest'
+          $ref: '#/definitions/internal_modules_koperasi_pemasok.CreateRequest'
       responses:
         "201":
           description: Created
@@ -9796,7 +9950,7 @@ paths:
             - $ref: '#/definitions/dto.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/pemasok.Response'
+                  $ref: '#/definitions/internal_modules_koperasi_pemasok.Response'
               type: object
       security:
       - ApiKeyAuth: []
@@ -9836,7 +9990,7 @@ paths:
             - $ref: '#/definitions/dto.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/pemasok.Response'
+                  $ref: '#/definitions/internal_modules_koperasi_pemasok.Response'
               type: object
       security:
       - ApiKeyAuth: []
@@ -9855,7 +10009,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pemasok.CreateRequest'
+          $ref: '#/definitions/internal_modules_koperasi_pemasok.CreateRequest'
       responses:
         "200":
           description: OK
@@ -9864,7 +10018,7 @@ paths:
             - $ref: '#/definitions/dto.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/pemasok.Response'
+                  $ref: '#/definitions/internal_modules_koperasi_pemasok.Response'
               type: object
       security:
       - ApiKeyAuth: []
@@ -11551,6 +11705,117 @@ paths:
       summary: Update student extracurricular
       tags:
       - student-extracurriculars
+  /v1/students/{id}/extracurriculars/{se_id}/billing-exclusions:
+    get:
+      consumes:
+      - application/json
+      description: Daftar bulan yang tagihan PASTA/ekskul-nya di-skip
+      parameters:
+      - description: Student ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Student Extracurricular ID
+        in: path
+        name: se_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.BillingExclusionsResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get billing month exclusions for a student extracurricular
+      tags:
+      - student-extracurriculars
+    put:
+      consumes:
+      - application/json
+      description: Ganti seluruh daftar bulan yang tagihan PASTA/ekskul-nya di-skip
+      parameters:
+      - description: Student ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Student Extracurricular ID
+        in: path
+        name: se_id
+        required: true
+        type: integer
+      - description: Daftar bulan skip
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SetBillingExclusionsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.BillingExclusionsResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set billing month exclusions for a student extracurricular
+      tags:
+      - student-extracurriculars
   /v1/students/{id}/facilities:
     get:
       parameters:
@@ -11664,6 +11929,117 @@ paths:
       summary: Update student facility enrollment (change zone/package)
       tags:
       - facilities
+  /v1/students/{id}/facilities/{facilityId}/billing-exclusions:
+    get:
+      consumes:
+      - application/json
+      description: Daftar bulan yang tagihan fasilitas-nya di-skip
+      parameters:
+      - description: Student ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Student Facility ID
+        in: path
+        name: facilityId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.BillingExclusionsResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get billing month exclusions for a student facility
+      tags:
+      - student-facilities
+    put:
+      consumes:
+      - application/json
+      description: Ganti seluruh daftar bulan yang tagihan fasilitas-nya di-skip
+      parameters:
+      - description: Student ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Student Facility ID
+        in: path
+        name: facilityId
+        required: true
+        type: integer
+      - description: Daftar bulan skip
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SetBillingExclusionsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.BillingExclusionsResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set billing month exclusions for a student facility
+      tags:
+      - student-facilities
   /v1/students/{id}/facilities/{facilityId}/current-month-days:
     get:
       parameters:

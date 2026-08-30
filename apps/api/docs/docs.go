@@ -3257,6 +3257,64 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/daycare-enrollments/preview-sync-invoices": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Hitung rencana sinkronisasi tagihan daycare bulanan TANPA",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "daycare-enrollments"
+                ],
+                "summary": "Preview daycare sync (dry-run)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/dto.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.DaycarePreviewResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/daycare-enrollments/sync-invoices": {
             "post": {
                 "security": [
@@ -4985,6 +5043,64 @@ const docTemplate = `{
                         "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/extracurriculars/preview-sync-invoices": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Hitung rencana sinkronisasi tagihan ekstrakurikuler bulanan",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "student-extracurriculars"
+                ],
+                "summary": "Preview extracurricular sync (dry-run)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/dto.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.ExtracurricularPreviewResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "401": {
@@ -8226,7 +8342,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/kas.BalanceResponse"
+                                            "$ref": "#/definitions/internal_modules_koperasi_kas.BalanceResponse"
                                         }
                                     }
                                 }
@@ -8305,7 +8421,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/kas.TransactionResponse"
+                                                "$ref": "#/definitions/internal_modules_koperasi_kas.TransactionResponse"
                                             }
                                         }
                                     }
@@ -8349,7 +8465,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/anggota.EmployeeResponse"
+                                                "$ref": "#/definitions/internal_modules_koperasi_anggota.EmployeeResponse"
                                             }
                                         }
                                     }
@@ -8393,7 +8509,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/anggota.EmployeeResponse"
+                                                "$ref": "#/definitions/internal_modules_koperasi_anggota.EmployeeResponse"
                                             }
                                         }
                                     }
@@ -8461,7 +8577,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/pinjaman.Response"
+                                                "$ref": "#/definitions/internal_modules_koperasi_pinjaman.Response"
                                             }
                                         }
                                     }
@@ -8488,7 +8604,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/pinjaman.CreateRequest"
+                            "$ref": "#/definitions/internal_modules_koperasi_pinjaman.CreateRequest"
                         }
                     }
                 ],
@@ -8504,7 +8620,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/pinjaman.Response"
+                                            "$ref": "#/definitions/internal_modules_koperasi_pinjaman.Response"
                                         }
                                     }
                                 }
@@ -8547,7 +8663,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/pinjaman.SummaryItem"
+                                                "$ref": "#/definitions/internal_modules_koperasi_pinjaman.SummaryItem"
                                             }
                                         }
                                     }
@@ -8590,7 +8706,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/pinjaman.Response"
+                                            "$ref": "#/definitions/internal_modules_koperasi_pinjaman.Response"
                                         }
                                     }
                                 }
@@ -8634,7 +8750,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/pinjaman.InstallmentResponse"
+                                                "$ref": "#/definitions/internal_modules_koperasi_pinjaman.InstallmentResponse"
                                             }
                                         }
                                     }
@@ -8670,7 +8786,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/pinjaman.PaymentRequest"
+                            "$ref": "#/definitions/internal_modules_koperasi_pinjaman.PaymentRequest"
                         }
                     }
                 ],
@@ -8686,7 +8802,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/pinjaman.Response"
+                                            "$ref": "#/definitions/internal_modules_koperasi_pinjaman.Response"
                                         }
                                     }
                                 }
@@ -8735,7 +8851,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/anggota.Response"
+                                                "$ref": "#/definitions/internal_modules_koperasi_anggota.Response"
                                             }
                                         }
                                     }
@@ -8762,7 +8878,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/anggota.CreateRequest"
+                            "$ref": "#/definitions/internal_modules_koperasi_anggota.CreateRequest"
                         }
                     }
                 ],
@@ -8778,7 +8894,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/anggota.Response"
+                                            "$ref": "#/definitions/internal_modules_koperasi_anggota.Response"
                                         }
                                     }
                                 }
@@ -8806,7 +8922,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/anggota.BulkCreateRequest"
+                            "$ref": "#/definitions/internal_modules_koperasi_anggota.BulkCreateRequest"
                         }
                     }
                 ],
@@ -8824,7 +8940,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/anggota.Response"
+                                                "$ref": "#/definitions/internal_modules_koperasi_anggota.Response"
                                             }
                                         }
                                     }
@@ -8867,7 +8983,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/anggota.Response"
+                                            "$ref": "#/definitions/internal_modules_koperasi_anggota.Response"
                                         }
                                     }
                                 }
@@ -8900,7 +9016,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/anggota.CreateRequest"
+                            "$ref": "#/definitions/internal_modules_koperasi_anggota.CreateRequest"
                         }
                     }
                 ],
@@ -8916,7 +9032,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/anggota.Response"
+                                            "$ref": "#/definitions/internal_modules_koperasi_anggota.Response"
                                         }
                                     }
                                 }
@@ -8986,7 +9102,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/anggota.DetailResponse"
+                                            "$ref": "#/definitions/internal_modules_koperasi_anggota.DetailResponse"
                                         }
                                     }
                                 }
@@ -9047,7 +9163,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/lainlain.Response"
+                                                "$ref": "#/definitions/internal_modules_koperasi_lainlain.Response"
                                             }
                                         }
                                     }
@@ -9074,7 +9190,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/lainlain.CreateRequest"
+                            "$ref": "#/definitions/internal_modules_koperasi_lainlain.CreateRequest"
                         }
                     }
                 ],
@@ -9090,7 +9206,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/lainlain.Response"
+                                            "$ref": "#/definitions/internal_modules_koperasi_lainlain.Response"
                                         }
                                     }
                                 }
@@ -9132,7 +9248,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/lainlain.Response"
+                                            "$ref": "#/definitions/internal_modules_koperasi_lainlain.Response"
                                         }
                                     }
                                 }
@@ -9181,7 +9297,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/barang.Response"
+                                                "$ref": "#/definitions/internal_modules_koperasi_barang.Response"
                                             }
                                         }
                                     }
@@ -9208,7 +9324,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/barang.CreateRequest"
+                            "$ref": "#/definitions/internal_modules_koperasi_barang.CreateRequest"
                         }
                     }
                 ],
@@ -9224,7 +9340,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/barang.Response"
+                                            "$ref": "#/definitions/internal_modules_koperasi_barang.Response"
                                         }
                                     }
                                 }
@@ -9266,7 +9382,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/barang.Response"
+                                            "$ref": "#/definitions/internal_modules_koperasi_barang.Response"
                                         }
                                     }
                                 }
@@ -9299,7 +9415,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/barang.CreateRequest"
+                            "$ref": "#/definitions/internal_modules_koperasi_barang.CreateRequest"
                         }
                     }
                 ],
@@ -9315,7 +9431,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/barang.Response"
+                                            "$ref": "#/definitions/internal_modules_koperasi_barang.Response"
                                         }
                                     }
                                 }
@@ -9410,7 +9526,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/pembelian.Response"
+                                                "$ref": "#/definitions/internal_modules_koperasi_pembelian.Response"
                                             }
                                         }
                                     }
@@ -9437,7 +9553,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/pembelian.CreateRequest"
+                            "$ref": "#/definitions/internal_modules_koperasi_pembelian.CreateRequest"
                         }
                     }
                 ],
@@ -9453,7 +9569,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/pembelian.Response"
+                                            "$ref": "#/definitions/internal_modules_koperasi_pembelian.Response"
                                         }
                                     }
                                 }
@@ -9495,7 +9611,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/pembelian.Response"
+                                            "$ref": "#/definitions/internal_modules_koperasi_pembelian.Response"
                                         }
                                     }
                                 }
@@ -9530,7 +9646,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/pembelian.PaymentRequest"
+                            "$ref": "#/definitions/internal_modules_koperasi_pembelian.PaymentRequest"
                         }
                     }
                 ],
@@ -9546,7 +9662,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/pembelian.Response"
+                                            "$ref": "#/definitions/internal_modules_koperasi_pembelian.Response"
                                         }
                                     }
                                 }
@@ -9599,7 +9715,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/laporan.MonthlyReport"
+                                            "$ref": "#/definitions/internal_modules_koperasi_laporan.MonthlyReport"
                                         }
                                     }
                                 }
@@ -9640,7 +9756,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/laporan.OutstandingReport"
+                                            "$ref": "#/definitions/internal_modules_koperasi_laporan.OutstandingReport"
                                         }
                                     }
                                 }
@@ -9693,7 +9809,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/laporan.ProfitLoss"
+                                            "$ref": "#/definitions/internal_modules_koperasi_laporan.ProfitLoss"
                                         }
                                     }
                                 }
@@ -9734,7 +9850,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/laporan.OutstandingReport"
+                                            "$ref": "#/definitions/internal_modules_koperasi_laporan.OutstandingReport"
                                         }
                                     }
                                 }
@@ -9767,7 +9883,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/laporan.StockReport"
+                                            "$ref": "#/definitions/internal_modules_koperasi_laporan.StockReport"
                                         }
                                     }
                                 }
@@ -9834,7 +9950,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/penjualan.Response"
+                                                "$ref": "#/definitions/internal_modules_koperasi_penjualan.Response"
                                             }
                                         }
                                     }
@@ -9861,7 +9977,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/penjualan.CreateRequest"
+                            "$ref": "#/definitions/internal_modules_koperasi_penjualan.CreateRequest"
                         }
                     }
                 ],
@@ -9877,7 +9993,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/penjualan.Response"
+                                            "$ref": "#/definitions/internal_modules_koperasi_penjualan.Response"
                                         }
                                     }
                                 }
@@ -9919,7 +10035,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/penjualan.Response"
+                                            "$ref": "#/definitions/internal_modules_koperasi_penjualan.Response"
                                         }
                                     }
                                 }
@@ -9954,7 +10070,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/penjualan.PaymentRequest"
+                            "$ref": "#/definitions/internal_modules_koperasi_penjualan.PaymentRequest"
                         }
                     }
                 ],
@@ -9970,7 +10086,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/penjualan.Response"
+                                            "$ref": "#/definitions/internal_modules_koperasi_penjualan.Response"
                                         }
                                     }
                                 }
@@ -10013,7 +10129,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/pemasok.Response"
+                                                "$ref": "#/definitions/internal_modules_koperasi_pemasok.Response"
                                             }
                                         }
                                     }
@@ -10040,7 +10156,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/pemasok.CreateRequest"
+                            "$ref": "#/definitions/internal_modules_koperasi_pemasok.CreateRequest"
                         }
                     }
                 ],
@@ -10056,7 +10172,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/pemasok.Response"
+                                            "$ref": "#/definitions/internal_modules_koperasi_pemasok.Response"
                                         }
                                     }
                                 }
@@ -10098,7 +10214,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/pemasok.Response"
+                                            "$ref": "#/definitions/internal_modules_koperasi_pemasok.Response"
                                         }
                                     }
                                 }
@@ -10131,7 +10247,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/pemasok.CreateRequest"
+                            "$ref": "#/definitions/internal_modules_koperasi_pemasok.CreateRequest"
                         }
                     }
                 ],
@@ -10147,7 +10263,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/pemasok.Response"
+                                            "$ref": "#/definitions/internal_modules_koperasi_pemasok.Response"
                                         }
                                     }
                                 }
@@ -13017,6 +13133,185 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/students/{id}/extracurriculars/{se_id}/billing-exclusions": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Daftar bulan yang tagihan PASTA/ekskul-nya di-skip",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "student-extracurriculars"
+                ],
+                "summary": "Get billing month exclusions for a student extracurricular",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Student ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Student Extracurricular ID",
+                        "name": "se_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/dto.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.BillingExclusionsResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Ganti seluruh daftar bulan yang tagihan PASTA/ekskul-nya di-skip",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "student-extracurriculars"
+                ],
+                "summary": "Set billing month exclusions for a student extracurricular",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Student ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Student Extracurricular ID",
+                        "name": "se_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Daftar bulan skip",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SetBillingExclusionsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/dto.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.BillingExclusionsResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/students/{id}/facilities": {
             "get": {
                 "security": [
@@ -13205,6 +13500,185 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/dto.SuccessResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/students/{id}/facilities/{facilityId}/billing-exclusions": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Daftar bulan yang tagihan fasilitas-nya di-skip",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "student-facilities"
+                ],
+                "summary": "Get billing month exclusions for a student facility",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Student ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Student Facility ID",
+                        "name": "facilityId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/dto.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.BillingExclusionsResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Ganti seluruh daftar bulan yang tagihan fasilitas-nya di-skip",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "student-facilities"
+                ],
+                "summary": "Set billing month exclusions for a student facility",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Student ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Student Facility ID",
+                        "name": "facilityId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Daftar bulan skip",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SetBillingExclusionsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/dto.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.BillingExclusionsResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -14596,286 +15070,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "anggota.BulkCreateRequest": {
-            "type": "object",
-            "required": [
-                "members"
-            ],
-            "properties": {
-                "members": {
-                    "type": "array",
-                    "minItems": 1,
-                    "items": {
-                        "$ref": "#/definitions/anggota.CreateRequest"
-                    }
-                }
-            }
-        },
-        "anggota.CreateRequest": {
-            "type": "object",
-            "required": [
-                "full_name",
-                "member_type"
-            ],
-            "properties": {
-                "address": {
-                    "type": "string"
-                },
-                "employee_id": {
-                    "type": "integer"
-                },
-                "full_name": {
-                    "type": "string",
-                    "maxLength": 100
-                },
-                "is_active": {
-                    "type": "boolean"
-                },
-                "member_type": {
-                    "type": "string",
-                    "enum": [
-                        "pegawai",
-                        "pengurus_yayasan",
-                        "pihak_luar"
-                    ]
-                },
-                "phone": {
-                    "type": "string",
-                    "maxLength": 20
-                }
-            }
-        },
-        "anggota.DetailResponse": {
-            "type": "object",
-            "properties": {
-                "address": {
-                    "type": "string"
-                },
-                "employee_id": {
-                    "type": "integer"
-                },
-                "employee_name": {
-                    "type": "string"
-                },
-                "full_name": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "is_active": {
-                    "type": "boolean"
-                },
-                "loan_summary": {
-                    "$ref": "#/definitions/anggota.LoanSummary"
-                },
-                "member_type": {
-                    "type": "string"
-                },
-                "phone": {
-                    "type": "string"
-                }
-            }
-        },
-        "anggota.EmployeeResponse": {
-            "type": "object",
-            "properties": {
-                "full_name": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "is_active": {
-                    "type": "boolean"
-                },
-                "join_date": {
-                    "type": "string"
-                },
-                "legacy_id": {
-                    "type": "integer"
-                }
-            }
-        },
-        "anggota.LoanSummary": {
-            "type": "object",
-            "properties": {
-                "active_loan_count": {
-                    "type": "integer"
-                },
-                "total_paid": {
-                    "type": "number"
-                },
-                "total_principal": {
-                    "type": "number"
-                },
-                "total_remaining": {
-                    "type": "number"
-                }
-            }
-        },
-        "anggota.Response": {
-            "type": "object",
-            "properties": {
-                "address": {
-                    "type": "string"
-                },
-                "employee_id": {
-                    "type": "integer"
-                },
-                "employee_name": {
-                    "type": "string"
-                },
-                "full_name": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "is_active": {
-                    "type": "boolean"
-                },
-                "member_type": {
-                    "type": "string"
-                },
-                "phone": {
-                    "type": "string"
-                }
-            }
-        },
-        "barang.CreateRequest": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "category": {
-                    "type": "string",
-                    "maxLength": 50
-                },
-                "cost_price": {
-                    "description": "Legacy single-variant (form barang lama): harga \u0026 stok satu varian default.",
-                    "type": "number",
-                    "minimum": 0
-                },
-                "is_active": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 100
-                },
-                "sale_price": {
-                    "type": "number",
-                    "minimum": 0
-                },
-                "stock": {
-                    "type": "integer",
-                    "minimum": 0
-                },
-                "unit": {
-                    "type": "string",
-                    "maxLength": 20
-                },
-                "variants": {
-                    "description": "Varian eksplisit (form barang ber-varian). Bila kosong, field legacy di bawah\ndipakai untuk membuat/memperbarui satu varian \"Default\" (kompatibilitas form lama).",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/barang.VariantRequest"
-                    }
-                }
-            }
-        },
-        "barang.Response": {
-            "type": "object",
-            "properties": {
-                "category": {
-                    "type": "string"
-                },
-                "cost_price": {
-                    "description": "Agregat kompatibilitas (sampai FE varian): harga varian default/pertama \u0026\ntotal stok seluruh varian — agar tabel \u0026 picker lama tetap berfungsi.",
-                    "type": "number"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "is_active": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "sale_price": {
-                    "type": "number"
-                },
-                "stock": {
-                    "type": "integer"
-                },
-                "unit": {
-                    "type": "string"
-                },
-                "variant_count": {
-                    "type": "integer"
-                },
-                "variants": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/barang.VariantResponse"
-                    }
-                }
-            }
-        },
-        "barang.VariantRequest": {
-            "type": "object",
-            "properties": {
-                "cost_price": {
-                    "type": "number",
-                    "minimum": 0
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "is_active": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 50
-                },
-                "sale_price": {
-                    "type": "number",
-                    "minimum": 0
-                },
-                "stock": {
-                    "description": "stok awal varian baru; update diabaikan",
-                    "type": "integer",
-                    "minimum": 0
-                }
-            }
-        },
-        "barang.VariantResponse": {
-            "type": "object",
-            "properties": {
-                "cost_price": {
-                    "type": "number"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "is_active": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "sale_price": {
-                    "type": "number"
-                },
-                "stock": {
-                    "type": "integer"
-                }
-            }
-        },
         "dto.AcademicEventResponse": {
             "type": "object",
             "properties": {
@@ -15072,6 +15266,34 @@ const docTemplate = `{
                 },
                 "paid": {
                     "type": "number"
+                }
+            }
+        },
+        "dto.BillingExclusionMonth": {
+            "type": "object",
+            "required": [
+                "month",
+                "year"
+            ],
+            "properties": {
+                "month": {
+                    "type": "integer",
+                    "maximum": 12,
+                    "minimum": 1
+                },
+                "year": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.BillingExclusionsResponse": {
+            "type": "object",
+            "properties": {
+                "months": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.BillingExclusionMonth"
+                    }
                 }
             }
         },
@@ -16208,6 +16430,41 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.DaycarePreviewItem": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "description": "premium | regular",
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "student_id": {
+                    "type": "integer"
+                },
+                "student_name": {
+                    "type": "string"
+                },
+                "will_sync": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "dto.DaycarePreviewResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.DaycarePreviewItem"
+                    }
+                },
+                "total_enrollments": {
+                    "type": "integer"
+                }
+            }
+        },
         "dto.DaycareSyncError": {
             "type": "object",
             "properties": {
@@ -16694,6 +16951,52 @@ const docTemplate = `{
                 },
                 "status": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.ExtracurricularPreviewItem": {
+            "type": "object",
+            "properties": {
+                "extracurricular_id": {
+                    "type": "integer"
+                },
+                "extracurricular_name": {
+                    "type": "string"
+                },
+                "months_to_add": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.MonthYearBrief"
+                    }
+                },
+                "skipped_excluded": {
+                    "type": "integer"
+                },
+                "skipped_exists": {
+                    "type": "integer"
+                },
+                "skipped_no_invoice": {
+                    "type": "integer"
+                },
+                "student_id": {
+                    "type": "integer"
+                },
+                "student_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ExtracurricularPreviewResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ExtracurricularPreviewItem"
+                    }
+                },
+                "total_enrollments": {
+                    "type": "integer"
                 }
             }
         },
@@ -17528,6 +17831,17 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.MonthYearBrief": {
+            "type": "object",
+            "properties": {
+                "month": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "integer"
+                }
+            }
+        },
         "dto.MonthlyBreakdown": {
             "type": "object",
             "properties": {
@@ -18218,6 +18532,17 @@ const docTemplate = `{
                 },
                 "time_out_calisan": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.SetBillingExclusionsRequest": {
+            "type": "object",
+            "properties": {
+                "months": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.BillingExclusionMonth"
+                    }
                 }
             }
         },
@@ -19214,7 +19539,287 @@ const docTemplate = `{
                 }
             }
         },
-        "kas.BalanceResponse": {
+        "internal_modules_koperasi_anggota.BulkCreateRequest": {
+            "type": "object",
+            "required": [
+                "members"
+            ],
+            "properties": {
+                "members": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/internal_modules_koperasi_anggota.CreateRequest"
+                    }
+                }
+            }
+        },
+        "internal_modules_koperasi_anggota.CreateRequest": {
+            "type": "object",
+            "required": [
+                "full_name",
+                "member_type"
+            ],
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "employee_id": {
+                    "type": "integer"
+                },
+                "full_name": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "member_type": {
+                    "type": "string",
+                    "enum": [
+                        "pegawai",
+                        "pengurus_yayasan",
+                        "pihak_luar"
+                    ]
+                },
+                "phone": {
+                    "type": "string",
+                    "maxLength": 20
+                }
+            }
+        },
+        "internal_modules_koperasi_anggota.DetailResponse": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "employee_id": {
+                    "type": "integer"
+                },
+                "employee_name": {
+                    "type": "string"
+                },
+                "full_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "loan_summary": {
+                    "$ref": "#/definitions/internal_modules_koperasi_anggota.LoanSummary"
+                },
+                "member_type": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_modules_koperasi_anggota.EmployeeResponse": {
+            "type": "object",
+            "properties": {
+                "full_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "join_date": {
+                    "type": "string"
+                },
+                "legacy_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_modules_koperasi_anggota.LoanSummary": {
+            "type": "object",
+            "properties": {
+                "active_loan_count": {
+                    "type": "integer"
+                },
+                "total_paid": {
+                    "type": "number"
+                },
+                "total_principal": {
+                    "type": "number"
+                },
+                "total_remaining": {
+                    "type": "number"
+                }
+            }
+        },
+        "internal_modules_koperasi_anggota.Response": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "employee_id": {
+                    "type": "integer"
+                },
+                "employee_name": {
+                    "type": "string"
+                },
+                "full_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "member_type": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_modules_koperasi_barang.CreateRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "category": {
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "cost_price": {
+                    "description": "Legacy single-variant (form barang lama): harga \u0026 stok satu varian default.",
+                    "type": "number",
+                    "minimum": 0
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "sale_price": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "stock": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "unit": {
+                    "type": "string",
+                    "maxLength": 20
+                },
+                "variants": {
+                    "description": "Varian eksplisit (form barang ber-varian). Bila kosong, field legacy di bawah\ndipakai untuk membuat/memperbarui satu varian \"Default\" (kompatibilitas form lama).",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_modules_koperasi_barang.VariantRequest"
+                    }
+                }
+            }
+        },
+        "internal_modules_koperasi_barang.Response": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "cost_price": {
+                    "description": "Agregat kompatibilitas (sampai FE varian): harga varian default/pertama \u0026\ntotal stok seluruh varian — agar tabel \u0026 picker lama tetap berfungsi.",
+                    "type": "number"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "sale_price": {
+                    "type": "number"
+                },
+                "stock": {
+                    "type": "integer"
+                },
+                "unit": {
+                    "type": "string"
+                },
+                "variant_count": {
+                    "type": "integer"
+                },
+                "variants": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_modules_koperasi_barang.VariantResponse"
+                    }
+                }
+            }
+        },
+        "internal_modules_koperasi_barang.VariantRequest": {
+            "type": "object",
+            "properties": {
+                "cost_price": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "sale_price": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "stock": {
+                    "description": "stok awal varian baru; update diabaikan",
+                    "type": "integer",
+                    "minimum": 0
+                }
+            }
+        },
+        "internal_modules_koperasi_barang.VariantResponse": {
+            "type": "object",
+            "properties": {
+                "cost_price": {
+                    "type": "number"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "sale_price": {
+                    "type": "number"
+                },
+                "stock": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_modules_koperasi_kas.BalanceResponse": {
             "type": "object",
             "properties": {
                 "academic_year_id": {
@@ -19225,7 +19830,7 @@ const docTemplate = `{
                 }
             }
         },
-        "kas.TransactionResponse": {
+        "internal_modules_koperasi_kas.TransactionResponse": {
             "type": "object",
             "properties": {
                 "amount": {
@@ -19257,7 +19862,7 @@ const docTemplate = `{
                 }
             }
         },
-        "lainlain.CreateRequest": {
+        "internal_modules_koperasi_lainlain.CreateRequest": {
             "type": "object",
             "required": [
                 "academic_year_id",
@@ -19292,7 +19897,7 @@ const docTemplate = `{
                 }
             }
         },
-        "lainlain.Response": {
+        "internal_modules_koperasi_lainlain.Response": {
             "type": "object",
             "properties": {
                 "academic_year_id": {
@@ -19324,7 +19929,7 @@ const docTemplate = `{
                 }
             }
         },
-        "laporan.CategoryLine": {
+        "internal_modules_koperasi_laporan.CategoryLine": {
             "type": "object",
             "properties": {
                 "category": {
@@ -19341,13 +19946,13 @@ const docTemplate = `{
                 }
             }
         },
-        "laporan.MonthlyReport": {
+        "internal_modules_koperasi_laporan.MonthlyReport": {
             "type": "object",
             "properties": {
                 "categories": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/laporan.CategoryLine"
+                        "$ref": "#/definitions/internal_modules_koperasi_laporan.CategoryLine"
                     }
                 },
                 "month": {
@@ -19367,7 +19972,7 @@ const docTemplate = `{
                 }
             }
         },
-        "laporan.OutstandingItem": {
+        "internal_modules_koperasi_laporan.OutstandingItem": {
             "type": "object",
             "properties": {
                 "date": {
@@ -19393,13 +19998,13 @@ const docTemplate = `{
                 }
             }
         },
-        "laporan.OutstandingReport": {
+        "internal_modules_koperasi_laporan.OutstandingReport": {
             "type": "object",
             "properties": {
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/laporan.OutstandingItem"
+                        "$ref": "#/definitions/internal_modules_koperasi_laporan.OutstandingItem"
                     }
                 },
                 "total_remaining": {
@@ -19407,7 +20012,7 @@ const docTemplate = `{
                 }
             }
         },
-        "laporan.ProfitLoss": {
+        "internal_modules_koperasi_laporan.ProfitLoss": {
             "type": "object",
             "properties": {
                 "cost_of_goods": {
@@ -19433,7 +20038,7 @@ const docTemplate = `{
                 }
             }
         },
-        "laporan.StockItem": {
+        "internal_modules_koperasi_laporan.StockItem": {
             "type": "object",
             "properties": {
                 "cost_price": {
@@ -19462,13 +20067,13 @@ const docTemplate = `{
                 }
             }
         },
-        "laporan.StockReport": {
+        "internal_modules_koperasi_laporan.StockReport": {
             "type": "object",
             "properties": {
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/laporan.StockItem"
+                        "$ref": "#/definitions/internal_modules_koperasi_laporan.StockItem"
                     }
                 },
                 "total_stock_value": {
@@ -19476,7 +20081,7 @@ const docTemplate = `{
                 }
             }
         },
-        "pemasok.CreateRequest": {
+        "internal_modules_koperasi_pemasok.CreateRequest": {
             "type": "object",
             "required": [
                 "name"
@@ -19499,7 +20104,7 @@ const docTemplate = `{
                 }
             }
         },
-        "pemasok.Response": {
+        "internal_modules_koperasi_pemasok.Response": {
             "type": "object",
             "properties": {
                 "address": {
@@ -19519,7 +20124,7 @@ const docTemplate = `{
                 }
             }
         },
-        "pembelian.CreateItemRequest": {
+        "internal_modules_koperasi_pembelian.CreateItemRequest": {
             "type": "object",
             "required": [
                 "quantity"
@@ -19541,7 +20146,7 @@ const docTemplate = `{
                 }
             }
         },
-        "pembelian.CreateRequest": {
+        "internal_modules_koperasi_pembelian.CreateRequest": {
             "type": "object",
             "required": [
                 "academic_year_id",
@@ -19561,7 +20166,7 @@ const docTemplate = `{
                     "type": "array",
                     "minItems": 1,
                     "items": {
-                        "$ref": "#/definitions/pembelian.CreateItemRequest"
+                        "$ref": "#/definitions/internal_modules_koperasi_pembelian.CreateItemRequest"
                     }
                 },
                 "notes": {
@@ -19585,7 +20190,7 @@ const docTemplate = `{
                 }
             }
         },
-        "pembelian.ItemResponse": {
+        "internal_modules_koperasi_pembelian.ItemResponse": {
             "type": "object",
             "properties": {
                 "product_id": {
@@ -19611,7 +20216,7 @@ const docTemplate = `{
                 }
             }
         },
-        "pembelian.PaymentRequest": {
+        "internal_modules_koperasi_pembelian.PaymentRequest": {
             "type": "object",
             "required": [
                 "amount",
@@ -19635,7 +20240,7 @@ const docTemplate = `{
                 }
             }
         },
-        "pembelian.Response": {
+        "internal_modules_koperasi_pembelian.Response": {
             "type": "object",
             "properties": {
                 "academic_year_id": {
@@ -19653,7 +20258,7 @@ const docTemplate = `{
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/pembelian.ItemResponse"
+                        "$ref": "#/definitions/internal_modules_koperasi_pembelian.ItemResponse"
                     }
                 },
                 "notes": {
@@ -19685,7 +20290,7 @@ const docTemplate = `{
                 }
             }
         },
-        "penjualan.CreateItemRequest": {
+        "internal_modules_koperasi_penjualan.CreateItemRequest": {
             "type": "object",
             "required": [
                 "quantity"
@@ -19708,7 +20313,7 @@ const docTemplate = `{
                 }
             }
         },
-        "penjualan.CreateRequest": {
+        "internal_modules_koperasi_penjualan.CreateRequest": {
             "type": "object",
             "required": [
                 "academic_year_id",
@@ -19731,7 +20336,7 @@ const docTemplate = `{
                     "type": "array",
                     "minItems": 1,
                     "items": {
-                        "$ref": "#/definitions/penjualan.CreateItemRequest"
+                        "$ref": "#/definitions/internal_modules_koperasi_penjualan.CreateItemRequest"
                     }
                 },
                 "notes": {
@@ -19751,7 +20356,7 @@ const docTemplate = `{
                 }
             }
         },
-        "penjualan.ItemResponse": {
+        "internal_modules_koperasi_penjualan.ItemResponse": {
             "type": "object",
             "properties": {
                 "product_id": {
@@ -19780,7 +20385,7 @@ const docTemplate = `{
                 }
             }
         },
-        "penjualan.PaymentRequest": {
+        "internal_modules_koperasi_penjualan.PaymentRequest": {
             "type": "object",
             "required": [
                 "amount",
@@ -19804,7 +20409,7 @@ const docTemplate = `{
                 }
             }
         },
-        "penjualan.Response": {
+        "internal_modules_koperasi_penjualan.Response": {
             "type": "object",
             "properties": {
                 "academic_year_id": {
@@ -19825,7 +20430,7 @@ const docTemplate = `{
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/penjualan.ItemResponse"
+                        "$ref": "#/definitions/internal_modules_koperasi_penjualan.ItemResponse"
                     }
                 },
                 "notes": {
@@ -19861,7 +20466,7 @@ const docTemplate = `{
                 }
             }
         },
-        "pinjaman.CreateRequest": {
+        "internal_modules_koperasi_pinjaman.CreateRequest": {
             "type": "object",
             "required": [
                 "academic_year_id",
@@ -19905,7 +20510,7 @@ const docTemplate = `{
                 }
             }
         },
-        "pinjaman.InstallmentResponse": {
+        "internal_modules_koperasi_pinjaman.InstallmentResponse": {
             "type": "object",
             "properties": {
                 "amount_due": {
@@ -19922,7 +20527,7 @@ const docTemplate = `{
                 }
             }
         },
-        "pinjaman.PaymentRequest": {
+        "internal_modules_koperasi_pinjaman.PaymentRequest": {
             "type": "object",
             "required": [
                 "amount",
@@ -19947,7 +20552,7 @@ const docTemplate = `{
                 }
             }
         },
-        "pinjaman.Response": {
+        "internal_modules_koperasi_pinjaman.Response": {
             "type": "object",
             "properties": {
                 "academic_year_id": {
@@ -19965,7 +20570,7 @@ const docTemplate = `{
                 "installments": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/pinjaman.InstallmentResponse"
+                        "$ref": "#/definitions/internal_modules_koperasi_pinjaman.InstallmentResponse"
                     }
                 },
                 "loan_date": {
@@ -20003,7 +20608,7 @@ const docTemplate = `{
                 }
             }
         },
-        "pinjaman.SummaryItem": {
+        "internal_modules_koperasi_pinjaman.SummaryItem": {
             "type": "object",
             "properties": {
                 "loan_count": {

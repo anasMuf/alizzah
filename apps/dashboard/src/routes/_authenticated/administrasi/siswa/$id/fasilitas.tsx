@@ -1,8 +1,12 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useAtom } from "jotai";
-import { Bus, Plus, X } from "lucide-react";
+import { Bus, CalendarDays, Plus, X } from "lucide-react";
 import { useMemo, useState } from "react";
+import {
+	getV1StudentsIdFacilitiesFacilityIdBillingExclusions,
+	usePutV1StudentsIdFacilitiesFacilityIdBillingExclusions,
+} from "#/api/endpoints/billing-exclusions/billing-exclusions";
 import {
 	getGetV1StudentsIdFacilitiesQueryKey,
 	useDeleteV1StudentsIdFacilitiesFacilityId,
@@ -14,6 +18,14 @@ import {
 	useGetV1FeeConfigs,
 	useGetV1FeeConfigsIdItems,
 } from "#/api/endpoints/fee-configs/fee-configs";
+import {
+	getGetV1InvoicesQueryKey,
+	useGetV1Invoices,
+} from "#/api/endpoints/invoices/invoices";
+import {
+	BillingMonthsDialog,
+	buildAcademicYearMonths,
+} from "#/components/molecules/BillingMonthsDialog";
 import {
 	Badge,
 	Button,
@@ -44,6 +56,10 @@ function SiswaFasilitasPage() {
 		new Date().toISOString().split("T")[0],
 	);
 	const [deletingItem, setDeletingItem] = useState<any>(null);
+	const [billingTarget, setBillingTarget] = useState<{
+		sfId: number;
+		name: string;
+	} | null>(null);
 
 	const { data: sfResp, isLoading } = useGetV1StudentsIdFacilities(
 		studentId,
@@ -51,6 +67,29 @@ function SiswaFasilitasPage() {
 		{ query: { enabled: !!activeAy?.id } } as any,
 	);
 	const studentFacilities: any[] = ((sfResp as any)?.data as any)?.data || [];
+
+	// Bulan-bulan tahun ajaran aktif (untuk grid dialog "Kelola Bulan")
+	const activeYearMonths = useMemo(
+		() => buildAcademicYearMonths(activeAy?.start_date, activeAy?.end_date),
+		[activeAy],
+	);
+
+	// Bulan yang invoice-nya sudah ada pembayaran → checkbox disabled
+	const { data: invoicesResp } = useGetV1Invoices({
+		student_id: studentId,
+		type: "monthly",
+		limit: 60,
+	});
+	const paidMonthKeys = useMemo(() => {
+		const keys = new Set<string>();
+		const list = (invoicesResp?.data as any)?.data ?? [];
+		for (const inv of list) {
+			if (inv.paid_amount > 0 && inv.month && inv.year) {
+				keys.add(`${inv.month}-${inv.year}`);
+			}
+		}
+		return keys;
+	}, [invoicesResp]);
 
 	const { data: masterResp } = useGetV1Facilities();
 	const allFacilities: any[] = ((masterResp as any)?.data as any)?.data || [];
@@ -139,6 +178,25 @@ function SiswaFasilitasPage() {
 				addToast({ variant: "error", title: "Gagal", message: err.message }),
 		},
 	});
+
+	const billingMutation =
+		usePutV1StudentsIdFacilitiesFacilityIdBillingExclusions({
+			mutation: {
+				onSuccess: () => {
+					addToast({
+						variant: "success",
+						title: "Berhasil",
+						message: "Daftar bulan skip tersimpan.",
+					});
+					queryClient.invalidateQueries({
+						queryKey: getGetV1InvoicesQueryKey(),
+					});
+					setBillingTarget(null);
+				},
+				onError: (err: any) =>
+					addToast({ variant: "error", title: "Gagal", message: err.message }),
+			},
+		});
 
 	const handleEnroll = (e: React.FormEvent) => {
 		e.preventDefault();
@@ -229,6 +287,21 @@ function SiswaFasilitasPage() {
 								) : (
 									<>
 										<Badge variant="success">Aktif</Badge>
+										<Button
+											variant="ghost"
+											size="sm"
+											className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+											onClick={() =>
+												setBillingTarget({
+													sfId: sf.id,
+													name: sf.facility?.name || "Fasilitas",
+												})
+											}
+											title="Atur bulan yang tagihannya di-skip"
+										>
+											<CalendarDays className="w-4 h-4" />
+											Kelola Bulan
+										</Button>
 										<button
 											type="button"
 											onClick={() => setDeletingItem(sf)}
@@ -358,6 +431,37 @@ function SiswaFasilitasPage() {
 				<strong>{deletingItem?.facility?.name}</strong>? Item tagihan terkait
 				yang belum dibayar akan dihapus dari tagihan bulan ini ke depan.
 			</ConfirmDialog>
+
+			{/* Dialog Kelola Bulan — skip tagihan bulanan fasilitas */}
+			<BillingMonthsDialog
+				open={!!billingTarget}
+				onClose={() => setBillingTarget(null)}
+				title={
+					billingTarget
+						? `Kelola Bulan — ${billingTarget.name}`
+						: "Kelola Bulan"
+				}
+				description="Bulan yang dicentang tetap ditagihkan untuk fasilitas ini. Bulan yang tidak dicentang di-skip (tidak ditagih). Enrollment siswa tetap aktif."
+				months={activeYearMonths}
+				paidKeys={paidMonthKeys}
+				loadExclusions={async () => {
+					if (!billingTarget) return [];
+					const res =
+						await getV1StudentsIdFacilitiesFacilityIdBillingExclusions(
+							studentId,
+							billingTarget.sfId,
+						);
+					return res.data.data.months ?? [];
+				}}
+				saveExclusions={async (months) => {
+					if (!billingTarget) return;
+					await billingMutation.mutateAsync({
+						id: studentId,
+						facilityId: billingTarget.sfId,
+						data: { months },
+					});
+				}}
+			/>
 		</div>
 	);
 }

@@ -315,6 +315,38 @@ func (h *DaycareEnrollmentHandler) SyncInvoices(c echo.Context) error {
 	})
 }
 
+// PreviewSyncInvoices godoc
+// @Summary      Preview daycare sync (dry-run)
+// @Description  Hitung rencana sinkronisasi tagihan daycare bulanan TANPA
+//
+//	mengubah data: per enrollment, premium = akan diproses, regular = dilewati.
+//
+// @Tags         daycare-enrollments
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Success      200  {object}  dto.SuccessResponse{data=dto.DaycarePreviewResponse}
+// @Failure      401  {object}  dto.ErrorResponse
+// @Failure      403  {object}  dto.ErrorResponse
+// @Failure      500  {object}  dto.ErrorResponse
+// @Router       /v1/daycare-enrollments/preview-sync-invoices [post]
+func (h *DaycareEnrollmentHandler) PreviewSyncInvoices(c echo.Context) error {
+	result, err := h.invoiceGen.PlanDaycareSync()
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{
+			Status:  status,
+			Code:    code,
+			Message: err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "Preview sinkronisasi daycare berhasil dihitung",
+		Data:    result,
+	})
+}
+
 // GenerateMonthlyInvoices godoc
 // @Summary      Generate monthly daycare SPD
 // @Description  Generate SPD for a specific student/month (Regular: attendance-based)

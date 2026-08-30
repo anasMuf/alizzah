@@ -31,6 +31,10 @@ type InvoiceGenerateService interface {
 	RemoveExtracurricularFromFutureInvoices(studentID, extracurricularID, academicYearID uint, endDate time.Time) error
 	CleanupExtracurricularInvoices(studentID, extracurricularID uint) error
 	SyncExtracurricularMonthlyInvoices() (*dto.ExtracurricularSyncResult, error)
+	// PlanExtracurricularSync menghitung rencana sync (dry-run, read-only).
+	PlanExtracurricularSync() (*dto.ExtracurricularPreviewResponse, error)
+	// PlanDaycareSync menghitung rencana sync daycare (dry-run, read-only).
+	PlanDaycareSync() (*dto.DaycarePreviewResponse, error)
 	AddFacilityToMonthlyRange(studentID, facilityID, academicYearID uint) error
 	RemoveFacilityFromFutureInvoices(studentID, facilityID, academicYearID uint, extraZoneNames ...string) error
 	// Billing month exclusions (skip tagihan bulanan)
@@ -825,30 +829,8 @@ func (s *invoiceGenerateService) addExtracurricularItemToMonthly(studentID, acad
 		return fmt.Errorf("monthly invoice not found for student %d month %d/%d", studentID, month, year)
 	}
 
-	// Check idempotency: skip fee items that already exist on this invoice.
-	// Use a set keyed by name+category + append after each create so that
-	// fee items with identical name (per-level variants) don't duplicate.
-	existingItems, _ := s.invoiceItemRepo.FindByInvoiceID(invoice.ID)
-	existingKeys := make(map[string]bool)
-	for _, existing := range existingItems {
-		existingKeys[existing.Name+"|"+existing.Category] = true
-	}
-	for _, feeItem := range feeItems {
-		key := feeItem.Name + "|" + feeItem.Category
-		if existingKeys[key] {
-			continue
-		}
-
-		// Skip jika level fee item tidak cocok dengan level siswa
-		if level != "" && feeItem.Level != "all" && feeItem.Level != level {
-			continue
-		}
-
-		// Skip jika item punya start_month dan bulan ini belum mencapai start_month
-		if feeItem.StartMonth != nil && month < *feeItem.StartMonth {
-			continue
-		}
-
+	toAdd := s.feeItemsToAddForMonth(invoice.ID, month, level, feeItems)
+	for _, feeItem := range toAdd {
 		item := &model.InvoiceItem{
 			InvoiceID:   invoice.ID,
 			Name:        feeItem.Name,
@@ -859,10 +841,40 @@ func (s *invoiceGenerateService) addExtracurricularItemToMonthly(studentID, acad
 		if err := s.invoiceItemRepo.Create(item); err != nil {
 			return err
 		}
-		existingKeys[key] = true // prevent subsequent fee items with same name from duplicating
 	}
 
 	return s.recalculateInvoiceTotal(invoice.ID)
+}
+
+// feeItemsToAddForMonth memfilter feeItems yang AKAN dibuat untuk bulan ini:
+// belum ada di invoice (name+category), level cocok, dan startMonth terpenuhi.
+// Read-only — dipakai bersama oleh addExtracurricularItemToMonthly (apply) dan
+// preview sync (dry-run) agar logika filter tidak terduplikasi.
+func (s *invoiceGenerateService) feeItemsToAddForMonth(invoiceID, month uint, level string, feeItems []model.FeeConfigItem) []model.FeeConfigItem {
+	existingItems, _ := s.invoiceItemRepo.FindByInvoiceID(invoiceID)
+	existingKeys := make(map[string]bool)
+	for _, existing := range existingItems {
+		existingKeys[existing.Name+"|"+existing.Category] = true
+	}
+
+	var toAdd []model.FeeConfigItem
+	for _, feeItem := range feeItems {
+		key := feeItem.Name + "|" + feeItem.Category
+		if existingKeys[key] {
+			continue
+		}
+		// Skip jika level fee item tidak cocok dengan level siswa
+		if level != "" && feeItem.Level != "all" && feeItem.Level != level {
+			continue
+		}
+		// Skip jika item punya start_month dan bulan ini belum mencapai start_month
+		if feeItem.StartMonth != nil && month < *feeItem.StartMonth {
+			continue
+		}
+		toAdd = append(toAdd, feeItem)
+		existingKeys[key] = true // prevent fee items dengan nama sama terduplikasi
+	}
+	return toAdd
 }
 
 func (s *invoiceGenerateService) RemoveExtracurricularFromFutureInvoices(studentID, extracurricularID, academicYearID uint, endDate time.Time) error {
@@ -1119,6 +1131,77 @@ func (s *invoiceGenerateService) SyncExtracurricularMonthlyInvoices() (*dto.Extr
 
 	result.TotalSkipped = len(result.Errors)
 	return result, nil
+}
+
+// PlanExtracurricularSync menghitung rencana sinkronisasi PASTA/ekskul (dry-run,
+// read-only) — bulan mana yang akan ditambah item dan alasan bulan dilewati
+// (exclusion / sudah ada / invoice belum ada). Tidak menulis apa pun ke DB.
+func (s *invoiceGenerateService) PlanExtracurricularSync() (*dto.ExtracurricularPreviewResponse, error) {
+	ay, err := s.acRepo.FindActive()
+	if err != nil {
+		return nil, fmt.Errorf("tahun ajaran aktif tidak ditemukan")
+	}
+
+	allSE, err := s.seRepo.FindAllActiveByAcademicYear(ay.ID)
+	if err != nil {
+		return nil, fmt.Errorf("gagal mengambil data ekskul: %v", err)
+	}
+
+	resp := &dto.ExtracurricularPreviewResponse{
+		TotalEnrollments: len(allSE),
+		Items:            make([]dto.ExtracurricularPreviewItem, 0, len(allSE)),
+	}
+
+	for _, se := range allSE {
+		resp.Items = append(resp.Items, s.planExtracurricularForEnrollment(se, ay))
+	}
+	return resp, nil
+}
+
+// planExtracurricularForEnrollment mengklasifikasikan tiap bulan dalam rentang
+// enrollment (startDate..akhir tahun ajaran) menjadi: akan ditambah / skip.
+func (s *invoiceGenerateService) planExtracurricularForEnrollment(se model.StudentExtracurricular, ay *model.AcademicYear) dto.ExtracurricularPreviewItem {
+	item := dto.ExtracurricularPreviewItem{
+		StudentID:           se.StudentID,
+		StudentName:         se.Student.FullName,
+		ExtracurricularID:   se.ExtracurricularID,
+		ExtracurricularName: se.Extracurricular.Name,
+		MonthsToAdd:         []dto.MonthYearBrief{},
+	}
+
+	feeConfig, _ := s.feeConfigRepo.FindByAcademicYearID(se.AcademicYearID)
+	if feeConfig == nil || feeConfig.ID == 0 {
+		return item // tidak ada tarif → tidak ada yang bisa ditambahkan
+	}
+	feeItems, _ := s.feeConfigItemRepo.FindByExtracurricular(feeConfig.ID, se.Extracurricular.Type, se.Extracurricular.Name)
+	if len(feeItems) == 0 {
+		return item
+	}
+
+	level := ""
+	enr, _ := s.enrollmentRepo.FindActiveByStudentID(se.StudentID)
+	if enr != nil {
+		level = enr.ClassGroup.Level
+	}
+
+	for _, m := range utility.MonthRangeFromDate(se.StartDate, ay.EndDate) {
+		if s.isMonthExcluded(se.StudentID, "extracurricular", se.ExtracurricularID, m.Month, m.Year) {
+			item.SkippedExcluded++
+			continue
+		}
+		invoice, err := s.invoiceRepo.FindMonthlyByStudent(se.StudentID, m.Month, m.Year)
+		if err != nil {
+			item.SkippedNoInvoice++
+			continue
+		}
+		toAdd := s.feeItemsToAddForMonth(invoice.ID, m.Month, level, feeItems)
+		if len(toAdd) == 0 {
+			item.SkippedExists++
+			continue
+		}
+		item.MonthsToAdd = append(item.MonthsToAdd, dto.MonthYearBrief{Month: m.Month, Year: m.Year})
+	}
+	return item
 }
 
 // GenerateMonthlyRange generates monthly invoices for a date range (called from enrollment service).
@@ -1872,6 +1955,38 @@ func (s *invoiceGenerateService) SyncDaycareMonthlyInvoices() (*dto.DaycareSyncR
 
 	result.TotalSkipped += len(result.Errors)
 	return result, nil
+}
+
+// PlanDaycareSync menghitung rencana sinkronisasi invoice daycare (dry-run,
+// read-only): per enrollment, premium = akan diproses, regular = dilewati.
+// Tidak memanggil Inject* dan tidak menulis apa pun ke DB.
+func (s *invoiceGenerateService) PlanDaycareSync() (*dto.DaycarePreviewResponse, error) {
+	enrollments, err := s.daycareRepo.FindAllActive()
+	if err != nil {
+		return nil, fmt.Errorf("gagal mengambil data daycare: %v", err)
+	}
+
+	resp := &dto.DaycarePreviewResponse{
+		TotalEnrollments: len(enrollments),
+		Items:            make([]dto.DaycarePreviewItem, 0, len(enrollments)),
+	}
+
+	for _, de := range enrollments {
+		item := dto.DaycarePreviewItem{
+			StudentID:   de.StudentID,
+			StudentName: de.Student.FullName,
+			Category:    de.Category,
+		}
+		if de.Category == "premium" {
+			item.WillSync = true
+			item.Reason = "Item bulanan akan disinkronkan"
+		} else {
+			item.WillSync = false
+			item.Reason = "Kategori regular dilewati"
+		}
+		resp.Items = append(resp.Items, item)
+	}
+	return resp, nil
 }
 
 // ─── Facility Methods ────────────────────────────────────────────────

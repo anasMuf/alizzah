@@ -92,6 +92,8 @@ func main() {
 		// Facilities
 		&model.Facility{},
 		&model.StudentFacility{},
+		// Billing month exclusions (skip tagihan bulanan)
+		&model.BillingMonthExclusion{},
 		// Dispensations
 		&model.Dispensation{},
 		// Student exceptionalities (ABK)
@@ -302,7 +304,10 @@ func main() {
 	// Student exceptionality repo
 	exceptionalityRepo := repository.NewStudentExceptionalityRepository(db)
 
-	invoiceGenService := service.NewInvoiceGenerateService(db, invoiceRepo, invoiceItemRepo, fcRepo, fcItemRepo, effectiveDayRepo, enrollmentRepo, extracurricularRepo, seRepo, ayRepo, daycareRepo, facilityRepo, sfRepo, dispensationRepo, exceptionalityRepo, daycareMonthlyAttRepo)
+	// Billing month exclusions repo (skip tagihan bulanan)
+	billingExclusionRepo := repository.NewBillingMonthExclusionRepository(db)
+
+	invoiceGenService := service.NewInvoiceGenerateService(db, invoiceRepo, invoiceItemRepo, fcRepo, fcItemRepo, effectiveDayRepo, enrollmentRepo, extracurricularRepo, seRepo, ayRepo, daycareRepo, facilityRepo, sfRepo, dispensationRepo, exceptionalityRepo, daycareMonthlyAttRepo, billingExclusionRepo)
 
 	// Auto-sync: tambahkan item tabungan wajib ke invoice existing yang belum memilikinya.
 	// Aman dijalankan berulang kali (idempotent), hanya menyentuh invoice unpaid/partial.
@@ -353,7 +358,7 @@ func main() {
 	enrollmentService := service.NewStudentEnrollmentService(db, enrollmentRepo, studentRepo, classGroupRepo, extracurricularRepo, seRepo, fcRepo, fcItemRepo, invoiceGenService, savingsService)
 	effectiveDayService := service.NewEffectiveDayService(effectiveDayRepo, classGroupRepo, invoiceGenService)
 	extracurricularService := service.NewExtracurricularService(db, extracurricularRepo, fcRepo, fcItemRepo)
-	seService := service.NewStudentExtracurricularService(db, seRepo, studentRepo, extracurricularRepo, ayRepo, enrollmentRepo, invoiceGenService)
+	seService := service.NewStudentExtracurricularService(db, seRepo, studentRepo, extracurricularRepo, ayRepo, enrollmentRepo, invoiceGenService, billingExclusionRepo)
 	eventService := service.NewStudentAcademicEventService(eventRepo, studentRepo)
 	daycareService := service.NewDaycareEnrollmentService(db, daycareRepo, studentRepo, ayRepo, daycareMonthlyAttRepo, invoiceRepo, invoiceGenService)
 
@@ -493,8 +498,12 @@ func main() {
 
 	// Facilities
 	facilityService := service.NewFacilityService(facilityRepo, fcRepo, fcItemRepo)
-	sfService := service.NewStudentFacilityService(sfRepo, studentRepo, facilityRepo, ayRepo, fcItemRepo, invoiceRepo, invoiceItemRepo, enrollmentRepo, effectiveDayRepo, invoiceGenService)
+	sfService := service.NewStudentFacilityService(sfRepo, studentRepo, facilityRepo, ayRepo, fcItemRepo, invoiceRepo, invoiceItemRepo, enrollmentRepo, effectiveDayRepo, invoiceGenService, billingExclusionRepo)
 	facilityHandler := handler.NewFacilityHandler(facilityService, sfService)
+
+	// Billing month exclusions (skip tagihan bulanan PASTA & fasilitas)
+	billingExclusionService := service.NewBillingExclusionService(db, billingExclusionRepo, ayRepo, invoiceGenService)
+	billingExclusionHandler := handler.NewBillingExclusionHandler(billingExclusionService, seRepo, sfRepo)
 
 	// Batch 7
 	cashHandler := handler.NewCashHandler(cashService)
@@ -582,6 +591,8 @@ func main() {
 	students.PUT("/:id/extracurriculars/:se_id", seHandler.Update, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.DELETE("/:id/extracurriculars/:se_id", seHandler.Unenroll, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.POST("/:id/extracurriculars/:extracurricular_id/cleanup-invoices", seHandler.CleanupExtracurricularInvoices, guard.RequireModule(middleware.ModuleAdministrasi))
+	students.GET("/:id/extracurriculars/:se_id/billing-exclusions", billingExclusionHandler.GetExtracurricular, guard.RequireModule(middleware.ModuleAdministrasi))
+	students.PUT("/:id/extracurriculars/:se_id/billing-exclusions", billingExclusionHandler.SetExtracurricular, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.GET("/:id/dispensations", dispensationHandler.ListByStudent, guard.RequireModule(middleware.ModuleKeuangan))
 	students.POST("/:id/dispensations", dispensationHandler.Create, guard.RequireModule(middleware.ModuleKeuangan))
 	students.GET("/:id/facilities", facilityHandler.ListByStudent, guard.RequireModule(middleware.ModuleAdministrasi))
@@ -589,6 +600,8 @@ func main() {
 	students.PUT("/:id/facilities/:facilityId", facilityHandler.UpdateEnrollment, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.GET("/:id/facilities/:facilityId/current-month-days", facilityHandler.GetCurrentMonthDays, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.DELETE("/:id/facilities/:facilityId", facilityHandler.Unenroll, guard.RequireModule(middleware.ModuleAdministrasi))
+	students.GET("/:id/facilities/:facilityId/billing-exclusions", billingExclusionHandler.GetFacility, guard.RequireModule(middleware.ModuleAdministrasi))
+	students.PUT("/:id/facilities/:facilityId/billing-exclusions", billingExclusionHandler.SetFacility, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.GET("/:id/academic-events", eventHandler.GetByStudent, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.POST("/:id/regenerate-invoices", studentHandler.RegenerateInvoices, guard.RequireModule(middleware.ModuleAdministrasi))
 
@@ -635,6 +648,7 @@ func main() {
 	// Extracurriculars
 	extracurriculars := api.Group("/extracurriculars", middleware.JWTAuth(tokenBlacklistRepo), guard.RequireModule(middleware.ModuleAdministrasi))
 	extracurriculars.POST("/sync-invoices", seHandler.SyncInvoices)
+	extracurriculars.POST("/preview-sync-invoices", seHandler.PreviewSyncInvoices)
 	extracurriculars.GET("/export", seHandler.Export)
 	extracurriculars.GET("/:id/students", seHandler.GetStudentsByExtracurricular)
 	extracurriculars.GET("", extracurricularHandler.List)
@@ -647,6 +661,7 @@ func main() {
 	daycare.GET("", daycareHandler.List)
 	daycare.POST("", daycareHandler.Create)
 	daycare.POST("/sync-invoices", daycareHandler.SyncInvoices)
+	daycare.POST("/preview-sync-invoices", daycareHandler.PreviewSyncInvoices)
 	daycare.POST("/generate-monthly", daycareHandler.GenerateMonthlyInvoices)
 	daycare.POST("/generate-monthly-bulk", daycareHandler.GenerateMonthlyBulk)
 	daycare.GET("/:id", daycareHandler.Get)

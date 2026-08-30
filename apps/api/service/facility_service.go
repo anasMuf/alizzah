@@ -182,6 +182,7 @@ type studentFacilityService struct {
 	enrollmentRepo    repository.StudentEnrollmentRepository
 	effectiveDayRepo  repository.EffectiveDayRepository
 	invoiceGen        InvoiceGenerateService
+	exclRepo          repository.BillingMonthExclusionRepository
 }
 
 func NewStudentFacilityService(
@@ -195,6 +196,7 @@ func NewStudentFacilityService(
 	enrollmentRepo repository.StudentEnrollmentRepository,
 	effectiveDayRepo repository.EffectiveDayRepository,
 	invoiceGen InvoiceGenerateService,
+	exclRepo repository.BillingMonthExclusionRepository,
 ) StudentFacilityService {
 	return &studentFacilityService{
 		sfRepo:            sfRepo,
@@ -207,6 +209,7 @@ func NewStudentFacilityService(
 		enrollmentRepo:    enrollmentRepo,
 		effectiveDayRepo:  effectiveDayRepo,
 		invoiceGen:        invoiceGen,
+		exclRepo:          exclRepo,
 	}
 }
 
@@ -514,6 +517,14 @@ func (s *studentFacilityService) Unenroll(studentID, sfID uint) error {
 				log.Printf("[Facility] Gagal remove facility dari invoice (unenroll) student=%d facility=%d: %v", studentID, sf.FacilityID, err)
 			}
 		}()
+	}
+
+	// R.8: hapus semua skip tagihan (billing exclusions) enrollment ini —
+	// enrollment sudah nonaktif, data skip tidak boleh menggantung.
+	if s.exclRepo != nil {
+		if err := s.exclRepo.DeleteByStudentAndEntity(studentID, "facility", sf.FacilityID); err != nil {
+			log.Printf("[Facility] Gagal menghapus billing exclusions student=%d facility=%d: %v", studentID, sf.FacilityID, err)
+		}
 	}
 
 	return nil

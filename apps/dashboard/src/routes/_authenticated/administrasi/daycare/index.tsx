@@ -7,6 +7,7 @@ import {
 	Cog,
 	Pencil,
 	Plus,
+	RefreshCw,
 	Search,
 	ShieldCheck,
 	ShieldX,
@@ -20,9 +21,17 @@ import {
 	useGetV1DaycareEnrollmentsMonthlyAttendance,
 	usePatchV1DaycareEnrollmentsIdStatus,
 	usePostV1DaycareEnrollmentsGenerateMonthlyBulk,
+	usePostV1DaycareEnrollmentsSyncInvoices,
 	usePutV1DaycareEnrollmentsMonthlyAttendance,
 } from "#/api/endpoints/daycare-enrollments/daycare-enrollments";
+import { getGetV1InvoicesQueryKey } from "#/api/endpoints/invoices/invoices";
+import { postV1DaycareEnrollmentsPreviewSyncInvoices } from "#/api/endpoints/sync-invoices/sync-invoices";
 import { customInstance } from "#/api/mutator/custom-instance";
+import {
+	SyncPreviewDialog,
+	type SyncPreviewRow,
+	type SyncPreviewSummaryItem,
+} from "#/components/molecules/SyncPreviewDialog";
 import {
 	Badge,
 	Button,
@@ -117,6 +126,7 @@ function EnrollmentTab() {
 	const [isActivateOpen, setIsActivateOpen] = useState(false);
 	const [enrollmentToActivate, setEnrollmentToActivate] = useState<any>(null);
 	const [generatingBulkSpd, setGeneratingBulkSpd] = useState(false);
+	const [syncOpen, setSyncOpen] = useState(false);
 
 	// Delete state
 	const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -126,6 +136,47 @@ function EnrollmentTab() {
 	const [isCheckingDelete, setIsCheckingDelete] = useState(false);
 
 	const bulkSpdMutation = usePostV1DaycareEnrollmentsGenerateMonthlyBulk();
+
+	const syncMutation = usePostV1DaycareEnrollmentsSyncInvoices({
+		mutation: {
+			onSuccess: (res: any) => {
+				const d = res?.data?.data;
+				addToast({
+					variant: "success",
+					title: "Berhasil",
+					message: d
+						? `Sinkron selesai — ${d.total_synced} dari ${d.total_enrollments} enrollment diproses, ${d.total_skipped} dilewati.`
+						: "Sinkronisasi tagihan daycare selesai.",
+				});
+				queryClient.invalidateQueries({
+					queryKey: getGetV1DaycareEnrollmentsQueryKey(),
+				});
+				queryClient.invalidateQueries({ queryKey: getGetV1InvoicesQueryKey() });
+				setSyncOpen(false);
+			},
+			onError: (err: any) =>
+				addToast({ variant: "error", title: "Gagal", message: err?.message }),
+		},
+	});
+
+	const loadSyncPreview = async () => {
+		const res = await postV1DaycareEnrollmentsPreviewSyncInvoices();
+		const d = res.data.data;
+
+		const rows: SyncPreviewRow[] = d.items.map((it) => ({
+			key: `${it.student_id}-${it.category}`,
+			student_name: it.student_name,
+			action: `${CATEGORY_LABELS[it.category] ?? it.category} — ${it.reason}`,
+			status: it.will_sync ? "change" : "skip",
+		}));
+		const totalWillSync = d.items.filter((it) => it.will_sync).length;
+		const summary: SyncPreviewSummaryItem[] = [
+			{ label: "Enrollment", value: d.total_enrollments },
+			{ label: "Akan disinkronkan", value: totalWillSync },
+			{ label: "Dilewati", value: d.total_enrollments - totalWillSync },
+		];
+		return { summary, rows };
+	};
 
 	const {
 		data: response,
@@ -282,6 +333,15 @@ function EnrollmentTab() {
 					<p className="text-sm text-gray-500">Kelola pendaftaran daycare.</p>
 				</div>
 				<div className="flex items-center gap-2">
+					<Button
+						variant="secondary"
+						onClick={() => setSyncOpen(true)}
+						className="flex items-center gap-2"
+						title="Sinkronkan item invoice daycare untuk semua enrollment aktif"
+					>
+						<RefreshCw className="h-4 w-4" />
+						Sync Invoice
+					</Button>
 					<Button
 						variant="secondary"
 						onClick={handleGenerateBulkSPD}
@@ -559,6 +619,18 @@ function EnrollmentTab() {
 					)}
 				</div>
 			</ConfirmDialog>
+
+			{/* Dialog Preview Sinkronisasi Invoice Daycare */}
+			<SyncPreviewDialog
+				open={syncOpen}
+				onClose={() => setSyncOpen(false)}
+				title="Sync Invoice Daycare"
+				description="Sinkronkan item invoice bulanan untuk semua enrollment daycare aktif. Enrollment premium akan diproses, regular dilewati."
+				loadPreview={loadSyncPreview}
+				runSync={async () => {
+					await syncMutation.mutateAsync();
+				}}
+			/>
 		</div>
 	);
 }

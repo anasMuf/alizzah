@@ -302,20 +302,20 @@ function EkskulDetailPage() {
 
 	if (loading) {
 		return (
-			<div className="bg-white rounded-xl shadow-sm h-64 animate-pulse max-w-5xl mx-auto mt-6" />
+			<div className="bg-white rounded-xl shadow-sm h-64 animate-pulse mt-6" />
 		);
 	}
 
 	if (error || !pasta) {
 		return (
-			<div className="bg-red-50 p-4 rounded-md text-red-800 max-w-5xl mx-auto mt-6">
+			<div className="bg-red-50 p-4 rounded-md text-red-800 mt-6">
 				{error ?? "Data tidak ditemukan."}
 			</div>
 		);
 	}
 
 	return (
-		<div className="space-y-6 max-w-5xl mx-auto">
+		<div className="space-y-6">
 			{/* Breadcrumb */}
 			<nav className="flex" aria-label="Breadcrumb">
 				<ol className="flex items-center space-x-2">
@@ -398,9 +398,9 @@ function EkskulDetailPage() {
 							}
 						/>
 					</div>
-					<div className="flex w-full sm:w-auto gap-3">
+					<div className="flex w-full flex-wrap items-center gap-3 sm:w-auto sm:flex-nowrap sm:gap-4">
 						<select
-							className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
+							className="block w-full sm:w-auto rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
 							value={rangeFrom ? `${rangeFrom.month}-${rangeFrom.year}` : ""}
 							onChange={(e) => {
 								const [mm, yy] = e.target.value.split("-");
@@ -418,7 +418,7 @@ function EkskulDetailPage() {
 							))}
 						</select>
 						<select
-							className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
+							className="block w-full sm:w-auto rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
 							value={rangeTo ? `${rangeTo.month}-${rangeTo.year}` : ""}
 							onChange={(e) => {
 								const [mm, yy] = e.target.value.split("-");
@@ -436,7 +436,7 @@ function EkskulDetailPage() {
 							))}
 						</select>
 						<select
-							className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
+							className="block w-full sm:w-auto rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
 							value={levelFilter}
 							onChange={(e) =>
 								updateSearch({
@@ -453,7 +453,7 @@ function EkskulDetailPage() {
 							))}
 						</select>
 						<select
-							className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
+							className="block w-full sm:w-auto rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
 							value={classGroupFilter}
 							onChange={(e) =>
 								updateSearch({ class_group: e.target.value || undefined })

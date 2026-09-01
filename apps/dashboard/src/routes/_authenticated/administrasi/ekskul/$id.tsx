@@ -398,43 +398,53 @@ function EkskulDetailPage() {
 							}
 						/>
 					</div>
-					<div className="flex w-full sm:w-auto gap-3">
-						<select
-							className="block w-full sm:w-40 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
-							value={rangeFrom ? `${rangeFrom.month}-${rangeFrom.year}` : ""}
-							onChange={(e) => {
-								const [mm, yy] = e.target.value.split("-");
-								updateSearch({ month_from: mm, year_from: yy });
-							}}
-							title="Bulan awal periode tagihan"
-						>
-							{fromOptions.map((m) => (
-								<option
-									key={`from-${m.month}-${m.year}`}
-									value={`${m.month}-${m.year}`}
-								>
-									Dari {monthLabel(m)}
-								</option>
-							))}
-						</select>
-						<select
-							className="block w-full sm:w-40 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
-							value={rangeTo ? `${rangeTo.month}-${rangeTo.year}` : ""}
-							onChange={(e) => {
-								const [mm, yy] = e.target.value.split("-");
-								updateSearch({ month_to: mm, year_to: yy });
-							}}
-							title="Bulan akhir periode tagihan"
-						>
-							{toOptions.map((m) => (
-								<option
-									key={`to-${m.month}-${m.year}`}
-									value={`${m.month}-${m.year}`}
-								>
-									Sampai {monthLabel(m)}
-								</option>
-							))}
-						</select>
+					<div className="flex w-full sm:w-auto flex-wrap gap-3">
+						<div className="flex flex-1 items-center gap-1.5 min-w-0 sm:flex-none">
+							<span className="whitespace-nowrap text-sm text-gray-500">
+								Dari
+							</span>
+							<select
+								className="block w-full sm:w-36 rounded-md border-0 py-1.5 pl-3 pr-8 text-gray-900 ring-1 ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
+								value={rangeFrom ? `${rangeFrom.month}-${rangeFrom.year}` : ""}
+								onChange={(e) => {
+									const [mm, yy] = e.target.value.split("-");
+									updateSearch({ month_from: mm, year_from: yy });
+								}}
+								title="Bulan awal periode tagihan"
+							>
+								{fromOptions.map((m) => (
+									<option
+										key={`from-${m.month}-${m.year}`}
+										value={`${m.month}-${m.year}`}
+									>
+										{monthLabel(m)}
+									</option>
+								))}
+							</select>
+						</div>
+						<div className="flex flex-1 items-center gap-1.5 min-w-0 sm:flex-none">
+							<span className="whitespace-nowrap text-sm text-gray-500">
+								Sampai
+							</span>
+							<select
+								className="block w-full sm:w-36 rounded-md border-0 py-1.5 pl-3 pr-8 text-gray-900 ring-1 ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
+								value={rangeTo ? `${rangeTo.month}-${rangeTo.year}` : ""}
+								onChange={(e) => {
+									const [mm, yy] = e.target.value.split("-");
+									updateSearch({ month_to: mm, year_to: yy });
+								}}
+								title="Bulan akhir periode tagihan"
+							>
+								{toOptions.map((m) => (
+									<option
+										key={`to-${m.month}-${m.year}`}
+										value={`${m.month}-${m.year}`}
+									>
+										{monthLabel(m)}
+									</option>
+								))}
+							</select>
+						</div>
 						<select
 							className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
 							value={levelFilter}

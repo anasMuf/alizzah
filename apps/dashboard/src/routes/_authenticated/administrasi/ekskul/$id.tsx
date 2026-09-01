@@ -400,7 +400,7 @@ function EkskulDetailPage() {
 					</div>
 					<div className="flex w-full sm:w-auto gap-3">
 						<select
-							className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
+							className="block w-full sm:w-40 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
 							value={rangeFrom ? `${rangeFrom.month}-${rangeFrom.year}` : ""}
 							onChange={(e) => {
 								const [mm, yy] = e.target.value.split("-");
@@ -418,7 +418,7 @@ function EkskulDetailPage() {
 							))}
 						</select>
 						<select
-							className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
+							className="block w-full sm:w-40 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
 							value={rangeTo ? `${rangeTo.month}-${rangeTo.year}` : ""}
 							onChange={(e) => {
 								const [mm, yy] = e.target.value.split("-");

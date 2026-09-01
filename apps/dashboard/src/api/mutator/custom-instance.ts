@@ -4,6 +4,10 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
 // bila nginx host yang memisah berdasarkan path (satu domain API).
 const KOPERASI_API_URL =
 	import.meta.env.VITE_KOPERASI_API_URL || "http://localhost:8081/api";
+// SDM/HR (penggajian) dilayani binary terpisah (sdm-api). Request /sdm/*
+// diarahkan ke base ini — lihat docs/sdm/plan.md (K4).
+const SDM_API_URL =
+	import.meta.env.VITE_SDM_API_URL || "http://localhost:8082/api";
 
 // Token getter di-inject oleh layer auth (mis. #/features/auth/AuthContext) via setTokenGetter,
 // sehingga api-client tidak bergantung pada implementasi auth (memutus siklus).
@@ -37,7 +41,11 @@ export const customInstance = async <T>(
 	urlStr: string,
 	options?: RequestInit & { params?: Record<string, unknown> },
 ): Promise<T> => {
-	const base = urlStr.includes("/koperasi/") ? KOPERASI_API_URL : API_URL;
+	const base = urlStr.includes("/koperasi/")
+		? KOPERASI_API_URL
+		: urlStr.includes("/sdm/")
+			? SDM_API_URL
+			: API_URL;
 	const url = new URL(`${base}${urlStr}`);
 
 	if (options?.params) {

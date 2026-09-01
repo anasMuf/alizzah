@@ -302,20 +302,20 @@ function EkskulDetailPage() {
 
 	if (loading) {
 		return (
-			<div className="bg-white rounded-xl shadow-sm h-64 animate-pulse max-w-5xl mx-auto mt-6" />
+			<div className="bg-white rounded-xl shadow-sm h-64 animate-pulse mt-6" />
 		);
 	}
 
 	if (error || !pasta) {
 		return (
-			<div className="bg-red-50 p-4 rounded-md text-red-800 max-w-5xl mx-auto mt-6">
+			<div className="bg-red-50 p-4 rounded-md text-red-800 mt-6">
 				{error ?? "Data tidak ditemukan."}
 			</div>
 		);
 	}
 
 	return (
-		<div className="space-y-6 max-w-5xl mx-auto">
+		<div className="space-y-6">
 			{/* Breadcrumb */}
 			<nav className="flex" aria-label="Breadcrumb">
 				<ol className="flex items-center space-x-2">

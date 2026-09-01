@@ -7,6 +7,7 @@ import { createRouter, RouterProvider } from "@tanstack/react-router";
 import ReactDOM from "react-dom/client";
 import { ErrorBoundary, ToastProvider } from "#/components/ui";
 import { AuthProvider, useAuth } from "#/features/auth/AuthContext";
+import { parseSearch, stringifySearch } from "#/utils/search";
 import { routeTree } from "./routeTree.gen";
 
 const queryClient = new QueryClient({
@@ -26,6 +27,8 @@ const router = createRouter({
 	routeTree,
 	defaultPreload: "intent",
 	scrollRestoration: true,
+	stringifySearch,
+	parseSearch,
 	context: {
 		auth: undefined!,
 	},

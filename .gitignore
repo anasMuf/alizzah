@@ -50,3 +50,6 @@ apps/api/api
 
 # Uploaded assets (runtime)
 apps/api/uploads/
+
+# Reference
+apps/old

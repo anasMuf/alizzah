@@ -301,6 +301,161 @@ func TestRemoveFacilityInvoices_RemovesUnpaidIncludingPastMonths(t *testing.T) {
 	assert.Equal(t, 50000.0, total)
 }
 
+// --- Preview (dry-run) pembersihan tagihan PASTA ---
+
+func TestPlanExtracurricularCleanupInvoices_ListsOnlyUnpaid(t *testing.T) {
+	db := setupBillingExclusionInvoiceTestDB(t)
+	fx := seedExclusionInvoiceFixture(t, db)
+
+	var augInv model.Invoice
+	require.NoError(t, db.Where("student_id = ? AND month = ? AND year = ?", fx.StudentID, 8, 2025).First(&augInv).Error)
+	require.NoError(t, db.Create(&model.InvoiceItem{InvoiceID: augInv.ID, Name: "Robotika", Category: "pasta", Amount: 100000, IsMandatory: true}).Error)
+	require.NoError(t, db.Create(&model.InvoiceItem{InvoiceID: augInv.ID, Name: "Robotika", Category: "pasta", Amount: 100000, IsMandatory: true, PaidAmount: 100000, Status: "paid"}).Error)
+
+	var before model.Invoice
+	require.NoError(t, db.First(&before, augInv.ID).Error)
+
+	gen := newTestInvoiceGen(t, db)
+	plan, err := gen.PlanExtracurricularCleanupInvoices(fx.StudentID, fx.ExID)
+	require.NoError(t, err)
+
+	// Hanya item unpaid yang masuk rencana
+	require.Equal(t, 1, plan.TotalItems)
+	assert.Equal(t, 100000.0, plan.TotalAmount)
+	require.Len(t, plan.Items, 1)
+	assert.Equal(t, uint(8), plan.Items[0].Month)
+	assert.Equal(t, uint(2025), plan.Items[0].Year)
+	assert.Equal(t, "Robotika", plan.Items[0].ItemName)
+
+	// Preview TIDAK boleh mengubah data apa pun
+	var after model.Invoice
+	require.NoError(t, db.First(&after, augInv.ID).Error)
+	assert.Equal(t, before.TotalAmount, after.TotalAmount, "preview tidak boleh mengubah total invoice")
+	count, _ := countInvoiceItems(t, db, augInv.ID, "pasta")
+	assert.Equal(t, int64(2), count, "preview tidak boleh menghapus item")
+}
+
+func TestPlanExtracurricularCleanupInvoices_EmptyWhenNothingUnpaid(t *testing.T) {
+	db := setupBillingExclusionInvoiceTestDB(t)
+	fx := seedExclusionInvoiceFixture(t, db)
+
+	var augInv model.Invoice
+	require.NoError(t, db.Where("student_id = ? AND month = ? AND year = ?", fx.StudentID, 8, 2025).First(&augInv).Error)
+	require.NoError(t, db.Create(&model.InvoiceItem{InvoiceID: augInv.ID, Name: "Robotika", Category: "pasta", Amount: 100000, IsMandatory: true, PaidAmount: 100000, Status: "paid"}).Error)
+
+	gen := newTestInvoiceGen(t, db)
+	plan, err := gen.PlanExtracurricularCleanupInvoices(fx.StudentID, fx.ExID)
+	require.NoError(t, err)
+	assert.Equal(t, 0, plan.TotalItems)
+	assert.Len(t, plan.Items, 0)
+}
+
+func TestPlanExtracurricularCleanupInvoices_MatchesActualRemove(t *testing.T) {
+	db := setupBillingExclusionInvoiceTestDB(t)
+	fx := seedExclusionInvoiceFixture(t, db)
+
+	var augInv model.Invoice
+	require.NoError(t, db.Where("student_id = ? AND month = ? AND year = ?", fx.StudentID, 8, 2025).First(&augInv).Error)
+	require.NoError(t, db.Create(&model.InvoiceItem{InvoiceID: augInv.ID, Name: "Robotika", Category: "pasta", Amount: 100000, IsMandatory: true}).Error)
+	require.NoError(t, db.Create(&model.InvoiceItem{InvoiceID: augInv.ID, Name: "Robotika", Category: "pasta", Amount: 100000, IsMandatory: true, PaidAmount: 100000, Status: "paid"}).Error)
+
+	var novInv model.Invoice
+	require.NoError(t, db.Where("student_id = ? AND month = ? AND year = ?", fx.StudentID, 11, 2025).First(&novInv).Error)
+	require.NoError(t, db.Create(&model.InvoiceItem{InvoiceID: novInv.ID, Name: "Robotika", Category: "pasta", Amount: 100000, IsMandatory: true}).Error)
+
+	gen := newTestInvoiceGen(t, db)
+	plan, err := gen.PlanExtracurricularCleanupInvoices(fx.StudentID, fx.ExID)
+	require.NoError(t, err)
+	plannedIDs := make(map[uint]bool)
+	for _, it := range plan.Items {
+		plannedIDs[it.ItemID] = true
+	}
+	require.NotEmpty(t, plannedIDs)
+
+	require.NoError(t, gen.RemoveExtracurricularInvoices(fx.StudentID, fx.ExID, fx.AcademicYear.ID, time.Date(2025, 8, 1, 0, 0, 0, 0, time.UTC)))
+
+	// Item yang tersisa (pasta) hanya yang PAID — preview harus persis dengan eksekusi
+	var remaining []model.InvoiceItem
+	require.NoError(t, db.Where("category = ?", "pasta").Find(&remaining).Error)
+	for _, r := range remaining {
+		assert.False(t, plannedIDs[r.ID], "item yang di-plan untuk dihapus tidak boleh tersisa")
+		assert.True(t, r.PaidAmount > 0, "item tersisa harus yang paid")
+	}
+}
+
+// --- Halaman detail PASTA: filter periode berbasis tagihan ---
+
+func newTestStudentExtracurricularSvc(t *testing.T, db *gorm.DB) StudentExtracurricularService {
+	t.Helper()
+	return NewStudentExtracurricularService(
+		db,
+		repository.NewStudentExtracurricularRepository(db),
+		repository.NewStudentRepository(db),
+		repository.NewExtracurricularRepository(db),
+		repository.NewAcademicYearRepository(db),
+		repository.NewStudentEnrollmentRepository(db),
+		repository.NewFeeConfigRepository(db),
+		repository.NewFeeConfigItemRepository(db),
+		newTestInvoiceGen(t, db),
+		repository.NewBillingMonthExclusionRepository(db),
+	)
+}
+
+func TestGetStudentsByExtracurricular_BillingInRange(t *testing.T) {
+	db := setupBillingExclusionInvoiceTestDB(t)
+	fx := seedExclusionInvoiceFixture(t, db)
+
+	// Siswa A (dari fixture): item Robotika unpaid Agustus 2025
+	var augInv model.Invoice
+	require.NoError(t, db.Where("student_id = ? AND month = ? AND year = ?", fx.StudentID, 8, 2025).First(&augInv).Error)
+	require.NoError(t, db.Create(&model.InvoiceItem{InvoiceID: augInv.ID, Name: "Robotika", Category: "pasta", Amount: 100000, IsMandatory: true}).Error)
+
+	// Siswa B: item Robotika Desember 2025 (di luar rentang Agu-Nov)
+	studentB := model.Student{FullName: "Siswa B", BirthPlace: "Jakarta", BirthDate: time.Date(2018, 1, 1, 0, 0, 0, 0, time.UTC), Gender: "P", Status: "active"}
+	require.NoError(t, db.Create(&studentB).Error)
+	m, y := uint(12), uint(2025)
+	decInv := model.Invoice{StudentID: studentB.ID, AcademicYearID: fx.AcademicYear.ID, Type: "monthly", Month: &m, Year: &y, Status: "unpaid", TotalAmount: 0}
+	require.NoError(t, db.Create(&decInv).Error)
+	require.NoError(t, db.Create(&model.InvoiceItem{InvoiceID: decInv.ID, Name: "Robotika", Category: "pasta", Amount: 100000, IsMandatory: true}).Error)
+
+	svc := newTestStudentExtracurricularSvc(t, db)
+	names := func(item *dto.ExtracurricularExportItem) []string {
+		var out []string
+		for _, s := range item.Students {
+			out = append(out, s.FullName)
+		}
+		return out
+	}
+
+	// Rentang Agu-Nov 2025 → hanya siswa A
+	item, err := svc.GetStudentsByExtracurricular(fx.ExID, fx.AcademicYear.ID, 8, 2025, 11, 2025)
+	require.NoError(t, err)
+	assert.Contains(t, names(item), "Anak Test")
+	assert.NotContains(t, names(item), "Siswa B")
+
+	// Default setahun penuh (semua param 0) → keduanya muncul
+	itemFull, err := svc.GetStudentsByExtracurricular(fx.ExID, fx.AcademicYear.ID, 0, 0, 0, 0)
+	require.NoError(t, err)
+	assert.Contains(t, names(itemFull), "Anak Test")
+	assert.Contains(t, names(itemFull), "Siswa B")
+}
+
+func TestGetStudentsByExtracurricular_PaidItemStillCounts(t *testing.T) {
+	db := setupBillingExclusionInvoiceTestDB(t)
+	fx := seedExclusionInvoiceFixture(t, db)
+
+	// Item SUDAH DIBAYAR tetap dihitung sebagai "memiliki tagihan"
+	var sepInv model.Invoice
+	require.NoError(t, db.Where("student_id = ? AND month = ? AND year = ?", fx.StudentID, 9, 2025).First(&sepInv).Error)
+	require.NoError(t, db.Create(&model.InvoiceItem{InvoiceID: sepInv.ID, Name: "Robotika", Category: "pasta", Amount: 100000, IsMandatory: true, PaidAmount: 100000, Status: "paid"}).Error)
+
+	svc := newTestStudentExtracurricularSvc(t, db)
+	item, err := svc.GetStudentsByExtracurricular(fx.ExID, fx.AcademicYear.ID, 8, 2025, 11, 2025)
+	require.NoError(t, err)
+	require.Len(t, item.Students, 1)
+	assert.Equal(t, "Anak Test", item.Students[0].FullName)
+}
+
 // --- Skip di jalur generate ---
 
 func TestAddExtracurricularToMonthlyRange_SkipsExcludedMonth(t *testing.T) {

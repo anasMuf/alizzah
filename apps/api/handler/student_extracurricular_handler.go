@@ -250,13 +250,21 @@ func (h *StudentExtracurricularHandler) Unenroll(c echo.Context) error {
 
 // GetStudentsByExtracurricular godoc
 // @Summary      Get students in an extracurricular
-// @Description  Get list of students enrolled in a specific extracurricular
+// @Description  Get list of students that have PASTA billing items in the given
+//
+//	month range (billing-based). Without range params, defaults to the
+//	full academic year.
+//
 // @Tags         student-extracurriculars
 // @Accept       json
 // @Produce      json
 // @Security     ApiKeyAuth
 // @Param        id                path   int  true   "Extracurricular ID"
 // @Param        academic_year_id  query  int  true   "Academic Year ID"
+// @Param        month_from        query  int  false  "Bulan awal rentang (1-12); kosong = bulan pertama tahun ajaran"
+// @Param        year_from         query  int  false  "Tahun awal rentang; kosong = tahun mulai tahun ajaran"
+// @Param        month_to          query  int  false  "Bulan akhir rentang (1-12); kosong = bulan terakhir tahun ajaran"
+// @Param        year_to           query  int  false  "Tahun akhir rentang; kosong = tahun akhir tahun ajaran"
 // @Success      200  {object}  dto.SuccessResponse{data=dto.ExtracurricularExportItem}
 // @Failure      400  {object}  dto.ErrorResponse
 // @Failure      401  {object}  dto.ErrorResponse
@@ -283,7 +291,12 @@ func (h *StudentExtracurricularHandler) GetStudentsByExtracurricular(c echo.Cont
 		})
 	}
 
-	item, err := h.seService.GetStudentsByExtracurricular(uint(exID), uint(ayID))
+	fromMonth, _ := strconv.Atoi(c.QueryParam("month_from"))
+	fromYear, _ := strconv.Atoi(c.QueryParam("year_from"))
+	toMonth, _ := strconv.Atoi(c.QueryParam("month_to"))
+	toYear, _ := strconv.Atoi(c.QueryParam("year_to"))
+
+	item, err := h.seService.GetStudentsByExtracurricular(uint(exID), uint(ayID), uint(fromMonth), uint(fromYear), uint(toMonth), uint(toYear))
 	if err != nil {
 		status, code := utility.GetErrorStatusAndCode(err)
 		return c.JSON(status, dto.ErrorResponse{
@@ -451,5 +464,60 @@ func (h *StudentExtracurricularHandler) CleanupExtracurricularInvoices(c echo.Co
 
 	return c.JSON(http.StatusOK, dto.SuccessResponse{
 		Message: "Item ekstrakurikuler berhasil dibersihkan dari invoice mendatang",
+	})
+}
+
+// PreviewCleanupExtracurricularInvoices godoc
+// @Summary      Preview pembersihan tagihan PASTA (dry-run)
+// @Description  Menampilkan item unpaid ekstrakurikuler yang AKAN dihapus dari
+//
+//	invoice bulanan siswa jika cleanup dijalankan — tanpa mengubah
+//	data apa pun. Gunakan untuk memverifikasi aksi sebelum
+//	mengeksekusi cleanup-invoices.
+//
+// @Tags         student-extracurriculars
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id                  path  int  true  "Student ID"
+// @Param        extracurricular_id  path  int  true  "Extracurricular ID"
+// @Success      200  {object}  dto.SuccessResponse{data=dto.ExtracurricularCleanupPreviewResponse}
+// @Failure      400  {object}  dto.ErrorResponse
+// @Failure      401  {object}  dto.ErrorResponse
+// @Failure      403  {object}  dto.ErrorResponse
+// @Failure      500  {object}  dto.ErrorResponse
+// @Router       /v1/students/{id}/extracurriculars/{extracurricular_id}/cleanup-invoices/preview [post]
+func (h *StudentExtracurricularHandler) PreviewCleanupExtracurricularInvoices(c echo.Context) error {
+	studentID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status:  http.StatusBadRequest,
+			Code:    "BAD_REQUEST",
+			Message: "ID siswa tidak valid",
+		})
+	}
+
+	extracurricularID, err := strconv.Atoi(c.Param("extracurricular_id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status:  http.StatusBadRequest,
+			Code:    "BAD_REQUEST",
+			Message: "ID ekstrakurikuler tidak valid",
+		})
+	}
+
+	result, err := h.invoiceGen.PlanExtracurricularCleanupInvoices(uint(studentID), uint(extracurricularID))
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{
+			Status:  status,
+			Code:    code,
+			Message: err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "Preview pembersihan tagihan PASTA",
+		Data:    result,
 	})
 }

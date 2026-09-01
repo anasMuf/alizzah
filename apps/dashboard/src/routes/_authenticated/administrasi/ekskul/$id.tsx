@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { customInstance } from "#/api/mutator/custom-instance";
+import { buildAcademicYearMonths } from "#/components/molecules/BillingMonthsDialog";
 import { Badge, Button, EmptyState, useToast } from "#/components/ui";
 import { academicYearAtom } from "#/store/global";
 import {
@@ -19,6 +20,28 @@ import {
 	formatStatus,
 } from "#/utils/excel";
 
+const MONTH_SHORT = [
+	"Jan",
+	"Feb",
+	"Mar",
+	"Apr",
+	"Mei",
+	"Jun",
+	"Jul",
+	"Agu",
+	"Sep",
+	"Okt",
+	"Nov",
+	"Des",
+];
+
+const monthLabel = (m: { month: number; year: number }) =>
+	`${MONTH_SHORT[m.month - 1] ?? m.month} ${m.year}`;
+
+/** Urutan bulan sebagai angka unik (tahun*12 + bulan) untuk membandingkan rentang. */
+const monthIndex = (m?: { month: number; year: number }) =>
+	m ? m.year * 12 + m.month : Number.NEGATIVE_INFINITY;
+
 export const Route = createFileRoute("/_authenticated/administrasi/ekskul/$id")(
 	{
 		component: EkskulDetailPage,
@@ -27,6 +50,13 @@ export const Route = createFileRoute("/_authenticated/administrasi/ekskul/$id")(
 			level: typeof params.level === "string" ? params.level : undefined,
 			class_group:
 				typeof params.class_group === "string" ? params.class_group : undefined,
+			month_from:
+				typeof params.month_from === "string" ? params.month_from : undefined,
+			year_from:
+				typeof params.year_from === "string" ? params.year_from : undefined,
+			month_to:
+				typeof params.month_to === "string" ? params.month_to : undefined,
+			year_to: typeof params.year_to === "string" ? params.year_to : undefined,
 		}),
 	},
 );
@@ -41,6 +71,38 @@ function EkskulDetailPage() {
 	const search = searchParams.search ?? "";
 	const levelFilter = searchParams.level ?? "";
 	const classGroupFilter = searchParams.class_group ?? "";
+	const monthFrom = searchParams.month_from ?? "";
+	const yearFrom = searchParams.year_from ?? "";
+	const monthTo = searchParams.month_to ?? "";
+	const yearTo = searchParams.year_to ?? "";
+
+	// Bulan-bulan tahun ajaran aktif (Jul..Jun) — untuk filter periode tagihan
+	const ayMonths = useMemo(
+		() => buildAcademicYearMonths(activeAy?.start_date, activeAy?.end_date),
+		[activeAy],
+	);
+
+	// Rentang efektif: default bulan pertama s.d. akhir tahun ajaran
+	const rangeFrom = useMemo(() => {
+		if (monthFrom && yearFrom)
+			return { month: Number(monthFrom), year: Number(yearFrom) };
+		return ayMonths[0];
+	}, [monthFrom, yearFrom, ayMonths]);
+	const rangeTo = useMemo(() => {
+		if (monthTo && yearTo)
+			return { month: Number(monthTo), year: Number(yearTo) };
+		return ayMonths[ayMonths.length - 1];
+	}, [monthTo, yearTo, ayMonths]);
+
+	// Opsi bulan dibatasi agar "Dari" selalu <= "Sampai" (cegah rentang invalid)
+	const fromOptions = useMemo(
+		() => ayMonths.filter((m) => monthIndex(m) <= monthIndex(rangeTo)),
+		[ayMonths, rangeTo],
+	);
+	const toOptions = useMemo(
+		() => ayMonths.filter((m) => monthIndex(m) >= monthIndex(rangeFrom)),
+		[ayMonths, rangeFrom],
+	);
 
 	const [data, setData] = useState<any>(null);
 	const [loading, setLoading] = useState(true);
@@ -62,14 +124,25 @@ function EkskulDetailPage() {
 	// Fetch data
 	useEffect(() => {
 		if (!activeAy?.id) return;
+		const params = new URLSearchParams({
+			academic_year_id: String(activeAy.id),
+		});
+		if (rangeFrom) {
+			params.set("month_from", String(rangeFrom.month));
+			params.set("year_from", String(rangeFrom.year));
+		}
+		if (rangeTo) {
+			params.set("month_to", String(rangeTo.month));
+			params.set("year_to", String(rangeTo.year));
+		}
 		setLoading(true);
 		customInstance<any>(
-			`/v1/extracurriculars/${id}/students?academic_year_id=${activeAy.id}`,
+			`/v1/extracurriculars/${id}/students?${params.toString()}`,
 		)
 			.then((res: any) => setData(res.data?.data))
 			.catch((err: any) => setError(err.message ?? "Gagal memuat data"))
 			.finally(() => setLoading(false));
-	}, [activeAy?.id, id]);
+	}, [activeAy?.id, id, rangeFrom, rangeTo]);
 
 	const pasta = data;
 	const allStudents: any[] = pasta?.students ?? [];
@@ -182,7 +255,13 @@ function EkskulDetailPage() {
 				/\s+/g,
 				"-",
 			);
-			await downloadExcel(sheets, `Pasta-${safeName}`);
+			const periodSuffix =
+				rangeFrom && rangeTo
+					? `_${monthLabel(rangeFrom).replace(/\s+/g, "-")}-${monthLabel(
+							rangeTo,
+						).replace(/\s+/g, "-")}`
+					: "";
+			await downloadExcel(sheets, `Pasta-${safeName}${periodSuffix}`);
 
 			addToast({
 				variant: "success",
@@ -262,7 +341,11 @@ function EkskulDetailPage() {
 						{pasta.extracurricular_name}
 					</h1>
 					<p className="mt-1 text-sm text-gray-500">
-						{allStudents.length} siswa terdaftar • Tahun ajaran {activeAy.name}
+						{allStudents.length} siswa memiliki tagihan • Periode{" "}
+						{rangeFrom && rangeTo
+							? `${monthLabel(rangeFrom)} – ${monthLabel(rangeTo)}`
+							: ""}{" "}
+						• Tahun ajaran {activeAy.name}
 					</p>
 				</div>
 				<div className="mt-4 sm:mt-0">
@@ -299,6 +382,42 @@ function EkskulDetailPage() {
 						/>
 					</div>
 					<div className="flex w-full sm:w-auto gap-3">
+						<select
+							className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
+							value={rangeFrom ? `${rangeFrom.month}-${rangeFrom.year}` : ""}
+							onChange={(e) => {
+								const [mm, yy] = e.target.value.split("-");
+								updateSearch({ month_from: mm, year_from: yy });
+							}}
+							title="Bulan awal periode tagihan"
+						>
+							{fromOptions.map((m) => (
+								<option
+									key={`from-${m.month}-${m.year}`}
+									value={`${m.month}-${m.year}`}
+								>
+									Dari {monthLabel(m)}
+								</option>
+							))}
+						</select>
+						<select
+							className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
+							value={rangeTo ? `${rangeTo.month}-${rangeTo.year}` : ""}
+							onChange={(e) => {
+								const [mm, yy] = e.target.value.split("-");
+								updateSearch({ month_to: mm, year_to: yy });
+							}}
+							title="Bulan akhir periode tagihan"
+						>
+							{toOptions.map((m) => (
+								<option
+									key={`to-${m.month}-${m.year}`}
+									value={`${m.month}-${m.year}`}
+								>
+									Sampai {monthLabel(m)}
+								</option>
+							))}
+						</select>
 						<select
 							className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
 							value={levelFilter}
@@ -345,7 +464,7 @@ function EkskulDetailPage() {
 					description={
 						search || levelFilter || classGroupFilter
 							? "Tidak ada siswa yang cocok dengan filter."
-							: "Belum ada siswa yang terdaftar di pasta ini."
+							: "Belum ada siswa yang memiliki tagihan di pasta ini pada periode tersebut."
 					}
 				/>
 			) : (

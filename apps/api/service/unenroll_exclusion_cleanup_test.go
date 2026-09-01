@@ -28,6 +28,8 @@ func TestUnenrollExtracurricular_DeletesBillingExclusions(t *testing.T) {
 		repository.NewExtracurricularRepository(db),
 		repository.NewAcademicYearRepository(db),
 		repository.NewStudentEnrollmentRepository(db),
+		repository.NewFeeConfigRepository(db),
+		repository.NewFeeConfigItemRepository(db),
 		newTestInvoiceGen(t, db),
 		exclRepo,
 	)

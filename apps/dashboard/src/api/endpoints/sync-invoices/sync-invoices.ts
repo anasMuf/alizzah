@@ -42,6 +42,27 @@ export interface DaycarePreviewResponse {
 	items: DaycarePreviewItem[];
 }
 
+// ─── Cleanup preview PASTA (dry-run sebelum "Bersihkan tagihan PASTA") ───────
+
+export interface ExtracurricularCleanupPreviewItem {
+	invoice_id: number;
+	month: number;
+	year: number;
+	item_id: number;
+	item_name: string;
+	amount: number;
+}
+
+export interface ExtracurricularCleanupPreviewResponse {
+	student_id: number;
+	extracurricular_id: number;
+	extracurricular_name: string;
+	start_date: string;
+	total_items: number;
+	total_amount: number;
+	items: ExtracurricularCleanupPreviewItem[];
+}
+
 export interface ApiSuccessResponse<T> {
 	data: { message: string; data: T };
 	status: number;
@@ -65,5 +86,17 @@ export const postV1DaycareEnrollmentsPreviewSyncInvoices = async (
 	return customInstance<ApiSuccessResponse<DaycarePreviewResponse>>(
 		"/v1/daycare-enrollments/preview-sync-invoices",
 		{ ...options, method: "POST" },
+	);
+};
+
+export const postV1StudentsIdExtracurricularsCleanupInvoicesPreview = async (
+	studentId: number,
+	extracurricularId: number,
+): Promise<ApiSuccessResponse<ExtracurricularCleanupPreviewResponse>> => {
+	return customInstance<
+		ApiSuccessResponse<ExtracurricularCleanupPreviewResponse>
+	>(
+		`/v1/students/${studentId}/extracurriculars/${extracurricularId}/cleanup-invoices/preview`,
+		{ method: "POST" },
 	);
 };

@@ -358,7 +358,7 @@ func main() {
 	enrollmentService := service.NewStudentEnrollmentService(db, enrollmentRepo, studentRepo, classGroupRepo, extracurricularRepo, seRepo, fcRepo, fcItemRepo, invoiceGenService, savingsService)
 	effectiveDayService := service.NewEffectiveDayService(effectiveDayRepo, classGroupRepo, invoiceGenService)
 	extracurricularService := service.NewExtracurricularService(db, extracurricularRepo, fcRepo, fcItemRepo)
-	seService := service.NewStudentExtracurricularService(db, seRepo, studentRepo, extracurricularRepo, ayRepo, enrollmentRepo, invoiceGenService, billingExclusionRepo)
+	seService := service.NewStudentExtracurricularService(db, seRepo, studentRepo, extracurricularRepo, ayRepo, enrollmentRepo, fcRepo, fcItemRepo, invoiceGenService, billingExclusionRepo)
 	eventService := service.NewStudentAcademicEventService(eventRepo, studentRepo)
 	daycareService := service.NewDaycareEnrollmentService(db, daycareRepo, studentRepo, ayRepo, daycareMonthlyAttRepo, invoiceRepo, invoiceGenService)
 
@@ -591,6 +591,7 @@ func main() {
 	students.PUT("/:id/extracurriculars/:se_id", seHandler.Update, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.DELETE("/:id/extracurriculars/:se_id", seHandler.Unenroll, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.POST("/:id/extracurriculars/:extracurricular_id/cleanup-invoices", seHandler.CleanupExtracurricularInvoices, guard.RequireModule(middleware.ModuleAdministrasi))
+	students.POST("/:id/extracurriculars/:extracurricular_id/cleanup-invoices/preview", seHandler.PreviewCleanupExtracurricularInvoices, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.GET("/:id/extracurriculars/:se_id/billing-exclusions", billingExclusionHandler.GetExtracurricular, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.PUT("/:id/extracurriculars/:se_id/billing-exclusions", billingExclusionHandler.SetExtracurricular, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.GET("/:id/dispensations", dispensationHandler.ListByStudent, guard.RequireModule(middleware.ModuleKeuangan))

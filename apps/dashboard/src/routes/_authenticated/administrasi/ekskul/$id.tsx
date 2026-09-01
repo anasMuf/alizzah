@@ -436,7 +436,7 @@ function EkskulDetailPage() {
 							))}
 						</select>
 						<select
-							className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
+							className="block w-full sm:w-auto rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
 							value={levelFilter}
 							onChange={(e) =>
 								updateSearch({
@@ -453,7 +453,7 @@ function EkskulDetailPage() {
 							))}
 						</select>
 						<select
-							className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
+							className="block w-full sm:w-auto rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
 							value={classGroupFilter}
 							onChange={(e) =>
 								updateSearch({ class_group: e.target.value || undefined })

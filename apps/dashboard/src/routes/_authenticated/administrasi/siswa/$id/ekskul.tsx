@@ -584,8 +584,8 @@ function SiswaEkskulPage() {
 			>
 				<p>
 					Anda yakin ingin menghentikan siswa dari{" "}
-					<strong>{selectedSeName}</strong>? Tagihan bulan ini ke depan yang
-					belum dibayar akan otomatis dihapus.
+					<strong>{selectedSeName}</strong>? Tagihan PASTA ini yang belum
+					dibayar (termasuk bulan sebelumnya) akan otomatis dihapus.
 				</p>
 			</ConfirmDialog>
 

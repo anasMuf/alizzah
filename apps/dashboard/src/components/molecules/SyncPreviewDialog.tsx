@@ -9,8 +9,9 @@ export interface SyncPreviewSummaryItem {
 
 export interface SyncPreviewRow {
 	key: string;
-	student_name: string;
-	/** Deskripsi aksi untuk siswa ini (mis. nama kegiatan + bulan yang ditambah). */
+	/** Label utama baris (mis. nama siswa, atau bulan "Agustus 2026"). */
+	title: string;
+	/** Deskripsi aksi untuk baris ini (mis. nama kegiatan + nominal). */
 	action: string;
 	/** "change" = akan mengubah data; "skip" = dilewati tanpa perubahan. */
 	status: "change" | "skip";
@@ -22,18 +23,28 @@ interface SyncPreviewDialogProps {
 	title: string;
 	description: string;
 	confirmLabel?: string;
-	/** Memuat rencana sync (dry-run). Dipanggil setiap dialog dibuka. */
+	/** Varian tombol konfirmasi — "danger" untuk aksi destruktif (mis. hapus). */
+	confirmVariant?: "primary" | "danger";
+	/** Label tombol saat sedang menjalankan aksi. */
+	runningLabel?: string;
+	/** Teks saat tidak ada baris yang perlu diubah. */
+	emptyText?: string;
+	/** Label badge untuk baris ber-status "change". */
+	changeLabel?: string;
+	/** Label badge untuk baris ber-status "skip". */
+	skipLabel?: string;
+	/** Memuat rencana aksi (dry-run). Dipanggil setiap dialog dibuka. */
 	loadPreview: () => Promise<{
 		summary: SyncPreviewSummaryItem[];
 		rows: SyncPreviewRow[];
 	}>;
-	/** Menjalankan sinkronisasi sesungguhnya. Toast sukses/gagal ditangani pemanggil. */
+	/** Menjalankan aksi sesungguhnya. Toast sukses/gagal ditangani pemanggil. */
 	runSync: () => Promise<void>;
 }
 
 /**
- * Dialog "Preview Sinkronisasi": menampilkan rencana aksi sync (dry-run) sebelum
- * dieksekusi. Tombol "Jalankan" dinonaktifkan bila tidak ada perubahan.
+ * Dialog "Preview Aksi": menampilkan rencana aksi (dry-run) sebelum dieksekusi.
+ * Tombol konfirmasi dinonaktifkan bila tidak ada baris ber-status "change".
  */
 export function SyncPreviewDialog({
 	open,
@@ -41,6 +52,11 @@ export function SyncPreviewDialog({
 	title,
 	description,
 	confirmLabel = "Jalankan Sinkronisasi",
+	confirmVariant = "primary",
+	runningLabel = "Menyinkronkan...",
+	emptyText = "Tidak ada enrollment aktif. Tidak ada yang perlu disinkronkan.",
+	changeLabel = "Ditambah",
+	skipLabel = "Dilewati",
 	loadPreview,
 	runSync,
 }: SyncPreviewDialogProps) {
@@ -102,14 +118,14 @@ export function SyncPreviewDialog({
 						Batal
 					</Button>
 					<Button
-						variant="primary"
+						variant={confirmVariant}
 						onClick={handleRun}
 						disabled={loading || running || !hasChanges}
 					>
 						<RefreshCw
 							className={`mr-2 h-4 w-4 ${running ? "animate-spin" : ""}`}
 						/>
-						{running ? "Menyinkronkan..." : confirmLabel}
+						{running ? runningLabel : confirmLabel}
 					</Button>
 				</>
 			}
@@ -123,7 +139,7 @@ export function SyncPreviewDialog({
 					</div>
 				) : rows.length === 0 ? (
 					<div className="rounded-md bg-gray-50 p-6 text-center text-sm text-gray-500">
-						Tidak ada enrollment aktif. Tidak ada yang perlu disinkronkan.
+						{emptyText}
 					</div>
 				) : (
 					<>
@@ -146,14 +162,14 @@ export function SyncPreviewDialog({
 								<li key={r.key} className="flex items-start gap-3 px-4 py-3">
 									<div className="min-w-0 flex-1">
 										<p className="text-sm font-medium text-gray-900">
-											{r.student_name}
+											{r.title}
 										</p>
 										<p className="mt-0.5 text-xs text-gray-500">{r.action}</p>
 									</div>
 									<Badge
 										variant={r.status === "change" ? "success" : "secondary"}
 									>
-										{r.status === "change" ? "Ditambah" : "Dilewati"}
+										{r.status === "change" ? changeLabel : skipLabel}
 									</Badge>
 								</li>
 							))}

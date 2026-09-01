@@ -25,11 +25,17 @@ import {
 	useGetV1StudentsIdExtracurriculars,
 	usePostV1StudentsIdExtracurriculars,
 } from "#/api/endpoints/student-extracurriculars/student-extracurriculars";
+import { postV1StudentsIdExtracurricularsCleanupInvoicesPreview } from "#/api/endpoints/sync-invoices/sync-invoices";
 import { ApiError, customInstance } from "#/api/mutator/custom-instance";
 import {
 	BillingMonthsDialog,
 	buildAcademicYearMonths,
 } from "#/components/molecules/BillingMonthsDialog";
+import {
+	SyncPreviewDialog,
+	type SyncPreviewRow,
+	type SyncPreviewSummaryItem,
+} from "#/components/molecules/SyncPreviewDialog";
 import {
 	Badge,
 	Button,
@@ -44,6 +50,28 @@ export const Route = createFileRoute(
 	component: SiswaEkskulPage,
 });
 
+const MONTH_NAMES = [
+	"Januari",
+	"Februari",
+	"Maret",
+	"April",
+	"Mei",
+	"Juni",
+	"Juli",
+	"Agustus",
+	"September",
+	"Oktober",
+	"November",
+	"Desember",
+];
+
+const formatRupiah = (amount: number) =>
+	new Intl.NumberFormat("id-ID", {
+		style: "currency",
+		currency: "IDR",
+		minimumFractionDigits: 0,
+	}).format(amount);
+
 function SiswaEkskulPage() {
 	const { id } = Route.useParams();
 	const studentId = Number(id);
@@ -54,7 +82,10 @@ function SiswaEkskulPage() {
 	const [isUnenrollOpen, setIsUnenrollOpen] = useState(false);
 	const [selectedSeId, setSelectedSeId] = useState<number | null>(null);
 	const [selectedSeName, setSelectedSeName] = useState("");
-	const [cleanupLoading, setCleanupLoading] = useState<number | null>(null);
+	const [cleanupTarget, setCleanupTarget] = useState<{
+		exId: number;
+		name: string;
+	} | null>(null);
 	const [billingTarget, setBillingTarget] = useState<{
 		seId: number;
 		name: string;
@@ -215,8 +246,7 @@ function SiswaEkskulPage() {
 		}
 	};
 
-	const handleCleanup = async (extracurricularId: number) => {
-		setCleanupLoading(extracurricularId);
+	const runCleanup = async (extracurricularId: number) => {
 		try {
 			await customInstance(
 				`/v1/students/${studentId}/extracurriculars/${extracurricularId}/cleanup-invoices`,
@@ -232,9 +262,37 @@ function SiswaEkskulPage() {
 			const msg =
 				error instanceof ApiError ? error.message : "Terjadi kesalahan";
 			addToast({ variant: "error", title: "Gagal", message: msg });
-		} finally {
-			setCleanupLoading(null);
+			throw error; // dialog tetap terbuka — user bisa coba lagi atau batal
 		}
+	};
+
+	const loadCleanupPreview = async (): Promise<{
+		summary: SyncPreviewSummaryItem[];
+		rows: SyncPreviewRow[];
+	}> => {
+		if (!cleanupTarget || cleanupTarget.exId === 0) {
+			return { summary: [], rows: [] };
+		}
+		const res = await postV1StudentsIdExtracurricularsCleanupInvoicesPreview(
+			studentId,
+			cleanupTarget.exId,
+		);
+		const d = res.data.data;
+
+		const rows: SyncPreviewRow[] = d.items.map((it) => ({
+			key: `${it.item_id}`,
+			title: `${MONTH_NAMES[it.month - 1] ?? it.month} ${it.year}`,
+			action: `${it.item_name} — ${formatRupiah(it.amount)}`,
+			status: "change",
+		}));
+		const invoiceCount = new Set(d.items.map((it) => `${it.year}-${it.month}`))
+			.size;
+		const summary: SyncPreviewSummaryItem[] = [
+			{ label: "Item dihapus", value: d.total_items },
+			{ label: "Total", value: formatRupiah(d.total_amount) },
+			{ label: "Invoice", value: invoiceCount },
+		];
+		return { summary, rows };
 	};
 
 	if (isLoading) {
@@ -445,13 +503,13 @@ function SiswaEkskulPage() {
 																variant="ghost"
 																size="sm"
 																className="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
-																disabled={
-																	cleanupLoading === se.extracurricular?.id
-																}
 																onClick={() =>
-																	handleCleanup(se.extracurricular?.id)
+																	setCleanupTarget({
+																		exId: se.extracurricular?.id ?? 0,
+																		name: se.extracurricular?.name || "PASTA",
+																	})
 																}
-																title="Bersihkan tagihan PASTA ini dari invoice"
+																title="Pratinjau & bersihkan tagihan PASTA ini dari invoice"
 															>
 																<Eraser className="h-4 w-4" />
 															</Button>
@@ -588,6 +646,28 @@ function SiswaEkskulPage() {
 					dibayar (termasuk bulan sebelumnya) akan otomatis dihapus.
 				</p>
 			</ConfirmDialog>
+
+			{/* Dialog Preview Bersihkan Tagihan PASTA — dry-run sebelum eksekusi */}
+			<SyncPreviewDialog
+				open={!!cleanupTarget}
+				onClose={() => setCleanupTarget(null)}
+				title={
+					cleanupTarget
+						? `Bersihkan Tagihan — ${cleanupTarget.name}`
+						: "Bersihkan Tagihan"
+				}
+				description="Pratinjau item unpaid yang akan dihapus dari invoice bulanan. Item yang sudah dibayar tidak akan disentuh."
+				confirmLabel="Bersihkan Tagihan"
+				confirmVariant="danger"
+				runningLabel="Membersihkan..."
+				emptyText="Tidak ada item unpaid yang perlu dibersihkan."
+				changeLabel="Dihapus"
+				loadPreview={loadCleanupPreview}
+				runSync={async () => {
+					if (!cleanupTarget) return;
+					await runCleanup(cleanupTarget.exId);
+				}}
+			/>
 
 			{/* Dialog Kelola Bulan — skip tagihan bulanan PASTA */}
 			<BillingMonthsDialog

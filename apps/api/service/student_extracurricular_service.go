@@ -20,7 +20,10 @@ type StudentExtracurricularService interface {
 	Update(studentID, seID uint, req dto.UpdateStudentExtracurricularRequest) (*dto.StudentExtracurricularResponse, error)
 	Unenroll(studentID, seID uint) error
 	ExportByAcademicYear(academicYearID uint) ([]dto.ExtracurricularExportItem, error)
-	GetStudentsByExtracurricular(extracurricularID, academicYearID uint) (*dto.ExtracurricularExportItem, error)
+	// GetStudentsByExtracurricular mengembalikan siswa yang MEMILIKI item tagihan
+	// PASTA pada rentang bulan (fromMonth..toMonth). Bila semua param rentang 0 →
+	// default bulan pertama s.d. akhir tahun ajaran.
+	GetStudentsByExtracurricular(extracurricularID, academicYearID, fromMonth, fromYear, toMonth, toYear uint) (*dto.ExtracurricularExportItem, error)
 }
 
 type studentExtracurricularService struct {
@@ -30,11 +33,13 @@ type studentExtracurricularService struct {
 	exRepo         repository.ExtracurricularRepository
 	acRepo         repository.AcademicYearRepository
 	enrollmentRepo repository.StudentEnrollmentRepository
+	feeConfigRepo  repository.FeeConfigRepository
+	feeItemRepo    repository.FeeConfigItemRepository
 	invoiceGen     InvoiceGenerateService
 	exclRepo       repository.BillingMonthExclusionRepository
 }
 
-func NewStudentExtracurricularService(db *gorm.DB, seRepo repository.StudentExtracurricularRepository, studentRepo repository.StudentRepository, exRepo repository.ExtracurricularRepository, acRepo repository.AcademicYearRepository, enrollmentRepo repository.StudentEnrollmentRepository, invoiceGen InvoiceGenerateService, exclRepo repository.BillingMonthExclusionRepository) StudentExtracurricularService {
+func NewStudentExtracurricularService(db *gorm.DB, seRepo repository.StudentExtracurricularRepository, studentRepo repository.StudentRepository, exRepo repository.ExtracurricularRepository, acRepo repository.AcademicYearRepository, enrollmentRepo repository.StudentEnrollmentRepository, feeConfigRepo repository.FeeConfigRepository, feeItemRepo repository.FeeConfigItemRepository, invoiceGen InvoiceGenerateService, exclRepo repository.BillingMonthExclusionRepository) StudentExtracurricularService {
 	return &studentExtracurricularService{
 		db:             db,
 		seRepo:         seRepo,
@@ -42,6 +47,8 @@ func NewStudentExtracurricularService(db *gorm.DB, seRepo repository.StudentExtr
 		exRepo:         exRepo,
 		acRepo:         acRepo,
 		enrollmentRepo: enrollmentRepo,
+		feeConfigRepo:  feeConfigRepo,
+		feeItemRepo:    feeItemRepo,
 		invoiceGen:     invoiceGen,
 		exclRepo:       exclRepo,
 	}
@@ -192,14 +199,39 @@ func (s *studentExtracurricularService) Unenroll(studentID, seID uint) error {
 	return nil
 }
 
-// GetStudentsByExtracurricular returns one extracurricular with its enrolled students.
-func (s *studentExtracurricularService) GetStudentsByExtracurricular(extracurricularID, academicYearID uint) (*dto.ExtracurricularExportItem, error) {
+// GetStudentsByExtracurricular returns one extracurricular with students that have
+// PASTA billing items in the given month range (billing-based "aktif di periode").
+// Bila semua param rentang 0 → default bulan pertama s.d. akhir tahun ajaran.
+func (s *studentExtracurricularService) GetStudentsByExtracurricular(extracurricularID, academicYearID, fromMonth, fromYear, toMonth, toYear uint) (*dto.ExtracurricularExportItem, error) {
 	ex, err := s.exRepo.FindByID(extracurricularID)
 	if err != nil {
 		return nil, errors.New("Ekstrakurikuler tidak ditemukan")
 	}
 
-	ses, err := s.seRepo.FindActiveByExtracurricularID(extracurricularID, academicYearID)
+	// Default rentang = bulan pertama s.d. akhir tahun ajaran bila tidak dikirim
+	if fromMonth == 0 || fromYear == 0 || toMonth == 0 || toYear == 0 {
+		ay, err := s.acRepo.FindByID(academicYearID)
+		if err != nil {
+			return nil, errors.New("Tahun ajaran tidak ditemukan")
+		}
+		fromMonth, fromYear = uint(ay.StartDate.Month()), uint(ay.StartDate.Year())
+		toMonth, toYear = uint(ay.EndDate.Month()), uint(ay.EndDate.Year())
+	}
+
+	// Fee items PASTA ini untuk mencocokkan invoice_items (name+category). Bila fee
+	// config belum ada → tidak ada item tagihan → daftar kosong (bukan error).
+	feeConfig, err := s.feeConfigRepo.FindByAcademicYearID(academicYearID)
+	if err != nil {
+		return &dto.ExtracurricularExportItem{
+			ExtracurricularID:   ex.ID,
+			ExtracurricularName: ex.Name,
+			Students:            []dto.ExtracurricularExportStudent{},
+		}, nil
+	}
+	feeItems, _ := s.feeItemRepo.FindByExtracurricular(feeConfig.ID, ex.Type, ex.Name)
+
+	// Siswa yang MEMILIKI item tagihan PASTA dalam rentang bulan
+	students, err := s.seRepo.FindStudentsByExtracurricularBilling(academicYearID, fromMonth, fromYear, toMonth, toYear, feeItems)
 	if err != nil {
 		return nil, fmt.Errorf("gagal mengambil data siswa: %w", err)
 	}
@@ -216,28 +248,28 @@ func (s *studentExtracurricularService) GetStudentsByExtracurricular(extracurric
 		classGroupLevelByStudent[enr.StudentID] = enr.ClassGroup.Level
 	}
 
-	students := make([]dto.ExtracurricularExportStudent, 0, len(ses))
-	for _, se := range ses {
+	studentsResp := make([]dto.ExtracurricularExportStudent, 0, len(students))
+	for _, st := range students {
 		bd := ""
-		if !se.Student.BirthDate.IsZero() {
-			bd = se.Student.BirthDate.Format("2006-01-02")
+		if !st.BirthDate.IsZero() {
+			bd = st.BirthDate.Format("2006-01-02")
 		}
-		students = append(students, dto.ExtracurricularExportStudent{
-			ID:              se.Student.ID,
-			FullName:        se.Student.FullName,
-			Gender:          se.Student.Gender,
-			BirthPlace:      se.Student.BirthPlace,
+		studentsResp = append(studentsResp, dto.ExtracurricularExportStudent{
+			ID:              st.ID,
+			FullName:        st.FullName,
+			Gender:          st.Gender,
+			BirthPlace:      st.BirthPlace,
 			BirthDate:       bd,
-			Status:          se.Student.Status,
-			ClassGroupName:  classGroupByStudent[se.StudentID],
-			ClassGroupLevel: classGroupLevelByStudent[se.StudentID],
+			Status:          st.Status,
+			ClassGroupName:  classGroupByStudent[st.ID],
+			ClassGroupLevel: classGroupLevelByStudent[st.ID],
 		})
 	}
 
 	return &dto.ExtracurricularExportItem{
 		ExtracurricularID:   ex.ID,
 		ExtracurricularName: ex.Name,
-		Students:            students,
+		Students:            studentsResp,
 	}, nil
 }
 

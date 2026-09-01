@@ -33,6 +33,9 @@ type InvoiceGenerateService interface {
 	// dibersihkan, termasuk bulan sebelum end_date).
 	RemoveExtracurricularInvoices(studentID, extracurricularID, academicYearID uint, startDate time.Time) error
 	CleanupExtracurricularInvoices(studentID, extracurricularID uint) error
+	// PlanExtracurricularCleanupInvoices menghitung (dry-run) item yang akan dihapus
+	// oleh CleanupExtracurricularInvoices — read-only, untuk preview UI.
+	PlanExtracurricularCleanupInvoices(studentID, extracurricularID uint) (*dto.ExtracurricularCleanupPreviewResponse, error)
 	SyncExtracurricularMonthlyInvoices() (*dto.ExtracurricularSyncResult, error)
 	// PlanExtracurricularSync menghitung rencana sync (dry-run, read-only).
 	PlanExtracurricularSync() (*dto.ExtracurricularPreviewResponse, error)
@@ -884,20 +887,33 @@ func (s *invoiceGenerateService) feeItemsToAddForMonth(invoiceID, month uint, le
 	return toAdd
 }
 
-func (s *invoiceGenerateService) RemoveExtracurricularInvoices(studentID, extracurricularID, academicYearID uint, startDate time.Time) error {
+// extracurricularRemovalCandidate — item unpaid ekskul yang akan dihapus beserta
+// bulan invoice-nya. Dipakai bersama RemoveExtracurricularInvoices (apply) dan
+// PlanExtracurricularCleanupInvoices (preview) agar keduanya tidak pernah divergen.
+type extracurricularRemovalCandidate struct {
+	Item  model.InvoiceItem
+	Month uint
+	Year  uint
+}
+
+// extracurricularItemsToRemove mengumpulkan item unpaid ekskul yang cocok
+// (name+category fee config, bulan >= startDate) dari invoice bulanan siswa.
+// Perilaku error meniru implementasi lama: fee config tidak ditemukan / query
+// invoice gagal → kandidat kosong (no-op), bukan error.
+func (s *invoiceGenerateService) extracurricularItemsToRemove(studentID, extracurricularID, academicYearID uint, startDate time.Time) ([]extracurricularRemovalCandidate, error) {
 	ex, err := s.extracurricularRepo.FindByID(extracurricularID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	feeConfig, err := s.feeConfigRepo.FindByAcademicYearID(academicYearID)
 	if err != nil {
-		return nil
+		return nil, nil
 	}
 
 	feeItems, _ := s.feeConfigItemRepo.FindByExtracurricular(feeConfig.ID, ex.Type, ex.Name)
 	if len(feeItems) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	// Lower bound = bulan MULAI enrollment: item hanya dibuat mulai bulan itu
@@ -909,25 +925,46 @@ func (s *invoiceGenerateService) RemoveExtracurricularInvoices(studentID, extrac
 
 	invoices, err := s.invoiceRepo.FindMonthlyByStudentFromMonth(studentID, fromMonth, fromYear)
 	if err != nil {
-		return nil
+		return nil, nil
 	}
 
+	var candidates []extracurricularRemovalCandidate
 	for _, inv := range invoices {
+		if inv.Month == nil || inv.Year == nil {
+			continue
+		}
 		items, _ := s.invoiceItemRepo.FindByInvoiceID(inv.ID)
-		anyChange := false
 		for _, item := range items {
 			for _, feeItem := range feeItems {
 				if item.Name == feeItem.Name && item.Category == feeItem.Category && item.PaidAmount == 0 {
-					// Hard delete — hindari soft-delete agar tidak menyebabkan duplikat saat enrollment ulang.
-					s.db.Unscoped().Delete(&model.InvoiceItem{}, item.ID)
-					anyChange = true
+					candidates = append(candidates, extracurricularRemovalCandidate{
+						Item:  item,
+						Month: *inv.Month,
+						Year:  *inv.Year,
+					})
+					break
 				}
 			}
 		}
-		// Selalu recalculate jika ada perubahan — mencegah total mismatch
-		if anyChange {
-			s.recalculateInvoiceTotal(inv.ID)
-		}
+	}
+	return candidates, nil
+}
+
+func (s *invoiceGenerateService) RemoveExtracurricularInvoices(studentID, extracurricularID, academicYearID uint, startDate time.Time) error {
+	candidates, err := s.extracurricularItemsToRemove(studentID, extracurricularID, academicYearID, startDate)
+	if err != nil || len(candidates) == 0 {
+		return err
+	}
+
+	changed := make(map[uint]bool)
+	for _, c := range candidates {
+		// Hard delete — hindari soft-delete agar tidak menyebabkan duplikat saat enrollment ulang.
+		s.db.Unscoped().Delete(&model.InvoiceItem{}, c.Item.ID)
+		changed[c.Item.InvoiceID] = true
+	}
+	// Selalu recalculate jika ada perubahan — mencegah total mismatch
+	for invoiceID := range changed {
+		s.recalculateInvoiceTotal(invoiceID)
 	}
 
 	return nil
@@ -1114,6 +1151,58 @@ func (s *invoiceGenerateService) CleanupExtracurricularInvoices(studentID, extra
 	return s.RemoveExtracurricularInvoices(
 		studentID, extracurricularID, enr.AcademicYearID, startDate,
 	)
+}
+
+// PlanExtracurricularCleanupInvoices menghitung (dry-run) item unpaid ekskul yang
+// akan dihapus oleh CleanupExtracurricularInvoices, tanpa mengubah data apa pun.
+// Resolusi tahun ajaran & start_date serta logika pemilihan item IDENTIK dengan
+// jalur eksekusi agar preview selalu akurat (lihat extracurricularItemsToRemove).
+func (s *invoiceGenerateService) PlanExtracurricularCleanupInvoices(studentID, extracurricularID uint) (*dto.ExtracurricularCleanupPreviewResponse, error) {
+	// Cari tahun ajaran aktif dari enrollment (sama seperti CleanupExtracurricularInvoices)
+	enr, err := s.enrollmentRepo.FindActiveByStudentID(studentID)
+	if err != nil {
+		return nil, fmt.Errorf("enrollment aktif tidak ditemukan untuk siswa %d: %w", studentID, err)
+	}
+
+	startDate := time.Now()
+	exName := ""
+	if se, err := s.seRepo.FindByStudentAndExtracurricular(studentID, extracurricularID, enr.AcademicYearID); err == nil && se != nil {
+		startDate = se.StartDate
+		if se.Extracurricular.Name != "" {
+			exName = se.Extracurricular.Name
+		}
+	}
+	if exName == "" {
+		if ex, err := s.extracurricularRepo.FindByID(extracurricularID); err == nil {
+			exName = ex.Name
+		}
+	}
+
+	candidates, err := s.extracurricularItemsToRemove(studentID, extracurricularID, enr.AcademicYearID, startDate)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &dto.ExtracurricularCleanupPreviewResponse{
+		StudentID:           studentID,
+		ExtracurricularID:   extracurricularID,
+		ExtracurricularName: exName,
+		StartDate:           startDate.Format("2006-01-02"),
+		Items:               make([]dto.ExtracurricularCleanupPreviewItem, 0, len(candidates)),
+	}
+	for _, c := range candidates {
+		resp.Items = append(resp.Items, dto.ExtracurricularCleanupPreviewItem{
+			InvoiceID: c.Item.InvoiceID,
+			Month:     c.Month,
+			Year:      c.Year,
+			ItemID:    c.Item.ID,
+			ItemName:  c.Item.Name,
+			Amount:    c.Item.Amount,
+		})
+		resp.TotalAmount += c.Item.Amount
+	}
+	resp.TotalItems = len(resp.Items)
+	return resp, nil
 }
 
 // SyncExtracurricularMonthlyInvoices backfills extracurricular items into existing monthly invoices.

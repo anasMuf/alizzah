@@ -20,6 +20,8 @@ func MigrateRolesToModules(db *gorm.DB) {
 		"admin_administrasi": {middleware.ModuleAdministrasi},
 		"admin_keuangan":     {middleware.ModuleKeuangan},
 		"admin_koperasi":     {middleware.ModuleKoperasi},
+		"admin_sdm":          {middleware.ModuleSDM},
+		"bendahara":          {middleware.ModuleSDM, middleware.ModuleKeuangan},
 		"kepala_sekolah":     {middleware.ModuleLaporan},
 		"yayasan":            {middleware.ModuleLaporan},
 	}

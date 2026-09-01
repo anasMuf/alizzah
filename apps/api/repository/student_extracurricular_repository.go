@@ -121,7 +121,7 @@ func (r *studentExtracurricularRepository) FindStudentsByExtracurricularBilling(
 
 	var students []model.Student
 	err := r.db.Distinct("students.*").
-		Joins("JOIN invoices i ON i.student_id = students.id AND i.type = 'monthly' AND i.academic_year_id = ?", academicYearID).
+		Joins("JOIN invoices i ON i.student_id = students.id AND i.type = 'monthly' AND i.academic_year_id = ? AND i.deleted_at IS NULL", academicYearID).
 		Joins("JOIN invoice_items ii ON ii.invoice_id = i.id AND ii.deleted_at IS NULL").
 		Where(nameCond, args...).
 		Where("(i.year > ? OR (i.year = ? AND i.month >= ?))", fromYear, fromYear, fromMonth).

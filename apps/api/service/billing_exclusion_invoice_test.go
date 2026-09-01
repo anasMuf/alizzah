@@ -419,25 +419,18 @@ func TestGetStudentsByExtracurricular_BillingInRange(t *testing.T) {
 	require.NoError(t, db.Create(&model.InvoiceItem{InvoiceID: decInv.ID, Name: "Robotika", Category: "pasta", Amount: 100000, IsMandatory: true}).Error)
 
 	svc := newTestStudentExtracurricularSvc(t, db)
-	names := func(item *dto.ExtracurricularExportItem) []string {
-		var out []string
-		for _, s := range item.Students {
-			out = append(out, s.FullName)
-		}
-		return out
-	}
 
 	// Rentang Agu-Nov 2025 → hanya siswa A
 	item, err := svc.GetStudentsByExtracurricular(fx.ExID, fx.AcademicYear.ID, 8, 2025, 11, 2025)
 	require.NoError(t, err)
-	assert.Contains(t, names(item), "Anak Test")
-	assert.NotContains(t, names(item), "Siswa B")
+	assert.Contains(t, exportStudentNames(item), "Anak Test")
+	assert.NotContains(t, exportStudentNames(item), "Siswa B")
 
 	// Default setahun penuh (semua param 0) → keduanya muncul
 	itemFull, err := svc.GetStudentsByExtracurricular(fx.ExID, fx.AcademicYear.ID, 0, 0, 0, 0)
 	require.NoError(t, err)
-	assert.Contains(t, names(itemFull), "Anak Test")
-	assert.Contains(t, names(itemFull), "Siswa B")
+	assert.Contains(t, exportStudentNames(itemFull), "Anak Test")
+	assert.Contains(t, exportStudentNames(itemFull), "Siswa B")
 }
 
 func TestGetStudentsByExtracurricular_PaidItemStillCounts(t *testing.T) {
@@ -454,6 +447,62 @@ func TestGetStudentsByExtracurricular_PaidItemStillCounts(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, item.Students, 1)
 	assert.Equal(t, "Anak Test", item.Students[0].FullName)
+}
+
+func exportStudentNames(item *dto.ExtracurricularExportItem) []string {
+	var out []string
+	for _, s := range item.Students {
+		out = append(out, s.FullName)
+	}
+	return out
+}
+
+func TestGetStudentsByExtracurricular_NoFeeConfigReturnsEmpty(t *testing.T) {
+	db := setupBillingExclusionInvoiceTestDB(t)
+	fx := seedExclusionBaseFixture(t, db, false)
+
+	// Hapus fee config tahun ajaran — tidak ada item tagihan yang bisa dicocokkan
+	var fc model.FeeConfig
+	require.NoError(t, db.Where("academic_year_id = ?", fx.AcademicYear.ID).First(&fc).Error)
+	require.NoError(t, db.Unscoped().Where("fee_config_id = ?", fc.ID).Delete(&model.FeeConfigItem{}).Error)
+	require.NoError(t, db.Unscoped().Delete(&model.FeeConfig{}, fc.ID).Error)
+
+	svc := newTestStudentExtracurricularSvc(t, db)
+	item, err := svc.GetStudentsByExtracurricular(fx.ExID, fx.AcademicYear.ID, 0, 0, 0, 0)
+	require.NoError(t, err)
+	assert.Empty(t, item.Students, "tanpa fee config → daftar kosong (bukan error)")
+}
+
+func TestGetStudentsByExtracurricular_CrossYearRange(t *testing.T) {
+	db := setupBillingExclusionInvoiceTestDB(t)
+	fx := seedExclusionInvoiceFixture(t, db)
+
+	// Siswa A: item Desember 2025
+	var decInv model.Invoice
+	require.NoError(t, db.Where("student_id = ? AND month = ? AND year = ?", fx.StudentID, 12, 2025).First(&decInv).Error)
+	require.NoError(t, db.Create(&model.InvoiceItem{InvoiceID: decInv.ID, Name: "Robotika", Category: "pasta", Amount: 100000, IsMandatory: true}).Error)
+
+	// Siswa B: item Januari 2026
+	studentB := model.Student{FullName: "Siswa B", BirthPlace: "Jakarta", BirthDate: time.Date(2018, 1, 1, 0, 0, 0, 0, time.UTC), Gender: "P", Status: "active"}
+	require.NoError(t, db.Create(&studentB).Error)
+	m, y := uint(1), uint(2026)
+	janInv := model.Invoice{StudentID: studentB.ID, AcademicYearID: fx.AcademicYear.ID, Type: "monthly", Month: &m, Year: &y, Status: "unpaid", TotalAmount: 0}
+	require.NoError(t, db.Create(&janInv).Error)
+	require.NoError(t, db.Create(&model.InvoiceItem{InvoiceID: janInv.ID, Name: "Robotika", Category: "pasta", Amount: 100000, IsMandatory: true}).Error)
+
+	svc := newTestStudentExtracurricularSvc(t, db)
+
+	// Rentang lintas tahun Des 2025 - Feb 2026 → keduanya
+	item, err := svc.GetStudentsByExtracurricular(fx.ExID, fx.AcademicYear.ID, 12, 2025, 2, 2026)
+	require.NoError(t, err)
+	assert.Contains(t, exportStudentNames(item), "Anak Test")
+	assert.Contains(t, exportStudentNames(item), "Siswa B")
+
+	// Rentang hanya Jan 2026 → hanya siswa B
+	itemJan, err := svc.GetStudentsByExtracurricular(fx.ExID, fx.AcademicYear.ID, 1, 2026, 1, 2026)
+	require.NoError(t, err)
+	assert.NotContains(t, exportStudentNames(itemJan), "Anak Test")
+	assert.Contains(t, exportStudentNames(itemJan), "Siswa B")
 }
 
 // --- Skip di jalur generate ---

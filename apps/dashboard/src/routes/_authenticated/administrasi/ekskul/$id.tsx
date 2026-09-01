@@ -42,6 +42,23 @@ const monthLabel = (m: { month: number; year: number }) =>
 const monthIndex = (m?: { month: number; year: number }) =>
 	m ? m.year * 12 + m.month : Number.NEGATIVE_INFINITY;
 
+/**
+ * Mengurai rentang dari URL, tetapi hanya jika ada di daftar bulan tahun ajaran
+ * aktif — mencegah param basi (mis. dari tahun ajaran sebelumnya) menghasilkan
+ * select kosong / rentang di luar TA.
+ */
+const parseRange = (
+	ayMonths: { month: number; year: number }[],
+	month?: string,
+	year?: string,
+): { month: number; year: number } | undefined => {
+	if (!month || !year) return undefined;
+	const m = { month: Number(month), year: Number(year) };
+	return ayMonths.some((am) => am.month === m.month && am.year === m.year)
+		? m
+		: undefined;
+};
+
 export const Route = createFileRoute("/_authenticated/administrasi/ekskul/$id")(
 	{
 		component: EkskulDetailPage,
@@ -82,17 +99,17 @@ function EkskulDetailPage() {
 		[activeAy],
 	);
 
-	// Rentang efektif: default bulan pertama s.d. akhir tahun ajaran
-	const rangeFrom = useMemo(() => {
-		if (monthFrom && yearFrom)
-			return { month: Number(monthFrom), year: Number(yearFrom) };
-		return ayMonths[0];
-	}, [monthFrom, yearFrom, ayMonths]);
-	const rangeTo = useMemo(() => {
-		if (monthTo && yearTo)
-			return { month: Number(monthTo), year: Number(yearTo) };
-		return ayMonths[ayMonths.length - 1];
-	}, [monthTo, yearTo, ayMonths]);
+	// Rentang efektif: default bulan pertama s.d. akhir tahun ajaran; nilai URL
+	// hanya dipakai bila masih valid untuk tahun ajaran aktif (parseRange).
+	const rangeFrom = useMemo(
+		() => parseRange(ayMonths, monthFrom, yearFrom) ?? ayMonths[0],
+		[ayMonths, monthFrom, yearFrom],
+	);
+	const rangeTo = useMemo(
+		() =>
+			parseRange(ayMonths, monthTo, yearTo) ?? ayMonths[ayMonths.length - 1],
+		[ayMonths, monthTo, yearTo],
+	);
 
 	// Opsi bulan dibatasi agar "Dari" selalu <= "Sampai" (cegah rentang invalid)
 	const fromOptions = useMemo(

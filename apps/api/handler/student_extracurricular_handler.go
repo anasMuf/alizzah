@@ -296,6 +296,17 @@ func (h *StudentExtracurricularHandler) GetStudentsByExtracurricular(c echo.Cont
 	toMonth, _ := strconv.Atoi(c.QueryParam("month_to"))
 	toYear, _ := strconv.Atoi(c.QueryParam("year_to"))
 
+	// Validasi bulan rentang (1-12); kosong (0) berarti pakai default tahun ajaran
+	for name, val := range map[string]int{"month_from": fromMonth, "month_to": toMonth} {
+		if val != 0 && (val < 1 || val > 12) {
+			return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+				Status:  http.StatusBadRequest,
+				Code:    "BAD_REQUEST",
+				Message: name + " harus antara 1-12",
+			})
+		}
+	}
+
 	item, err := h.seService.GetStudentsByExtracurricular(uint(exID), uint(ayID), uint(fromMonth), uint(fromYear), uint(toMonth), uint(toYear))
 	if err != nil {
 		status, code := utility.GetErrorStatusAndCode(err)

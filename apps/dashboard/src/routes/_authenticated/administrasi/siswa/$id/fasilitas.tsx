@@ -429,7 +429,7 @@ function SiswaFasilitasPage() {
 			>
 				Apakah Anda yakin ingin melepas siswa dari fasilitas{" "}
 				<strong>{deletingItem?.facility?.name}</strong>? Item tagihan terkait
-				yang belum dibayar akan dihapus dari tagihan bulan ini ke depan.
+				yang belum dibayar akan dihapus, termasuk dari bulan-bulan sebelumnya.
 			</ConfirmDialog>
 
 			{/* Dialog Kelola Bulan — skip tagihan bulanan fasilitas */}

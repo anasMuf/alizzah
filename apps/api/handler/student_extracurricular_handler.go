@@ -402,12 +402,12 @@ func (h *StudentExtracurricularHandler) PreviewSyncInvoices(c echo.Context) erro
 }
 
 // CleanupExtracurricularInvoices godoc
-// @Summary      Hapus item ekskul dari invoice bulan ini dan seterusnya
-// @Description  Recovery endpoint: menghapus item ekskul tertentu dari invoice
+// @Summary      Hapus item unpaid ekskul dari invoice mulai bulan mulai mengikuti
+// @Description  Recovery endpoint: menghapus item unpaid ekskul tertentu dari
 //
-//	bulanan siswa tanpa menghapus riwayat pembayaran.
-//	Gunakan ketika siswa pindah/pindah ekskul dan invoice masih
-//	menampilkan tagihan ekskul lama.
+//	invoice bulanan siswa (termasuk bulan-bulan sebelumnya) tanpa
+//	hapus riwayat pembayaran. Gunakan ketika siswa pindah/pindah
+//	ekskul dan invoice masih menampilkan tagihan ekskul lama.
 //
 // @Tags         student-extracurriculars
 // @Accept       json

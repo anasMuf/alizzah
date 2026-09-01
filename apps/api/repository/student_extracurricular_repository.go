@@ -12,6 +12,10 @@ type StudentExtracurricularRepository interface {
 	FindByID(id uint) (*model.StudentExtracurricular, error)
 	FindActiveByStudentID(studentID, academicYearID uint) ([]model.StudentExtracurricular, error)
 	FindActiveByStudentAndExtracurricular(studentID, extracurricularID, academicYearID uint) (*model.StudentExtracurricular, error)
+	// FindByStudentAndExtracurricular mencari record enrollment (aktif ATAU sudah
+	// nonaktif) untuk (student, ekskul, tahun ajaran) — dipakai recovery cleanup
+	// invoice yang butuh start_date meskipun enrollment sudah di-unenroll.
+	FindByStudentAndExtracurricular(studentID, extracurricularID, academicYearID uint) (*model.StudentExtracurricular, error)
 	FindActiveByExtracurricularID(extracurricularID, academicYearID uint) ([]model.StudentExtracurricular, error)
 	FindAllActiveByAcademicYear(academicYearID uint) ([]model.StudentExtracurricular, error)
 	Create(se *model.StudentExtracurricular) error
@@ -64,6 +68,18 @@ func (r *studentExtracurricularRepository) FindActiveByStudentAndExtracurricular
 	var se model.StudentExtracurricular
 	err := r.db.Preload("Extracurricular").
 		Where("student_id = ? AND extracurricular_id = ? AND academic_year_id = ? AND end_date IS NULL", studentID, extracurricularID, academicYearID).
+		First(&se).Error
+	if err != nil {
+		return nil, err
+	}
+	return &se, nil
+}
+
+func (r *studentExtracurricularRepository) FindByStudentAndExtracurricular(studentID, extracurricularID, academicYearID uint) (*model.StudentExtracurricular, error) {
+	var se model.StudentExtracurricular
+	err := r.db.Preload("Extracurricular").
+		Where("student_id = ? AND extracurricular_id = ? AND academic_year_id = ?", studentID, extracurricularID, academicYearID).
+		Order("start_date DESC").
 		First(&se).Error
 	if err != nil {
 		return nil, err

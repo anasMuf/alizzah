@@ -510,10 +510,12 @@ func (s *studentFacilityService) Unenroll(studentID, sfID uint) error {
 		return err
 	}
 
-	// Hapus item fasilitas dari invoice bulan ini ke depan yang belum dibayar
+	// Hapus item unpaid fasilitas dari invoice mulai bulan siswa mengikuti
+	// (start_date) ke depan — berhenti = semua item unpaid fasilitas ini
+	// dihapus, termasuk bulan-bulan sebelum hari ini (Aturan B).
 	if s.invoiceGen != nil {
 		go func() {
-			if err := s.invoiceGen.RemoveFacilityFromFutureInvoices(studentID, sf.FacilityID, sf.AcademicYearID); err != nil {
+			if err := s.invoiceGen.RemoveFacilityInvoices(studentID, sf.FacilityID, sf.AcademicYearID, sf.StartDate); err != nil {
 				log.Printf("[Facility] Gagal remove facility dari invoice (unenroll) student=%d facility=%d: %v", studentID, sf.FacilityID, err)
 			}
 		}()

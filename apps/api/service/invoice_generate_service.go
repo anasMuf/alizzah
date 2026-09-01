@@ -28,7 +28,10 @@ type InvoiceGenerateService interface {
 	SyncDaycareMonthlyInvoices() (*dto.DaycareSyncResult, error)
 	RecalculateInfaqHarian(classGroupID, month, year uint) error
 	AddExtracurricularToMonthlyRange(studentID, extracurricularID, academicYearID uint) error
-	RemoveExtracurricularFromFutureInvoices(studentID, extracurricularID, academicYearID uint, endDate time.Time) error
+	// RemoveExtracurricularInvoices menghapus item unpaid ekskul dari invoice mulai
+	// bulan startDate ke depan (Aturan B: berhenti PASTA = semua item unpaid PASTA
+	// dibersihkan, termasuk bulan sebelum end_date).
+	RemoveExtracurricularInvoices(studentID, extracurricularID, academicYearID uint, startDate time.Time) error
 	CleanupExtracurricularInvoices(studentID, extracurricularID uint) error
 	SyncExtracurricularMonthlyInvoices() (*dto.ExtracurricularSyncResult, error)
 	// PlanExtracurricularSync menghitung rencana sync (dry-run, read-only).
@@ -37,6 +40,10 @@ type InvoiceGenerateService interface {
 	PlanDaycareSync() (*dto.DaycarePreviewResponse, error)
 	AddFacilityToMonthlyRange(studentID, facilityID, academicYearID uint) error
 	RemoveFacilityFromFutureInvoices(studentID, facilityID, academicYearID uint, extraZoneNames ...string) error
+	// RemoveFacilityInvoices menghapus item unpaid fasilitas dari invoice mulai
+	// bulan startDate ke depan (Aturan B saat Unenroll) — termasuk bulan-bulan
+	// sebelum hari ini. Jalur ganti zona TETAP pakai RemoveFacilityFromFutureInvoices.
+	RemoveFacilityInvoices(studentID, facilityID, academicYearID uint, startDate time.Time, extraZoneNames ...string) error
 	// Billing month exclusions (skip tagihan bulanan)
 	// RemoveExtracurricularItemFromMonthly menghapus item unpaid ekstrakurikuler
 	// dari invoice bulan tertentu (saat bulan ditandai skip).
@@ -877,7 +884,7 @@ func (s *invoiceGenerateService) feeItemsToAddForMonth(invoiceID, month uint, le
 	return toAdd
 }
 
-func (s *invoiceGenerateService) RemoveExtracurricularFromFutureInvoices(studentID, extracurricularID, academicYearID uint, endDate time.Time) error {
+func (s *invoiceGenerateService) RemoveExtracurricularInvoices(studentID, extracurricularID, academicYearID uint, startDate time.Time) error {
 	ex, err := s.extracurricularRepo.FindByID(extracurricularID)
 	if err != nil {
 		return err
@@ -893,9 +900,12 @@ func (s *invoiceGenerateService) RemoveExtracurricularFromFutureInvoices(student
 		return nil
 	}
 
-	// Gunakan end_date (bukan time.Now()) agar akurat meskipun di-backdate
-	fromMonth := uint(endDate.Month())
-	fromYear := uint(endDate.Year())
+	// Lower bound = bulan MULAI enrollment: item hanya dibuat mulai bulan itu
+	// (AddExtracurricularToMonthlyRange memakai MonthRangeFromDate(start, endTA)),
+	// jadi item unpaid bulan sebelum end_date (mis. Agustus saat berhenti di
+	// September) ikut dibersihkan — Aturan B, bukan hanya "bulan berjalan ke depan".
+	fromMonth := uint(startDate.Month())
+	fromYear := uint(startDate.Year())
 
 	invoices, err := s.invoiceRepo.FindMonthlyByStudentFromMonth(studentID, fromMonth, fromYear)
 	if err != nil {
@@ -1086,16 +1096,23 @@ func (s *invoiceGenerateService) RestoreFacilityItemToMonthly(studentID, facilit
 }
 
 // CleanupExtracurricularInvoices adalah recovery endpoint untuk admin.
-// Menghapus item ekskul dari invoice bulan ini dan seterusnya tanpa harus
-// regenerate seluruh invoice (yang akan menghapus riwayat pembayaran).
+// Menghapus item unpaid ekskul dari invoice mulai bulan mulai mengikuti (start_date)
+// tanpa harus regenerate seluruh invoice (yang akan menghapus riwayat pembayaran).
 func (s *invoiceGenerateService) CleanupExtracurricularInvoices(studentID, extracurricularID uint) error {
 	// Cari tahun ajaran aktif dari enrollment
 	enr, err := s.enrollmentRepo.FindActiveByStudentID(studentID)
 	if err != nil {
 		return fmt.Errorf("enrollment aktif tidak ditemukan untuk siswa %d: %w", studentID, err)
 	}
-	return s.RemoveExtracurricularFromFutureInvoices(
-		studentID, extracurricularID, enr.AcademicYearID, time.Now(),
+	// Ambil record enrollment ekskul (aktif ataupun sudah nonaktif) untuk
+	// menentukan start_date — cleanup harus membersihkan dari bulan mulai
+	// mengikuti, bukan dari bulan berjalan.
+	startDate := time.Now()
+	if se, err := s.seRepo.FindByStudentAndExtracurricular(studentID, extracurricularID, enr.AcademicYearID); err == nil && se != nil {
+		startDate = se.StartDate
+	}
+	return s.RemoveExtracurricularInvoices(
+		studentID, extracurricularID, enr.AcademicYearID, startDate,
 	)
 }
 
@@ -2190,7 +2207,28 @@ func (s *invoiceGenerateService) addFacilityItemToMonthly(studentID, month, year
 	return s.recalculateInvoiceTotal(invoice.ID)
 }
 
+// RemoveFacilityFromFutureInvoices menghapus item unpaid fasilitas dari invoice
+// bulan berjalan ke depan — dipakai jalur GANTI ZONA (Enroll reactivation &
+// UpdateEnrollment): item zona lama bulan-bulan sebelumnya adalah piutang sah
+// dan tidak boleh dihapus.
 func (s *invoiceGenerateService) RemoveFacilityFromFutureInvoices(studentID, facilityID, academicYearID uint, extraZoneNames ...string) error {
+	now := time.Now()
+	return s.removeFacilityItemsFromInvoices(studentID, facilityID, academicYearID, uint(now.Month()), uint(now.Year()), extraZoneNames...)
+}
+
+// RemoveFacilityInvoices menghapus item unpaid fasilitas dari invoice mulai bulan
+// startDate ke depan — dipakai jalur Unenroll (Aturan B): berhenti fasilitas =
+// semua item unpaid fasilitas itu dibersihkan, termasuk bulan-bulan sebelum hari
+// ini. Item yang sudah dibayar dipertahankan (integritas pembayaran).
+func (s *invoiceGenerateService) RemoveFacilityInvoices(studentID, facilityID, academicYearID uint, startDate time.Time, extraZoneNames ...string) error {
+	return s.removeFacilityItemsFromInvoices(studentID, facilityID, academicYearID, uint(startDate.Month()), uint(startDate.Year()), extraZoneNames...)
+}
+
+// removeFacilityItemsFromInvoices adalah inti pembersihan item fasilitas:
+// menghapus item unpaid (category=facility, paid_amount=0) yang cocok dengan
+// fasilitas/zona pada invoice bulan >= (fromMonth, fromYear) dalam tahun ajaran
+// yang sama, lalu recalculate total invoice yang berubah.
+func (s *invoiceGenerateService) removeFacilityItemsFromInvoices(studentID, facilityID, academicYearID, fromMonth, fromYear uint, extraZoneNames ...string) error {
 	facility, err := s.facilityRepo.FindByID(facilityID)
 	if err != nil {
 		return err
@@ -2207,10 +2245,6 @@ func (s *invoiceGenerateService) RemoveFacilityFromFutureInvoices(studentID, fac
 		}
 	}
 
-	now := time.Now()
-	curMonth := uint(now.Month())
-	curYear := uint(now.Year())
-
 	// Scope ke TAHUN AJARAN yang sama — jangan sampai unenroll fasilitas di
 	// tahun ajaran lama menghapus item fasilitas di invoice tahun ajaran baru.
 	allInvoices, _ := s.invoiceRepo.FindMonthlyByStudentAcademicYear(studentID, academicYearID)
@@ -2219,7 +2253,7 @@ func (s *invoiceGenerateService) RemoveFacilityFromFutureInvoices(studentID, fac
 		if inv.Month == nil || inv.Year == nil {
 			continue
 		}
-		if *inv.Year > curYear || (*inv.Year == curYear && *inv.Month >= curMonth) {
+		if *inv.Year > fromYear || (*inv.Year == fromYear && *inv.Month >= fromMonth) {
 			invoices = append(invoices, inv)
 		}
 	}

@@ -18,21 +18,71 @@ func NewRepository(db *gorm.DB) Repository { return &repository{db: db} }
 
 func (r *repository) FindAll(search string, activeOnly bool) ([]Member, error) {
 	var members []Member
-	q := r.db.Preload("Employee").Order("full_name ASC")
+	q := r.db.Order("full_name ASC")
 	if search != "" {
 		q = q.Where("full_name ILIKE ?", "%"+search+"%")
 	}
 	if activeOnly {
 		q = q.Where("is_active = ?", true)
 	}
-	err := q.Find(&members).Error
-	return members, err
+	if err := q.Find(&members).Error; err != nil {
+		return nil, err
+	}
+	if err := r.attachEmployeeNames(members); err != nil {
+		return nil, err
+	}
+	return members, nil
 }
 
 func (r *repository) FindByID(id uint) (*Member, error) {
 	var m Member
-	err := r.db.Preload("Employee").First(&m, id).Error
-	return &m, err
+	if err := r.db.First(&m, id).Error; err != nil {
+		return nil, err
+	}
+	if m.EmployeeID != nil {
+		names, err := r.employeeNameMap([]uint{*m.EmployeeID})
+		if err != nil {
+			return nil, err
+		}
+		m.EmployeeName = names[*m.EmployeeID]
+	}
+	return &m, nil
+}
+
+// attachEmployeeNames mengisi Member.EmployeeName dari `koperasi_employees`
+// (view atas sdm_employees — sumber kanonik karyawan modul SDM).
+func (r *repository) attachEmployeeNames(members []Member) error {
+	ids := make([]uint, 0, len(members))
+	for _, m := range members {
+		if m.EmployeeID != nil {
+			ids = append(ids, *m.EmployeeID)
+		}
+	}
+	names, err := r.employeeNameMap(ids)
+	if err != nil {
+		return err
+	}
+	for i := range members {
+		if members[i].EmployeeID != nil {
+			members[i].EmployeeName = names[*members[i].EmployeeID]
+		}
+	}
+	return nil
+}
+
+func (r *repository) employeeNameMap(ids []uint) (map[uint]string, error) {
+	result := make(map[uint]string, len(ids))
+	if len(ids) == 0 {
+		return result, nil
+	}
+	var emps []Employee
+	if err := r.db.Where("id IN ?", ids).Find(&emps).Error; err != nil {
+		return nil, err
+	}
+	for _, e := range emps {
+		result[e.ID] = e.FullName
+	}
+	return result, nil
 }
 
 func (r *repository) Create(m *Member) error { return r.db.Create(m).Error }

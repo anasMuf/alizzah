@@ -74,10 +74,13 @@ func New(deps *shared.Deps) *Module {
 	}
 }
 
-// Models mengembalikan seluruh model GORM milik modul untuk dipakai AutoMigrate.
+// Models mengembalikan seluruh model GORM milik modul untuk AutoMigrate.
+// Catatan: `koperasi_employees` TIDAK dimigrasi dari sini — tabel tsb adalah
+// view atas `sdm_employees` (sumber kanonik karyawan = modul SDM, lihat
+// sdm.EnsureEmployeeView).
 func (m *Module) Models() []any {
 	return []any{
-		&anggota.Employee{}, &anggota.Member{},
+		&anggota.Member{},
 		&barang.Product{}, &barang.Variant{},
 		&master.MasterData{},
 		&pemasok.Supplier{},

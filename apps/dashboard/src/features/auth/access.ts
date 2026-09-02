@@ -6,6 +6,7 @@ export const MODULES = {
 	administrasi: "administrasi",
 	keuangan: "keuangan",
 	koperasi: "koperasi",
+	sdm: "sdm",
 	laporan: "laporan",
 } as const;
 
@@ -15,6 +16,7 @@ export const MODULE_LABELS: Record<string, string> = {
 	administrasi: "Administrasi",
 	keuangan: "Keuangan",
 	koperasi: "Koperasi",
+	sdm: "SDM / HR",
 	laporan: "Laporan",
 };
 

@@ -49,8 +49,9 @@ func main() {
 	// Pre-migration: handle income_category_id column sebelum AutoMigrate
 	preMigrateIncomeCategory(db)
 
-	// AutoMigrate
-	if err := db.AutoMigrate(
+	// AutoMigrate — gabung seluruh model inti dalam satu slice
+	// (Go tidak mengizinkan argumen biasa + spread pada variadic tunggal).
+	migrateModels := []any{
 		&model.User{},
 		&model.AcademicYear{},
 		// Batch 2
@@ -106,7 +107,8 @@ func main() {
 		&model.AuditEntry{},
 		// Settings key-value
 		&model.Setting{},
-	); err != nil {
+	}
+	if err := db.AutoMigrate(migrateModels...); err != nil {
 		log.Fatal("Gagal AutoMigrate:", err)
 	}
 

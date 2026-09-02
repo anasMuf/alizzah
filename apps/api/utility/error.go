@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"strings"
 
+	"api/dto"
+
 	"github.com/labstack/echo/v4"
 )
 
@@ -96,4 +98,11 @@ func statusToCode(status int, msg string) string {
 	default:
 		return "INTERNAL_ERROR"
 	}
+}
+
+// Fail menulis response error JSON dari error apa pun (memetakan status via
+// GetErrorStatusAndCode). Dipakai bersama oleh handler modul.
+func Fail(c echo.Context, err error) error {
+	status, code := GetErrorStatusAndCode(err)
+	return c.JSON(status, dto.ErrorResponse{Status: status, Code: code, Message: err.Error()})
 }

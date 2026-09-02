@@ -27,6 +27,7 @@ var modulePrefixMap = map[string]string{
 	"daily-closings":      "laporan",
 	"users":               "pengaturan",
 	"backups":             "pengaturan",
+	"sdm":                 "sdm",
 	"auth":                "auth",
 }
 

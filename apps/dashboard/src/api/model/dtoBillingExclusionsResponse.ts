@@ -9,4 +9,9 @@ import type { DtoBillingExclusionMonth } from "./dtoBillingExclusionMonth";
 
 export interface DtoBillingExclusionsResponse {
 	months?: DtoBillingExclusionMonth[];
+	/** PaidMonths = bulan di mana entity tsb sudah punya item yang DIBIAYAR
+  (paid_amount > 0) pada invoice siswa. UI memakai daftar ini untuk
+  men-disable bulan yang tidak bisa di-skip (item berbayar tidak bisa
+  dihapus backend) — berbeda dengan sekadar "invoice bulan tsb sudah bayar". */
+	paid_months?: DtoBillingExclusionMonth[];
 }

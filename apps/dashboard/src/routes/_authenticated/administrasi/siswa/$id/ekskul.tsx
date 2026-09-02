@@ -8,17 +8,14 @@ import {
 	ShieldCheck,
 	Trophy,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useGetV1AcademicYears } from "#/api/endpoints/academic-years/academic-years";
 import {
 	getV1StudentsIdExtracurricularsSeIdBillingExclusions,
 	usePutV1StudentsIdExtracurricularsSeIdBillingExclusions,
 } from "#/api/endpoints/billing-exclusions/billing-exclusions";
 import { useGetV1Extracurriculars } from "#/api/endpoints/extracurriculars/extracurriculars";
-import {
-	getGetV1InvoicesQueryKey,
-	useGetV1Invoices,
-} from "#/api/endpoints/invoices/invoices";
+import { getGetV1InvoicesQueryKey } from "#/api/endpoints/invoices/invoices";
 import {
 	getGetV1StudentsIdExtracurricularsQueryKey,
 	useDeleteV1StudentsIdExtracurricularsSeId,
@@ -89,6 +86,7 @@ function SiswaEkskulPage() {
 	const [billingTarget, setBillingTarget] = useState<{
 		seId: number;
 		name: string;
+		startDate?: string;
 	} | null>(null);
 
 	const [formData, setFormData] = useState({
@@ -117,23 +115,53 @@ function SiswaEkskulPage() {
 		[activeYear],
 	);
 
-	// Bulan yang invoice-nya sudah ada pembayaran → checkbox disabled (item paid
-	// tidak bisa dihapus backend). Approximasi per-invoice, konservatif.
-	const { data: invoicesResp } = useGetV1Invoices({
-		student_id: studentId,
-		type: "monthly",
-		limit: 60,
-	});
-	const paidMonthKeys = useMemo(() => {
+	// Bulan yang item PASTA-nya sudah dibayar (dari backend paid_months) — lebih
+	// akurat daripada sekadar "invoice bulan tsb sudah bayar". Dipakai untuk
+	// men-disable bulan yang TIDAK BISA di-skip di dialog Kelola Bulan.
+	const [billingPaidMonths, setBillingPaidMonths] = useState<
+		{ month: number; year: number }[] | null
+	>(null);
+
+	// Fetch paid_months hanya saat dialog dibuka (per enrollment target).
+	useEffect(() => {
+		if (!billingTarget) {
+			setBillingPaidMonths(null);
+			return;
+		}
+		let cancelled = false;
+		getV1StudentsIdExtracurricularsSeIdBillingExclusions(
+			studentId,
+			billingTarget.seId,
+		)
+			.then((res) => {
+				if (cancelled) return;
+				setBillingPaidMonths(res.data.data.paid_months ?? []);
+			})
+			.catch(() => {
+				if (!cancelled) setBillingPaidMonths([]);
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [billingTarget, studentId]);
+
+	// Bulan dalam periode enrollment (bulan mulai s.d. akhir tahun ajaran) — bulan
+	// sebelum start_date tidak relevan untuk dialog PASTA ini.
+	const billingMonths = useMemo(() => {
+		if (!billingTarget?.startDate) return activeYearMonths;
+		const start = new Date(billingTarget.startDate);
+		if (Number.isNaN(start.getTime())) return activeYearMonths;
+		const startKey = start.getFullYear() * 12 + (start.getMonth() + 1);
+		return activeYearMonths.filter((m) => m.year * 12 + m.month >= startKey);
+	}, [activeYearMonths, billingTarget]);
+
+	const billingPaidKeys = useMemo(() => {
 		const keys = new Set<string>();
-		const list = (invoicesResp?.data as any)?.data ?? [];
-		for (const inv of list) {
-			if (inv.paid_amount > 0 && inv.month && inv.year) {
-				keys.add(`${inv.month}-${inv.year}`);
-			}
+		for (const m of billingPaidMonths ?? []) {
+			keys.add(`${m.month}-${m.year}`);
 		}
 		return keys;
-	}, [invoicesResp]);
+	}, [billingPaidMonths]);
 
 	const enrollMutation = usePostV1StudentsIdExtracurriculars({
 		mutation: {
@@ -483,6 +511,7 @@ function SiswaEkskulPage() {
 																	setBillingTarget({
 																		seId: se.id,
 																		name: se.extracurricular?.name || "PASTA",
+																		startDate: se.start_date,
 																	})
 																}
 																title="Atur bulan yang tagihannya di-skip"
@@ -674,7 +703,7 @@ function SiswaEkskulPage() {
 
 			{/* Dialog Kelola Bulan — skip tagihan bulanan PASTA */}
 			<BillingMonthsDialog
-				open={!!billingTarget}
+				open={!!billingTarget && billingPaidMonths !== null}
 				onClose={() => setBillingTarget(null)}
 				title={
 					billingTarget
@@ -682,8 +711,8 @@ function SiswaEkskulPage() {
 						: "Kelola Bulan"
 				}
 				description="Bulan yang dicentang tetap ditagihkan untuk PASTA ini. Bulan yang tidak dicentang di-skip (tidak ditagih). Enrollment siswa tetap aktif."
-				months={activeYearMonths}
-				paidKeys={paidMonthKeys}
+				months={billingMonths}
+				paidKeys={billingPaidKeys}
 				loadExclusions={async () => {
 					if (!billingTarget) return [];
 					const res =

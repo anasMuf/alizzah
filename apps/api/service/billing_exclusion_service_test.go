@@ -133,6 +133,35 @@ func TestSetExclusions_DedupeAndReplaceAll(t *testing.T) {
 	assert.Equal(t, uint(2026), resp.Months[0].Year)
 }
 
+func TestGetByStudentAndEntity_ReportsPaidMonths(t *testing.T) {
+	db := setupBillingExclusionInvoiceTestDB(t)
+	fx := seedExclusionInvoiceFixture(t, db)
+
+	// Oktober: item Robotika PAID → harus dilaporkan di paid_months
+	var octInv model.Invoice
+	require.NoError(t, db.Where("student_id = ? AND month = ? AND year = ?", fx.StudentID, 10, 2025).First(&octInv).Error)
+	require.NoError(t, db.Create(&model.InvoiceItem{InvoiceID: octInv.ID, Name: "Robotika", Category: "pasta", Amount: 100000, IsMandatory: true, PaidAmount: 100000, Status: "paid"}).Error)
+
+	// November: item Robotika UNPAID → tidak boleh masuk paid_months
+	var novInv model.Invoice
+	require.NoError(t, db.Where("student_id = ? AND month = ? AND year = ?", fx.StudentID, 11, 2025).First(&novInv).Error)
+	require.NoError(t, db.Create(&model.InvoiceItem{InvoiceID: novInv.ID, Name: "Robotika", Category: "pasta", Amount: 100000, IsMandatory: true}).Error)
+
+	svc := NewBillingExclusionService(
+		db,
+		repository.NewBillingMonthExclusionRepository(db),
+		repository.NewAcademicYearRepository(db),
+		newTestInvoiceGen(t, db),
+	)
+
+	resp, err := svc.GetByStudentAndEntity(fx.StudentID, "extracurricular", fx.ExID)
+	require.NoError(t, err)
+
+	require.Len(t, resp.PaidMonths, 1, "hanya bulan dengan item ekskul BERBAYAR yang dilaporkan")
+	assert.Equal(t, uint(10), resp.PaidMonths[0].Month)
+	assert.Equal(t, uint(2025), resp.PaidMonths[0].Year)
+}
+
 func TestSetExclusions_RejectsOutsideAcademicYear(t *testing.T) {
 	db := setupBillingExclusionInvoiceTestDB(t)
 	fx := seedExclusionInvoiceFixture(t, db)

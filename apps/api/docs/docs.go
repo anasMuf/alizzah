@@ -15662,6 +15662,13 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/dto.BillingExclusionMonth"
                     }
+                },
+                "paid_months": {
+                    "description": "PaidMonths = bulan di mana entity tsb sudah punya item yang DIBIAYAR\n(paid_amount \u003e 0) pada invoice siswa. UI memakai daftar ini untuk\nmen-disable bulan yang tidak bisa di-skip (item berbayar tidak bisa\ndihapus backend) — berbeda dengan sekadar \"invoice bulan tsb sudah bayar\".",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.BillingExclusionMonth"
+                    }
                 }
             }
         },

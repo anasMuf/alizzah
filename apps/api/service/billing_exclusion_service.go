@@ -42,7 +42,53 @@ func (s *billingExclusionService) GetByStudentAndEntity(studentID uint, entityTy
 	for _, ex := range exclusions {
 		months = append(months, dto.BillingExclusionMonth{Month: ex.Month, Year: ex.Year})
 	}
-	return &dto.BillingExclusionsResponse{Months: months}, nil
+	resp := &dto.BillingExclusionsResponse{Months: months}
+	if entityType == "extracurricular" {
+		// Bulan yang item PASTA-nya sudah dibayar → UI men-disable (tak bisa di-skip).
+		if paid, err := s.paidExtracurricularMonths(studentID, entityRefID); err == nil {
+			resp.PaidMonths = paid
+		}
+	}
+	return resp, nil
+}
+
+// paidExtracurricularMonths mengembalikan bulan-bulan (tahun ajaran aktif) di mana
+// siswa punya item invoice PASTA untuk ekskul tsb dengan paid_amount > 0.
+// Item berbayar tidak bisa dihapus oleh RemoveExtracurricularItemFromMonthly
+// (integritas pembayaran), jadi dialog Kelola Bulan harus men-disable bulan tsb.
+func (s *billingExclusionService) paidExtracurricularMonths(studentID, extracurricularID uint) ([]dto.BillingExclusionMonth, error) {
+	ay, err := s.ayRepo.FindActive()
+	if err != nil {
+		return nil, err
+	}
+	var ex model.Extracurricular
+	if err := s.db.First(&ex, extracurricularID).Error; err != nil {
+		return nil, err
+	}
+	var rows []struct {
+		Month uint
+		Year  uint
+	}
+	// Cocokkan item invoice dengan fee config item ekskul (name+category), sama
+	// seperti logika extracurricularItemsToRemove — bukan asumsi nama sama persis.
+	err = s.db.Table("invoice_items").
+		Select("DISTINCT i.month AS month, i.year AS year").
+		Joins("JOIN invoices i ON i.id = invoice_items.invoice_id").
+		Joins("JOIN fee_configs fc ON fc.academic_year_id = i.academic_year_id").
+		Joins("JOIN fee_config_items fci ON fci.fee_config_id = fc.id AND fci.category = ? AND fci.name = ? AND fci.is_active = ?", ex.Type, ex.Name, true).
+		Where("i.student_id = ? AND i.academic_year_id = ? AND i.type = 'monthly'", studentID, ay.ID).
+		Where("invoice_items.deleted_at IS NULL AND invoice_items.paid_amount > 0").
+		Where("invoice_items.category = fci.category AND invoice_items.name = fci.name").
+		Order("i.year, i.month").
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	out := make([]dto.BillingExclusionMonth, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, dto.BillingExclusionMonth{Month: r.Month, Year: r.Year})
+	}
+	return out, nil
 }
 
 type monthKey struct {

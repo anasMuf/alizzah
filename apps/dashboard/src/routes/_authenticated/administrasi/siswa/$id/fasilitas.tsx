@@ -59,6 +59,7 @@ function SiswaFasilitasPage() {
 	const [billingTarget, setBillingTarget] = useState<{
 		sfId: number;
 		name: string;
+		startDate?: string;
 	} | null>(null);
 
 	const { data: sfResp, isLoading } = useGetV1StudentsIdFacilities(
@@ -73,6 +74,16 @@ function SiswaFasilitasPage() {
 		() => buildAcademicYearMonths(activeAy?.start_date, activeAy?.end_date),
 		[activeAy],
 	);
+
+	// Bulan dalam periode enrollment fasilitas (mulai s.d. akhir tahun ajaran) —
+	// bulan sebelum start_date tidak relevan untuk dialog fasilitas ini.
+	const billingMonths = useMemo(() => {
+		if (!billingTarget?.startDate) return activeYearMonths;
+		const start = new Date(billingTarget.startDate);
+		if (Number.isNaN(start.getTime())) return activeYearMonths;
+		const startKey = start.getFullYear() * 12 + (start.getMonth() + 1);
+		return activeYearMonths.filter((m) => m.year * 12 + m.month >= startKey);
+	}, [activeYearMonths, billingTarget]);
 
 	// Bulan yang invoice-nya sudah ada pembayaran → checkbox disabled
 	const { data: invoicesResp } = useGetV1Invoices({
@@ -295,6 +306,7 @@ function SiswaFasilitasPage() {
 												setBillingTarget({
 													sfId: sf.id,
 													name: sf.facility?.name || "Fasilitas",
+													startDate: sf.start_date,
 												})
 											}
 											title="Atur bulan yang tagihannya di-skip"
@@ -442,7 +454,7 @@ function SiswaFasilitasPage() {
 						: "Kelola Bulan"
 				}
 				description="Bulan yang dicentang tetap ditagihkan untuk fasilitas ini. Bulan yang tidak dicentang di-skip (tidak ditagih). Enrollment siswa tetap aktif."
-				months={activeYearMonths}
+				months={billingMonths}
 				paidKeys={paidMonthKeys}
 				loadExclusions={async () => {
 					if (!billingTarget) return [];

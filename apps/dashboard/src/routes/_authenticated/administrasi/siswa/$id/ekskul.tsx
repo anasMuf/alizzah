@@ -282,13 +282,16 @@ function SiswaEkskulPage() {
 		const rows: SyncPreviewRow[] = d.items.map((it) => ({
 			key: `${it.item_id}`,
 			title: `${MONTH_NAMES[it.month - 1] ?? it.month} ${it.year}`,
-			action: `${it.item_name} — ${formatRupiah(it.amount)}`,
+			action:
+				it.action === "writeoff"
+					? `${it.item_name} — sisa ${formatRupiah(it.amount)} dibebaskan (sudah dibayar sebagian)`
+					: `${it.item_name} — ${formatRupiah(it.amount)}`,
 			status: "change",
 		}));
 		const invoiceCount = new Set(d.items.map((it) => `${it.year}-${it.month}`))
 			.size;
 		const summary: SyncPreviewSummaryItem[] = [
-			{ label: "Item dihapus", value: d.total_items },
+			{ label: "Item diproses", value: d.total_items },
 			{ label: "Total", value: formatRupiah(d.total_amount) },
 			{ label: "Invoice", value: invoiceCount },
 		];

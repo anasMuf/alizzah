@@ -5,10 +5,8 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
+import type { DtoBillingExclusionMonth } from "./dtoBillingExclusionMonth";
 
-export type DeleteV1DaycareEnrollmentsIdParams = {
-	/**
-	 * Also delete unpaid invoices
-	 */
-	delete_invoices?: boolean;
-};
+export interface DtoSetBillingExclusionsRequest {
+	months?: DtoBillingExclusionMonth[];
+}

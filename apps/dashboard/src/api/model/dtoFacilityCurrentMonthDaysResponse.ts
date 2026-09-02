@@ -6,13 +6,10 @@
  * OpenAPI spec version: 1.0
  */
 
-export interface DtoPaymentItemResponse {
-	amount?: number;
-	category?: string;
-	id?: number;
+export interface DtoFacilityCurrentMonthDaysResponse {
+	current_days?: number;
+	default_days?: number;
 	invoice_id?: number;
 	invoice_item_id?: number;
-	invoice_item_name?: string;
-	invoice_month?: number;
-	invoice_year?: number;
+	zone_amount?: number;
 }

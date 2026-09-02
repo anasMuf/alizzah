@@ -605,44 +605,6 @@ func (h *DaycareEnrollmentHandler) GetMonthlyAttendance(c echo.Context) error {
 // @Failure      403  {object}  dto.ErrorResponse
 // @Failure      404  {object}  dto.ErrorResponse
 // @Router       /v1/daycare-enrollments/{id} [delete]
-// CheckPremiumHistory godoc
-// @Summary      Check if student has premium history
-// @Description  Check if a student has ever had a premium daycare enrollment (for auto-detect Lanjutan/Baru)
-// @Tags         daycare-enrollments
-// @Accept       json
-// @Produce      json
-// @Security     ApiKeyAuth
-// @Param        student_id  query  int  true  "Student ID"
-// @Success      200  {object}  dto.SuccessResponse{data=map[string]bool}
-// @Router       /v1/daycare-enrollments/check-premium-history [get]
-func (h *DaycareEnrollmentHandler) CheckPremiumHistory(c echo.Context) error {
-	sid, err := strconv.Atoi(c.QueryParam("student_id"))
-	if err != nil || sid <= 0 {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Status:  http.StatusBadRequest,
-			Code:    "BAD_REQUEST",
-			Message: "student_id tidak valid",
-		})
-	}
-
-	hasHistory, err := h.daycareService.HasPremiumHistory(uint(sid))
-	if err != nil {
-		status, code := utility.GetErrorStatusAndCode(err)
-		return c.JSON(status, dto.ErrorResponse{
-			Status:  status,
-			Code:    code,
-			Message: err.Error(),
-		})
-	}
-
-	return c.JSON(http.StatusOK, dto.SuccessResponse{
-		Message: "OK",
-		Data: map[string]bool{
-			"has_premium_history": hasHistory,
-		},
-	})
-}
-
 func (h *DaycareEnrollmentHandler) Delete(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -680,5 +642,43 @@ func (h *DaycareEnrollmentHandler) Delete(c echo.Context) error {
 	return c.JSON(http.StatusOK, dto.SuccessResponse{
 		Message: result.Message,
 		Data:    result,
+	})
+}
+
+// CheckPremiumHistory godoc
+// @Summary      Check if student has premium history
+// @Description  Check if a student has ever had a premium daycare enrollment (for auto-detect Lanjutan/Baru)
+// @Tags         daycare-enrollments
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        student_id  query  int  true  "Student ID"
+// @Success      200  {object}  dto.SuccessResponse{data=map[string]bool}
+// @Router       /v1/daycare-enrollments/check-premium-history [get]
+func (h *DaycareEnrollmentHandler) CheckPremiumHistory(c echo.Context) error {
+	sid, err := strconv.Atoi(c.QueryParam("student_id"))
+	if err != nil || sid <= 0 {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status:  http.StatusBadRequest,
+			Code:    "BAD_REQUEST",
+			Message: "student_id tidak valid",
+		})
+	}
+
+	hasHistory, err := h.daycareService.HasPremiumHistory(uint(sid))
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{
+			Status:  status,
+			Code:    code,
+			Message: err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "OK",
+		Data: map[string]bool{
+			"has_premium_history": hasHistory,
+		},
 	})
 }

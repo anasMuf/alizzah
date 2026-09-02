@@ -8,6 +8,12 @@ type PaymentQueryParams struct {
 	EndDate        string
 	Source         string
 	Search         string
+	Level          string // jenjang siswa (intan/berlian) via enrollment aktif
+	ClassGroupID   uint   // rombel siswa via enrollment aktif
+	CreatedBy      uint   // petugas pencatat
+	Category       string // kategori item yang dibayar (monthly_spp, pasta, dll)
+	Month          uint   // periode tagihan yang dibayar (bulan)
+	Year           uint   // periode tagihan yang dibayar (tahun)
 	Page           int
 	Limit          int
 }
@@ -42,14 +48,15 @@ type IncidentalItemReq struct {
 
 // Response
 type PaymentListResponse struct {
-	ID             uint                 `json:"id"`
-	Student        StudentBriefResponse `json:"student"`
-	PaymentDate    string               `json:"payment_date"`
-	TotalAmount    float64              `json:"total_amount"`
-	SavingsDeposit float64              `json:"savings_deposit"`
-	Source         string               `json:"source"`
-	CreatedBy      UserBriefResponse    `json:"created_by"`
-	CreatedAt      string               `json:"created_at"`
+	ID             uint                  `json:"id"`
+	Student        StudentBriefResponse  `json:"student"`
+	PaymentDate    string                `json:"payment_date"`
+	TotalAmount    float64               `json:"total_amount"`
+	SavingsDeposit float64               `json:"savings_deposit"`
+	Source         string                `json:"source"`
+	Items          []PaymentItemResponse `json:"items"`
+	CreatedBy      UserBriefResponse     `json:"created_by"`
+	CreatedAt      string                `json:"created_at"`
 }
 
 type PaymentDetailResponse struct {
@@ -72,4 +79,6 @@ type PaymentItemResponse struct {
 	InvoiceItemName string  `json:"invoice_item_name"`
 	Category        string  `json:"category"`
 	Amount          float64 `json:"amount"`
+	InvoiceMonth    *uint   `json:"invoice_month,omitempty"`
+	InvoiceYear     *uint   `json:"invoice_year,omitempty"`
 }

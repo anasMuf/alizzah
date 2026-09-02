@@ -31,6 +31,7 @@ import type {
 	GetV1FacilitiesIdStudents200,
 	GetV1FacilitiesIdStudentsParams,
 	GetV1StudentsIdFacilities200,
+	GetV1StudentsIdFacilitiesFacilityIdCurrentMonthDays200,
 	GetV1StudentsIdFacilitiesParams,
 	PostV1Facilities201,
 	PostV1StudentsIdFacilities201,
@@ -1274,3 +1275,261 @@ export const useDeleteV1StudentsIdFacilitiesFacilityId = <
 		queryClient,
 	);
 };
+export type getV1StudentsIdFacilitiesFacilityIdCurrentMonthDaysResponse200 = {
+	data: GetV1StudentsIdFacilitiesFacilityIdCurrentMonthDays200;
+	status: 200;
+};
+
+export type getV1StudentsIdFacilitiesFacilityIdCurrentMonthDaysResponseSuccess =
+	getV1StudentsIdFacilitiesFacilityIdCurrentMonthDaysResponse200 & {
+		headers: Headers;
+	};
+
+export type getV1StudentsIdFacilitiesFacilityIdCurrentMonthDaysResponse =
+	getV1StudentsIdFacilitiesFacilityIdCurrentMonthDaysResponseSuccess;
+
+export const getGetV1StudentsIdFacilitiesFacilityIdCurrentMonthDaysUrl = (
+	id: number,
+	facilityId: number,
+) => {
+	return `/v1/students/${id}/facilities/${facilityId}/current-month-days`;
+};
+
+/**
+ * @summary Get current month effective days & invoice item quantity for a facility enrollment
+ */
+export const getV1StudentsIdFacilitiesFacilityIdCurrentMonthDays = async (
+	id: number,
+	facilityId: number,
+	options?: RequestInit,
+): Promise<getV1StudentsIdFacilitiesFacilityIdCurrentMonthDaysResponse> => {
+	return customInstance<getV1StudentsIdFacilitiesFacilityIdCurrentMonthDaysResponse>(
+		getGetV1StudentsIdFacilitiesFacilityIdCurrentMonthDaysUrl(id, facilityId),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
+
+export const getGetV1StudentsIdFacilitiesFacilityIdCurrentMonthDaysQueryKey = (
+	id: number,
+	facilityId: number,
+) => {
+	return [
+		`/v1/students/${id}/facilities/${facilityId}/current-month-days`,
+	] as const;
+};
+
+export const getGetV1StudentsIdFacilitiesFacilityIdCurrentMonthDaysQueryOptions =
+	<
+		TData = Awaited<
+			ReturnType<typeof getV1StudentsIdFacilitiesFacilityIdCurrentMonthDays>
+		>,
+		TError = unknown,
+	>(
+		id: number,
+		facilityId: number,
+		options?: {
+			query?: Partial<
+				UseQueryOptions<
+					Awaited<
+						ReturnType<
+							typeof getV1StudentsIdFacilitiesFacilityIdCurrentMonthDays
+						>
+					>,
+					TError,
+					TData
+				>
+			>;
+			request?: SecondParameter<typeof customInstance>;
+		},
+	) => {
+		const { query: queryOptions, request: requestOptions } = options ?? {};
+
+		const queryKey =
+			queryOptions?.queryKey ??
+			getGetV1StudentsIdFacilitiesFacilityIdCurrentMonthDaysQueryKey(
+				id,
+				facilityId,
+			);
+
+		const queryFn: QueryFunction<
+			Awaited<
+				ReturnType<typeof getV1StudentsIdFacilitiesFacilityIdCurrentMonthDays>
+			>
+		> = ({ signal }) =>
+			getV1StudentsIdFacilitiesFacilityIdCurrentMonthDays(id, facilityId, {
+				signal,
+				...requestOptions,
+			});
+
+		return {
+			queryKey,
+			queryFn,
+			enabled: !!(id && facilityId),
+			...queryOptions,
+		} as UseQueryOptions<
+			Awaited<
+				ReturnType<typeof getV1StudentsIdFacilitiesFacilityIdCurrentMonthDays>
+			>,
+			TError,
+			TData
+		> & { queryKey: DataTag<QueryKey, TData, TError> };
+	};
+
+export type GetV1StudentsIdFacilitiesFacilityIdCurrentMonthDaysQueryResult =
+	NonNullable<
+		Awaited<
+			ReturnType<typeof getV1StudentsIdFacilitiesFacilityIdCurrentMonthDays>
+		>
+	>;
+export type GetV1StudentsIdFacilitiesFacilityIdCurrentMonthDaysQueryError =
+	unknown;
+
+export function useGetV1StudentsIdFacilitiesFacilityIdCurrentMonthDays<
+	TData = Awaited<
+		ReturnType<typeof getV1StudentsIdFacilitiesFacilityIdCurrentMonthDays>
+	>,
+	TError = unknown,
+>(
+	id: number,
+	facilityId: number,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<
+					ReturnType<typeof getV1StudentsIdFacilitiesFacilityIdCurrentMonthDays>
+				>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<
+						ReturnType<
+							typeof getV1StudentsIdFacilitiesFacilityIdCurrentMonthDays
+						>
+					>,
+					TError,
+					Awaited<
+						ReturnType<
+							typeof getV1StudentsIdFacilitiesFacilityIdCurrentMonthDays
+						>
+					>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1StudentsIdFacilitiesFacilityIdCurrentMonthDays<
+	TData = Awaited<
+		ReturnType<typeof getV1StudentsIdFacilitiesFacilityIdCurrentMonthDays>
+	>,
+	TError = unknown,
+>(
+	id: number,
+	facilityId: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<
+					ReturnType<typeof getV1StudentsIdFacilitiesFacilityIdCurrentMonthDays>
+				>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<
+						ReturnType<
+							typeof getV1StudentsIdFacilitiesFacilityIdCurrentMonthDays
+						>
+					>,
+					TError,
+					Awaited<
+						ReturnType<
+							typeof getV1StudentsIdFacilitiesFacilityIdCurrentMonthDays
+						>
+					>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1StudentsIdFacilitiesFacilityIdCurrentMonthDays<
+	TData = Awaited<
+		ReturnType<typeof getV1StudentsIdFacilitiesFacilityIdCurrentMonthDays>
+	>,
+	TError = unknown,
+>(
+	id: number,
+	facilityId: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<
+					ReturnType<typeof getV1StudentsIdFacilitiesFacilityIdCurrentMonthDays>
+				>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get current month effective days & invoice item quantity for a facility enrollment
+ */
+
+export function useGetV1StudentsIdFacilitiesFacilityIdCurrentMonthDays<
+	TData = Awaited<
+		ReturnType<typeof getV1StudentsIdFacilitiesFacilityIdCurrentMonthDays>
+	>,
+	TError = unknown,
+>(
+	id: number,
+	facilityId: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<
+					ReturnType<typeof getV1StudentsIdFacilitiesFacilityIdCurrentMonthDays>
+				>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions =
+		getGetV1StudentsIdFacilitiesFacilityIdCurrentMonthDaysQueryOptions(
+			id,
+			facilityId,
+			options,
+		);
+
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+	return { ...query, queryKey: queryOptions.queryKey };
+}

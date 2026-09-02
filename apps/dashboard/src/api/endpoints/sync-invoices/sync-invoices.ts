@@ -50,6 +50,8 @@ export interface ExtracurricularCleanupPreviewItem {
 	year: number;
 	item_id: number;
 	item_name: string;
+	/** "remove" = dihapus; "writeoff" = sisa dibebaskan (sudah dibayar sebagian). */
+	action: string;
 	amount: number;
 }
 

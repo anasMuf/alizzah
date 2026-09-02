@@ -34,6 +34,12 @@ func NewPaymentHandler(service service.PaymentService) *PaymentHandler {
 // @Param        start_date        query   string  false  "Start Date (YYYY-MM-DD)"
 // @Param        end_date          query   string  false  "End Date (YYYY-MM-DD)"
 // @Param        search            query   string  false  "Search by student name"
+// @Param        level             query   string  false  "Jenjang siswa (intan/berlian) via enrollment aktif"
+// @Param        class_group_id    query   int     false  "ID rombel siswa via enrollment aktif"
+// @Param        created_by        query   int     false  "Petugas pencatat (user ID)"
+// @Param        category          query   string  false  "Kategori item yang dibayar (monthly_spp, pasta, dll)"
+// @Param        month             query   int     false  "Periode tagihan yang dibayar (bulan 1-12)"
+// @Param        year              query   int     false  "Periode tagihan yang dibayar (tahun)"
 // @Success      200               {object}  dto.PaginatedResponse{data=[]dto.PaymentListResponse}
 // @Failure      401               {object}  dto.ErrorResponse
 // @Failure      403               {object}  dto.ErrorResponse
@@ -43,6 +49,10 @@ func (h *PaymentHandler) List(c echo.Context) error {
 	page, limit := utility.ParsePagination(c)
 	studentID, _ := strconv.Atoi(c.QueryParam("student_id"))
 	academicYearID, _ := strconv.Atoi(c.QueryParam("academic_year_id"))
+	classGroupID, _ := strconv.Atoi(c.QueryParam("class_group_id"))
+	createdBy, _ := strconv.Atoi(c.QueryParam("created_by"))
+	month, _ := strconv.Atoi(c.QueryParam("month"))
+	year, _ := strconv.Atoi(c.QueryParam("year"))
 
 	params := dto.PaymentQueryParams{
 		StudentID:      uint(studentID),
@@ -51,6 +61,12 @@ func (h *PaymentHandler) List(c echo.Context) error {
 		EndDate:        c.QueryParam("end_date"),
 		Source:         c.QueryParam("source"),
 		Search:         c.QueryParam("search"),
+		Level:          c.QueryParam("level"),
+		ClassGroupID:   uint(classGroupID),
+		CreatedBy:      uint(createdBy),
+		Category:       c.QueryParam("category"),
+		Month:          uint(month),
+		Year:           uint(year),
 		Page:           page,
 		Limit:          limit,
 	}

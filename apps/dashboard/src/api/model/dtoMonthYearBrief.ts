@@ -6,9 +6,7 @@
  * OpenAPI spec version: 1.0
  */
 
-export type DeleteV1DaycareEnrollmentsIdParams = {
-	/**
-	 * Also delete unpaid invoices
-	 */
-	delete_invoices?: boolean;
-};
+export interface DtoMonthYearBrief {
+	month?: number;
+	year?: number;
+}

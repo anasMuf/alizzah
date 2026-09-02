@@ -25,6 +25,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
 	DtoEnrollExtracurricularRequest,
 	DtoErrorResponse,
+	DtoSetBillingExclusionsRequest,
 	DtoSuccessResponse,
 	DtoUpdateStudentExtracurricularRequest,
 	GetV1ExtracurricularsExport200,
@@ -33,9 +34,13 @@ import type {
 	GetV1ExtracurricularsIdStudentsParams,
 	GetV1StudentsIdExtracurriculars200,
 	GetV1StudentsIdExtracurricularsParams,
+	GetV1StudentsIdExtracurricularsSeIdBillingExclusions200,
+	PostV1ExtracurricularsPreviewSyncInvoices200,
 	PostV1ExtracurricularsSyncInvoices200,
 	PostV1StudentsIdExtracurriculars201,
+	PostV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesPreview200,
 	PutV1StudentsIdExtracurricularsSeId200,
+	PutV1StudentsIdExtracurricularsSeIdBillingExclusions200,
 } from "../../model";
 
 import { customInstance } from "../../mutator/custom-instance";
@@ -272,6 +277,134 @@ export function useGetV1ExtracurricularsExport<
 	return { ...query, queryKey: queryOptions.queryKey };
 }
 
+export type postV1ExtracurricularsPreviewSyncInvoicesResponse200 = {
+	data: PostV1ExtracurricularsPreviewSyncInvoices200;
+	status: 200;
+};
+
+export type postV1ExtracurricularsPreviewSyncInvoicesResponse401 = {
+	data: DtoErrorResponse;
+	status: 401;
+};
+
+export type postV1ExtracurricularsPreviewSyncInvoicesResponse403 = {
+	data: DtoErrorResponse;
+	status: 403;
+};
+
+export type postV1ExtracurricularsPreviewSyncInvoicesResponse500 = {
+	data: DtoErrorResponse;
+	status: 500;
+};
+
+export type postV1ExtracurricularsPreviewSyncInvoicesResponseSuccess =
+	postV1ExtracurricularsPreviewSyncInvoicesResponse200 & {
+		headers: Headers;
+	};
+export type postV1ExtracurricularsPreviewSyncInvoicesResponseError = (
+	| postV1ExtracurricularsPreviewSyncInvoicesResponse401
+	| postV1ExtracurricularsPreviewSyncInvoicesResponse403
+	| postV1ExtracurricularsPreviewSyncInvoicesResponse500
+) & {
+	headers: Headers;
+};
+
+export type postV1ExtracurricularsPreviewSyncInvoicesResponse =
+	| postV1ExtracurricularsPreviewSyncInvoicesResponseSuccess
+	| postV1ExtracurricularsPreviewSyncInvoicesResponseError;
+
+export const getPostV1ExtracurricularsPreviewSyncInvoicesUrl = () => {
+	return `/v1/extracurriculars/preview-sync-invoices`;
+};
+
+/**
+ * Hitung rencana sinkronisasi tagihan ekstrakurikuler bulanan
+ * @summary Preview extracurricular sync (dry-run)
+ */
+export const postV1ExtracurricularsPreviewSyncInvoices = async (
+	options?: RequestInit,
+): Promise<postV1ExtracurricularsPreviewSyncInvoicesResponse> => {
+	return customInstance<postV1ExtracurricularsPreviewSyncInvoicesResponse>(
+		getPostV1ExtracurricularsPreviewSyncInvoicesUrl(),
+		{
+			...options,
+			method: "POST",
+		},
+	);
+};
+
+export const getPostV1ExtracurricularsPreviewSyncInvoicesMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1ExtracurricularsPreviewSyncInvoices>>,
+		TError,
+		void,
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1ExtracurricularsPreviewSyncInvoices>>,
+	TError,
+	void,
+	TContext
+> => {
+	const mutationKey = ["postV1ExtracurricularsPreviewSyncInvoices"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1ExtracurricularsPreviewSyncInvoices>>,
+		void
+	> = () => {
+		return postV1ExtracurricularsPreviewSyncInvoices(requestOptions);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type PostV1ExtracurricularsPreviewSyncInvoicesMutationResult =
+	NonNullable<
+		Awaited<ReturnType<typeof postV1ExtracurricularsPreviewSyncInvoices>>
+	>;
+
+export type PostV1ExtracurricularsPreviewSyncInvoicesMutationError =
+	DtoErrorResponse;
+
+/**
+ * @summary Preview extracurricular sync (dry-run)
+ */
+export const usePostV1ExtracurricularsPreviewSyncInvoices = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1ExtracurricularsPreviewSyncInvoices>>,
+			TError,
+			void,
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1ExtracurricularsPreviewSyncInvoices>>,
+	TError,
+	void,
+	TContext
+> => {
+	return useMutation(
+		getPostV1ExtracurricularsPreviewSyncInvoicesMutationOptions(options),
+		queryClient,
+	);
+};
 export type postV1ExtracurricularsSyncInvoicesResponse200 = {
 	data: PostV1ExtracurricularsSyncInvoices200;
 	status: 200;
@@ -466,7 +599,7 @@ export const getGetV1ExtracurricularsIdStudentsUrl = (
 };
 
 /**
- * Get list of students enrolled in a specific extracurricular
+ * Get list of students that have PASTA billing items in the given
  * @summary Get students in an extracurricular
  */
 export const getV1ExtracurricularsIdStudents = async (
@@ -1045,6 +1178,360 @@ export const usePostV1StudentsIdExtracurriculars = <
 		queryClient,
 	);
 };
+export type postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesResponse200 =
+	{
+		data: DtoSuccessResponse;
+		status: 200;
+	};
+
+export type postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesResponse400 =
+	{
+		data: DtoErrorResponse;
+		status: 400;
+	};
+
+export type postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesResponse401 =
+	{
+		data: DtoErrorResponse;
+		status: 401;
+	};
+
+export type postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesResponse403 =
+	{
+		data: DtoErrorResponse;
+		status: 403;
+	};
+
+export type postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesResponse500 =
+	{
+		data: DtoErrorResponse;
+		status: 500;
+	};
+
+export type postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesResponseSuccess =
+	postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesResponse200 & {
+		headers: Headers;
+	};
+export type postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesResponseError =
+	(
+		| postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesResponse400
+		| postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesResponse401
+		| postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesResponse403
+		| postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesResponse500
+	) & {
+		headers: Headers;
+	};
+
+export type postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesResponse =
+	| postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesResponseSuccess
+	| postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesResponseError;
+
+export const getPostV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesUrl =
+	(id: number, extracurricularId: number) => {
+		return `/v1/students/${id}/extracurriculars/${extracurricularId}/cleanup-invoices`;
+	};
+
+/**
+ * Recovery endpoint: menghapus item unpaid ekskul tertentu dari
+ * @summary Hapus item unpaid ekskul dari invoice mulai bulan mulai mengikuti
+ */
+export const postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoices =
+	async (
+		id: number,
+		extracurricularId: number,
+		options?: RequestInit,
+	): Promise<postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesResponse> => {
+		return customInstance<postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesResponse>(
+			getPostV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesUrl(
+				id,
+				extracurricularId,
+			),
+			{
+				...options,
+				method: "POST",
+			},
+		);
+	};
+
+export const getPostV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesMutationOptions =
+	<TError = DtoErrorResponse, TContext = unknown>(options?: {
+		mutation?: UseMutationOptions<
+			Awaited<
+				ReturnType<
+					typeof postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoices
+				>
+			>,
+			TError,
+			{ id: number; extracurricularId: number },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	}): UseMutationOptions<
+		Awaited<
+			ReturnType<
+				typeof postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoices
+			>
+		>,
+		TError,
+		{ id: number; extracurricularId: number },
+		TContext
+	> => {
+		const mutationKey = [
+			"postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoices",
+		];
+		const { mutation: mutationOptions, request: requestOptions } = options
+			? options.mutation &&
+				"mutationKey" in options.mutation &&
+				options.mutation.mutationKey
+				? options
+				: { ...options, mutation: { ...options.mutation, mutationKey } }
+			: { mutation: { mutationKey }, request: undefined };
+
+		const mutationFn: MutationFunction<
+			Awaited<
+				ReturnType<
+					typeof postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoices
+				>
+			>,
+			{ id: number; extracurricularId: number }
+		> = (props) => {
+			const { id, extracurricularId } = props ?? {};
+
+			return postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoices(
+				id,
+				extracurricularId,
+				requestOptions,
+			);
+		};
+
+		return { mutationFn, ...mutationOptions };
+	};
+
+export type PostV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesMutationResult =
+	NonNullable<
+		Awaited<
+			ReturnType<
+				typeof postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoices
+			>
+		>
+	>;
+
+export type PostV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesMutationError =
+	DtoErrorResponse;
+
+/**
+ * @summary Hapus item unpaid ekskul dari invoice mulai bulan mulai mengikuti
+ */
+export const usePostV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoices =
+	<TError = DtoErrorResponse, TContext = unknown>(
+		options?: {
+			mutation?: UseMutationOptions<
+				Awaited<
+					ReturnType<
+						typeof postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoices
+					>
+				>,
+				TError,
+				{ id: number; extracurricularId: number },
+				TContext
+			>;
+			request?: SecondParameter<typeof customInstance>;
+		},
+		queryClient?: QueryClient,
+	): UseMutationResult<
+		Awaited<
+			ReturnType<
+				typeof postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoices
+			>
+		>,
+		TError,
+		{ id: number; extracurricularId: number },
+		TContext
+	> => {
+		return useMutation(
+			getPostV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesMutationOptions(
+				options,
+			),
+			queryClient,
+		);
+	};
+export type postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesPreviewResponse200 =
+	{
+		data: PostV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesPreview200;
+		status: 200;
+	};
+
+export type postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesPreviewResponse400 =
+	{
+		data: DtoErrorResponse;
+		status: 400;
+	};
+
+export type postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesPreviewResponse401 =
+	{
+		data: DtoErrorResponse;
+		status: 401;
+	};
+
+export type postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesPreviewResponse403 =
+	{
+		data: DtoErrorResponse;
+		status: 403;
+	};
+
+export type postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesPreviewResponse500 =
+	{
+		data: DtoErrorResponse;
+		status: 500;
+	};
+
+export type postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesPreviewResponseSuccess =
+	postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesPreviewResponse200 & {
+		headers: Headers;
+	};
+export type postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesPreviewResponseError =
+	(
+		| postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesPreviewResponse400
+		| postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesPreviewResponse401
+		| postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesPreviewResponse403
+		| postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesPreviewResponse500
+	) & {
+		headers: Headers;
+	};
+
+export type postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesPreviewResponse =
+	| postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesPreviewResponseSuccess
+	| postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesPreviewResponseError;
+
+export const getPostV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesPreviewUrl =
+	(id: number, extracurricularId: number) => {
+		return `/v1/students/${id}/extracurriculars/${extracurricularId}/cleanup-invoices/preview`;
+	};
+
+/**
+ * Menampilkan item unpaid ekstrakurikuler yang AKAN dihapus dari
+ * @summary Preview pembersihan tagihan PASTA (dry-run)
+ */
+export const postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesPreview =
+	async (
+		id: number,
+		extracurricularId: number,
+		options?: RequestInit,
+	): Promise<postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesPreviewResponse> => {
+		return customInstance<postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesPreviewResponse>(
+			getPostV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesPreviewUrl(
+				id,
+				extracurricularId,
+			),
+			{
+				...options,
+				method: "POST",
+			},
+		);
+	};
+
+export const getPostV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesPreviewMutationOptions =
+	<TError = DtoErrorResponse, TContext = unknown>(options?: {
+		mutation?: UseMutationOptions<
+			Awaited<
+				ReturnType<
+					typeof postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesPreview
+				>
+			>,
+			TError,
+			{ id: number; extracurricularId: number },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	}): UseMutationOptions<
+		Awaited<
+			ReturnType<
+				typeof postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesPreview
+			>
+		>,
+		TError,
+		{ id: number; extracurricularId: number },
+		TContext
+	> => {
+		const mutationKey = [
+			"postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesPreview",
+		];
+		const { mutation: mutationOptions, request: requestOptions } = options
+			? options.mutation &&
+				"mutationKey" in options.mutation &&
+				options.mutation.mutationKey
+				? options
+				: { ...options, mutation: { ...options.mutation, mutationKey } }
+			: { mutation: { mutationKey }, request: undefined };
+
+		const mutationFn: MutationFunction<
+			Awaited<
+				ReturnType<
+					typeof postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesPreview
+				>
+			>,
+			{ id: number; extracurricularId: number }
+		> = (props) => {
+			const { id, extracurricularId } = props ?? {};
+
+			return postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesPreview(
+				id,
+				extracurricularId,
+				requestOptions,
+			);
+		};
+
+		return { mutationFn, ...mutationOptions };
+	};
+
+export type PostV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesPreviewMutationResult =
+	NonNullable<
+		Awaited<
+			ReturnType<
+				typeof postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesPreview
+			>
+		>
+	>;
+
+export type PostV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesPreviewMutationError =
+	DtoErrorResponse;
+
+/**
+ * @summary Preview pembersihan tagihan PASTA (dry-run)
+ */
+export const usePostV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesPreview =
+	<TError = DtoErrorResponse, TContext = unknown>(
+		options?: {
+			mutation?: UseMutationOptions<
+				Awaited<
+					ReturnType<
+						typeof postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesPreview
+					>
+				>,
+				TError,
+				{ id: number; extracurricularId: number },
+				TContext
+			>;
+			request?: SecondParameter<typeof customInstance>;
+		},
+		queryClient?: QueryClient,
+	): UseMutationResult<
+		Awaited<
+			ReturnType<
+				typeof postV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesPreview
+			>
+		>,
+		TError,
+		{ id: number; extracurricularId: number },
+		TContext
+	> => {
+		return useMutation(
+			getPostV1StudentsIdExtracurricularsExtracurricularIdCleanupInvoicesPreviewMutationOptions(
+				options,
+			),
+			queryClient,
+		);
+	};
 export type putV1StudentsIdExtracurricularsSeIdResponse200 = {
 	data: PutV1StudentsIdExtracurricularsSeId200;
 	status: 200;
@@ -1341,6 +1828,478 @@ export const useDeleteV1StudentsIdExtracurricularsSeId = <
 > => {
 	return useMutation(
 		getDeleteV1StudentsIdExtracurricularsSeIdMutationOptions(options),
+		queryClient,
+	);
+};
+export type getV1StudentsIdExtracurricularsSeIdBillingExclusionsResponse200 = {
+	data: GetV1StudentsIdExtracurricularsSeIdBillingExclusions200;
+	status: 200;
+};
+
+export type getV1StudentsIdExtracurricularsSeIdBillingExclusionsResponse400 = {
+	data: DtoErrorResponse;
+	status: 400;
+};
+
+export type getV1StudentsIdExtracurricularsSeIdBillingExclusionsResponse401 = {
+	data: DtoErrorResponse;
+	status: 401;
+};
+
+export type getV1StudentsIdExtracurricularsSeIdBillingExclusionsResponse403 = {
+	data: DtoErrorResponse;
+	status: 403;
+};
+
+export type getV1StudentsIdExtracurricularsSeIdBillingExclusionsResponse404 = {
+	data: DtoErrorResponse;
+	status: 404;
+};
+
+export type getV1StudentsIdExtracurricularsSeIdBillingExclusionsResponse500 = {
+	data: DtoErrorResponse;
+	status: 500;
+};
+
+export type getV1StudentsIdExtracurricularsSeIdBillingExclusionsResponseSuccess =
+	getV1StudentsIdExtracurricularsSeIdBillingExclusionsResponse200 & {
+		headers: Headers;
+	};
+export type getV1StudentsIdExtracurricularsSeIdBillingExclusionsResponseError =
+	(
+		| getV1StudentsIdExtracurricularsSeIdBillingExclusionsResponse400
+		| getV1StudentsIdExtracurricularsSeIdBillingExclusionsResponse401
+		| getV1StudentsIdExtracurricularsSeIdBillingExclusionsResponse403
+		| getV1StudentsIdExtracurricularsSeIdBillingExclusionsResponse404
+		| getV1StudentsIdExtracurricularsSeIdBillingExclusionsResponse500
+	) & {
+		headers: Headers;
+	};
+
+export type getV1StudentsIdExtracurricularsSeIdBillingExclusionsResponse =
+	| getV1StudentsIdExtracurricularsSeIdBillingExclusionsResponseSuccess
+	| getV1StudentsIdExtracurricularsSeIdBillingExclusionsResponseError;
+
+export const getGetV1StudentsIdExtracurricularsSeIdBillingExclusionsUrl = (
+	id: number,
+	seId: number,
+) => {
+	return `/v1/students/${id}/extracurriculars/${seId}/billing-exclusions`;
+};
+
+/**
+ * Daftar bulan yang tagihan PASTA/ekskul-nya di-skip
+ * @summary Get billing month exclusions for a student extracurricular
+ */
+export const getV1StudentsIdExtracurricularsSeIdBillingExclusions = async (
+	id: number,
+	seId: number,
+	options?: RequestInit,
+): Promise<getV1StudentsIdExtracurricularsSeIdBillingExclusionsResponse> => {
+	return customInstance<getV1StudentsIdExtracurricularsSeIdBillingExclusionsResponse>(
+		getGetV1StudentsIdExtracurricularsSeIdBillingExclusionsUrl(id, seId),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
+
+export const getGetV1StudentsIdExtracurricularsSeIdBillingExclusionsQueryKey = (
+	id: number,
+	seId: number,
+) => {
+	return [
+		`/v1/students/${id}/extracurriculars/${seId}/billing-exclusions`,
+	] as const;
+};
+
+export const getGetV1StudentsIdExtracurricularsSeIdBillingExclusionsQueryOptions =
+	<
+		TData = Awaited<
+			ReturnType<typeof getV1StudentsIdExtracurricularsSeIdBillingExclusions>
+		>,
+		TError = DtoErrorResponse,
+	>(
+		id: number,
+		seId: number,
+		options?: {
+			query?: Partial<
+				UseQueryOptions<
+					Awaited<
+						ReturnType<
+							typeof getV1StudentsIdExtracurricularsSeIdBillingExclusions
+						>
+					>,
+					TError,
+					TData
+				>
+			>;
+			request?: SecondParameter<typeof customInstance>;
+		},
+	) => {
+		const { query: queryOptions, request: requestOptions } = options ?? {};
+
+		const queryKey =
+			queryOptions?.queryKey ??
+			getGetV1StudentsIdExtracurricularsSeIdBillingExclusionsQueryKey(id, seId);
+
+		const queryFn: QueryFunction<
+			Awaited<
+				ReturnType<typeof getV1StudentsIdExtracurricularsSeIdBillingExclusions>
+			>
+		> = ({ signal }) =>
+			getV1StudentsIdExtracurricularsSeIdBillingExclusions(id, seId, {
+				signal,
+				...requestOptions,
+			});
+
+		return {
+			queryKey,
+			queryFn,
+			enabled: !!(id && seId),
+			...queryOptions,
+		} as UseQueryOptions<
+			Awaited<
+				ReturnType<typeof getV1StudentsIdExtracurricularsSeIdBillingExclusions>
+			>,
+			TError,
+			TData
+		> & { queryKey: DataTag<QueryKey, TData, TError> };
+	};
+
+export type GetV1StudentsIdExtracurricularsSeIdBillingExclusionsQueryResult =
+	NonNullable<
+		Awaited<
+			ReturnType<typeof getV1StudentsIdExtracurricularsSeIdBillingExclusions>
+		>
+	>;
+export type GetV1StudentsIdExtracurricularsSeIdBillingExclusionsQueryError =
+	DtoErrorResponse;
+
+export function useGetV1StudentsIdExtracurricularsSeIdBillingExclusions<
+	TData = Awaited<
+		ReturnType<typeof getV1StudentsIdExtracurricularsSeIdBillingExclusions>
+	>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	seId: number,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<
+					ReturnType<
+						typeof getV1StudentsIdExtracurricularsSeIdBillingExclusions
+					>
+				>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<
+						ReturnType<
+							typeof getV1StudentsIdExtracurricularsSeIdBillingExclusions
+						>
+					>,
+					TError,
+					Awaited<
+						ReturnType<
+							typeof getV1StudentsIdExtracurricularsSeIdBillingExclusions
+						>
+					>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1StudentsIdExtracurricularsSeIdBillingExclusions<
+	TData = Awaited<
+		ReturnType<typeof getV1StudentsIdExtracurricularsSeIdBillingExclusions>
+	>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	seId: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<
+					ReturnType<
+						typeof getV1StudentsIdExtracurricularsSeIdBillingExclusions
+					>
+				>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<
+						ReturnType<
+							typeof getV1StudentsIdExtracurricularsSeIdBillingExclusions
+						>
+					>,
+					TError,
+					Awaited<
+						ReturnType<
+							typeof getV1StudentsIdExtracurricularsSeIdBillingExclusions
+						>
+					>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetV1StudentsIdExtracurricularsSeIdBillingExclusions<
+	TData = Awaited<
+		ReturnType<typeof getV1StudentsIdExtracurricularsSeIdBillingExclusions>
+	>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	seId: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<
+					ReturnType<
+						typeof getV1StudentsIdExtracurricularsSeIdBillingExclusions
+					>
+				>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get billing month exclusions for a student extracurricular
+ */
+
+export function useGetV1StudentsIdExtracurricularsSeIdBillingExclusions<
+	TData = Awaited<
+		ReturnType<typeof getV1StudentsIdExtracurricularsSeIdBillingExclusions>
+	>,
+	TError = DtoErrorResponse,
+>(
+	id: number,
+	seId: number,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<
+					ReturnType<
+						typeof getV1StudentsIdExtracurricularsSeIdBillingExclusions
+					>
+				>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const queryOptions =
+		getGetV1StudentsIdExtracurricularsSeIdBillingExclusionsQueryOptions(
+			id,
+			seId,
+			options,
+		);
+
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+		TData,
+		TError
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+	return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export type putV1StudentsIdExtracurricularsSeIdBillingExclusionsResponse200 = {
+	data: PutV1StudentsIdExtracurricularsSeIdBillingExclusions200;
+	status: 200;
+};
+
+export type putV1StudentsIdExtracurricularsSeIdBillingExclusionsResponse400 = {
+	data: DtoErrorResponse;
+	status: 400;
+};
+
+export type putV1StudentsIdExtracurricularsSeIdBillingExclusionsResponse401 = {
+	data: DtoErrorResponse;
+	status: 401;
+};
+
+export type putV1StudentsIdExtracurricularsSeIdBillingExclusionsResponse403 = {
+	data: DtoErrorResponse;
+	status: 403;
+};
+
+export type putV1StudentsIdExtracurricularsSeIdBillingExclusionsResponse404 = {
+	data: DtoErrorResponse;
+	status: 404;
+};
+
+export type putV1StudentsIdExtracurricularsSeIdBillingExclusionsResponse500 = {
+	data: DtoErrorResponse;
+	status: 500;
+};
+
+export type putV1StudentsIdExtracurricularsSeIdBillingExclusionsResponseSuccess =
+	putV1StudentsIdExtracurricularsSeIdBillingExclusionsResponse200 & {
+		headers: Headers;
+	};
+export type putV1StudentsIdExtracurricularsSeIdBillingExclusionsResponseError =
+	(
+		| putV1StudentsIdExtracurricularsSeIdBillingExclusionsResponse400
+		| putV1StudentsIdExtracurricularsSeIdBillingExclusionsResponse401
+		| putV1StudentsIdExtracurricularsSeIdBillingExclusionsResponse403
+		| putV1StudentsIdExtracurricularsSeIdBillingExclusionsResponse404
+		| putV1StudentsIdExtracurricularsSeIdBillingExclusionsResponse500
+	) & {
+		headers: Headers;
+	};
+
+export type putV1StudentsIdExtracurricularsSeIdBillingExclusionsResponse =
+	| putV1StudentsIdExtracurricularsSeIdBillingExclusionsResponseSuccess
+	| putV1StudentsIdExtracurricularsSeIdBillingExclusionsResponseError;
+
+export const getPutV1StudentsIdExtracurricularsSeIdBillingExclusionsUrl = (
+	id: number,
+	seId: number,
+) => {
+	return `/v1/students/${id}/extracurriculars/${seId}/billing-exclusions`;
+};
+
+/**
+ * Ganti seluruh daftar bulan yang tagihan PASTA/ekskul-nya di-skip
+ * @summary Set billing month exclusions for a student extracurricular
+ */
+export const putV1StudentsIdExtracurricularsSeIdBillingExclusions = async (
+	id: number,
+	seId: number,
+	dtoSetBillingExclusionsRequest: DtoSetBillingExclusionsRequest,
+	options?: RequestInit,
+): Promise<putV1StudentsIdExtracurricularsSeIdBillingExclusionsResponse> => {
+	return customInstance<putV1StudentsIdExtracurricularsSeIdBillingExclusionsResponse>(
+		getPutV1StudentsIdExtracurricularsSeIdBillingExclusionsUrl(id, seId),
+		{
+			...options,
+			method: "PUT",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(dtoSetBillingExclusionsRequest),
+		},
+	);
+};
+
+export const getPutV1StudentsIdExtracurricularsSeIdBillingExclusionsMutationOptions =
+	<TError = DtoErrorResponse, TContext = unknown>(options?: {
+		mutation?: UseMutationOptions<
+			Awaited<
+				ReturnType<typeof putV1StudentsIdExtracurricularsSeIdBillingExclusions>
+			>,
+			TError,
+			{ id: number; seId: number; data: DtoSetBillingExclusionsRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	}): UseMutationOptions<
+		Awaited<
+			ReturnType<typeof putV1StudentsIdExtracurricularsSeIdBillingExclusions>
+		>,
+		TError,
+		{ id: number; seId: number; data: DtoSetBillingExclusionsRequest },
+		TContext
+	> => {
+		const mutationKey = [
+			"putV1StudentsIdExtracurricularsSeIdBillingExclusions",
+		];
+		const { mutation: mutationOptions, request: requestOptions } = options
+			? options.mutation &&
+				"mutationKey" in options.mutation &&
+				options.mutation.mutationKey
+				? options
+				: { ...options, mutation: { ...options.mutation, mutationKey } }
+			: { mutation: { mutationKey }, request: undefined };
+
+		const mutationFn: MutationFunction<
+			Awaited<
+				ReturnType<typeof putV1StudentsIdExtracurricularsSeIdBillingExclusions>
+			>,
+			{ id: number; seId: number; data: DtoSetBillingExclusionsRequest }
+		> = (props) => {
+			const { id, seId, data } = props ?? {};
+
+			return putV1StudentsIdExtracurricularsSeIdBillingExclusions(
+				id,
+				seId,
+				data,
+				requestOptions,
+			);
+		};
+
+		return { mutationFn, ...mutationOptions };
+	};
+
+export type PutV1StudentsIdExtracurricularsSeIdBillingExclusionsMutationResult =
+	NonNullable<
+		Awaited<
+			ReturnType<typeof putV1StudentsIdExtracurricularsSeIdBillingExclusions>
+		>
+	>;
+export type PutV1StudentsIdExtracurricularsSeIdBillingExclusionsMutationBody =
+	DtoSetBillingExclusionsRequest;
+export type PutV1StudentsIdExtracurricularsSeIdBillingExclusionsMutationError =
+	DtoErrorResponse;
+
+/**
+ * @summary Set billing month exclusions for a student extracurricular
+ */
+export const usePutV1StudentsIdExtracurricularsSeIdBillingExclusions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<
+				ReturnType<typeof putV1StudentsIdExtracurricularsSeIdBillingExclusions>
+			>,
+			TError,
+			{ id: number; seId: number; data: DtoSetBillingExclusionsRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<
+		ReturnType<typeof putV1StudentsIdExtracurricularsSeIdBillingExclusions>
+	>,
+	TError,
+	{ id: number; seId: number; data: DtoSetBillingExclusionsRequest },
+	TContext
+> => {
+	return useMutation(
+		getPutV1StudentsIdExtracurricularsSeIdBillingExclusionsMutationOptions(
+			options,
+		),
 		queryClient,
 	);
 };

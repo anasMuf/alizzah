@@ -648,7 +648,7 @@ func mapPaymentStudentBrief(s model.Student) dto.StudentBriefResponse {
 }
 
 func mapPaymentToListResponse(p model.Payment) dto.PaymentListResponse {
-	return dto.PaymentListResponse{
+	resp := dto.PaymentListResponse{
 		ID:             p.ID,
 		Student:        mapPaymentStudentBrief(p.Student),
 		PaymentDate:    p.PaymentDate.Format("2006-01-02"),
@@ -658,6 +658,30 @@ func mapPaymentToListResponse(p model.Payment) dto.PaymentListResponse {
 		CreatedBy:      dto.UserBriefResponse{ID: p.Creator.ID, FullName: p.Creator.FullName},
 		CreatedAt:      p.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 	}
+	resp.Items = mapPaymentItems(p.Items)
+	return resp
+}
+
+func mapPaymentItems(items []model.PaymentItem) []dto.PaymentItemResponse {
+	out := make([]dto.PaymentItemResponse, 0, len(items))
+	for _, item := range items {
+		resp := dto.PaymentItemResponse{
+			ID:              item.ID,
+			InvoiceItemID:   item.InvoiceItemID,
+			InvoiceID:       item.InvoiceItem.InvoiceID,
+			InvoiceItemName: item.InvoiceItem.Name,
+			Category:        item.InvoiceItem.Category,
+			Amount:          item.Amount,
+		}
+		if item.InvoiceItem.Invoice.Month != nil {
+			resp.InvoiceMonth = item.InvoiceItem.Invoice.Month
+		}
+		if item.InvoiceItem.Invoice.Year != nil {
+			resp.InvoiceYear = item.InvoiceItem.Invoice.Year
+		}
+		out = append(out, resp)
+	}
+	return out
 }
 
 func mapPaymentToDetailResponse(p model.Payment) dto.PaymentDetailResponse {
@@ -676,9 +700,16 @@ func mapPaymentToDetailResponse(p model.Payment) dto.PaymentDetailResponse {
 	}
 	var items []dto.PaymentItemResponse
 	for _, item := range p.Items {
-		items = append(items, dto.PaymentItemResponse{
+		respItem := dto.PaymentItemResponse{
 			ID: item.ID, InvoiceItemID: item.InvoiceItemID, InvoiceID: item.InvoiceItem.InvoiceID, InvoiceItemName: item.InvoiceItem.Name, Category: item.InvoiceItem.Category, Amount: item.Amount,
-		})
+		}
+		if item.InvoiceItem.Invoice.Month != nil {
+			respItem.InvoiceMonth = item.InvoiceItem.Invoice.Month
+		}
+		if item.InvoiceItem.Invoice.Year != nil {
+			respItem.InvoiceYear = item.InvoiceItem.Invoice.Year
+		}
+		items = append(items, respItem)
 	}
 	resp.Items = items
 	return resp

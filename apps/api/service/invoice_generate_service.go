@@ -765,6 +765,42 @@ func (s *invoiceGenerateService) RecalculateInfaqHarian(classGroupID, month, yea
 						needsRecalc = true
 					}
 				}
+
+				// Item fasilitas per-hari (per_day): hari efektif berubah → jumlah
+				// hari ikut di-update. Tanpa ini, item fasilitas yang dibuat sebelum
+				// hari efektif diset akan tertulis 0 hari selamanya (tidak ada recalc
+				// lain utk fasilitas). Item flat (quantity NULL) tidak disentuh.
+				if item.Category == "facility" && item.Quantity != nil && item.UnitPrice != nil {
+					newQuantity := effectiveDays.TotalDays
+					newAmount := *item.UnitPrice * float64(newQuantity)
+
+					// Nama dasar tanpa suffix " (N hari)" — ambil dari nama item saat ini
+					baseName := item.Name
+					if idx := strings.LastIndex(item.Name, " ("); idx > 0 {
+						baseName = item.Name[:idx]
+					}
+					newName := fmt.Sprintf("%s (%d hari)", baseName, newQuantity)
+
+					if item.PaidAmount == 0 {
+						item.Amount = newAmount
+						item.Quantity = &newQuantity
+						item.Name = newName
+						item.Status = "unpaid"
+						txItemRepo.Update(&item)
+						needsRecalc = true
+					} else if newAmount >= item.PaidAmount {
+						item.Amount = newAmount
+						item.Quantity = &newQuantity
+						item.Name = newName
+						if item.PaidAmount >= newAmount {
+							item.Status = "paid"
+						} else {
+							item.Status = "partial"
+						}
+						txItemRepo.Update(&item)
+						needsRecalc = true
+					}
+				}
 			}
 
 			if needsRecalc {

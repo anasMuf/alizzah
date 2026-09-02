@@ -688,3 +688,70 @@ func TestGenerateMonthly_SkipsExcludedFacility(t *testing.T) {
 	assert.Equal(t, int64(1), count)
 	assert.Equal(t, 50000.0, total)
 }
+
+// --- Recalc hari efektif: item fasilitas per_day ikut di-update ---
+
+func TestRecalculateInfaqHarian_UpdatesFacilityPerDayItems(t *testing.T) {
+	db := setupBillingExclusionInvoiceTestDB(t)
+	fx := seedExclusionInvoiceFixture(t, db)
+
+	// Rombel siswa (Intan 1) — hari efektif Oktober: 20 hari
+	var cg model.ClassGroup
+	require.NoError(t, db.First(&cg).Error)
+	require.NoError(t, db.Create(&model.EffectiveDay{
+		ClassGroupID: cg.ID, AcademicYearID: fx.AcademicYear.ID,
+		Month: 10, Year: 2025, TotalDays: 20, TotalMondays: 0, CreatedBy: 1,
+	}).Error)
+
+	// Item fasilitas per_day "0 hari" di invoice Oktober (simulasi dibuat sebelum
+	// hari efektif diset — tanpa recalc, akan tertulis 0 hari selamanya)
+	var inv model.Invoice
+	require.NoError(t, db.Where("student_id = ? AND month = ? AND year = ?", fx.StudentID, 10, 2025).First(&inv).Error)
+	fid := fx.FacilityID
+	qty := uint(0)
+	up := 50000.0
+	require.NoError(t, db.Create(&model.InvoiceItem{
+		InvoiceID: inv.ID, Name: "Antar Jemput (0 hari)", Category: "facility",
+		Amount: 0, Quantity: &qty, UnitPrice: &up, IsMandatory: true, FacilityID: &fid,
+	}).Error)
+
+	gen := newTestInvoiceGen(t, db)
+	require.NoError(t, gen.RecalculateInfaqHarian(cg.ID, 10, 2025))
+
+	var reloaded model.InvoiceItem
+	require.NoError(t, db.Where("invoice_id = ? AND category = ?", inv.ID, "facility").First(&reloaded).Error)
+	assert.Equal(t, uint(20), *reloaded.Quantity, "jumlah hari harus mengikuti hari efektif")
+	assert.Equal(t, 1000000.0, reloaded.Amount, "amount = unit_price × hari")
+	assert.Equal(t, "Antar Jemput (20 hari)", reloaded.Name)
+}
+
+func TestRecalculateInfaqHarian_KeepsPaidFacilityItemWhenNewAmountBelow(t *testing.T) {
+	db := setupBillingExclusionInvoiceTestDB(t)
+	fx := seedExclusionInvoiceFixture(t, db)
+
+	var cg model.ClassGroup
+	require.NoError(t, db.First(&cg).Error)
+	require.NoError(t, db.Create(&model.EffectiveDay{
+		ClassGroupID: cg.ID, AcademicYearID: fx.AcademicYear.ID,
+		Month: 11, Year: 2025, TotalDays: 10, TotalMondays: 0, CreatedBy: 1,
+	}).Error)
+
+	var inv model.Invoice
+	require.NoError(t, db.Where("student_id = ? AND month = ? AND year = ?", fx.StudentID, 11, 2025).First(&inv).Error)
+	fid := fx.FacilityID
+	qty := uint(0)
+	up := 50000.0
+	// Item sudah terlanjur dibayar 600.000 (12 hari × 50rb) padahal hari efektif baru 10
+	require.NoError(t, db.Create(&model.InvoiceItem{
+		InvoiceID: inv.ID, Name: "Antar Jemput (0 hari)", Category: "facility",
+		Amount: 0, PaidAmount: 600000, Status: "paid", Quantity: &qty, UnitPrice: &up, IsMandatory: true, FacilityID: &fid,
+	}).Error)
+
+	gen := newTestInvoiceGen(t, db)
+	require.NoError(t, gen.RecalculateInfaqHarian(cg.ID, 11, 2025))
+
+	// newAmount (500rb) < paidAmount (600rb) → item tidak boleh diubah
+	var reloaded model.InvoiceItem
+	require.NoError(t, db.Where("invoice_id = ? AND category = ?", inv.ID, "facility").First(&reloaded).Error)
+	assert.Equal(t, uint(0), *reloaded.Quantity, "item paid tidak boleh diturunkan")
+}

@@ -1,9 +1,11 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -265,4 +267,35 @@ func TestNewBackupService_Location(t *testing.T) {
 	svc := NewBackupService(BackupConfig{})
 	require.NotNil(t, svc.loc)
 	assert.Contains(t, svc.loc.String(), "Jakarta")
+}
+
+// Baris > 64KB memecahkan bufio.Scanner lama (ErrTooLong → pipe berhenti dibaca
+// → pg_dump macet). Filter harus tahan baris sepanjang apa pun.
+func TestFilterCompatLines_LongLineDoesNotHang(t *testing.T) {
+	longValue := strings.Repeat("x", 300*1024) // > bufio.MaxScanTokenSize (64KB)
+	input := "\\restrict yang harus dibuang\n" +
+		"COPY data (col) FROM stdin;\n" +
+		longValue + "\n" +
+		"\\unrestrict ini juga dibuang\n" +
+		"normal line\n"
+
+	var out bytes.Buffer
+	svc := NewBackupService(BackupConfig{})
+	require.NoError(t, svc.filterCompatLines(strings.NewReader(input), &out))
+
+	res := out.String()
+	assert.NotContains(t, res, "restrict", "baris \\restrict/\\unrestrict harus dibuang")
+	assert.Contains(t, res, longValue, "baris panjang (>64KB) harus dipertahankan utuh")
+	assert.Contains(t, res, "normal line")
+}
+
+func TestFilterCompatLines_LastLineWithoutNewline(t *testing.T) {
+	input := "\\restrict buang\nlast line tanpa newline"
+	var out bytes.Buffer
+	svc := NewBackupService(BackupConfig{})
+	require.NoError(t, svc.filterCompatLines(strings.NewReader(input), &out))
+
+	res := out.String()
+	assert.NotContains(t, res, "restrict")
+	assert.Contains(t, res, "last line tanpa newline")
 }

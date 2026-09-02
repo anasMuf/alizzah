@@ -524,6 +524,9 @@ function DetailTagihanPage() {
 								Tagihan Tambahan/Insidental
 							</p>
 						)}
+						{item.notes && (
+							<p className="text-xs text-amber-700 mt-1">{item.notes}</p>
+						)}
 						{hasQuantity && (
 							<div className="mt-1.5">
 								<span className="text-xs text-gray-500">
@@ -893,7 +896,7 @@ function DetailTagihanPage() {
 								<thead className="bg-gray-50">
 									<tr>
 										<th className="py-3 pl-6 pr-3 text-left text-sm font-semibold text-gray-900">
-											Tanggal
+											No. Ref / Tanggal
 										</th>
 										<th className="px-3 py-3 text-left text-sm font-semibold text-gray-900">
 											Sumber
@@ -910,7 +913,17 @@ function DetailTagihanPage() {
 									{invoice.payments.map((p: any) => (
 										<tr key={p.id} className="hover:bg-gray-50">
 											<td className="py-3 pl-6 pr-3 text-sm text-gray-900">
-												{formatDate(p.payment_date)}
+												<Link
+													to="/keuangan/pembayaran/$id"
+													params={{ id: p.id.toString() }}
+													className="font-mono font-medium text-indigo-600 hover:text-indigo-900 inline-flex items-center"
+												>
+													#{p.id}{" "}
+													<ChevronRight className="w-3.5 h-3.5 ml-0.5" />
+												</Link>
+												<div className="text-xs text-gray-500 mt-0.5">
+													{formatDate(p.payment_date)}
+												</div>
 											</td>
 											<td className="px-3 py-3 text-sm text-gray-500">
 												{p.source === "cash" ? "Tunai (Kas)" : "Tabungan"}

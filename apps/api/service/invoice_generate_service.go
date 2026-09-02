@@ -887,17 +887,24 @@ func (s *invoiceGenerateService) feeItemsToAddForMonth(invoiceID, month uint, le
 	return toAdd
 }
 
-// extracurricularRemovalCandidate — item unpaid ekskul yang akan dihapus beserta
-// bulan invoice-nya. Dipakai bersama RemoveExtracurricularInvoices (apply) dan
-// PlanExtracurricularCleanupInvoices (preview) agar keduanya tidak pernah divergen.
+// extracurricularRemovalCandidate — item ekskul yang akan diproses cleanup beserta
+// bulan invoice-nya. Action "remove" = item unpaid dihapus (hard delete);
+// "writeoff" = sisa item partial dibebaskan (item dipertahankan, nominal
+// diturunkan ke jumlah yang sudah dibayar). Dipakai bersama
+// RemoveExtracurricularInvoices (apply) dan PlanExtracurricularCleanupInvoices
+// (preview) agar keduanya tidak pernah divergen.
 type extracurricularRemovalCandidate struct {
-	Item  model.InvoiceItem
-	Month uint
-	Year  uint
+	Item   model.InvoiceItem
+	Month  uint
+	Year   uint
+	Action string // "remove" | "writeoff"
 }
 
-// extracurricularItemsToRemove mengumpulkan item unpaid ekskul yang cocok
-// (name+category fee config, bulan >= startDate) dari invoice bulanan siswa.
+// extracurricularItemsToRemove mengumpulkan item ekskul yang cocok
+// (name+category fee config, bulan >= startDate) dari invoice bulanan siswa:
+// - unpaid → Action "remove" (akan dihapus)
+// - partial (sudah dibayar sebagian) → Action "writeoff" (sisa dibebaskan)
+// Item lunas tidak ikut diproses (integritas pembayaran).
 // Perilaku error meniru implementasi lama: fee config tidak ditemukan / query
 // invoice gagal → kandidat kosong (no-op), bukan error.
 func (s *invoiceGenerateService) extracurricularItemsToRemove(studentID, extracurricularID, academicYearID uint, startDate time.Time) ([]extracurricularRemovalCandidate, error) {
@@ -936,14 +943,22 @@ func (s *invoiceGenerateService) extracurricularItemsToRemove(studentID, extracu
 		items, _ := s.invoiceItemRepo.FindByInvoiceID(inv.ID)
 		for _, item := range items {
 			for _, feeItem := range feeItems {
-				if item.Name == feeItem.Name && item.Category == feeItem.Category && item.PaidAmount == 0 {
-					candidates = append(candidates, extracurricularRemovalCandidate{
-						Item:  item,
-						Month: *inv.Month,
-						Year:  *inv.Year,
-					})
-					break
+				if item.Name != feeItem.Name || item.Category != feeItem.Category {
+					continue
 				}
+				switch {
+				case item.PaidAmount == 0:
+					candidates = append(candidates, extracurricularRemovalCandidate{
+						Item: item, Month: *inv.Month, Year: *inv.Year, Action: "remove",
+					})
+				case item.PaidAmount < item.Amount:
+					// Sudah dibayar sebagian — sisa dibebaskan (write-off), item
+					// dipertahankan agar riwayat pembayaran tetap utuh.
+					candidates = append(candidates, extracurricularRemovalCandidate{
+						Item: item, Month: *inv.Month, Year: *inv.Year, Action: "writeoff",
+					})
+				}
+				break
 			}
 		}
 	}
@@ -958,8 +973,21 @@ func (s *invoiceGenerateService) RemoveExtracurricularInvoices(studentID, extrac
 
 	changed := make(map[uint]bool)
 	for _, c := range candidates {
-		// Hard delete — hindari soft-delete agar tidak menyebabkan duplikat saat enrollment ulang.
-		s.db.Unscoped().Delete(&model.InvoiceItem{}, c.Item.ID)
+		switch c.Action {
+		case "writeoff":
+			// Sisa dibebaskan: nominal item diturunkan ke jumlah yang sudah
+			// dibayar & status jadi lunas, disertai catatan agar traceable.
+			if err := s.db.Model(&model.InvoiceItem{}).Where("id = ?", c.Item.ID).Updates(map[string]interface{}{
+				"amount": c.Item.PaidAmount,
+				"status": "paid",
+				"notes":  fmt.Sprintf("Sisa dibebaskan — siswa berhenti mengikuti (%d/%d)", c.Month, c.Year),
+			}).Error; err != nil {
+				return err
+			}
+		default:
+			// Hard delete — hindari soft-delete agar tidak menyebabkan duplikat saat enrollment ulang.
+			s.db.Unscoped().Delete(&model.InvoiceItem{}, c.Item.ID)
+		}
 		changed[c.Item.InvoiceID] = true
 	}
 	// Selalu recalculate jika ada perubahan — mencegah total mismatch
@@ -1191,15 +1219,22 @@ func (s *invoiceGenerateService) PlanExtracurricularCleanupInvoices(studentID, e
 		Items:               make([]dto.ExtracurricularCleanupPreviewItem, 0, len(candidates)),
 	}
 	for _, c := range candidates {
+		// Untuk write-off, nilai yang dipengaruhi adalah SISA yang dibebaskan
+		// (bukan seluruh nominal item) — preview harus persis dengan eksekusi.
+		affected := c.Item.Amount
+		if c.Action == "writeoff" {
+			affected = c.Item.Amount - c.Item.PaidAmount
+		}
 		resp.Items = append(resp.Items, dto.ExtracurricularCleanupPreviewItem{
 			InvoiceID: c.Item.InvoiceID,
 			Month:     c.Month,
 			Year:      c.Year,
 			ItemID:    c.Item.ID,
 			ItemName:  c.Item.Name,
-			Amount:    c.Item.Amount,
+			Action:    c.Action,
+			Amount:    affected,
 		})
-		resp.TotalAmount += c.Item.Amount
+		resp.TotalAmount += affected
 	}
 	resp.TotalItems = len(resp.Items)
 	return resp, nil

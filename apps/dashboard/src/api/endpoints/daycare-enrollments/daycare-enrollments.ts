@@ -44,6 +44,7 @@ import type {
 	GetV1DaycareEnrollmentsParams,
 	PostV1DaycareEnrollments201,
 	PostV1DaycareEnrollmentsGenerateMonthlyBulk200,
+	PostV1DaycareEnrollmentsPreviewSyncInvoices200,
 	PostV1DaycareEnrollmentsSyncInvoices200,
 	PutV1DaycareAttendance200,
 	PutV1DaycareEnrollmentsId200,
@@ -424,42 +425,13 @@ export type getV1DaycareEnrollmentsCheckPremiumHistoryResponse200 = {
 	status: 200;
 };
 
-export type getV1DaycareEnrollmentsCheckPremiumHistoryResponse400 = {
-	data: DtoErrorResponse;
-	status: 400;
-};
-
-export type getV1DaycareEnrollmentsCheckPremiumHistoryResponse401 = {
-	data: DtoErrorResponse;
-	status: 401;
-};
-
-export type getV1DaycareEnrollmentsCheckPremiumHistoryResponse403 = {
-	data: DtoErrorResponse;
-	status: 403;
-};
-
-export type getV1DaycareEnrollmentsCheckPremiumHistoryResponse404 = {
-	data: DtoErrorResponse;
-	status: 404;
-};
-
 export type getV1DaycareEnrollmentsCheckPremiumHistoryResponseSuccess =
 	getV1DaycareEnrollmentsCheckPremiumHistoryResponse200 & {
 		headers: Headers;
 	};
-export type getV1DaycareEnrollmentsCheckPremiumHistoryResponseError = (
-	| getV1DaycareEnrollmentsCheckPremiumHistoryResponse400
-	| getV1DaycareEnrollmentsCheckPremiumHistoryResponse401
-	| getV1DaycareEnrollmentsCheckPremiumHistoryResponse403
-	| getV1DaycareEnrollmentsCheckPremiumHistoryResponse404
-) & {
-	headers: Headers;
-};
 
 export type getV1DaycareEnrollmentsCheckPremiumHistoryResponse =
-	| getV1DaycareEnrollmentsCheckPremiumHistoryResponseSuccess
-	| getV1DaycareEnrollmentsCheckPremiumHistoryResponseError;
+	getV1DaycareEnrollmentsCheckPremiumHistoryResponseSuccess;
 
 export const getGetV1DaycareEnrollmentsCheckPremiumHistoryUrl = (
 	params: GetV1DaycareEnrollmentsCheckPremiumHistoryParams,
@@ -480,8 +452,7 @@ export const getGetV1DaycareEnrollmentsCheckPremiumHistoryUrl = (
 };
 
 /**
- * Delete a daycare enrollment. If delete_invoices=true, also removes unpaid monthly invoices from current month onward.
-Check if a student has ever had a premium daycare enrollment (for auto-detect Lanjutan/Baru)
+ * Check if a student has ever had a premium daycare enrollment (for auto-detect Lanjutan/Baru)
  * @summary Check if student has premium history
  */
 export const getV1DaycareEnrollmentsCheckPremiumHistory = async (
@@ -510,7 +481,7 @@ export const getGetV1DaycareEnrollmentsCheckPremiumHistoryQueryOptions = <
 	TData = Awaited<
 		ReturnType<typeof getV1DaycareEnrollmentsCheckPremiumHistory>
 	>,
-	TError = DtoErrorResponse,
+	TError = unknown,
 >(
 	params: GetV1DaycareEnrollmentsCheckPremiumHistoryParams,
 	options?: {
@@ -548,14 +519,13 @@ export const getGetV1DaycareEnrollmentsCheckPremiumHistoryQueryOptions = <
 export type GetV1DaycareEnrollmentsCheckPremiumHistoryQueryResult = NonNullable<
 	Awaited<ReturnType<typeof getV1DaycareEnrollmentsCheckPremiumHistory>>
 >;
-export type GetV1DaycareEnrollmentsCheckPremiumHistoryQueryError =
-	DtoErrorResponse;
+export type GetV1DaycareEnrollmentsCheckPremiumHistoryQueryError = unknown;
 
 export function useGetV1DaycareEnrollmentsCheckPremiumHistory<
 	TData = Awaited<
 		ReturnType<typeof getV1DaycareEnrollmentsCheckPremiumHistory>
 	>,
-	TError = DtoErrorResponse,
+	TError = unknown,
 >(
 	params: GetV1DaycareEnrollmentsCheckPremiumHistoryParams,
 	options: {
@@ -586,7 +556,7 @@ export function useGetV1DaycareEnrollmentsCheckPremiumHistory<
 	TData = Awaited<
 		ReturnType<typeof getV1DaycareEnrollmentsCheckPremiumHistory>
 	>,
-	TError = DtoErrorResponse,
+	TError = unknown,
 >(
 	params: GetV1DaycareEnrollmentsCheckPremiumHistoryParams,
 	options?: {
@@ -617,7 +587,7 @@ export function useGetV1DaycareEnrollmentsCheckPremiumHistory<
 	TData = Awaited<
 		ReturnType<typeof getV1DaycareEnrollmentsCheckPremiumHistory>
 	>,
-	TError = DtoErrorResponse,
+	TError = unknown,
 >(
 	params: GetV1DaycareEnrollmentsCheckPremiumHistoryParams,
 	options?: {
@@ -642,7 +612,7 @@ export function useGetV1DaycareEnrollmentsCheckPremiumHistory<
 	TData = Awaited<
 		ReturnType<typeof getV1DaycareEnrollmentsCheckPremiumHistory>
 	>,
-	TError = DtoErrorResponse,
+	TError = unknown,
 >(
 	params: GetV1DaycareEnrollmentsCheckPremiumHistoryParams,
 	options?: {
@@ -1237,6 +1207,134 @@ export const usePutV1DaycareEnrollmentsMonthlyAttendance = <
 		queryClient,
 	);
 };
+export type postV1DaycareEnrollmentsPreviewSyncInvoicesResponse200 = {
+	data: PostV1DaycareEnrollmentsPreviewSyncInvoices200;
+	status: 200;
+};
+
+export type postV1DaycareEnrollmentsPreviewSyncInvoicesResponse401 = {
+	data: DtoErrorResponse;
+	status: 401;
+};
+
+export type postV1DaycareEnrollmentsPreviewSyncInvoicesResponse403 = {
+	data: DtoErrorResponse;
+	status: 403;
+};
+
+export type postV1DaycareEnrollmentsPreviewSyncInvoicesResponse500 = {
+	data: DtoErrorResponse;
+	status: 500;
+};
+
+export type postV1DaycareEnrollmentsPreviewSyncInvoicesResponseSuccess =
+	postV1DaycareEnrollmentsPreviewSyncInvoicesResponse200 & {
+		headers: Headers;
+	};
+export type postV1DaycareEnrollmentsPreviewSyncInvoicesResponseError = (
+	| postV1DaycareEnrollmentsPreviewSyncInvoicesResponse401
+	| postV1DaycareEnrollmentsPreviewSyncInvoicesResponse403
+	| postV1DaycareEnrollmentsPreviewSyncInvoicesResponse500
+) & {
+	headers: Headers;
+};
+
+export type postV1DaycareEnrollmentsPreviewSyncInvoicesResponse =
+	| postV1DaycareEnrollmentsPreviewSyncInvoicesResponseSuccess
+	| postV1DaycareEnrollmentsPreviewSyncInvoicesResponseError;
+
+export const getPostV1DaycareEnrollmentsPreviewSyncInvoicesUrl = () => {
+	return `/v1/daycare-enrollments/preview-sync-invoices`;
+};
+
+/**
+ * Hitung rencana sinkronisasi tagihan daycare bulanan TANPA
+ * @summary Preview daycare sync (dry-run)
+ */
+export const postV1DaycareEnrollmentsPreviewSyncInvoices = async (
+	options?: RequestInit,
+): Promise<postV1DaycareEnrollmentsPreviewSyncInvoicesResponse> => {
+	return customInstance<postV1DaycareEnrollmentsPreviewSyncInvoicesResponse>(
+		getPostV1DaycareEnrollmentsPreviewSyncInvoicesUrl(),
+		{
+			...options,
+			method: "POST",
+		},
+	);
+};
+
+export const getPostV1DaycareEnrollmentsPreviewSyncInvoicesMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1DaycareEnrollmentsPreviewSyncInvoices>>,
+		TError,
+		void,
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1DaycareEnrollmentsPreviewSyncInvoices>>,
+	TError,
+	void,
+	TContext
+> => {
+	const mutationKey = ["postV1DaycareEnrollmentsPreviewSyncInvoices"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1DaycareEnrollmentsPreviewSyncInvoices>>,
+		void
+	> = () => {
+		return postV1DaycareEnrollmentsPreviewSyncInvoices(requestOptions);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type PostV1DaycareEnrollmentsPreviewSyncInvoicesMutationResult =
+	NonNullable<
+		Awaited<ReturnType<typeof postV1DaycareEnrollmentsPreviewSyncInvoices>>
+	>;
+
+export type PostV1DaycareEnrollmentsPreviewSyncInvoicesMutationError =
+	DtoErrorResponse;
+
+/**
+ * @summary Preview daycare sync (dry-run)
+ */
+export const usePostV1DaycareEnrollmentsPreviewSyncInvoices = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1DaycareEnrollmentsPreviewSyncInvoices>>,
+			TError,
+			void,
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1DaycareEnrollmentsPreviewSyncInvoices>>,
+	TError,
+	void,
+	TContext
+> => {
+	return useMutation(
+		getPostV1DaycareEnrollmentsPreviewSyncInvoicesMutationOptions(options),
+		queryClient,
+	);
+};
 export type postV1DaycareEnrollmentsSyncInvoicesResponse200 = {
 	data: PostV1DaycareEnrollmentsSyncInvoices200;
 	status: 200;
@@ -1775,7 +1873,7 @@ export type deleteV1DaycareEnrollmentsIdResponse =
 
 export const getDeleteV1DaycareEnrollmentsIdUrl = (
 	id: number,
-	params: DeleteV1DaycareEnrollmentsIdParams,
+	params?: DeleteV1DaycareEnrollmentsIdParams,
 ) => {
 	const normalizedParams = new URLSearchParams();
 
@@ -1794,12 +1892,11 @@ export const getDeleteV1DaycareEnrollmentsIdUrl = (
 
 /**
  * Delete a daycare enrollment. If delete_invoices=true, also removes unpaid monthly invoices from current month onward.
-Check if a student has ever had a premium daycare enrollment (for auto-detect Lanjutan/Baru)
- * @summary Check if student has premium history
+ * @summary Delete daycare enrollment
  */
 export const deleteV1DaycareEnrollmentsId = async (
 	id: number,
-	params: DeleteV1DaycareEnrollmentsIdParams,
+	params?: DeleteV1DaycareEnrollmentsIdParams,
 	options?: RequestInit,
 ): Promise<deleteV1DaycareEnrollmentsIdResponse> => {
 	return customInstance<deleteV1DaycareEnrollmentsIdResponse>(
@@ -1818,14 +1915,14 @@ export const getDeleteV1DaycareEnrollmentsIdMutationOptions = <
 	mutation?: UseMutationOptions<
 		Awaited<ReturnType<typeof deleteV1DaycareEnrollmentsId>>,
 		TError,
-		{ id: number; params: DeleteV1DaycareEnrollmentsIdParams },
+		{ id: number; params?: DeleteV1DaycareEnrollmentsIdParams },
 		TContext
 	>;
 	request?: SecondParameter<typeof customInstance>;
 }): UseMutationOptions<
 	Awaited<ReturnType<typeof deleteV1DaycareEnrollmentsId>>,
 	TError,
-	{ id: number; params: DeleteV1DaycareEnrollmentsIdParams },
+	{ id: number; params?: DeleteV1DaycareEnrollmentsIdParams },
 	TContext
 > => {
 	const mutationKey = ["deleteV1DaycareEnrollmentsId"];
@@ -1839,7 +1936,7 @@ export const getDeleteV1DaycareEnrollmentsIdMutationOptions = <
 
 	const mutationFn: MutationFunction<
 		Awaited<ReturnType<typeof deleteV1DaycareEnrollmentsId>>,
-		{ id: number; params: DeleteV1DaycareEnrollmentsIdParams }
+		{ id: number; params?: DeleteV1DaycareEnrollmentsIdParams }
 	> = (props) => {
 		const { id, params } = props ?? {};
 
@@ -1856,7 +1953,7 @@ export type DeleteV1DaycareEnrollmentsIdMutationResult = NonNullable<
 export type DeleteV1DaycareEnrollmentsIdMutationError = DtoErrorResponse;
 
 /**
- * @summary Check if student has premium history
+ * @summary Delete daycare enrollment
  */
 export const useDeleteV1DaycareEnrollmentsId = <
 	TError = DtoErrorResponse,
@@ -1866,7 +1963,7 @@ export const useDeleteV1DaycareEnrollmentsId = <
 		mutation?: UseMutationOptions<
 			Awaited<ReturnType<typeof deleteV1DaycareEnrollmentsId>>,
 			TError,
-			{ id: number; params: DeleteV1DaycareEnrollmentsIdParams },
+			{ id: number; params?: DeleteV1DaycareEnrollmentsIdParams },
 			TContext
 		>;
 		request?: SecondParameter<typeof customInstance>;
@@ -1875,7 +1972,7 @@ export const useDeleteV1DaycareEnrollmentsId = <
 ): UseMutationResult<
 	Awaited<ReturnType<typeof deleteV1DaycareEnrollmentsId>>,
 	TError,
-	{ id: number; params: DeleteV1DaycareEnrollmentsIdParams },
+	{ id: number; params?: DeleteV1DaycareEnrollmentsIdParams },
 	TContext
 > => {
 	return useMutation(

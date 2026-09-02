@@ -11,4 +11,20 @@ export type GetV1ExtracurricularsIdStudentsParams = {
 	 * Academic Year ID
 	 */
 	academic_year_id: number;
+	/**
+	 * Bulan awal rentang (1-12); kosong = bulan pertama tahun ajaran
+	 */
+	month_from?: number;
+	/**
+	 * Tahun awal rentang; kosong = tahun mulai tahun ajaran
+	 */
+	year_from?: number;
+	/**
+	 * Bulan akhir rentang (1-12); kosong = bulan terakhir tahun ajaran
+	 */
+	month_to?: number;
+	/**
+	 * Tahun akhir rentang; kosong = tahun akhir tahun ajaran
+	 */
+	year_to?: number;
 };

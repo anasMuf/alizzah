@@ -5,9 +5,10 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DtoDeleteDaycareEnrollmentResponse } from "./dtoDeleteDaycareEnrollmentResponse";
+import type { DtoBillingExclusionsResponse } from "./dtoBillingExclusionsResponse";
 import type { DtoSuccessResponse } from "./dtoSuccessResponse";
 
-export type DeleteV1DaycareEnrollmentsId200 = DtoSuccessResponse & {
-	data?: DtoDeleteDaycareEnrollmentResponse;
-};
+export type GetV1StudentsIdExtracurricularsSeIdBillingExclusions200 =
+	DtoSuccessResponse & {
+		data?: DtoBillingExclusionsResponse;
+	};

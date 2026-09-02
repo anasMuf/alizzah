@@ -51,6 +51,26 @@
 
 BEGIN;
 
+-- ── 0) Kumpulkan invoice terdampak ke temp table (sebelum item di-update) ──
+CREATE TEMP TABLE _fix_facility_invoices ON COMMIT DROP AS
+SELECT DISTINCT i.id AS invoice_id
+FROM invoice_items ii
+JOIN invoices i ON i.id = ii.invoice_id
+JOIN student_enrollments enr ON enr.student_id = i.student_id AND enr.status = 'active'
+JOIN class_groups cg ON cg.id = enr.class_group_id
+WHERE ii.category = 'facility'
+  AND ii.deleted_at IS NULL
+  AND ii.paid_amount = 0
+  AND ii.quantity IS NOT NULL
+  AND ii.unit_price IS NOT NULL
+  AND ii.amount = 0
+  AND COALESCE(
+    (SELECT NULLIF(ed.total_days,0) FROM effective_days ed
+      WHERE ed.class_group_id = cg.id AND ed.month = i.month AND ed.year = i.year),
+    (SELECT NULLIF(ed2.total_days,0) FROM effective_days ed2
+      WHERE ed2.class_group_id = 0 AND ed2.level = cg.level AND ed2.month = i.month AND ed2.year = i.year),
+    0) > 0;
+
 -- ── 1) Update quantity/amount/nama item fasilitas per_day yang 0 hari ──────
 WITH resolved AS (
   SELECT ii2.id AS item_id,
@@ -70,23 +90,22 @@ WITH resolved AS (
     AND ii2.quantity IS NOT NULL
     AND ii2.unit_price IS NOT NULL
     AND ii2.amount = 0
-),
-upd AS (
-  UPDATE invoice_items ii
-  SET quantity = r.days,
-      amount   = ii.unit_price * r.days,
-      name     = regexp_replace(ii.name, '\s+\(\d+ hari\)$', '') || ' (' || r.days || ' hari)'
-  FROM resolved r
-  WHERE ii.id = r.item_id
-    AND r.days > 0
-  RETURNING ii.invoice_id
-),
-agg AS (
+)
+UPDATE invoice_items ii
+SET quantity = r.days,
+    amount   = ii.unit_price * r.days,
+    name     = regexp_replace(ii.name, '\s+\(\d+ hari\)$', '') || ' (' || r.days || ' hari)'
+FROM resolved r
+WHERE ii.id = r.item_id
+  AND r.days > 0;
+
+-- ── 2) Recalculate total invoice (statement TERPISAH — item sudah ter-commit) ──
+WITH agg AS (
   SELECT ii.invoice_id,
          COALESCE(SUM(ii.amount), 0)      AS new_total,
          COALESCE(SUM(ii.paid_amount), 0) AS new_paid
   FROM invoice_items ii
-  JOIN (SELECT DISTINCT invoice_id FROM upd) u ON u.invoice_id = ii.invoice_id
+  JOIN _fix_facility_invoices t ON t.invoice_id = ii.invoice_id
   GROUP BY ii.invoice_id
 )
 UPDATE invoices i
@@ -99,6 +118,8 @@ SET total_amount = agg.new_total,
     END
 FROM agg
 WHERE i.id = agg.invoice_id;
+
+DROP TABLE _fix_facility_invoices;
 
 COMMIT;
 

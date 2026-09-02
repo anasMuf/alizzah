@@ -344,6 +344,15 @@ definitions:
         items:
           $ref: '#/definitions/dto.BillingExclusionMonth'
         type: array
+      paid_months:
+        description: |-
+          PaidMonths = bulan di mana entity tsb sudah punya item yang DIBIAYAR
+          (paid_amount > 0) pada invoice siswa. UI memakai daftar ini untuk
+          men-disable bulan yang tidak bisa di-skip (item berbayar tidak bisa
+          dihapus backend) — berbeda dengan sekadar "invoice bulan tsb sudah bayar".
+        items:
+          $ref: '#/definitions/dto.BillingExclusionMonth'
+        type: array
     type: object
   dto.CashBalanceResponse:
     properties:

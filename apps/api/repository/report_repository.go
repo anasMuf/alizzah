@@ -40,9 +40,12 @@ type ReportRepository interface {
 	SumIncomeTransactions(academicYearID uint, startDate, endDate time.Time, incomeCategories string) (float64, error)
 	GetIncomeCategoryLabelMap() (map[string]string, error)
 
-	// Savings deposits (Tabungan Umum)
+	// Savings deposits & withdrawals (Tabungan Umum)
 	DailySavingsDeposits(academicYearID uint, startDate, endDate time.Time) (map[string]float64, error)
 	SumSavingsDeposits(academicYearID uint, startDate, endDate time.Time) (float64, error)
+	// Penarikan/penggunaan tabungan umum (vault keluar) — pengurang laporan saldo
+	DailySavingsWithdrawals(academicYearID uint, startDate, endDate time.Time) (map[string]float64, error)
+	SumSavingsWithdrawals(academicYearID uint, startDate, endDate time.Time) (float64, error)
 
 	// Tabungan
 	DailySavingsCredit(startDate, endDate time.Time, savingsType string) (map[string]float64, error)
@@ -781,6 +784,44 @@ func (r *reportRepository) SumSavingsDeposits(academicYearID uint, startDate, en
 	err := r.db.Table("payments").
 		Select("COALESCE(SUM(savings_deposit), 0)").
 		Where("deleted_at IS NULL AND academic_year_id = ? AND payment_date BETWEEN ? AND ?", academicYearID, startDate, endDate).
+		Scan(&total).Error
+	return total, err
+}
+
+// DailySavingsWithdrawals returns daily savings withdrawals (Tabungan Umum)
+// from vault_transactions — uang keluar brangkas karena penarikan wali ataupun
+// penggunaan tabungan untuk pembayaran tagihan (source_type='savings_withdrawal',
+// transaction_type='credit'). Dipakai sebagai pengurang pada laporan saldo agar
+// setoran tabungan yang dipakai bayar/ditarik tidak dihitung ganda.
+func (r *reportRepository) DailySavingsWithdrawals(academicYearID uint, startDate, endDate time.Time) (map[string]float64, error) {
+	type row struct {
+		Date  time.Time
+		Total float64
+	}
+	var rows []row
+
+	err := r.db.Table("vault_transactions").
+		Select("transaction_date as date, SUM(amount) as total").
+		Where("academic_year_id = ? AND transaction_date BETWEEN ? AND ? AND source_type = 'savings_withdrawal' AND transaction_type = 'credit'", academicYearID, startDate, endDate).
+		Group("DATE(transaction_date)").
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]float64)
+	for _, row := range rows {
+		result[row.Date.Format("2006-01-02")] += row.Total
+	}
+	return result, nil
+}
+
+// SumSavingsWithdrawals returns total savings withdrawals in range
+func (r *reportRepository) SumSavingsWithdrawals(academicYearID uint, startDate, endDate time.Time) (float64, error) {
+	var total float64
+	err := r.db.Table("vault_transactions").
+		Select("COALESCE(SUM(amount), 0)").
+		Where("academic_year_id = ? AND transaction_date BETWEEN ? AND ? AND source_type = 'savings_withdrawal' AND transaction_type = 'credit'", academicYearID, startDate, endDate).
 		Scan(&total).Error
 	return total, err
 }

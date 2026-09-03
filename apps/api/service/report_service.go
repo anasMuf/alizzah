@@ -738,6 +738,10 @@ func (s *reportService) GetSaldo(req dto.SaldoRequest) (*dto.SaldoResponse, erro
 	}
 
 	// 4. Savings deposits (Tabungan Umum) — add to penerimaan (only when explicitly requested)
+	// Setoran tabungan ikut dihitung sebagai penerimaan; oleh karena itu penarikan /
+	// penggunaan tabungan (uang keluar brangkas) juga harus dikurangkan di sisi
+	// pengeluaran agar rupiah yang sama (setor → dipakai bayar/ditarik) tidak dihitung
+	// ganda dan saldo akhir mencerminkan kas yang benar-benar tersedia.
 	if allPos || req.IncludeSavings {
 		savingsDaily, err := s.reportRepo.DailySavingsDeposits(academicYearID, startDate, endDate)
 		if err != nil {
@@ -751,6 +755,19 @@ func (s *reportService) GetSaldo(req dto.SaldoRequest) (*dto.SaldoResponse, erro
 			return nil, err
 		}
 		saldoSebelum += savingsSumSebelum
+
+		savingsWdDaily, err := s.reportRepo.DailySavingsWithdrawals(academicYearID, startDate, endDate)
+		if err != nil {
+			return nil, err
+		}
+		for d, v := range savingsWdDaily {
+			mergedExpense[d] += v
+		}
+		savingsWdSebelum, err := s.reportRepo.SumSavingsWithdrawals(academicYearID, ay.StartDate, endPrevDate)
+		if err != nil {
+			return nil, err
+		}
+		saldoSebelum -= savingsWdSebelum
 	}
 
 	// Collect all dates that have transactions

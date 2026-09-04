@@ -204,6 +204,11 @@ func (s *reportService) GetAnnualReport(req dto.AnnualReportRequest) (*dto.Annua
 	totalBilled := utility.SumBilled(byCategory)
 	totalPaid := utility.SumPaid(byCategory)
 
+	// Penerimaan lain (BOS/Donasi/Hibah/dll) adalah pendapatan riil sekolah dan
+	// harus masuk Net. Tabungan (titipan siswa) sengaja TIDAK dimasukkan ke Net
+	// — posisinya tercermin di VaultBalance.
+	otherIncome, _ := s.reportRepo.SumIncomeTransactions(req.AcademicYearID, ay.StartDate, ay.EndDate, "")
+
 	expenseByCategory, _ := s.reportRepo.SumExpenseByCategory(
 		req.AcademicYearID, ay.StartDate, ay.EndDate,
 	)
@@ -220,9 +225,10 @@ func (s *reportService) GetAnnualReport(req dto.AnnualReportRequest) (*dto.Annua
 			TotalBilled: totalBilled,
 			TotalPaid:   totalPaid,
 			TotalUnpaid: totalBilled - totalPaid,
+			OtherIncome: otherIncome,
 		},
 		ExpenseSummary: dto.AnnualExpenseSummary{Total: totalExpense},
-		Net:            totalPaid - totalExpense,
+		Net:            totalPaid + otherIncome - totalExpense,
 		ByMonth:        byMonth,
 		CashBalance:    cashBalance,
 		VaultBalance:   vaultBalance,

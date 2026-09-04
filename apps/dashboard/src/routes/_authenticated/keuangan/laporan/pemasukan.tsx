@@ -6,6 +6,7 @@ import {
 	useGetV1FeeConfigs,
 	useGetV1FeeConfigsIdItems,
 } from "#/api/endpoints/fee-configs/fee-configs";
+import { useGetV1IncomeCategories } from "#/api/endpoints/income-categories/income-categories";
 import {
 	type PemasukanData,
 	useGetReportsPemasukan,
@@ -69,6 +70,13 @@ function LaporanPemasukanPage() {
 	);
 	const feeItems = ((feeItemsData?.data as any)?.data ?? []) as any[];
 
+	// Kategori penerimaan lain (BOS, Donasi, Hibah, Lainnya, dst) — dinamis dari
+	// master data agar setiap kategori yang bisa dipilih user ikut terlaporkan.
+	const { data: incomeCatData } = useGetV1IncomeCategories({
+		query: { staleTime: 5 * 60 * 1000 },
+	});
+	const incomeCats = ((incomeCatData?.data as any)?.data ?? []) as any[];
+
 	const feeItemGroups = useMemo((): MultiSelectGroup[] => {
 		const sorted = [...feeItems].sort(sortByCategory);
 		const map = new Map<string, MultiSelectGroup>();
@@ -100,20 +108,20 @@ function LaporanPemasukanPage() {
 			map.get(groupName)!.items.push({ id: item.id, label });
 		}
 
-		// Income categories as final group
+		// Income categories as final group (dinamis dari master data)
 		map.set("Penerimaan Lain", {
 			header: "Penerimaan Lain",
 			items: [
-				{ id: -1, label: "Dana BOS" },
-				{ id: -2, label: "Donasi" },
-				{ id: -3, label: "Hibah" },
-				{ id: -4, label: "Lainnya" },
-				{ id: -5, label: "Tabungan Umum" },
+				...incomeCats.map((inc: any) => ({
+					id: `income:${inc.code}`,
+					label: (inc.name as string) || (inc.code as string),
+				})),
+				{ id: "savings:voluntary", label: "Tabungan Umum" },
 			],
 		});
 
 		return [...map.values()];
-	}, [feeItems]);
+	}, [feeItems, incomeCats]);
 
 	// Flat options for "Semua" toggle
 	const allFeeItemOptions = useMemo(
@@ -146,18 +154,10 @@ function LaporanPemasukanPage() {
 			.filter((item: any) => selectedFeeItemIds.includes(item.id))
 			.map((item: any) => item.category);
 
-		// Map negative IDs to income category codes
-		const incomeCategoryMap: Record<number, string> = {
-			[-1]: "bos",
-			[-2]: "donasi",
-			[-3]: "hibah",
-			[-4]: "lainnya",
-		};
 		const selectedIncomeCategories = selectedFeeItemIds
-			.filter((id) => typeof id === "number" && id < 0 && id >= -4)
-			.map((id) => incomeCategoryMap[id as number])
-			.filter(Boolean);
-		const includeSavings = selectedFeeItemIds.includes(-5);
+			.filter((id) => typeof id === "string" && id.startsWith("income:"))
+			.map((id) => (id as string).slice("income:".length));
+		const includeSavings = selectedFeeItemIds.includes("savings:voluntary");
 
 		setCommittedParams({
 			date_from: filters.date_from,
@@ -241,16 +241,16 @@ function LaporanPemasukanPage() {
 				.filter((item: any) => selectedFeeItemIds.includes(item.id))
 				.map((item: any) => item.name),
 			...selectedFeeItemIds
-				.filter((id) => typeof id === "number" && id < 0)
+				.filter((id) => typeof id === "string" && id !== "")
 				.map((id) => {
-					const map: Record<number, string> = {
-						[-1]: "Dana BOS",
-						[-2]: "Donasi",
-						[-3]: "Hibah",
-						[-4]: "Lainnya",
-						[-5]: "Tabungan Umum",
-					};
-					return map[id as number];
+					const key = id as string;
+					if (key === "savings:voluntary") return "Tabungan Umum";
+					if (key.startsWith("income:")) {
+						const code = key.slice("income:".length);
+						const found = incomeCats.find((inc: any) => inc.code === code);
+						return (found?.name as string) || code;
+					}
+					return "";
 				})
 				.filter(Boolean),
 		];
@@ -260,7 +260,7 @@ function LaporanPemasukanPage() {
 			periode: `${formatDate(committedParams.date_from as string)} - ${formatDate(committedParams.date_to as string)}`,
 			ta: activeAy?.name ?? "-",
 		};
-	}, [committedParams, selectedFeeItemIds, feeItems, activeAy]);
+	}, [committedParams, selectedFeeItemIds, feeItems, incomeCats, activeAy]);
 
 	return (
 		<div className="h-full flex flex-col">

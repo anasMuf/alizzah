@@ -24,6 +24,7 @@ type ReportService interface {
 	GetPengeluaran(req dto.PengeluaranRequest) (*dto.PengeluaranResponse, error)
 	GetTabunganReport(req dto.TabunganReportRequest) (*dto.TabunganReportResponse, error)
 	GetTabunganSiswaReport(studentID uint, req dto.TabunganSiswaReportRequest) (*dto.TabunganSiswaReportResponse, error)
+	GetPaymentIntegrity(academicYearID uint) (*dto.PaymentIntegrityResponse, error)
 }
 
 type reportService struct {
@@ -345,6 +346,9 @@ func (s *reportService) GetClassGroupReport(classGroupID uint, req dto.ClassGrou
 	}, nil
 }
 
+// savingsTypeGeneral is the student_savings.type for Tabungan Umum
+const savingsTypeGeneral = "general"
+
 // invoiceCategoryLabels maps invoice_items.category to display labels
 var invoiceCategoryLabels = map[string]string{
 	"monthly_spp":       "SPP",
@@ -374,6 +378,7 @@ var invoiceCategoryOrder = []string{
 	"ekskul",
 	"savings_mandatory",
 	"daycare",
+	"daycare_meal",
 	"graduation",
 	"facility",
 	"lainnya",
@@ -458,6 +463,18 @@ func (s *reportService) GetPosisiKas(req dto.PosisiKasRequest) (*dto.PosisiKasRe
 		return nil, err
 	}
 
+	// Penarikan tabungan umum oleh wali = pengeluaran kas pada pos Tabungan Umum
+	if req.IncludeSavings {
+		withdrawBulan, err := s.reportRepo.SumSavingsCredit(startDate, endDate, savingsTypeGeneral)
+		if err != nil {
+			return nil, err
+		}
+		if withdrawBulan > 0 {
+			pengeluaranBulan["savings_voluntary"] = append(pengeluaranBulan["savings_voluntary"],
+				dto.PosisiKasExpense{Name: "Penarikan Tabungan Umum", Amount: withdrawBulan})
+		}
+	}
+
 	// Saldo sebelum: penerimaan - pengeluaran from start of AY to end of prev month
 	penerimaanSebelum, err := s.reportRepo.SumPenerimaanByInvoiceCategory(academicYearID, ay.StartDate, endPrevDate)
 	if err != nil {
@@ -490,6 +507,23 @@ func (s *reportService) GetPosisiKas(req dto.PosisiKasRequest) (*dto.PosisiKasRe
 		for _, d := range details {
 			pengeluaranSebelumTotal[cat] += d.Amount
 		}
+	}
+
+	if req.IncludeSavings {
+		withdrawSebelum, err := s.reportRepo.SumSavingsCredit(ay.StartDate, endPrevDate, savingsTypeGeneral)
+		if err != nil {
+			return nil, err
+		}
+		pengeluaranSebelumTotal["savings_voluntary"] += withdrawSebelum
+	}
+
+	// Carry-over: saldo akhir seluruh TA sebelumnya menjadi saldo awal per pos.
+	carryByCat, err := s.priorYearsCarryoverByCategory(ay.StartDate, req.ExpenseCategoryIDs, req.IncomeCategories, req.IncludeSavings)
+	if err != nil {
+		return nil, err
+	}
+	for cat, v := range carryByCat {
+		penerimaanSebelum[cat] += v
 	}
 
 	// Collect all categories that have any data
@@ -735,9 +769,32 @@ func (s *reportService) GetSaldo(req dto.SaldoRequest) (*dto.SaldoResponse, erro
 			return nil, err
 		}
 		saldoSebelum += incomeSumSebelum
+
+		// Pengeluaran yang terikat ke kategori penerimaan lain (mis. pos beban
+		// "Lain-lain" ber-invoice_category 'lainnya'). Tanpa ini, sisi pemasukan
+		// income ikut terhitung tapi sisi pengeluarannya hilang → saldo bias naik.
+		for _, code := range strings.Split(req.IncomeCategories, ",") {
+			code = strings.TrimSpace(code)
+			if code == "" {
+				continue
+			}
+			expDaily, err := s.reportRepo.DailyPengeluaran(academicYearID, startDate, endDate, code)
+			if err != nil {
+				return nil, err
+			}
+			for d, v := range expDaily {
+				mergedExpense[d] += v
+			}
+			expSebelum, err := s.reportRepo.SumPengeluaran(academicYearID, ay.StartDate, endPrevDate, code)
+			if err != nil {
+				return nil, err
+			}
+			saldoSebelum -= expSebelum
+		}
 	}
 
-	// 4. Savings deposits (Tabungan Umum) — add to penerimaan (only when explicitly requested)
+	// 4. Savings (Tabungan Umum) — kas masuk dari setoran DAN kas keluar dari penarikan wali.
+	// Keduanya harus ikut: setoran saja membuat saldo hanya bergerak satu arah.
 	if allPos || req.IncludeSavings {
 		savingsDaily, err := s.reportRepo.DailySavingsDeposits(academicYearID, startDate, endDate)
 		if err != nil {
@@ -751,7 +808,28 @@ func (s *reportService) GetSaldo(req dto.SaldoRequest) (*dto.SaldoResponse, erro
 			return nil, err
 		}
 		saldoSebelum += savingsSumSebelum
+
+		// Penarikan tabungan umum oleh wali = pengeluaran kas
+		withdrawDaily, err := s.reportRepo.DailySavingsCredit(startDate, endDate, savingsTypeGeneral)
+		if err != nil {
+			return nil, err
+		}
+		for d, v := range withdrawDaily {
+			mergedExpense[d] += v
+		}
+		withdrawSumSebelum, err := s.reportRepo.SumSavingsCredit(ay.StartDate, endPrevDate, savingsTypeGeneral)
+		if err != nil {
+			return nil, err
+		}
+		saldoSebelum -= withdrawSumSebelum
 	}
+
+	// Carry-over: saldo akhir seluruh TA sebelumnya menjadi saldo awal TA ini.
+	carry, err := s.priorYearsCarryover(ay.StartDate, categories, allPos, onlyIncome, req.IncomeCategories, req.IncludeSavings)
+	if err != nil {
+		return nil, err
+	}
+	saldoSebelum += carry
 
 	// Collect all dates that have transactions
 	dateSet := make(map[string]bool)
@@ -1210,4 +1288,180 @@ func (s *reportService) GetPengeluaran(req dto.PengeluaranRequest) (*dto.Pengelu
 		Rows:         rows,
 		GrandTotal:   grandTotal,
 	}, nil
+}
+
+// GetPaymentIntegrity mengembalikan daftar payment yang header total_amount-nya
+// tidak konsisten dengan jumlah payment_items (diagnostik; tidak mengubah data).
+func (s *reportService) GetPaymentIntegrity(academicYearID uint) (*dto.PaymentIntegrityResponse, error) {
+	ayID := utility.ResolveAcademicYear(academicYearID, s.academicYearRepo)
+	ay, err := s.academicYearRepo.FindByID(ayID)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := s.reportRepo.FindInconsistentPayments(ayID)
+	if err != nil {
+		return nil, err
+	}
+	var totalDelta float64
+	for _, r := range rows {
+		totalDelta += r.Unaccounted
+	}
+	return &dto.PaymentIntegrityResponse{
+		AcademicYear: ay.Name,
+		Count:        len(rows),
+		TotalDelta:   totalDelta,
+		Rows:         rows,
+	}, nil
+}
+
+// sumNetForRange menghitung net kas (penerimaan − pengeluaran) untuk satu tahun
+// ajaran pada rentang [start,end] dengan filter pos/income/savings yang sama
+// seperti laporan saldo. Dipakai untuk saldo "sebelum" TA berjalan maupun
+// carry-over saldo TA sebelumnya.
+func (s *reportService) sumNetForRange(ayID uint, start, end time.Time, categories []string, allPos, onlyIncome bool, incomeCategories string, includeSavings bool) (float64, error) {
+	var pen, peng float64
+
+	if allPos {
+		p, err := s.reportRepo.SumPenerimaan(ayID, start, end, "")
+		if err != nil {
+			return 0, err
+		}
+		e, err := s.reportRepo.SumPengeluaran(ayID, start, end, "")
+		if err != nil {
+			return 0, err
+		}
+		pen += p
+		peng += e
+	} else if !onlyIncome {
+		for _, cat := range categories {
+			if cat == "" {
+				continue
+			}
+			p, err := s.reportRepo.SumPenerimaan(ayID, start, end, cat)
+			if err != nil {
+				return 0, err
+			}
+			e, err := s.reportRepo.SumPengeluaran(ayID, start, end, cat)
+			if err != nil {
+				return 0, err
+			}
+			pen += p
+			peng += e
+		}
+	}
+
+	if onlyIncome || strings.TrimSpace(incomeCategories) != "" {
+		inc, err := s.reportRepo.SumIncomeTransactions(ayID, start, end, incomeCategories)
+		if err != nil {
+			return 0, err
+		}
+		pen += inc
+		for _, code := range strings.Split(incomeCategories, ",") {
+			code = strings.TrimSpace(code)
+			if code == "" {
+				continue
+			}
+			e, err := s.reportRepo.SumPengeluaran(ayID, start, end, code)
+			if err != nil {
+				return 0, err
+			}
+			peng += e
+		}
+	}
+
+	if allPos || includeSavings {
+		dep, err := s.reportRepo.SumSavingsDeposits(ayID, start, end)
+		if err != nil {
+			return 0, err
+		}
+		wd, err := s.reportRepo.SumSavingsCredit(start, end, savingsTypeGeneral)
+		if err != nil {
+			return 0, err
+		}
+		pen += dep
+		peng += wd
+	}
+
+	return pen - peng, nil
+}
+
+// priorYearsCarryover menjumlahkan net kas seluruh tahun ajaran yang dimulai
+// sebelum TA berjalan (rentang penuh masing-masing), dengan filter yang sama.
+// Asumsi akuntansi: kas sekolah kontinu — saldo akhir TA lama = saldo awal TA
+// baru. Savings bersifat lintas-TA (berbasis tanggal), tapi karena rentang TA
+// tidak tumpang tindih, penjumlahan per-TA tidak double-count.
+func (s *reportService) priorYearsCarryover(currentAYStart time.Time, categories []string, allPos, onlyIncome bool, incomeCategories string, includeSavings bool) (float64, error) {
+	ays, err := s.academicYearRepo.FindAll()
+	if err != nil {
+		return 0, err
+	}
+	var carry float64
+	for _, pay := range ays {
+		if !pay.StartDate.Before(currentAYStart) {
+			continue // hanya TA yang mulai sebelum TA berjalan
+		}
+		net, err := s.sumNetForRange(pay.ID, pay.StartDate, pay.EndDate, categories, allPos, onlyIncome, incomeCategories, includeSavings)
+		if err != nil {
+			return 0, err
+		}
+		carry += net
+	}
+	return carry, nil
+}
+
+// priorYearsCarryoverByCategory mengembalikan net kas per pos (invoice_category)
+// dari seluruh TA yang mulai sebelum TA berjalan — untuk carry-over Posisi Kas.
+func (s *reportService) priorYearsCarryoverByCategory(currentAYStart time.Time, expenseCategoryIDs, incomeCategories string, includeSavings bool) (map[string]float64, error) {
+	ays, err := s.academicYearRepo.FindAll()
+	if err != nil {
+		return nil, err
+	}
+	carry := make(map[string]float64)
+	for _, pay := range ays {
+		if !pay.StartDate.Before(currentAYStart) {
+			continue
+		}
+		pen, err := s.reportRepo.SumPenerimaanByInvoiceCategory(pay.ID, pay.StartDate, pay.EndDate)
+		if err != nil {
+			return nil, err
+		}
+		inc, err := s.reportRepo.SumIncomeTransactionsByCategory(pay.ID, pay.StartDate, pay.EndDate, incomeCategories)
+		if err != nil {
+			return nil, err
+		}
+		for c, v := range inc {
+			pen[c] += v
+		}
+		if includeSavings {
+			dep, err := s.reportRepo.SumSavingsDeposits(pay.ID, pay.StartDate, pay.EndDate)
+			if err != nil {
+				return nil, err
+			}
+			pen["savings_voluntary"] += dep
+		}
+		pengRaw, err := s.reportRepo.SumPengeluaranByInvoiceCategory(pay.ID, pay.StartDate, pay.EndDate, expenseCategoryIDs)
+		if err != nil {
+			return nil, err
+		}
+		peng := make(map[string]float64)
+		for c, ds := range pengRaw {
+			for _, d := range ds {
+				peng[c] += d.Amount
+			}
+		}
+		if includeSavings {
+			wd, err := s.reportRepo.SumSavingsCredit(pay.StartDate, pay.EndDate, savingsTypeGeneral)
+			if err != nil {
+				return nil, err
+			}
+			peng["savings_voluntary"] += wd
+		}
+		for c, v := range pen {
+			carry[c] += v
+		}
+		for c, v := range peng {
+			carry[c] -= v
+		}
+	}
+	return carry, nil
 }

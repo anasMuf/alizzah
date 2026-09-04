@@ -1,5 +1,7 @@
 package model
 
+import "time"
+
 type SavingsTransaction struct {
 	PrimaryKey
 	StudentSavingsID uint    `gorm:"not null;index"`
@@ -12,6 +14,10 @@ type SavingsTransaction struct {
 	SourceID  *uint  `gorm:""`
 	Notes     string `gorm:"type:text"`
 	CreatedBy uint   `gorm:"not null"`
+	// TransactionDate: tanggal buku transaksi (bukan timestamp input). Dipakai
+	// laporan agar penarikan/setoran dikelompokkan per tanggal buku, lepas dari
+	// timezone server. Default CURRENT_DATE untuk jalur yang tak menyetel eksplisit.
+	TransactionDate time.Time `gorm:"type:date;not null;default:CURRENT_DATE;index"`
 	BaseModelTimeAt
 
 	StudentSavings StudentSavings `gorm:"foreignKey:StudentSavingsID"`

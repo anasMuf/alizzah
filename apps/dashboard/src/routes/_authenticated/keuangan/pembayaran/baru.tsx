@@ -153,10 +153,11 @@ function KasirPembayaranPage() {
 		setSelectedInvoices(Array.from(invIds));
 		setIncidentalItems(incidentals);
 
-		// Set source
+		// Set source + porsi tabungan (untuk prefill pembayaran campuran)
 		if (editPayment.source === "savings" || editPayment.source === "cash") {
 			setPaymentSource(editPayment.source);
 		}
+		setSavingsUsage(Number(editPayment.savings_usage_amount || 0));
 
 		// Preserve original payment date
 		if (editPayment.payment_date) {
@@ -174,6 +175,8 @@ function KasirPembayaranPage() {
 	// Payment form (continued)
 	const [cashReceived, setCashReceived] = useState(0);
 	const [depositChange, setDepositChange] = useState(false);
+	// Porsi yang dibayar dari tabungan umum (sisanya tunai). 0 saat sumber tunai.
+	const [savingsUsage, setSavingsUsage] = useState(0);
 
 	// Savings
 	const { data: savingsResp } = useGetV1StudentsIdSavings(
@@ -313,11 +316,20 @@ function KasirPembayaranPage() {
 		return item && !item.is_dispensation && amt > 0;
 	});
 
+	// Ganti sumber: saat pilih Tabungan, default nominal = penuh (dibatasi saldo);
+	// user bisa menurunkannya untuk pembayaran campuran (sebagian tunai).
+	const handleSourceChange = (s: "cash" | "savings") => {
+		setPaymentSource(s);
+		setSavingsUsage(s === "savings" ? Math.min(totalPay, savingsBalance) : 0);
+	};
+
 	const canSubmit =
 		selectedStudent &&
 		(totalPay > 0 || tabunganUmumTotal > 0 || hasItemsToPay) &&
 		((paymentSource === "cash" && cashReceived >= totalPay) ||
-			(paymentSource === "savings" && savingsBalance >= totalPay));
+			(paymentSource === "savings" &&
+				savingsUsage <= savingsBalance &&
+				savingsUsage <= totalPay));
 
 	// Sync guard — cegah double-submit dalam <1ms
 	const submitGuard = useRef(false);
@@ -379,11 +391,19 @@ function KasirPembayaranPage() {
 	const handleSubmit = () => {
 		if (submitGuard.current) return;
 		submitGuard.current = true;
-		if (paymentSource === "savings" && totalPay > savingsBalance) {
+		if (paymentSource === "savings" && savingsUsage > savingsBalance) {
 			addToast({
 				variant: "error",
 				title: "Validasi",
-				message: "Saldo tabungan tidak mencukupi.",
+				message: "Nominal dari tabungan melebihi saldo.",
+			});
+			return;
+		}
+		if (paymentSource === "savings" && savingsUsage > totalPay) {
+			addToast({
+				variant: "error",
+				title: "Validasi",
+				message: "Nominal dari tabungan melebihi total pembayaran.",
 			});
 			return;
 		}
@@ -418,6 +438,7 @@ function KasirPembayaranPage() {
 			academic_year_id: activeAy?.id || 1,
 			student_id: selectedStudent.id,
 			source: paymentSource,
+			savings_usage_amount: paymentSource === "savings" ? savingsUsage : 0,
 			payment_date: paymentDate,
 			items: Object.entries(payAmounts)
 				.filter(([id, amt]) => {
@@ -473,6 +494,7 @@ function KasirPembayaranPage() {
 								setPaymentDate(new Date().toISOString().split("T")[0]);
 								setNotes("");
 								setPaymentSource("cash");
+								setSavingsUsage(0);
 							}}
 							disabled={isEditMode}
 						/>
@@ -544,10 +566,12 @@ function KasirPembayaranPage() {
 							cashReceived={cashReceived}
 							depositChange={depositChange}
 							notes={notes}
-							onSourceChange={setPaymentSource}
+							savingsUsage={savingsUsage}
+							onSourceChange={handleSourceChange}
 							onCashReceivedChange={setCashReceived}
 							onDepositChangeChange={setDepositChange}
 							onNotesChange={setNotes}
+							onSavingsUsageChange={setSavingsUsage}
 						/>
 						<div className="flex-shrink-0 border-t border-gray-200 p-4 bg-white">
 							<Button

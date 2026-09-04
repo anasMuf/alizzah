@@ -7,6 +7,7 @@ import (
 	"api/utility"
 	"errors"
 	"fmt"
+	"math"
 	"time"
 
 	"gorm.io/gorm"
@@ -86,6 +87,13 @@ func (s *paymentService) GetByID(id uint) (*dto.PaymentDetailResponse, error) {
 		return nil, err
 	}
 	resp := mapPaymentToDetailResponse(*payment)
+	// Porsi tabungan umum (payment_usage) untuk prefill form edit.
+	var usage float64
+	s.db.Table("savings_transactions").
+		Select("COALESCE(SUM(net_amount), 0)").
+		Where("deleted_at IS NULL AND source_type = 'payment_usage' AND transaction_type = 'credit' AND source_id = ?", id).
+		Scan(&usage)
+	resp.SavingsUsage = usage
 	return &resp, nil
 }
 
@@ -230,6 +238,19 @@ func (s *paymentService) createInTx(tx *gorm.DB, createdBy uint, req dto.CreateP
 		return nil, err
 	}
 
+	// [C2] Integrity guard: header TotalAmount HARUS sama dengan jumlah item.
+	// Laporan menjumlahkan payment_items, jadi drift header vs item membuat uang
+	// "hilang"/ganda dari laporan. Ini menegakkan invarian di titik tulis agar
+	// anomali seperti 7 baris legacy tak terulang. SavingsDeposit terpisah (kas
+	// vs brangkas) dan tidak masuk TotalAmount.
+	var itemSum float64
+	for _, pi := range paymentItems {
+		itemSum += pi.Amount
+	}
+	if math.Abs(itemSum-result.TotalAmount) > 0.005 {
+		return nil, fmt.Errorf("integritas pembayaran gagal: total header %.2f != jumlah item %.2f", result.TotalAmount, itemSum)
+	}
+
 	// [D] Update invoice items
 	for _, item := range req.Items {
 		invoiceItem, err := s.invoiceItemRepo.WithTx(tx).FindByID(item.InvoiceItemID)
@@ -253,11 +274,30 @@ func (s *paymentService) createInTx(tx *gorm.DB, createdBy uint, req dto.CreateP
 		}
 	}
 
-	// [F] Cash source → WriteCashCredit (invoice items + savings deposit)
-	if req.Source == "cash" && (totalAmount > 0 || req.SavingsDeposit > 0) {
-		cashAmount := totalAmount + req.SavingsDeposit
+	// Split pendanaan: berapa dari total yang diambil dari tabungan umum,
+	// sisanya tunai. Mendukung pembayaran campuran (mis. sebagian saldo
+	// tabungan + tambahan tunai) dalam satu transaksi.
+	savingsUsage := req.SavingsUsage
+	if savingsUsage <= 0 && req.Source == "savings" {
+		savingsUsage = totalAmount // kompat: source=savings = pakai tabungan penuh
+	}
+	if savingsUsage < 0 {
+		savingsUsage = 0
+	}
+	// Item Tabungan Wajib tidak boleh didanai dari Tabungan Umum (hindari
+	// transfer antar-tabungan sekaligus double-count kas). Sisanya (non-wajib)
+	// boleh dari tabungan.
+	maxSavingsUsage := totalAmount - mandatorySavingsAmount
+	if savingsUsage > maxSavingsUsage {
+		return nil, fmt.Errorf("Nominal dari tabungan (%.0f) melebihi bagian yang boleh didanai tabungan (%.0f). Item Tabungan Wajib harus dibayar tunai.", savingsUsage, maxSavingsUsage)
+	}
+	cashPortion := totalAmount - savingsUsage
+
+	// [F] Porsi tunai → WriteCashCredit (porsi tunai + setoran tabungan)
+	if cashPortion > 0 || req.SavingsDeposit > 0 {
+		cashAmount := cashPortion + req.SavingsDeposit
 		desc := fmt.Sprintf("Pembayaran %s", student.FullName)
-		if totalAmount == 0 && req.SavingsDeposit > 0 {
+		if cashPortion == 0 && req.SavingsDeposit > 0 {
 			desc = fmt.Sprintf("Setoran tabungan %s", student.FullName)
 		}
 		if err := s.txnWriter.WriteCashCredit(req.AcademicYearID, paymentDate, cashAmount, "payment", &result.ID, desc, createdBy, tx); err != nil {
@@ -265,32 +305,33 @@ func (s *paymentService) createInTx(tx *gorm.DB, createdBy uint, req dto.CreateP
 		}
 	}
 
-	// [G] Savings source → debit general savings
-	if req.Source == "savings" && totalAmount > 0 {
+	// [G] Porsi tabungan umum → payment_usage credit (kurangi saldo + brangkas)
+	if savingsUsage > 0 {
 		savings, err := s.savingsRepo.FindByStudentAndTypeForUpdate(tx, req.StudentID, "general")
 		if err != nil {
 			return nil, errors.New("Tabungan umum siswa tidak ditemukan")
 		}
-		if totalAmount > savings.Balance {
-			return nil, fmt.Errorf("Saldo tabungan tidak mencukupi. Saldo: %.0f, Dibutuhkan: %.0f", savings.Balance, totalAmount)
+		if savingsUsage > savings.Balance {
+			return nil, fmt.Errorf("Saldo tabungan tidak mencukupi. Saldo: %.0f, Dibutuhkan: %.0f", savings.Balance, savingsUsage)
 		}
 		stxn := &model.SavingsTransaction{
 			StudentSavingsID: savings.ID,
 			TransactionType:  "credit",
-			Amount:           totalAmount,
-			NetAmount:        totalAmount,
+			Amount:           savingsUsage,
+			NetAmount:        savingsUsage,
 			SourceType:       "payment_usage",
 			SourceID:         &result.ID,
 			Notes:            "Pembayaran dari tabungan umum",
 			CreatedBy:        createdBy,
+			TransactionDate:  paymentDate,
 		}
 		if err := s.savingsTxnRepo.CreateWithTx(stxn, tx); err != nil {
 			return nil, err
 		}
-		if err := s.savingsRepo.SubtractBalance(tx, savings.ID, totalAmount); err != nil {
+		if err := s.savingsRepo.SubtractBalance(tx, savings.ID, savingsUsage); err != nil {
 			return nil, fmt.Errorf("gagal mengurangi saldo tabungan: %w", err)
 		}
-		if err := s.txnWriter.WriteVaultDebit(req.AcademicYearID, paymentDate, totalAmount, "savings_withdrawal", &result.ID, fmt.Sprintf("Penggunaan tabungan %s", student.FullName), createdBy, tx); err != nil {
+		if err := s.txnWriter.WriteVaultDebit(req.AcademicYearID, paymentDate, savingsUsage, "savings_withdrawal", &result.ID, fmt.Sprintf("Penggunaan tabungan %s", student.FullName), createdBy, tx); err != nil {
 			return nil, err
 		}
 	}
@@ -314,6 +355,7 @@ func (s *paymentService) createInTx(tx *gorm.DB, createdBy uint, req dto.CreateP
 			SourceID:         &result.ID,
 			Notes:            "Setoran tabungan",
 			CreatedBy:        createdBy,
+			TransactionDate:  paymentDate,
 		}
 		if err := s.savingsTxnRepo.CreateWithTx(stxn, tx); err != nil {
 			return nil, err
@@ -351,6 +393,7 @@ func (s *paymentService) createInTx(tx *gorm.DB, createdBy uint, req dto.CreateP
 			SourceID:         &result.ID,
 			Notes:            "Setoran tabungan wajib dari pembayaran",
 			CreatedBy:        createdBy,
+			TransactionDate:  paymentDate,
 		}
 		if err := s.savingsTxnRepo.CreateWithTx(mstxn, tx); err != nil {
 			return nil, err

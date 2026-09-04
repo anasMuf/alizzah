@@ -34,6 +34,10 @@ type CreatePaymentRequest struct {
 	Items           []PaymentItemReq    `json:"items" validate:"omitempty,dive"`
 	IncidentalItems []IncidentalItemReq `json:"incidental_items" validate:"omitempty,dive"`
 	SavingsDeposit  float64             `json:"savings_deposit" validate:"omitempty,min=0"`
+	// SavingsUsage: berapa dari total tagihan yang didanai dari tabungan umum
+	// (sisanya tunai). Opsional; 0 = seluruhnya tunai. Bila kosong dan
+	// source="savings", di-default ke seluruh total (kompat perilaku lama).
+	SavingsUsage float64 `json:"savings_usage_amount" validate:"omitempty,min=0"`
 }
 
 type PaymentItemReq struct {
@@ -65,6 +69,7 @@ type PaymentDetailResponse struct {
 	PaymentDate    string                `json:"payment_date"`
 	TotalAmount    float64               `json:"total_amount"`
 	SavingsDeposit float64               `json:"savings_deposit"`
+	SavingsUsage   float64               `json:"savings_usage_amount"` // porsi dibayar dari tabungan umum
 	Source         string                `json:"source"`
 	Notes          *string               `json:"notes"`
 	Items          []PaymentItemResponse `json:"items"`

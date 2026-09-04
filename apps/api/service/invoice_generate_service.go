@@ -193,10 +193,11 @@ func (s *invoiceGenerateService) GenerateInitial(params dto.GenerateInitialInvoi
 							label = fmt.Sprintf("Dispensasi: %s (%.0f%%)", d.Reason, d.DiscountValue)
 						}
 						dispensationItems = append(dispensationItems, model.InvoiceItem{
-							Name:     label,
-							Category: "dispensation",
-							Amount:   -discountForThis,
-							Status:   "paid",
+							Name:           label,
+							Category:       "dispensation",
+							OffsetCategory: d.FeeCategory,
+							Amount:         -discountForThis,
+							Status:         "paid",
 						})
 					}
 				}
@@ -514,12 +515,13 @@ func (s *invoiceGenerateService) GenerateMonthly(params dto.GenerateMonthlyInvoi
 							label = fmt.Sprintf("Dispensasi: %s (%.0f%%)", d.Reason, d.DiscountValue)
 						}
 						invoiceItems = append(invoiceItems, model.InvoiceItem{
-							Name:        label,
-							Category:    "dispensation",
-							Amount:      -discountForThis,
-							IsMandatory: true,
-							Status:      "paid",
-							Notes:       d.Notes,
+							Name:           label,
+							Category:       "dispensation",
+							OffsetCategory: d.FeeCategory,
+							Amount:         -discountForThis,
+							IsMandatory:    true,
+							Status:         "paid",
+							Notes:          d.Notes,
 						})
 					}
 				}
@@ -1988,13 +1990,14 @@ func (s *invoiceGenerateService) applyDispensationToInvoice(invoice *model.Invoi
 					label = fmt.Sprintf("Dispensasi: %s (%.0f%%)", d.Reason, d.DiscountValue)
 				}
 				newItems = append(newItems, model.InvoiceItem{
-					InvoiceID:   invoice.ID,
-					Name:        label,
-					Category:    "dispensation",
-					Amount:      -discountForThis,
-					IsMandatory: true,
-					Status:      "paid",
-					Notes:       d.Notes,
+					InvoiceID:      invoice.ID,
+					Name:           label,
+					Category:       "dispensation",
+					OffsetCategory: d.FeeCategory,
+					Amount:         -discountForThis,
+					IsMandatory:    true,
+					Status:         "paid",
+					Notes:          d.Notes,
 				})
 			}
 		}

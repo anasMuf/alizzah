@@ -56,8 +56,18 @@ func TestUnenrollFacility_DeletesBillingExclusions(t *testing.T) {
 	require.NoError(t, db.Where("student_id = ? AND facility_id = ?", fx.StudentID, fx.FacilityID).First(&sf).Error)
 
 	exclRepo := repository.NewBillingMonthExclusionRepository(db)
+	monthZoneRepo := repository.NewStudentFacilityMonthZoneRepository(db)
 	require.NoError(t, exclRepo.Replace(db, fx.StudentID, "facility", fx.FacilityID, []model.BillingMonthExclusion{
 		{StudentID: fx.StudentID, EntityType: "facility", EntityRefID: fx.FacilityID, Month: 9, Year: 2025, AcademicYearID: fx.AcademicYear.ID},
+	}))
+
+	// R.9 (epic zona-bulanan): override per bulan ikut dihapus saat unenroll.
+	var sfForZone model.StudentFacility
+	require.NoError(t, db.Where("student_id = ? AND facility_id = ?", fx.StudentID, fx.FacilityID).First(&sfForZone).Error)
+	require.NoError(t, monthZoneRepo.UpsertMonth(&model.StudentFacilityMonthZone{
+		StudentFacilityID: sfForZone.ID,
+		Month:             9,
+		Year:              2025,
 	}))
 
 	svc := NewStudentFacilityService(
@@ -72,6 +82,8 @@ func TestUnenrollFacility_DeletesBillingExclusions(t *testing.T) {
 		repository.NewEffectiveDayRepository(db),
 		newTestInvoiceGen(t, db),
 		exclRepo,
+		repository.NewFeeConfigRepository(db),
+		monthZoneRepo,
 	)
 
 	err := svc.Unenroll(fx.StudentID, sf.ID)
@@ -86,4 +98,9 @@ func TestUnenrollFacility_DeletesBillingExclusions(t *testing.T) {
 	exclusions, err := exclRepo.FindByStudentAndEntity(fx.StudentID, "facility", fx.FacilityID)
 	require.NoError(t, err)
 	assert.Len(t, exclusions, 0, "exclusion harus dihapus saat unenroll")
+
+	// R.9: override zona per bulan ikut terhapus
+	zones, err := monthZoneRepo.FindByStudentFacilityID(sf.ID)
+	require.NoError(t, err)
+	assert.Len(t, zones, 0, "month-zone harus dihapus saat unenroll")
 }

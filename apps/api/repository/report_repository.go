@@ -136,6 +136,18 @@ func (r *reportRepository) GetMonthlyBreakdown(academicYearID uint) ([]dto.Month
 		return nil, err
 	}
 
+	// Penerimaan lain (income_transactions) per bulan — ikut agar breakdown
+	// konsisten dengan Net tahunan.
+	var otherIncomes []MonthlyAmount
+	err = r.db.Table("income_transactions it").
+		Select("EXTRACT(MONTH FROM it.transaction_date) as month, EXTRACT(YEAR FROM it.transaction_date) as year, SUM(it.amount) as amount").
+		Where("it.deleted_at IS NULL AND it.academic_year_id = ?", academicYearID).
+		Group("year, month").
+		Scan(&otherIncomes).Error
+	if err != nil {
+		return nil, err
+	}
+
 	var expenses []MonthlyAmount
 	err = r.db.Table("expenses e").
 		Select("EXTRACT(MONTH FROM e.expense_date) as month, EXTRACT(YEAR FROM e.expense_date) as year, SUM(e.amount) as amount").
@@ -159,6 +171,9 @@ func (r *reportRepository) GetMonthlyBreakdown(academicYearID uint) ([]dto.Month
 
 	for _, inc := range incomes {
 		merge(inc.Month, inc.Year, inc.Amount, 0)
+	}
+	for _, oi := range otherIncomes {
+		merge(oi.Month, oi.Year, oi.Amount, 0)
 	}
 	for _, exp := range expenses {
 		merge(exp.Month, exp.Year, 0, exp.Amount)

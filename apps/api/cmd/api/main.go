@@ -99,6 +99,8 @@ func main() {
 		// Facilities
 		&model.Facility{},
 		&model.StudentFacility{},
+		// Per-bulan zone override fasilitas (antar jemput)
+		&model.StudentFacilityMonthZone{},
 		// Billing month exclusions (skip tagihan bulanan)
 		&model.BillingMonthExclusion{},
 		// Dispensations
@@ -330,6 +332,7 @@ func main() {
 	// Facility repos (needed before invoiceGenService)
 	facilityRepo := repository.NewFacilityRepository(db)
 	sfRepo := repository.NewStudentFacilityRepository(db)
+	monthZoneRepo := repository.NewStudentFacilityMonthZoneRepository(db)
 
 	// Dispensation repo (needed before invoiceGenService)
 	dispensationRepo := repository.NewDispensationRepository(db)
@@ -340,7 +343,7 @@ func main() {
 	// Billing month exclusions repo (skip tagihan bulanan)
 	billingExclusionRepo := repository.NewBillingMonthExclusionRepository(db)
 
-	invoiceGenService := service.NewInvoiceGenerateService(db, invoiceRepo, invoiceItemRepo, fcRepo, fcItemRepo, effectiveDayRepo, enrollmentRepo, extracurricularRepo, seRepo, ayRepo, daycareRepo, facilityRepo, sfRepo, dispensationRepo, exceptionalityRepo, daycareMonthlyAttRepo, billingExclusionRepo)
+	invoiceGenService := service.NewInvoiceGenerateService(db, invoiceRepo, invoiceItemRepo, fcRepo, fcItemRepo, effectiveDayRepo, enrollmentRepo, extracurricularRepo, seRepo, ayRepo, daycareRepo, facilityRepo, sfRepo, dispensationRepo, exceptionalityRepo, daycareMonthlyAttRepo, billingExclusionRepo, monthZoneRepo)
 
 	// Auto-sync: tambahkan item tabungan wajib ke invoice existing yang belum memilikinya.
 	// Aman dijalankan berulang kali (idempotent), hanya menyentuh invoice unpaid/partial.
@@ -531,7 +534,7 @@ func main() {
 
 	// Facilities
 	facilityService := service.NewFacilityService(facilityRepo, fcRepo, fcItemRepo)
-	sfService := service.NewStudentFacilityService(sfRepo, studentRepo, facilityRepo, ayRepo, fcItemRepo, invoiceRepo, invoiceItemRepo, enrollmentRepo, effectiveDayRepo, invoiceGenService, billingExclusionRepo)
+	sfService := service.NewStudentFacilityService(sfRepo, studentRepo, facilityRepo, ayRepo, fcItemRepo, invoiceRepo, invoiceItemRepo, enrollmentRepo, effectiveDayRepo, invoiceGenService, billingExclusionRepo, fcRepo, monthZoneRepo)
 	facilityHandler := handler.NewFacilityHandler(facilityService, sfService)
 
 	// Billing month exclusions (skip tagihan bulanan PASTA & fasilitas)
@@ -636,6 +639,9 @@ func main() {
 	students.DELETE("/:id/facilities/:facilityId", facilityHandler.Unenroll, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.GET("/:id/facilities/:facilityId/billing-exclusions", billingExclusionHandler.GetFacility, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.PUT("/:id/facilities/:facilityId/billing-exclusions", billingExclusionHandler.SetFacility, guard.RequireModule(middleware.ModuleAdministrasi))
+	// Per-bulan zone override fasilitas (epic zona-bulanan)
+	students.PUT("/:id/facilities/:facilityId/month-zone", facilityHandler.SetMonthZone, guard.RequireModule(middleware.ModuleAdministrasi))
+	students.DELETE("/:id/facilities/:facilityId/month-zone", facilityHandler.ClearMonthZone, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.GET("/:id/academic-events", eventHandler.GetByStudent, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.POST("/:id/regenerate-invoices", studentHandler.RegenerateInvoices, guard.RequireModule(middleware.ModuleAdministrasi))
 

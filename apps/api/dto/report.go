@@ -111,6 +111,7 @@ type AnnualIncomeSummary struct {
 	TotalBilled float64 `json:"total_billed"`
 	TotalPaid   float64 `json:"total_paid"`
 	TotalUnpaid float64 `json:"total_unpaid"`
+	OtherIncome float64 `json:"other_income"` // income_transactions (BOS/Donasi/Hibah/dll)
 }
 
 type AnnualExpenseSummary struct {
@@ -440,10 +441,10 @@ type PaymentIntegrityRow struct {
 	PaymentDate string  `json:"payment_date"`
 	StudentID   uint    `json:"student_id"`
 	StudentName string  `json:"student_name"`
-	Header      float64 `json:"header"`       // payments.total_amount
-	ItemsSum    float64 `json:"items_sum"`    // Σ payment_items.amount
-	Savings     float64 `json:"savings"`      // payments.savings_deposit
-	Unaccounted float64 `json:"unaccounted"`  // header − items_sum
+	Header      float64 `json:"header"`      // payments.total_amount
+	ItemsSum    float64 `json:"items_sum"`   // Σ payment_items.amount
+	Savings     float64 `json:"savings"`     // payments.savings_deposit
+	Unaccounted float64 `json:"unaccounted"` // header − items_sum
 }
 
 type PaymentIntegrityResponse struct {

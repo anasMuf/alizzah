@@ -239,16 +239,37 @@ func (r *cashTransactionRepository) GetTodaySummary(academicYearID uint) (credit
 
 func (r *cashTransactionRepository) SumByCategory(academicYearID uint, start, end time.Time) ([]dto.CategoryAmount, error) {
 	var results []dto.CategoryAmount
+	// Penerimaan dari pembayaran invoice, per kategori pos.
+	// .Table() melewati soft-delete scope GORM, jadi filter deleted_at eksplisit.
 	err := r.db.
 		Table("payment_items pi").
 		Select("ii.category as category, SUM(pi.amount) as amount").
 		Joins("JOIN invoice_items ii ON ii.id = pi.invoice_item_id").
 		Joins("JOIN payments p ON p.id = pi.payment_id").
-		Where("p.academic_year_id = ? AND p.payment_date BETWEEN ? AND ?",
+		Where("pi.deleted_at IS NULL AND ii.deleted_at IS NULL AND p.deleted_at IS NULL AND p.academic_year_id = ? AND p.payment_date BETWEEN ? AND ?",
 			academicYearID, start, end).
 		Group("ii.category").
 		Scan(&results).Error
-	return results, err
+	if err != nil {
+		return nil, err
+	}
+
+	// Penerimaan lain (income_transactions: BOS, Donasi, Hibah, dll) juga masuk
+	// kas, jadi harus ikut di ringkasan penerimaan harian.
+	var incomeRows []dto.CategoryAmount
+	err = r.db.
+		Table("income_transactions it").
+		Select("ic.name as category, SUM(it.amount) as amount").
+		Joins("JOIN income_categories ic ON ic.id = it.income_category_id").
+		Where("it.deleted_at IS NULL AND it.academic_year_id = ? AND it.transaction_date BETWEEN ? AND ?",
+			academicYearID, start, end).
+		Group("ic.name").
+		Scan(&incomeRows).Error
+	if err != nil {
+		return nil, err
+	}
+	results = append(results, incomeRows...)
+	return results, nil
 }
 
 func (r *cashTransactionRepository) DeleteBySource(tx *gorm.DB, sourceType string, sourceID uint) error {

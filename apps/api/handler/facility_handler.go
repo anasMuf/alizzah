@@ -122,6 +122,8 @@ func (h *FacilityHandler) Delete(c echo.Context) error {
 // @Param        search            query string false "Search by student name"
 // @Param        page              query int   false  "Page (default 1)"
 // @Param        limit             query int   false  "Limit (default 20)"
+// @Param        month             query int   false  "Bulan (1-12) untuk kuantitas hari; default bulan berjalan"
+// @Param        year              query int   false  "Tahun untuk kuantitas hari; default tahun berjalan"
 // @Success      200  {object}  dto.SuccessResponse{data=dto.PaginatedFacilityStudentResponse}
 // @Router       /v1/facilities/{id}/students [get]
 func (h *FacilityHandler) ListStudents(c echo.Context) error {
@@ -133,12 +135,16 @@ func (h *FacilityHandler) ListStudents(c echo.Context) error {
 	ayID, _ := strconv.Atoi(c.QueryParam("academic_year_id"))
 	page, _ := strconv.Atoi(c.QueryParam("page"))
 	limit, _ := strconv.Atoi(c.QueryParam("limit"))
+	month, _ := strconv.Atoi(c.QueryParam("month"))
+	year, _ := strconv.Atoi(c.QueryParam("year"))
 
 	params := dto.FacilityStudentQueryParams{
 		AcademicYearID: uint(ayID),
 		Search:         c.QueryParam("search"),
 		Page:           page,
 		Limit:          limit,
+		Month:          uint(month),
+		Year:           uint(year),
 	}
 
 	result, err := h.sfService.GetStudentsByFacility(uint(id), params)
@@ -234,13 +240,88 @@ func (h *FacilityHandler) UpdateEnrollment(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: err.Error()})
 	}
 
-	sf, err := h.sfService.UpdateEnrollment(uint(studentID), uint(sfID), req)
+	sf, summary, err := h.sfService.UpdateEnrollment(uint(studentID), uint(sfID), req)
 	if err != nil {
 		status, code := utility.GetErrorStatusAndCode(err)
 		return c.JSON(status, dto.ErrorResponse{Status: status, Code: code, Message: err.Error()})
 	}
 
-	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil memperbarui fasilitas siswa", Data: sf})
+	return c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "Berhasil memperbarui fasilitas siswa",
+		Data:    dto.StudentFacilityUpdateResponse{Facility: *sf, Summary: summary},
+	})
+}
+
+// SetMonthZone godoc
+// @Summary      Set per-month zone override for a facility enrollment
+// @Tags         facilities
+// @Security     ApiKeyAuth
+// @Param        id          path  int                                    true  "Student ID"
+// @Param        facilityId  path  int                                    true  "Student Facility enrollment ID"
+// @Param        request     body  dto.UpdateStudentFacilityMonthZoneRequest  true  "Set month zone"
+// @Success      200  {object}  dto.SuccessResponse{data=dto.FacilityMonthZoneResponse}
+// @Router       /v1/students/{id}/facilities/{facilityId}/month-zone [put]
+func (h *FacilityHandler) SetMonthZone(c echo.Context) error {
+	studentID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: "ID tidak valid"})
+	}
+
+	sfID, err := strconv.Atoi(c.Param("facilityId"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: "ID fasilitas tidak valid"})
+	}
+
+	var req dto.UpdateStudentFacilityMonthZoneRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: err.Error()})
+	}
+	if err := c.Validate(req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "VALIDATION_ERROR", Message: err.Error()})
+	}
+
+	resp, err := h.sfService.SetMonthZone(uint(studentID), uint(sfID), req)
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{Status: status, Code: code, Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil memperbarui zona bulanan fasilitas", Data: resp})
+}
+
+// ClearMonthZone godoc
+// @Summary      Remove per-month zone override (back to default)
+// @Tags         facilities
+// @Security     ApiKeyAuth
+// @Param        id          path  int  true  "Student ID"
+// @Param        facilityId  path  int  true  "Student Facility enrollment ID"
+// @Param        month       query int  true  "Bulan (1-12)"
+// @Param        year        query int  true  "Tahun"
+// @Param        force       query bool false "Izinkan rewrite item yang sudah dibayar"
+// @Success      200  {object}  dto.SuccessResponse{data=dto.FacilityMonthZoneResponse}
+// @Router       /v1/students/{id}/facilities/{facilityId}/month-zone [delete]
+func (h *FacilityHandler) ClearMonthZone(c echo.Context) error {
+	studentID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: "ID tidak valid"})
+	}
+
+	sfID, err := strconv.Atoi(c.Param("facilityId"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: "ID fasilitas tidak valid"})
+	}
+
+	month, _ := strconv.Atoi(c.QueryParam("month"))
+	year, _ := strconv.Atoi(c.QueryParam("year"))
+	force := c.QueryParam("force") == "true" || c.QueryParam("force") == "1"
+
+	resp, err := h.sfService.ClearMonthZone(uint(studentID), uint(sfID), uint(month), uint(year), force)
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{Status: status, Code: code, Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil mengembalikan zona bulanan ke default", Data: resp})
 }
 
 // GetCurrentMonthDays godoc

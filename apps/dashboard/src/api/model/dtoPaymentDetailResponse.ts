@@ -17,6 +17,7 @@ export interface DtoPaymentDetailResponse {
 	notes?: string;
 	payment_date?: string;
 	savings_deposit?: number;
+	savings_usage_amount?: number;
 	source?: string;
 	student?: DtoStudentBriefResponse;
 	total_amount?: number;

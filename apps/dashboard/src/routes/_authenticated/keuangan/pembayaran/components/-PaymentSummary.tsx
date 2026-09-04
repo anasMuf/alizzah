@@ -14,10 +14,12 @@ interface PaymentSummaryProps {
 	cashReceived: number;
 	depositChange: boolean;
 	notes: string;
+	savingsUsage: number;
 	onSourceChange: (s: "cash" | "savings") => void;
 	onCashReceivedChange: (v: number) => void;
 	onDepositChangeChange: (v: boolean) => void;
 	onNotesChange: (v: string) => void;
+	onSavingsUsageChange: (v: number) => void;
 }
 
 export function PaymentSummary({
@@ -31,10 +33,12 @@ export function PaymentSummary({
 	cashReceived,
 	depositChange,
 	notes,
+	savingsUsage,
 	onSourceChange,
 	onCashReceivedChange,
 	onDepositChangeChange,
 	onNotesChange,
+	onSavingsUsageChange,
 }: PaymentSummaryProps) {
 	const changeAmount = useMemo(() => {
 		return cashReceived > totalPay ? cashReceived - totalPay : 0;
@@ -148,12 +152,51 @@ export function PaymentSummary({
 				</div>
 			</div>
 
-			{source === "savings" && savingsBalance < totalPay && totalPay > 0 && (
-				<div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg p-3">
-					<AlertCircle className="h-4 w-4 text-red-400 flex-shrink-0 mt-0.5" />
-					<p className="text-xs text-red-700">
-						Saldo tabungan tidak mencukupi.
-					</p>
+			{source === "savings" && totalPay > 0 && (
+				<div className="space-y-3">
+					<div>
+						<label className="block text-xs font-medium text-gray-700 mb-1">
+							Nominal dari Tabungan (Rp)
+						</label>
+						<CurrencyInput
+							className="block w-full rounded-lg border-0 py-2.5 px-4 text-lg font-bold text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 tabular-nums"
+							value={savingsUsage}
+							onChange={onSavingsUsageChange}
+							placeholder="0"
+						/>
+						<p className="mt-1 text-xs text-gray-500">
+							Saldo tersedia: {formatCurrency(savingsBalance)}
+						</p>
+					</div>
+
+					{/* Sisa dibayar tunai */}
+					{savingsUsage < totalPay && (
+						<div className="bg-white rounded-lg border border-gray-200 p-3 flex justify-between text-sm">
+							<span className="text-gray-500">Sisa dibayar tunai</span>
+							<span className="font-bold text-gray-900 tabular-nums">
+								{formatCurrency(totalPay - savingsUsage)}
+							</span>
+						</div>
+					)}
+
+					{savingsUsage > savingsBalance && (
+						<div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg p-3">
+							<AlertCircle className="h-4 w-4 text-red-400 flex-shrink-0 mt-0.5" />
+							<p className="text-xs text-red-700">
+								Nominal melebihi saldo tabungan (
+								{formatCurrency(savingsBalance)}).
+							</p>
+						</div>
+					)}
+					{savingsUsage > totalPay && (
+						<div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg p-3">
+							<AlertCircle className="h-4 w-4 text-amber-400 flex-shrink-0 mt-0.5" />
+							<p className="text-xs text-amber-700">
+								Nominal melebihi total pembayaran ({formatCurrency(totalPay)}).
+								Kurangi nominal tabungan.
+							</p>
+						</div>
+					)}
 				</div>
 			)}
 

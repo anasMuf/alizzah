@@ -42,6 +42,7 @@ func setupBillingExclusionInvoiceTestDB(t *testing.T) *gorm.DB {
 		&model.InvoiceItem{},
 		&model.Facility{},
 		&model.StudentFacility{},
+		&model.StudentFacilityMonthZone{},
 		&model.EffectiveDay{},
 		&model.Dispensation{},
 		&model.StudentExceptionality{},
@@ -143,6 +144,7 @@ func newTestInvoiceGen(t *testing.T, db *gorm.DB) InvoiceGenerateService {
 		repository.NewStudentExceptionalityRepository(db),
 		repository.NewDaycareMonthlyAttendanceRepository(db),
 		repository.NewBillingMonthExclusionRepository(db),
+		repository.NewStudentFacilityMonthZoneRepository(db),
 	)
 }
 

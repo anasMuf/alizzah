@@ -24,6 +24,10 @@ import {
 	usePostV1StudentsIdFacilities,
 } from "#/api/endpoints/facilities/facilities";
 import {
+	deleteFacilityMonthZone,
+	putFacilityMonthZone,
+} from "#/api/endpoints/facilities/facility-month-zone";
+import {
 	getGetV1FeeConfigsIdItemsQueryKey,
 	useDeleteV1FeeConfigsIdItemsItemId,
 	useGetV1FeeConfigs,
@@ -223,12 +227,29 @@ function FacilityDetailPage() {
 				body: JSON.stringify({ fee_config_item_id: feeConfigItemId }),
 			});
 		},
-		onSuccess: () => {
+		onSuccess: (resp) => {
 			addToast({
 				variant: "success",
 				title: "Berhasil",
-				message: "Zona berhasil diubah.",
+				message: "Zona default diubah.",
 			});
+			// Ringkasan penyelarasan item tagihan (epic zona-bulanan).
+			const summary = (resp as any)?.data?.data?.summary;
+			if (summary) {
+				const parts: string[] = [];
+				if (summary.reconciled > 0)
+					parts.push(`${summary.reconciled} bulan disesuaikan`);
+				if (summary.skipped_override > 0)
+					parts.push(`${summary.skipped_override} bulan ber-override dilewati`);
+				if (summary.skipped_paid > 0)
+					parts.push(`${summary.skipped_paid} bulan sudah dibayar dilewati`);
+				if (parts.length > 0)
+					addToast({
+						variant: "info",
+						title: "Penyelarasan tagihan",
+						message: `${parts.join(" • ")}. Bulan ber-override/sudah dibayar diatur per bulan di tab Jumlah Hari Bulanan.`,
+					});
+			}
 			queryClient.invalidateQueries({
 				queryKey: getGetV1FacilitiesIdStudentsQueryKey(id, {
 					academic_year_id: activeAy?.id,
@@ -548,7 +569,11 @@ function FacilityDetailPage() {
 			</div>
 
 			{tab === "days" && (
-				<FacilityMonthlyDaysTab facilityId={id} academicYearId={activeAy?.id} />
+				<FacilityMonthlyDaysTab
+					facilityId={id}
+					academicYearId={activeAy?.id}
+					zones={zones}
+				/>
 			)}
 
 			{tab === "settings" && (
@@ -1193,9 +1218,11 @@ function FacilityDetailPage() {
 function FacilityMonthlyDaysTab({
 	facilityId,
 	academicYearId,
+	zones,
 }: {
 	facilityId: number;
 	academicYearId?: number;
+	zones: { id: number; name: string; amount: number }[];
 }) {
 	const { addToast } = useToast();
 	const queryClient = useQueryClient();
@@ -1207,15 +1234,23 @@ function FacilityMonthlyDaysTab({
 	const [original, setOriginal] = useState<Record<number, number>>({});
 	const [loading, setLoading] = useState(false);
 	const [saving, setSaving] = useState(false);
+	const [zoneBusyId, setZoneBusyId] = useState<number | null>(null);
+	// Aksi zona yang butuh konfirmasi karena item bulan sudah dibayar.
+	const [pendingZone, setPendingZone] = useState<{
+		row: any;
+		clear: boolean;
+		feeId: number | null;
+	} | null>(null);
 
 	const load = useCallback(async () => {
 		if (!academicYearId) return;
 		setLoading(true);
 		try {
-			const res = await customInstance<{ data: { data: any[] } }>(
+			const res = await customInstance<{ data: { data: { data: any[] } } }>(
 				`/v1/facilities/${facilityId}/students?academic_year_id=${academicYearId}&limit=200&month=${month}&year=${year}`,
 			);
-			const list = ((res as any)?.data?.data ?? []) as any[];
+			// Body backend: { data: { data: [...], meta } } — ambil array-nya.
+			const list = ((res as any)?.data?.data?.data ?? []) as any[];
 			setRows(list);
 			const init: Record<number, number> = {};
 			for (const r of list) {
@@ -1311,6 +1346,105 @@ function FacilityMonthlyDaysTab({
 
 	const monthLabel = `${MONTH_NAMES[month - 1]} ${year}`;
 
+	// ── Zona per bulan (epic zona-bulanan) ──
+	// Nilai dropdown: "default" (ikut zona default enrollment), "none" (override
+	// tanpa zona → item dasar), atau id zona (override eksplisit utk bulan tsb).
+	const fmtMoney = (v: number) =>
+		new Intl.NumberFormat("id-ID", {
+			style: "currency",
+			currency: "IDR",
+			minimumFractionDigits: 0,
+		}).format(v);
+
+	const zoneSelectValue = (r: any): string => {
+		if (r.month_zone_overridden) {
+			return r.month_zone_fee_config_item_id != null
+				? String(r.month_zone_fee_config_item_id)
+				: "none";
+		}
+		return "default";
+	};
+
+	const requestZoneChange = async (
+		r: any,
+		clear: boolean,
+		feeId: number | null,
+		force: boolean,
+	) => {
+		setZoneBusyId(r.id);
+		try {
+			const resp = await (clear
+				? deleteFacilityMonthZone(r.student?.id, r.id, month, year, force)
+				: putFacilityMonthZone(r.student?.id, r.id, {
+						month,
+						year,
+						fee_config_item_id: feeId,
+						force,
+					}));
+			const detail = (resp as any)?.data?.data;
+			const parts = [`Zona ${monthLabel} • ${r.student?.full_name} disimpan.`];
+			if (detail && force && r.month_item_paid) {
+				const selisih = Number(detail.remaining_or_excess);
+				if (selisih < 0) {
+					parts.push(
+						`Kelebihan bayar ${fmtMoney(Math.abs(selisih))} tercatat — selesaikan via kasir.`,
+					);
+				} else if (selisih > 0) {
+					parts.push(`Sisa tagihan kini ${fmtMoney(selisih)}.`);
+				}
+			}
+			addToast({
+				variant: "success",
+				title: "Berhasil",
+				message: parts.join(" "),
+			});
+		} catch (e: any) {
+			addToast({
+				variant: "error",
+				title: "Gagal",
+				message: e?.message ?? "Gagal menyimpan zona bulan ini.",
+			});
+		} finally {
+			setZoneBusyId(null);
+		}
+		load();
+	};
+
+	const handleZoneChange = (r: any, raw: string) => {
+		const defaultId =
+			r.fee_config_item?.id != null ? String(r.fee_config_item.id) : null;
+		const overridden = !!r.month_zone_overridden;
+		let action: { clear: boolean; feeId: number | null } | null = null;
+
+		if (raw === "default") {
+			if (!overridden) return; // memang sudah mengikuti default
+			action = { clear: true, feeId: null };
+		} else if (raw === "none") {
+			if (overridden && r.month_zone_fee_config_item_id == null) return;
+			if (!overridden && defaultId == null) return; // default memang tanpa zona
+			action = { clear: false, feeId: null };
+		} else {
+			if (!overridden && defaultId === raw) return; // sudah zona default
+			if (
+				overridden &&
+				r.month_zone_fee_config_item_id != null &&
+				String(r.month_zone_fee_config_item_id) === raw
+			)
+				return; // sudah zona tsb
+			if (overridden && defaultId === raw) {
+				action = { clear: true, feeId: null }; // kembali ke default
+			} else {
+				action = { clear: false, feeId: Number(raw) };
+			}
+		}
+		if (!action) return;
+		if (r.month_item_paid) {
+			setPendingZone({ row: r, ...action });
+			return;
+		}
+		requestZoneChange(r, action.clear, action.feeId, false);
+	};
+
 	return (
 		<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 p-4 space-y-4">
 			<div>
@@ -1318,8 +1452,9 @@ function FacilityMonthlyDaysTab({
 					Jumlah Hari per Bulan
 				</h3>
 				<p className="text-sm text-gray-500">
-					Pilih bulan, lalu atur jumlah hari yang ditagihkan untuk tiap siswa.
-					Perubahan menyesuaikan item fasilitas pada tagihan bulan tersebut.
+					Pilih bulan (boleh bulan lalu), lalu atur zona & jumlah hari yang
+					ditagihkan utk tiap siswa. Zona yang dipilih menjadi override utk
+					bulan itu; tanpa pilihan, mengikuti zona default di tab Pengaturan.
 				</p>
 			</div>
 
@@ -1386,8 +1521,41 @@ function FacilityMonthlyDaysTab({
 													</div>
 												)}
 											</td>
-											<td className="py-2.5 px-4 text-sm text-gray-500">
-												{r.fee_config_item?.name ?? "-"}
+											<td className="py-2.5 px-4">
+												<select
+													value={zoneSelectValue(r)}
+													onChange={(e) => handleZoneChange(r, e.target.value)}
+													disabled={!!r.end_date || zoneBusyId === r.id}
+													title={
+														r.month_item_paid
+															? "Item tagihan bulan ini sudah dibayar — perubahan membutuhkan konfirmasi (selisih menjadi sisa tagihan/kelebihan bayar)."
+															: undefined
+													}
+													className={`block w-full rounded-md border-0 py-1 pl-2 pr-7 text-xs ring-1 ring-inset focus:ring-2 focus:ring-indigo-600 ${
+														r.month_item_paid
+															? "bg-amber-50 text-amber-900 ring-amber-300"
+															: "text-gray-900 ring-gray-300"
+													}`}
+												>
+													<option value="default">
+														{r.fee_config_item
+															? `Default: ${r.fee_config_item.name}`
+															: "Default (Tanpa zona)"}
+													</option>
+													{r.fee_config_item && (
+														<option value="none">— Tanpa zona —</option>
+													)}
+													{zones.map((z: any) => (
+														<option key={z.id} value={z.id}>
+															{z.name}
+														</option>
+													))}
+												</select>
+												{r.month_item_paid && (
+													<div className="mt-0.5 text-[10px] text-amber-600">
+														sudah dibayar
+													</div>
+												)}
 											</td>
 											<td className="py-2.5 px-4 text-center">
 												{editable ? (
@@ -1440,6 +1608,27 @@ function FacilityMonthlyDaysTab({
 					</div>
 				</>
 			)}
+
+			{/* Konfirmasi ubah zona bulan yang sudah dibayar */}
+			<ConfirmDialog
+				open={!!pendingZone}
+				onCancel={() => setPendingZone(null)}
+				onConfirm={() => {
+					if (!pendingZone) return;
+					const { row, clear, feeId } = pendingZone;
+					setPendingZone(null);
+					requestZoneChange(row, clear, feeId, true);
+				}}
+				title="Ubah tagihan yang sudah dibayar?"
+				variant="danger"
+				confirmLabel="Tetap Ubah"
+			>
+				Item fasilitas{" "}
+				<strong>{pendingZone?.row?.student?.full_name ?? "-"}</strong> untuk{" "}
+				<strong>{monthLabel}</strong> sudah dibayar. Harga akan disesuaikan ke
+				zona baru; pembayaran yang tercatat tidak diubah dan selisihnya menjadi
+				sisa tagihan / kelebihan bayar. Lanjutkan?
+			</ConfirmDialog>
 		</div>
 	);
 }

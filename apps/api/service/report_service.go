@@ -1007,12 +1007,10 @@ func (s *reportService) GetTabunganReport(req dto.TabunganReportRequest) (*dto.T
 
 	startOfMonth := time.Date(int(req.Year), time.Month(req.Month), 1, 0, 0, 0, 0, time.UTC)
 	endOfMonth := startOfMonth.AddDate(0, 1, -1)
-	// Use the start of the active academic year as baseline
-	ay, ayErr := s.academicYearRepo.FindActive()
-	if ayErr != nil {
-		return nil, fmt.Errorf("gagal mengambil tahun ajaran aktif: %w", ayErr)
-	}
-	beginningOfTime := ay.StartDate
+	// Tabungan bersifat lintas tahun ajaran (berbasis tanggal transaksi), jadi
+	// saldo sebelum dihitung dari SELURUH riwayat sebelum bulan laporan — bukan
+	// dari awal TA aktif, yang akan mengabaikan saldo bawaan tahun sebelumnya.
+	beginningOfTime := time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)
 	endOfPrevMonth := startOfMonth.AddDate(0, 0, -1)
 
 	// Saldo sebelum = sum debits (masuk/setoran) - sum credits (keluar/penarikan)

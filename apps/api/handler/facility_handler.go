@@ -122,6 +122,8 @@ func (h *FacilityHandler) Delete(c echo.Context) error {
 // @Param        search            query string false "Search by student name"
 // @Param        page              query int   false  "Page (default 1)"
 // @Param        limit             query int   false  "Limit (default 20)"
+// @Param        month             query int   false  "Bulan (1-12) untuk kuantitas hari; default bulan berjalan"
+// @Param        year              query int   false  "Tahun untuk kuantitas hari; default tahun berjalan"
 // @Success      200  {object}  dto.SuccessResponse{data=dto.PaginatedFacilityStudentResponse}
 // @Router       /v1/facilities/{id}/students [get]
 func (h *FacilityHandler) ListStudents(c echo.Context) error {
@@ -133,12 +135,16 @@ func (h *FacilityHandler) ListStudents(c echo.Context) error {
 	ayID, _ := strconv.Atoi(c.QueryParam("academic_year_id"))
 	page, _ := strconv.Atoi(c.QueryParam("page"))
 	limit, _ := strconv.Atoi(c.QueryParam("limit"))
+	month, _ := strconv.Atoi(c.QueryParam("month"))
+	year, _ := strconv.Atoi(c.QueryParam("year"))
 
 	params := dto.FacilityStudentQueryParams{
 		AcademicYearID: uint(ayID),
 		Search:         c.QueryParam("search"),
 		Page:           page,
 		Limit:          limit,
+		Month:          uint(month),
+		Year:           uint(year),
 	}
 
 	result, err := h.sfService.GetStudentsByFacility(uint(id), params)

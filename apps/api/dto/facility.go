@@ -62,15 +62,25 @@ type FacilityStudentQueryParams struct {
 	Search         string
 	Page           int
 	Limit          int
+	// Month & Year opsional: bila > 0, kuantitas hari dihitung untuk bulan
+	// tersebut. Bila 0, default ke bulan berjalan (kompatibel mundur).
+	Month uint
+	Year  uint
 }
 
 type FacilityStudentItemResponse struct {
-	ID               uint                        `json:"id"`
-	Student          StudentBriefResponse        `json:"student"`
-	FeeConfigItem    *FeeConfigItemBriefResponse `json:"fee_config_item,omitempty"`
-	StartDate        string                      `json:"start_date"`
-	EndDate          *string                     `json:"end_date"`
-	CurrentMonthDays *uint                       `json:"current_month_days,omitempty"`
+	ID            uint                        `json:"id"`
+	Student       StudentBriefResponse        `json:"student"`
+	FeeConfigItem *FeeConfigItemBriefResponse `json:"fee_config_item,omitempty"`
+	StartDate     string                      `json:"start_date"`
+	EndDate       *string                     `json:"end_date"`
+	// Jumlah hari (kuantitas item fasilitas per_day) untuk bulan yang diminta.
+	CurrentMonthDays *uint `json:"current_month_days,omitempty"`
+	// InvoiceID & InvoiceItemID item fasilitas pada bulan yang diminta —
+	// diisi hanya bila item per_day tersedia, dipakai FE untuk menyimpan
+	// perubahan jumlah hari tanpa panggilan resolve terpisah.
+	InvoiceID     *uint `json:"invoice_id,omitempty"`
+	InvoiceItemID *uint `json:"invoice_item_id,omitempty"`
 }
 
 type PaginatedFacilityStudentResponse struct {

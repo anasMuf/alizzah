@@ -588,6 +588,11 @@ func (s *studentFacilityService) GetStudentsByFacility(facilityID uint, params d
 	now := time.Now()
 	curMonth := uint(now.Month())
 	curYear := uint(now.Year())
+	// Bila bulan/tahun diminta eksplisit, pakai itu (fitur pilih bulan).
+	if params.Month > 0 && params.Year > 0 {
+		curMonth = params.Month
+		curYear = params.Year
+	}
 
 	for _, sf := range sfs {
 		var endDateStr *string
@@ -638,6 +643,10 @@ func (s *studentFacilityService) GetStudentsByFacility(facilityID uint, params d
 					continue
 				}
 				item.CurrentMonthDays = invItem.Quantity
+				invoiceID := invoice.ID
+				invItemID := invItem.ID
+				item.InvoiceID = &invoiceID
+				item.InvoiceItemID = &invItemID
 				break
 			}
 		}

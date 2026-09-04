@@ -33,7 +33,11 @@ import {
 } from "#/components/ui";
 import { useProducts } from "#/features/koperasi/barang/api";
 import { academicYearAtom } from "../../../../store/global";
-import { formatCurrency, formatDate } from "../../../../utils/format";
+import {
+	formatCurrency,
+	formatDate,
+	formatMonthYear,
+} from "../../../../utils/format";
 import { openPrintWindow } from "../../../../utils/print";
 
 export const Route = createFileRoute("/_authenticated/keuangan/tagihan/$id")({
@@ -601,7 +605,7 @@ function DetailTagihanPage() {
 
 	const periodeStr =
 		invoice.month && invoice.year
-			? `Juli ${invoice.year}` // Using dummy month text, in real app need array
+			? formatMonthYear(invoice.month, invoice.year)
 			: invoice.academic_year?.name;
 
 	const handlePrint = () => {
@@ -956,7 +960,9 @@ function DetailTagihanPage() {
 					setIsAddItemOpen(false);
 					setEditingItem(null);
 				}}
-				title={editingItem ? "Edit Item Tagihan" : "Tambah Item Tagihan"}
+				title={`${editingItem ? "Edit" : "Tambah"} Item Tagihan${
+					periodeStr ? ` — ${periodeStr}` : ""
+				}`}
 			>
 				<form
 					onSubmit={handleSaveItem}

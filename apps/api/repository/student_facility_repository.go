@@ -5,6 +5,7 @@ import (
 	"api/model"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type StudentFacilityRepository interface {
@@ -65,7 +66,11 @@ func (r *studentFacilityRepository) Create(sf *model.StudentFacility) error {
 }
 
 func (r *studentFacilityRepository) Update(sf *model.StudentFacility) error {
-	return r.db.Save(sf).Error
+	// Omit asosiasi: sf biasanya dimuat lewat FindByID yang mem-preload
+	// FeeConfigItem. Tanpa Omit, GORM meng-upsert asosiasi belongs-to dan
+	// menimpa balik FeeConfigItemID dari objek FeeConfigItem yang basi,
+	// sehingga ganti zona tidak pernah tersimpan.
+	return r.db.Omit(clause.Associations).Save(sf).Error
 }
 
 func (r *studentFacilityRepository) Delete(id uint) error {

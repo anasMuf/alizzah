@@ -1,4 +1,3 @@
-import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import {
@@ -26,7 +25,6 @@ function PindahRombelPage() {
 	const [activeAy] = useAtom(academicYearAtom);
 	const navigate = useNavigate();
 	const { addToast } = useToast();
-	const queryClient = useQueryClient();
 
 	const [studentSearch, setStudentSearch] = useState("");
 	const [selectedStudent, setSelectedStudent] = useState<any>(null);
@@ -62,15 +60,6 @@ function PindahRombelPage() {
 	const createMutation = usePostV1AcademicEventsClassChanges({
 		mutation: {
 			onSuccess: () => {
-				// Segarkan daftar siswa & daftar siswa per-rombel yang basi.
-				// Tanpa ini, siswa yang dipindah masih tampil di cache rombel asal
-				// (terlihat "double" dibanding rombel tujuan) sampai refetch manual.
-				queryClient.invalidateQueries({ queryKey: ["/v1/students"] });
-				queryClient.invalidateQueries({
-					predicate: (q) =>
-						typeof q.queryKey[0] === "string" &&
-						(q.queryKey[0] as string).startsWith("/v1/class-groups"),
-				});
 				addToast({
 					variant: "success",
 					title: "Berhasil",

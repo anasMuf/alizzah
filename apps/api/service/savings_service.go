@@ -163,6 +163,7 @@ func (s *savingsService) GuardianWithdrawal(studentID, createdBy uint, req dto.S
 			SourceType:       "guardian_withdrawal",
 			Notes:            req.Notes,
 			CreatedBy:        createdBy,
+			TransactionDate:  time.Now(),
 		}
 		if err := s.txnRepo.CreateWithTx(stxn, tx); err != nil {
 			return err
@@ -228,6 +229,7 @@ func (s *savingsService) DebitMandatory(studentID uint, amount float64, sourceTy
 		SourceID:         sourceID,
 		Notes:            notes,
 		CreatedBy:        createdBy,
+		TransactionDate:  time.Now(),
 	}
 	if err := s.txnRepo.CreateWithTx(stxn, tx); err != nil {
 		return err
@@ -257,6 +259,7 @@ func (s *savingsService) CreditGeneral(studentID uint, amount float64, sourceTyp
 		SourceID:         sourceID,
 		Notes:            notes,
 		CreatedBy:        createdBy,
+		TransactionDate:  time.Now(),
 	}
 	if err := s.txnRepo.CreateWithTx(stxn, tx); err != nil {
 		return err

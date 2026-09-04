@@ -431,3 +431,24 @@ type PengeluaranResponse struct {
 	Rows         []PengeluaranRow `json:"rows"`
 	GrandTotal   float64          `json:"grand_total"`
 }
+
+// ── Integritas Pembayaran (diagnostik) ────────────────────────────────
+// PaymentIntegrityRow menandai satu payment yang header total_amount-nya tidak
+// sama dengan jumlah payment_items (uang yang tak masuk laporan berbasis item).
+type PaymentIntegrityRow struct {
+	PaymentID   uint    `json:"payment_id"`
+	PaymentDate string  `json:"payment_date"`
+	StudentID   uint    `json:"student_id"`
+	StudentName string  `json:"student_name"`
+	Header      float64 `json:"header"`       // payments.total_amount
+	ItemsSum    float64 `json:"items_sum"`    // Σ payment_items.amount
+	Savings     float64 `json:"savings"`      // payments.savings_deposit
+	Unaccounted float64 `json:"unaccounted"`  // header − items_sum
+}
+
+type PaymentIntegrityResponse struct {
+	AcademicYear string                `json:"academic_year"`
+	Count        int                   `json:"count"`
+	TotalDelta   float64               `json:"total_delta"` // Σ unaccounted
+	Rows         []PaymentIntegrityRow `json:"rows"`
+}

@@ -16,6 +16,7 @@ type InvoiceItem struct {
 	KoperasiProductID *uint    `gorm:""`                       // diturunkan dari fee_config_item
 	KoperasiVariantID *uint    `gorm:""`                       // dipilih per siswa saat generate/edit invoice
 	FacilityID        *uint    `gorm:"index"`                  // fasilitas asal item (kategori facility); nil = legacy
+	OffsetCategory    string   `gorm:"size:30"`                // untuk item kontra (dispensation): pos yang dikurangi; kosong = belum terpetakan
 	BaseModelTimeAt
 
 	Invoice Invoice `gorm:"foreignKey:InvoiceID"`

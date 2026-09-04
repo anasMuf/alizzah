@@ -7,6 +7,7 @@ import {
 	useGetV1FeeConfigs,
 	useGetV1FeeConfigsIdItems,
 } from "#/api/endpoints/fee-configs/fee-configs";
+import { useGetV1IncomeCategories } from "#/api/endpoints/income-categories/income-categories";
 import {
 	type SaldoData,
 	useGetReportsSaldo,
@@ -83,6 +84,13 @@ function LaporanSaldoPage() {
 	);
 	const feeItems = ((feeItemsData?.data as any)?.data ?? []) as any[];
 
+	// Kategori penerimaan lain (BOS, Donasi, Hibah, Lainnya, dst) — dinamis dari
+	// master data agar setiap kategori yang bisa dipilih user ikut terlaporkan.
+	const { data: incomeCatData } = useGetV1IncomeCategories({
+		query: { staleTime: 5 * 60 * 1000 },
+	});
+	const incomeCats = ((incomeCatData?.data as any)?.data ?? []) as any[];
+
 	// Grouped by category for pos multi-select
 	const posGroups = useMemo((): MultiSelectGroup[] => {
 		const sorted = [...feeItems].sort(sortByCategory);
@@ -105,15 +113,15 @@ function LaporanSaldoPage() {
 			{
 				header: "Penerimaan Lain",
 				items: [
-					{ id: -1, label: "Dana BOS" },
-					{ id: -2, label: "Donasi" },
-					{ id: -3, label: "Hibah" },
-					{ id: -4, label: "Lainnya" },
-					{ id: -5, label: "Tabungan Umum" },
+					...incomeCats.map((inc: any) => ({
+						id: `income:${inc.code}`,
+						label: (inc.name as string) || (inc.code as string),
+					})),
+					{ id: "savings:voluntary", label: "Tabungan Umum" },
 				],
 			},
 		];
-	}, [feeItems]);
+	}, [feeItems, incomeCats]);
 
 	const flatPosOptions = useMemo(
 		() => posGroups.flatMap((g) => g.items),
@@ -157,17 +165,10 @@ function LaporanSaldoPage() {
 		const selectedCategories = feeItems
 			.filter((item: any) => selectedPosIds.includes(item.id))
 			.map((item: any) => item.category);
-		const incomeCategoryMap: Record<number, string> = {
-			[-1]: "bos",
-			[-2]: "donasi",
-			[-3]: "hibah",
-			[-4]: "lainnya",
-		};
 		const selectedIncomeCategories = selectedPosIds
-			.filter((id) => typeof id === "number" && id < 0 && id >= -4)
-			.map((id) => incomeCategoryMap[id as number])
-			.filter(Boolean);
-		const includeSavings = selectedPosIds.includes(-5);
+			.filter((id) => typeof id === "string" && id.startsWith("income:"))
+			.map((id) => (id as string).slice("income:".length));
+		const includeSavings = selectedPosIds.includes("savings:voluntary");
 		setCommittedParams({
 			date_from: filters.date_from,
 			date_to: filters.date_to,
@@ -232,19 +233,19 @@ function LaporanSaldoPage() {
 
 	const infoFilters: Record<string, string> = useMemo(() => {
 		if (!committedParams) return {} as Record<string, string>;
-		const incomeLabelMap: Record<number, string> = {
-			[-1]: "Dana BOS",
-			[-2]: "Donasi",
-			[-3]: "Hibah",
-			[-4]: "Lainnya",
-			[-5]: "Tabungan Umum",
+		const incomeLabelMap: Record<string, string> = {
+			"savings:voluntary": "Tabungan Umum",
 		};
+		for (const inc of incomeCats) {
+			incomeLabelMap[`income:${inc.code}`] =
+				(inc.name as string) || (inc.code as string);
+		}
 		const feeNames = feeItems
 			.filter((item: any) => selectedPosIds.includes(item.id))
 			.map((item: any) => item.name);
 		const incomeNames = selectedPosIds
-			.filter((id) => typeof id === "number" && id < 0)
-			.map((id) => incomeLabelMap[id as number])
+			.filter((id) => typeof id === "string" && id in incomeLabelMap)
+			.map((id) => incomeLabelMap[id as string])
 			.filter(Boolean);
 		const allPosNames = [...feeNames, ...incomeNames];
 		const taNames = academicYears
@@ -261,6 +262,7 @@ function LaporanSaldoPage() {
 		selectedPosIds,
 		selectedAyIds,
 		feeItems,
+		incomeCats,
 		academicYears,
 		activeAy,
 	]);

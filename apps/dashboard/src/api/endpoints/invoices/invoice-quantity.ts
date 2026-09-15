@@ -28,6 +28,8 @@ export interface UpdateInvoiceItemQuantityResponse {
 			paid_amount: number;
 			status: string;
 			is_mandatory: boolean;
+			/** True when quantity=0 skipped the facility billing month. */
+			skipped?: boolean;
 			quantity?: number;
 			unit_price?: number;
 		};

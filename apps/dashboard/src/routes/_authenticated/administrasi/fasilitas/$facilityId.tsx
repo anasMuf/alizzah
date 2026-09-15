@@ -267,28 +267,35 @@ function FacilityDetailPage() {
 
 	const saveDaysMutation = useMutation({
 		mutationFn: async ({
-			invoiceId,
-			itemId,
-			quantity,
+			studentId,
+			sfId,
+			month,
+			year,
+			days,
 		}: {
-			invoiceId: number;
-			itemId: number;
-			quantity: number;
+			studentId: number;
+			sfId: number;
+			month: number;
+			year: number;
+			days: number;
 		}) => {
-			return customInstance(
-				`/v1/invoices/${invoiceId}/items/${itemId}/quantity`,
+			return customInstance<{ data: { data: { excluded: boolean } } }>(
+				`/v1/students/${studentId}/facilities/${sfId}/month-days`,
 				{
 					method: "PUT",
 					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ quantity }),
+					body: JSON.stringify({ month, year, days }),
 				},
 			);
 		},
-		onSuccess: () => {
+		onSuccess: (resp) => {
+			const excluded = (resp as any)?.data?.data?.excluded;
 			addToast({
 				variant: "success",
 				title: "Berhasil",
-				message: "Jumlah hari berhasil diubah.",
+				message: excluded
+					? "0 hari tersimpan — tagihan fasilitas bulan ini di-skip."
+					: "Jumlah hari berhasil diubah.",
 			});
 			queryClient.invalidateQueries({
 				queryKey: getGetV1FacilitiesIdStudentsQueryKey(id, {
@@ -751,7 +758,10 @@ function FacilityDetailPage() {
 									</thead>
 									<tbody className="divide-y divide-gray-100">
 										{studentsData.map((sf) => (
-											<tr key={sf.id} className="hover:bg-gray-50">
+											<tr
+												key={sf.id}
+												className={`${(sf as any).month_excluded ? "bg-amber-50/70 hover:bg-amber-100/70" : "hover:bg-gray-50"} transition-colors`}
+											>
 												<td className="py-3 px-4">
 													<div className="text-sm font-medium text-gray-900">
 														{sf.student?.full_name}
@@ -835,7 +845,7 @@ function FacilityDetailPage() {
 															<div className="flex items-center justify-center gap-1">
 																<input
 																	type="number"
-																	min={1}
+																	min={0}
 																	value={editingDaysValue}
 																	onChange={(e) =>
 																		setEditingDaysValue(e.target.value)
@@ -846,40 +856,21 @@ function FacilityDetailPage() {
 																	type="button"
 																	onClick={async () => {
 																		const qty = Number(editingDaysValue);
-																		if (qty <= 0) return;
-																		try {
-																			const resp = await customInstance<{
-																				data: any;
-																			}>(
-																				`/v1/students/${sf.student?.id}/facilities/${sf.id}/current-month-days`,
-																			);
-																			const info = (resp as any).data?.data;
-																			if (
-																				!info?.invoice_item_id ||
-																				!info?.invoice_id
-																			) {
-																				addToast({
-																					variant: "error",
-																					title: "Gagal",
-																					message:
-																						"Item fasilitas tidak ditemukan di invoice bulan ini.",
-																				});
-																				return;
-																			}
-																			saveDaysMutation.mutate({
-																				invoiceId: info.invoice_id,
-																				itemId: info.invoice_item_id,
-																				quantity: qty,
-																			});
-																		} catch (err: any) {
-																			addToast({
-																				variant: "error",
-																				title: "Gagal",
-																				message:
-																					err?.message ??
-																					"Gagal mengambil data jumlah hari.",
-																			});
-																		}
+																		if (
+																			!Number.isInteger(qty) ||
+																			qty < 0 ||
+																			qty > 31 ||
+																			!sf.student?.id ||
+																			!sf.id
+																		)
+																			return;
+																		saveDaysMutation.mutate({
+																			studentId: sf.student.id,
+																			sfId: sf.id,
+																			month: new Date().getMonth() + 1,
+																			year: new Date().getFullYear(),
+																			days: qty,
+																		});
 																	}}
 																	className="text-xs text-indigo-600 hover:text-indigo-800"
 																>
@@ -896,9 +887,11 @@ function FacilityDetailPage() {
 														</div>
 													) : (
 														<span className="inline-flex items-center gap-1">
-															{(sf as any).current_month_days != null
-																? (sf as any).current_month_days
-																: "—"}
+															{(sf as any).month_excluded
+																? 0
+																: (sf as any).current_month_days != null
+																	? (sf as any).current_month_days
+																	: "—"}
 															{!sf.end_date && (
 																<button
 																	type="button"
@@ -1254,8 +1247,8 @@ function FacilityMonthlyDaysTab({
 			setRows(list);
 			const init: Record<number, number> = {};
 			for (const r of list) {
-				if (r.invoice_item_id != null) {
-					init[r.id] = r.current_month_days ?? 0;
+				if (r.invoice_item_id != null || r.month_excluded) {
+					init[r.id] = r.month_excluded ? 0 : (r.current_month_days ?? 0);
 				}
 			}
 			setDraft(init);
@@ -1290,7 +1283,9 @@ function FacilityMonthlyDaysTab({
 	};
 
 	const changed = rows.filter(
-		(r) => r.invoice_item_id != null && draft[r.id] !== original[r.id],
+		(r) =>
+			(r.invoice_item_id != null || r.month_excluded) &&
+			draft[r.id] !== original[r.id],
 	);
 
 	const handleSave = async () => {
@@ -1306,14 +1301,21 @@ function FacilityMonthlyDaysTab({
 		const errors: string[] = [];
 		for (const r of changed) {
 			const qty = draft[r.id];
-			if (qty == null || qty < 0) continue;
+			if (
+				qty == null ||
+				!Number.isInteger(qty) ||
+				qty < 0 ||
+				qty > 31 ||
+				!r.student?.id
+			)
+				continue;
 			try {
 				await customInstance(
-					`/v1/invoices/${r.invoice_id}/items/${r.invoice_item_id}/quantity`,
+					`/v1/students/${r.student.id}/facilities/${r.id}/month-days`,
 					{
 						method: "PUT",
 						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify({ quantity: qty }),
+						body: JSON.stringify({ month, year, days: qty }),
 					},
 				);
 			} catch (e: any) {
@@ -1508,9 +1510,13 @@ function FacilityMonthlyDaysTab({
 							</thead>
 							<tbody className="divide-y divide-gray-100">
 								{rows.map((r) => {
-									const editable = r.invoice_item_id != null;
+									const editable =
+										r.invoice_item_id != null || r.month_excluded;
 									return (
-										<tr key={r.id} className="hover:bg-gray-50">
+										<tr
+											key={r.id}
+											className={`${r.month_excluded ? "bg-amber-50/70 hover:bg-amber-100/70" : "hover:bg-gray-50"} transition-colors`}
+										>
 											<td className="py-2.5 px-4">
 												<div className="text-sm font-medium text-gray-900">
 													{r.student?.full_name}
@@ -1559,23 +1565,25 @@ function FacilityMonthlyDaysTab({
 											</td>
 											<td className="py-2.5 px-4 text-center">
 												{editable ? (
-													<input
-														type="number"
-														min={0}
-														max={31}
-														value={draft[r.id] ?? 0}
-														onChange={(e) => {
-															const val = Math.min(
-																31,
-																Math.max(
-																	0,
-																	Number.parseInt(e.target.value) || 0,
-																),
-															);
-															setDraft((prev) => ({ ...prev, [r.id]: val }));
-														}}
-														className="w-20 rounded-md border-0 py-1 text-center text-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
-													/>
+													<div className="flex flex-col items-center gap-1">
+														<input
+															type="number"
+															min={0}
+															max={31}
+															value={draft[r.id] ?? 0}
+															onChange={(e) => {
+																const val = Math.min(
+																	31,
+																	Math.max(
+																		0,
+																		Number.parseInt(e.target.value) || 0,
+																	),
+																);
+																setDraft((prev) => ({ ...prev, [r.id]: val }));
+															}}
+															className="w-20 rounded-md border-0 py-1 text-center text-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+														/>
+													</div>
 												) : (
 													<span
 														className="text-xs text-gray-300"

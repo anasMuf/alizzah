@@ -40,6 +40,7 @@ func setupBillingExclusionInvoiceTestDB(t *testing.T) *gorm.DB {
 		&model.StudentExtracurricular{},
 		&model.Invoice{},
 		&model.InvoiceItem{},
+		&model.InvoiceInstallment{},
 		&model.Facility{},
 		&model.StudentFacility{},
 		&model.StudentFacilityMonthZone{},

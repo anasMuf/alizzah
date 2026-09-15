@@ -65,6 +65,8 @@ func newFacilityZoneSvc(t *testing.T, db *gorm.DB) StudentFacilityService {
 		repository.NewBillingMonthExclusionRepository(db),
 		repository.NewFeeConfigRepository(db),
 		repository.NewStudentFacilityMonthZoneRepository(db),
+		newTestInvoiceService(t, db),
+		newTestBillingExclusionSvc(t, db),
 	)
 }
 

@@ -171,7 +171,14 @@ function DetailTagihanPage() {
 		if (editingItem) {
 			// Item berbasis kuantitas: validasi unitQuantity
 			if (editingItem.quantity != null && editingItem.unit_price != null) {
-				return Number(unitQuantity) > 0;
+				const value = Number(unitQuantity);
+				const isFacility = editingItem.category === "facility";
+				return (
+					unitQuantity.trim() !== "" &&
+					Number.isInteger(value) &&
+					value >= (isFacility ? 0 : 1) &&
+					value <= 31
+				);
 			}
 			// Item flat: validasi nama dan nominal
 			return !!itemName && Number(itemAmount) > 0;
@@ -265,11 +272,14 @@ function DetailTagihanPage() {
 
 	const quantityMutation = usePutV1InvoicesIdItemsItemIdQuantity({
 		mutation: {
-			onSuccess: () => {
+			onSuccess: (response) => {
+				const skipped = response.data.data.skipped;
 				addToast({
 					variant: "success",
 					title: "Berhasil",
-					message: "Jumlah hari/Senin berhasil diubah.",
+					message: skipped
+						? "0 hari tersimpan — tagihan fasilitas bulan ini di-skip."
+						: "Jumlah hari/Senin berhasil diubah.",
 				});
 				queryClient.invalidateQueries({ queryKey: [`/v1/invoices/${id}`] });
 				setEditingItem(null);
@@ -1053,29 +1063,39 @@ function DetailTagihanPage() {
 										value={unitQuantity}
 										onChange={(e: any) => setUnitQuantity(e.target.value)}
 										required
-										min="1"
+										min={editingItem.category === "facility" ? "0" : "1"}
+										max="31"
 										placeholder={
 											editingItem.category === "savings_mandatory"
 												? "Masukkan jumlah Senin"
 												: "Masukkan jumlah hari efektif"
 										}
 									/>
-									{Number(unitQuantity) > 0 && (
-										<div className="bg-indigo-50 rounded-md p-3 border border-indigo-200">
-											<div className="text-xs text-indigo-600 mb-1">Total</div>
-											<div className="text-lg font-bold text-indigo-700">
-												{formatCurrency(
-													Number(unitQuantity) * editingItem.unit_price,
-												)}
-											</div>
-											<div className="text-xs text-indigo-500 mt-0.5">
-												{formatCurrency(editingItem.unit_price)} &times;{" "}
-												{unitQuantity}{" "}
-												{editingItem.category === "savings_mandatory"
-													? "Senin"
-													: "hari"}
-											</div>
+									{editingItem.category === "facility" &&
+									Number(unitQuantity) === 0 ? (
+										<div className="bg-amber-50 rounded-md p-3 border border-amber-200 text-sm text-amber-800">
+											0 hari akan men-skip tagihan fasilitas bulan ini.
 										</div>
+									) : (
+										Number(unitQuantity) > 0 && (
+											<div className="bg-indigo-50 rounded-md p-3 border border-indigo-200">
+												<div className="text-xs text-indigo-600 mb-1">
+													Total
+												</div>
+												<div className="text-lg font-bold text-indigo-700">
+													{formatCurrency(
+														Number(unitQuantity) * editingItem.unit_price,
+													)}
+												</div>
+												<div className="text-xs text-indigo-500 mt-0.5">
+													{formatCurrency(editingItem.unit_price)} &times;{" "}
+													{unitQuantity}{" "}
+													{editingItem.category === "savings_mandatory"
+														? "Senin"
+														: "hari"}
+												</div>
+											</div>
+										)
 									)}
 								</>
 							)}

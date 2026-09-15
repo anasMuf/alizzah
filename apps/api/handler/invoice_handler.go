@@ -362,7 +362,12 @@ func (h *InvoiceHandler) UpdateItemQuantity(c echo.Context) error {
 		errMsg := err.Error()
 		if errMsg == "Item ini bukan item berbasis kuantitas (per hari/per Senin)" ||
 			errMsg == "Item sudah lunas, tidak bisa diubah" ||
-			errMsg == "Nominal baru tidak boleh kurang dari jumlah yang sudah dibayar" {
+			errMsg == "Nominal baru tidak boleh kurang dari jumlah yang sudah dibayar" ||
+			errMsg == "Jumlah 0 hanya berlaku untuk item fasilitas" ||
+			errMsg == "Item fasilitas bulan ini sudah ada pembayaran — jumlah hari tidak bisa diubah" ||
+			errMsg == "Mekanisme skip tagihan fasilitas belum tersedia" ||
+			errMsg == "Jumlah 0 hanya berlaku untuk item fasilitas pada invoice bulanan" ||
+			errMsg == "Item fasilitas legacy tidak memiliki relasi fasilitas" {
 			status = http.StatusUnprocessableEntity
 			code = "UNPROCESSABLE_ENTITY"
 		}

@@ -53,6 +53,8 @@ type FacilityCurrentMonthDaysResponse struct {
 	CurrentDays   uint    `json:"current_days"`
 	ZoneAmount    float64 `json:"zone_amount"`
 	InvoiceID     *uint   `json:"invoice_id"`
+	// Excluded true bila bulan ini di-skip (tidak ditagih) untuk fasilitas ini.
+	Excluded bool `json:"excluded"`
 }
 
 // --- Facility detail: list students by facility ---
@@ -89,6 +91,9 @@ type FacilityStudentItemResponse struct {
 	// MonthItemPaid true bila item invoice fasilitas bulan tsb sudah dibayar
 	// (memicu konfirmasi saat ubah zona/hari).
 	MonthItemPaid bool `json:"month_item_paid"`
+	// MonthExcluded true bila bulan tsb di-skip (tidak ditagih) untuk fasilitas
+	// ini — membedakan "0 hari karena di-skip" dari "belum ada item".
+	MonthExcluded bool `json:"month_excluded"`
 }
 
 type PaginatedFacilityStudentResponse struct {
@@ -152,4 +157,30 @@ type FacilityMonthRewriteResult struct {
 type StudentFacilityUpdateResponse struct {
 	Facility StudentFacilityResponse     `json:"facility"`
 	Summary  *FacilityDefaultZoneSummary `json:"summary,omitempty"`
+}
+
+// --- Per-bulan jumlah hari (fasilitas antar jemput) ---
+
+// UpdateFacilityMonthDaysRequest — set jumlah hari item fasilitas utk SATU bulan.
+// Days = 0 berarti bulan itu di-skip (tidak ditagih).
+type UpdateFacilityMonthDaysRequest struct {
+	Month uint `json:"month" validate:"required,min=1,max=12"`
+	Year  uint `json:"year" validate:"required,min=2000,max=2100"`
+	// Pointer agar field yang tidak dikirim (nil) ditolak validasi, bukan
+	// diperlakukan sebagai 0 (yang berarti skip).
+	Days *uint `json:"days" validate:"required,min=0,max=31"`
+}
+
+// FacilityMonthDaysResponse — hasil PUT month-days.
+type FacilityMonthDaysResponse struct {
+	Month uint `json:"month"`
+	Year  uint `json:"year"`
+	// Days jumlah hari efektif setelah operasi; 0 bila bulan di-skip.
+	Days uint `json:"days"`
+	// Excluded true bila bulan tsb di-skip (tidak ditagih).
+	Excluded      bool  `json:"excluded"`
+	InvoiceID     *uint `json:"invoice_id,omitempty"`
+	InvoiceItemID *uint `json:"invoice_item_id,omitempty"`
+	// ItemPaid true bila item bulan tsb (masih ada) sudah ada pembayaran.
+	ItemPaid bool `json:"item_paid"`
 }

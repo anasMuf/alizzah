@@ -84,6 +84,8 @@ func TestUnenrollFacility_DeletesBillingExclusions(t *testing.T) {
 		exclRepo,
 		repository.NewFeeConfigRepository(db),
 		monthZoneRepo,
+		newTestInvoiceService(t, db),
+		newTestBillingExclusionSvc(t, db),
 	)
 
 	err := svc.Unenroll(fx.StudentID, sf.ID)

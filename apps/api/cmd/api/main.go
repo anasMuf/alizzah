@@ -357,7 +357,11 @@ func main() {
 			syncResult.TotalSkipped, len(syncResult.Errors))
 	}
 
-	invoiceService := service.NewInvoiceService(invoiceRepo, invoiceItemRepo, invoiceInstallmentRepo, paymentRepo)
+	// Billing month exclusions service dibuat sebelum invoiceService karena endpoint
+	// quantity fasilitas memakai quantity=0 sebagai skip bulan.
+	billingExclusionService := service.NewBillingExclusionService(db, billingExclusionRepo, ayRepo, invoiceGenService)
+
+	invoiceService := service.NewInvoiceService(invoiceRepo, invoiceItemRepo, invoiceInstallmentRepo, paymentRepo, billingExclusionService)
 
 	// Batch 6: create transaction infrastructure first
 	txnWriterService := service.NewTransactionWriterService(cashTxnRepo, vaultTxnRepo)
@@ -534,11 +538,9 @@ func main() {
 
 	// Facilities
 	facilityService := service.NewFacilityService(facilityRepo, fcRepo, fcItemRepo)
-	sfService := service.NewStudentFacilityService(sfRepo, studentRepo, facilityRepo, ayRepo, fcItemRepo, invoiceRepo, invoiceItemRepo, enrollmentRepo, effectiveDayRepo, invoiceGenService, billingExclusionRepo, fcRepo, monthZoneRepo)
+	sfService := service.NewStudentFacilityService(sfRepo, studentRepo, facilityRepo, ayRepo, fcItemRepo, invoiceRepo, invoiceItemRepo, enrollmentRepo, effectiveDayRepo, invoiceGenService, billingExclusionRepo, fcRepo, monthZoneRepo, invoiceService, billingExclusionService)
 	facilityHandler := handler.NewFacilityHandler(facilityService, sfService)
 
-	// Billing month exclusions (skip tagihan bulanan PASTA & fasilitas)
-	billingExclusionService := service.NewBillingExclusionService(db, billingExclusionRepo, ayRepo, invoiceGenService)
 	billingExclusionHandler := handler.NewBillingExclusionHandler(billingExclusionService, seRepo, sfRepo)
 
 	// Batch 7
@@ -642,6 +644,8 @@ func main() {
 	// Per-bulan zone override fasilitas (epic zona-bulanan)
 	students.PUT("/:id/facilities/:facilityId/month-zone", facilityHandler.SetMonthZone, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.DELETE("/:id/facilities/:facilityId/month-zone", facilityHandler.ClearMonthZone, guard.RequireModule(middleware.ModuleAdministrasi))
+	// Per-bulan jumlah hari fasilitas (0 = skip bulan)
+	students.PUT("/:id/facilities/:facilityId/month-days", facilityHandler.SetMonthDays, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.GET("/:id/academic-events", eventHandler.GetByStudent, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.POST("/:id/regenerate-invoices", studentHandler.RegenerateInvoices, guard.RequireModule(middleware.ModuleAdministrasi))
 

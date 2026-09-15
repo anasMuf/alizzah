@@ -38,6 +38,7 @@ type invoiceService struct {
 	itemRepo        repository.InvoiceItemRepository
 	installmentRepo repository.InvoiceInstallmentRepository
 	paymentRepo     repository.PaymentRepository
+	exclSvc         BillingExclusionService
 }
 
 func NewInvoiceService(
@@ -45,12 +46,14 @@ func NewInvoiceService(
 	itemRepo repository.InvoiceItemRepository,
 	installmentRepo repository.InvoiceInstallmentRepository,
 	paymentRepo repository.PaymentRepository,
+	exclSvc BillingExclusionService,
 ) InvoiceService {
 	return &invoiceService{
 		invoiceRepo:     invoiceRepo,
 		itemRepo:        itemRepo,
 		installmentRepo: installmentRepo,
 		paymentRepo:     paymentRepo,
+		exclSvc:         exclSvc,
 	}
 }
 
@@ -210,23 +213,61 @@ func (s *invoiceService) UpdateItemQuantity(invoiceID, itemID uint, req dto.Upda
 	if err != nil || item.InvoiceID != invoiceID {
 		return nil, errors.New("Item tidak ditemukan pada invoice ini")
 	}
+	if req.Quantity == nil {
+		return nil, errors.New("Jumlah hari wajib diisi")
+	}
 
 	if item.UnitPrice == nil {
 		return nil, errors.New("Item ini bukan item berbasis kuantitas (per hari/per Senin)")
+	}
+
+	// Quantity 0 untuk fasilitas berarti skip bulan, bukan item invoice Rp 0.
+	// Delegasikan ke BillingExclusionService agar semua jalur generate/restore
+	// tetap memakai satu sumber kebenaran.
+	if *req.Quantity == 0 {
+		if item.Category != "facility" {
+			return nil, errors.New("Jumlah 0 hanya berlaku untuk item fasilitas")
+		}
+		if item.PaidAmount > 0 {
+			return nil, errors.New("Item fasilitas bulan ini sudah ada pembayaran — jumlah hari tidak bisa diubah")
+		}
+		if s.exclSvc == nil {
+			return nil, errors.New("Mekanisme skip tagihan fasilitas belum tersedia")
+		}
+		invoice, err := s.invoiceRepo.FindByID(invoiceID)
+		if err != nil || invoice.Type != "monthly" || invoice.Month == nil || invoice.Year == nil {
+			return nil, errors.New("Jumlah 0 hanya berlaku untuk item fasilitas pada invoice bulanan")
+		}
+		if item.FacilityID == nil {
+			return nil, errors.New("Item fasilitas legacy tidak memiliki relasi fasilitas")
+		}
+		if err := s.exclSvc.SkipFacilityMonth(invoice.StudentID, *item.FacilityID, *invoice.Month, *invoice.Year); err != nil {
+			return nil, err
+		}
+
+		// Item sudah dihapus oleh mekanisme skip. Response tetap dikembalikan
+		// sebagai hasil operasi agar klien tidak perlu memperlakukan 0 sebagai
+		// error; status "skipped" menjelaskan bahwa item tidak lagi ada di invoice.
+		zero := uint(0)
+		resp := mapInvoiceItemToResponse(*item)
+		resp.Amount = 0
+		resp.Quantity = &zero
+		resp.Skipped = true
+		return &resp, nil
 	}
 
 	if item.Status == "paid" {
 		return nil, errors.New("Item sudah lunas, tidak bisa diubah")
 	}
 
-	newAmount := *item.UnitPrice * float64(req.Quantity)
+	newAmount := *item.UnitPrice * float64(*req.Quantity)
 
 	// Jika sudah ada pembayaran parsial, amount baru tidak boleh kurang dari paid_amount
 	if item.PaidAmount > 0 && newAmount < item.PaidAmount {
 		return nil, errors.New("Nominal baru tidak boleh kurang dari jumlah yang sudah dibayar")
 	}
 
-	quantity := req.Quantity
+	quantity := *req.Quantity
 	item.Quantity = &quantity
 	item.Amount = newAmount
 

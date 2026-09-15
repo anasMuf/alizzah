@@ -58,12 +58,15 @@ type InvoicePaymentBrief struct {
 
 // Response — Item
 type InvoiceItemResponse struct {
-	ID                uint     `json:"id"`
-	Name              string   `json:"name"`
-	Category          string   `json:"category"`
-	Amount            float64  `json:"amount"`
-	PaidAmount        float64  `json:"paid_amount"`
-	Status            string   `json:"status"`
+	ID         uint    `json:"id"`
+	Name       string  `json:"name"`
+	Category   string  `json:"category"`
+	Amount     float64 `json:"amount"`
+	PaidAmount float64 `json:"paid_amount"`
+	Status     string  `json:"status"`
+	// Skipped true berarti operasi quantity=0 berhasil dan item fasilitas
+	// dihapus dari invoice melalui billing exclusion.
+	Skipped           bool     `json:"skipped,omitempty"`
 	IsMandatory       bool     `json:"is_mandatory"`
 	Quantity          *uint    `json:"quantity,omitempty"`
 	UnitPrice         *float64 `json:"unit_price,omitempty"`
@@ -89,7 +92,8 @@ type UpdateInvoiceItemRequest struct {
 
 // Request — Update Item Quantity (override hari efektif per item)
 type UpdateInvoiceItemQuantityRequest struct {
-	Quantity uint `json:"quantity" validate:"required,min=1"`
+	// Pointer agar field yang tidak dikirim (nil) berbeda dari quantity 0.
+	Quantity *uint `json:"quantity" validate:"required,min=0,max=31"`
 }
 
 // Response — Installment

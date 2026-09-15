@@ -324,6 +324,50 @@ func (h *FacilityHandler) ClearMonthZone(c echo.Context) error {
 	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil mengembalikan zona bulanan ke default", Data: resp})
 }
 
+// SetMonthDays godoc
+// @Summary      Set per-month days for a facility enrollment (0 = skip month)
+// @Description  Menyetel jumlah hari item fasilitas utk satu bulan. days = 0 berarti bulan tsb di-skip (tidak ditagih); days >= 1 mencabut skip & menyetel jumlah hari.
+// @Tags         facilities
+// @Security     ApiKeyAuth
+// @Param        id          path  int                               true  "Student ID"
+// @Param        facilityId  path  int                               true  "Student Facility enrollment ID"
+// @Param        request     body  dto.UpdateFacilityMonthDaysRequest  true  "Set month days"
+// @Success      200  {object}  dto.SuccessResponse{data=dto.FacilityMonthDaysResponse}
+// @Failure      400  {object}  dto.ErrorResponse
+// @Failure      422  {object}  dto.ErrorResponse
+// @Router       /v1/students/{id}/facilities/{facilityId}/month-days [put]
+func (h *FacilityHandler) SetMonthDays(c echo.Context) error {
+	studentID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: "ID tidak valid"})
+	}
+
+	sfID, err := strconv.Atoi(c.Param("facilityId"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: "ID fasilitas tidak valid"})
+	}
+
+	var req dto.UpdateFacilityMonthDaysRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: err.Error()})
+	}
+	if err := c.Validate(req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "VALIDATION_ERROR", Message: err.Error()})
+	}
+
+	resp, err := h.sfService.SetMonthDays(uint(studentID), uint(sfID), req)
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{Status: status, Code: code, Message: err.Error()})
+	}
+
+	message := "Berhasil memperbarui jumlah hari fasilitas"
+	if resp.Excluded {
+		message = "Jumlah hari 0 — tagihan fasilitas bulan ini di-skip"
+	}
+	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: message, Data: resp})
+}
+
 // GetCurrentMonthDays godoc
 // @Summary      Get current month effective days & invoice item quantity for a facility enrollment
 // @Tags         facilities

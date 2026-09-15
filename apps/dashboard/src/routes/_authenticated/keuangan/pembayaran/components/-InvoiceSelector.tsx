@@ -166,11 +166,14 @@ export function InvoiceSelector({
 	const queryClient = useQueryClient();
 	const qtyMutation = usePutV1InvoicesIdItemsItemIdQuantity({
 		mutation: {
-			onSuccess: () => {
+			onSuccess: (response) => {
+				const skipped = response.data.data.skipped;
 				addToast({
 					variant: "success",
 					title: "Berhasil",
-					message: "Jumlah hari/Senin berhasil diubah.",
+					message: skipped
+						? "0 hari tersimpan — tagihan fasilitas bulan ini di-skip."
+						: "Jumlah hari/Senin berhasil diubah.",
 				});
 				setQtyEditingItem(null);
 				if (selectedInvoices.length > 0) {
@@ -190,11 +193,19 @@ export function InvoiceSelector({
 	});
 
 	const handleQtySave = () => {
-		if (!qtyEditingItem || !qtyValue || Number(qtyValue) < 1) return;
+		if (!qtyEditingItem || !qtyValue) return;
+		const quantity = Number(qtyValue);
+		const isFacility = qtyEditingItem.category === "facility";
+		if (
+			!Number.isInteger(quantity) ||
+			quantity < (isFacility ? 0 : 1) ||
+			quantity > 31
+		)
+			return;
 		qtyMutation.mutate({
 			invoiceId: qtyEditingItem.invoice_id,
 			itemId: qtyEditingItem.id,
-			data: { quantity: Number(qtyValue) },
+			data: { quantity },
 		});
 	};
 
@@ -642,7 +653,8 @@ export function InvoiceSelector({
 								</label>
 								<input
 									type="number"
-									min={1}
+									min={qtyEditingItem.category === "facility" ? 0 : 1}
+									max={31}
 									value={qtyValue}
 									onChange={(e) => setQtyValue(e.target.value)}
 									className="block w-full rounded-md border-0 py-2 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
@@ -650,21 +662,28 @@ export function InvoiceSelector({
 								/>
 							</div>
 
-							{Number(qtyValue) > 0 && (
-								<div className="bg-indigo-50 rounded-md p-3 border border-indigo-200">
-									<div className="text-xs text-indigo-600 mb-1">
-										Total Tagihan
-									</div>
-									<div className="text-lg font-bold text-indigo-700">
-										{formatCurrency(
-											Number(qtyValue) * qtyEditingItem.unit_price,
-										)}
-									</div>
-									<div className="text-xs text-indigo-500 mt-0.5">
-										{formatCurrency(qtyEditingItem.unit_price)} &times;{" "}
-										{qtyValue} hari
-									</div>
+							{qtyEditingItem.category === "facility" &&
+							Number(qtyValue) === 0 ? (
+								<div className="bg-amber-50 rounded-md p-3 border border-amber-200 text-sm text-amber-800">
+									0 hari akan men-skip tagihan fasilitas bulan ini.
 								</div>
+							) : (
+								Number(qtyValue) > 0 && (
+									<div className="bg-indigo-50 rounded-md p-3 border border-indigo-200">
+										<div className="text-xs text-indigo-600 mb-1">
+											Total Tagihan
+										</div>
+										<div className="text-lg font-bold text-indigo-700">
+											{formatCurrency(
+												Number(qtyValue) * qtyEditingItem.unit_price,
+											)}
+										</div>
+										<div className="text-xs text-indigo-500 mt-0.5">
+											{formatCurrency(qtyEditingItem.unit_price)} &times;{" "}
+											{qtyValue} hari
+										</div>
+									</div>
+								)
 							)}
 
 							<div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
@@ -679,7 +698,12 @@ export function InvoiceSelector({
 									variant="primary"
 									onClick={handleQtySave}
 									disabled={
-										qtyMutation.isPending || !qtyValue || Number(qtyValue) < 1
+										qtyMutation.isPending ||
+										!qtyValue ||
+										!Number.isInteger(Number(qtyValue)) ||
+										Number(qtyValue) <
+											(qtyEditingItem.category === "facility" ? 0 : 1) ||
+										Number(qtyValue) > 31
 									}
 								>
 									{qtyMutation.isPending ? "Menyimpan..." : "Simpan"}

@@ -122,8 +122,8 @@ export function ManualInvoiceForm({
 		setQuantity("");
 	}, [isOpen, preselectedStudent, activeAy?.id]);
 
-	// Mode mengikuti pilihan tahun ajaran secara otomatis, tetapi tetap dapat
-	// diubah admin (mis. beban non-tarif pada TA aktif, atau tunggakan milik TA aktif).
+	// Mode ditentukan mutlak oleh tahun ajaran terpilih (lihat modeAvailability):
+	// hanya satu mode yang sah, sehingga tombol mode efektif terkunci.
 	useEffect(() => {
 		if (!isOpen || !academicYearId) return;
 		setMode(defaultManualInvoiceMode(academicYearId === activeAy?.id));
@@ -383,9 +383,10 @@ export function ManualInvoiceForm({
 				className="space-y-6"
 			>
 				<div>
-					<Label>Siswa</Label>
+					<Label htmlFor="manual-invoice-student">Siswa</Label>
 					<div className="relative mt-2">
 						<StudentSearch
+							inputId="manual-invoice-student"
 							selectedStudent={selectedStudent}
 							onSelect={handleSelectStudent}
 							onClear={() => setSelectedStudent(null)}
@@ -414,9 +415,17 @@ export function ManualInvoiceForm({
 
 				<div>
 					<Label>Mode Tagihan</Label>
-					<div className="mt-2 grid grid-cols-2 gap-2">
+					<div
+						role="radiogroup"
+						aria-label="Mode Tagihan"
+						className="mt-2 grid grid-cols-2 gap-2"
+					>
 						<button
 							type="button"
+							role="radio"
+							aria-checked={mode === "itemized"}
+							aria-describedby="manual-invoice-mode-help"
+							title={itemizedAvailability.reason}
 							onClick={() => setMode("itemized")}
 							disabled={!itemizedAvailability.allowed}
 							className={`rounded-lg border px-3 py-2 text-sm font-medium ${
@@ -433,6 +442,10 @@ export function ManualInvoiceForm({
 						</button>
 						<button
 							type="button"
+							role="radio"
+							aria-checked={mode === "total"}
+							aria-describedby="manual-invoice-mode-help"
+							title={totalAvailability.reason}
 							onClick={() => setMode("total")}
 							disabled={!totalAvailability.allowed}
 							className={`rounded-lg border px-3 py-2 text-sm font-medium ${
@@ -450,7 +463,10 @@ export function ManualInvoiceForm({
 					</div>
 
 					{isModeBlocked ? (
-						<div className="mt-2 rounded-md bg-amber-50 p-3 text-xs text-amber-800">
+						<div
+							id="manual-invoice-mode-help"
+							className="mt-2 rounded-md bg-amber-50 p-3 text-xs text-amber-800"
+						>
 							<p>
 								Tahun ajaran <strong>{selectedAy?.name || "-"}</strong> belum
 								punya item tarif aktif, sehingga mode rinci belum bisa dipakai.
@@ -465,7 +481,10 @@ export function ManualInvoiceForm({
 							</Link>
 						</div>
 					) : (
-						<p className="mt-2 text-xs text-gray-500">
+						<p
+							id="manual-invoice-mode-help"
+							className="mt-2 text-xs text-gray-500"
+						>
 							{isActiveAcademicYear
 								? "Tahun ajaran aktif memakai mode rinci sesuai tarifnya; mode nominal total hanya untuk tunggakan tahun ajaran lain."
 								: "Tahun ajaran selain TA aktif dicatat sebagai tunggakan dengan satu nominal total."}

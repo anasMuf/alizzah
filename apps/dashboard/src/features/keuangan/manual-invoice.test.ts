@@ -370,6 +370,15 @@ describe("modeAvailability", () => {
 			allowed: true,
 		},
 		{
+			// TA lampau yang kebetulan punya tarif tetap memakai mode total —
+			// mode rinci yang terhalang, bukan mode totalnya.
+			name: "mode total pada TA lain yang punya tarif",
+			mode: "total" as const,
+			isActiveAcademicYear: false,
+			hasTariffConfig: true,
+			allowed: true,
+		},
+		{
 			name: "mode total pada TA aktif",
 			mode: "total" as const,
 			isActiveAcademicYear: true,

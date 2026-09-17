@@ -74,9 +74,14 @@ export function PaymentSummary({
 							className={`flex justify-between px-3 py-2 text-sm ${item.is_dispensation ? "bg-green-50" : ""}`}
 						>
 							<span
-								className={`${item.is_dispensation ? "text-green-700 italic" : "text-gray-700"} truncate flex-1 pr-2`}
+								className={`${item.is_dispensation ? "text-green-700 italic" : "text-gray-700"} flex-1 pr-2 min-w-0`}
 							>
-								{item.name}
+								<span className="block truncate">{item.name}</span>
+								{item.origin_academic_year_name && (
+									<span className="block text-[11px] font-medium text-amber-700">
+										Tunggakan TA {item.origin_academic_year_name}
+									</span>
+								)}
 							</span>
 							<span
 								className={`font-medium tabular-nums whitespace-nowrap ${item.is_dispensation ? "text-green-600" : "text-gray-900"}`}

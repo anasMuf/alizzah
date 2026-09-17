@@ -361,7 +361,7 @@ func main() {
 	// quantity fasilitas memakai quantity=0 sebagai skip bulan.
 	billingExclusionService := service.NewBillingExclusionService(db, billingExclusionRepo, ayRepo, invoiceGenService)
 
-	invoiceService := service.NewInvoiceService(invoiceRepo, invoiceItemRepo, invoiceInstallmentRepo, paymentRepo, billingExclusionService)
+	invoiceService := service.NewInvoiceService(db, invoiceRepo, studentRepo, ayRepo, invoiceItemRepo, invoiceInstallmentRepo, paymentRepo, billingExclusionService)
 
 	// Batch 6: create transaction infrastructure first
 	txnWriterService := service.NewTransactionWriterService(cashTxnRepo, vaultTxnRepo)
@@ -745,9 +745,12 @@ func main() {
 	// Batch 5: Invoices
 	invoices := api.Group("/invoices", middleware.JWTAuth(tokenBlacklistRepo), guard.RequireModule(middleware.ModuleKeuangan))
 	invoices.GET("", invoiceHandler.List)
+	invoices.POST("", invoiceHandler.Create)
 	invoices.GET("/batch", invoiceHandler.Batch)
 	invoices.POST("/sync-savings-mandatory", invoiceHandler.SyncSavingsMandatoryInvoices)
 	invoices.GET("/:id", invoiceHandler.Get)
+	invoices.PUT("/:id", invoiceHandler.Update)
+	invoices.DELETE("/:id", invoiceHandler.Delete)
 	invoices.POST("/:id/items", invoiceHandler.AddItem)
 	invoices.PUT("/:id/items/:item_id", invoiceHandler.UpdateItem)
 	invoices.PUT("/:id/items/:item_id/quantity", invoiceHandler.UpdateItemQuantity)

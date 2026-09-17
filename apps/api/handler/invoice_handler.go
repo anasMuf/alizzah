@@ -174,6 +174,154 @@ func (h *InvoiceHandler) GetByStudent(c echo.Context) error {
 	})
 }
 
+// Create godoc
+// @Summary      Create manual invoice
+// @Description  Membuat tagihan manual. type "arrears" = tunggakan historis (tepat 1 item, nominal total saja, notes wajib); type "manual" = tagihan rinci dengan N item. Total dihitung server dari item — jangan kirim total dari client.
+// @Tags         invoices
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        request  body      dto.CreateInvoiceRequest  true  "Data tagihan"
+// @Success      201      {object}  dto.SuccessResponse{data=dto.InvoiceDetailResponse}
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      401      {object}  dto.ErrorResponse
+// @Failure      403      {object}  dto.ErrorResponse
+// @Failure      404      {object}  dto.ErrorResponse
+// @Failure      422      {object}  dto.ErrorResponse
+// @Failure      500      {object}  dto.ErrorResponse
+// @Router       /v1/invoices [post]
+func (h *InvoiceHandler) Create(c echo.Context) error {
+	var req dto.CreateInvoiceRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status:  http.StatusBadRequest,
+			Code:    "BAD_REQUEST",
+			Message: err.Error(),
+		})
+	}
+	if err := c.Validate(req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status:  http.StatusBadRequest,
+			Code:    "VALIDATION_ERROR",
+			Message: err.Error(),
+		})
+	}
+
+	invoice, err := h.service.CreateManual(req)
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{
+			Status:  status,
+			Code:    code,
+			Message: err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusCreated, dto.SuccessResponse{
+		Message: "Tagihan berhasil dibuat",
+		Data:    invoice,
+	})
+}
+
+// Update godoc
+// @Summary      Update invoice metadata
+// @Description  Mengubah notes dan due_date saja. Item, total_amount, paid_amount, dan status tidak tersentuh. due_date kosong menghapus jatuh tempo. Untuk type arrears, notes wajib diisi.
+// @Tags         invoices
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id       path      int                       true  "Invoice ID"
+// @Param        request  body      dto.UpdateInvoiceRequest  true  "Data yang diubah"
+// @Success      200      {object}  dto.SuccessResponse{data=dto.InvoiceDetailResponse}
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      401      {object}  dto.ErrorResponse
+// @Failure      403      {object}  dto.ErrorResponse
+// @Failure      404      {object}  dto.ErrorResponse
+// @Failure      422      {object}  dto.ErrorResponse
+// @Failure      500      {object}  dto.ErrorResponse
+// @Router       /v1/invoices/{id} [put]
+func (h *InvoiceHandler) Update(c echo.Context) error {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status:  http.StatusBadRequest,
+			Code:    "BAD_REQUEST",
+			Message: "ID tidak valid",
+		})
+	}
+
+	var req dto.UpdateInvoiceRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status:  http.StatusBadRequest,
+			Code:    "BAD_REQUEST",
+			Message: err.Error(),
+		})
+	}
+	if err := c.Validate(req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status:  http.StatusBadRequest,
+			Code:    "VALIDATION_ERROR",
+			Message: err.Error(),
+		})
+	}
+
+	invoice, err := h.service.Update(uint(id), req)
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{
+			Status:  status,
+			Code:    code,
+			Message: err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "Tagihan berhasil diperbarui",
+		Data:    invoice,
+	})
+}
+
+// Delete godoc
+// @Summary      Delete manual invoice
+// @Description  Soft delete tagihan manual (type arrears/manual) yang belum memiliki pembayaran. Tagihan hasil generate, atau yang sudah memiliki pembayaran, ditolak dengan 409.
+// @Tags         invoices
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id     path      int  true  "Invoice ID"
+// @Success      200    {object}  dto.SuccessResponse
+// @Failure      400    {object}  dto.ErrorResponse
+// @Failure      401    {object}  dto.ErrorResponse
+// @Failure      403    {object}  dto.ErrorResponse
+// @Failure      404    {object}  dto.ErrorResponse
+// @Failure      409    {object}  dto.ErrorResponse
+// @Failure      500    {object}  dto.ErrorResponse
+// @Router       /v1/invoices/{id} [delete]
+func (h *InvoiceHandler) Delete(c echo.Context) error {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status:  http.StatusBadRequest,
+			Code:    "BAD_REQUEST",
+			Message: "ID tidak valid",
+		})
+	}
+
+	if err := h.service.Delete(uint(id)); err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{
+			Status:  status,
+			Code:    code,
+			Message: err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "Tagihan berhasil dihapus",
+	})
+}
+
 // AddItem godoc
 // @Summary      Add item to invoice
 // @Description  Add a new item to an existing invoice

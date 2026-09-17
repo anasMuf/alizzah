@@ -728,6 +728,52 @@ definitions:
     required:
     - installments
     type: object
+  dto.CreateInvoiceItemRequest:
+    properties:
+      amount:
+        type: number
+      category:
+        maxLength: 30
+        type: string
+      name:
+        maxLength: 100
+        type: string
+      notes:
+        type: string
+      quantity:
+        type: integer
+      unit_price:
+        type: number
+    required:
+    - category
+    - name
+    type: object
+  dto.CreateInvoiceRequest:
+    properties:
+      academic_year_id:
+        type: integer
+      due_date:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/dto.CreateInvoiceItemRequest'
+        minItems: 1
+        type: array
+      notes:
+        type: string
+      student_id:
+        type: integer
+      type:
+        enum:
+        - arrears
+        - manual
+        type: string
+    required:
+    - academic_year_id
+    - items
+    - student_id
+    - type
+    type: object
   dto.CreatePaymentRequest:
     properties:
       academic_year_id:
@@ -2960,6 +3006,13 @@ definitions:
     required:
     - amount
     - name
+    type: object
+  dto.UpdateInvoiceRequest:
+    properties:
+      due_date:
+        type: string
+      notes:
+        type: string
     type: object
   dto.UpdateStudentExtracurricularRequest:
     properties:
@@ -8558,7 +8611,109 @@ paths:
       summary: List invoices
       tags:
       - invoices
+    post:
+      consumes:
+      - application/json
+      description: Membuat tagihan manual. type "arrears" = tunggakan historis (tepat
+        1 item, nominal total saja, notes wajib); type "manual" = tagihan rinci dengan
+        N item. Total dihitung server dari item — jangan kirim total dari client.
+      parameters:
+      - description: Data tagihan
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateInvoiceRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.InvoiceDetailResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create manual invoice
+      tags:
+      - invoices
   /v1/invoices/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Soft delete tagihan manual (type arrears/manual) yang belum memiliki
+        pembayaran. Tagihan hasil generate, atau yang sudah memiliki pembayaran, ditolak
+        dengan 409.
+      parameters:
+      - description: Invoice ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete manual invoice
+      tags:
+      - invoices
     get:
       consumes:
       - application/json
@@ -8604,6 +8759,65 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Get invoice details
+      tags:
+      - invoices
+    put:
+      consumes:
+      - application/json
+      description: Mengubah notes dan due_date saja. Item, total_amount, paid_amount,
+        dan status tidak tersentuh. due_date kosong menghapus jatuh tempo. Untuk type
+        arrears, notes wajib diisi.
+      parameters:
+      - description: Invoice ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Data yang diubah
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateInvoiceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.InvoiceDetailResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update invoice metadata
       tags:
       - invoices
   /v1/invoices/{id}/installments:

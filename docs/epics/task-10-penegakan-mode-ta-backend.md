@@ -168,6 +168,8 @@ terlokalisasi pada satu blok di `CreateManual` + satu helper murni.
   tidak punya `fee_config_item_id`, sehingga server belum bisa memverifikasi asal item
   maupun level/gender-nya. Ini gap integritas yang lebih besar dari mode-vs-TA dan
   butuh perubahan DTO (mungkin skema) tersendiri.
-- **`POST /v1/invoices/:id/items`** belum menjaga aturan "`arrears` harus tepat 1 item" —
-  tunggakan masih bisa ditambah item kedua lewat endpoint itu walau `CreateManual`
-  menolaknya di awal. Sepadan tema penegakan di server, tapi di luar lingkup Task 10.
+- ~~**`POST /v1/invoices/:id/items`** belum menjaga aturan "`arrears` harus tepat 1 item"~~ —
+  **DIKERJAKAN di [Task 15](./task-15-tindak-lanjut-review.md).** Semua endpoint mutasi
+  item (`AddItem`, `UpdateItem`, `UpdateItemQuantity`, `DeleteItem`) kini menolak
+  tagihan tunggakan dengan 409, jadi invarian satu item tidak lagi bocor lewat
+  jalur itu.

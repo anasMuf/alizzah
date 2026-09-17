@@ -18,8 +18,12 @@ import (
 func newTestInvoiceService(t *testing.T, db *gorm.DB) InvoiceService {
 	t.Helper()
 	return NewInvoiceService(
+		db,
 		repository.NewInvoiceRepository(db),
+		repository.NewStudentRepository(db),
+		repository.NewAcademicYearRepository(db),
 		repository.NewInvoiceItemRepository(db),
+		repository.NewFeeConfigItemRepository(db),
 		repository.NewInvoiceInstallmentRepository(db),
 		repository.NewPaymentRepository(db),
 		newTestBillingExclusionSvc(t, db),

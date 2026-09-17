@@ -15,6 +15,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useGetV1ReportsStudentsId } from "#/api/endpoints/reports/reports";
 import { useGetV1Students } from "#/api/endpoints/students/students";
 import { Alert, Badge, Button } from "#/components/ui";
+import { invoiceTypeLabel } from "#/features/keuangan/invoice-labels";
 import { academicYearAtom } from "../../../../../store/global";
 import { formatCurrency, formatDate } from "../../../../../utils/format";
 import { openPrintWindow } from "../../../../../utils/print";
@@ -242,7 +243,7 @@ function RekapSiswaPage() {
 						? `Tagihan Bulanan — ${inv.period}`
 						: inv.type === "registration"
 							? `Tagihan Registrasi — ${inv.period}`
-							: `Tagihan ${inv.type} — ${inv.period}`;
+							: `Tagihan ${invoiceTypeLabel(inv.type)} — ${inv.period}`;
 
 				html += `<div class="border rounded p-3 mb-2 break-inside-avoid">
 					<div class="mb-2">
@@ -575,7 +576,7 @@ function RekapSiswaPage() {
 															? `Tagihan Bulanan — ${inv.period}`
 															: inv.type === "registration"
 																? `Tagihan Registrasi — ${inv.period}`
-																: `Tagihan ${inv.type} — ${inv.period}`}
+																: `Tagihan ${invoiceTypeLabel(inv.type)} — ${inv.period}`}
 													</p>
 													<div className="flex items-center gap-2 mt-1">
 														{invoiceStatusBadge(inv.status)}

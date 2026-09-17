@@ -96,6 +96,38 @@ type UpdateInvoiceItemQuantityRequest struct {
 	Quantity *uint `json:"quantity" validate:"required,min=0,max=31"`
 }
 
+// Request — Create Invoice (tagihan manual / tunggakan historis)
+type CreateInvoiceItemRequest struct {
+	Name      string   `json:"name" validate:"required,max=100"`
+	Category  string   `json:"category" validate:"required,max=30"`
+	Amount    float64  `json:"amount"`
+	Quantity  *uint    `json:"quantity"`
+	UnitPrice *float64 `json:"unit_price"`
+	Notes     string   `json:"notes"`
+}
+
+// CreateInvoiceRequest membuat tagihan manual.
+//
+//	type "arrears" = tunggakan historis (tepat 1 item, nominal total saja)
+//	type "manual"  = tagihan rinci dengan N item
+//
+// Total TIDAK dikirim client — selalu dihitung server dari item.
+type CreateInvoiceRequest struct {
+	StudentID      uint                       `json:"student_id" validate:"required"`
+	AcademicYearID uint                       `json:"academic_year_id" validate:"required"`
+	Type           string                     `json:"type" validate:"required,oneof=arrears manual"`
+	DueDate        string                     `json:"due_date" validate:"omitempty,dateonly"`
+	Notes          string                     `json:"notes"`
+	Items          []CreateInvoiceItemRequest `json:"items" validate:"required,min=1,dive"`
+}
+
+// Request — Update Invoice. Hanya metadata yang dapat diubah; item, total_amount,
+// paid_amount, dan status tidak tersentuh. DueDate kosong berarti menghapus jatuh tempo.
+type UpdateInvoiceRequest struct {
+	Notes   string `json:"notes"`
+	DueDate string `json:"due_date" validate:"omitempty,dateonly"`
+}
+
 // Response — Installment
 type InstallmentResponse struct {
 	ID                uint    `json:"id"`

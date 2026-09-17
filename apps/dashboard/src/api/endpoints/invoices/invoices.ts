@@ -25,11 +25,13 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
 	DtoAddInvoiceItemRequest,
 	DtoCreateInstallmentScheduleRequest,
+	DtoCreateInvoiceRequest,
 	DtoErrorResponse,
 	DtoSuccessResponse,
 	DtoUpdateInstallmentRequest,
 	DtoUpdateInvoiceItemQuantityRequest,
 	DtoUpdateInvoiceItemRequest,
+	DtoUpdateInvoiceRequest,
 	GetV1Invoices200,
 	GetV1InvoicesBatch200,
 	GetV1InvoicesBatchParams,
@@ -38,9 +40,11 @@ import type {
 	GetV1InvoicesParams,
 	GetV1StudentsIdInvoices200,
 	GetV1StudentsIdInvoicesParams,
+	PostV1Invoices201,
 	PostV1InvoicesIdInstallments201,
 	PostV1InvoicesIdItems201,
 	PostV1InvoicesSyncSavingsMandatory200,
+	PutV1InvoicesId200,
 	PutV1InvoicesIdInstallmentsInstId200,
 	PutV1InvoicesIdItemsItemId200,
 	PutV1InvoicesIdItemsItemIdQuantity200,
@@ -241,6 +245,148 @@ export function useGetV1Invoices<
 	return { ...query, queryKey: queryOptions.queryKey };
 }
 
+export type postV1InvoicesResponse201 = {
+	data: PostV1Invoices201;
+	status: 201;
+};
+
+export type postV1InvoicesResponse400 = {
+	data: DtoErrorResponse;
+	status: 400;
+};
+
+export type postV1InvoicesResponse401 = {
+	data: DtoErrorResponse;
+	status: 401;
+};
+
+export type postV1InvoicesResponse403 = {
+	data: DtoErrorResponse;
+	status: 403;
+};
+
+export type postV1InvoicesResponse404 = {
+	data: DtoErrorResponse;
+	status: 404;
+};
+
+export type postV1InvoicesResponse422 = {
+	data: DtoErrorResponse;
+	status: 422;
+};
+
+export type postV1InvoicesResponse500 = {
+	data: DtoErrorResponse;
+	status: 500;
+};
+
+export type postV1InvoicesResponseSuccess = postV1InvoicesResponse201 & {
+	headers: Headers;
+};
+export type postV1InvoicesResponseError = (
+	| postV1InvoicesResponse400
+	| postV1InvoicesResponse401
+	| postV1InvoicesResponse403
+	| postV1InvoicesResponse404
+	| postV1InvoicesResponse422
+	| postV1InvoicesResponse500
+) & {
+	headers: Headers;
+};
+
+export type postV1InvoicesResponse =
+	| postV1InvoicesResponseSuccess
+	| postV1InvoicesResponseError;
+
+export const getPostV1InvoicesUrl = () => {
+	return `/v1/invoices`;
+};
+
+/**
+ * Membuat tagihan manual. type "arrears" = tunggakan historis (tepat 1 item, nominal total saja, notes wajib); type "manual" = tagihan rinci dengan N item. Total dihitung server dari item — jangan kirim total dari client.
+ * @summary Create manual invoice
+ */
+export const postV1Invoices = async (
+	dtoCreateInvoiceRequest: DtoCreateInvoiceRequest,
+	options?: RequestInit,
+): Promise<postV1InvoicesResponse> => {
+	return customInstance<postV1InvoicesResponse>(getPostV1InvoicesUrl(), {
+		...options,
+		method: "POST",
+		headers: { "Content-Type": "application/json", ...options?.headers },
+		body: JSON.stringify(dtoCreateInvoiceRequest),
+	});
+};
+
+export const getPostV1InvoicesMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postV1Invoices>>,
+		TError,
+		{ data: DtoCreateInvoiceRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postV1Invoices>>,
+	TError,
+	{ data: DtoCreateInvoiceRequest },
+	TContext
+> => {
+	const mutationKey = ["postV1Invoices"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postV1Invoices>>,
+		{ data: DtoCreateInvoiceRequest }
+	> = (props) => {
+		const { data } = props ?? {};
+
+		return postV1Invoices(data, requestOptions);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type PostV1InvoicesMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postV1Invoices>>
+>;
+export type PostV1InvoicesMutationBody = DtoCreateInvoiceRequest;
+export type PostV1InvoicesMutationError = DtoErrorResponse;
+
+/**
+ * @summary Create manual invoice
+ */
+export const usePostV1Invoices = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postV1Invoices>>,
+			TError,
+			{ data: DtoCreateInvoiceRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postV1Invoices>>,
+	TError,
+	{ data: DtoCreateInvoiceRequest },
+	TContext
+> => {
+	return useMutation(getPostV1InvoicesMutationOptions(options), queryClient);
+};
 export type getV1InvoicesBatchResponse200 = {
 	data: GetV1InvoicesBatch200;
 	status: 200;
@@ -801,6 +947,296 @@ export function useGetV1InvoicesId<
 	return { ...query, queryKey: queryOptions.queryKey };
 }
 
+export type putV1InvoicesIdResponse200 = {
+	data: PutV1InvoicesId200;
+	status: 200;
+};
+
+export type putV1InvoicesIdResponse400 = {
+	data: DtoErrorResponse;
+	status: 400;
+};
+
+export type putV1InvoicesIdResponse401 = {
+	data: DtoErrorResponse;
+	status: 401;
+};
+
+export type putV1InvoicesIdResponse403 = {
+	data: DtoErrorResponse;
+	status: 403;
+};
+
+export type putV1InvoicesIdResponse404 = {
+	data: DtoErrorResponse;
+	status: 404;
+};
+
+export type putV1InvoicesIdResponse422 = {
+	data: DtoErrorResponse;
+	status: 422;
+};
+
+export type putV1InvoicesIdResponse500 = {
+	data: DtoErrorResponse;
+	status: 500;
+};
+
+export type putV1InvoicesIdResponseSuccess = putV1InvoicesIdResponse200 & {
+	headers: Headers;
+};
+export type putV1InvoicesIdResponseError = (
+	| putV1InvoicesIdResponse400
+	| putV1InvoicesIdResponse401
+	| putV1InvoicesIdResponse403
+	| putV1InvoicesIdResponse404
+	| putV1InvoicesIdResponse422
+	| putV1InvoicesIdResponse500
+) & {
+	headers: Headers;
+};
+
+export type putV1InvoicesIdResponse =
+	| putV1InvoicesIdResponseSuccess
+	| putV1InvoicesIdResponseError;
+
+export const getPutV1InvoicesIdUrl = (id: number) => {
+	return `/v1/invoices/${id}`;
+};
+
+/**
+ * Mengubah notes dan due_date saja. Item, total_amount, paid_amount, dan status tidak tersentuh. due_date kosong menghapus jatuh tempo. Untuk type arrears, notes wajib diisi.
+ * @summary Update invoice metadata
+ */
+export const putV1InvoicesId = async (
+	id: number,
+	dtoUpdateInvoiceRequest: DtoUpdateInvoiceRequest,
+	options?: RequestInit,
+): Promise<putV1InvoicesIdResponse> => {
+	return customInstance<putV1InvoicesIdResponse>(getPutV1InvoicesIdUrl(id), {
+		...options,
+		method: "PUT",
+		headers: { "Content-Type": "application/json", ...options?.headers },
+		body: JSON.stringify(dtoUpdateInvoiceRequest),
+	});
+};
+
+export const getPutV1InvoicesIdMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof putV1InvoicesId>>,
+		TError,
+		{ id: number; data: DtoUpdateInvoiceRequest },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof putV1InvoicesId>>,
+	TError,
+	{ id: number; data: DtoUpdateInvoiceRequest },
+	TContext
+> => {
+	const mutationKey = ["putV1InvoicesId"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof putV1InvoicesId>>,
+		{ id: number; data: DtoUpdateInvoiceRequest }
+	> = (props) => {
+		const { id, data } = props ?? {};
+
+		return putV1InvoicesId(id, data, requestOptions);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type PutV1InvoicesIdMutationResult = NonNullable<
+	Awaited<ReturnType<typeof putV1InvoicesId>>
+>;
+export type PutV1InvoicesIdMutationBody = DtoUpdateInvoiceRequest;
+export type PutV1InvoicesIdMutationError = DtoErrorResponse;
+
+/**
+ * @summary Update invoice metadata
+ */
+export const usePutV1InvoicesId = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof putV1InvoicesId>>,
+			TError,
+			{ id: number; data: DtoUpdateInvoiceRequest },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof putV1InvoicesId>>,
+	TError,
+	{ id: number; data: DtoUpdateInvoiceRequest },
+	TContext
+> => {
+	return useMutation(getPutV1InvoicesIdMutationOptions(options), queryClient);
+};
+export type deleteV1InvoicesIdResponse200 = {
+	data: DtoSuccessResponse;
+	status: 200;
+};
+
+export type deleteV1InvoicesIdResponse400 = {
+	data: DtoErrorResponse;
+	status: 400;
+};
+
+export type deleteV1InvoicesIdResponse401 = {
+	data: DtoErrorResponse;
+	status: 401;
+};
+
+export type deleteV1InvoicesIdResponse403 = {
+	data: DtoErrorResponse;
+	status: 403;
+};
+
+export type deleteV1InvoicesIdResponse404 = {
+	data: DtoErrorResponse;
+	status: 404;
+};
+
+export type deleteV1InvoicesIdResponse409 = {
+	data: DtoErrorResponse;
+	status: 409;
+};
+
+export type deleteV1InvoicesIdResponse500 = {
+	data: DtoErrorResponse;
+	status: 500;
+};
+
+export type deleteV1InvoicesIdResponseSuccess =
+	deleteV1InvoicesIdResponse200 & {
+		headers: Headers;
+	};
+export type deleteV1InvoicesIdResponseError = (
+	| deleteV1InvoicesIdResponse400
+	| deleteV1InvoicesIdResponse401
+	| deleteV1InvoicesIdResponse403
+	| deleteV1InvoicesIdResponse404
+	| deleteV1InvoicesIdResponse409
+	| deleteV1InvoicesIdResponse500
+) & {
+	headers: Headers;
+};
+
+export type deleteV1InvoicesIdResponse =
+	| deleteV1InvoicesIdResponseSuccess
+	| deleteV1InvoicesIdResponseError;
+
+export const getDeleteV1InvoicesIdUrl = (id: number) => {
+	return `/v1/invoices/${id}`;
+};
+
+/**
+ * Soft delete tagihan manual (type arrears/manual) yang belum memiliki pembayaran. Tagihan hasil generate, atau yang sudah memiliki pembayaran, ditolak dengan 409.
+ * @summary Delete manual invoice
+ */
+export const deleteV1InvoicesId = async (
+	id: number,
+	options?: RequestInit,
+): Promise<deleteV1InvoicesIdResponse> => {
+	return customInstance<deleteV1InvoicesIdResponse>(
+		getDeleteV1InvoicesIdUrl(id),
+		{
+			...options,
+			method: "DELETE",
+		},
+	);
+};
+
+export const getDeleteV1InvoicesIdMutationOptions = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof deleteV1InvoicesId>>,
+		TError,
+		{ id: number },
+		TContext
+	>;
+	request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof deleteV1InvoicesId>>,
+	TError,
+	{ id: number },
+	TContext
+> => {
+	const mutationKey = ["deleteV1InvoicesId"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation &&
+			"mutationKey" in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof deleteV1InvoicesId>>,
+		{ id: number }
+	> = (props) => {
+		const { id } = props ?? {};
+
+		return deleteV1InvoicesId(id, requestOptions);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteV1InvoicesIdMutationResult = NonNullable<
+	Awaited<ReturnType<typeof deleteV1InvoicesId>>
+>;
+
+export type DeleteV1InvoicesIdMutationError = DtoErrorResponse;
+
+/**
+ * @summary Delete manual invoice
+ */
+export const useDeleteV1InvoicesId = <
+	TError = DtoErrorResponse,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof deleteV1InvoicesId>>,
+			TError,
+			{ id: number },
+			TContext
+		>;
+		request?: SecondParameter<typeof customInstance>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof deleteV1InvoicesId>>,
+	TError,
+	{ id: number },
+	TContext
+> => {
+	return useMutation(
+		getDeleteV1InvoicesIdMutationOptions(options),
+		queryClient,
+	);
+};
 export type getV1InvoicesIdInstallmentsResponse200 = {
 	data: GetV1InvoicesIdInstallments200;
 	status: 200;

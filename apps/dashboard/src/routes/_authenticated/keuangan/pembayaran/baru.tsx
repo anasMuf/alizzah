@@ -210,6 +210,12 @@ function KasirPembayaranPage() {
 					item.category === "dispensation" ||
 					(payAmounts[item.id] ?? 0) > 0
 				) {
+					// TA asal hanya ditandai bila berbeda dari TA aktif — agar baris tagihan
+					// tahun berjalan tidak diberi label yang tidak perlu.
+					const originYearName =
+						activeAy?.id != null && detail.academic_year?.id !== activeAy.id
+							? detail.academic_year?.name
+							: undefined;
 					items.push({
 						id: item.id,
 						invoice_id: detail.id,
@@ -220,6 +226,7 @@ function KasirPembayaranPage() {
 						// Item monthly_spp "dikunci" jika invoice-nya punya dispensasi
 						is_locked:
 							item.category === "monthly_spp" && hasDispensation.has(detail.id),
+						origin_academic_year_name: originYearName,
 					});
 				}
 			});
@@ -230,7 +237,7 @@ function KasirPembayaranPage() {
 		);
 		return items;
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [invoiceDetails]);
+	}, [invoiceDetails, activeAy?.id]);
 
 	// Buang entri payAmounts
 	// Cleanup effect

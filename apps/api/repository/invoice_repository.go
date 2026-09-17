@@ -3,6 +3,7 @@ package repository
 import (
 	"api/dto"
 	"api/model"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -18,6 +19,8 @@ type InvoiceRepository interface {
 	UpdateStatus(id uint, status string, paidAmount float64) error
 	UpdateTotalAmount(id uint, totalAmount float64) error
 	UpdateNotes(id uint, notes string) error
+	UpdateNotesAndDueDate(id uint, notes string, dueDate *time.Time) error
+	Delete(id uint) error
 	ExistsInitialByStudent(studentID, academicYearID uint) (bool, error)
 	ExistsRegistrationByStudent(studentID, academicYearID uint) (bool, error)
 	ExistsMonthlyByStudent(studentID, month, year uint) (bool, error)
@@ -207,6 +210,25 @@ func (r *invoiceRepository) UpdateTotalAmount(id uint, totalAmount float64) erro
 
 func (r *invoiceRepository) UpdateNotes(id uint, notes string) error {
 	result := r.db.Model(&model.Invoice{}).Where("id = ?", id).Update("notes", notes)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
+func (r *invoiceRepository) Delete(id uint) error {
+	return r.db.Delete(&model.Invoice{}, id).Error
+}
+
+func (r *invoiceRepository) UpdateNotesAndDueDate(id uint, notes string, dueDate *time.Time) error {
+	// Satu statement agar notes & due_date selalu konsisten satu sama lain.
+	result := r.db.Model(&model.Invoice{}).Where("id = ?", id).Updates(map[string]interface{}{
+		"notes":    notes,
+		"due_date": dueDate,
+	})
 	if result.Error != nil {
 		return result.Error
 	}

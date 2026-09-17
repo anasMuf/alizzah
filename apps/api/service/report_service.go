@@ -98,7 +98,7 @@ func (s *reportService) GetDailyReport(req dto.DailyReportRequest) (*dto.DailyRe
 	openingBalance, _ := s.cashRepo.GetBalanceUpToDate(academicYearID, date.AddDate(0, 0, -1))
 	closingBalance := openingBalance + totalIncome - totalExpense
 
-	vaultBalance, _ := s.vaultRepo.GetCurrentBalance(academicYearID)
+	vaultBalance, _ := s.vaultRepo.GetBalanceUpToDate(academicYearID, date)
 
 	dc, _ := s.dailyClosingRepo.FindByDate(date)
 	var dcInReport *dto.DailyClosingInReport

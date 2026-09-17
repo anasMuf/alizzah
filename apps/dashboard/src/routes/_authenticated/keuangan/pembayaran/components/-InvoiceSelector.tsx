@@ -5,6 +5,12 @@ import { useGetV1InvoicesBatch } from "#/api/endpoints/invoices/invoice-batch";
 import { usePutV1InvoicesIdItemsItemIdQuantity } from "#/api/endpoints/invoices/invoice-quantity";
 import { useGetV1StudentsIdInvoices } from "#/api/endpoints/invoices/invoices";
 import { Button, CurrencyInput, SlideOver, useToast } from "#/components/ui";
+import { invoicePeriodOrTypeLabel } from "#/features/keuangan/invoice-labels";
+import {
+	invoiceDescription,
+	invoiceRemaining,
+	otherYearOutstandingInvoices,
+} from "#/features/keuangan/outstanding-invoices";
 import { formatCurrency } from "../../../../../utils/format";
 
 interface InvoiceSelectorProps {
@@ -83,26 +89,41 @@ export function InvoiceSelector({
 		number | null
 	>(null);
 
+	// Tunggakan dari tahun ajaran lain: query tanpa `academic_year_id` (semua TA),
+	// difilter di sisi klien ke TA selain yang sedang aktif. Item-nya nanti diambil
+	// lewat `invoices/batch` yang memang tidak ter-scope tahun ajaran.
+	const { data: otherYearsResp } = useGetV1StudentsIdInvoices(
+		studentId,
+		{},
+		{ query: { enabled: !!studentId } },
+	);
+	const otherYearInvoices = otherYearOutstandingInvoices(
+		(otherYearsResp?.data as any)?.data || [],
+		academicYearId,
+	);
+
 	// Fetch item details for expanded paid invoice
 	const { data: expandedPaidInvoiceDetails = [] } = useGetV1InvoicesBatch(
 		expandedPaidInvoiceId !== null ? [expandedPaidInvoiceId] : [],
 		{ enabled: expandedPaidInvoiceId !== null },
 	);
 
-	// Auto-select initial invoice
+	// Auto-select initial invoice (termasuk tunggakan dari TA lain, sehingga tautan
+	// "Catat Pembayaran" dari detail tagihan TA lampau tetap berfungsi).
 	useEffect(() => {
 		if (
-			unpaidInvoices.length > 0 &&
 			initialInvoiceId &&
-			selectedInvoices.length === 0
+			selectedInvoices.length === 0 &&
+			unpaidInvoices.length + otherYearInvoices.length > 0
 		) {
-			const matched = unpaidInvoices.find(
+			const matched = [...unpaidInvoices, ...otherYearInvoices].find(
 				(inv: any) => inv.id === initialInvoiceId,
 			);
 			if (matched) onToggleInvoice(matched.id);
 		}
 	}, [
 		unpaidInvoices,
+		otherYearInvoices,
 		initialInvoiceId,
 		onToggleInvoice,
 		selectedInvoices.length,
@@ -140,6 +161,13 @@ export function InvoiceSelector({
 				) {
 					const isLockedBySpp =
 						item.category === "monthly_spp" && hasDispensation.has(detail.id);
+					// TA asal hanya ditandai bila berbeda dari TA aktif — agar baris tagihan
+					// tahun berjalan tidak diberi label yang tidak perlu.
+					const originYearName =
+						academicYearId != null &&
+						detail.academic_year?.id !== academicYearId
+							? detail.academic_year?.name
+							: undefined;
 					items.push({
 						id: item.id,
 						invoice_id: detail.id,
@@ -151,6 +179,7 @@ export function InvoiceSelector({
 						status: item.status,
 						is_dispensation: item.category === "dispensation",
 						is_locked: isLockedBySpp,
+						origin_academic_year_name: originYearName,
 					});
 				}
 			});
@@ -160,7 +189,7 @@ export function InvoiceSelector({
 			(a, b) => (a.is_dispensation ? 1 : 0) - (b.is_dispensation ? 1 : 0),
 		);
 		return items;
-	}, [invoiceDetails]);
+	}, [invoiceDetails, academicYearId]);
 
 	// Quantity mutation untuk item harian/per-Senin
 	const queryClient = useQueryClient();
@@ -251,15 +280,7 @@ export function InvoiceSelector({
 					className="w-full flex items-center px-3 py-2.5 text-sm hover:bg-gray-50 transition-colors"
 				>
 					<span className="flex-1 text-gray-600 text-left">
-						{inv.type === "monthly"
-							? `Bulanan ${inv.month}/${inv.year}`
-							: inv.type === "registration"
-								? "Registrasi"
-								: inv.type === "initial"
-									? "Biaya Awal"
-									: inv.type === "daycare_initial"
-										? "Biaya Awal Daycare"
-										: "Lainnya"}
+						{invoicePeriodOrTypeLabel(inv)}
 					</span>
 					<span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full font-medium">
 						Lunas
@@ -382,15 +403,7 @@ export function InvoiceSelector({
 								onChange={() => onToggleInvoice(inv.id)}
 							/>
 							<span className="ml-2.5 flex-1 font-medium text-gray-900">
-								{inv.type === "monthly"
-									? `Bulanan ${inv.month}/${inv.year}`
-									: inv.type === "registration"
-										? "Registrasi"
-										: inv.type === "initial"
-											? "Biaya Awal"
-											: inv.type === "daycare_initial"
-												? "Biaya Awal Daycare"
-												: "Lainnya"}
+								{invoicePeriodOrTypeLabel(inv)}
 							</span>
 							<span className="font-semibold text-rose-600 tabular-nums">
 								{formatCurrency(
@@ -401,6 +414,45 @@ export function InvoiceSelector({
 					);
 				})}
 			</div>
+
+			{/* Tunggakan dari tahun ajaran lain — dapat dicentang & dibayar seperti biasa */}
+			{otherYearInvoices.length > 0 && (
+				<div className="mt-4">
+					<p className="text-xs font-semibold text-amber-700 uppercase tracking-wider mb-2">
+						Tunggakan Tahun Ajaran Lain
+					</p>
+					<div className="space-y-2">
+						{otherYearInvoices.map((inv) => {
+							const sisa = invoiceRemaining(inv);
+							const isSelected = selectedInvoices.includes(inv.id as number);
+							return (
+								<label
+									key={inv.id}
+									className={`flex items-center p-2.5 border rounded-lg cursor-pointer text-sm transition-colors ${isSelected ? "border-amber-500 bg-amber-50" : "border-amber-200 hover:bg-amber-50/50"}`}
+								>
+									<input
+										type="checkbox"
+										className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-600"
+										checked={isSelected}
+										onChange={() => onToggleInvoice(inv.id as number)}
+									/>
+									<span className="ml-2.5 flex-1 min-w-0">
+										<span className="block font-medium text-gray-900 truncate">
+											{invoiceDescription(inv)}
+										</span>
+										<span className="block text-xs text-amber-700">
+											TA {inv.academic_year?.name || "-"}
+										</span>
+									</span>
+									<span className="font-semibold text-rose-600 tabular-nums whitespace-nowrap">
+										{formatCurrency(sisa)}
+									</span>
+								</label>
+							);
+						})}
+					</div>
+				</div>
+			)}
 
 			{/* Paid invoices history */}
 			{paidInvoices.length > 0 && (

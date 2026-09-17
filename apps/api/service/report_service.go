@@ -98,7 +98,7 @@ func (s *reportService) GetDailyReport(req dto.DailyReportRequest) (*dto.DailyRe
 	openingBalance, _ := s.cashRepo.GetBalanceUpToDate(academicYearID, date.AddDate(0, 0, -1))
 	closingBalance := openingBalance + totalIncome - totalExpense
 
-	vaultBalance, _ := s.vaultRepo.GetCurrentBalance(academicYearID)
+	vaultBalance, _ := s.vaultRepo.GetBalanceUpToDate(academicYearID, date)
 
 	dc, _ := s.dailyClosingRepo.FindByDate(date)
 	var dcInReport *dto.DailyClosingInReport
@@ -355,10 +355,13 @@ func (s *reportService) GetClassGroupReport(classGroupID uint, req dto.ClassGrou
 // savingsTypeGeneral is the student_savings.type for Tabungan Umum
 const savingsTypeGeneral = "general"
 
-// invoiceCategoryLabels maps invoice_items.category to display labels
+// invoiceCategoryLabels maps invoice_items.category to display labels.
+// Setiap kategori yang bisa muncul sebagai bucket laporan harus punya entri di
+// sini — kategori tanpa label tampil mentah (mis. "arrears") di posisi kas.
 var invoiceCategoryLabels = map[string]string{
 	"monthly_spp":       "SPP",
 	"monthly_infaq":     "Infaq Harian",
+	"arrears":           "Tunggakan",
 	"initial":           "Biaya Awal Masuk",
 	"registration":      "Biaya Registrasi",
 	"pasta":             "PASTA",
@@ -373,9 +376,12 @@ var invoiceCategoryLabels = map[string]string{
 	"savings_voluntary": "Tabungan Umum",
 }
 
-// invoiceCategoryOrder defines display order for posisi kas report
+// invoiceCategoryOrder defines display order for posisi kas report.
+// Tunggakan diletakkan tepat setelah SPP karena umumnya memang SPP tahun
+// ajaran sebelumnya yang belum tercatat.
 var invoiceCategoryOrder = []string{
 	"monthly_spp",
+	"arrears",
 	"monthly_infaq",
 	"initial",
 	"registration",

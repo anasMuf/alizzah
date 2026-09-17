@@ -9,8 +9,11 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
+	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type InvoiceService interface {
@@ -18,6 +21,12 @@ type InvoiceService interface {
 	GetByID(id uint) (*dto.InvoiceDetailResponse, error)
 	GetBatch(ids []uint) ([]dto.InvoiceDetailResponse, error)
 	GetByStudentID(studentID uint, invoiceType, status string, academicYearID uint, showAll bool) ([]dto.InvoiceListResponse, error)
+	// CreateManual membuat tagihan manual / tunggakan historis (total dihitung server).
+	CreateManual(req dto.CreateInvoiceRequest) (*dto.InvoiceDetailResponse, error)
+	// Delete menghapus (soft) tagihan manual — hanya type arrears/manual yang belum ada pembayaran.
+	Delete(id uint) error
+	// Update mengubah metadata invoice (notes & due_date saja).
+	Update(id uint, req dto.UpdateInvoiceRequest) (*dto.InvoiceDetailResponse, error)
 	// Item management
 	AddItem(invoiceID uint, req dto.AddInvoiceItemRequest) (*dto.InvoiceItemResponse, error)
 	UpdateItem(invoiceID, itemID uint, req dto.UpdateInvoiceItemRequest) (*dto.InvoiceItemResponse, error)
@@ -34,23 +43,35 @@ type InvoiceService interface {
 }
 
 type invoiceService struct {
+	db              *gorm.DB
 	invoiceRepo     repository.InvoiceRepository
+	studentRepo     repository.StudentRepository
+	ayRepo          repository.AcademicYearRepository
 	itemRepo        repository.InvoiceItemRepository
+	feeItemRepo     repository.FeeConfigItemRepository
 	installmentRepo repository.InvoiceInstallmentRepository
 	paymentRepo     repository.PaymentRepository
 	exclSvc         BillingExclusionService
 }
 
 func NewInvoiceService(
+	db *gorm.DB,
 	invoiceRepo repository.InvoiceRepository,
+	studentRepo repository.StudentRepository,
+	ayRepo repository.AcademicYearRepository,
 	itemRepo repository.InvoiceItemRepository,
+	feeItemRepo repository.FeeConfigItemRepository,
 	installmentRepo repository.InvoiceInstallmentRepository,
 	paymentRepo repository.PaymentRepository,
 	exclSvc BillingExclusionService,
 ) InvoiceService {
 	return &invoiceService{
+		db:              db,
 		invoiceRepo:     invoiceRepo,
+		studentRepo:     studentRepo,
+		ayRepo:          ayRepo,
 		itemRepo:        itemRepo,
+		feeItemRepo:     feeItemRepo,
 		installmentRepo: installmentRepo,
 		paymentRepo:     paymentRepo,
 		exclSvc:         exclSvc,
@@ -144,7 +165,245 @@ func (s *invoiceService) GetBatch(ids []uint) ([]dto.InvoiceDetailResponse, erro
 	return responses, nil
 }
 
+func (s *invoiceService) CreateManual(req dto.CreateInvoiceRequest) (*dto.InvoiceDetailResponse, error) {
+	if req.Type != "arrears" && req.Type != "manual" {
+		return nil, utility.NewUnprocessableError("Jenis tagihan manual tidak valid")
+	}
+	if len(req.Items) == 0 {
+		return nil, utility.NewUnprocessableError("Tagihan harus memiliki minimal 1 item")
+	}
+
+	// Tunggakan historis dicatat sebagai nominal total: tepat 1 item + keterangan wajib.
+	if req.Type == "arrears" {
+		if len(req.Items) != 1 {
+			return nil, utility.NewUnprocessableError("Tagihan tunggakan harus berisi tepat 1 item")
+		}
+		if strings.TrimSpace(req.Notes) == "" {
+			return nil, utility.NewUnprocessableError("Keterangan wajib diisi untuk tagihan tunggakan")
+		}
+	}
+
+	if _, err := s.studentRepo.FindByID(req.StudentID); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, utility.NewNotFoundError("Siswa tidak ditemukan")
+		}
+		return nil, err
+	}
+	ay, err := s.ayRepo.FindByID(req.AcademicYearID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, utility.NewNotFoundError("Tahun ajaran tidak ditemukan")
+		}
+		return nil, err
+	}
+
+	// Penegakan mode-vs-TA di server — pertahanan lapis kedua atas aturan yang
+	// sudah ditegakkan di UI (lihat docs/epics/task-9-validasi-mode-tahun-ajaran.md).
+	// Item tarif hanya dihitung untuk mode rinci; mode total tidak membutuhkannya.
+	var activeTariffItemCount int64
+	if req.Type == "manual" {
+		activeTariffItemCount, err = s.feeItemRepo.CountActiveItemsByAcademicYear(req.AcademicYearID)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if reason := invoiceModeViolation(req.Type, ay.IsActive, activeTariffItemCount); reason != "" {
+		return nil, utility.NewUnprocessableError(reason)
+	}
+
+	var dueDate *time.Time
+	if strings.TrimSpace(req.DueDate) != "" {
+		parsed, err := utility.ParseDate(req.DueDate)
+		if err != nil {
+			return nil, utility.NewUnprocessableError("Format jatuh tempo tidak valid (YYYY-MM-DD)")
+		}
+		dueDate = &parsed
+	}
+
+	items := make([]model.InvoiceItem, 0, len(req.Items))
+	for _, it := range req.Items {
+		name := strings.TrimSpace(it.Name)
+		if name == "" {
+			return nil, utility.NewUnprocessableError("Nama item wajib diisi")
+		}
+		if it.Amount <= 0 {
+			return nil, utility.NewUnprocessableError(fmt.Sprintf("Nominal item '%s' harus lebih dari 0", name))
+		}
+
+		category := strings.TrimSpace(it.Category)
+		if req.Type == "arrears" {
+			category = "arrears"
+		}
+
+		items = append(items, model.InvoiceItem{
+			Name:        name,
+			Category:    category,
+			Amount:      it.Amount,
+			PaidAmount:  0,
+			Status:      "unpaid",
+			IsMandatory: false,
+			Quantity:    it.Quantity,
+			UnitPrice:   it.UnitPrice,
+			Notes:       it.Notes,
+		})
+	}
+
+	invoice := &model.Invoice{
+		StudentID:      req.StudentID,
+		AcademicYearID: req.AcademicYearID,
+		Type:           req.Type,
+		Status:         "unpaid",
+		TotalAmount:    utility.SumInvoiceItems(items),
+		PaidAmount:     0,
+		DueDate:        dueDate,
+		Notes:          strings.TrimSpace(req.Notes),
+	}
+
+	err = s.db.Transaction(func(tx *gorm.DB) error {
+		if err := s.invoiceRepo.WithTx(tx).Create(invoice); err != nil {
+			return err
+		}
+		for i := range items {
+			items[i].InvoiceID = invoice.ID
+		}
+		// Item manual tidak mandatory agar admin dapat mengoreksi/menghapusnya
+		// selama belum lunas.
+		return s.itemRepo.WithTx(tx).BulkCreateNonMandatoryItems(items)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	saved, err := s.invoiceRepo.FindByID(invoice.ID)
+	if err != nil {
+		return nil, err
+	}
+	resp := mapInvoiceToDetailResponse(*saved)
+	return &resp, nil
+}
+
+func (s *invoiceService) Delete(id uint) error {
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		// Kunci baris invoice lebih dulu, lalu validasi ULANG di dalam transaksi.
+		// Sebelumnya validasi berjalan di luar transaksi tanpa kunci apa pun,
+		// sehingga pembayaran yang masuk di sela validasi dan penghapusan bisa
+		// membuat payment_item yatim: kas tercatat, tagihannya hilang.
+		// Pembayaran mengunci baris invoice yang sama (lihat paymentService.createInTx),
+		// jadi kedua jalur terserialisasi pada kunci yang sama.
+		if err := lockInvoiceRow(tx, id); err != nil {
+			return err
+		}
+
+		invoice, err := s.invoiceRepo.WithTx(tx).FindByID(id)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return utility.NewNotFoundError("Invoice tidak ditemukan")
+			}
+			return err
+		}
+
+		// Invoice hasil generate dikelola lewat RegenerateForStudent, bukan lewat endpoint ini.
+		if invoice.Type != "arrears" && invoice.Type != "manual" {
+			return utility.NewConflictError("Tagihan hasil generate tidak dapat dihapus. Gunakan regenerate tagihan siswa.")
+		}
+
+		if invoice.PaidAmount != 0 {
+			return utility.NewConflictError("Tagihan yang sudah memiliki pembayaran tidak dapat dihapus. Hapus pembayarannya terlebih dahulu.")
+		}
+
+		// Belt-and-braces: pastikan tidak ada payment_item yang menunjuk item invoice ini,
+		// walau paid_amount sudah 0 (mis. data tidak konsisten).
+		payments, err := s.paymentRepo.WithTx(tx).FindByInvoiceID(id)
+		if err != nil {
+			return err
+		}
+		if len(payments) > 0 {
+			return utility.NewConflictError("Tagihan yang sudah memiliki pembayaran tidak dapat dihapus. Hapus pembayarannya terlebih dahulu.")
+		}
+
+		// Item ikut di-soft-delete: payment_service mencari item hanya by ID tanpa
+		// memeriksa invoice induknya, sehingga item yatim masih berpotensi dibayar.
+		if err := s.itemRepo.WithTx(tx).DeleteByInvoiceID(id); err != nil {
+			return err
+		}
+		return s.invoiceRepo.WithTx(tx).Delete(id)
+	})
+}
+
+// lockInvoiceRow mengambil row-level lock (SELECT ... FOR UPDATE) pada satu invoice.
+// No-op bila barisnya tidak ada — pemanggil tetap memvalidasi lewat query biasa
+// sehingga pesan 404 tidak berubah.
+//
+// Dipakai berpasangan dengan penguncian yang sama di paymentService.createInTx:
+// kedua jalur harus mengunci tabel `invoices` dengan urutan id menaik agar tidak
+// terjadi deadlock sekaligus menutup balapan hapus-vs-bayar.
+func lockInvoiceRow(tx *gorm.DB, id uint) error {
+	var locked []uint
+	return tx.Model(&model.Invoice{}).
+		Clauses(clause.Locking{Strength: "UPDATE"}).
+		Where("id = ?", id).
+		Pluck("id", &locked).Error
+}
+
+func (s *invoiceService) Update(id uint, req dto.UpdateInvoiceRequest) (*dto.InvoiceDetailResponse, error) {
+	invoice, err := s.invoiceRepo.FindByID(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, utility.NewNotFoundError("Invoice tidak ditemukan")
+		}
+		return nil, err
+	}
+
+	notes := strings.TrimSpace(req.Notes)
+	// Keterangan adalah jejak asal tunggakan (R.3) — jangan sampai terhapus lewat edit.
+	if invoice.Type == "arrears" && notes == "" {
+		return nil, utility.NewUnprocessableError("Keterangan wajib diisi untuk tagihan tunggakan")
+	}
+
+	var dueDate *time.Time
+	if strings.TrimSpace(req.DueDate) != "" {
+		parsed, err := utility.ParseDate(req.DueDate)
+		if err != nil {
+			return nil, utility.NewUnprocessableError("Format jatuh tempo tidak valid (YYYY-MM-DD)")
+		}
+		dueDate = &parsed
+	}
+
+	if err := s.invoiceRepo.UpdateNotesAndDueDate(id, notes, dueDate); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, utility.NewNotFoundError("Invoice tidak ditemukan")
+		}
+		return nil, err
+	}
+
+	saved, err := s.invoiceRepo.FindByID(id)
+	if err != nil {
+		return nil, err
+	}
+	resp := mapInvoiceToDetailResponse(*saved)
+	return &resp, nil
+}
+
+// rejectArrearsItemMutation menolak perubahan item pada tagihan tunggakan.
+// Tagihan `arrears` direpresentasikan sebagai satu nominal total (lihat CreateManual),
+// sehingga menambah, mengubah, atau menghapus itemnya melanggar invarian "tepat satu
+// item" — termasuk menghapus item tunggalnya sampai tagihan jadi kosong.
+func (s *invoiceService) rejectArrearsItemMutation(invoiceID uint) error {
+	invoice, err := s.invoiceRepo.FindByID(invoiceID)
+	if err != nil {
+		return errors.New("Invoice tidak ditemukan")
+	}
+	if invoice.Type == "arrears" {
+		return utility.NewConflictError("Item tagihan tunggakan tidak dapat diubah. Hapus tagihannya bila nominalnya salah.")
+	}
+	return nil
+}
+
 func (s *invoiceService) AddItem(invoiceID uint, req dto.AddInvoiceItemRequest) (*dto.InvoiceItemResponse, error) {
+	if err := s.rejectArrearsItemMutation(invoiceID); err != nil {
+		return nil, err
+	}
+
 	invoice, err := s.invoiceRepo.FindByID(invoiceID)
 	if err != nil {
 		return nil, errors.New("Invoice tidak ditemukan")
@@ -184,6 +443,10 @@ func (s *invoiceService) AddItem(invoiceID uint, req dto.AddInvoiceItemRequest) 
 }
 
 func (s *invoiceService) UpdateItem(invoiceID, itemID uint, req dto.UpdateInvoiceItemRequest) (*dto.InvoiceItemResponse, error) {
+	if err := s.rejectArrearsItemMutation(invoiceID); err != nil {
+		return nil, err
+	}
+
 	item, err := s.itemRepo.FindByID(itemID)
 	if err != nil || item.InvoiceID != invoiceID {
 		return nil, errors.New("Item tidak ditemukan pada invoice ini")
@@ -209,6 +472,10 @@ func (s *invoiceService) UpdateItem(invoiceID, itemID uint, req dto.UpdateInvoic
 }
 
 func (s *invoiceService) UpdateItemQuantity(invoiceID, itemID uint, req dto.UpdateInvoiceItemQuantityRequest) (*dto.InvoiceItemResponse, error) {
+	if err := s.rejectArrearsItemMutation(invoiceID); err != nil {
+		return nil, err
+	}
+
 	item, err := s.itemRepo.FindByID(itemID)
 	if err != nil || item.InvoiceID != invoiceID {
 		return nil, errors.New("Item tidak ditemukan pada invoice ini")
@@ -287,6 +554,10 @@ func (s *invoiceService) UpdateItemQuantity(invoiceID, itemID uint, req dto.Upda
 }
 
 func (s *invoiceService) DeleteItem(invoiceID, itemID uint) error {
+	if err := s.rejectArrearsItemMutation(invoiceID); err != nil {
+		return err
+	}
+
 	item, err := s.itemRepo.FindByID(itemID)
 	if err != nil || item.InvoiceID != invoiceID {
 		return errors.New("Item tidak ditemukan pada invoice ini")

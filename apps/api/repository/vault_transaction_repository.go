@@ -14,6 +14,9 @@ type VaultTransactionRepository interface {
 	CreateWithTx(vt *model.VaultTransaction, db *gorm.DB) error
 	SumFiltered(params dto.VaultTransactionQueryParams) (credit, debit float64, err error)
 	GetCurrentBalance(academicYearID uint) (float64, error)
+	// GetBalanceUpToDate menghitung saldo brangkas sampai akhir `date` (inklusif),
+	// sehingga laporan bertanggal lampau tidak memakai saldo hari ini.
+	GetBalanceUpToDate(academicYearID uint, date time.Time) (float64, error)
 	DeleteBySource(tx *gorm.DB, sourceType string, sourceID uint) error
 }
 
@@ -117,6 +120,27 @@ func (r *vaultTransactionRepository) SumFiltered(params dto.VaultTransactionQuer
 
 	err = query.Scan(&res).Error
 	return res.Credit, res.Debit, err
+}
+
+func (r *vaultTransactionRepository) GetBalanceUpToDate(academicYearID uint, date time.Time) (float64, error) {
+	type Result struct {
+		Credit float64
+		Debit  float64
+	}
+	var res Result
+
+	query := r.db.Model(&model.VaultTransaction{}).
+		Select("COALESCE(SUM(CASE WHEN transaction_type = 'debit' THEN amount ELSE 0 END), 0) as credit, COALESCE(SUM(CASE WHEN transaction_type = 'credit' THEN amount ELSE 0 END), 0) as debit")
+
+	if academicYearID != 0 {
+		query = query.Where("academic_year_id = ?", academicYearID)
+	}
+
+	endOfDay := time.Date(date.Year(), date.Month(), date.Day(), 23, 59, 59, 0, time.UTC)
+	if err := query.Where("transaction_date <= ?", endOfDay).Scan(&res).Error; err != nil {
+		return 0, err
+	}
+	return res.Credit - res.Debit, nil
 }
 
 func (r *vaultTransactionRepository) GetCurrentBalance(academicYearID uint) (float64, error) {

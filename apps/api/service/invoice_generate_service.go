@@ -2838,11 +2838,13 @@ func (s *invoiceGenerateService) RegenerateForStudent(studentID uint) error {
 		return fmt.Errorf("gagal menemukan tahun ajaran: %w", err)
 	}
 
-	// 4. Hapus semua invoice (initial, registration, monthly) untuk student+academic_year
+	// 4. Hapus semua invoice hasil generate (initial, registration, monthly) untuk
+	//    student+academic_year. Invoice yang diinput admin (arrears/manual) DIKECUALIKAN
+	//    — regenerate tidak boleh menghapus data yang bukan hasil generate.
 	//    Urutan: invoice_installments → invoice_items → invoices (FK constraint)
 	var invoiceIDs []uint
 	if err := s.db.Model(&model.Invoice{}).
-		Where("student_id = ? AND academic_year_id = ?", studentID, academicYearID).
+		Where("student_id = ? AND academic_year_id = ? AND type NOT IN (?)", studentID, academicYearID, []string{"arrears", "manual"}).
 		Pluck("id", &invoiceIDs).Error; err != nil {
 		return fmt.Errorf("gagal mengambil daftar invoice: %w", err)
 	}

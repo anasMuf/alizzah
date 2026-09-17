@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import {
 	CalendarDays,
@@ -16,11 +16,13 @@ import {
 } from "#/api/endpoints/fee-configs/fee-configs";
 import { usePutV1InvoicesIdItemsItemIdQuantity } from "#/api/endpoints/invoices/invoice-quantity";
 import {
+	useDeleteV1InvoicesId,
 	useDeleteV1InvoicesIdItemsItemId,
 	useGetV1InvoicesId,
 	useGetV1InvoicesIdInstallments,
 	usePostV1InvoicesIdInstallments,
 	usePostV1InvoicesIdItems,
+	usePutV1InvoicesId,
 	usePutV1InvoicesIdItemsItemId,
 } from "#/api/endpoints/invoices/invoices";
 import {
@@ -31,6 +33,11 @@ import {
 	SlideOver,
 	useToast,
 } from "#/components/ui";
+import { invoiceTypeLabel } from "#/features/keuangan/invoice-labels";
+import {
+	canDeleteManualInvoice,
+	isManualInvoiceType,
+} from "#/features/keuangan/manual-invoice";
 import { useProducts } from "#/features/koperasi/barang/api";
 import { academicYearAtom } from "../../../../store/global";
 import {
@@ -48,6 +55,7 @@ function DetailTagihanPage() {
 	const { id } = Route.useParams();
 	const queryClient = useQueryClient();
 	const { addToast } = useToast();
+	const navigate = useNavigate();
 	const [activeAy] = useAtom(academicYearAtom);
 
 	const { data: invoiceResp, isLoading } = useGetV1InvoicesId(Number(id));
@@ -65,6 +73,12 @@ function DetailTagihanPage() {
 	const [isAddItemOpen, setIsAddItemOpen] = useState(false);
 	const [editingItem, setEditingItem] = useState<any>(null);
 	const [deletingItem, setDeletingItem] = useState<any>(null);
+
+	// Aksi di level tagihan — hanya untuk tagihan manual (arrears/manual).
+	const [isEditInvoiceOpen, setIsEditInvoiceOpen] = useState(false);
+	const [editNotes, setEditNotes] = useState("");
+	const [editDueDate, setEditDueDate] = useState("");
+	const [isDeleteInvoiceOpen, setIsDeleteInvoiceOpen] = useState(false);
 
 	// Installments Management
 	const [isInstallmentOpen, setIsInstallmentOpen] = useState(false);
@@ -94,6 +108,7 @@ function DetailTagihanPage() {
 	// Sync guard — mencegah double-submit dalam <1ms sebelum isPending mutation berubah
 	const saveGuard = useRef(false);
 	const installmentGuard = useRef(false);
+	const invoiceActionGuard = useRef(false);
 
 	// Fetch fee config and items for dropdown
 	const { data: feeConfigsResp } = useGetV1FeeConfigs();
@@ -203,6 +218,23 @@ function DetailTagihanPage() {
 		editingItem,
 	]);
 
+	// Menyegarkan data yang terdampak perubahan nominal tagihan. Key detail siswa
+	// bersifat per-id (`/v1/students/:id`), sehingga `["/v1/students"]` saja tidak
+	// menjangkau kartu Total Tunggakan di halaman siswa.
+	const invalidateInvoiceAndStudent = () => {
+		queryClient.invalidateQueries({ queryKey: [`/v1/invoices/${id}`] });
+		queryClient.invalidateQueries({ queryKey: ["/v1/invoices"] });
+		const studentId = invoice?.student?.id;
+		if (studentId) {
+			queryClient.invalidateQueries({
+				queryKey: [`/v1/students/${studentId}`],
+			});
+			queryClient.invalidateQueries({
+				queryKey: [`/v1/students/${studentId}/invoices`],
+			});
+		}
+	};
+
 	const addItemMutation = usePostV1InvoicesIdItems({
 		mutation: {
 			onSuccess: () => {
@@ -212,7 +244,7 @@ function DetailTagihanPage() {
 					title: "Berhasil",
 					message: "Item berhasil ditambahkan.",
 				});
-				queryClient.invalidateQueries({ queryKey: [`/v1/invoices/${id}`] });
+				invalidateInvoiceAndStudent();
 				setIsAddItemOpen(false);
 			},
 			onError: (err: any) => {
@@ -235,7 +267,7 @@ function DetailTagihanPage() {
 					title: "Berhasil",
 					message: "Item berhasil diubah.",
 				});
-				queryClient.invalidateQueries({ queryKey: [`/v1/invoices/${id}`] });
+				invalidateInvoiceAndStudent();
 				setEditingItem(null);
 			},
 			onError: (err: any) => {
@@ -257,7 +289,7 @@ function DetailTagihanPage() {
 					title: "Berhasil",
 					message: "Item berhasil dihapus.",
 				});
-				queryClient.invalidateQueries({ queryKey: [`/v1/invoices/${id}`] });
+				invalidateInvoiceAndStudent();
 				setDeletingItem(null);
 			},
 			onError: (err: any) => {
@@ -281,7 +313,7 @@ function DetailTagihanPage() {
 						? "0 hari tersimpan — tagihan fasilitas bulan ini di-skip."
 						: "Jumlah hari/Senin berhasil diubah.",
 				});
-				queryClient.invalidateQueries({ queryKey: [`/v1/invoices/${id}`] });
+				invalidateInvoiceAndStudent();
 				setEditingItem(null);
 			},
 			onError: (err: any) => {
@@ -491,6 +523,53 @@ function DetailTagihanPage() {
 		});
 	};
 
+	// Aksi level tagihan (khusus tagihan manual)
+	const updateInvoiceMutation = usePutV1InvoicesId({
+		mutation: {
+			onSuccess: () => {
+				invoiceActionGuard.current = false;
+				addToast({
+					variant: "success",
+					title: "Berhasil",
+					message: "Keterangan tagihan berhasil diperbarui.",
+				});
+				invalidateInvoiceAndStudent();
+				setIsEditInvoiceOpen(false);
+			},
+			onError: (err: any) => {
+				invoiceActionGuard.current = false;
+				addToast({
+					variant: "error",
+					title: "Gagal",
+					message: err.message || "Gagal memperbarui keterangan tagihan.",
+				});
+			},
+		},
+	});
+
+	const deleteInvoiceMutation = useDeleteV1InvoicesId({
+		mutation: {
+			onSuccess: () => {
+				invoiceActionGuard.current = false;
+				addToast({
+					variant: "success",
+					title: "Berhasil",
+					message: "Tagihan berhasil dihapus.",
+				});
+				invalidateInvoiceAndStudent();
+				navigate({ to: "/keuangan/tagihan", search: {} as any });
+			},
+			onError: (err: any) => {
+				invoiceActionGuard.current = false;
+				addToast({
+					variant: "error",
+					title: "Gagal",
+					message: err.message || "Gagal menghapus tagihan.",
+				});
+			},
+		},
+	});
+
 	if (isLoading)
 		return (
 			<div className="p-8 text-center text-gray-500">
@@ -503,6 +582,28 @@ function DetailTagihanPage() {
 				Tagihan tidak ditemukan.
 			</div>
 		);
+
+	const isManualInvoice = isManualInvoiceType(invoice.type);
+	const canDeleteInvoice = canDeleteManualInvoice(
+		invoice.type,
+		Number(invoice.paid_amount),
+	);
+
+	const handleOpenEditInvoice = () => {
+		setEditNotes(invoice.notes ?? "");
+		setEditDueDate((invoice.due_date || "").split("T")[0]);
+		setIsEditInvoiceOpen(true);
+	};
+
+	const handleSaveEditInvoice = (e: React.FormEvent) => {
+		e.preventDefault();
+		if (invoiceActionGuard.current || updateInvoiceMutation.isPending) return;
+		invoiceActionGuard.current = true;
+		updateInvoiceMutation.mutate({
+			id: Number(id),
+			data: { notes: editNotes, due_date: editDueDate },
+		});
+	};
 
 	const totalAmount = Number(invoice.total_amount);
 	const paidAmount = Number(invoice.paid_amount);
@@ -582,16 +683,7 @@ function DetailTagihanPage() {
 		);
 	};
 
-	const translateType = (type: string) => {
-		const map: Record<string, string> = {
-			monthly: "Bulanan",
-			registration: "Registrasi Tahunan",
-			initial: "Biaya Awal",
-			daycare_initial: "Biaya Awal Daycare",
-			incidental: "Insidental",
-		};
-		return map[type] || type;
-	};
+	const translateType = (type: string) => invoiceTypeLabel(type);
 
 	const getStatusText = (status: string) => {
 		if (status === "paid")
@@ -808,6 +900,20 @@ function DetailTagihanPage() {
 					<Button variant="secondary" onClick={handlePrint}>
 						<Printer className="w-4 h-4 mr-2" /> Cetak Tagihan
 					</Button>
+					{isManualInvoice && (
+						<Button variant="secondary" onClick={handleOpenEditInvoice}>
+							<Edit2 className="w-4 h-4 mr-2" /> Edit Keterangan
+						</Button>
+					)}
+					{canDeleteInvoice && (
+						<Button
+							variant="secondary"
+							className="text-rose-700 border-rose-200 hover:bg-rose-50"
+							onClick={() => setIsDeleteInvoiceOpen(true)}
+						>
+							<Trash2 className="w-4 h-4 mr-2" /> Hapus Tagihan
+						</Button>
+					)}
 					{invoice.status !== "paid" && (
 						<Link
 							to="/keuangan/pembayaran/baru"
@@ -1475,6 +1581,88 @@ function DetailTagihanPage() {
 					tagihan ini?
 				</p>
 				<p className="mt-2 text-sm text-gray-500">
+					Tindakan ini tidak dapat dibatalkan.
+				</p>
+			</ConfirmDialog>
+
+			<SlideOver
+				isOpen={isEditInvoiceOpen}
+				onClose={() => setIsEditInvoiceOpen(false)}
+				title="Edit Keterangan Tagihan"
+				footer={
+					<>
+						<Button
+							type="button"
+							variant="secondary"
+							onClick={() => setIsEditInvoiceOpen(false)}
+							disabled={updateInvoiceMutation.isPending}
+						>
+							Batal
+						</Button>
+						<Button
+							type="button"
+							variant="primary"
+							onClick={handleSaveEditInvoice}
+							disabled={updateInvoiceMutation.isPending}
+						>
+							{updateInvoiceMutation.isPending ? "Menyimpan..." : "Simpan"}
+						</Button>
+					</>
+				}
+			>
+				<form onSubmit={handleSaveEditInvoice} className="space-y-6">
+					<div>
+						<label
+							htmlFor="edit-invoice-notes"
+							className="block text-sm font-medium leading-6 text-gray-900"
+						>
+							Keterangan
+							{invoice.type === "arrears" && (
+								<span className="text-red-500"> *</span>
+							)}
+						</label>
+						<textarea
+							id="edit-invoice-notes"
+							rows={3}
+							value={editNotes}
+							onChange={(e) => setEditNotes(e.target.value)}
+							className="mt-2 block w-full rounded-md border-0 py-2 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
+						/>
+						{invoice.type === "arrears" && (
+							<p className="mt-1 text-xs text-gray-500">
+								Keterangan wajib diisi untuk tagihan tunggakan.
+							</p>
+						)}
+					</div>
+
+					<FormField
+						id="edit-invoice-due-date"
+						type="date"
+						label="Jatuh Tempo (opsional)"
+						value={editDueDate}
+						onChange={(e) => setEditDueDate(e.target.value)}
+					/>
+				</form>
+			</SlideOver>
+
+			<ConfirmDialog
+				open={isDeleteInvoiceOpen}
+				onCancel={() => setIsDeleteInvoiceOpen(false)}
+				onConfirm={() => {
+					if (invoiceActionGuard.current) return;
+					invoiceActionGuard.current = true;
+					deleteInvoiceMutation.mutate({ id: Number(id) });
+				}}
+				title="Hapus Tagihan"
+				variant="danger"
+				confirmLabel="Hapus Tagihan"
+			>
+				<p>
+					Apakah Anda yakin ingin menghapus tagihan ini senilai{" "}
+					<strong>{formatCurrency(totalAmount)}</strong>?
+				</p>
+				<p className="mt-2 text-sm text-gray-500">
+					Tagihan yang dihapus tidak lagi dihitung sebagai tunggakan siswa.
 					Tindakan ini tidak dapat dibatalkan.
 				</p>
 			</ConfirmDialog>

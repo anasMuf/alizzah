@@ -66,7 +66,7 @@ func (r *reportRepository) SumInvoiceByCategory(academicYearID uint, month, year
 	var results []dto.BilledVsPaid
 
 	query := r.db.Table("invoice_items ii").
-		Select("ii.category, SUM(ii.amount) as billed, SUM(ii.paid_amount) as paid").
+		Select(invoiceCategoryPosExpr+" as category, SUM(ii.amount) as billed, SUM(ii.paid_amount) as paid").
 		Joins("JOIN invoices i ON i.id = ii.invoice_id").
 		Where("ii.deleted_at IS NULL AND i.deleted_at IS NULL AND i.academic_year_id = ?", academicYearID)
 
@@ -82,7 +82,7 @@ func (r *reportRepository) SumInvoiceByCategory(academicYearID uint, month, year
 		query = query.Where(monthlyVisibilityCond("i"))
 	}
 
-	err := query.Group("ii.category").Scan(&results).Error
+	err := query.Group(invoiceCategoryPosExpr).Scan(&results).Error
 	return results, err
 }
 
@@ -218,7 +218,8 @@ func (r *reportRepository) GetStudentsByClassGroupForMonth(classGroupID uint, mo
 	return results, err
 }
 
-// SumPenerimaanByInvoiceCategory: total payment_items grouped by invoice_items.category
+// SumPenerimaanByInvoiceCategory: total payment_items grouped by pos item
+// (lihat invoiceCategoryPosExpr — item dispensasi dialihkan ke pos asalnya).
 func (r *reportRepository) SumPenerimaanByInvoiceCategory(academicYearID uint, startDate, endDate time.Time) (map[string]float64, error) {
 	type row struct {
 		Category string
@@ -226,16 +227,12 @@ func (r *reportRepository) SumPenerimaanByInvoiceCategory(academicYearID uint, s
 	}
 	var rows []row
 
-	// Item dispensasi (kategori "dispensation", amount negatif) dialihkan ke pos
-	// asalnya lewat offset_category agar potongan mengurangi pos yang benar,
-	// bukan berdiri sebagai bucket "dispensation" yang tidak ditampilkan.
-	catExpr := "CASE WHEN ii.category = 'dispensation' AND COALESCE(ii.offset_category,'') <> '' THEN ii.offset_category ELSE ii.category END"
 	err := r.db.Table("payment_items pi").
-		Select(catExpr+" as category, SUM(pi.amount) as total").
+		Select(invoiceCategoryPosExpr+" as category, SUM(pi.amount) as total").
 		Joins("JOIN invoice_items ii ON ii.id = pi.invoice_item_id").
 		Joins("JOIN payments p ON p.id = pi.payment_id").
 		Where("pi.deleted_at IS NULL AND ii.deleted_at IS NULL AND p.deleted_at IS NULL AND p.academic_year_id = ? AND p.payment_date BETWEEN ? AND ?", academicYearID, startDate, endDate).
-		Group(catExpr).
+		Group(invoiceCategoryPosExpr).
 		Scan(&rows).Error
 
 	result := make(map[string]float64)

@@ -167,6 +167,14 @@ Logika pemilihan tarif + filter level/gender **diekstrak** dari `tagihan/$id.tsx
 
 Karena invoice dimiliki TA asal sementara pembayaran dicatat di TA aktif: laporan TA lampau akan menunjukkan **"tagihan" naik tanpa "terbayar" naik** (payment rate turun), dan laporan TA aktif menunjukkan **"terbayar" naik tanpa "tagihan" pendamping** (payment rate bisa >100%). Ini konsekuensi tak terhindarkan dari backfill historis + kas periode berjalan. Keputusan: **diterima apa adanya** (cash-basis); tidak ada penandaan/pemisahan khusus di laporan pada epik ini.
 
+### 3g. Pos Kategori Tunggakan (Task 11)
+
+Pembayaran tunggakan dikelompokkan sebagai pos **"Tunggakan"** karena server memaksa `invoice_items.category = 'arrears'` untuk `type=arrears` (`invoice_service.go`), sehingga kategori tarif asalnya tidak tersimpan. Konsekuensinya laporan **tidak dapat** memisahkan "tunggakan SPP" dari SPP tahun berjalan — keduanya berada di pos yang berbeda (`arrears` vs `monthly_spp`), bukan digabung.
+
+Pos ini muncul di Posisi Kas, Saldo, laporan tahunan, laporan harian, dan ringkasan `/keuangan`; **tidak** muncul di laporan bulanan karena tunggakan `month`-nya NULL (difilter `i.month = ?`).
+
+Label dan urutan pos diatur di `invoiceCategoryLabels`/`invoiceCategoryOrder` (`report_service.go`); `TestInvoiceCategoryLabelsCoverOrder` menjaga agar kategori baru tidak tampil mentah. Perbaikan ini **tidak** mengubah angka apa pun — hanya keterbacaannya. Menggabungkan pos tunggakan ke SPP adalah keputusan akuntansi terpisah yang belum diambil (lihat Catatan Implementasi Task 11).
+
 ## 4. Edge Cases
 
 - `type=arrears` dengan `items` ≠ 1 → tolak 422

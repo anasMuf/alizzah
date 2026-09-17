@@ -175,9 +175,9 @@ Karena invoice dimiliki TA asal sementara pembayaran dicatat di TA aktif: lapora
 - `student_id` atau `academic_year_id` tidak eksis → tolak 404/422 dengan pesan jelas
 - Hapus invoice yang salah satu itemnya sudah ada `payment_item` → **409**, bukan partial delete
 - Hapus invoice hasil generate (`monthly`/`initial`/`registration`/`graduation`/`daycare_initial`/`incidental`) → **409**
-- Tunggakan di TA yang **sama** dengan TA aktif → **tidak lagi mungkin** sejak Task 9 (mode total hanya untuk TA lain). Beban non-tarif di TA aktif dilayani lewat `incidental_items` saat pembayaran.
-- TA aktif **tanpa** konfigurasi tarif → kedua mode tidak sah; form diblokir dengan sebab + tautan Pengaturan Tarif (Task 9).
-- `academic_year_id` yang dikirim ≠ TA aktif untuk `type=arrears` → sah (memang tujuan utamanya); tidak ada validasi kesamaan TA
+- Tunggakan di TA yang **sama** dengan TA aktif → ditolak server **422** (Task 9 menutupnya di UI, Task 10 menegakkannya di server). Beban non-tarif di TA aktif dilayani lewat `incidental_items` saat pembayaran.
+- TA aktif **tanpa** item tarif aktif → kedua mode ditolak server **422**; UI memblokir form dengan sebab + tautan Pengaturan Tarif (Task 9/Task 10).
+- `academic_year_id` untuk `type=arrears` → **wajib** bukan TA aktif (`type=manual` wajib TA aktif bertarif), ditegakkan server sejak Task 10
 - Pembayaran lintas-TA: invoice TA lampau dibayar saat TA aktif → `payment.academic_year_id` = TA aktif, `payment_item.invoice_item_id` menunjuk TA lampau
 - `RegenerateForStudent` dipanggil saat ada invoice `arrears`/`manual` → keduanya **tetap utuh**
 - Invoice `arrears` dengan `month`/`year` NULL tidak terkena `monthlyVisibilityCond`
@@ -201,6 +201,7 @@ Karena invoice dimiliki TA asal sementara pembayaran dicatat di TA aktif: lapora
 - **R.10**: `SumUnpaidByStudent` **tetap tanpa filter TA** sehingga kartu "Total Tunggakan" mencakup tunggakan lintas TA.
 - **R.11**: `translateType` menampilkan label untuk `arrears` ("Tunggakan") dan `manual` ("Manual") di **semua** lokasi pemakaiannya.
 - **R.12**: Semua route baru memakai `RequireModule(ModuleKeuangan)`.
+- **R.13** *(Task 10)*: `POST /v1/invoices` **menegakkan kesesuaian mode dengan TA di server** — `arrears` ditolak 422 bila TA terpilih adalah TA aktif; `manual` ditolak 422 bila TA bukan TA aktif atau TA tersebut tidak punya item tarif aktif. Redaksi pesan identik dengan `modeAvailability` di klien. Validasi klien (Task 9) tetap ada sebagai lapis pertama; server adalah lapis kedua.
 
 ## 6. Success Criteria (MUST ALL BE TRUE)
 
@@ -234,6 +235,8 @@ Semua kriteria backend di bawah diverifikasi end-to-end pada 2026-09-17 — liha
 - ❌ **NO** mengizinkan `DELETE /v1/invoices/:id` menghapus invoice hasil generate (itu tugas `RegenerateForStudent`)
 - ❌ **NO** ~~mengunci mode form murni pada kecocokan TA tanpa escape hatch~~ — **DIBATALKAN oleh Task 9**: escape hatch justru dicabut atas keputusan produk (Q3=C), karena mode rinci memang bergantung pada tarif milik TA terpilih
 - ❌ **NO** mengaktifkan tombol mode yang tidak sah untuk TA terpilih (Task 9: tombol wajib disabled dengan sebab tertulis, bukan hanya divalidasi saat submit)
+- ❌ **NO** mengandalkan validasi klien sebagai satu-satunya penjaga aturan mode-vs-TA (Task 10: server wajib menolak `arrears` di TA aktif dan `manual` di TA non-aktif/tanpa tarif dengan 422)
+- ❌ **NO** memakai `FeeConfigRepository.FindByAcademicYearID` untuk menentukan "punya tarif" di server tanpa menyaring `is_active` — klien hanya melihat item aktif (`FindAll`), jadi definisinya harus identik agar UI dan API tidak berbeda pendapat
 - ❌ **NO** menulis ulang logika pemilihan tarif/filter level-gender (ekstrak dari `tagihan/$id.tsx:99-155`)
 - ❌ **NO** memperbaiki bug pre-existing `DELETE FROM payment_items` di `RegenerateForStudent:2852` (scope terpisah — lihat §8)
 - ❌ **NO** mengubah `academic_year_id` invoice menjadi TA aktif saat dibayar — invoice tetap milik TA asal (R.9)
@@ -269,7 +272,7 @@ Semua kriteria backend di bawah diverifikasi end-to-end pada 2026-09-17 — liha
 | Q7: Guard `RegenerateForStudent` | **A** — kecualikan `arrears`/`manual` | 1 baris pada `invoice_generate_service.go:2844-2846`; mencegah kehilangan data |
 | Q8: Isi section tunggakan | **A** — semua tagihan belum lunas dari TA lain | Lebih jujur: tunggakan = apa pun yang belum dibayar, termasuk `monthly` lama |
 | Q9: Perlakuan di laporan | **A** — terima apa adanya (cash-basis) | Nol pekerjaan tambahan di modul laporan |
-| Q10: Validasi mode vs TA (Task 9) | **1A + 2A + 3C + 4A** | Mode jadi ditentukan mutlak oleh TA; TA tanpa tarif diblokir total. Menggantikan Q6 |
+| Q10: Validasi mode vs TA (Task 9) | **1A + 2A + 3C + 4A** | Mode jadi ditentukan mutlak oleh TA; TA tanpa tarif diblokir total. Menggantikan Q6. **Task 10** menaikkan penegakan ini ke server (R.13) |
 
 ### Research Deep-Dives
 

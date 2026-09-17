@@ -51,7 +51,11 @@ Konsekuensi yang diterima secara sadar (Q10/3C mencabut escape hatch Q6):
 | `apps/dashboard/src/features/keuangan/components/ManualInvoiceForm.tsx` | **Ubah** — tombol mode disabled + sebab, banner blokir + tautan, Simpan nonaktif |
 | `apps/docs/epics/tagihan-tunggakan-backfill.md` | **Ubah** — amendemen R.4, R.4b, R.4c, anti-pattern, edge case, Q10 |
 
-**Tidak ada perubahan backend.** Batasan ini murni aturan UI; server tetap menerima kedua type (R.5/R.6 tidak berubah).
+**Tidak ada perubahan backend** pada Task 9 ini. Batasan ini murni aturan UI (R.5/R.6 tidak berubah di sini).
+
+> **⚠️ DI-SUPERSEDED oleh [Task 10](./task-10-penegakan-mode-ta-backend.md):** server kini
+> juga menegakkan kesesuaian mode-vs-TA (R.13). Aturan UI di Task 9 tetap berlaku
+> sebagai lapis pertama; server menjadi lapis kedua.
 
 ## Step 2: Implementation Checklist
 
@@ -119,4 +123,4 @@ Tanpa gate itu, memilih TA aktif akan menampilkan banner "belum punya konfiguras
 ### Verifikasi yang BELUM dijalankan
 
 - Verifikasi browser untuk keempat kombinasi TA × mode. Butuh server + PostgreSQL + minimal satu TA lampau dan satu TA aktif tanpa tarif (yang terakhir perlu menyiapkan TA baru agar tidak punya tarif).
-- Catatan: verifikasi HTTP+DB atas alur backend sudah selesai dan menegaskan baris 54 — server memang menerima kedua type tanpa memeriksa kecocokan TA. Lihat [Verifikasi E2E](./verifikasi-e2e-tagihan-tunggakan.md).
+- Catatan: penegakan server atas aturan ini dikerjakan di [Task 10](./task-10-penegakan-mode-ta-backend.md) — lihat juga [Verifikasi E2E](./verifikasi-e2e-tagihan-tunggakan.md) untuk celah yang ditemukan pada verifikasi pertama.

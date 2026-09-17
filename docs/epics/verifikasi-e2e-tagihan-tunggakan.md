@@ -110,17 +110,18 @@ semuanya **selamat** dengan id yang sama; jumlahnya tidak berubah (3 → 3).
 
 ## Temuan
 
-### T1. Penegakan mode-vs-TA hanya di klien (batasan terdokumentasi, bukan bug)
+### T1. Penegakan mode-vs-TA hanya di klien — **DITUTUP oleh [Task 10](./task-10-penegakan-mode-ta-backend.md)**
 
-`POST /v1/invoices` **menerima** `arrears` untuk TA aktif (HTTP 201) dan `manual`
-untuk TA lampau (HTTP 201) — keduanya ditolak oleh aturan UI di
-`manual-invoice.ts`. Ini **disengaja** dan tercatat di
-[Task 9](./task-9-validasi-mode-tahun-ajaran.md) baris 54: *"Tidak ada perubahan
-backend. Batasan ini murni aturan UI; server tetap menerima kedua type."*
+Saat verifikasi pertama (2026-09-17), `POST /v1/invoices` **menerima** `arrears`
+untuk TA aktif (HTTP 201) dan `manual` untuk TA lampau (HTTP 201) — keduanya ditolak
+oleh aturan UI di `manual-invoice.ts`. Itu disengaja dan tercatat di
+[Task 9](./task-9-validasi-mode-tahun-ajaran.md): aturan murni UI.
 
-Konsekuensi: klien lain atau panggilan API langsung bisa membuat kombinasi yang
-tidak konsisten dengan aturan produk. Tidak ditindaklanjuti di sini karena
-mengubahnya berarti mengubah kontrak epik — perlu keputusan produk terpisah.
+Celah itu kemudian ditutup: server kini menegakkan aturan yang sama (R.13). Keempat
+kombinasi diverifikasi ulang lewat HTTP terhadap binary baru — `arrears` di TA aktif
+dan `manual` di TA lampau sekarang **422** dengan pesan identik klien, sementara
+alur sah (`manual` di TA aktif bertarif, `arrears` di TA lampau) tetap **201**.
+Detail: [Task 10](./task-10-penegakan-mode-ta-backend.md).
 
 ### T2. Verifikasi browser belum dijalankan
 
@@ -134,4 +135,5 @@ otomatis di lingkungan ini. Aturan UI sudah diuji unit; sisanya adalah tampilan.
 - [ ] Verifikasi browser: TA aktif bertarif → Rinci aktif & Total disabled;
       TA lampau → Total aktif & Rinci disabled dengan sebab; TA aktif tanpa tarif →
       banner blokir + Simpan nonaktif; siswa tanpa enrollment → peringatan level.
-- [ ] Keputusan produk: apakah penegakan mode-vs-TA perlu naik ke backend (T1).
+- [x] Keputusan produk: penegakan mode-vs-TA dinaikkan ke backend — **selesai** di
+      [Task 10](./task-10-penegakan-mode-ta-backend.md).

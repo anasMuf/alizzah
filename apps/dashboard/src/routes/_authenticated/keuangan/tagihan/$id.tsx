@@ -218,6 +218,23 @@ function DetailTagihanPage() {
 		editingItem,
 	]);
 
+	// Menyegarkan data yang terdampak perubahan nominal tagihan. Key detail siswa
+	// bersifat per-id (`/v1/students/:id`), sehingga `["/v1/students"]` saja tidak
+	// menjangkau kartu Total Tunggakan di halaman siswa.
+	const invalidateInvoiceAndStudent = () => {
+		queryClient.invalidateQueries({ queryKey: [`/v1/invoices/${id}`] });
+		queryClient.invalidateQueries({ queryKey: ["/v1/invoices"] });
+		const studentId = invoice?.student?.id;
+		if (studentId) {
+			queryClient.invalidateQueries({
+				queryKey: [`/v1/students/${studentId}`],
+			});
+			queryClient.invalidateQueries({
+				queryKey: [`/v1/students/${studentId}/invoices`],
+			});
+		}
+	};
+
 	const addItemMutation = usePostV1InvoicesIdItems({
 		mutation: {
 			onSuccess: () => {
@@ -227,7 +244,7 @@ function DetailTagihanPage() {
 					title: "Berhasil",
 					message: "Item berhasil ditambahkan.",
 				});
-				queryClient.invalidateQueries({ queryKey: [`/v1/invoices/${id}`] });
+				invalidateInvoiceAndStudent();
 				setIsAddItemOpen(false);
 			},
 			onError: (err: any) => {
@@ -250,7 +267,7 @@ function DetailTagihanPage() {
 					title: "Berhasil",
 					message: "Item berhasil diubah.",
 				});
-				queryClient.invalidateQueries({ queryKey: [`/v1/invoices/${id}`] });
+				invalidateInvoiceAndStudent();
 				setEditingItem(null);
 			},
 			onError: (err: any) => {
@@ -272,7 +289,7 @@ function DetailTagihanPage() {
 					title: "Berhasil",
 					message: "Item berhasil dihapus.",
 				});
-				queryClient.invalidateQueries({ queryKey: [`/v1/invoices/${id}`] });
+				invalidateInvoiceAndStudent();
 				setDeletingItem(null);
 			},
 			onError: (err: any) => {
@@ -296,7 +313,7 @@ function DetailTagihanPage() {
 						? "0 hari tersimpan — tagihan fasilitas bulan ini di-skip."
 						: "Jumlah hari/Senin berhasil diubah.",
 				});
-				queryClient.invalidateQueries({ queryKey: [`/v1/invoices/${id}`] });
+				invalidateInvoiceAndStudent();
 				setEditingItem(null);
 			},
 			onError: (err: any) => {
@@ -516,8 +533,7 @@ function DetailTagihanPage() {
 					title: "Berhasil",
 					message: "Keterangan tagihan berhasil diperbarui.",
 				});
-				queryClient.invalidateQueries({ queryKey: [`/v1/invoices/${id}`] });
-				queryClient.invalidateQueries({ queryKey: ["/v1/students"] });
+				invalidateInvoiceAndStudent();
 				setIsEditInvoiceOpen(false);
 			},
 			onError: (err: any) => {
@@ -540,8 +556,7 @@ function DetailTagihanPage() {
 					title: "Berhasil",
 					message: "Tagihan berhasil dihapus.",
 				});
-				queryClient.invalidateQueries({ queryKey: ["/v1/invoices"] });
-				queryClient.invalidateQueries({ queryKey: ["/v1/students"] });
+				invalidateInvoiceAndStudent();
 				navigate({ to: "/keuangan/tagihan", search: {} as any });
 			},
 			onError: (err: any) => {

@@ -206,12 +206,26 @@ export function ManualInvoiceForm({
 	const quantityBased = isQuantityBasedUnit(selectedFeeItem?.unit);
 	const itemizedTotal = sumDraftAmounts(itemRows);
 
-	const handleSelectStudent = (student: any) => {
-		setSelectedStudent(student);
-		// Item rinci bergantung pada level/gender siswa — mulai ulang bila siswa berganti.
+	// Isian yang bergantung pada konteks (siswa/TA) — dikosongkan saat konteks
+	// berganti supaya nominal & keterangan lama tidak tersubmit ke siswa/TA lain.
+	const clearDraftInputs = () => {
 		setItemRows([]);
 		setSelectedFeeItemId("");
 		setQuantity("");
+		setTotalAmount(0);
+		setNotes("");
+	};
+
+	const handleSelectStudent = (student: any) => {
+		setSelectedStudent(student);
+		// Item rinci bergantung pada level/gender siswa — mulai ulang bila siswa berganti.
+		clearDraftInputs();
+	};
+
+	const handleSelectAcademicYear = (value: string) => {
+		setAcademicYearId(value === "" ? undefined : Number(value));
+		// Tarif berbeda per TA — item & nominal ikut dikosongkan, bukan hanya mode.
+		clearDraftInputs();
 	};
 
 	const handleAddItem = () => {
@@ -265,8 +279,19 @@ export function ManualInvoiceForm({
 					message: "Tagihan berhasil dibuat.",
 				});
 				// Daftar tagihan & detail siswa (total tunggakan) ikut berubah.
+				// Key detail siswa bersifat per-id (`/v1/students/:id`), sehingga
+				// `["/v1/students"]` saja tidak menjangkau kartu Total Tunggakan.
 				queryClient.invalidateQueries({ queryKey: ["/v1/invoices"] });
 				queryClient.invalidateQueries({ queryKey: ["/v1/students"] });
+				const studentId = selectedStudent?.id;
+				if (studentId) {
+					queryClient.invalidateQueries({
+						queryKey: [`/v1/students/${studentId}`],
+					});
+					queryClient.invalidateQueries({
+						queryKey: [`/v1/students/${studentId}/invoices`],
+					});
+				}
 				onClose();
 				onSuccess?.();
 			},
@@ -374,7 +399,7 @@ export function ManualInvoiceForm({
 					<select
 						id="manual-invoice-ay"
 						value={academicYearId ?? ""}
-						onChange={(e) => setAcademicYearId(Number(e.target.value))}
+						onChange={(e) => handleSelectAcademicYear(e.target.value)}
 						className="mt-2 block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
 					>
 						<option value="">— Pilih tahun ajaran —</option>

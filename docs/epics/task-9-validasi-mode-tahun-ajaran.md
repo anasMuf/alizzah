@@ -90,7 +90,7 @@ State test dirapikan: `baseState` kini menggambarkan TA lampau (mode total sah),
 - [x] `npx tsc --noEmit` bersih
 - [x] `npx biome check src` — 71 warning (tidak bertambah), tidak ada diagnostik baru
 - [x] `pnpm build` sukses
-- [ ] Verifikasi browser: memilih TA aktif bertarif → Rinci aktif & Total disabled; memilih TA lampau → Total aktif & Rinci disabled + sebab; TA aktif tanpa tarif → banner blokir + Simpan nonaktif — **belum dijalankan**
+- [ ] Verifikasi browser: memilih TA aktif bertarif → Rinci aktif & Total disabled; memilih TA lampau → Total aktif & Rinci disabled + sebab; TA aktif tanpa tarif → banner blokir + Simpan nonaktif — **belum dijalankan** (aturan UI-nya sendiri sudah lulus unit test)
 
 ## Success Criteria
 
@@ -100,7 +100,7 @@ State test dirapikan: `baseState` kini menggambarkan TA lampau (mode total sah),
 - [x] Kesesuaian mode divalidasi di submit sebagai pertahanan lapis kedua
 - [x] Tidak ada perubahan backend
 - [x] 14 test baru lulus, typecheck bersih, build sukses
-- [ ] Verifikasi browser end-to-end — belum dijalankan
+- [ ] Verifikasi browser end-to-end — belum dijalankan. Verifikasi HTTP+DB atas seluruh alur invoice manual/tunggakan sudah dilakukan; lihat [Verifikasi E2E](./verifikasi-e2e-tagihan-tunggakan.md). Penegakan mode-vs-TA memang sengaja hanya di klien (baris 54 di atas), terkonfirmasi oleh e2e.
 
 ## Catatan Implementasi
 
@@ -119,3 +119,4 @@ Tanpa gate itu, memilih TA aktif akan menampilkan banner "belum punya konfiguras
 ### Verifikasi yang BELUM dijalankan
 
 - Verifikasi browser untuk keempat kombinasi TA × mode. Butuh server + PostgreSQL + minimal satu TA lampau dan satu TA aktif tanpa tarif (yang terakhir perlu menyiapkan TA baru agar tidak punya tarif).
+- Catatan: verifikasi HTTP+DB atas alur backend sudah selesai dan menegaskan baris 54 — server memang menerima kedua type tanpa memeriksa kecocokan TA. Lihat [Verifikasi E2E](./verifikasi-e2e-tagihan-tunggakan.md).

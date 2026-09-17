@@ -204,20 +204,24 @@ Karena invoice dimiliki TA asal sementara pembayaran dicatat di TA aktif: lapora
 
 ## 6. Success Criteria (MUST ALL BE TRUE)
 
-- [ ] Unit test service create: `total_amount` = jumlah item (server-side); `type=arrears` dengan ≠ 1 item ditolak; `items` kosong ditolak; `amount <= 0` ditolak
-- [ ] Unit test guard delete: invoice `arrears`/`manual` tanpa pembayaran terhapus; invoice hasil generate ditolak; invoice dengan pembayaran ditolak
-- [ ] Unit test regenerate: invoice `arrears`/`manual` **tidak** terhapus oleh `RegenerateForStudent`, invoice hasil generate terhapus
-- [ ] Integration test: POST → GET (`/v1/invoices/:id`) → DELETE roundtrip berhasil; DELETE pada invoice yang sudah dibayar → 409
-- [ ] Integration test: bayar invoice `arrears` TA lampau saat TA aktif → `payment.academic_year_id` = TA aktif, status invoice berubah `partial`/`paid`
-- [ ] Integration test: `GET /v1/students/:id/invoices` tanpa `academic_year_id` mengembalikan invoice lintas TA
-- [ ] `useGetV1StudentsIdInvoices` dipanggil tanpa `academic_year_id` memberikan invoice TA lain beserta `academic_year.name` (label TA asal tersedia)
-- [ ] UI: form "Tambah Tagihan" dapat dibuka dari **daftar Tagihan** dan **detail siswa**; mode berpindah otomatis saat TA diubah dan dapat diubah manual; total pada mode Rinci terhitung otomatis
-- [ ] UI: section "Tunggakan Tahun Ajaran Lain" tampil di daftar tagihan siswa dan di kasir; tagihan darinya dapat dicentang, dialokasikan, dan dibayar
-- [ ] UI: setelah menyimpan tagihan, `useGetV1StudentsId` ikut ter-invalidate (agar kartu "Total Tunggakan" tidak basi)
-- [ ] `go build ./...` di `apps/api` sukses
-- [ ] `pnpm build` & `pnpm lint` di `apps/dashboard` sukses
-- [ ] Swagger di-regenerate (`swag init`) dan client Orval di-generate ulang
-- [ ] Pre-commit hooks passing
+Semua kriteria backend di bawah diverifikasi end-to-end pada 2026-09-17 — lihat
+[Verifikasi E2E](./verifikasi-e2e-tagihan-tunggakan.md) untuk bukti lengkap
+(27 asersi terhadap binary HEAD di atas salinan database).
+
+- [x] Unit test service create: `total_amount` = jumlah item (server-side); `type=arrears` dengan ≠ 1 item ditolak; `items` kosong ditolak; `amount <= 0` ditolak
+- [x] Unit test guard delete: invoice `arrears`/`manual` tanpa pembayaran terhapus; invoice hasil generate ditolak; invoice dengan pembayaran ditolak
+- [x] Unit test regenerate: invoice `arrears`/`manual` **tidak** terhapus oleh `RegenerateForStudent`, invoice hasil generate terhapus
+- [x] Integration test: POST → GET (`/v1/invoices/:id`) → DELETE roundtrip berhasil; DELETE pada invoice yang sudah dibayar → 409
+- [x] Integration test: bayar invoice `arrears` TA lampau saat TA aktif → `payment.academic_year_id` = TA aktif, status invoice berubah `partial`/`paid`
+- [x] Integration test: `GET /v1/students/:id/invoices` tanpa `academic_year_id` mengembalikan invoice lintas TA
+- [ ] `useGetV1StudentsIdInvoices` dipanggil tanpa `academic_year_id` memberikan invoice TA lain beserta `academic_year.name` (label TA asal tersedia) — respons API sudah diverifikasi memuat objek `academic_year`; panggilan hook-nya sendiri belum diverifikasi di browser
+- [ ] UI: form "Tambah Tagihan" dapat dibuka dari **daftar Tagihan** dan **detail siswa**; mode berpindah otomatis saat TA diubah dan dapat diubah manual; total pada mode Rinci terhitung otomatis — logika murni lulus unit test; verifikasi browser belum dijalankan
+- [ ] UI: section "Tunggakan Tahun Ajaran Lain" tampil di daftar tagihan siswa dan di kasir; tagihan darinya dapat dicentang, dialokasikan, dan dibayar — logika murni lulus unit test; verifikasi browser belum dijalankan
+- [ ] UI: setelah menyimpan tagihan, `useGetV1StudentsId` ikut ter-invalidate (agar kartu "Total Tunggakan" tidak basi) — belum diverifikasi di browser
+- [x] `go build ./...` di `apps/api` sukses
+- [x] `pnpm build` & `pnpm lint` di `apps/dashboard` sukses
+- [ ] Swagger di-regenerate (`swag init`) dan client Orval di-generate ulang — Swagger sudah; client Orval masih tertunda (lihat §8)
+- [x] Pre-commit hooks passing
 
 ## 7. Anti-Patterns (FORBIDDEN)
 

@@ -239,16 +239,17 @@ func (r *cashTransactionRepository) GetTodaySummary(academicYearID uint) (credit
 
 func (r *cashTransactionRepository) SumByCategory(academicYearID uint, start, end time.Time) ([]dto.CategoryAmount, error) {
 	var results []dto.CategoryAmount
-	// Penerimaan dari pembayaran invoice, per kategori pos.
+	// Penerimaan dari pembayaran invoice, per pos. Item dispensasi dialihkan ke
+	// pos asalnya (invoiceCategoryPosExpr) agar konsisten dengan Posisi Kas.
 	// .Table() melewati soft-delete scope GORM, jadi filter deleted_at eksplisit.
 	err := r.db.
 		Table("payment_items pi").
-		Select("ii.category as category, SUM(pi.amount) as amount").
+		Select(invoiceCategoryPosExpr+" as category, SUM(pi.amount) as amount").
 		Joins("JOIN invoice_items ii ON ii.id = pi.invoice_item_id").
 		Joins("JOIN payments p ON p.id = pi.payment_id").
 		Where("pi.deleted_at IS NULL AND ii.deleted_at IS NULL AND p.deleted_at IS NULL AND p.academic_year_id = ? AND p.payment_date BETWEEN ? AND ?",
 			academicYearID, start, end).
-		Group("ii.category").
+		Group(invoiceCategoryPosExpr).
 		Scan(&results).Error
 	if err != nil {
 		return nil, err

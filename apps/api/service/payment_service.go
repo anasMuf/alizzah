@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type PaymentService interface {
@@ -145,6 +146,37 @@ func (s *paymentService) Create(createdBy uint, req dto.CreatePaymentRequest) (*
 // createInTx menjalankan seluruh logika pembuatan pembayaran di dalam transaksi yang sudah ada.
 // Dipanggil dari Create() maupun Update() (setelah reverse payment lama).
 func (s *paymentService) createInTx(tx *gorm.DB, createdBy uint, req dto.CreatePaymentRequest, student *model.Student, paymentDate time.Time) (*model.Payment, error) {
+	// [A0] Kunci baris invoice dari item yang akan dibayar (urut id menaik) lebih
+	// dulu, agar balapan dengan penghapusan tagihan terserialisasi pada kunci yang
+	// sama — lihat invoiceService.Delete. Tanpa ini, pembayaran bisa lolos tepat
+	// setelah Delete memvalidasi bahwa tagihan belum dibayar, dan menyisakan
+	// payment_item yatim (kas tercatat, tagihan hilang).
+	//
+	// Sengaja dua langkah: PostgreSQL menolak DISTINCT bersamaan dengan FOR UPDATE.
+	if len(req.Items) > 0 {
+		itemIDs := make([]uint, 0, len(req.Items))
+		for _, item := range req.Items {
+			itemIDs = append(itemIDs, item.InvoiceItemID)
+		}
+		var invoiceIDs []uint
+		if err := tx.Model(&model.InvoiceItem{}).
+			Where("id IN ?", itemIDs).
+			Distinct().
+			Pluck("invoice_id", &invoiceIDs).Error; err != nil {
+			return nil, err
+		}
+		if len(invoiceIDs) > 0 {
+			var locked []uint
+			if err := tx.Model(&model.Invoice{}).
+				Clauses(clause.Locking{Strength: "UPDATE"}).
+				Where("id IN ?", invoiceIDs).
+				Order("id").
+				Pluck("id", &locked).Error; err != nil {
+				return nil, err
+			}
+		}
+	}
+
 	// [A] Validate and collect invoice items
 	totalAmount := float64(0)
 	mandatorySavingsAmount := float64(0)

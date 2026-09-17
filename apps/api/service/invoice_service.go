@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type InvoiceService interface {
@@ -282,41 +283,66 @@ func (s *invoiceService) CreateManual(req dto.CreateInvoiceRequest) (*dto.Invoic
 }
 
 func (s *invoiceService) Delete(id uint) error {
-	invoice, err := s.invoiceRepo.FindByID(id)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return utility.NewNotFoundError("Invoice tidak ditemukan")
-		}
-		return err
-	}
-
-	// Invoice hasil generate dikelola lewat RegenerateForStudent, bukan lewat endpoint ini.
-	if invoice.Type != "arrears" && invoice.Type != "manual" {
-		return utility.NewConflictError("Tagihan hasil generate tidak dapat dihapus. Gunakan regenerate tagihan siswa.")
-	}
-
-	if invoice.PaidAmount != 0 {
-		return utility.NewConflictError("Tagihan yang sudah memiliki pembayaran tidak dapat dihapus. Hapus pembayarannya terlebih dahulu.")
-	}
-
-	// Belt-and-braces: pastikan tidak ada payment_item yang menunjuk item invoice ini,
-	// walau paid_amount sudah 0 (mis. data tidak konsisten).
-	payments, err := s.paymentRepo.FindByInvoiceID(id)
-	if err != nil {
-		return err
-	}
-	if len(payments) > 0 {
-		return utility.NewConflictError("Tagihan yang sudah memiliki pembayaran tidak dapat dihapus. Hapus pembayarannya terlebih dahulu.")
-	}
-
-	// Item ikut di-soft-delete: payment_service mencari item hanya by ID tanpa
-	// memeriksa invoice induknya, sehingga item yatim masih berpotensi dibayar.
 	return s.db.Transaction(func(tx *gorm.DB) error {
+		// Kunci baris invoice lebih dulu, lalu validasi ULANG di dalam transaksi.
+		// Sebelumnya validasi berjalan di luar transaksi tanpa kunci apa pun,
+		// sehingga pembayaran yang masuk di sela validasi dan penghapusan bisa
+		// membuat payment_item yatim: kas tercatat, tagihannya hilang.
+		// Pembayaran mengunci baris invoice yang sama (lihat paymentService.createInTx),
+		// jadi kedua jalur terserialisasi pada kunci yang sama.
+		if err := lockInvoiceRow(tx, id); err != nil {
+			return err
+		}
+
+		invoice, err := s.invoiceRepo.WithTx(tx).FindByID(id)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return utility.NewNotFoundError("Invoice tidak ditemukan")
+			}
+			return err
+		}
+
+		// Invoice hasil generate dikelola lewat RegenerateForStudent, bukan lewat endpoint ini.
+		if invoice.Type != "arrears" && invoice.Type != "manual" {
+			return utility.NewConflictError("Tagihan hasil generate tidak dapat dihapus. Gunakan regenerate tagihan siswa.")
+		}
+
+		if invoice.PaidAmount != 0 {
+			return utility.NewConflictError("Tagihan yang sudah memiliki pembayaran tidak dapat dihapus. Hapus pembayarannya terlebih dahulu.")
+		}
+
+		// Belt-and-braces: pastikan tidak ada payment_item yang menunjuk item invoice ini,
+		// walau paid_amount sudah 0 (mis. data tidak konsisten).
+		payments, err := s.paymentRepo.WithTx(tx).FindByInvoiceID(id)
+		if err != nil {
+			return err
+		}
+		if len(payments) > 0 {
+			return utility.NewConflictError("Tagihan yang sudah memiliki pembayaran tidak dapat dihapus. Hapus pembayarannya terlebih dahulu.")
+		}
+
+		// Item ikut di-soft-delete: payment_service mencari item hanya by ID tanpa
+		// memeriksa invoice induknya, sehingga item yatim masih berpotensi dibayar.
 		if err := s.itemRepo.WithTx(tx).DeleteByInvoiceID(id); err != nil {
 			return err
 		}
 		return s.invoiceRepo.WithTx(tx).Delete(id)
 	})
+}
+
+// lockInvoiceRow mengambil row-level lock (SELECT ... FOR UPDATE) pada satu invoice.
+// No-op bila barisnya tidak ada — pemanggil tetap memvalidasi lewat query biasa
+// sehingga pesan 404 tidak berubah.
+//
+// Dipakai berpasangan dengan penguncian yang sama di paymentService.createInTx:
+// kedua jalur harus mengunci tabel `invoices` dengan urutan id menaik agar tidak
+// terjadi deadlock sekaligus menutup balapan hapus-vs-bayar.
+func lockInvoiceRow(tx *gorm.DB, id uint) error {
+	var locked []uint
+	return tx.Model(&model.Invoice{}).
+		Clauses(clause.Locking{Strength: "UPDATE"}).
+		Where("id = ?", id).
+		Pluck("id", &locked).Error
 }
 
 func (s *invoiceService) Update(id uint, req dto.UpdateInvoiceRequest) (*dto.InvoiceDetailResponse, error) {

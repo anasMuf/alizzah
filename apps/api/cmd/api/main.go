@@ -361,7 +361,7 @@ func main() {
 	// quantity fasilitas memakai quantity=0 sebagai skip bulan.
 	billingExclusionService := service.NewBillingExclusionService(db, billingExclusionRepo, ayRepo, invoiceGenService)
 
-	invoiceService := service.NewInvoiceService(db, invoiceRepo, studentRepo, ayRepo, invoiceItemRepo, invoiceInstallmentRepo, paymentRepo, billingExclusionService)
+	invoiceService := service.NewInvoiceService(db, invoiceRepo, studentRepo, ayRepo, invoiceItemRepo, fcItemRepo, invoiceInstallmentRepo, paymentRepo, billingExclusionService)
 
 	// Batch 6: create transaction infrastructure first
 	txnWriterService := service.NewTransactionWriterService(cashTxnRepo, vaultTxnRepo)

@@ -47,6 +47,7 @@ type invoiceService struct {
 	studentRepo     repository.StudentRepository
 	ayRepo          repository.AcademicYearRepository
 	itemRepo        repository.InvoiceItemRepository
+	feeItemRepo     repository.FeeConfigItemRepository
 	installmentRepo repository.InvoiceInstallmentRepository
 	paymentRepo     repository.PaymentRepository
 	exclSvc         BillingExclusionService
@@ -58,6 +59,7 @@ func NewInvoiceService(
 	studentRepo repository.StudentRepository,
 	ayRepo repository.AcademicYearRepository,
 	itemRepo repository.InvoiceItemRepository,
+	feeItemRepo repository.FeeConfigItemRepository,
 	installmentRepo repository.InvoiceInstallmentRepository,
 	paymentRepo repository.PaymentRepository,
 	exclSvc BillingExclusionService,
@@ -68,6 +70,7 @@ func NewInvoiceService(
 		studentRepo:     studentRepo,
 		ayRepo:          ayRepo,
 		itemRepo:        itemRepo,
+		feeItemRepo:     feeItemRepo,
 		installmentRepo: installmentRepo,
 		paymentRepo:     paymentRepo,
 		exclSvc:         exclSvc,
@@ -185,11 +188,26 @@ func (s *invoiceService) CreateManual(req dto.CreateInvoiceRequest) (*dto.Invoic
 		}
 		return nil, err
 	}
-	if _, err := s.ayRepo.FindByID(req.AcademicYearID); err != nil {
+	ay, err := s.ayRepo.FindByID(req.AcademicYearID)
+	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, utility.NewNotFoundError("Tahun ajaran tidak ditemukan")
 		}
 		return nil, err
+	}
+
+	// Penegakan mode-vs-TA di server — pertahanan lapis kedua atas aturan yang
+	// sudah ditegakkan di UI (lihat docs/epics/task-9-validasi-mode-tahun-ajaran.md).
+	// Item tarif hanya dihitung untuk mode rinci; mode total tidak membutuhkannya.
+	var activeTariffItemCount int64
+	if req.Type == "manual" {
+		activeTariffItemCount, err = s.feeItemRepo.CountActiveItemsByAcademicYear(req.AcademicYearID)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if reason := invoiceModeViolation(req.Type, ay.IsActive, activeTariffItemCount); reason != "" {
+		return nil, utility.NewUnprocessableError(reason)
 	}
 
 	var dueDate *time.Time
@@ -240,7 +258,7 @@ func (s *invoiceService) CreateManual(req dto.CreateInvoiceRequest) (*dto.Invoic
 		Notes:          strings.TrimSpace(req.Notes),
 	}
 
-	err := s.db.Transaction(func(tx *gorm.DB) error {
+	err = s.db.Transaction(func(tx *gorm.DB) error {
 		if err := s.invoiceRepo.WithTx(tx).Create(invoice); err != nil {
 			return err
 		}

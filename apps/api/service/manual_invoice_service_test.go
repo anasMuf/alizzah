@@ -34,6 +34,8 @@ func setupManualInvoiceTestDB(t *testing.T) *gorm.DB {
 		&model.ClassGroup{},
 		&model.Student{},
 		&model.StudentEnrollment{},
+		&model.FeeConfig{},
+		&model.FeeConfigItem{},
 		&model.Invoice{},
 		&model.InvoiceItem{},
 		&model.InvoiceInstallment{},
@@ -44,20 +46,47 @@ func setupManualInvoiceTestDB(t *testing.T) *gorm.DB {
 }
 
 type manualInvoiceFixture struct {
-	StudentID    uint
-	AcademicYear model.AcademicYear
+	StudentID uint
+	// ActiveAcademicYear adalah TA aktif (is_active=true) yang PUNYA item tarif
+	// aktif — satu-satunya TA yang sah untuk tagihan rinci (type=manual).
+	ActiveAcademicYear model.AcademicYear
+	// PastAcademicYear adalah TA non-aktif — rumah tunggakan historis
+	// (type=arrears), karena mode total hanya sah untuk TA selain TA aktif.
+	PastAcademicYear model.AcademicYear
 }
 
 func seedManualInvoiceFixture(t *testing.T, db *gorm.DB) manualInvoiceFixture {
 	t.Helper()
 
-	ay := model.AcademicYear{
+	past := model.AcademicYear{
 		Name:      "2024/2025",
 		StartDate: time.Date(2024, 7, 15, 0, 0, 0, 0, time.UTC),
 		EndDate:   time.Date(2025, 6, 30, 0, 0, 0, 0, time.UTC),
+		IsActive:  false,
+	}
+	require.NoError(t, db.Create(&past).Error)
+
+	active := model.AcademicYear{
+		Name:      "2025/2026",
+		StartDate: time.Date(2025, 7, 15, 0, 0, 0, 0, time.UTC),
+		EndDate:   time.Date(2026, 6, 30, 0, 0, 0, 0, time.UTC),
 		IsActive:  true,
 	}
-	require.NoError(t, db.Create(&ay).Error)
+	require.NoError(t, db.Create(&active).Error)
+
+	fc := model.FeeConfig{AcademicYearID: active.ID}
+	require.NoError(t, db.Create(&fc).Error)
+	require.NoError(t, db.Create(&model.FeeConfigItem{
+		FeeConfigID: fc.ID,
+		Category:    "monthly_spp",
+		ItemKey:     "spp_all_all",
+		Name:        "SPP",
+		Level:       "all",
+		Gender:      "all",
+		Amount:      250000,
+		Unit:        "fixed",
+		IsActive:    true,
+	}).Error)
 
 	student := model.Student{
 		FullName:   "Ahmad Test",
@@ -67,7 +96,14 @@ func seedManualInvoiceFixture(t *testing.T, db *gorm.DB) manualInvoiceFixture {
 	}
 	require.NoError(t, db.Create(&student).Error)
 
-	return manualInvoiceFixture{StudentID: student.ID, AcademicYear: ay}
+	return manualInvoiceFixture{StudentID: student.ID, ActiveAcademicYear: active, PastAcademicYear: past}
+}
+
+// softDeleteItemTarifAktif menyembunyikan seluruh item tarif aktif sehingga
+// mode rinci terhalang untuk TA aktif (meniru TA baru yang belum diatur tarifnya).
+func softDeleteItemTarifAktif(t *testing.T, db *gorm.DB) {
+	t.Helper()
+	require.NoError(t, db.Where("is_active = ?", true).Delete(&model.FeeConfigItem{}).Error)
 }
 
 func newTestManualInvoiceService(t *testing.T, db *gorm.DB) InvoiceService {
@@ -78,6 +114,7 @@ func newTestManualInvoiceService(t *testing.T, db *gorm.DB) InvoiceService {
 		repository.NewStudentRepository(db),
 		repository.NewAcademicYearRepository(db),
 		repository.NewInvoiceItemRepository(db),
+		repository.NewFeeConfigItemRepository(db),
 		repository.NewInvoiceInstallmentRepository(db),
 		repository.NewPaymentRepository(db),
 		nil, // exclSvc tidak dipakai CreateManual
@@ -99,7 +136,7 @@ func TestCreateManual_Arrears_Success(t *testing.T) {
 
 	resp, err := svc.CreateManual(dto.CreateInvoiceRequest{
 		StudentID:      fx.StudentID,
-		AcademicYearID: fx.AcademicYear.ID,
+		AcademicYearID: fx.PastAcademicYear.ID,
 		Type:           "arrears",
 		Notes:          "Tunggakan SPP Ganjil 2024/2025",
 		Items: []dto.CreateInvoiceItemRequest{
@@ -114,7 +151,7 @@ func TestCreateManual_Arrears_Success(t *testing.T) {
 	assert.Equal(t, 0.0, resp.PaidAmount)
 	assert.Nil(t, resp.Month, "month harus NULL untuk tagihan manual")
 	assert.Nil(t, resp.Year, "year harus NULL untuk tagihan manual")
-	assert.Equal(t, fx.AcademicYear.ID, resp.AcademicYear.ID, "invoice harus dimiliki tahun ajaran asal")
+	assert.Equal(t, fx.PastAcademicYear.ID, resp.AcademicYear.ID, "invoice harus dimiliki tahun ajaran asal")
 
 	require.Len(t, resp.Items, 1)
 	assert.Equal(t, "arrears", resp.Items[0].Category, "category item tunggakan dipaksa 'arrears'")
@@ -130,7 +167,7 @@ func TestCreateManual_Manual_MultipleItems_TotalComputedServerSide(t *testing.T)
 
 	resp, err := svc.CreateManual(dto.CreateInvoiceRequest{
 		StudentID:      fx.StudentID,
-		AcademicYearID: fx.AcademicYear.ID,
+		AcademicYearID: fx.ActiveAcademicYear.ID,
 		Type:           "manual",
 		Notes:          "Seragam & uang kegiatan",
 		Items: []dto.CreateInvoiceItemRequest{
@@ -153,7 +190,7 @@ func TestCreateManual_Arrears_MultipleItems_Rejected(t *testing.T) {
 
 	_, err := svc.CreateManual(dto.CreateInvoiceRequest{
 		StudentID:      fx.StudentID,
-		AcademicYearID: fx.AcademicYear.ID,
+		AcademicYearID: fx.PastAcademicYear.ID,
 		Type:           "arrears",
 		Notes:          "Tunggakan",
 		Items: []dto.CreateInvoiceItemRequest{
@@ -172,7 +209,7 @@ func TestCreateManual_Arrears_EmptyNotes_Rejected(t *testing.T) {
 	for _, notes := range []string{"", "   "} {
 		_, err := svc.CreateManual(dto.CreateInvoiceRequest{
 			StudentID:      fx.StudentID,
-			AcademicYearID: fx.AcademicYear.ID,
+			AcademicYearID: fx.PastAcademicYear.ID,
 			Type:           "arrears",
 			Notes:          notes,
 			Items: []dto.CreateInvoiceItemRequest{
@@ -195,7 +232,7 @@ func TestCreateManual_EmptyItems_Rejected(t *testing.T) {
 
 	_, err := svc.CreateManual(dto.CreateInvoiceRequest{
 		StudentID:      fx.StudentID,
-		AcademicYearID: fx.AcademicYear.ID,
+		AcademicYearID: fx.PastAcademicYear.ID,
 		Type:           "manual",
 		Items:          nil,
 	})
@@ -210,7 +247,7 @@ func TestCreateManual_NonPositiveAmount_Rejected(t *testing.T) {
 	for _, amount := range []float64{0, -100} {
 		_, err := svc.CreateManual(dto.CreateInvoiceRequest{
 			StudentID:      fx.StudentID,
-			AcademicYearID: fx.AcademicYear.ID,
+			AcademicYearID: fx.ActiveAcademicYear.ID,
 			Type:           "manual",
 			Items: []dto.CreateInvoiceItemRequest{
 				{Name: "Item", Category: "other", Amount: amount},
@@ -231,7 +268,7 @@ func TestCreateManual_StudentNotFound(t *testing.T) {
 
 	_, err := svc.CreateManual(dto.CreateInvoiceRequest{
 		StudentID:      99999,
-		AcademicYearID: fx.AcademicYear.ID,
+		AcademicYearID: fx.PastAcademicYear.ID,
 		Type:           "manual",
 		Items: []dto.CreateInvoiceItemRequest{
 			{Name: "Item", Category: "other", Amount: 100000},
@@ -264,7 +301,7 @@ func TestCreateManual_DueDate(t *testing.T) {
 	// Format diterima
 	resp, err := svc.CreateManual(dto.CreateInvoiceRequest{
 		StudentID:      fx.StudentID,
-		AcademicYearID: fx.AcademicYear.ID,
+		AcademicYearID: fx.PastAcademicYear.ID,
 		Type:           "arrears",
 		Notes:          "Tunggakan",
 		DueDate:        "2026-10-01",
@@ -277,7 +314,7 @@ func TestCreateManual_DueDate(t *testing.T) {
 	// Format tidak diterima
 	_, err = svc.CreateManual(dto.CreateInvoiceRequest{
 		StudentID:      fx.StudentID,
-		AcademicYearID: fx.AcademicYear.ID,
+		AcademicYearID: fx.PastAcademicYear.ID,
 		Type:           "arrears",
 		Notes:          "Tunggakan",
 		DueDate:        "bukan-tanggal",
@@ -331,6 +368,117 @@ func TestCreateInvoiceRequest_ValidationTags(t *testing.T) {
 	})
 }
 
+// --- Penegakan mode-vs-TA ---
+
+// TestInvoiceModeViolation menguji tabel aturan murni — cermin dari
+// describe("modeAvailability") di manual-invoice.test.ts.
+func TestInvoiceModeViolation(t *testing.T) {
+	cases := []struct {
+		name        string
+		typ         string
+		isActive    bool
+		tariffItems int64
+		wantRefused bool
+	}{
+		{"manual di TA aktif bertarif", "manual", true, 1, false},
+		{"manual di TA aktif tanpa tarif", "manual", true, 0, true},
+		{"manual di TA lampau", "manual", false, 5, true},
+		{"arrears di TA aktif", "arrears", true, 5, true},
+		{"arrears di TA lampau", "arrears", false, 0, false},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := invoiceModeViolation(tc.typ, tc.isActive, tc.tariffItems)
+			if tc.wantRefused {
+				assert.NotEmpty(t, got, "kombinasi tidak sah harus punya alasan")
+			} else {
+				assert.Empty(t, got, "kombinasi sah tidak boleh punya alasan")
+			}
+		})
+	}
+
+	t.Run("sebab menyebut item tarif", func(t *testing.T) {
+		assert.Contains(t, invoiceModeViolation("manual", true, 0), "item tarif")
+	})
+
+	t.Run("sebab menyebut tahun ajaran aktif", func(t *testing.T) {
+		assert.Contains(t, invoiceModeViolation("arrears", true, 1), "aktif")
+		assert.Contains(t, invoiceModeViolation("manual", false, 1), "aktif")
+	})
+}
+
+func TestCreateManual_Arrears_OnActiveYear_Rejected(t *testing.T) {
+	db := setupManualInvoiceTestDB(t)
+	fx := seedManualInvoiceFixture(t, db)
+	svc := newTestManualInvoiceService(t, db)
+
+	_, err := svc.CreateManual(dto.CreateInvoiceRequest{
+		StudentID:      fx.StudentID,
+		AcademicYearID: fx.ActiveAcademicYear.ID,
+		Type:           "arrears",
+		Notes:          "Tunggakan di TA aktif",
+		Items:          []dto.CreateInvoiceItemRequest{{Name: "Tunggakan", Category: "arrears", Amount: 100000}},
+	})
+	assertAppErrorCode(t, err, http.StatusUnprocessableEntity)
+
+	var count int64
+	require.NoError(t, db.Model(&model.Invoice{}).Count(&count).Error)
+	assert.Equal(t, int64(0), count, "percobaan gagal tidak boleh menyimpan invoice")
+}
+
+func TestCreateManual_Manual_OnPastYear_Rejected(t *testing.T) {
+	db := setupManualInvoiceTestDB(t)
+	fx := seedManualInvoiceFixture(t, db)
+	svc := newTestManualInvoiceService(t, db)
+
+	_, err := svc.CreateManual(dto.CreateInvoiceRequest{
+		StudentID:      fx.StudentID,
+		AcademicYearID: fx.PastAcademicYear.ID,
+		Type:           "manual",
+		Notes:          "Rinci di TA lampau",
+		Items:          []dto.CreateInvoiceItemRequest{{Name: "Item", Category: "other", Amount: 100000}},
+	})
+	assertAppErrorCode(t, err, http.StatusUnprocessableEntity)
+}
+
+func TestCreateManual_Manual_ActiveYearWithoutTariff_Rejected(t *testing.T) {
+	db := setupManualInvoiceTestDB(t)
+	fx := seedManualInvoiceFixture(t, db)
+	svc := newTestManualInvoiceService(t, db)
+
+	// TA baru yang belum diatur tarifnya: TA aktif, tapi tidak ada item tarif
+	// aktif. Kedua mode terhalang (arrears karena TA aktif, manual karena tarif).
+	softDeleteItemTarifAktif(t, db)
+
+	_, err := svc.CreateManual(dto.CreateInvoiceRequest{
+		StudentID:      fx.StudentID,
+		AcademicYearID: fx.ActiveAcademicYear.ID,
+		Type:           "manual",
+		Items:          []dto.CreateInvoiceItemRequest{{Name: "Item", Category: "other", Amount: 100000}},
+	})
+	assertAppErrorCode(t, err, http.StatusUnprocessableEntity)
+}
+
+func TestCreateManual_ModeCheckedBeforeItemContent(t *testing.T) {
+	db := setupManualInvoiceTestDB(t)
+	fx := seedManualInvoiceFixture(t, db)
+	svc := newTestManualInvoiceService(t, db)
+
+	// Mode tidak sah + nominal tidak sah: yang dilaporkan harus masalah mode,
+	// bukan masalah nominal — kesesuaian mode diperiksa lebih dulu.
+	_, err := svc.CreateManual(dto.CreateInvoiceRequest{
+		StudentID:      fx.StudentID,
+		AcademicYearID: fx.PastAcademicYear.ID,
+		Type:           "manual",
+		Items:          []dto.CreateInvoiceItemRequest{{Name: "Item", Category: "other", Amount: 0}},
+	})
+	require.Error(t, err)
+	var appErr *utility.AppError
+	require.True(t, errors.As(err, &appErr), "error harus *utility.AppError")
+	assert.Contains(t, appErr.Message, "Mode rinci")
+}
+
 // --- Delete ---
 
 // createArrearsViaService membuat satu invoice tunggakan lewat service (jalur
@@ -339,7 +487,7 @@ func createArrearsViaService(t *testing.T, svc InvoiceService, fx manualInvoiceF
 	t.Helper()
 	resp, err := svc.CreateManual(dto.CreateInvoiceRequest{
 		StudentID:      fx.StudentID,
-		AcademicYearID: fx.AcademicYear.ID,
+		AcademicYearID: fx.PastAcademicYear.ID,
 		Type:           "arrears",
 		Notes:          "Tunggakan SPP 2024/2025",
 		Items: []dto.CreateInvoiceItemRequest{
@@ -386,7 +534,7 @@ func TestDeleteInvoice_GeneratedType_Rejected(t *testing.T) {
 	fx := seedManualInvoiceFixture(t, db)
 	svc := newTestManualInvoiceService(t, db)
 
-	generated := model.Invoice{StudentID: fx.StudentID, AcademicYearID: fx.AcademicYear.ID, Type: "monthly", Status: "unpaid", TotalAmount: 100000}
+	generated := model.Invoice{StudentID: fx.StudentID, AcademicYearID: fx.PastAcademicYear.ID, Type: "monthly", Status: "unpaid", TotalAmount: 100000}
 	require.NoError(t, db.Create(&generated).Error)
 
 	err := svc.Delete(generated.ID)
@@ -421,7 +569,7 @@ func TestDeleteInvoice_HasPaymentItem_Rejected(t *testing.T) {
 	user := model.User{Email: "kasir@test.com", Password: "h", Role: "keuangan", FullName: "Kasir"}
 	require.NoError(t, db.Create(&user).Error)
 	payment := model.Payment{
-		StudentID: fx.StudentID, AcademicYearID: fx.AcademicYear.ID,
+		StudentID: fx.StudentID, AcademicYearID: fx.PastAcademicYear.ID,
 		PaymentDate: time.Now(), TotalAmount: 10000, Source: "cash", CreatedBy: user.ID,
 	}
 	require.NoError(t, db.Create(&payment).Error)
@@ -490,7 +638,7 @@ func TestUpdateInvoice_Manual_EmptyNotes_Allowed(t *testing.T) {
 
 	created, err := svc.CreateManual(dto.CreateInvoiceRequest{
 		StudentID:      fx.StudentID,
-		AcademicYearID: fx.AcademicYear.ID,
+		AcademicYearID: fx.ActiveAcademicYear.ID,
 		Type:           "manual",
 		Notes:          "Seragam",
 		Items:          []dto.CreateInvoiceItemRequest{{Name: "Seragam", Category: "other", Amount: 100000}},

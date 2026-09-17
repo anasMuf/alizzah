@@ -23,6 +23,7 @@ func newTestInvoiceService(t *testing.T, db *gorm.DB) InvoiceService {
 		repository.NewStudentRepository(db),
 		repository.NewAcademicYearRepository(db),
 		repository.NewInvoiceItemRepository(db),
+		repository.NewFeeConfigItemRepository(db),
 		repository.NewInvoiceInstallmentRepository(db),
 		repository.NewPaymentRepository(db),
 		newTestBillingExclusionSvc(t, db),

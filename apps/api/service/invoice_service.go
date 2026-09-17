@@ -384,7 +384,26 @@ func (s *invoiceService) Update(id uint, req dto.UpdateInvoiceRequest) (*dto.Inv
 	return &resp, nil
 }
 
+// rejectArrearsItemMutation menolak perubahan item pada tagihan tunggakan.
+// Tagihan `arrears` direpresentasikan sebagai satu nominal total (lihat CreateManual),
+// sehingga menambah, mengubah, atau menghapus itemnya melanggar invarian "tepat satu
+// item" — termasuk menghapus item tunggalnya sampai tagihan jadi kosong.
+func (s *invoiceService) rejectArrearsItemMutation(invoiceID uint) error {
+	invoice, err := s.invoiceRepo.FindByID(invoiceID)
+	if err != nil {
+		return errors.New("Invoice tidak ditemukan")
+	}
+	if invoice.Type == "arrears" {
+		return utility.NewConflictError("Item tagihan tunggakan tidak dapat diubah. Hapus tagihannya bila nominalnya salah.")
+	}
+	return nil
+}
+
 func (s *invoiceService) AddItem(invoiceID uint, req dto.AddInvoiceItemRequest) (*dto.InvoiceItemResponse, error) {
+	if err := s.rejectArrearsItemMutation(invoiceID); err != nil {
+		return nil, err
+	}
+
 	invoice, err := s.invoiceRepo.FindByID(invoiceID)
 	if err != nil {
 		return nil, errors.New("Invoice tidak ditemukan")
@@ -424,6 +443,10 @@ func (s *invoiceService) AddItem(invoiceID uint, req dto.AddInvoiceItemRequest) 
 }
 
 func (s *invoiceService) UpdateItem(invoiceID, itemID uint, req dto.UpdateInvoiceItemRequest) (*dto.InvoiceItemResponse, error) {
+	if err := s.rejectArrearsItemMutation(invoiceID); err != nil {
+		return nil, err
+	}
+
 	item, err := s.itemRepo.FindByID(itemID)
 	if err != nil || item.InvoiceID != invoiceID {
 		return nil, errors.New("Item tidak ditemukan pada invoice ini")
@@ -449,6 +472,10 @@ func (s *invoiceService) UpdateItem(invoiceID, itemID uint, req dto.UpdateInvoic
 }
 
 func (s *invoiceService) UpdateItemQuantity(invoiceID, itemID uint, req dto.UpdateInvoiceItemQuantityRequest) (*dto.InvoiceItemResponse, error) {
+	if err := s.rejectArrearsItemMutation(invoiceID); err != nil {
+		return nil, err
+	}
+
 	item, err := s.itemRepo.FindByID(itemID)
 	if err != nil || item.InvoiceID != invoiceID {
 		return nil, errors.New("Item tidak ditemukan pada invoice ini")
@@ -527,6 +554,10 @@ func (s *invoiceService) UpdateItemQuantity(invoiceID, itemID uint, req dto.Upda
 }
 
 func (s *invoiceService) DeleteItem(invoiceID, itemID uint) error {
+	if err := s.rejectArrearsItemMutation(invoiceID); err != nil {
+		return err
+	}
+
 	item, err := s.itemRepo.FindByID(itemID)
 	if err != nil || item.InvoiceID != invoiceID {
 		return errors.New("Item tidak ditemukan pada invoice ini")

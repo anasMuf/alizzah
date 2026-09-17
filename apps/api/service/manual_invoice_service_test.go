@@ -714,3 +714,67 @@ func TestUpdateInvoice_NotFound(t *testing.T) {
 	_, err := svc.Update(99999, dto.UpdateInvoiceRequest{Notes: "x"})
 	assertAppErrorCode(t, err, http.StatusNotFound)
 }
+
+// --- Mutasi item: guard tagihan tunggakan ---
+
+// TestArrearsItemMutation_Rejected menjaga invarian "arrears = tepat satu item"
+// pada endpoint mutasi item, bukan hanya di CreateManual.
+func TestArrearsItemMutation_Rejected(t *testing.T) {
+	db := setupManualInvoiceTestDB(t)
+	fx := seedManualInvoiceFixture(t, db)
+	svc := newTestManualInvoiceService(t, db)
+
+	arrears := createArrearsViaService(t, svc, fx)
+	itemID := arrears.Items[0].ID
+	qty := uint(2)
+
+	_, err := svc.AddItem(arrears.ID, dto.AddInvoiceItemRequest{
+		Name: "Item kedua", Category: "arrears", Amount: 1000,
+	})
+	assertAppErrorCode(t, err, http.StatusConflict)
+
+	_, err = svc.UpdateItem(arrears.ID, itemID, dto.UpdateInvoiceItemRequest{
+		Name: "Diubah", Amount: 5000,
+	})
+	assertAppErrorCode(t, err, http.StatusConflict)
+
+	_, err = svc.UpdateItemQuantity(arrears.ID, itemID, dto.UpdateInvoiceItemQuantityRequest{Quantity: &qty})
+	assertAppErrorCode(t, err, http.StatusConflict)
+
+	err = svc.DeleteItem(arrears.ID, itemID)
+	assertAppErrorCode(t, err, http.StatusConflict)
+
+	// Invarian terjaga: tunggakan tetap satu item dengan nominal & total awal.
+	res, err := svc.GetByID(arrears.ID)
+	require.NoError(t, err)
+	require.Len(t, res.Items, 1)
+	assert.Equal(t, 100000.0, res.Items[0].Amount)
+	assert.Equal(t, 100000.0, res.TotalAmount)
+}
+
+// TestManualItemMutation_StillAllowed memastikan guard di atas khusus tunggakan —
+// tagihan rinci memang boleh dikoreksi itemnya.
+func TestManualItemMutation_StillAllowed(t *testing.T) {
+	db := setupManualInvoiceTestDB(t)
+	fx := seedManualInvoiceFixture(t, db)
+	svc := newTestManualInvoiceService(t, db)
+
+	manual, err := svc.CreateManual(dto.CreateInvoiceRequest{
+		StudentID:      fx.StudentID,
+		AcademicYearID: fx.ActiveAcademicYear.ID,
+		Type:           "manual",
+		Items: []dto.CreateInvoiceItemRequest{
+			{Name: "Seragam", Category: "other", Amount: 100000},
+			{Name: "Kegiatan", Category: "other", Amount: 50000},
+		},
+	})
+	require.NoError(t, err)
+	require.Len(t, manual.Items, 2)
+
+	require.NoError(t, svc.DeleteItem(manual.ID, manual.Items[0].ID))
+
+	res, err := svc.GetByID(manual.ID)
+	require.NoError(t, err)
+	require.Len(t, res.Items, 1)
+	assert.Equal(t, 50000.0, res.TotalAmount, "total dihitung ulang setelah item dihapus")
+}

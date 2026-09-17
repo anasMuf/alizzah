@@ -385,6 +385,9 @@ func TestInvoiceModeViolation(t *testing.T) {
 		{"manual di TA lampau", "manual", false, 5, true},
 		{"arrears di TA aktif", "arrears", true, 5, true},
 		{"arrears di TA lampau", "arrears", false, 0, false},
+		// TA lampau yang kebetulan punya tarif tetap sah untuk arrears —
+		// yang terhalang adalah mode rincinya, bukan mode totalnya.
+		{"arrears di TA lampau bertarif", "arrears", false, 5, false},
 	}
 
 	for _, tc := range cases {

@@ -460,6 +460,28 @@ func TestCreateManual_Manual_ActiveYearWithoutTariff_Rejected(t *testing.T) {
 	assertAppErrorCode(t, err, http.StatusUnprocessableEntity)
 }
 
+func TestCreateManual_Manual_ActiveYearWithInactiveTariff_Rejected(t *testing.T) {
+	db := setupManualInvoiceTestDB(t)
+	fx := seedManualInvoiceFixture(t, db)
+	svc := newTestManualInvoiceService(t, db)
+
+	// Item tarif ADA tetapi tidak aktif. Sengaja di-nonaktifkan (BUKAN di-soft-delete)
+	// agar predikat `is_active = true` pada CountActiveItemsByAcademicYear benar-benar
+	// teruji: soft-delete akan tersaring oleh deleted_at, sehingga menghapus predikat
+	// is_active tidak akan membuat test itu merah.
+	require.NoError(t, db.Model(&model.FeeConfigItem{}).
+		Where("is_active = ?", true).
+		Update("is_active", false).Error)
+
+	_, err := svc.CreateManual(dto.CreateInvoiceRequest{
+		StudentID:      fx.StudentID,
+		AcademicYearID: fx.ActiveAcademicYear.ID,
+		Type:           "manual",
+		Items:          []dto.CreateInvoiceItemRequest{{Name: "Item", Category: "other", Amount: 100000}},
+	})
+	assertAppErrorCode(t, err, http.StatusUnprocessableEntity)
+}
+
 func TestCreateManual_ModeCheckedBeforeItemContent(t *testing.T) {
 	db := setupManualInvoiceTestDB(t)
 	fx := seedManualInvoiceFixture(t, db)

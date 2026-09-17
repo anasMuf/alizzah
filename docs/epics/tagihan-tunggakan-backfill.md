@@ -175,7 +175,8 @@ Karena invoice dimiliki TA asal sementara pembayaran dicatat di TA aktif: lapora
 - `student_id` atau `academic_year_id` tidak eksis → tolak 404/422 dengan pesan jelas
 - Hapus invoice yang salah satu itemnya sudah ada `payment_item` → **409**, bukan partial delete
 - Hapus invoice hasil generate (`monthly`/`initial`/`registration`/`graduation`/`daycare_initial`/`incidental`) → **409**
-- Tunggakan di TA yang **sama** dengan TA aktif (via escape hatch) → diizinkan, namun UI menampilkan peringatan risiko dobel dengan hasil generate
+- Tunggakan di TA yang **sama** dengan TA aktif → **tidak lagi mungkin** sejak Task 9 (mode total hanya untuk TA lain). Beban non-tarif di TA aktif dilayani lewat `incidental_items` saat pembayaran.
+- TA aktif **tanpa** konfigurasi tarif → kedua mode tidak sah; form diblokir dengan sebab + tautan Pengaturan Tarif (Task 9).
 - `academic_year_id` yang dikirim ≠ TA aktif untuk `type=arrears` → sah (memang tujuan utamanya); tidak ada validasi kesamaan TA
 - Pembayaran lintas-TA: invoice TA lampau dibayar saat TA aktif → `payment.academic_year_id` = TA aktif, `payment_item.invoice_item_id` menunjuk TA lampau
 - `RegenerateForStudent` dipanggil saat ada invoice `arrears`/`manual` → keduanya **tetap utuh**
@@ -189,7 +190,9 @@ Karena invoice dimiliki TA asal sementara pembayaran dicatat di TA aktif: lapora
 - **R.1**: Admin dapat membuat invoice manual untuk seorang siswa pada tahun ajaran tertentu dengan `type` baru `arrears` (satu item nominal total) atau `manual` (rinci per item).
 - **R.2**: `total_amount` dihitung di server dari jumlah item; client **tidak** mengirim total.
 - **R.3**: Invoice `arrears` dimiliki **tahun ajaran asal** (`academic_year_id` = TA yang dipilih), dengan `month`/`year` NULL dan `notes` wajib.
-- **R.4**: Form adaptif — TA = TA aktif → mode Rinci (item dari tarif, total otomatis); TA ≠ TA aktif → mode Total (satu input nominal). Mode ter-set otomatis dari TA namun **dapat diubah admin**.
+- **R.4** *(diamandemen oleh Task 9)*: Form adaptif — TA = TA aktif **dan punya konfigurasi tarif** → mode Rinci (item dari tarif, total otomatis); TA ≠ TA aktif → mode Total (satu input nominal). **Mode ditentukan mutlak oleh TA dan tidak dapat diubah admin.** Escape hatch pada versi awal R.4 dicabut; lihat Task 9.
+- **R.4b** *(Task 9)*: Bila TA terpilih = TA aktif **tanpa** konfigurasi tarif, tidak ada mode yang sah — form diblokir total dengan sebab + tautan ke `/pengaturan/tarif`, dan tombol Simpan nonaktif.
+- **R.4c** *(Task 9)*: Kesesuaian mode dengan TA divalidasi sebelum validasi isian, sehingga state basi tidak mungkin tersubmit.
 - **R.5**: `DELETE /v1/invoices/:id` hanya berhasil untuk `type IN ('arrears','manual')` **dan** `paid_amount == 0` **dan** tanpa `payment_item`; selain itu 409. Soft delete.
 - **R.6**: `PUT /v1/invoices/:id` hanya mengubah `notes` dan `due_date`.
 - **R.7**: `RegenerateForStudent` **tidak** menghapus invoice `arrears`/`manual`.
@@ -225,7 +228,8 @@ Karena invoice dimiliki TA asal sementara pembayaran dicatat di TA aktif: lapora
 - ❌ **NO** mengizinkan hapus/ubah invoice yang sudah memiliki pembayaran (integritas pembayaran — R.5)
 - ❌ **NO** memakai `type = "incidental"` untuk tagihan manual (`incidental` dibuat otomatis saat pembayaran dan langsung lunas — lifecycle berbeda)
 - ❌ **NO** mengizinkan `DELETE /v1/invoices/:id` menghapus invoice hasil generate (itu tugas `RegenerateForStudent`)
-- ❌ **NO** mengunci mode form murni pada kecocokan TA tanpa escape hatch (R.4 — akan menghalangi beban non-tarif di TA aktif)
+- ❌ **NO** ~~mengunci mode form murni pada kecocokan TA tanpa escape hatch~~ — **DIBATALKAN oleh Task 9**: escape hatch justru dicabut atas keputusan produk (Q3=C), karena mode rinci memang bergantung pada tarif milik TA terpilih
+- ❌ **NO** mengaktifkan tombol mode yang tidak sah untuk TA terpilih (Task 9: tombol wajib disabled dengan sebab tertulis, bukan hanya divalidasi saat submit)
 - ❌ **NO** menulis ulang logika pemilihan tarif/filter level-gender (ekstrak dari `tagihan/$id.tsx:99-155`)
 - ❌ **NO** memperbaiki bug pre-existing `DELETE FROM payment_items` di `RegenerateForStudent:2852` (scope terpisah — lihat §8)
 - ❌ **NO** mengubah `academic_year_id` invoice menjadi TA aktif saat dibayar — invoice tetap milik TA asal (R.9)
@@ -257,10 +261,11 @@ Karena invoice dimiliki TA asal sementara pembayaran dicatat di TA aktif: lapora
 | Q3: Granularitas item | **Kondisional** — TA sama → rinci per tarif + total otomatis; TA beda → satu nominal total | Dua nilai `type` baru: `manual` & `arrears`; total tetap dihitung server |
 | Q4: Titik masuk form | **A** — daftar Tagihan & detail siswa | Perlu pemilih siswa reusable di form (ter-prefill dari detail siswa) |
 | Q5: Cakupan input | **A** — per siswa | Tidak ada batch endpoint; massal ditunda |
-| Q6: Escape hatch mode | **A** — mode eksplisit, ter-set otomatis dari TA, dapat diubah | Menutup kasus beban non-tarif di TA aktif (R.4) |
+| Q6: Escape hatch mode | **A** (awal) — mode eksplisit, dapat diubah | **DIBATALKAN oleh Q10/Task 9** — lihat baris di bawah |
 | Q7: Guard `RegenerateForStudent` | **A** — kecualikan `arrears`/`manual` | 1 baris pada `invoice_generate_service.go:2844-2846`; mencegah kehilangan data |
 | Q8: Isi section tunggakan | **A** — semua tagihan belum lunas dari TA lain | Lebih jujur: tunggakan = apa pun yang belum dibayar, termasuk `monthly` lama |
 | Q9: Perlakuan di laporan | **A** — terima apa adanya (cash-basis) | Nol pekerjaan tambahan di modul laporan |
+| Q10: Validasi mode vs TA (Task 9) | **1A + 2A + 3C + 4A** | Mode jadi ditentukan mutlak oleh TA; TA tanpa tarif diblokir total. Menggantikan Q6 |
 
 ### Research Deep-Dives
 
@@ -291,7 +296,7 @@ Diusulkan pada Q3. **Ditolak karena** menghalangi beban non-tarif di TA aktif da
 
 - "Bagaimana kalau tagihan manual di TA aktif dobel dengan hasil generate?" → Mode Rinci di TA aktif menampilkan peringatan risiko dobel; tidak ada pencegahan otomatis (tidak ada unique index). Dicatat sebagai keterbatasan yang diterima.
 - "Kalau tagihan manual dibuat lalu regenerate ditekan?" → Dijawab R.7: dikecualikan dari hard-delete.
-- "Bagaimana kalau tunggakan ternyata milik TA aktif?" → Dijawab R.4 (escape hatch mode).
+- "Bagaimana kalau tunggakan ternyata milik TA aktif?" → **Tidak lagi mungkin** sejak Task 9 (Q10/3C). Yang tersedia untuk TA aktif: mode rinci dari tarif; beban non-tarif lewat `incidental_items` saat pembayaran.
 - "Apakah laporan jadi aneh?" → Ya, dan sudah dinyatakan eksplisit di §3f; diterima sebagai konsekuensi cash-basis.
 - "Apakah kartu Total Tunggakan ikut berubah?" → Ya, otomatis (R.10). Karena itu invalidasi `useGetV1StudentsId` wajib.
 - "Kalau item tunggakan sudah dibayar sebagian?" → Boleh; perilaku `partial` existing langsung berlaku tanpa kode baru.
@@ -306,6 +311,7 @@ Diusulkan pada Q3. **Ditolak karena** menghalangi beban non-tarif di TA aktif da
 - Task 6 (opsional): pecah kartu "Total Tunggakan" menjadi TA Aktif vs TA Lain → [task-6-frontend-split-total-arrears-card.md](./task-6-frontend-split-total-arrears-card.md) (Done — tanpa perubahan backend)
 - Task 7: aksi **Hapus & Edit keterangan** tagihan manual di detail tagihan (`tagihan/$id.tsx`) → [task-7-frontend-invoice-edit-delete.md](./task-7-frontend-invoice-edit-delete.md) (Done)
 - Task 8 (baru, disarankan): regenerate **penuh** client Orval + satukan pemilih item tarif & `CATEGORY_LABELS` — lihat Catatan Implementasi Task 3 (#1, #2, #3)
+- Task 9: Validasi kesesuaian **mode tagihan dengan tahun ajaran** (mencabut escape hatch Q6, blokir TA tanpa tarif) → [task-9-validasi-mode-tahun-ajaran.md](./task-9-validasi-mode-tahun-ajaran.md) (Done)
 
 **Perbaikan pasca-review:**
 

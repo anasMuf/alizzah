@@ -7,9 +7,11 @@ import {
 	defaultManualInvoiceMode,
 	feeItemUnitLabel,
 	filterFeeItemsForStudent,
+	hasUsableMode,
 	isManualInvoiceType,
 	type ManualInvoiceFormState,
 	manualInvoiceType,
+	modeAvailability,
 	sumDraftAmounts,
 	validateManualInvoice,
 } from "./manual-invoice";
@@ -23,7 +25,23 @@ const baseState: ManualInvoiceFormState = {
 	items: [],
 	notes: "Tunggakan SPP Ganjil 2024/2025",
 	dueDate: "",
+	// baseState menggambarkan TA lampau: mode total sah, mode rinci tidak.
+	isActiveAcademicYear: false,
+	hasTariffConfig: false,
 };
+
+/** State mode rinci yang sah: TA aktif dan sudah punya konfigurasi tarif. */
+const itemizedState = (
+	overrides: Partial<ManualInvoiceFormState> = {},
+): ManualInvoiceFormState => ({
+	...baseState,
+	mode: "itemized",
+	isActiveAcademicYear: true,
+	hasTariffConfig: true,
+	notes: "",
+	items: [{ name: "Seragam", category: "other", amount: 100_000 }],
+	...overrides,
+});
 
 describe("defaultManualInvoiceMode", () => {
 	it("memilih mode rinci untuk tahun ajaran aktif", () => {
@@ -143,41 +161,26 @@ describe("validateManualInvoice", () => {
 	});
 
 	it("tidak mewajibkan keterangan pada mode rinci", () => {
-		const state: ManualInvoiceFormState = {
-			...baseState,
-			mode: "itemized",
-			notes: "",
-			items: [{ name: "Seragam", category: "other", amount: 100_000 }],
-		};
-		expect(validateManualInvoice(state)).toBeNull();
+		expect(validateManualInvoice(itemizedState({ notes: "" }))).toBeNull();
 	});
 
 	it("menolak mode rinci tanpa item", () => {
-		const state: ManualInvoiceFormState = {
-			...baseState,
-			mode: "itemized",
-			items: [],
-		};
-		expect(validateManualInvoice(state)).toBe(
+		expect(validateManualInvoice(itemizedState({ items: [] }))).toBe(
 			"Tambahkan minimal satu item tagihan",
 		);
 	});
 
 	it("menolak item tanpa nama", () => {
-		const state: ManualInvoiceFormState = {
-			...baseState,
-			mode: "itemized",
+		const state = itemizedState({
 			items: [{ name: "  ", category: "other", amount: 100_000 }],
-		};
+		});
 		expect(validateManualInvoice(state)).toBe("Nama item wajib diisi");
 	});
 
 	it("menolak item dengan nominal tidak positif", () => {
-		const state: ManualInvoiceFormState = {
-			...baseState,
-			mode: "itemized",
+		const state = itemizedState({
 			items: [{ name: "Denda", category: "other", amount: 0 }],
-		};
+		});
 		expect(validateManualInvoice(state)).toBe(
 			"Nominal item 'Denda' harus lebih dari 0",
 		);
@@ -231,23 +234,23 @@ describe("buildCreateInvoicePayload", () => {
 		});
 		expect(payload.notes).toBe("Tunggakan");
 
-		const itemized = buildCreateInvoicePayload({
-			...baseState,
-			mode: "itemized",
-			items: [{ name: "  Seragam  ", category: "other", amount: 100_000 }],
-		});
+		const itemized = buildCreateInvoicePayload(
+			itemizedState({
+				items: [{ name: "  Seragam  ", category: "other", amount: 100_000 }],
+			}),
+		);
 		expect(itemized.items[0].name).toBe("Seragam");
 	});
 
 	it("mode rinci memetakan semua item", () => {
-		const payload = buildCreateInvoicePayload({
-			...baseState,
-			mode: "itemized",
-			items: [
-				{ name: "Seragam", category: "other", amount: 100_000 },
-				{ name: "Uang Kegiatan", category: "other", amount: 250_000 },
-			],
-		});
+		const payload = buildCreateInvoicePayload(
+			itemizedState({
+				items: [
+					{ name: "Seragam", category: "other", amount: 100_000 },
+					{ name: "Uang Kegiatan", category: "other", amount: 250_000 },
+				],
+			}),
+		);
 
 		expect(payload.type).toBe("manual");
 		expect(payload.items).toHaveLength(2);
@@ -255,20 +258,20 @@ describe("buildCreateInvoicePayload", () => {
 	});
 
 	it("menyertakan quantity & unit_price hanya bila ada isinya", () => {
-		const payload = buildCreateInvoicePayload({
-			...baseState,
-			mode: "itemized",
-			items: [
-				{
-					name: "Antar Jemput",
-					category: "facility",
-					amount: 120_000,
-					quantity: 12,
-					unitPrice: 10_000,
-				},
-				{ name: "Seragam", category: "other", amount: 100_000 },
-			],
-		});
+		const payload = buildCreateInvoicePayload(
+			itemizedState({
+				items: [
+					{
+						name: "Antar Jemput",
+						category: "facility",
+						amount: 120_000,
+						quantity: 12,
+						unitPrice: 10_000,
+					},
+					{ name: "Seragam", category: "other", amount: 100_000 },
+				],
+			}),
+		);
 
 		expect(payload.items[0].quantity).toBe(12);
 		expect(payload.items[0].unit_price).toBe(10_000);
@@ -318,5 +321,128 @@ describe("canDeleteManualInvoice", () => {
 
 	it("memperlakukan paid_amount yang hilang sebagai 0", () => {
 		expect(canDeleteManualInvoice("manual", undefined)).toBe(true);
+	});
+});
+
+describe("modeAvailability", () => {
+	const matrix = [
+		{
+			name: "mode rinci pada TA aktif dengan tarif",
+			mode: "itemized" as const,
+			isActiveAcademicYear: true,
+			hasTariffConfig: true,
+			allowed: true,
+		},
+		{
+			name: "mode rinci pada TA aktif tanpa tarif",
+			mode: "itemized" as const,
+			isActiveAcademicYear: true,
+			hasTariffConfig: false,
+			allowed: false,
+		},
+		{
+			name: "mode rinci pada TA lain",
+			mode: "itemized" as const,
+			isActiveAcademicYear: false,
+			hasTariffConfig: true,
+			allowed: false,
+		},
+		{
+			name: "mode total pada TA lain",
+			mode: "total" as const,
+			isActiveAcademicYear: false,
+			hasTariffConfig: false,
+			allowed: true,
+		},
+		{
+			name: "mode total pada TA aktif",
+			mode: "total" as const,
+			isActiveAcademicYear: true,
+			hasTariffConfig: true,
+			allowed: false,
+		},
+	];
+
+	for (const row of matrix) {
+		it(`${row.allowed ? "mengizinkan" : "menolak"} ${row.name}`, () => {
+			const result = modeAvailability({
+				mode: row.mode,
+				isActiveAcademicYear: row.isActiveAcademicYear,
+				hasTariffConfig: row.hasTariffConfig,
+			});
+
+			expect(result.allowed).toBe(row.allowed);
+			if (!row.allowed) {
+				expect(result.reason).toBeTruthy();
+			}
+		});
+	}
+
+	it("menyebut tarif sebagai sebab saat TA aktif belum punya tarif", () => {
+		const result = modeAvailability({
+			mode: "itemized",
+			isActiveAcademicYear: true,
+			hasTariffConfig: false,
+		});
+		expect(result.reason).toContain("tarif");
+	});
+
+	it("menyebut tahun ajaran aktif sebagai sebab untuk mode total", () => {
+		const result = modeAvailability({
+			mode: "total",
+			isActiveAcademicYear: true,
+			hasTariffConfig: true,
+		});
+		expect(result.reason).toContain("aktif");
+	});
+});
+
+describe("hasUsableMode", () => {
+	it("true untuk TA aktif yang punya tarif", () => {
+		expect(
+			hasUsableMode({ isActiveAcademicYear: true, hasTariffConfig: true }),
+		).toBe(true);
+	});
+
+	it("true untuk TA lain", () => {
+		expect(
+			hasUsableMode({ isActiveAcademicYear: false, hasTariffConfig: false }),
+		).toBe(true);
+	});
+
+	it("false hanya untuk TA aktif tanpa tarif", () => {
+		expect(
+			hasUsableMode({ isActiveAcademicYear: true, hasTariffConfig: false }),
+		).toBe(false);
+	});
+});
+
+describe("validateManualInvoice — kesesuaian mode dengan tahun ajaran", () => {
+	it("menolak mode total pada TA aktif", () => {
+		const state: ManualInvoiceFormState = {
+			...baseState,
+			mode: "total",
+			isActiveAcademicYear: true,
+			hasTariffConfig: true,
+		};
+		expect(validateManualInvoice(state)).toContain("aktif");
+	});
+
+	it("menolak mode rinci pada TA lain", () => {
+		const state = itemizedState({ isActiveAcademicYear: false });
+		expect(validateManualInvoice(state)).toContain("aktif");
+	});
+
+	it("menolak mode rinci pada TA aktif tanpa tarif", () => {
+		const state = itemizedState({ hasTariffConfig: false });
+		expect(validateManualInvoice(state)).toContain("tarif");
+	});
+
+	it("memeriksa kesesuaian mode sebelum memeriksa isian", () => {
+		// Meski tanpa item, pesannya soal mode — bukan soal item.
+		const state = itemizedState({ isActiveAcademicYear: false, items: [] });
+		expect(validateManualInvoice(state)).not.toBe(
+			"Tambahkan minimal satu item tagihan",
+		);
 	});
 });

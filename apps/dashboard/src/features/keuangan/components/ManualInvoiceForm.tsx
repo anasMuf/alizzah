@@ -1,4 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -26,9 +27,11 @@ import {
 	defaultManualInvoiceMode,
 	feeItemUnitLabel,
 	filterFeeItemsForStudent,
+	hasUsableMode,
 	isQuantityBasedUnit,
 	type ManualInvoiceItemDraft,
 	type ManualInvoiceMode,
+	modeAvailability,
 	sumDraftAmounts,
 	validateManualInvoice,
 } from "../manual-invoice";
@@ -132,12 +135,39 @@ export function ManualInvoiceForm({
 	const academicYears: any[] = (academicYearsResp?.data as any)?.data || [];
 	const selectedAy = academicYears.find((ay: any) => ay.id === academicYearId);
 
-	const { data: feeConfigsResp } = useGetV1FeeConfigs();
+	const { data: feeConfigsResp, isLoading: isFeeConfigLoading } =
+		useGetV1FeeConfigs();
 	const feeConfigs: any[] = (feeConfigsResp?.data as any)?.data || [];
 	const feeConfigForAy = feeConfigs.find(
 		(fc: any) => fc.academic_year?.id === academicYearId,
 	);
 	const feeConfigId = feeConfigForAy?.id;
+
+	// Mode ditentukan mutlak oleh TA terpilih (tidak lagi bisa dipaksa admin):
+	// rinci hanya untuk TA aktif yang punya tarif, total hanya untuk TA lain.
+	const isActiveAcademicYear =
+		academicYearId != null && academicYearId === activeAy?.id;
+	const hasTariffConfig = !!feeConfigId;
+	const itemizedAvailability = modeAvailability({
+		mode: "itemized",
+		isActiveAcademicYear,
+		hasTariffConfig,
+	});
+	const totalAvailability = modeAvailability({
+		mode: "total",
+		isActiveAcademicYear,
+		hasTariffConfig,
+	});
+	// Hanya false pada TA aktif yang belum punya tarif: kedua mode terhalang.
+	const noUsableMode = !hasUsableMode({
+		isActiveAcademicYear,
+		hasTariffConfig,
+	});
+	const currentModeAvailability =
+		mode === "itemized" ? itemizedAvailability : totalAvailability;
+	// `noUsableMode` bisa transien saat daftar tarif masih dimuat — jangan
+	// tampilkan banner blokir sebelum data tarif benar-benar diketahui.
+	const isModeBlocked = noUsableMode && !isFeeConfigLoading;
 
 	const { data: feeItemsResp } = useGetV1FeeConfigsIdItems(
 		feeConfigId || 0,
@@ -273,6 +303,8 @@ export function ManualInvoiceForm({
 			})),
 			notes,
 			dueDate,
+			isActiveAcademicYear,
+			hasTariffConfig,
 		};
 
 		const validationError = validateManualInvoice(formState);
@@ -314,7 +346,9 @@ export function ManualInvoiceForm({
 						type="button"
 						variant="primary"
 						onClick={handleSubmit}
-						disabled={isPending}
+						disabled={
+							isPending || noUsableMode || !currentModeAvailability.allowed
+						}
 					>
 						{isPending ? "Menyimpan..." : "Simpan"}
 					</Button>
@@ -362,10 +396,15 @@ export function ManualInvoiceForm({
 						<button
 							type="button"
 							onClick={() => setMode("itemized")}
+							disabled={!itemizedAvailability.allowed}
 							className={`rounded-lg border px-3 py-2 text-sm font-medium ${
 								mode === "itemized"
 									? "border-indigo-600 bg-indigo-50 text-indigo-700"
 									: "border-gray-300 text-gray-600 hover:bg-gray-50"
+							} ${
+								itemizedAvailability.allowed
+									? ""
+									: "cursor-not-allowed opacity-50 hover:bg-transparent"
 							}`}
 						>
 							Tagihan Berjalan (rinci)
@@ -373,15 +412,43 @@ export function ManualInvoiceForm({
 						<button
 							type="button"
 							onClick={() => setMode("total")}
+							disabled={!totalAvailability.allowed}
 							className={`rounded-lg border px-3 py-2 text-sm font-medium ${
 								mode === "total"
 									? "border-indigo-600 bg-indigo-50 text-indigo-700"
 									: "border-gray-300 text-gray-600 hover:bg-gray-50"
+							} ${
+								totalAvailability.allowed
+									? ""
+									: "cursor-not-allowed opacity-50 hover:bg-transparent"
 							}`}
 						>
 							Tunggakan (nominal total)
 						</button>
 					</div>
+
+					{isModeBlocked ? (
+						<div className="mt-2 rounded-md bg-amber-50 p-3 text-xs text-amber-800">
+							<p>
+								Tahun ajaran <strong>{selectedAy?.name || "-"}</strong> belum
+								punya konfigurasi tarif, sehingga mode rinci belum bisa dipakai.
+								Mode nominal total hanya berlaku untuk tahun ajaran selain TA
+								aktif, jadi tagihan belum bisa dicatat untuk TA ini.
+							</p>
+							<Link
+								to="/pengaturan/tarif"
+								className="mt-1 inline-flex font-medium text-amber-900 underline"
+							>
+								Atur konfigurasi tarif TA ini
+							</Link>
+						</div>
+					) : (
+						<p className="mt-2 text-xs text-gray-500">
+							{isActiveAcademicYear
+								? "Tahun ajaran aktif memakai mode rinci sesuai tarifnya; mode nominal total hanya untuk tunggakan tahun ajaran lain."
+								: "Tahun ajaran selain TA aktif dicatat sebagai tunggakan dengan satu nominal total."}
+						</p>
+					)}
 				</div>
 
 				{mode === "total" ? (

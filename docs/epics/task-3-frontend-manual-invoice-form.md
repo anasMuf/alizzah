@@ -34,7 +34,7 @@ Admin dapat mencatat tagihan manual / tunggakan langsung dari UI: **satu form ad
 |---|---|
 | Mode | `itemized` (type `manual`) dan `total` (type `arrears`) |
 | Mode default | TA terpilih = TA aktif → `itemized`; TA lain → `total` |
-| Escape hatch | Mode dapat diubah admin kapan saja; pilihan manual bertahan sampai TA diubah |
+| Escape hatch | ~~Mode dapat diubah admin kapan saja; pilihan manual bertahan sampai TA diubah~~ — **DICABUT oleh Task 9**: mode kini ditentukan mutlak oleh TA (lihat [task-9](./task-9-validasi-mode-tahun-ajaran.md)) |
 | Mode total | Banner penjelasan + `CurrencyInput` nominal + `Keterangan` **wajib** |
 | Mode rinci | Dropdown item tarif (difilter level/gender siswa, dikelompokkan per kategori) + kuantitas untuk unit `per_day`/`per_monday` + daftar item + total otomatis |
 | Jatuh tempo | Opsional, kedua mode |

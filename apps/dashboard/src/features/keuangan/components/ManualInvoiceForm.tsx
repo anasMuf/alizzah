@@ -4,10 +4,7 @@ import { useAtom } from "jotai";
 import { Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useGetV1AcademicYears } from "#/api/endpoints/academic-years/academic-years";
-import {
-	useGetV1FeeConfigs,
-	useGetV1FeeConfigsIdItems,
-} from "#/api/endpoints/fee-configs/fee-configs";
+import { useGetV1FeeConfigs } from "#/api/endpoints/fee-configs/fee-configs";
 import { usePostV1Invoices } from "#/api/endpoints/invoices/invoices";
 import { ApiError } from "#/api/mutator/custom-instance";
 import {
@@ -32,6 +29,7 @@ import {
 	type ManualInvoiceItemDraft,
 	type ManualInvoiceMode,
 	modeAvailability,
+	studentLevelWarning,
 	sumDraftAmounts,
 	validateManualInvoice,
 } from "../manual-invoice";
@@ -141,13 +139,18 @@ export function ManualInvoiceForm({
 	const feeConfigForAy = feeConfigs.find(
 		(fc: any) => fc.academic_year?.id === academicYearId,
 	);
-	const feeConfigId = feeConfigForAy?.id;
+
+	// Item tarif sudah ikut pada respons daftar tarif — `FindAll` di backend
+	// memuat `Items` yang aktif saja (`is_active = true`), jadi tidak perlu
+	// request kedua.
+	const feeItemsForAy: any[] = feeConfigForAy?.items ?? [];
+	const allFeeItems = feeItemsForAy;
 
 	// Mode ditentukan mutlak oleh TA terpilih (tidak lagi bisa dipaksa admin):
 	// rinci hanya untuk TA aktif yang punya tarif, total hanya untuk TA lain.
 	const isActiveAcademicYear =
 		academicYearId != null && academicYearId === activeAy?.id;
-	const hasTariffConfig = !!feeConfigId;
+	const hasTariffConfig = feeItemsForAy.length > 0;
 	const itemizedAvailability = modeAvailability({
 		mode: "itemized",
 		isActiveAcademicYear,
@@ -169,18 +172,12 @@ export function ManualInvoiceForm({
 	// tampilkan banner blokir sebelum data tarif benar-benar diketahui.
 	const isModeBlocked = noUsableMode && !isFeeConfigLoading;
 
-	const { data: feeItemsResp } = useGetV1FeeConfigsIdItems(
-		feeConfigId || 0,
-		undefined,
-		{ query: { enabled: !!feeConfigId && mode === "itemized" } },
-	);
-	const allFeeItems: any[] = (feeItemsResp?.data as any)?.data || [];
-
 	const studentLevel =
 		selectedStudent?.active_enrollment?.class_group?.level ??
 		selectedStudent?.active_enrollment?.level ??
 		null;
 	const studentGender = selectedStudent?.gender ?? null;
+	const selectedStudentLevelWarning = studentLevelWarning(studentLevel);
 
 	// Tarif difilter sesuai profil siswa (level & gender).
 	const availableFeeItems = useMemo(
@@ -431,7 +428,7 @@ export function ManualInvoiceForm({
 						<div className="mt-2 rounded-md bg-amber-50 p-3 text-xs text-amber-800">
 							<p>
 								Tahun ajaran <strong>{selectedAy?.name || "-"}</strong> belum
-								punya konfigurasi tarif, sehingga mode rinci belum bisa dipakai.
+								punya item tarif aktif, sehingga mode rinci belum bisa dipakai.
 								Mode nominal total hanya berlaku untuk tahun ajaran selain TA
 								aktif, jadi tagihan belum bisa dicatat untuk TA ini.
 							</p>
@@ -482,6 +479,11 @@ export function ManualInvoiceForm({
 
 						{selectedStudent && (
 							<div className="space-y-3">
+								{selectedStudentLevelWarning && (
+									<div className="rounded-md bg-amber-50 p-3 text-xs text-amber-800">
+										{selectedStudentLevelWarning}
+									</div>
+								)}
 								<Label htmlFor="manual-invoice-fee-item">Item Tarif</Label>
 								<div className="flex items-end gap-2">
 									<select

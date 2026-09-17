@@ -60,9 +60,13 @@ export interface ModeAvailability {
  * Apakah sebuah mode sah untuk tahun ajaran terpilih.
  *
  * Aturan (menggantikan escape hatch lama — mode tidak lagi bisa dipaksa):
- * - mode `itemized` hanya sah untuk TA aktif **dan** yang sudah punya tarif,
+ * - mode `itemized` hanya sah untuk TA aktif **dan** yang punya item tarif aktif,
  *   karena itemnya diambil dari tarif milik TA itu.
  * - mode `total` hanya sah untuk TA selain TA aktif.
+ *
+ * `hasTariffConfig` berarti "ada item tarif aktif yang bisa dipakai" — bukan
+ * sekadar konfigurasi tarifnya ada. Konfigurasi tanpa item aktif sama tidak
+ * terpakainya untuk mode rinci.
  */
 export function modeAvailability(params: {
 	mode: ManualInvoiceMode;
@@ -81,7 +85,7 @@ export function modeAvailability(params: {
 		if (!hasTariffConfig) {
 			return {
 				allowed: false,
-				reason: "Tahun ajaran ini belum punya konfigurasi tarif.",
+				reason: "Tahun ajaran ini belum punya item tarif aktif.",
 			};
 		}
 		return { allowed: true };
@@ -206,6 +210,20 @@ export function validateManualInvoice(
 		}
 	}
 	return null;
+}
+
+/**
+ * Peringatan bila level siswa tidak diketahui — biasanya karena siswa belum punya
+ * enrollment aktif. Filter tarif per level hanya bisa mencocokkan tarif berlevel
+ * "all"/kosong, sehingga daftar tarif bisa tampak hampir kosong meski tarifnya ada.
+ *
+ * Mengembalikan `null` bila level diketahui (tidak perlu peringatan).
+ */
+export function studentLevelWarning(
+	studentLevel?: string | null,
+): string | null {
+	if (studentLevel) return null;
+	return 'Siswa ini belum punya enrollment aktif, jadi hanya tarif berlevel "Semua" yang ditampilkan.';
 }
 
 /** Nama item tunggakan, mis. "Tunggakan TA 2024/2025". */

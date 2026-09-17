@@ -12,6 +12,7 @@ import {
 	type ManualInvoiceFormState,
 	manualInvoiceType,
 	modeAvailability,
+	studentLevelWarning,
 	sumDraftAmounts,
 	validateManualInvoice,
 } from "./manual-invoice";
@@ -324,6 +325,20 @@ describe("canDeleteManualInvoice", () => {
 	});
 });
 
+describe("studentLevelWarning", () => {
+	it("tidak memberi peringatan bila level siswa diketahui", () => {
+		expect(studentLevelWarning("intan")).toBeNull();
+	});
+
+	it("memberi peringatan bila level siswa tidak diketahui", () => {
+		for (const level of [undefined, null, ""]) {
+			const warning = studentLevelWarning(level);
+			expect(warning).toBeTruthy();
+			expect(warning).toContain("enrollment aktif");
+		}
+	});
+});
+
 describe("modeAvailability", () => {
 	const matrix = [
 		{
@@ -378,13 +393,13 @@ describe("modeAvailability", () => {
 		});
 	}
 
-	it("menyebut tarif sebagai sebab saat TA aktif belum punya tarif", () => {
+	it("menyebut item tarif sebagai sebab saat TA aktif belum punya item tarif", () => {
 		const result = modeAvailability({
 			mode: "itemized",
 			isActiveAcademicYear: true,
 			hasTariffConfig: false,
 		});
-		expect(result.reason).toContain("tarif");
+		expect(result.reason).toContain("item tarif");
 	});
 
 	it("menyebut tahun ajaran aktif sebagai sebab untuk mode total", () => {
@@ -435,7 +450,7 @@ describe("validateManualInvoice — kesesuaian mode dengan tahun ajaran", () => 
 
 	it("menolak mode rinci pada TA aktif tanpa tarif", () => {
 		const state = itemizedState({ hasTariffConfig: false });
-		expect(validateManualInvoice(state)).toContain("tarif");
+		expect(validateManualInvoice(state)).toContain("item tarif");
 	});
 
 	it("memeriksa kesesuaian mode sebelum memeriksa isian", () => {

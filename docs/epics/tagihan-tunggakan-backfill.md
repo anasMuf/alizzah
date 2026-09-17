@@ -175,6 +175,14 @@ Pos ini muncul di Posisi Kas, Saldo, laporan tahunan, laporan harian, dan ringka
 
 Label dan urutan pos diatur di `invoiceCategoryLabels`/`invoiceCategoryOrder` (`report_service.go`); `TestInvoiceCategoryLabelsCoverOrder` menjaga agar kategori baru tidak tampil mentah. Perbaikan ini **tidak** mengubah angka apa pun — hanya keterbacaannya. Menggabungkan pos tunggakan ke SPP adalah keputusan akuntansi terpisah yang belum diambil (lihat Catatan Implementasi Task 11).
 
+### 3h. Netting Dispensasi (Task 12)
+
+Item dispensasi (potongan) disimpan sebagai item berkategori `dispensation` dengan amount negatif, dan pos asalnya dipetakan lewat `offset_category`. Sebelum Task 12, pemetaan itu hanya diterapkan di Posisi Kas/Saldo — laporan harian dan bulanan menampilkannya sebagai bucket `dispensation` tersendiri.
+
+Task 12 menyatukan keempat definisi laporan lewat satu ekspresi bersama (`invoiceCategoryPosExpr`). Ekspresi itu hanya dipakai di `SELECT`/`GROUP BY`, **bukan** `WHERE`, sehingga himpunan baris dan nilai yang dijumlahkan identik: **semua total tidak berubah**, yang berpindah hanya atribusi antar pos.
+
+Item dispensasi yang `offset_category`-nya kosong (saat ini nol) tetap jatuh ke bucket `dispensation` sebagai sinyal data yang belum di-backfill — sengaja dibiarkan mentah, tidak diberi label ramah.
+
 ## 4. Edge Cases
 
 - `type=arrears` dengan `items` ≠ 1 → tolak 422

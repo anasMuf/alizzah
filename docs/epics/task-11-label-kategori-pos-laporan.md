@@ -105,9 +105,16 @@ backend, hanya `arrears` yang belum. Fee config memakai 9 kategori, semuanya sud
 berlabel — sehingga `type=manual` tidak berisiko muncul mentah selama item dipilih
 dari tarif.
 
-### Yang tetap mentah (tidak dikerjakan)
+### `dispensation` — ditangani di Task 12, dan catatan awal di sini keliru
 
-`dispensation` juga tidak punya label. Ia biasanya dialihkan ke pos asalnya lewat
-`offset_category`, tetapi baris lama tanpa `offset_category` (ada 218 di DB dev)
-akan tampil mentah sebagai bucket `dispensation`. Itu masalah pra-existing,
-terpisah dari tunggakan, dan belum diputuskan penanganannya.
+Draf pertama dokumen ini menulis "218 baris tanpa `offset_category`". Itu **salah**:
+query-nya hanya menghitung total item dispensasi. Faktanya **semuanya** (218 dari 218)
+sudah punya pemetaan `offset_category`.
+
+Masalah sebenarnya ada di jalur query, bukan di data: empat definisi SQL (Posisi Kas,
+Saldo, harian, bulanan/tahunan) menangani dispensasi secara berbeda. Disatukan di
+[Task 12](./task-12-netting-dispensasi-laporan.md) lewat satu ekspresi bersama.
+
+Label ramah untuk `dispensation` **sengaja tidak ditambahkan**: baris yang belum
+terpetakan seharusnya tampil mentah sebagai sinyal masalah data, dan saat ini jumlahnya
+nol.

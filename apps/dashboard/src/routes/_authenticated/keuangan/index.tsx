@@ -16,7 +16,10 @@ import { useGetV1Invoices } from "#/api/endpoints/invoices/invoices";
 import { useGetV1ReportsDaily } from "#/api/endpoints/reports/reports";
 import { useGetV1VaultBalance } from "#/api/endpoints/vault/vault";
 import { useAccess } from "#/features/auth/access";
-import { invoiceTypeLabel } from "#/features/keuangan/invoice-labels";
+import {
+	invoiceCategoryLabel,
+	invoiceTypeLabel,
+} from "#/features/keuangan/invoice-labels";
 import { academicYearAtom } from "../../../store/global";
 import { formatCurrency } from "../../../utils/format";
 
@@ -252,7 +255,7 @@ function KeuanganOverviewPage() {
 										<span className="mt-1.5 pt-1.5 border-t border-gray-600 space-y-0.5 block">
 											{incomeCategories.map((c) => (
 												<span key={c.category} className="flex justify-between">
-													<span>{c.category}</span>
+													<span>{invoiceCategoryLabel(c.category)}</span>
 													<span>{formatCurrency(c.amount)}</span>
 												</span>
 											))}

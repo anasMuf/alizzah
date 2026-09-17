@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { invoicePeriodOrTypeLabel, invoiceTypeLabel } from "./invoice-labels";
+import {
+	invoiceCategoryLabel,
+	invoicePeriodOrTypeLabel,
+	invoiceTypeLabel,
+} from "./invoice-labels";
 
 describe("invoiceTypeLabel", () => {
 	it("menerjemahkan semua jenis tagihan yang dikenal", () => {
@@ -36,6 +40,46 @@ describe("invoiceTypeLabel", () => {
 	it("memberi tanda '-' untuk jenis kosong", () => {
 		expect(invoiceTypeLabel(undefined)).toBe("-");
 		expect(invoiceTypeLabel("")).toBe("-");
+	});
+});
+
+describe("invoiceCategoryLabel", () => {
+	it("menerjemahkan kategori pos yang muncul di laporan", () => {
+		expect(invoiceCategoryLabel("monthly_spp")).toBe("SPP");
+		expect(invoiceCategoryLabel("arrears")).toBe("Tunggakan");
+		expect(invoiceCategoryLabel("savings_mandatory")).toBe("Tabungan Wajib");
+		expect(invoiceCategoryLabel("facility")).toBe("Fasilitas");
+	});
+
+	it("tidak pernah mengembalikan kategori mentah untuk yang dikenal", () => {
+		for (const cat of [
+			"monthly_spp",
+			"monthly_infaq",
+			"arrears",
+			"initial",
+			"registration",
+			"pasta",
+			"calisan",
+			"ekskul",
+			"savings_mandatory",
+			"daycare",
+			"daycare_meal",
+			"graduation",
+			"facility",
+			"lainnya",
+			"savings_voluntary",
+		]) {
+			expect(invoiceCategoryLabel(cat)).not.toBe(cat);
+		}
+	});
+
+	it("mengembalikan kategori tak dikenal apa adanya (tidak menyembunyikan data)", () => {
+		expect(invoiceCategoryLabel("entah_apa")).toBe("entah_apa");
+	});
+
+	it("memberi tanda '-' untuk kategori kosong", () => {
+		expect(invoiceCategoryLabel(undefined)).toBe("-");
+		expect(invoiceCategoryLabel("")).toBe("-");
 	});
 });
 

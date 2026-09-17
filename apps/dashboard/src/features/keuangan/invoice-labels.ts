@@ -25,6 +25,44 @@ export function invoiceTypeLabel(type?: string): string {
 	return INVOICE_TYPE_LABELS[type] ?? type;
 }
 
+/**
+ * Label kategori pos tagihan (`invoice_items.category`).
+ *
+ * Backend sudah mengirim nama pos yang siap tampil pada Posisi Kas & Saldo
+ * (`post.name`), tetapi sebagian permukaan menerima kategori mentah — mis.
+ * `by_category` laporan harian dan ringkasan `/keuangan`. Tanpa pemetaan ini,
+ * tunggakan tampil sebagai kode mentah `arrears`.
+ *
+ * Redaksi sengaja disamakan dengan `invoiceCategoryLabels` di
+ * `apps/api/service/report_service.go` agar satu kategori tidak punya dua nama.
+ */
+const INVOICE_CATEGORY_LABELS: Record<string, string> = {
+	monthly_spp: "SPP",
+	monthly_infaq: "Infaq Harian",
+	arrears: "Tunggakan",
+	initial: "Biaya Awal Masuk",
+	registration: "Biaya Registrasi",
+	pasta: "PASTA",
+	calisan: "Calisan",
+	ekskul: "Ekskul",
+	savings_mandatory: "Tabungan Wajib",
+	daycare: "Daycare (SPD)",
+	daycare_meal: "Konsumsi Daycare",
+	graduation: "Wisuda",
+	facility: "Fasilitas",
+	lainnya: "Lain-lain",
+	savings_voluntary: "Tabungan Umum",
+};
+
+/**
+ * Label kategori pos yang dapat dibaca manusia.
+ * Kategori tak dikenal dikembalikan apa adanya agar data tidak disembunyikan.
+ */
+export function invoiceCategoryLabel(category?: string): string {
+	if (!category) return "-";
+	return INVOICE_CATEGORY_LABELS[category] ?? category;
+}
+
 /** Periode tagihan: "Bulanan 8/2026" untuk bulanan, selain itu label jenisnya. */
 export function invoicePeriodOrTypeLabel(invoice: {
 	type?: string;

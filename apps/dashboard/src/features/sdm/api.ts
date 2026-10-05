@@ -413,6 +413,17 @@ export function useDeleteEmployee() {
 
 // ── Lampiran HR per karyawan ──
 
+type HRType = "fungsional" | "tugas_tambahan" | "penanggung_jawab" | "lainlain";
+
+// Segmen URL memakai tanda hubung (konsisten dengan route backend & endpoint
+// master). Body tetap memakai garis bawah (mis. tugas_tambahan_id).
+const HR_PATH: Record<HRType, string> = {
+	fungsional: "fungsional",
+	tugas_tambahan: "tugas-tambahan",
+	penanggung_jawab: "penanggung-jawab",
+	lainlain: "lainlain",
+};
+
 export function useAttachHR(employeeId: number) {
 	const qc = useQueryClient();
 	return useMutation({
@@ -420,9 +431,10 @@ export function useAttachHR(employeeId: number) {
 			type,
 			body,
 		}: {
-			type: "fungsional" | "tugas_tambahan" | "penanggung_jawab" | "lainlain";
+			type: HRType;
 			body: Record<string, unknown>;
-		}) => sdmSend<null>("POST", `/employees/${employeeId}/${type}`, body),
+		}) =>
+			sdmSend<null>("POST", `/employees/${employeeId}/${HR_PATH[type]}`, body),
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: sdmKeys.employeeHR(employeeId) });
 			qc.invalidateQueries({ queryKey: sdmKeys.employee(employeeId) });
@@ -433,8 +445,11 @@ export function useAttachHR(employeeId: number) {
 export function useDetachHR(employeeId: number) {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: ({ type, detailId }: { type: string; detailId: number }) =>
-			sdmSend<null>("DELETE", `/employees/${employeeId}/${type}/${detailId}`),
+		mutationFn: ({ type, detailId }: { type: HRType; detailId: number }) =>
+			sdmSend<null>(
+				"DELETE",
+				`/employees/${employeeId}/${HR_PATH[type]}/${detailId}`,
+			),
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: sdmKeys.employeeHR(employeeId) });
 			qc.invalidateQueries({ queryKey: sdmKeys.employee(employeeId) });

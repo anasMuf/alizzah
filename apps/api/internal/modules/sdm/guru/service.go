@@ -20,17 +20,30 @@ func NewService(repo *Repository, masterRepo *master.Repository) *Service {
 }
 
 // ResolveEffectiveGolongan menentukan golongan efektif karyawan pada tanggal
-// `asOf`: hitung selisih hari sejak tgl_masuk lalu cari rentang golongan
-// (from_day < hari <= to_day, urutan id). Bila tidak ada kecocokan (jeda antar
-// golongan / tgl_masuk NULL) → fallback ke golongan tersimpan, lalu golongan
-// terendah. Ini menggantikan mutasi `id_pk` per-request di aplikasi lama (F5).
+// `asOf` berdasarkan masa kerja (tgl_masuk). Rentang golongan bersifat
+// setengah terbuka [from_day, to_day); `to_day` nil = tanpa batas atas.
+// Dipilih band dengan from_day TERBESAR yang cocok, sehingga tahan terhadap
+// urutan baris maupun rentang yang beririsan/celah. Bila tgl_masuk NULL atau
+// tak ada band cocok → fallback ke golongan tersimpan, lalu golongan terendah.
+// Ini menggantikan mutasi `id_pk` per-request di aplikasi lama (F5).
 func ResolveEffectiveGolongan(allGolongan []master.Golongan, emp *Employee, asOf time.Time) uint {
 	if emp.TglMasuk != nil {
-		days := int(asOf.Sub(*emp.TglMasuk).Hours() / 24)
-		for _, g := range allGolongan {
-			if g.FromDay != nil && g.ToDay != nil && days > *g.FromDay && days <= *g.ToDay {
-				return g.ID
+		days := calendarDays(*emp.TglMasuk, asOf)
+		var best *master.Golongan
+		for i := range allGolongan {
+			g := &allGolongan[i]
+			if g.FromDay == nil || days < *g.FromDay {
+				continue
 			}
+			if g.ToDay != nil && days >= *g.ToDay {
+				continue
+			}
+			if best == nil || *g.FromDay > *best.FromDay {
+				best = g
+			}
+		}
+		if best != nil {
+			return best.ID
 		}
 	}
 	if emp.GolonganID != nil {
@@ -40,6 +53,15 @@ func ResolveEffectiveGolongan(allGolongan []master.Golongan, emp *Employee, asOf
 		return allGolongan[0].ID
 	}
 	return 0
+}
+
+// calendarDays menghitung selisih hari kalender (mengabaikan jam) antara `from`
+// dan `to` — mencegah off-by-one ketika `to` membawa komponen waktu (mis.
+// time.Now()).
+func calendarDays(from, to time.Time) int {
+	f := time.Date(from.Year(), from.Month(), from.Day(), 0, 0, 0, 0, from.Location())
+	t := time.Date(to.Year(), to.Month(), to.Day(), 0, 0, 0, 0, to.Location())
+	return int(t.Sub(f).Hours() / 24)
 }
 
 // ── List / Detail ──

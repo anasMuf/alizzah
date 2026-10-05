@@ -61,17 +61,36 @@ func (r *Repository) PinjamanStats() (count, totalSisa int64, err error) {
 	return s.Count, s.Sisa, err
 }
 
-// GuruPerGolongan menghitung jumlah karyawan aktif per golongan.
-func (r *Repository) GuruPerGolongan() ([]GolonganStat, error) {
-	var rows []GolonganStat
-	err := r.db.Table("sdm_employees").
-		Select("sdm_golongan.kode, COUNT(sdm_employees.id) AS jumlah").
-		Joins("JOIN sdm_golongan ON sdm_golongan.id = sdm_employees.golongan_id").
-		Where("sdm_employees.is_active = ?", true).
-		Group("sdm_golongan.kode").
-		Order("sdm_golongan.kode ASC").
-		Scan(&rows).Error
-	return rows, err
+// GuruPerGolonganEfektif menghitung jumlah karyawan aktif per golongan
+// EFEKTIF (dihitung dari masa kerja pada `asOf`), bukan golongan tersimpan —
+// agar statistik konsisten dengan golongan yang dipakai menghitung gaji.
+func (r *Repository) GuruPerGolonganEfektif(asOf time.Time) ([]GolonganStat, error) {
+	var emps []guru.Employee
+	if err := r.db.Where("is_active = ?", true).Find(&emps).Error; err != nil {
+		return nil, err
+	}
+	var golongans []master.Golongan
+	if err := r.db.Order("id ASC").Find(&golongans).Error; err != nil {
+		return nil, err
+	}
+	kodeByID := make(map[uint]string, len(golongans))
+	order := make([]string, 0, len(golongans))
+	for _, g := range golongans {
+		kodeByID[g.ID] = g.Kode
+		order = append(order, g.Kode)
+	}
+	counts := map[string]int{}
+	for i := range emps {
+		id := guru.ResolveEffectiveGolongan(golongans, &emps[i], asOf)
+		if kode, ok := kodeByID[id]; ok {
+			counts[kode]++
+		}
+	}
+	out := make([]GolonganStat, 0, len(order))
+	for _, kode := range order {
+		out = append(out, GolonganStat{Kode: kode, Jumlah: counts[kode]})
+	}
+	return out, nil
 }
 
 // ── Snapshot penggajian ──

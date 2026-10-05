@@ -610,7 +610,7 @@ func (s *Service) Summary(academicYearID *uint, tahun string) (*SummaryResponse,
 	resp.PinjamanAktif = int(pinjamCount)
 	resp.TotalSisaPinjaman = int(pinjamSisa)
 
-	perGolongan, err := s.repo.GuruPerGolongan()
+	perGolongan, err := s.repo.GuruPerGolonganEfektif(time.Now())
 	if err != nil {
 		return nil, err
 	}

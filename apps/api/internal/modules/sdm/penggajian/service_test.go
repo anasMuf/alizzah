@@ -15,12 +15,12 @@ func ptr(v int) *int { return &v }
 
 func testGolongans() []master.Golongan {
 	return []master.Golongan{
-		{PrimaryKey: model.PrimaryKey{ID: 1}, Kode: "A", FromDay: ptr(0), ToDay: ptr(730), Nilai: 250000},
-		{PrimaryKey: model.PrimaryKey{ID: 2}, Kode: "B", FromDay: ptr(760), ToDay: ptr(1826), Nilai: 300000},
-		{PrimaryKey: model.PrimaryKey{ID: 3}, Kode: "C", FromDay: ptr(1856), ToDay: ptr(3652), Nilai: 350000},
-		{PrimaryKey: model.PrimaryKey{ID: 4}, Kode: "D", FromDay: ptr(3682), ToDay: ptr(5478), Nilai: 400000},
-		{PrimaryKey: model.PrimaryKey{ID: 5}, Kode: "E", FromDay: ptr(5508), ToDay: ptr(7305), Nilai: 450000},
-		{PrimaryKey: model.PrimaryKey{ID: 6}, Kode: "F", FromDay: ptr(7335), ToDay: ptr(9131), Nilai: 500000},
+		{PrimaryKey: model.PrimaryKey{ID: 1}, Kode: "A", FromDay: ptr(0), ToDay: ptr(731), Nilai: 250000},
+		{PrimaryKey: model.PrimaryKey{ID: 2}, Kode: "B", FromDay: ptr(731), ToDay: ptr(1827), Nilai: 300000},
+		{PrimaryKey: model.PrimaryKey{ID: 3}, Kode: "C", FromDay: ptr(1827), ToDay: ptr(3653), Nilai: 350000},
+		{PrimaryKey: model.PrimaryKey{ID: 4}, Kode: "D", FromDay: ptr(3653), ToDay: ptr(5479), Nilai: 400000},
+		{PrimaryKey: model.PrimaryKey{ID: 5}, Kode: "E", FromDay: ptr(5479), ToDay: ptr(7306), Nilai: 450000},
+		{PrimaryKey: model.PrimaryKey{ID: 6}, Kode: "F", FromDay: ptr(7306), ToDay: nil, Nilai: 500000},
 	}
 }
 
@@ -184,6 +184,33 @@ func TestGolonganEfektifTanpaTglMasuk(t *testing.T) {
 	got := guru.ResolveEffectiveGolongan(testGolongans(), emp, asOf)
 	if got != 1 {
 		t.Errorf("Golongan efektif tanpa tgl_masuk = %d, want 1 (tersimpan)", got)
+	}
+}
+
+// Rentang kontigu setengah terbuka [from, to): setiap masa kerja memetakan tepat
+// satu golongan, tanpa celah (tak pernah jatuh ke fallback).
+func TestGolonganEfektifBatasKontigu(t *testing.T) {
+	base, _ := time.Parse("2006-01-02", "2020-01-01")
+	golongans := testGolongans()
+	cases := []struct {
+		hari int
+		want uint
+	}{
+		{0, 1}, {730, 1}, // A: [0,731)
+		{731, 2}, {1826, 2}, // B: [731,1827)
+		{1827, 3}, {3652, 3}, // C: [1827,3653)
+		{3653, 4}, {5478, 4}, // D: [3653,5479)
+		{5479, 5}, {7305, 5}, // E: [5479,7306)
+		{7306, 6}, {99999, 6}, // F: [7306, ∞)
+	}
+	for _, c := range cases {
+		tgl := base
+		asOf := base.AddDate(0, 0, c.hari)
+		emp := &guru.Employee{PrimaryKey: model.PrimaryKey{ID: 1}, TglMasuk: &tgl}
+		got := guru.ResolveEffectiveGolongan(golongans, emp, asOf)
+		if got != c.want {
+			t.Errorf("masa kerja %d hari → golongan %d, want %d", c.hari, got, c.want)
+		}
 	}
 }
 

@@ -17,6 +17,7 @@ import (
 // tidak di-seed — diisi lewat UI.
 func Seed(db *gorm.DB) {
 	seedMasters(db)
+	migrateGolonganRanges(db)
 	seedEmployees(db)
 }
 
@@ -31,12 +32,12 @@ func seedMasters(db *gorm.DB) {
 	db.Model(&master.Golongan{}).Count(&golonganCount)
 	if golonganCount == 0 {
 		golongans := []master.Golongan{
-			{Kode: "A", FromDay: ptr(0), ToDay: ptr(730), Keterangan: "Pengabdian 0 - 2 Tahun", Nilai: 250000},
-			{Kode: "B", FromDay: ptr(760), ToDay: ptr(1826), Keterangan: "Pengabdian 2,1 - 5 Tahun", Nilai: 300000},
-			{Kode: "C", FromDay: ptr(1856), ToDay: ptr(3652), Keterangan: "Pengabdian 5,1 - 10 Tahun", Nilai: 350000},
-			{Kode: "D", FromDay: ptr(3682), ToDay: ptr(5478), Keterangan: "Pengabdian 10,1 - 15 Tahun", Nilai: 400000},
-			{Kode: "E", FromDay: ptr(5508), ToDay: ptr(7305), Keterangan: "Pengabdian 15,1 - 20 Tahun", Nilai: 450000},
-			{Kode: "F", FromDay: ptr(7335), ToDay: ptr(9131), Keterangan: "Pengabdian 20,1 - 25 Tahun", Nilai: 500000},
+			{Kode: "A", FromDay: ptr(0), ToDay: ptr(731), Keterangan: "Pengabdian 0 - 2 Tahun", Nilai: 250000},
+			{Kode: "B", FromDay: ptr(731), ToDay: ptr(1827), Keterangan: "Pengabdian 2 - 5 Tahun", Nilai: 300000},
+			{Kode: "C", FromDay: ptr(1827), ToDay: ptr(3653), Keterangan: "Pengabdian 5 - 10 Tahun", Nilai: 350000},
+			{Kode: "D", FromDay: ptr(3653), ToDay: ptr(5479), Keterangan: "Pengabdian 10 - 15 Tahun", Nilai: 400000},
+			{Kode: "E", FromDay: ptr(5479), ToDay: ptr(7306), Keterangan: "Pengabdian 15 - 20 Tahun", Nilai: 450000},
+			{Kode: "F", FromDay: ptr(7306), ToDay: nil, Keterangan: "Pengabdian 20 Tahun ke atas", Nilai: 500000},
 		}
 		if err := db.Create(&golongans).Error; err != nil {
 			log.Printf("Seed SDM golongan gagal: %v", err)
@@ -137,6 +138,60 @@ func seedNamedMaster[T any](db *gorm.DB, _ *T, rows []T) {
 		return
 	}
 	log.Printf("Seed SDM: %d %T", len(rows), *new(T))
+}
+
+// migrateGolonganRanges menyelaraskan rentang golongan lama (inklusif,
+// berlubang) ke rentang kontigu setengah terbuka [from, to); `F` tanpa batas
+// atas (to_day NULL). Idempotent: hanya mengubah baris yang MASIH memakai nilai
+// lama, sehingga tidak menimpa perubahan manual yang sudah dilakukan dan aman
+// dijalankan tiap startup.
+func migrateGolonganRanges(db *gorm.DB) {
+	legacy := map[string][2]int{
+		"A": {0, 730}, "B": {760, 1826}, "C": {1856, 3652},
+		"D": {3682, 5478}, "E": {5508, 7305}, "F": {7335, 9131},
+	}
+	targets := []struct {
+		kode       string
+		from       int
+		to         int
+		toOpen     bool
+		keterangan string
+	}{
+		{"A", 0, 731, false, "Pengabdian 0 - 2 Tahun"},
+		{"B", 731, 1827, false, "Pengabdian 2 - 5 Tahun"},
+		{"C", 1827, 3653, false, "Pengabdian 5 - 10 Tahun"},
+		{"D", 3653, 5479, false, "Pengabdian 10 - 15 Tahun"},
+		{"E", 5479, 7306, false, "Pengabdian 15 - 20 Tahun"},
+		{"F", 7306, 0, true, "Pengabdian 20 Tahun ke atas"},
+	}
+	updated := 0
+	for _, t := range targets {
+		var g master.Golongan
+		if err := db.Where("kode = ?", t.kode).First(&g).Error; err != nil {
+			continue
+		}
+		lv := legacy[t.kode]
+		if g.FromDay == nil || *g.FromDay != lv[0] || g.ToDay == nil || *g.ToDay != lv[1] {
+			continue // sudah termigrasi / diubah manual
+		}
+		from := t.from
+		g.FromDay = &from
+		if t.toOpen {
+			g.ToDay = nil
+		} else {
+			to := t.to
+			g.ToDay = &to
+		}
+		g.Keterangan = t.keterangan
+		if err := db.Save(&g).Error; err != nil {
+			log.Printf("Migrasi golongan %s gagal: %v", t.kode, err)
+			continue
+		}
+		updated++
+	}
+	if updated > 0 {
+		log.Printf("Migrasi SDM: rentang %d golongan diselaraskan (kontigu)", updated)
+	}
 }
 
 // seedEmployees mengisi karyawan sesuai data terkini: dump `guru` lama + dua

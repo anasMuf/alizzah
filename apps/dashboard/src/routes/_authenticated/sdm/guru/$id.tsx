@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { ArrowLeft, HandCoins, UserCog } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge } from "#/components/ui";
 import { useEmployee, useRiwayat } from "#/features/sdm/api";
 import { academicYearAtom } from "#/store/global";
@@ -9,6 +10,8 @@ import { formatCurrency, formatDate } from "#/utils/format";
 export const Route = createFileRoute("/_authenticated/sdm/guru/$id")({
 	component: GuruDetailPage,
 });
+
+const PAGE_SIZE = 10;
 
 function GuruDetailPage() {
 	const { id } = Route.useParams();
@@ -20,15 +23,44 @@ function GuruDetailPage() {
 		employeeId,
 	);
 
+	// Hanya bulan yang punya penggajian (riwayat pembayaran).
+	const riwayatRows = useMemo(
+		() => (riwayat?.per_bulan ?? []).filter((b) => b.ada_data),
+		[riwayat],
+	);
+
+	// Infinite scroll: tampilkan PAGE_SIZE baris dulu, tambah saat sentinel terlihat.
+	const [visible, setVisible] = useState(PAGE_SIZE);
+	const sentinelRef = useRef<HTMLDivElement>(null);
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: reset saat karyawan/TA berganti
+	useEffect(() => {
+		setVisible(PAGE_SIZE);
+	}, [employeeId, activeAy?.id]);
+
+	useEffect(() => {
+		const el = sentinelRef.current;
+		if (!el) return;
+		const observer = new IntersectionObserver(
+			(entries) => {
+				if (entries[0].isIntersecting && visible < riwayatRows.length) {
+					setVisible(visible + PAGE_SIZE);
+				}
+			},
+			{ rootMargin: "200px" },
+		);
+		observer.observe(el);
+		return () => observer.disconnect();
+	}, [visible, riwayatRows.length]);
+
+	const shown = riwayatRows.slice(0, visible);
+
 	if (isLoading) {
 		return <p className="text-sm text-gray-500">Memuat karyawan...</p>;
 	}
 	if (isError || !emp) {
 		return <p className="text-sm text-red-600">Gagal memuat karyawan.</p>;
 	}
-
-	// Hanya bulan yang punya penggajian (riwayat pembayaran).
-	const riwayatRows = (riwayat?.per_bulan ?? []).filter((b) => b.ada_data);
 
 	return (
 		<div className="space-y-6">
@@ -93,69 +125,65 @@ function GuruDetailPage() {
 						Belum ada penggajian pada Tahun Ajaran ini.
 					</p>
 				) : (
-					<div className="overflow-x-auto">
-						<table className="min-w-full divide-y divide-gray-200">
-							<thead className="bg-gray-50">
-								<tr>
-									<th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
-										Bulan
-									</th>
-									<th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
-										Status
-									</th>
-									<th className="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
-										Total
-									</th>
-									<th className="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
-										Slip
-									</th>
-								</tr>
-							</thead>
-							<tbody className="divide-y divide-gray-100">
-								{riwayatRows.map((b) => (
-									<tr key={b.periode} className="hover:bg-gray-50">
-										<td className="px-5 py-3 text-sm font-medium text-gray-900 whitespace-nowrap">
-											{b.label}
-										</td>
-										<td className="px-5 py-3">
-											{b.status === "finalized" ? (
-												<Badge variant="success">Finalized</Badge>
-											) : (
-												<Badge variant="warning">Preview</Badge>
-											)}
-										</td>
-										<td className="px-5 py-3 text-sm font-semibold text-gray-900 text-right whitespace-nowrap">
-											{formatCurrency(b.total_gaji)}
-										</td>
-										<td className="px-5 py-3 text-right">
-											<Link
-												to="/sdm/penggajian/$id"
-												params={{ id: String(employeeId) }}
-												search={{ periode: b.periode.slice(0, 7) }}
-												className="text-sm text-indigo-600 hover:text-indigo-800"
-											>
-												Lihat Slip
-											</Link>
-										</td>
+					<>
+						<div className="overflow-x-auto">
+							<table className="min-w-full divide-y divide-gray-200">
+								<thead className="bg-gray-50">
+									<tr>
+										<th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
+											Bulan
+										</th>
+										<th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
+											Status
+										</th>
+										<th className="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
+											Total
+										</th>
+										<th className="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
+											Slip
+										</th>
 									</tr>
-								))}
-							</tbody>
-							<tfoot className="bg-gray-50 font-semibold">
-								<tr>
-									<td
-										colSpan={2}
-										className="px-5 py-3 text-right text-sm text-gray-700"
-									>
-										Total
-									</td>
-									<td className="px-5 py-3 text-sm text-gray-900 text-right whitespace-nowrap">
-										{formatCurrency(riwayat?.total_gaji ?? 0)}
-									</td>
-									<td />
-								</tr>
-							</tfoot>
-						</table>
-					</div>
+								</thead>
+								<tbody className="divide-y divide-gray-100">
+									{shown.map((b) => (
+										<tr key={b.periode} className="hover:bg-gray-50">
+											<td className="px-5 py-3 text-sm font-medium text-gray-900 whitespace-nowrap">
+												{b.label}
+											</td>
+											<td className="px-5 py-3">
+												{b.status === "finalized" ? (
+													<Badge variant="success">Finalized</Badge>
+												) : (
+													<Badge variant="warning">Preview</Badge>
+												)}
+											</td>
+											<td className="px-5 py-3 text-sm font-semibold text-gray-900 text-right whitespace-nowrap">
+												{formatCurrency(b.total_gaji)}
+											</td>
+											<td className="px-5 py-3 text-right">
+												<Link
+													to="/sdm/penggajian/$id"
+													params={{ id: String(employeeId) }}
+													search={{ periode: b.periode.slice(0, 7) }}
+													className="text-sm text-indigo-600 hover:text-indigo-800"
+												>
+													Lihat Slip
+												</Link>
+											</td>
+										</tr>
+									))}
+								</tbody>
+							</table>
+						</div>
+
+						{/* Sentinel infinite scroll */}
+						<div ref={sentinelRef} className="h-px" />
+						<div className="flex items-center justify-center py-3 text-sm text-gray-500">
+							{shown.length < riwayatRows.length
+								? `Menampilkan ${shown.length} dari ${riwayatRows.length} bulan`
+								: `Semua ${riwayatRows.length} bulan ditampilkan`}
+						</div>
+					</>
 				)}
 			</div>
 		</div>

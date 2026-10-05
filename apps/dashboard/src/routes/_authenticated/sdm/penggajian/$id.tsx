@@ -2,7 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, FileDown, Printer } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "#/components/ui";
-import { currentPeriode, formatPeriode, useSlip } from "#/features/sdm/api";
+import {
+	currentPeriode,
+	formatPeriode,
+	useGolongans,
+	useSlip,
+} from "#/features/sdm/api";
 import { formatCurrency } from "#/utils/format";
 
 export const Route = createFileRoute("/_authenticated/sdm/penggajian/$id")({
@@ -18,6 +23,7 @@ function SlipPage() {
 	const employeeId = Number(id);
 	const [periodeState] = useState(periode);
 	const { data: slip, isLoading, isError } = useSlip(periodeState, employeeId);
+	const { data: golongans = [] } = useGolongans();
 
 	if (isLoading) {
 		return <p className="text-sm text-gray-500">Menghitung slip...</p>;
@@ -45,7 +51,10 @@ function SlipPage() {
 						const { downloadSlipPdf } = await import(
 							"#/features/sdm/lib/slipPdf"
 						);
-						downloadSlipPdf(slip, periodeState);
+						const golonganKeterangan =
+							golongans.find((g) => g.kode === slip.golongan_kode)
+								?.keterangan ?? "";
+						downloadSlipPdf(slip, periodeState, { golonganKeterangan });
 					}}
 					className="inline-flex items-center rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
 				>

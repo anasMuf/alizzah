@@ -44,6 +44,9 @@ describe("renderSlipPdf", () => {
 		const page = doc.internal.pageSize;
 		expect(Math.round(page.getWidth())).toBe(148);
 		expect(Math.round(page.getHeight())).toBe(210);
+
+		// Konten harus muat dalam satu halaman A5.
+		expect(doc.getNumberOfPages()).toBe(1);
 	});
 
 	it("tetap menghasilkan PDF untuk karyawan tanpa rincian", () => {

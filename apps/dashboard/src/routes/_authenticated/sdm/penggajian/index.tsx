@@ -23,6 +23,7 @@ import {
 	monthsInAcademicYear,
 	type Slip,
 	useFinalizePayroll,
+	useGolongans,
 	usePenggajian,
 	useUnlockPayroll,
 } from "#/features/sdm/api";
@@ -56,6 +57,7 @@ function PenggajianPage() {
 	}, [months, periode]);
 
 	const { data: payroll, isLoading, isError } = usePenggajian(periode);
+	const { data: golongans = [] } = useGolongans();
 	const finalize = useFinalizePayroll();
 	const unlock = useUnlockPayroll();
 
@@ -84,7 +86,9 @@ function PenggajianPage() {
 				sdmGet<Slip>(`/penggajian/${employeeId}`, { periode }),
 				import("#/features/sdm/lib/slipPdf"),
 			]);
-			downloadSlipPdf(slip, periode);
+			const golonganKeterangan =
+				golongans.find((g) => g.kode === slip.golongan_kode)?.keterangan ?? "";
+			downloadSlipPdf(slip, periode, { golonganKeterangan });
 		} catch (err) {
 			addToast({
 				variant: "error",

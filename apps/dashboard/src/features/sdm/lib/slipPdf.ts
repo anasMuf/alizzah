@@ -47,7 +47,7 @@ function sectionHeader(no: string, title: string): Row {
 }
 
 /** Susun baris tabel slip mengikuti aplikasi lama (Dokumen 03 / gaji_print.php). */
-function buildBody(s: Slip): Row[] {
+function buildBody(s: Slip, golonganKeterangan?: string): Row[] {
 	const rows: Row[] = [];
 
 	rows.push([
@@ -58,11 +58,11 @@ function buildBody(s: Slip): Row[] {
 		},
 		rp(s.hr_pokok),
 		rp(s.hr_pokok),
-		s.impasing
-			? "sertifikasi+impasing (100%)"
-			: s.sertifikasi
-				? "sertifikasi (50%)"
-				: "",
+		s.sertifikasi
+			? "sertifikasi (50%)"
+			: s.impasing
+				? "sertifikasi+impasing (100%)"
+				: (golonganKeterangan ?? ""),
 	]);
 
 	const khRate = s.jumlah_hadir ? Math.round(s.kehadiran / s.jumlah_hadir) : 0;
@@ -134,14 +134,18 @@ function buildBody(s: Slip): Row[] {
  * downloadSlipPdf — hasilkan & unduh slip gaji PDF (A5) satu karyawan,
  * mengikuti desain aplikasi lama (gaji_print.php).
  */
-export function renderSlipPdf(slip: Slip, periode: string): jsPDF {
+export function renderSlipPdf(
+	slip: Slip,
+	periode: string,
+	opts: { golonganKeterangan?: string } = {},
+): jsPDF {
 	const doc = new jsPDF({ unit: "mm", format: "a5" });
 	const pageW = doc.internal.pageSize.getWidth();
 	const margin = 8;
 
 	// Header: doa + identitas periode.
 	doc.setFont("helvetica", "normal");
-	doc.setFontSize(8);
+	doc.setFontSize(10);
 	doc.text(
 		"Alhamdulillah… Alloh Ar Rozzaq memberikan Rizki Halal melalui PAUD Unggulan AL IZZAH. Semoga Barokah & membawa banyak manfaat.",
 		pageW / 2,
@@ -159,7 +163,7 @@ export function renderSlipPdf(slip: Slip, periode: string): jsPDF {
 		margin: { left: margin, right: margin },
 		theme: "grid",
 		head: [["No", "Jenis HR", "Nominal", "Subtotal", "Ket"]],
-		body: buildBody(slip),
+		body: buildBody(slip, opts.golonganKeterangan),
 		foot: [
 			[
 				{
@@ -231,8 +235,12 @@ export function renderSlipPdf(slip: Slip, periode: string): jsPDF {
 }
 
 /** downloadSlipPdf — hasilkan & unduh slip gaji PDF (A5). */
-export function downloadSlipPdf(slip: Slip, periode: string): void {
-	renderSlipPdf(slip, periode).save(
+export function downloadSlipPdf(
+	slip: Slip,
+	periode: string,
+	opts: { golonganKeterangan?: string } = {},
+): void {
+	renderSlipPdf(slip, periode, opts).save(
 		`slip-gaji-${slug(slip.nama)}-${periode}.pdf`,
 	);
 }

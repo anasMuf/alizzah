@@ -331,7 +331,7 @@ function PenggajianPage() {
 										Total
 									</th>
 									<th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">
-										Status WA
+										Slip Gaji Terkirim
 									</th>
 									<th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
 										Aksi

@@ -246,7 +246,7 @@ function PenggajianPage() {
 													<FileText className="h-3.5 w-3.5 mr-1" /> Slip
 												</Link>
 												<Link
-													to="/sdm/guru/$id"
+													to="/sdm/penggajian/olah-hr/$id"
 													params={{ id: String(r.employee_id) }}
 													className="inline-flex items-center rounded-md border border-gray-300 px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
 												>

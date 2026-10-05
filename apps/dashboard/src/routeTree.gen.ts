@@ -95,6 +95,7 @@ import { Route as AuthenticatedAdministrasiDaycareBaruRouteImport } from './rout
 import { Route as AuthenticatedKeuanganKasTutupBukuIndexRouteImport } from './routes/_authenticated/keuangan/kas/tutup-buku/index'
 import { Route as AuthenticatedAdministrasiSiswaIdIndexRouteImport } from './routes/_authenticated/administrasi/siswa/$id/index'
 import { Route as AuthenticatedAdministrasiRombelIdIndexRouteImport } from './routes/_authenticated/administrasi/rombel/$id/index'
+import { Route as AuthenticatedSdmPenggajianOlahHrIdRouteImport } from './routes/_authenticated/sdm/penggajian/olah-hr/$id'
 import { Route as AuthenticatedKeuanganTagihanSiswaIdRouteImport } from './routes/_authenticated/keuangan/tagihan/siswa.$id'
 import { Route as AuthenticatedKeuanganTabunganSiswaIdRouteImport } from './routes/_authenticated/keuangan/tabungan/siswa.$id'
 import { Route as AuthenticatedKeuanganLaporanOldTahunanRouteImport } from './routes/_authenticated/keuangan/laporan/old/tahunan'
@@ -616,6 +617,12 @@ const AuthenticatedAdministrasiRombelIdIndexRoute =
     path: '/rombel/$id/',
     getParentRoute: () => AuthenticatedAdministrasiRoute,
   } as any)
+const AuthenticatedSdmPenggajianOlahHrIdRoute =
+  AuthenticatedSdmPenggajianOlahHrIdRouteImport.update({
+    id: '/penggajian/olah-hr/$id',
+    path: '/penggajian/olah-hr/$id',
+    getParentRoute: () => AuthenticatedSdmRoute,
+  } as any)
 const AuthenticatedKeuanganTagihanSiswaIdRoute =
   AuthenticatedKeuanganTagihanSiswaIdRouteImport.update({
     id: '/tagihan/siswa/$id',
@@ -819,6 +826,7 @@ export interface FileRoutesByFullPath {
   '/keuangan/laporan/old/tahunan': typeof AuthenticatedKeuanganLaporanOldTahunanRoute
   '/keuangan/tabungan/siswa/$id': typeof AuthenticatedKeuanganTabunganSiswaIdRoute
   '/keuangan/tagihan/siswa/$id': typeof AuthenticatedKeuanganTagihanSiswaIdRoute
+  '/sdm/penggajian/olah-hr/$id': typeof AuthenticatedSdmPenggajianOlahHrIdRoute
   '/administrasi/rombel/$id/': typeof AuthenticatedAdministrasiRombelIdIndexRoute
   '/administrasi/siswa/$id/': typeof AuthenticatedAdministrasiSiswaIdIndexRoute
   '/keuangan/kas/tutup-buku/': typeof AuthenticatedKeuanganKasTutupBukuIndexRoute
@@ -919,6 +927,7 @@ export interface FileRoutesByTo {
   '/keuangan/laporan/old/tahunan': typeof AuthenticatedKeuanganLaporanOldTahunanRoute
   '/keuangan/tabungan/siswa/$id': typeof AuthenticatedKeuanganTabunganSiswaIdRoute
   '/keuangan/tagihan/siswa/$id': typeof AuthenticatedKeuanganTagihanSiswaIdRoute
+  '/sdm/penggajian/olah-hr/$id': typeof AuthenticatedSdmPenggajianOlahHrIdRoute
   '/administrasi/rombel/$id': typeof AuthenticatedAdministrasiRombelIdIndexRoute
   '/administrasi/siswa/$id': typeof AuthenticatedAdministrasiSiswaIdIndexRoute
   '/keuangan/kas/tutup-buku': typeof AuthenticatedKeuanganKasTutupBukuIndexRoute
@@ -1025,6 +1034,7 @@ export interface FileRoutesById {
   '/_authenticated/keuangan/laporan/old/tahunan': typeof AuthenticatedKeuanganLaporanOldTahunanRoute
   '/_authenticated/keuangan/tabungan/siswa/$id': typeof AuthenticatedKeuanganTabunganSiswaIdRoute
   '/_authenticated/keuangan/tagihan/siswa/$id': typeof AuthenticatedKeuanganTagihanSiswaIdRoute
+  '/_authenticated/sdm/penggajian/olah-hr/$id': typeof AuthenticatedSdmPenggajianOlahHrIdRoute
   '/_authenticated/administrasi/rombel/$id/': typeof AuthenticatedAdministrasiRombelIdIndexRoute
   '/_authenticated/administrasi/siswa/$id/': typeof AuthenticatedAdministrasiSiswaIdIndexRoute
   '/_authenticated/keuangan/kas/tutup-buku/': typeof AuthenticatedKeuanganKasTutupBukuIndexRoute
@@ -1131,6 +1141,7 @@ export interface FileRouteTypes {
     | '/keuangan/laporan/old/tahunan'
     | '/keuangan/tabungan/siswa/$id'
     | '/keuangan/tagihan/siswa/$id'
+    | '/sdm/penggajian/olah-hr/$id'
     | '/administrasi/rombel/$id/'
     | '/administrasi/siswa/$id/'
     | '/keuangan/kas/tutup-buku/'
@@ -1231,6 +1242,7 @@ export interface FileRouteTypes {
     | '/keuangan/laporan/old/tahunan'
     | '/keuangan/tabungan/siswa/$id'
     | '/keuangan/tagihan/siswa/$id'
+    | '/sdm/penggajian/olah-hr/$id'
     | '/administrasi/rombel/$id'
     | '/administrasi/siswa/$id'
     | '/keuangan/kas/tutup-buku'
@@ -1336,6 +1348,7 @@ export interface FileRouteTypes {
     | '/_authenticated/keuangan/laporan/old/tahunan'
     | '/_authenticated/keuangan/tabungan/siswa/$id'
     | '/_authenticated/keuangan/tagihan/siswa/$id'
+    | '/_authenticated/sdm/penggajian/olah-hr/$id'
     | '/_authenticated/administrasi/rombel/$id/'
     | '/_authenticated/administrasi/siswa/$id/'
     | '/_authenticated/keuangan/kas/tutup-buku/'
@@ -1951,6 +1964,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdministrasiRombelIdIndexRouteImport
       parentRoute: typeof AuthenticatedAdministrasiRoute
     }
+    '/_authenticated/sdm/penggajian/olah-hr/$id': {
+      id: '/_authenticated/sdm/penggajian/olah-hr/$id'
+      path: '/penggajian/olah-hr/$id'
+      fullPath: '/sdm/penggajian/olah-hr/$id'
+      preLoaderRoute: typeof AuthenticatedSdmPenggajianOlahHrIdRouteImport
+      parentRoute: typeof AuthenticatedSdmRoute
+    }
     '/_authenticated/keuangan/tagihan/siswa/$id': {
       id: '/_authenticated/keuangan/tagihan/siswa/$id'
       path: '/tagihan/siswa/$id'
@@ -2356,6 +2376,7 @@ interface AuthenticatedSdmRouteChildren {
   AuthenticatedSdmGuruIndexRoute: typeof AuthenticatedSdmGuruIndexRoute
   AuthenticatedSdmPenggajianIndexRoute: typeof AuthenticatedSdmPenggajianIndexRoute
   AuthenticatedSdmPinjamanIndexRoute: typeof AuthenticatedSdmPinjamanIndexRoute
+  AuthenticatedSdmPenggajianOlahHrIdRoute: typeof AuthenticatedSdmPenggajianOlahHrIdRoute
 }
 
 const AuthenticatedSdmRouteChildren: AuthenticatedSdmRouteChildren = {
@@ -2369,6 +2390,8 @@ const AuthenticatedSdmRouteChildren: AuthenticatedSdmRouteChildren = {
   AuthenticatedSdmGuruIndexRoute: AuthenticatedSdmGuruIndexRoute,
   AuthenticatedSdmPenggajianIndexRoute: AuthenticatedSdmPenggajianIndexRoute,
   AuthenticatedSdmPinjamanIndexRoute: AuthenticatedSdmPinjamanIndexRoute,
+  AuthenticatedSdmPenggajianOlahHrIdRoute:
+    AuthenticatedSdmPenggajianOlahHrIdRoute,
 }
 
 const AuthenticatedSdmRouteWithChildren =

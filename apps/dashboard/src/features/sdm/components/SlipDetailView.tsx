@@ -18,7 +18,9 @@ export function SlipDetailView({
 				<h1 className="text-xl font-bold text-gray-900">
 					Slip Gaji {formatPeriode(periode)}
 				</h1>
-				<p className="text-sm text-gray-500">Yayasan Al-Izzah — TK/PAUD</p>
+				<p className="text-sm text-gray-500">
+					PAUD Unggulan AL-IZZAH Kab. Mojokerto
+				</p>
 			</div>
 
 			<div className="mt-4 flex flex-wrap items-center justify-between gap-3">

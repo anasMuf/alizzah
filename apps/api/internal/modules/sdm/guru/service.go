@@ -49,13 +49,25 @@ func (s *Service) List(search string, golonganID *uint, activeOnly bool) ([]Empl
 		return nil, err
 	}
 	allGolongan, _ := s.masterRepo.FindAllGolongan()
-	now := time.Now()
+	return toEmployeeItems(rows, allGolongan, time.Now()), nil
+}
+
+// ListPaged mengembalikan halaman karyawan (urut id) + total baris terfilter.
+func (s *Service) ListPaged(search string, golonganID *uint, activeOnly bool, page, limit int) ([]EmployeeItem, int64, error) {
+	rows, total, err := s.repo.FindPaged(search, golonganID, activeOnly, page, limit)
+	if err != nil {
+		return nil, 0, err
+	}
+	allGolongan, _ := s.masterRepo.FindAllGolongan()
+	return toEmployeeItems(rows, allGolongan, time.Now()), total, nil
+}
+
+func toEmployeeItems(rows []Employee, allGolongan []master.Golongan, asOf time.Time) []EmployeeItem {
 	out := make([]EmployeeItem, 0, len(rows))
 	for i := range rows {
-		item := toEmployeeItem(&rows[i], allGolongan, now)
-		out = append(out, *item)
+		out = append(out, *toEmployeeItem(&rows[i], allGolongan, asOf))
 	}
-	return out, nil
+	return out
 }
 
 func (s *Service) Get(id uint) (*EmployeeDetail, error) {

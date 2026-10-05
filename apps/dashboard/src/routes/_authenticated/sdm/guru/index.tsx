@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Plus, Search, Users } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Loader2, Plus, Search, Users } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ApiError } from "#/api/mutator/custom-instance";
 import {
 	Badge,
@@ -16,7 +16,7 @@ import {
 	type Employee,
 	type EmployeeInput,
 	useDeleteEmployee,
-	useEmployees,
+	useEmployeesInfinite,
 	useGolongans,
 	useSaveEmployee,
 } from "#/features/sdm/api";
@@ -25,6 +25,8 @@ import { formatDate } from "#/utils/format";
 export const Route = createFileRoute("/_authenticated/sdm/guru/")({
 	component: GuruListPage,
 });
+
+const PAGE_SIZE = 10;
 
 function GuruListPage() {
 	const { addToast } = useToast();
@@ -35,15 +37,45 @@ function GuruListPage() {
 	const [deleting, setDeleting] = useState<Employee | null>(null);
 
 	const { data: golongans = [] } = useGolongans();
-	const { data: employees = [], isLoading, isError } = useEmployees(debounced);
+	const {
+		data,
+		isLoading,
+		isError,
+		fetchNextPage,
+		hasNextPage,
+		isFetchingNextPage,
+	} = useEmployeesInfinite(debounced, false, PAGE_SIZE);
 	const saveEmp = useSaveEmployee();
 	const deleteEmp = useDeleteEmployee();
+
+	const employees = useMemo(
+		() => data?.pages.flatMap((p) => p.data) ?? [],
+		[data],
+	);
+	const total = data?.pages[0]?.meta.total ?? 0;
 
 	// Debounce sederhana untuk pencarian.
 	useEffect(() => {
 		const t = setTimeout(() => setDebounced(search), 300);
 		return () => clearTimeout(t);
 	}, [search]);
+
+	// Infinite scroll: muat halaman berikutnya saat sentinel terlihat.
+	const sentinelRef = useRef<HTMLDivElement>(null);
+	useEffect(() => {
+		const el = sentinelRef.current;
+		if (!el) return;
+		const observer = new IntersectionObserver(
+			(entries) => {
+				if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+					fetchNextPage();
+				}
+			},
+			{ rootMargin: "200px" },
+		);
+		observer.observe(el);
+		return () => observer.disconnect();
+	}, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
 	const golonganKode = (id?: number | null) =>
 		golongans.find((g) => g.id === id)?.kode ?? "-";
@@ -93,6 +125,9 @@ function GuruListPage() {
 					<table className="min-w-full divide-y divide-gray-200">
 						<thead className="bg-gray-50">
 							<tr>
+								<th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase w-14">
+									No
+								</th>
 								<th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
 									Nama
 								</th>
@@ -111,8 +146,11 @@ function GuruListPage() {
 							</tr>
 						</thead>
 						<tbody className="divide-y divide-gray-100">
-							{employees.map((e) => (
+							{employees.map((e, i) => (
 								<tr key={e.id} className="hover:bg-gray-50">
+									<td className="px-4 py-3 text-sm text-gray-400 tabular-nums">
+										{i + 1}
+									</td>
 									<td className="px-4 py-3 text-sm font-medium text-gray-900">
 										<Link
 											to="/sdm/guru/$id"
@@ -162,6 +200,25 @@ function GuruListPage() {
 							))}
 						</tbody>
 					</table>
+
+					{/* Sentinel infinite scroll */}
+					<div ref={sentinelRef} className="h-px" />
+				</div>
+			)}
+
+			{!isLoading && !isError && employees.length > 0 && (
+				<div className="flex items-center justify-center py-3 text-sm text-gray-500">
+					{isFetchingNextPage ? (
+						<>
+							<Loader2 className="h-4 w-4 mr-2 animate-spin" /> Memuat...
+						</>
+					) : hasNextPage ? (
+						<span>
+							Menampilkan {employees.length} dari {total} karyawan
+						</span>
+					) : (
+						<span>Semua {total} karyawan ditampilkan</span>
+					)}
 				</div>
 			)}
 

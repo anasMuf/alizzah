@@ -31,3 +31,23 @@ export async function sdmSend<T>(
 	});
 	return res.data.data;
 }
+
+export interface SdmPageMeta {
+	page: number;
+	limit: number;
+	total: number;
+}
+
+type PagedEnvelope<T> = { message: string; data: T; meta: SdmPageMeta };
+
+// Varian sdmGet untuk endpoint paginated ({ message, data, meta }).
+export async function sdmGetPaged<T>(
+	path: string,
+	params?: Record<string, unknown>,
+): Promise<{ data: T; meta: SdmPageMeta }> {
+	const res = await customInstance<{ data: PagedEnvelope<T> }>(
+		`${BASE}${path}`,
+		params ? { params } : undefined,
+	);
+	return { data: res.data.data, meta: res.data.meta };
+}

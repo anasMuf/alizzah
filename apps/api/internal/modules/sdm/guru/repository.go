@@ -17,7 +17,7 @@ func NewRepository(db *gorm.DB) *Repository { return &Repository{db: db} }
 
 func (r *Repository) FindAll(search string, golonganID *uint, activeOnly bool) ([]Employee, error) {
 	var rows []Employee
-	q := r.db.Preload("Golongan").Order("nama ASC")
+	q := r.db.Preload("Golongan").Order("id ASC")
 	if search != "" {
 		q = q.Where("nama ILIKE ?", "%"+search+"%")
 	}
@@ -29,6 +29,36 @@ func (r *Repository) FindAll(search string, golonganID *uint, activeOnly bool) (
 	}
 	err := q.Find(&rows).Error
 	return rows, err
+}
+
+// FindPaged mengambil karyawan dengan pagination (urut id ASC) + total baris
+// terfilter. Dipakai daftar karyawan (infinite scroll).
+func (r *Repository) FindPaged(search string, golonganID *uint, activeOnly bool, page, limit int) ([]Employee, int64, error) {
+	// Builder dipanggil ulang untuk Count & Find — menghindari polusi statement
+	// GORM saat satu *gorm.DB dipakai dua finisher (Count lalu Find).
+	build := func() *gorm.DB {
+		q := r.db.Model(&Employee{})
+		if search != "" {
+			q = q.Where("nama ILIKE ?", "%"+search+"%")
+		}
+		if golonganID != nil {
+			q = q.Where("golongan_id = ?", *golonganID)
+		}
+		if activeOnly {
+			q = q.Where("is_active = ?", true)
+		}
+		return q
+	}
+
+	var total int64
+	if err := build().Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	var rows []Employee
+	offset := (page - 1) * limit
+	err := build().Preload("Golongan").Order("id ASC").Limit(limit).Offset(offset).Find(&rows).Error
+	return rows, total, err
 }
 
 func (r *Repository) FindByID(id uint) (*Employee, error) {

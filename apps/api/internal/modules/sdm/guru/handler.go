@@ -61,13 +61,16 @@ func parseUintParam(c echo.Context, name string) (uint, error) {
 }
 
 // List godoc
-// @Summary Daftar karyawan
+// @Summary Daftar karyawan (urut id)
 // @Tags sdm-guru
 // @Security ApiKeyAuth
 // @Param search query string false "Cari nama"
 // @Param golongan_id query int false "Filter golongan"
 // @Param active query bool false "Hanya yang aktif"
-// @Success 200 {object} dto.SuccessResponse{data=[]guru.EmployeeItem}
+// @Param all query bool false "true = seluruh data (tanpa pagination, untuk dropdown)"
+// @Param page query int false "Halaman (default 1)"
+// @Param limit query int false "Per halaman (default 20)"
+// @Success 200 {object} dto.PaginatedResponse{data=[]guru.EmployeeItem}
 // @Router /v1/sdm/employees [get]
 func (h *Handler) List(c echo.Context) error {
 	var golonganID *uint
@@ -79,11 +82,29 @@ func (h *Handler) List(c echo.Context) error {
 		u := uint(id)
 		golonganID = &u
 	}
-	items, err := h.svc.List(c.QueryParam("search"), golonganID, c.QueryParam("active") == "true")
+	search := c.QueryParam("search")
+	activeOnly := c.QueryParam("active") == "true"
+
+	// Mode "all": seluruh karyawan tanpa pagination (dropdown/absensi).
+	if c.QueryParam("all") == "true" {
+		items, err := h.svc.List(search, golonganID, activeOnly)
+		if err != nil {
+			return utility.Fail(c, err)
+		}
+		return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil mengambil daftar karyawan", Data: items})
+	}
+
+	// Mode default: pagination (infinite scroll daftar karyawan).
+	page, limit := utility.ParsePagination(c)
+	items, total, err := h.svc.ListPaged(search, golonganID, activeOnly, page, limit)
 	if err != nil {
 		return utility.Fail(c, err)
 	}
-	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil mengambil daftar karyawan", Data: items})
+	return c.JSON(http.StatusOK, dto.PaginatedResponse{
+		Message: "Berhasil mengambil daftar karyawan",
+		Data:    items,
+		Meta:    dto.Meta{Page: page, Limit: limit, Total: total},
+	})
 }
 
 // Create godoc

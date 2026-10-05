@@ -1,5 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { sdmGet, sdmSend } from "./lib/client";
+import {
+	useInfiniteQuery,
+	useMutation,
+	useQuery,
+	useQueryClient,
+} from "@tanstack/react-query";
+import { sdmGet, sdmGetPaged, sdmSend } from "./lib/client";
 
 // ── Types ──
 
@@ -343,9 +348,34 @@ export function useEmployees(search = "", activeOnly = false) {
 		queryKey: sdmKeys.employees(search, activeOnly),
 		queryFn: () =>
 			sdmGet<Employee[]>("/employees", {
+				all: true,
 				search: search || undefined,
 				active: activeOnly || undefined,
 			}),
+	});
+}
+
+// useEmployeesInfinite — daftar karyawan berhalaman (urut id) untuk infinite
+// scroll. Halaman diambil dengan limit (default 10) hingga total terpenuhi.
+export function useEmployeesInfinite(
+	search = "",
+	activeOnly = false,
+	limit = 10,
+) {
+	return useInfiniteQuery({
+		queryKey: [...sdmKeys.employees(search, activeOnly), "infinite", limit],
+		queryFn: ({ pageParam }) =>
+			sdmGetPaged<Employee[]>("/employees", {
+				page: pageParam,
+				limit,
+				search: search || undefined,
+				active: activeOnly || undefined,
+			}),
+		initialPageParam: 1,
+		getNextPageParam: (last) => {
+			const loaded = last.meta.page * last.meta.limit;
+			return loaded < last.meta.total ? last.meta.page + 1 : undefined;
+		},
 	});
 }
 

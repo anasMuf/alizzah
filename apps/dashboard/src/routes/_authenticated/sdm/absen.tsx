@@ -77,17 +77,18 @@ function AbsenPage() {
 
 	const items = useMemo(
 		() =>
-			employees.map((e) => ({
-				employee: e,
-				entry: values[e.id] ?? {
+			employees.map((e) => {
+				const base: AbsenEntry = values[e.id] ?? {
 					employee_id: e.id,
 					hadir: 0,
 					hadir_siaga: 0,
 					hadir_terlambat: 0,
 					hadir_piket: 0,
 					pulang_awal: 0,
-				},
-			})),
+				};
+				// employee_id selalu diambil dari karyawan (sumber kebenaran).
+				return { employee: e, entry: { ...base, employee_id: e.id } };
+			}),
 		[employees, values],
 	);
 
@@ -109,10 +110,26 @@ function AbsenPage() {
 
 	const setVal = (employeeId: number, key: string, raw: string) => {
 		const v = Math.max(0, Number(raw) || 0);
-		setValues((prev) => ({
-			...prev,
-			[employeeId]: { ...prev[employeeId], [key]: v } as AbsenEntry,
-		}));
+		setValues((prev) => {
+			// Seed entri lengkap bila belum ada — kalau tidak, `{...undefined}`
+			// menghasilkan objek tanpa employee_id (payload invalid).
+			const base: AbsenEntry = prev[employeeId] ?? {
+				employee_id: employeeId,
+				hadir: 0,
+				hadir_siaga: 0,
+				hadir_terlambat: 0,
+				hadir_piket: 0,
+				pulang_awal: 0,
+			};
+			return {
+				...prev,
+				[employeeId]: {
+					...base,
+					employee_id: employeeId,
+					[key]: v,
+				} as AbsenEntry,
+			};
+		});
 	};
 
 	const handleSave = () => {

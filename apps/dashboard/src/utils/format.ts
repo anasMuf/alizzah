@@ -26,6 +26,15 @@ export const formatDate = (dateString?: string): string => {
 	}).format(date);
 };
 
+/** Format month (1-12) + year into Indonesian "September 2026". */
+export const formatMonthYear = (month?: number, year?: number): string => {
+	if (!month || !year) return "-";
+	return new Intl.DateTimeFormat("id-ID", {
+		month: "long",
+		year: "numeric",
+	}).format(new Date(year, month - 1, 1));
+};
+
 export const formatDateTime = (dateString?: string): string => {
 	if (!dateString) return "-";
 	const date = new Date(dateString);

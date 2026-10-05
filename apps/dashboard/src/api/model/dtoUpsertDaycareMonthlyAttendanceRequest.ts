@@ -15,7 +15,10 @@ export interface DtoUpsertDaycareMonthlyAttendanceRequest {
 	 * @maximum 12
 	 */
 	month: number;
-	/** @maximum 6000 (100 jam) */
+	/**
+	 * max 100 jam ≈ 6000 menit
+	 * @maximum 6000
+	 */
 	overtime_minutes?: number;
 	/** @maximum 30 */
 	spd_days?: number;

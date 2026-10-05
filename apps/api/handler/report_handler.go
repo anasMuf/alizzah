@@ -431,3 +431,31 @@ func (h *ReportHandler) Pengeluaran(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil mengambil laporan pengeluaran", Data: report})
 }
+
+// PaymentIntegrity godoc
+// @Summary      Payment integrity diagnostic
+// @Description  List payments whose header total_amount differs from the sum of payment_items (money missing/duplicated from item-based reports)
+// @Tags         reports
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        academic_year_id  query  int  false  "Academic Year ID"
+// @Success      200               {object}  dto.SuccessResponse{data=dto.PaymentIntegrityResponse}
+// @Failure      401               {object}  dto.ErrorResponse
+// @Failure      403               {object}  dto.ErrorResponse
+// @Failure      500               {object}  dto.ErrorResponse
+// @Router       /v1/reports/integrity/payments [get]
+func (h *ReportHandler) PaymentIntegrity(c echo.Context) error {
+	var ayID uint
+	if v := c.QueryParam("academic_year_id"); v != "" {
+		if n, err := strconv.ParseUint(v, 10, 64); err == nil {
+			ayID = uint(n)
+		}
+	}
+	report, err := h.service.GetPaymentIntegrity(ayID)
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{Status: status, Code: code, Message: err.Error()})
+	}
+	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil mengambil diagnostik integritas pembayaran", Data: report})
+}

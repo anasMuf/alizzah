@@ -8,6 +8,8 @@ interface StudentSearchProps {
 	onSelect: (student: any) => void;
 	onClear: () => void;
 	disabled?: boolean;
+	/** id input, agar pemanggil dapat menghubungkan <label htmlFor>. */
+	inputId?: string;
 }
 
 export function StudentSearch({
@@ -15,6 +17,7 @@ export function StudentSearch({
 	onSelect,
 	onClear,
 	disabled = false,
+	inputId,
 }: StudentSearchProps) {
 	const searchInputRef = useRef<HTMLInputElement>(null);
 	const [searchStudent, setSearchStudent] = useState("");
@@ -63,6 +66,7 @@ export function StudentSearch({
 			</div>
 			<input
 				ref={searchInputRef}
+				id={inputId}
 				type="text"
 				className="block w-full rounded-lg border-0 py-2 pl-9 pr-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
 				placeholder="Cari nama siswa..."

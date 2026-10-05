@@ -1,12 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
-import { ChevronRight, Filter, RefreshCw, Search } from "lucide-react";
-import { useCallback } from "react";
+import { ChevronRight, Filter, Plus, RefreshCw, Search } from "lucide-react";
+import { useCallback, useState } from "react";
 import { useDebounce } from "use-debounce";
 import { useGetV1ClassGroups } from "#/api/endpoints/class-groups/class-groups";
 import { useSyncSavingsMandatory } from "#/api/endpoints/invoices/invoice-sync-savings";
 import { useGetV1Invoices } from "#/api/endpoints/invoices/invoices";
 import { Badge, Button, Pagination, useToast } from "#/components/ui";
+import { ManualInvoiceForm } from "#/features/keuangan/components/ManualInvoiceForm";
+import { invoiceTypeLabel } from "#/features/keuangan/invoice-labels";
 import { academicYearAtom } from "../../../../store/global";
 import { formatCurrency } from "../../../../utils/format";
 
@@ -50,6 +52,8 @@ function TagihanListPage() {
 	const page = searchParams.page ?? 1;
 
 	const [debouncedSearch] = useDebounce(search, 500);
+
+	const [isAddInvoiceOpen, setIsAddInvoiceOpen] = useState(false);
 
 	// Helper to update search params in the URL
 	const updateSearch = useCallback(
@@ -106,15 +110,7 @@ function TagihanListPage() {
 		return <Badge variant="danger">✗ Belum</Badge>;
 	};
 
-	const translateType = (type: string) => {
-		const map: Record<string, string> = {
-			monthly: "Bulanan",
-			registration: "Registrasi Tahunan",
-			initial: "Biaya Awal",
-			incidental: "Insidental",
-		};
-		return map[type] || type;
-	};
+	const translateType = (type: string) => invoiceTypeLabel(type);
 
 	return (
 		<div className="space-y-6">
@@ -128,35 +124,49 @@ function TagihanListPage() {
 						Daftar semua tagihan siswa beserta status pembayarannya.
 					</p>
 				</div>
-				<Button
-					variant="secondary"
-					size="sm"
-					disabled={syncMutation.isPending}
-					onClick={() => {
-						syncMutation.mutate(undefined, {
-							onSuccess: (result) => {
-								addToast({
-									variant: "success",
-									title: "Sinkronisasi Tabungan Wajib",
-									message: `${result.total_synced} invoice ditambahkan, ${result.total_skipped} dilewati.`,
-								});
-							},
-							onError: (err) => {
-								addToast({
-									variant: "error",
-									title: "Gagal",
-									message:
-										err instanceof Error ? err.message : "Gagal sinkronisasi.",
-								});
-							},
-						});
-					}}
-				>
-					<RefreshCw
-						className={`w-4 h-4 mr-2 ${syncMutation.isPending ? "animate-spin" : ""}`}
-					/>
-					{syncMutation.isPending ? "Menyinkronkan..." : "Sync Tabungan Wajib"}
-				</Button>
+				<div className="mt-4 flex flex-wrap gap-2 sm:mt-0">
+					<Button
+						variant="primary"
+						size="sm"
+						onClick={() => setIsAddInvoiceOpen(true)}
+					>
+						<Plus className="w-4 h-4 mr-2" />
+						Tambah Tagihan
+					</Button>
+					<Button
+						variant="secondary"
+						size="sm"
+						disabled={syncMutation.isPending}
+						onClick={() => {
+							syncMutation.mutate(undefined, {
+								onSuccess: (result) => {
+									addToast({
+										variant: "success",
+										title: "Sinkronisasi Tabungan Wajib",
+										message: `${result.total_synced} invoice ditambahkan, ${result.total_skipped} dilewati.`,
+									});
+								},
+								onError: (err) => {
+									addToast({
+										variant: "error",
+										title: "Gagal",
+										message:
+											err instanceof Error
+												? err.message
+												: "Gagal sinkronisasi.",
+									});
+								},
+							});
+						}}
+					>
+						<RefreshCw
+							className={`w-4 h-4 mr-2 ${syncMutation.isPending ? "animate-spin" : ""}`}
+						/>
+						{syncMutation.isPending
+							? "Menyinkronkan..."
+							: "Sync Tabungan Wajib"}
+					</Button>
+				</div>
 			</div>
 
 			{/* Filters */}
@@ -234,6 +244,8 @@ function TagihanListPage() {
 							<option value="initial">Biaya Awal</option>
 							<option value="daycare_initial">Biaya Awal Daycare</option>
 							<option value="incidental">Insidental</option>
+							<option value="manual">Manual</option>
+							<option value="arrears">Tunggakan</option>
 						</select>
 					</div>
 
@@ -423,6 +435,11 @@ function TagihanListPage() {
 					/>
 				)}
 			</div>
+
+			<ManualInvoiceForm
+				isOpen={isAddInvoiceOpen}
+				onClose={() => setIsAddInvoiceOpen(false)}
+			/>
 		</div>
 	);
 }

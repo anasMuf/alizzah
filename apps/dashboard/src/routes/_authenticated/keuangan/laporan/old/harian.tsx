@@ -12,6 +12,7 @@ import {
 import { useState } from "react";
 import { useGetV1ReportsDaily } from "#/api/endpoints/reports/reports";
 import { Alert, Badge, Button } from "#/components/ui";
+import { invoiceCategoryLabel } from "#/features/keuangan/invoice-labels";
 import { academicYearAtom } from "../../../../../store/global";
 import { formatCurrency, formatDate } from "../../../../../utils/format";
 import { openPrintWindow } from "../../../../../utils/print";
@@ -80,8 +81,8 @@ function LaporanHarianPage() {
 			c += `<table><tbody>`;
 			income.by_category.forEach((cat: any) => {
 				const name = cat.sub_category
-					? `${esc(cat.category)} &gt; ${esc(cat.sub_category)}`
-					: esc(cat.category);
+					? `${esc(invoiceCategoryLabel(cat.category))} &gt; ${esc(cat.sub_category)}`
+					: esc(invoiceCategoryLabel(cat.category));
 				c += `<tr><td>${name}</td><td class="text-right font-bold font-mono">${fmt(Number(cat.amount || 0))}</td></tr>`;
 			});
 			c += `</tbody></table>`;
@@ -253,8 +254,8 @@ function LaporanHarianPage() {
 										<div key={i} className="flex justify-between text-sm">
 											<span className="text-gray-600">
 												{cat.sub_category
-													? `${cat.category} > ${cat.sub_category}`
-													: cat.category}
+													? `${invoiceCategoryLabel(cat.category)} > ${cat.sub_category}`
+													: invoiceCategoryLabel(cat.category)}
 											</span>
 											<span className="font-medium text-gray-900 tabular-nums">
 												{formatCurrency(Number(cat.amount || 0))}

@@ -7,6 +7,7 @@ import {
 	useGetV1FeeConfigs,
 	useGetV1FeeConfigsIdItems,
 } from "#/api/endpoints/fee-configs/fee-configs";
+import { useGetV1IncomeCategories } from "#/api/endpoints/income-categories/income-categories";
 import type { PosisiKasPost } from "#/api/endpoints/reports/posisi-kas";
 import {
 	type PosisiKasData,
@@ -62,13 +63,6 @@ const CATEGORY_ORDER: Record<string, number> = {
 	ekskul: 12,
 };
 
-const INCOME_CATEGORIES: { key: string; label: string }[] = [
-	{ key: "bos", label: "Dana BOS" },
-	{ key: "donasi", label: "Donasi" },
-	{ key: "hibah", label: "Hibah" },
-	{ key: "lainnya", label: "Lainnya" },
-];
-
 function LaporanPosisiKasPage() {
 	const [activeAy] = useAtom(academicYearAtom);
 	const { data: feeConfigsData } = useGetV1FeeConfigs({
@@ -91,6 +85,13 @@ function LaporanPosisiKasPage() {
 		query: { staleTime: 5 * 60 * 1000 },
 	});
 	const expenseCats = ((expenseCatData?.data as any)?.data ?? []) as any[];
+
+	// Kategori penerimaan lain (BOS, Donasi, Hibah, Lainnya, dst) — dinamis dari
+	// master data agar setiap kategori yang bisa dipilih user ikut terlaporkan.
+	const { data: incomeCatData } = useGetV1IncomeCategories({
+		query: { staleTime: 5 * 60 * 1000 },
+	});
+	const incomeCats = ((incomeCatData?.data as any)?.data ?? []) as any[];
 
 	// Unified category tree: fee categories + expense subs + income-only
 	const { kategoriGroups, flatKategoriOptions } = useMemo(() => {
@@ -131,23 +132,25 @@ function LaporanPosisiKasPage() {
 			groups.push({ header: label, items });
 		}
 
-		// Income-only categories
-		for (const inc of INCOME_CATEGORIES) {
-			const expenseParent = expenseByInvoice[inc.key];
+		// Income-only categories (dinamis dari master data)
+		for (const inc of incomeCats) {
+			const key = inc.code as string;
+			const label = (inc.name as string) || key;
+			const expenseParent = expenseByInvoice[key];
 			const items: { id: string | number; label: string }[] = [];
 
-			const incomeId = `income:${inc.key}`;
+			const incomeId = `income:${key}`;
 			items.push({ id: incomeId, label: "Pemasukan" });
-			flat.push({ id: incomeId, label: `${inc.label} — Pemasukan` });
+			flat.push({ id: incomeId, label: `${label} — Pemasukan` });
 
 			if (expenseParent?.children) {
 				for (const child of expenseParent.children) {
 					items.push({ id: child.id, label: child.name });
-					flat.push({ id: child.id, label: `${inc.label} > ${child.name}` });
+					flat.push({ id: child.id, label: `${label} > ${child.name}` });
 				}
 			}
 
-			groups.push({ header: inc.label, items });
+			groups.push({ header: label, items });
 		}
 
 		// Tabungan Umum
@@ -158,7 +161,7 @@ function LaporanPosisiKasPage() {
 		flat.push({ id: "savings:voluntary", label: "Tabungan Umum — Setoran" });
 
 		return { kategoriGroups: groups, flatKategoriOptions: flat };
-	}, [feeItems, expenseCats]);
+	}, [feeItems, expenseCats, incomeCats]);
 
 	const [selectedIds, setSelectedIds] = useState<(string | number)[]>([]);
 

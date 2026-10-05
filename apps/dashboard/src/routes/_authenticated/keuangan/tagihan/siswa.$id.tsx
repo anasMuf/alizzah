@@ -5,6 +5,12 @@ import { useState } from "react";
 import { useGetV1StudentsIdInvoices } from "#/api/endpoints/invoices/invoices";
 import { useGetV1StudentsId } from "#/api/endpoints/students/students";
 import { Badge, Button } from "#/components/ui";
+import { invoiceTypeLabel } from "#/features/keuangan/invoice-labels";
+import {
+	invoiceDescription,
+	invoiceRemaining,
+	otherYearOutstandingInvoices,
+} from "#/features/keuangan/outstanding-invoices";
 import { academicYearAtom } from "../../../../store/global";
 import { formatCurrency } from "../../../../utils/format";
 
@@ -36,6 +42,22 @@ function TagihanSiswaPage() {
 		);
 	const invoices = (invoicesResp?.data as any)?.data || [];
 
+	// Tunggakan dari TA lain: query tanpa `academic_year_id` (semua tahun ajaran),
+	// difilter di sisi klien ke TA selain yang sedang aktif.
+	const { data: otherYearsResp } = useGetV1StudentsIdInvoices(
+		Number(id),
+		{},
+		{ query: { enabled: !!activeAy?.id && !!id } },
+	);
+	const otherYearInvoices = otherYearOutstandingInvoices(
+		(otherYearsResp?.data as any)?.data || [],
+		activeAy?.id,
+	);
+	const otherYearTotal = otherYearInvoices.reduce(
+		(sum, invoice) => sum + invoiceRemaining(invoice),
+		0,
+	);
+
 	const getStatusBadge = (status: string, sisa: number) => {
 		if (status === "paid") return <Badge variant="success">● Lunas</Badge>;
 		if (status === "partial")
@@ -47,16 +69,7 @@ function TagihanSiswaPage() {
 		return <Badge variant="danger">✗ Belum</Badge>;
 	};
 
-	const translateType = (type: string) => {
-		const map: Record<string, string> = {
-			monthly: "Bulanan",
-			registration: "Registrasi Tahunan",
-			initial: "Biaya Awal",
-			daycare_initial: "Biaya Awal Daycare",
-			incidental: "Insidental",
-		};
-		return map[type] || type;
-	};
+	const translateType = (type: string) => invoiceTypeLabel(type);
 
 	if (isStudentLoading)
 		return (
@@ -110,6 +123,100 @@ function TagihanSiswaPage() {
 					</Link>
 				</div>
 			</div>
+
+			{/* Tunggakan dari tahun ajaran lain */}
+			{otherYearInvoices.length > 0 && (
+				<div className="bg-white rounded-xl shadow-sm ring-1 ring-amber-200 overflow-hidden">
+					<div className="px-4 py-3 border-b border-amber-100 bg-amber-50/60 flex flex-wrap items-center justify-between gap-2">
+						<div>
+							<h3 className="text-sm font-semibold text-amber-900">
+								Tunggakan Tahun Ajaran Lain
+							</h3>
+							<p className="mt-0.5 text-xs text-amber-700">
+								{otherYearInvoices.length} tagihan belum lunas dari tahun ajaran
+								selain {activeAy?.name}.
+							</p>
+						</div>
+						<span className="text-sm font-semibold text-amber-900">
+							Sisa {formatCurrency(otherYearTotal)}
+						</span>
+					</div>
+					<div className="overflow-x-auto">
+						<table className="min-w-full divide-y divide-gray-300">
+							<thead className="bg-gray-50">
+								<tr>
+									<th
+										scope="col"
+										className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6"
+									>
+										TA Asal
+									</th>
+									<th
+										scope="col"
+										className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+									>
+										Keterangan
+									</th>
+									<th
+										scope="col"
+										className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+									>
+										Total
+									</th>
+									<th
+										scope="col"
+										className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+									>
+										Sisa
+									</th>
+									<th
+										scope="col"
+										className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+									>
+										Status
+									</th>
+									<th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
+										<span className="sr-only">Aksi</span>
+									</th>
+								</tr>
+							</thead>
+							<tbody className="divide-y divide-gray-200 bg-white">
+								{otherYearInvoices.map((invoice) => {
+									const sisa = invoiceRemaining(invoice);
+									return (
+										<tr key={invoice.id} className="hover:bg-amber-50/40 group">
+											<td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+												{invoice.academic_year?.name || "-"}
+											</td>
+											<td className="px-3 py-4 text-sm text-gray-600">
+												{invoiceDescription(invoice)}
+											</td>
+											<td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+												{formatCurrency(Number(invoice.total_amount) || 0)}
+											</td>
+											<td className="whitespace-nowrap px-3 py-4 text-sm font-medium text-gray-900">
+												{formatCurrency(sisa)}
+											</td>
+											<td className="whitespace-nowrap px-3 py-4 text-sm">
+												{getStatusBadge(invoice.status ?? "", sisa)}
+											</td>
+											<td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+												<Link
+													to="/keuangan/tagihan/$id"
+													params={{ id: String(invoice.id) }}
+													className="inline-flex items-center text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
+												>
+													Detail <ChevronRight className="w-4 h-4 ml-1" />
+												</Link>
+											</td>
+										</tr>
+									);
+								})}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			)}
 
 			<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden">
 				<div className="px-4 py-3 border-b border-gray-200 bg-gray-50/50">

@@ -49,6 +49,13 @@ func main() {
 	// Pre-migration: handle income_category_id column sebelum AutoMigrate
 	preMigrateIncomeCategory(db)
 
+	// Pre-migration: savings_transactions.transaction_date (tanggal buku).
+	// Ditambahkan sebagai nullable → di-backfill dari created_at (WIB) → baru
+	// dijadikan NOT NULL default CURRENT_DATE. Pola ini menghindari bug "default
+	// mengisi semua baris lama dengan tanggal hari ini". Hanya jalan sekali
+	// (saat kolom belum ada), jadi tak menimpa tanggal baris yang sudah benar.
+	preMigrateSavingsTransactionDate(db)
+
 	// AutoMigrate — gabung seluruh model inti dalam satu slice
 	// (Go tidak mengizinkan argumen biasa + spread pada variadic tunggal).
 	migrateModels := []any{
@@ -93,6 +100,8 @@ func main() {
 		// Facilities
 		&model.Facility{},
 		&model.StudentFacility{},
+		// Per-bulan zone override fasilitas (antar jemput)
+		&model.StudentFacilityMonthZone{},
 		// Billing month exclusions (skip tagihan bulanan)
 		&model.BillingMonthExclusion{},
 		// Dispensations
@@ -168,6 +177,32 @@ func main() {
 
 	if err := db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS uq_ed_level ON effective_days (level, month, year) WHERE level != ''`).Error; err != nil {
 		log.Printf("ERROR: gagal buat index uq_ed_level: %v", err)
+	}
+
+	// Backfill invoice_items.offset_category untuk item dispensasi lama.
+	// Dispensasi disimpan sebagai item kategori "dispensation" (amount negatif),
+	// tapi laporan per-pos memfilter ii.category, sehingga potongan hilang dari
+	// pos yang seharusnya dikurangi. offset_category memetakan tiap dispensasi
+	// ke pos asalnya (fee_category). Match: nama item = "Dispensasi: <reason>"
+	// dengan signature "(NN%)" ⇔ percent, tanpa suffix ⇔ fixed, dan fee_category
+	// benar-benar ada di invoice yang sama. Idempoten (hanya baris yang kosong).
+	if err := db.Exec(`
+		UPDATE invoice_items ii SET offset_category = d.fee_category
+		FROM invoices i, dispensations d
+		WHERE ii.invoice_id = i.id
+		  AND d.student_id = i.student_id
+		  AND d.academic_year_id = i.academic_year_id
+		  AND d.deleted_at IS NULL
+		  AND (ii.name = 'Dispensasi: ' || d.reason OR ii.name LIKE 'Dispensasi: ' || d.reason || ' (%')
+		  AND ((ii.name LIKE '%\%)' AND d.discount_type = 'percent')
+		       OR (ii.name NOT LIKE '%\%)' AND d.discount_type = 'fixed'))
+		  AND EXISTS (SELECT 1 FROM invoice_items ii2
+		              WHERE ii2.invoice_id = i.id AND ii2.deleted_at IS NULL
+		                AND ii2.category = d.fee_category)
+		  AND ii.category = 'dispensation'
+		  AND ii.deleted_at IS NULL
+		  AND COALESCE(ii.offset_category, '') = ''`).Error; err != nil {
+		log.Printf("Warning: gagal backfill offset_category dispensasi: %v", err)
 	}
 
 	// Extracurriculars: drop old composite index
@@ -299,6 +334,7 @@ func main() {
 	// Facility repos (needed before invoiceGenService)
 	facilityRepo := repository.NewFacilityRepository(db)
 	sfRepo := repository.NewStudentFacilityRepository(db)
+	monthZoneRepo := repository.NewStudentFacilityMonthZoneRepository(db)
 
 	// Dispensation repo (needed before invoiceGenService)
 	dispensationRepo := repository.NewDispensationRepository(db)
@@ -309,7 +345,7 @@ func main() {
 	// Billing month exclusions repo (skip tagihan bulanan)
 	billingExclusionRepo := repository.NewBillingMonthExclusionRepository(db)
 
-	invoiceGenService := service.NewInvoiceGenerateService(db, invoiceRepo, invoiceItemRepo, fcRepo, fcItemRepo, effectiveDayRepo, enrollmentRepo, extracurricularRepo, seRepo, ayRepo, daycareRepo, facilityRepo, sfRepo, dispensationRepo, exceptionalityRepo, daycareMonthlyAttRepo, billingExclusionRepo)
+	invoiceGenService := service.NewInvoiceGenerateService(db, invoiceRepo, invoiceItemRepo, fcRepo, fcItemRepo, effectiveDayRepo, enrollmentRepo, extracurricularRepo, seRepo, ayRepo, daycareRepo, facilityRepo, sfRepo, dispensationRepo, exceptionalityRepo, daycareMonthlyAttRepo, billingExclusionRepo, monthZoneRepo)
 
 	// Auto-sync: tambahkan item tabungan wajib ke invoice existing yang belum memilikinya.
 	// Aman dijalankan berulang kali (idempotent), hanya menyentuh invoice unpaid/partial.
@@ -323,7 +359,11 @@ func main() {
 			syncResult.TotalSkipped, len(syncResult.Errors))
 	}
 
-	invoiceService := service.NewInvoiceService(invoiceRepo, invoiceItemRepo, invoiceInstallmentRepo, paymentRepo)
+	// Billing month exclusions service dibuat sebelum invoiceService karena endpoint
+	// quantity fasilitas memakai quantity=0 sebagai skip bulan.
+	billingExclusionService := service.NewBillingExclusionService(db, billingExclusionRepo, ayRepo, invoiceGenService)
+
+	invoiceService := service.NewInvoiceService(db, invoiceRepo, studentRepo, ayRepo, invoiceItemRepo, fcItemRepo, invoiceInstallmentRepo, paymentRepo, billingExclusionService)
 
 	// Batch 6: create transaction infrastructure first
 	txnWriterService := service.NewTransactionWriterService(cashTxnRepo, vaultTxnRepo)
@@ -360,7 +400,7 @@ func main() {
 	enrollmentService := service.NewStudentEnrollmentService(db, enrollmentRepo, studentRepo, classGroupRepo, extracurricularRepo, seRepo, fcRepo, fcItemRepo, invoiceGenService, savingsService)
 	effectiveDayService := service.NewEffectiveDayService(effectiveDayRepo, classGroupRepo, invoiceGenService)
 	extracurricularService := service.NewExtracurricularService(db, extracurricularRepo, fcRepo, fcItemRepo)
-	seService := service.NewStudentExtracurricularService(db, seRepo, studentRepo, extracurricularRepo, ayRepo, enrollmentRepo, invoiceGenService, billingExclusionRepo)
+	seService := service.NewStudentExtracurricularService(db, seRepo, studentRepo, extracurricularRepo, ayRepo, enrollmentRepo, fcRepo, fcItemRepo, invoiceGenService, billingExclusionRepo)
 	eventService := service.NewStudentAcademicEventService(eventRepo, studentRepo)
 	daycareService := service.NewDaycareEnrollmentService(db, daycareRepo, studentRepo, ayRepo, daycareMonthlyAttRepo, invoiceRepo, invoiceGenService)
 
@@ -500,11 +540,9 @@ func main() {
 
 	// Facilities
 	facilityService := service.NewFacilityService(facilityRepo, fcRepo, fcItemRepo)
-	sfService := service.NewStudentFacilityService(sfRepo, studentRepo, facilityRepo, ayRepo, fcItemRepo, invoiceRepo, invoiceItemRepo, enrollmentRepo, effectiveDayRepo, invoiceGenService, billingExclusionRepo)
+	sfService := service.NewStudentFacilityService(sfRepo, studentRepo, facilityRepo, ayRepo, fcItemRepo, invoiceRepo, invoiceItemRepo, enrollmentRepo, effectiveDayRepo, invoiceGenService, billingExclusionRepo, fcRepo, monthZoneRepo, invoiceService, billingExclusionService)
 	facilityHandler := handler.NewFacilityHandler(facilityService, sfService)
 
-	// Billing month exclusions (skip tagihan bulanan PASTA & fasilitas)
-	billingExclusionService := service.NewBillingExclusionService(db, billingExclusionRepo, ayRepo, invoiceGenService)
 	billingExclusionHandler := handler.NewBillingExclusionHandler(billingExclusionService, seRepo, sfRepo)
 
 	// Batch 7
@@ -593,6 +631,7 @@ func main() {
 	students.PUT("/:id/extracurriculars/:se_id", seHandler.Update, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.DELETE("/:id/extracurriculars/:se_id", seHandler.Unenroll, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.POST("/:id/extracurriculars/:extracurricular_id/cleanup-invoices", seHandler.CleanupExtracurricularInvoices, guard.RequireModule(middleware.ModuleAdministrasi))
+	students.POST("/:id/extracurriculars/:extracurricular_id/cleanup-invoices/preview", seHandler.PreviewCleanupExtracurricularInvoices, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.GET("/:id/extracurriculars/:se_id/billing-exclusions", billingExclusionHandler.GetExtracurricular, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.PUT("/:id/extracurriculars/:se_id/billing-exclusions", billingExclusionHandler.SetExtracurricular, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.GET("/:id/dispensations", dispensationHandler.ListByStudent, guard.RequireModule(middleware.ModuleKeuangan))
@@ -604,6 +643,11 @@ func main() {
 	students.DELETE("/:id/facilities/:facilityId", facilityHandler.Unenroll, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.GET("/:id/facilities/:facilityId/billing-exclusions", billingExclusionHandler.GetFacility, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.PUT("/:id/facilities/:facilityId/billing-exclusions", billingExclusionHandler.SetFacility, guard.RequireModule(middleware.ModuleAdministrasi))
+	// Per-bulan zone override fasilitas (epic zona-bulanan)
+	students.PUT("/:id/facilities/:facilityId/month-zone", facilityHandler.SetMonthZone, guard.RequireModule(middleware.ModuleAdministrasi))
+	students.DELETE("/:id/facilities/:facilityId/month-zone", facilityHandler.ClearMonthZone, guard.RequireModule(middleware.ModuleAdministrasi))
+	// Per-bulan jumlah hari fasilitas (0 = skip bulan)
+	students.PUT("/:id/facilities/:facilityId/month-days", facilityHandler.SetMonthDays, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.GET("/:id/academic-events", eventHandler.GetByStudent, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.POST("/:id/regenerate-invoices", studentHandler.RegenerateInvoices, guard.RequireModule(middleware.ModuleAdministrasi))
 
@@ -703,9 +747,12 @@ func main() {
 	// Batch 5: Invoices
 	invoices := api.Group("/invoices", middleware.JWTAuth(tokenBlacklistRepo), guard.RequireModule(middleware.ModuleKeuangan))
 	invoices.GET("", invoiceHandler.List)
+	invoices.POST("", invoiceHandler.Create)
 	invoices.GET("/batch", invoiceHandler.Batch)
 	invoices.POST("/sync-savings-mandatory", invoiceHandler.SyncSavingsMandatoryInvoices)
 	invoices.GET("/:id", invoiceHandler.Get)
+	invoices.PUT("/:id", invoiceHandler.Update)
+	invoices.DELETE("/:id", invoiceHandler.Delete)
 	invoices.POST("/:id/items", invoiceHandler.AddItem)
 	invoices.PUT("/:id/items/:item_id", invoiceHandler.UpdateItem)
 	invoices.PUT("/:id/items/:item_id/quantity", invoiceHandler.UpdateItemQuantity)
@@ -805,6 +852,7 @@ func main() {
 	reports.GET("/pengeluaran", reportHandler.Pengeluaran, guard.RequireModule(middleware.ModuleKeuangan, middleware.ModuleLaporan))
 	reports.GET("/transaksi-pengeluaran", reportHandler.TransaksiPengeluaran, guard.RequireModule(middleware.ModuleKeuangan, middleware.ModuleLaporan))
 	reports.GET("/tabungan", reportHandler.TabunganReport, guard.RequireModule(middleware.ModuleKeuangan, middleware.ModuleLaporan))
+	reports.GET("/integrity/payments", reportHandler.PaymentIntegrity, guard.RequireModule(middleware.ModuleKeuangan, middleware.ModuleLaporan))
 	reports.GET("/savings/students/:id", reportHandler.TabunganSiswaReport, guard.RequireModule(middleware.ModuleKeuangan))
 	reports.GET("/students/:id", reportHandler.ByStudent, guard.RequireModule(middleware.ModuleKeuangan))
 	reports.GET("/class-groups/:id", reportHandler.ByClassGroup, guard.RequireModule(middleware.ModuleKeuangan, middleware.ModuleLaporan))
@@ -846,6 +894,37 @@ func isKoperasiSeamEnabled() bool {
 // preMigrateIncomeCategory menangani migrasi income_transactions dari kolom category (string)
 // ke income_category_id (FK) SEBELUM AutoMigrate. GORM AutoMigrate akan gagal jika mencoba
 // menambah kolom NOT NULL ke tabel yang sudah berisi data.
+// preMigrateSavingsTransactionDate menambah kolom transaction_date (tanggal
+// buku) ke savings_transactions dengan pola aman: nullable → backfill dari
+// created_at (WIB) → NOT NULL + default CURRENT_DATE. Hanya berjalan ketika
+// kolom belum ada, sehingga idempoten dan tidak menimpa tanggal yang sudah
+// diisi eksplisit oleh aplikasi.
+func preMigrateSavingsTransactionDate(db *gorm.DB) {
+	if !db.Migrator().HasTable(&model.SavingsTransaction{}) {
+		return // tabel belum ada; AutoMigrate akan membuat kolom sesuai model
+	}
+	if db.Migrator().HasColumn(&model.SavingsTransaction{}, "transaction_date") {
+		return // sudah ada; jangan backfill ulang
+	}
+	if err := db.Exec(`ALTER TABLE savings_transactions ADD COLUMN transaction_date date`).Error; err != nil {
+		log.Printf("[preMigrateSavingsDate] gagal menambah kolom: %v", err)
+		return
+	}
+	if err := db.Exec(`
+		UPDATE savings_transactions
+		SET transaction_date = (created_at AT TIME ZONE 'Asia/Jakarta')::date
+		WHERE created_at IS NOT NULL AND transaction_date IS NULL`).Error; err != nil {
+		log.Printf("[preMigrateSavingsDate] gagal backfill: %v", err)
+	}
+	// Sisa baris tanpa created_at → pakai hari ini agar bisa NOT NULL.
+	db.Exec(`UPDATE savings_transactions SET transaction_date = CURRENT_DATE WHERE transaction_date IS NULL`)
+	db.Exec(`ALTER TABLE savings_transactions ALTER COLUMN transaction_date SET DEFAULT CURRENT_DATE`)
+	if err := db.Exec(`ALTER TABLE savings_transactions ALTER COLUMN transaction_date SET NOT NULL`).Error; err != nil {
+		log.Printf("[preMigrateSavingsDate] gagal set NOT NULL: %v", err)
+	}
+	log.Println("[preMigrateSavingsDate] kolom transaction_date dibuat & di-backfill dari created_at (WIB)")
+}
+
 func preMigrateIncomeCategory(db *gorm.DB) {
 	migrator := db.Migrator()
 

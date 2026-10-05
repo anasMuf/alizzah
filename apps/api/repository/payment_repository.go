@@ -39,7 +39,8 @@ func (r *paymentRepository) FindAll(params dto.PaymentQueryParams) ([]model.Paym
 		Preload("Student").
 		Preload("Student.Enrollments", "status = ?", "active").
 		Preload("Student.Enrollments.ClassGroup").
-		Preload("Creator")
+		Preload("Creator").
+		Preload("Items.InvoiceItem.Invoice")
 
 	if params.StudentID != 0 {
 		query = query.Where("student_id = ?", params.StudentID)
@@ -49,6 +50,9 @@ func (r *paymentRepository) FindAll(params dto.PaymentQueryParams) ([]model.Paym
 	}
 	if params.Source != "" {
 		query = query.Where("source = ?", params.Source)
+	}
+	if params.CreatedBy != 0 {
+		query = query.Where("created_by = ?", params.CreatedBy)
 	}
 	if params.StartDate != "" {
 		if d, err := time.Parse("2006-01-02", params.StartDate); err == nil {
@@ -66,6 +70,49 @@ func (r *paymentRepository) FindAll(params dto.PaymentQueryParams) ([]model.Paym
 				Select("id").
 				Where("full_name ILIKE ?", "%"+params.Search+"%"),
 		)
+	}
+	// Filter jenjang/rombel lewat enrollment AKTIF siswa pada tahun ajaran terpilih
+	// (jika tahun ajaran tidak di-filter, cukup cari di enrollment aktif mana pun).
+	if params.Level != "" || params.ClassGroupID != 0 {
+		enrQ := r.db.Model(&model.StudentEnrollment{}).
+			Select("student_id").
+			Where("status = ?", "active")
+		if params.AcademicYearID != 0 {
+			enrQ = enrQ.Where("academic_year_id = ?", params.AcademicYearID)
+		}
+		if params.Level != "" {
+			enrQ = enrQ.
+				Joins("JOIN class_groups cg ON cg.id = student_enrollments.class_group_id").
+				Where("cg.level = ?", params.Level)
+		}
+		if params.ClassGroupID != 0 {
+			enrQ = enrQ.Where("class_group_id = ?", params.ClassGroupID)
+		}
+		query = query.Where("student_id IN (?)", enrQ)
+	}
+	// Filter berdasarkan kategori item yang dibayar (payment punya setidaknya satu
+	// item dengan kategori tsb) — mis. pasta, monthly_spp, dsb.
+	if params.Category != "" {
+		query = query.Where("id IN (?)",
+			r.db.Model(&model.PaymentItem{}).
+				Select("payment_items.payment_id").
+				Joins("JOIN invoice_items ii ON ii.id = payment_items.invoice_item_id").
+				Where("ii.category = ?", params.Category),
+		)
+	}
+	// Filter periode tagihan yang dibayar (bulan/tahun invoice tempat item berada).
+	if params.Month != 0 || params.Year != 0 {
+		piQ := r.db.Model(&model.PaymentItem{}).
+			Select("payment_items.payment_id").
+			Joins("JOIN invoice_items ii ON ii.id = payment_items.invoice_item_id").
+			Joins("JOIN invoices i ON i.id = ii.invoice_id")
+		if params.Month != 0 {
+			piQ = piQ.Where("i.month = ?", params.Month)
+		}
+		if params.Year != 0 {
+			piQ = piQ.Where("i.year = ?", params.Year)
+		}
+		query = query.Where("id IN (?)", piQ)
 	}
 
 	if err := query.Count(&total).Error; err != nil {
@@ -90,7 +137,7 @@ func (r *paymentRepository) FindByID(id uint) (*model.Payment, error) {
 	err := r.db.Preload("Student").
 		Preload("Student.Enrollments", "status = ?", "active").
 		Preload("Student.Enrollments.ClassGroup").
-		Preload("Creator").Preload("Items").Preload("Items.InvoiceItem").First(&payment, id).Error
+		Preload("Creator").Preload("Items").Preload("Items.InvoiceItem").Preload("Items.InvoiceItem.Invoice").First(&payment, id).Error
 	return &payment, err
 }
 
@@ -100,7 +147,7 @@ func (r *paymentRepository) FindByIDUnscoped(id uint) (*model.Payment, error) {
 	err := r.db.Unscoped().Preload("Student").
 		Preload("Student.Enrollments", "status = ?", "active").
 		Preload("Student.Enrollments.ClassGroup").
-		Preload("Creator").Preload("Items").Preload("Items.InvoiceItem").First(&payment, id).Error
+		Preload("Creator").Preload("Items").Preload("Items.InvoiceItem").Preload("Items.InvoiceItem.Invoice").First(&payment, id).Error
 	return &payment, err
 }
 

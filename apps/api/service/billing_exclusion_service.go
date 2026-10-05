@@ -15,6 +15,13 @@ import (
 type BillingExclusionService interface {
 	GetByStudentAndEntity(studentID uint, entityType string, entityRefID uint) (*dto.BillingExclusionsResponse, error)
 	SetExclusions(studentID uint, entityType string, entityRefID uint, req dto.SetBillingExclusionsRequest) (*dto.BillingExclusionsResponse, error)
+	// SkipFacilityMonth menandai SATU bulan sebagai skip utk sebuah fasilitas
+	// (idempotent): bulan ditambahkan ke daftar exclusion berjalan sehingga item
+	// unpaid bulan tsb dihapus.
+	SkipFacilityMonth(studentID, facilityID, month, year uint) error
+	// UnskipFacilityMonth mencabut skip SATU bulan utk sebuah fasilitas
+	// (idempotent): item bulan tsb dikembalikan.
+	UnskipFacilityMonth(studentID, facilityID, month, year uint) error
 }
 
 type billingExclusionService struct {
@@ -42,7 +49,53 @@ func (s *billingExclusionService) GetByStudentAndEntity(studentID uint, entityTy
 	for _, ex := range exclusions {
 		months = append(months, dto.BillingExclusionMonth{Month: ex.Month, Year: ex.Year})
 	}
-	return &dto.BillingExclusionsResponse{Months: months}, nil
+	resp := &dto.BillingExclusionsResponse{Months: months}
+	if entityType == "extracurricular" {
+		// Bulan yang item PASTA-nya sudah dibayar → UI men-disable (tak bisa di-skip).
+		if paid, err := s.paidExtracurricularMonths(studentID, entityRefID); err == nil {
+			resp.PaidMonths = paid
+		}
+	}
+	return resp, nil
+}
+
+// paidExtracurricularMonths mengembalikan bulan-bulan (tahun ajaran aktif) di mana
+// siswa punya item invoice PASTA untuk ekskul tsb dengan paid_amount > 0.
+// Item berbayar tidak bisa dihapus oleh RemoveExtracurricularItemFromMonthly
+// (integritas pembayaran), jadi dialog Kelola Bulan harus men-disable bulan tsb.
+func (s *billingExclusionService) paidExtracurricularMonths(studentID, extracurricularID uint) ([]dto.BillingExclusionMonth, error) {
+	ay, err := s.ayRepo.FindActive()
+	if err != nil {
+		return nil, err
+	}
+	var ex model.Extracurricular
+	if err := s.db.First(&ex, extracurricularID).Error; err != nil {
+		return nil, err
+	}
+	var rows []struct {
+		Month uint
+		Year  uint
+	}
+	// Cocokkan item invoice dengan fee config item ekskul (name+category), sama
+	// seperti logika extracurricularItemsToRemove — bukan asumsi nama sama persis.
+	err = s.db.Table("invoice_items").
+		Select("DISTINCT i.month AS month, i.year AS year").
+		Joins("JOIN invoices i ON i.id = invoice_items.invoice_id").
+		Joins("JOIN fee_configs fc ON fc.academic_year_id = i.academic_year_id").
+		Joins("JOIN fee_config_items fci ON fci.fee_config_id = fc.id AND fci.category = ? AND fci.name = ? AND fci.is_active = ?", ex.Type, ex.Name, true).
+		Where("i.student_id = ? AND i.academic_year_id = ? AND i.type = 'monthly'", studentID, ay.ID).
+		Where("invoice_items.deleted_at IS NULL AND invoice_items.paid_amount > 0").
+		Where("invoice_items.category = fci.category AND invoice_items.name = fci.name").
+		Order("i.year, i.month").
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	out := make([]dto.BillingExclusionMonth, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, dto.BillingExclusionMonth{Month: r.Month, Year: r.Year})
+	}
+	return out, nil
 }
 
 type monthKey struct {
@@ -69,6 +122,13 @@ func monthWithinAcademicYear(month, year uint, start, end time.Time) bool {
 // dicabut → item ditambahkan kembali. Kegagalan penerapan invoice hanya
 // di-log (pola sama dengan Unenroll) — daftar skip tetap tersimpan.
 func (s *billingExclusionService) SetExclusions(studentID uint, entityType string, entityRefID uint, req dto.SetBillingExclusionsRequest) (*dto.BillingExclusionsResponse, error) {
+	return s.setExclusions(studentID, entityType, entityRefID, req, false)
+}
+
+// setExclusions strict=true dipakai jalur fasilitas month-days. Berbeda dari
+// perilaku legacy SetExclusions, kegagalan apply invoice dikembalikan dan
+// daftar exclusion dikembalikan ke state sebelumnya.
+func (s *billingExclusionService) setExclusions(studentID uint, entityType string, entityRefID uint, req dto.SetBillingExclusionsRequest, strict bool) (*dto.BillingExclusionsResponse, error) {
 	if entityType != "extracurricular" && entityType != "facility" {
 		return nil, errors.New("entity_type tidak valid")
 	}
@@ -142,6 +202,9 @@ func (s *billingExclusionService) SetExclusions(studentID uint, entityType strin
 			applyErr = s.invoiceGen.RemoveFacilityItemFromMonthly(studentID, entityRefID, key.month, key.year)
 		}
 		if applyErr != nil {
+			if strict {
+				return nil, s.rollbackExclusions(studentID, entityType, entityRefID, old, applyErr)
+			}
 			log.Printf("[BillingExclusion] Gagal hapus item %s %d bulan %d/%d siswa %d: %v", entityType, entityRefID, key.month, key.year, studentID, applyErr)
 		}
 	}
@@ -153,9 +216,65 @@ func (s *billingExclusionService) SetExclusions(studentID uint, entityType strin
 			applyErr = s.invoiceGen.RestoreFacilityItemToMonthly(studentID, entityRefID, ay.ID, key.month, key.year)
 		}
 		if applyErr != nil {
+			if strict {
+				return nil, s.rollbackExclusions(studentID, entityType, entityRefID, old, applyErr)
+			}
 			log.Printf("[BillingExclusion] Gagal restore item %s %d bulan %d/%d siswa %d: %v", entityType, entityRefID, key.month, key.year, studentID, applyErr)
 		}
 	}
 
 	return s.GetByStudentAndEntity(studentID, entityType, entityRefID)
+}
+
+// SkipFacilityMonth menandai satu bulan sebagai skip utk sebuah fasilitas.
+// Idempotent — bulan yang sudah ter-skip tidak diduplikasi.
+func (s *billingExclusionService) SkipFacilityMonth(studentID, facilityID, month, year uint) error {
+	return s.setFacilityMonthExcluded(studentID, facilityID, month, year, true)
+}
+
+// UnskipFacilityMonth mencabut skip satu bulan utk sebuah fasilitas.
+// Idempotent — bulan yang memang tidak ter-skip tidak mengubah apa pun.
+func (s *billingExclusionService) UnskipFacilityMonth(studentID, facilityID, month, year uint) error {
+	return s.setFacilityMonthExcluded(studentID, facilityID, month, year, false)
+}
+
+// setFacilityMonthExcluded menambah/membuang SATU bulan dari daftar exclusion
+// berjalan lalu mendelegasikan ke SetExclusions — supaya validasi bulan,
+// replace-all, dan apply-diff ke invoice tidak diduplikasi.
+func (s *billingExclusionService) setFacilityMonthExcluded(studentID, facilityID, month, year uint, skip bool) error {
+	old, err := s.exclRepo.FindByStudentAndEntity(studentID, "facility", facilityID)
+	if err != nil {
+		return err
+	}
+
+	months := make([]dto.BillingExclusionMonth, 0, len(old)+1)
+	found := false
+	for _, ex := range old {
+		if ex.Month == month && ex.Year == year {
+			found = true
+			if !skip {
+				continue // cabut: buang bulan ini dari daftar
+			}
+		}
+		months = append(months, dto.BillingExclusionMonth{Month: ex.Month, Year: ex.Year})
+	}
+	if skip && !found {
+		months = append(months, dto.BillingExclusionMonth{Month: month, Year: year})
+	}
+
+	_, err = s.setExclusions(studentID, "facility", facilityID, dto.SetBillingExclusionsRequest{Months: months}, true)
+	return err
+}
+
+// rollbackExclusions memulihkan daftar exclusion sebelum apply invoice gagal.
+// Dipakai hanya pada jalur strict fasilitas; SetExclusions legacy tetap
+// mempertahankan perilaku kompatibel berupa logging-only.
+func (s *billingExclusionService) rollbackExclusions(studentID uint, entityType string, entityRefID uint, old []model.BillingMonthExclusion, applyErr error) error {
+	rollbackErr := s.db.Transaction(func(tx *gorm.DB) error {
+		return s.exclRepo.Replace(tx, studentID, entityType, entityRefID, old)
+	})
+	if rollbackErr != nil {
+		return fmt.Errorf("%w; rollback exclusion gagal: %v", applyErr, rollbackErr)
+	}
+	return applyErr
 }

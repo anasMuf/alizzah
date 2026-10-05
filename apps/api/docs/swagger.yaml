@@ -65,6 +65,9 @@ definitions:
     type: object
   dto.AnnualIncomeSummary:
     properties:
+      other_income:
+        description: income_transactions (BOS/Donasi/Hibah/dll)
+        type: number
       total_billed:
         type: number
       total_paid:
@@ -146,6 +149,15 @@ definitions:
   dto.BillingExclusionsResponse:
     properties:
       months:
+        items:
+          $ref: '#/definitions/dto.BillingExclusionMonth'
+        type: array
+      paid_months:
+        description: |-
+          PaidMonths = bulan di mana entity tsb sudah punya item yang DIBIAYAR
+          (paid_amount > 0) pada invoice siswa. UI memakai daftar ini untuk
+          men-disable bulan yang tidak bisa di-skip (item berbayar tidak bisa
+          dihapus backend) — berbeda dengan sekadar "invoice bulan tsb sudah bayar".
         items:
           $ref: '#/definitions/dto.BillingExclusionMonth'
         type: array
@@ -716,6 +728,52 @@ definitions:
     required:
     - installments
     type: object
+  dto.CreateInvoiceItemRequest:
+    properties:
+      amount:
+        type: number
+      category:
+        maxLength: 30
+        type: string
+      name:
+        maxLength: 100
+        type: string
+      notes:
+        type: string
+      quantity:
+        type: integer
+      unit_price:
+        type: number
+    required:
+    - category
+    - name
+    type: object
+  dto.CreateInvoiceRequest:
+    properties:
+      academic_year_id:
+        type: integer
+      due_date:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/dto.CreateInvoiceItemRequest'
+        minItems: 1
+        type: array
+      notes:
+        type: string
+      student_id:
+        type: integer
+      type:
+        enum:
+        - arrears
+        - manual
+        type: string
+    required:
+    - academic_year_id
+    - items
+    - student_id
+    - type
+    type: object
   dto.CreatePaymentRequest:
     properties:
       academic_year_id:
@@ -733,6 +791,13 @@ definitions:
       payment_date:
         type: string
       savings_deposit:
+        minimum: 0
+        type: number
+      savings_usage_amount:
+        description: |-
+          SavingsUsage: berapa dari total tagihan yang didanai dari tabungan umum
+          (sisanya tunai). Opsional; 0 = seluruhnya tunai. Bila kosong dan
+          source="savings", di-default ke seluruh total (kompat perilaku lama).
         minimum: 0
         type: number
       source:
@@ -1250,6 +1315,44 @@ definitions:
       total:
         type: number
     type: object
+  dto.ExtracurricularCleanupPreviewItem:
+    properties:
+      action:
+        description: '"remove" | "writeoff"'
+        type: string
+      amount:
+        description: nilai yang dihapus / sisa yang dibebaskan
+        type: number
+      invoice_id:
+        type: integer
+      item_id:
+        type: integer
+      item_name:
+        type: string
+      month:
+        type: integer
+      year:
+        type: integer
+    type: object
+  dto.ExtracurricularCleanupPreviewResponse:
+    properties:
+      extracurricular_id:
+        type: integer
+      extracurricular_name:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/dto.ExtracurricularCleanupPreviewItem'
+        type: array
+      start_date:
+        type: string
+      student_id:
+        type: integer
+      total_amount:
+        type: number
+      total_items:
+        type: integer
+    type: object
   dto.ExtracurricularExportItem:
     properties:
       extracurricular_id:
@@ -1351,12 +1454,62 @@ definitions:
         type: integer
       default_days:
         type: integer
+      excluded:
+        description: Excluded true bila bulan ini di-skip (tidak ditagih) untuk fasilitas
+          ini.
+        type: boolean
       invoice_id:
         type: integer
       invoice_item_id:
         type: integer
       zone_amount:
         type: number
+    type: object
+  dto.FacilityMonthDaysResponse:
+    properties:
+      days:
+        description: Days jumlah hari efektif setelah operasi; 0 bila bulan di-skip.
+        type: integer
+      excluded:
+        description: Excluded true bila bulan tsb di-skip (tidak ditagih).
+        type: boolean
+      invoice_id:
+        type: integer
+      invoice_item_id:
+        type: integer
+      item_paid:
+        description: ItemPaid true bila item bulan tsb (masih ada) sudah ada pembayaran.
+        type: boolean
+      month:
+        type: integer
+      year:
+        type: integer
+    type: object
+  dto.FacilityMonthZoneResponse:
+    properties:
+      fee_config_item_id:
+        description: 'Zona efektif setelah operasi (override ?: default); null = tanpa
+          zona.'
+        type: integer
+      invoice_item_updated:
+        description: InvoiceItemUpdated true bila item invoice bulan tsb ditemukan
+          & ditulis ulang.
+        type: boolean
+      item_paid_amount:
+        description: ItemPaidAmount jumlah yang sudah dibayar pada item bulan tsb.
+        type: number
+      month:
+        type: integer
+      remaining_or_excess:
+        description: |-
+          RemainingOrExcess = amount - paid; positif = sisa tagihan,
+          negatif = kelebihan bayar (setelah rewrite).
+        type: number
+      source:
+        description: '"override" | "default"'
+        type: string
+      year:
+        type: integer
     type: object
   dto.FacilityResponse:
     properties:
@@ -1372,6 +1525,8 @@ definitions:
   dto.FacilityStudentItemResponse:
     properties:
       current_month_days:
+        description: Jumlah hari (kuantitas item fasilitas per_day) untuk bulan yang
+          diminta.
         type: integer
       end_date:
         type: string
@@ -1379,6 +1534,32 @@ definitions:
         $ref: '#/definitions/dto.FeeConfigItemBriefResponse'
       id:
         type: integer
+      invoice_id:
+        description: |-
+          InvoiceID & InvoiceItemID item fasilitas pada bulan yang diminta —
+          diisi hanya bila item per_day tersedia, dipakai FE untuk menyimpan
+          perubahan jumlah hari tanpa panggilan resolve terpisah.
+        type: integer
+      invoice_item_id:
+        type: integer
+      month_excluded:
+        description: |-
+          MonthExcluded true bila bulan tsb di-skip (tidak ditagih) untuk fasilitas
+          ini — membedakan "0 hari karena di-skip" dari "belum ada item".
+        type: boolean
+      month_item_paid:
+        description: |-
+          MonthItemPaid true bila item invoice fasilitas bulan tsb sudah dibayar
+          (memicu konfirmasi saat ubah zona/hari).
+        type: boolean
+      month_zone_fee_config_item_id:
+        description: |-
+          Zona EFEKTIF bulan yang diminta (override ?: default) — dipakai dropdown
+          zona per bulan di tab bulanan. Absence field = default tanpa zona.
+        type: integer
+      month_zone_overridden:
+        description: MonthZoneOverridden true bila bulan tsb punya override eksplisit.
+        type: boolean
       start_date:
         type: string
       student:
@@ -1763,6 +1944,11 @@ definitions:
         type: number
       quantity:
         type: integer
+      skipped:
+        description: |-
+          Skipped true berarti operasi quantity=0 berhasil dan item fasilitas
+          dihapus dari invoice melalui billing exclusion.
+        type: boolean
       status:
         type: string
       unit_price:
@@ -1952,11 +2138,51 @@ definitions:
         type: string
       savings_deposit:
         type: number
+      savings_usage_amount:
+        description: porsi dibayar dari tabungan umum
+        type: number
       source:
         type: string
       student:
         $ref: '#/definitions/dto.StudentBriefResponse'
       total_amount:
+        type: number
+    type: object
+  dto.PaymentIntegrityResponse:
+    properties:
+      academic_year:
+        type: string
+      count:
+        type: integer
+      rows:
+        items:
+          $ref: '#/definitions/dto.PaymentIntegrityRow'
+        type: array
+      total_delta:
+        description: Σ unaccounted
+        type: number
+    type: object
+  dto.PaymentIntegrityRow:
+    properties:
+      header:
+        description: payments.total_amount
+        type: number
+      items_sum:
+        description: Σ payment_items.amount
+        type: number
+      payment_date:
+        type: string
+      payment_id:
+        type: integer
+      savings:
+        description: payments.savings_deposit
+        type: number
+      student_id:
+        type: integer
+      student_name:
+        type: string
+      unaccounted:
+        description: header − items_sum
         type: number
     type: object
   dto.PaymentItemReq:
@@ -1983,6 +2209,10 @@ definitions:
         type: integer
       invoice_item_name:
         type: string
+      invoice_month:
+        type: integer
+      invoice_year:
+        type: integer
     type: object
   dto.PaymentListResponse:
     properties:
@@ -1992,6 +2222,10 @@ definitions:
         $ref: '#/definitions/dto.UserBriefResponse'
       id:
         type: integer
+      items:
+        items:
+          $ref: '#/definitions/dto.PaymentItemResponse'
+        type: array
       payment_date:
         type: string
       savings_deposit:
@@ -2704,6 +2938,28 @@ definitions:
     required:
     - enrollment_type
     type: object
+  dto.UpdateFacilityMonthDaysRequest:
+    properties:
+      days:
+        description: |-
+          Pointer agar field yang tidak dikirim (nil) ditolak validasi, bukan
+          diperlakukan sebagai 0 (yang berarti skip).
+        maximum: 31
+        minimum: 0
+        type: integer
+      month:
+        maximum: 12
+        minimum: 1
+        type: integer
+      year:
+        maximum: 2100
+        minimum: 2000
+        type: integer
+    required:
+    - days
+    - month
+    - year
+    type: object
   dto.UpdateFeeConfigRequest:
     properties:
       savings_admin_rate:
@@ -2729,7 +2985,10 @@ definitions:
   dto.UpdateInvoiceItemQuantityRequest:
     properties:
       quantity:
-        minimum: 1
+        description: Pointer agar field yang tidak dikirim (nil) berbeda dari quantity
+          0.
+        maximum: 31
+        minimum: 0
         type: integer
     required:
     - quantity
@@ -2748,12 +3007,41 @@ definitions:
     - amount
     - name
     type: object
+  dto.UpdateInvoiceRequest:
+    properties:
+      due_date:
+        type: string
+      notes:
+        type: string
+    type: object
   dto.UpdateStudentExtracurricularRequest:
     properties:
       end_date:
         type: string
     required:
     - end_date
+    type: object
+  dto.UpdateStudentFacilityMonthZoneRequest:
+    properties:
+      fee_config_item_id:
+        description: FeeConfigItemID zona utk bulan tsb; null = "tanpa zona".
+        type: integer
+      force:
+        description: |-
+          Force=true mengizinkan rewrite item invoice yang sudah dibayar
+          (paid_amount dipertahankan; selisih jadi sisa tagihan/kelebihan bayar).
+        type: boolean
+      month:
+        maximum: 12
+        minimum: 1
+        type: integer
+      year:
+        maximum: 2100
+        minimum: 2000
+        type: integer
+    required:
+    - month
+    - year
     type: object
   dto.UpdateStudentFacilityRequest:
     properties:
@@ -5613,10 +5901,8 @@ paths:
     delete:
       consumes:
       - application/json
-      - application/json
-      description: |-
-        Delete a daycare enrollment. If delete_invoices=true, also removes unpaid monthly invoices from current month onward.
-        Check if a student has ever had a premium daycare enrollment (for auto-detect Lanjutan/Baru)
+      description: Delete a daycare enrollment. If delete_invoices=true, also removes
+        unpaid monthly invoices from current month onward.
       parameters:
       - description: Daycare Enrollment ID
         in: path
@@ -5627,13 +5913,7 @@ paths:
         in: query
         name: delete_invoices
         type: boolean
-      - description: Student ID
-        in: query
-        name: student_id
-        required: true
-        type: integer
       produces:
-      - application/json
       - application/json
       responses:
         "200":
@@ -5643,9 +5923,7 @@ paths:
             - $ref: '#/definitions/dto.SuccessResponse'
             - properties:
                 data:
-                  additionalProperties:
-                    type: boolean
-                  type: object
+                  $ref: '#/definitions/dto.DeleteDaycareEnrollmentResponse'
               type: object
         "400":
           description: Bad Request
@@ -5665,10 +5943,8 @@ paths:
             $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
-      - ApiKeyAuth: []
-      summary: Check if student has premium history
+      summary: Delete daycare enrollment
       tags:
-      - daycare-enrollments
       - daycare-enrollments
     get:
       consumes:
@@ -5823,22 +6099,15 @@ paths:
     get:
       consumes:
       - application/json
-      - application/json
-      description: |-
-        Delete a daycare enrollment. If delete_invoices=true, also removes unpaid monthly invoices from current month onward.
-        Check if a student has ever had a premium daycare enrollment (for auto-detect Lanjutan/Baru)
+      description: Check if a student has ever had a premium daycare enrollment (for
+        auto-detect Lanjutan/Baru)
       parameters:
-      - description: Also delete unpaid invoices
-        in: query
-        name: delete_invoices
-        type: boolean
       - description: Student ID
         in: query
         name: student_id
         required: true
         type: integer
       produces:
-      - application/json
       - application/json
       responses:
         "200":
@@ -5852,28 +6121,10 @@ paths:
                     type: boolean
                   type: object
               type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
       - ApiKeyAuth: []
       summary: Check if student has premium history
       tags:
-      - daycare-enrollments
       - daycare-enrollments
   /v1/daycare-enrollments/generate-monthly:
     post:
@@ -6968,7 +7219,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get list of students enrolled in a specific extracurricular
+      description: Get list of students that have PASTA billing items in the given
       parameters:
       - description: Extracurricular ID
         in: path
@@ -6979,6 +7230,22 @@ paths:
         in: query
         name: academic_year_id
         required: true
+        type: integer
+      - description: Bulan awal rentang (1-12); kosong = bulan pertama tahun ajaran
+        in: query
+        name: month_from
+        type: integer
+      - description: Tahun awal rentang; kosong = tahun mulai tahun ajaran
+        in: query
+        name: year_from
+        type: integer
+      - description: Bulan akhir rentang (1-12); kosong = bulan terakhir tahun ajaran
+        in: query
+        name: month_to
+        type: integer
+      - description: Tahun akhir rentang; kosong = tahun akhir tahun ajaran
+        in: query
+        name: year_to
         type: integer
       produces:
       - application/json
@@ -7244,6 +7511,14 @@ paths:
       - description: Limit (default 20)
         in: query
         name: limit
+        type: integer
+      - description: Bulan (1-12) untuk kuantitas hari; default bulan berjalan
+        in: query
+        name: month
+        type: integer
+      - description: Tahun untuk kuantitas hari; default tahun berjalan
+        in: query
+        name: year
         type: integer
       responses:
         "200":
@@ -8336,7 +8611,109 @@ paths:
       summary: List invoices
       tags:
       - invoices
+    post:
+      consumes:
+      - application/json
+      description: Membuat tagihan manual. type "arrears" = tunggakan historis (tepat
+        1 item, nominal total saja, notes wajib); type "manual" = tagihan rinci dengan
+        N item. Total dihitung server dari item — jangan kirim total dari client.
+      parameters:
+      - description: Data tagihan
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateInvoiceRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.InvoiceDetailResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create manual invoice
+      tags:
+      - invoices
   /v1/invoices/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Soft delete tagihan manual (type arrears/manual) yang belum memiliki
+        pembayaran. Tagihan hasil generate, atau yang sudah memiliki pembayaran, ditolak
+        dengan 409.
+      parameters:
+      - description: Invoice ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete manual invoice
+      tags:
+      - invoices
     get:
       consumes:
       - application/json
@@ -8382,6 +8759,65 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Get invoice details
+      tags:
+      - invoices
+    put:
+      consumes:
+      - application/json
+      description: Mengubah notes dan due_date saja. Item, total_amount, paid_amount,
+        dan status tidak tersentuh. due_date kosong menghapus jatuh tempo. Untuk type
+        arrears, notes wajib diisi.
+      parameters:
+      - description: Invoice ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Data yang diubah
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateInvoiceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.InvoiceDetailResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update invoice metadata
       tags:
       - invoices
   /v1/invoices/{id}/installments:
@@ -10134,6 +10570,30 @@ paths:
         in: query
         name: search
         type: string
+      - description: Jenjang siswa (intan/berlian) via enrollment aktif
+        in: query
+        name: level
+        type: string
+      - description: ID rombel siswa via enrollment aktif
+        in: query
+        name: class_group_id
+        type: integer
+      - description: Petugas pencatat (user ID)
+        in: query
+        name: created_by
+        type: integer
+      - description: Kategori item yang dibayar (monthly_spp, pasta, dll)
+        in: query
+        name: category
+        type: string
+      - description: Periode tagihan yang dibayar (bulan 1-12)
+        in: query
+        name: month
+        type: integer
+      - description: Periode tagihan yang dibayar (tahun)
+        in: query
+        name: year
+        type: integer
       produces:
       - application/json
       responses:
@@ -10512,6 +10972,46 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Daily report
+      tags:
+      - reports
+  /v1/reports/integrity/payments:
+    get:
+      consumes:
+      - application/json
+      description: List payments whose header total_amount differs from the sum of
+        payment_items (money missing/duplicated from item-based reports)
+      parameters:
+      - description: Academic Year ID
+        in: query
+        name: academic_year_id
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.PaymentIntegrityResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Payment integrity diagnostic
       tags:
       - reports
   /v1/reports/monthly:
@@ -11559,7 +12059,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: 'Recovery endpoint: menghapus item ekskul tertentu dari invoice'
+      description: 'Recovery endpoint: menghapus item unpaid ekskul tertentu dari'
       parameters:
       - description: Student ID
         in: path
@@ -11596,7 +12096,56 @@ paths:
             $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
-      summary: Hapus item ekskul dari invoice bulan ini dan seterusnya
+      summary: Hapus item unpaid ekskul dari invoice mulai bulan mulai mengikuti
+      tags:
+      - student-extracurriculars
+  /v1/students/{id}/extracurriculars/{extracurricular_id}/cleanup-invoices/preview:
+    post:
+      consumes:
+      - application/json
+      description: Menampilkan item unpaid ekstrakurikuler yang AKAN dihapus dari
+      parameters:
+      - description: Student ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Extracurricular ID
+        in: path
+        name: extracurricular_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.ExtracurricularCleanupPreviewResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Preview pembersihan tagihan PASTA (dry-run)
       tags:
       - student-extracurriculars
   /v1/students/{id}/extracurriculars/{se_id}:
@@ -12067,6 +12616,126 @@ paths:
       - ApiKeyAuth: []
       summary: Get current month effective days & invoice item quantity for a facility
         enrollment
+      tags:
+      - facilities
+  /v1/students/{id}/facilities/{facilityId}/month-days:
+    put:
+      description: Menyetel jumlah hari item fasilitas utk satu bulan. days = 0 berarti
+        bulan tsb di-skip (tidak ditagih); days >= 1 mencabut skip & menyetel jumlah
+        hari.
+      parameters:
+      - description: Student ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Student Facility enrollment ID
+        in: path
+        name: facilityId
+        required: true
+        type: integer
+      - description: Set month days
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateFacilityMonthDaysRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.FacilityMonthDaysResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set per-month days for a facility enrollment (0 = skip month)
+      tags:
+      - facilities
+  /v1/students/{id}/facilities/{facilityId}/month-zone:
+    delete:
+      parameters:
+      - description: Student ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Student Facility enrollment ID
+        in: path
+        name: facilityId
+        required: true
+        type: integer
+      - description: Bulan (1-12)
+        in: query
+        name: month
+        required: true
+        type: integer
+      - description: Tahun
+        in: query
+        name: year
+        required: true
+        type: integer
+      - description: Izinkan rewrite item yang sudah dibayar
+        in: query
+        name: force
+        type: boolean
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.FacilityMonthZoneResponse'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Remove per-month zone override (back to default)
+      tags:
+      - facilities
+    put:
+      parameters:
+      - description: Student ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Student Facility enrollment ID
+        in: path
+        name: facilityId
+        required: true
+        type: integer
+      - description: Set month zone
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateStudentFacilityMonthZoneRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.FacilityMonthZoneResponse'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Set per-month zone override for a facility enrollment
       tags:
       - facilities
   /v1/students/{id}/guardians:

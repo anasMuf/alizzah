@@ -8,28 +8,31 @@ import {
 	ShieldCheck,
 	Trophy,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useGetV1AcademicYears } from "#/api/endpoints/academic-years/academic-years";
 import {
 	getV1StudentsIdExtracurricularsSeIdBillingExclusions,
 	usePutV1StudentsIdExtracurricularsSeIdBillingExclusions,
 } from "#/api/endpoints/billing-exclusions/billing-exclusions";
 import { useGetV1Extracurriculars } from "#/api/endpoints/extracurriculars/extracurriculars";
-import {
-	getGetV1InvoicesQueryKey,
-	useGetV1Invoices,
-} from "#/api/endpoints/invoices/invoices";
+import { getGetV1InvoicesQueryKey } from "#/api/endpoints/invoices/invoices";
 import {
 	getGetV1StudentsIdExtracurricularsQueryKey,
 	useDeleteV1StudentsIdExtracurricularsSeId,
 	useGetV1StudentsIdExtracurriculars,
 	usePostV1StudentsIdExtracurriculars,
 } from "#/api/endpoints/student-extracurriculars/student-extracurriculars";
+import { postV1StudentsIdExtracurricularsCleanupInvoicesPreview } from "#/api/endpoints/sync-invoices/sync-invoices";
 import { ApiError, customInstance } from "#/api/mutator/custom-instance";
 import {
 	BillingMonthsDialog,
 	buildAcademicYearMonths,
 } from "#/components/molecules/BillingMonthsDialog";
+import {
+	SyncPreviewDialog,
+	type SyncPreviewRow,
+	type SyncPreviewSummaryItem,
+} from "#/components/molecules/SyncPreviewDialog";
 import {
 	Badge,
 	Button,
@@ -44,6 +47,28 @@ export const Route = createFileRoute(
 	component: SiswaEkskulPage,
 });
 
+const MONTH_NAMES = [
+	"Januari",
+	"Februari",
+	"Maret",
+	"April",
+	"Mei",
+	"Juni",
+	"Juli",
+	"Agustus",
+	"September",
+	"Oktober",
+	"November",
+	"Desember",
+];
+
+const formatRupiah = (amount: number) =>
+	new Intl.NumberFormat("id-ID", {
+		style: "currency",
+		currency: "IDR",
+		minimumFractionDigits: 0,
+	}).format(amount);
+
 function SiswaEkskulPage() {
 	const { id } = Route.useParams();
 	const studentId = Number(id);
@@ -54,10 +79,14 @@ function SiswaEkskulPage() {
 	const [isUnenrollOpen, setIsUnenrollOpen] = useState(false);
 	const [selectedSeId, setSelectedSeId] = useState<number | null>(null);
 	const [selectedSeName, setSelectedSeName] = useState("");
-	const [cleanupLoading, setCleanupLoading] = useState<number | null>(null);
+	const [cleanupTarget, setCleanupTarget] = useState<{
+		exId: number;
+		name: string;
+	} | null>(null);
 	const [billingTarget, setBillingTarget] = useState<{
 		seId: number;
 		name: string;
+		startDate?: string;
 	} | null>(null);
 
 	const [formData, setFormData] = useState({
@@ -86,23 +115,53 @@ function SiswaEkskulPage() {
 		[activeYear],
 	);
 
-	// Bulan yang invoice-nya sudah ada pembayaran → checkbox disabled (item paid
-	// tidak bisa dihapus backend). Approximasi per-invoice, konservatif.
-	const { data: invoicesResp } = useGetV1Invoices({
-		student_id: studentId,
-		type: "monthly",
-		limit: 60,
-	});
-	const paidMonthKeys = useMemo(() => {
+	// Bulan yang item PASTA-nya sudah dibayar (dari backend paid_months) — lebih
+	// akurat daripada sekadar "invoice bulan tsb sudah bayar". Dipakai untuk
+	// men-disable bulan yang TIDAK BISA di-skip di dialog Kelola Bulan.
+	const [billingPaidMonths, setBillingPaidMonths] = useState<
+		{ month: number; year: number }[] | null
+	>(null);
+
+	// Fetch paid_months hanya saat dialog dibuka (per enrollment target).
+	useEffect(() => {
+		if (!billingTarget) {
+			setBillingPaidMonths(null);
+			return;
+		}
+		let cancelled = false;
+		getV1StudentsIdExtracurricularsSeIdBillingExclusions(
+			studentId,
+			billingTarget.seId,
+		)
+			.then((res) => {
+				if (cancelled) return;
+				setBillingPaidMonths(res.data.data.paid_months ?? []);
+			})
+			.catch(() => {
+				if (!cancelled) setBillingPaidMonths([]);
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [billingTarget, studentId]);
+
+	// Bulan dalam periode enrollment (bulan mulai s.d. akhir tahun ajaran) — bulan
+	// sebelum start_date tidak relevan untuk dialog PASTA ini.
+	const billingMonths = useMemo(() => {
+		if (!billingTarget?.startDate) return activeYearMonths;
+		const start = new Date(billingTarget.startDate);
+		if (Number.isNaN(start.getTime())) return activeYearMonths;
+		const startKey = start.getFullYear() * 12 + (start.getMonth() + 1);
+		return activeYearMonths.filter((m) => m.year * 12 + m.month >= startKey);
+	}, [activeYearMonths, billingTarget]);
+
+	const billingPaidKeys = useMemo(() => {
 		const keys = new Set<string>();
-		const list = (invoicesResp?.data as any)?.data ?? [];
-		for (const inv of list) {
-			if (inv.paid_amount > 0 && inv.month && inv.year) {
-				keys.add(`${inv.month}-${inv.year}`);
-			}
+		for (const m of billingPaidMonths ?? []) {
+			keys.add(`${m.month}-${m.year}`);
 		}
 		return keys;
-	}, [invoicesResp]);
+	}, [billingPaidMonths]);
 
 	const enrollMutation = usePostV1StudentsIdExtracurriculars({
 		mutation: {
@@ -215,8 +274,7 @@ function SiswaEkskulPage() {
 		}
 	};
 
-	const handleCleanup = async (extracurricularId: number) => {
-		setCleanupLoading(extracurricularId);
+	const runCleanup = async (extracurricularId: number) => {
 		try {
 			await customInstance(
 				`/v1/students/${studentId}/extracurriculars/${extracurricularId}/cleanup-invoices`,
@@ -232,9 +290,40 @@ function SiswaEkskulPage() {
 			const msg =
 				error instanceof ApiError ? error.message : "Terjadi kesalahan";
 			addToast({ variant: "error", title: "Gagal", message: msg });
-		} finally {
-			setCleanupLoading(null);
+			throw error; // dialog tetap terbuka — user bisa coba lagi atau batal
 		}
+	};
+
+	const loadCleanupPreview = async (): Promise<{
+		summary: SyncPreviewSummaryItem[];
+		rows: SyncPreviewRow[];
+	}> => {
+		if (!cleanupTarget || cleanupTarget.exId === 0) {
+			return { summary: [], rows: [] };
+		}
+		const res = await postV1StudentsIdExtracurricularsCleanupInvoicesPreview(
+			studentId,
+			cleanupTarget.exId,
+		);
+		const d = res.data.data;
+
+		const rows: SyncPreviewRow[] = d.items.map((it) => ({
+			key: `${it.item_id}`,
+			title: `${MONTH_NAMES[it.month - 1] ?? it.month} ${it.year}`,
+			action:
+				it.action === "writeoff"
+					? `${it.item_name} — sisa ${formatRupiah(it.amount)} dibebaskan (sudah dibayar sebagian)`
+					: `${it.item_name} — ${formatRupiah(it.amount)}`,
+			status: "change",
+		}));
+		const invoiceCount = new Set(d.items.map((it) => `${it.year}-${it.month}`))
+			.size;
+		const summary: SyncPreviewSummaryItem[] = [
+			{ label: "Item diproses", value: d.total_items },
+			{ label: "Total", value: formatRupiah(d.total_amount) },
+			{ label: "Invoice", value: invoiceCount },
+		];
+		return { summary, rows };
 	};
 
 	if (isLoading) {
@@ -422,6 +511,7 @@ function SiswaEkskulPage() {
 																	setBillingTarget({
 																		seId: se.id,
 																		name: se.extracurricular?.name || "PASTA",
+																		startDate: se.start_date,
 																	})
 																}
 																title="Atur bulan yang tagihannya di-skip"
@@ -445,13 +535,13 @@ function SiswaEkskulPage() {
 																variant="ghost"
 																size="sm"
 																className="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
-																disabled={
-																	cleanupLoading === se.extracurricular?.id
-																}
 																onClick={() =>
-																	handleCleanup(se.extracurricular?.id)
+																	setCleanupTarget({
+																		exId: se.extracurricular?.id ?? 0,
+																		name: se.extracurricular?.name || "PASTA",
+																	})
 																}
-																title="Bersihkan tagihan PASTA ini dari invoice"
+																title="Pratinjau & bersihkan tagihan PASTA ini dari invoice"
 															>
 																<Eraser className="h-4 w-4" />
 															</Button>
@@ -584,14 +674,36 @@ function SiswaEkskulPage() {
 			>
 				<p>
 					Anda yakin ingin menghentikan siswa dari{" "}
-					<strong>{selectedSeName}</strong>? Tagihan bulan ini ke depan yang
-					belum dibayar akan otomatis dihapus.
+					<strong>{selectedSeName}</strong>? Tagihan PASTA ini yang belum
+					dibayar (termasuk bulan sebelumnya) akan otomatis dihapus.
 				</p>
 			</ConfirmDialog>
 
+			{/* Dialog Preview Bersihkan Tagihan PASTA — dry-run sebelum eksekusi */}
+			<SyncPreviewDialog
+				open={!!cleanupTarget}
+				onClose={() => setCleanupTarget(null)}
+				title={
+					cleanupTarget
+						? `Bersihkan Tagihan — ${cleanupTarget.name}`
+						: "Bersihkan Tagihan"
+				}
+				description="Pratinjau item unpaid yang akan dihapus dari invoice bulanan. Item yang sudah dibayar tidak akan disentuh."
+				confirmLabel="Bersihkan Tagihan"
+				confirmVariant="danger"
+				runningLabel="Membersihkan..."
+				emptyText="Tidak ada item unpaid yang perlu dibersihkan."
+				changeLabel="Dihapus"
+				loadPreview={loadCleanupPreview}
+				runSync={async () => {
+					if (!cleanupTarget) return;
+					await runCleanup(cleanupTarget.exId);
+				}}
+			/>
+
 			{/* Dialog Kelola Bulan — skip tagihan bulanan PASTA */}
 			<BillingMonthsDialog
-				open={!!billingTarget}
+				open={!!billingTarget && billingPaidMonths !== null}
 				onClose={() => setBillingTarget(null)}
 				title={
 					billingTarget
@@ -599,8 +711,8 @@ function SiswaEkskulPage() {
 						: "Kelola Bulan"
 				}
 				description="Bulan yang dicentang tetap ditagihkan untuk PASTA ini. Bulan yang tidak dicentang di-skip (tidak ditagih). Enrollment siswa tetap aktif."
-				months={activeYearMonths}
-				paidKeys={paidMonthKeys}
+				months={billingMonths}
+				paidKeys={billingPaidKeys}
 				loadExclusions={async () => {
 					if (!billingTarget) return [];
 					const res =

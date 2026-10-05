@@ -165,7 +165,7 @@ function EnrollmentTab() {
 
 		const rows: SyncPreviewRow[] = d.items.map((it) => ({
 			key: `${it.student_id}-${it.category}`,
-			student_name: it.student_name,
+			title: it.student_name,
 			action: `${CATEGORY_LABELS[it.category] ?? it.category} — ${it.reason}`,
 			status: it.will_sync ? "change" : "skip",
 		}));

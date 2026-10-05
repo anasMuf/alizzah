@@ -17,6 +17,8 @@ export interface DtoCreatePaymentRequest {
 	payment_date: string;
 	/** @minimum 0 */
 	savings_deposit?: number;
+	/** @minimum 0 */
+	savings_usage_amount?: number;
 	source: DtoCreatePaymentRequestSource;
 	student_id: number;
 }

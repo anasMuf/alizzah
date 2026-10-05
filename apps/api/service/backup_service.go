@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -256,30 +257,41 @@ func (s *BackupService) runWithCompatFilter(cmd *exec.Cmd, tmpPath string) error
 		return err
 	}
 
+	if err := s.filterCompatLines(pipe, tmpFile); err != nil {
+		return err
+	}
+	return cmd.Wait()
+}
+
+// filterCompatLines menyalin baris dari in ke out sambil membuang baris
+// \restrict / \unrestrict (pattern dari shell script backup-db.sh).
+//
+// Dipakai bufio.Reader.ReadString (BUKAN bufio.Scanner) karena Scanner punya
+// batas token 64KB (bufio.MaxScanTokenSize) — baris COPY > 64KB (nilai kolom
+// besar, mis. JSON schedule) membuat Scanner berhenti dengan ErrTooLong, pipe
+// berhenti dibaca, dan pg_dump macet menunggu pipe → backup gantung selamanya.
+func (s *BackupService) filterCompatLines(in io.Reader, out io.Writer) error {
 	// Pattern dari shell script backup-db.sh: hapus baris \restrict / \unrestrict
 	reCompat := regexp.MustCompile(`^\\restrict|^\\unrestrict`)
 
-	scanner := bufio.NewScanner(pipe)
-	writer := bufio.NewWriter(tmpFile)
-	for scanner.Scan() {
-		line := scanner.Text()
-		if reCompat.MatchString(line) {
-			continue
+	reader := bufio.NewReader(in)
+	writer := bufio.NewWriter(out)
+	for {
+		line, err := reader.ReadString('\n')
+		if len(line) > 0 {
+			content := strings.TrimSuffix(strings.TrimSuffix(line, "\n"), "\r")
+			if !reCompat.MatchString(content) {
+				fmt.Fprintln(writer, content)
+			}
 		}
-		fmt.Fprintln(writer, line)
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return err
+		}
 	}
-	writer.Flush()
-
-	scanErr := scanner.Err()
-	waitErr := cmd.Wait()
-
-	if scanErr != nil {
-		return scanErr
-	}
-	if waitErr != nil {
-		return waitErr
-	}
-	return tmpFile.Close()
+	return writer.Flush()
 }
 
 // ─── Verify ────────────────────────────────────────────────────────────────────

@@ -9,6 +9,7 @@ import type { DtoFeeConfigItemBriefResponse } from "./dtoFeeConfigItemBriefRespo
 import type { DtoStudentBriefResponse } from "./dtoStudentBriefResponse";
 
 export interface DtoFacilityStudentItemResponse {
+	current_month_days?: number;
 	end_date?: string;
 	fee_config_item?: DtoFeeConfigItemBriefResponse;
 	id?: number;

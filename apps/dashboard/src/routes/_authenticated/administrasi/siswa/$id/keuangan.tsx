@@ -1,7 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, CreditCard, PiggyBank, Wallet } from "lucide-react";
+import { useAtom } from "jotai";
+import { ArrowRight, CreditCard, PiggyBank, Plus, Wallet } from "lucide-react";
+import { useState } from "react";
+import { useGetV1StudentsIdInvoices } from "#/api/endpoints/invoices/invoices";
 import { useGetV1StudentsId } from "#/api/endpoints/students/students";
 import { Button } from "#/components/ui";
+import { ManualInvoiceForm } from "#/features/keuangan/components/ManualInvoiceForm";
+import { splitUnpaidByAcademicYear } from "#/features/keuangan/outstanding-invoices";
+import { academicYearAtom } from "#/store/global";
 
 export const Route = createFileRoute(
 	"/_authenticated/administrasi/siswa/$id/keuangan",
@@ -15,6 +21,18 @@ function SiswaKeuanganPage() {
 
 	const { data: response, isLoading, isError } = useGetV1StudentsId(studentId);
 	const student = (response?.data as any)?.data;
+
+	const [isAddInvoiceOpen, setIsAddInvoiceOpen] = useState(false);
+	const [activeAy] = useAtom(academicYearAtom);
+
+	// Daftar tagihan lintas tahun ajaran (tanpa param TA) untuk memecah tunggakan
+	// menjadi porsi TA aktif vs TA lain.
+	const { data: invoicesResp } = useGetV1StudentsIdInvoices(
+		studentId,
+		{},
+		{ query: { enabled: !!activeAy?.id && !!studentId } },
+	);
+	const allInvoices: any[] = (invoicesResp?.data as any)?.data || [];
 
 	if (isLoading) {
 		return (
@@ -40,6 +58,14 @@ function SiswaKeuanganPage() {
 
 	const summary = student.financial_summary;
 
+	// Porsi tunggakan TA lain dihitung dari daftar; porsi TA aktif diturunkan dari
+	// total agar konsisten dengan aturan visibilitas bulan berjalan di backend.
+	const unpaidSplit = splitUnpaidByAcademicYear(
+		allInvoices,
+		activeAy?.id,
+		summary?.total_unpaid ?? 0,
+	);
+
 	return (
 		<div className="space-y-6">
 			<div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -61,7 +87,34 @@ function SiswaKeuanganPage() {
 						Akumulasi tagihan SPP, SPD, dll yang belum lunas.
 					</p>
 
-					<div className="mt-auto pt-6 relative z-10">
+					{unpaidSplit.otherYears > 0 && (
+						<div className="mt-3 pt-3 border-t border-red-100 relative z-10 space-y-1">
+							<div className="flex items-center justify-between text-sm">
+								<span className="text-gray-500">
+									Tunggakan {activeAy?.name}
+								</span>
+								<span className="font-medium text-gray-700 tabular-nums">
+									{formatRupiah(unpaidSplit.activeYear)}
+								</span>
+							</div>
+							<div className="flex items-center justify-between text-sm">
+								<span className="text-gray-500">Tunggakan TA Lain</span>
+								<span className="font-medium text-amber-700 tabular-nums">
+									{formatRupiah(unpaidSplit.otherYears)}
+								</span>
+							</div>
+						</div>
+					)}
+
+					<div className="mt-auto pt-6 relative z-10 space-y-2">
+						<Button
+							variant="primary"
+							className="w-full"
+							onClick={() => setIsAddInvoiceOpen(true)}
+						>
+							<Plus className="mr-2 w-4 h-4" />
+							Catat Tunggakan
+						</Button>
 						<Link to="/keuangan/tagihan/siswa/$id" params={{ id }}>
 							<Button
 								variant="secondary"
@@ -147,6 +200,13 @@ function SiswaKeuanganPage() {
 					</div>
 				</div>
 			</div>
+
+			<ManualInvoiceForm
+				isOpen={isAddInvoiceOpen}
+				onClose={() => setIsAddInvoiceOpen(false)}
+				preselectedStudent={student}
+				lockStudent
+			/>
 		</div>
 	);
 }

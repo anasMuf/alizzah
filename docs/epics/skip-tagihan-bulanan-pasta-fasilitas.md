@@ -12,7 +12,8 @@ Admin tidak bisa menonaktifkan tagihan bulanan (PASTA/ekskul, fasilitas) pada **
 Temuan diverifikasi dari dua jalur yang ada, keduanya tidak memenuhi kebutuhan:
 
 1. **Aksi "Hapus item tagihan"** — semua item invoice bulanan di-generate dengan `IsMandatory: true` hardcoded (termasuk PASTA opsional), sehingga tombol hapus disembunyikan di UI dan backend menolak dengan *"Tidak bisa menghapus item mandatory"*.
-2. **Alur "Berhenti" (`Unenroll`)** — hanya mendukung cutoff `end_date = time.Now()` (bulan berjalan ke depan); tidak ada pemilihan bulan. Jalur `Update` yang menerima `end_date` bebas (backdate) tidak memanggil cleanup invoice sama sekali. `end_date` bersifat cutoff tunggal, tidak bisa mewakili "Oktober aktif lagi".
+2. **Alur "Berhenti" (`Unenroll`)** — dulu hanya mendukung cutoff `end_date = time.Now()` (bulan berjalan ke depan); tidak ada pemilihan bulan. Jalur `Update` yang menerima `end_date` bebas (backdate) tidak memanggil cleanup invoice sama sekali. `end_date` bersifat cutoff tunggal, tidak bisa mewakili "Oktober aktif lagi".
+   > **Perubahan berikutnya (Aturan B):** cleanup `Unenroll` diubah dari "bulan berjalan ke depan" menjadi "mulai bulan `start_date` ke depan" — semua item unpaid PASTA/fasilitas yang dihentikan ikut dibersihkan, termasuk bulan-bulan sebelum `end_date` (mis. item Agustus saat berhenti di September). Lihat `RemoveExtracurricularInvoices` / `RemoveFacilityInvoices`.
 
 Fitur yang dirancang: **skip tagihan per bulan** — admin memilih daftar bulan (bebas/tidak berurutan) di mana tagihan PASTA/fasilitas tidak ditagihkan, tanpa mengubah status enrollment (tetap Aktif).
 
@@ -27,7 +28,7 @@ Fitur yang dirancang: **skip tagihan per bulan** — admin memilih daftar bulan 
 | `apps/api/service/invoice_generate_service.go:1718-1864` | `AddFacilityToMonthlyRange` — backfill fasilitas; titik cek skip |
 | `apps/api/service/invoice_generate_service.go:840-884` | `RemoveExtracurricularFromFutureInvoices` — pola hapus item (name+category match, unpaid only) |
 | `apps/api/service/invoice_generate_service.go:1866-1928` | `RemoveFacilityFromFutureInvoices` — pola hapus item fasilitas (facility_id/name match, unpaid only) |
-| `apps/api/service/student_extracurricular_service.go:155-182` | `Unenroll` — `end_date = now`, cleanup bulan berjalan ke depan |
+| `apps/api/service/student_extracurricular_service.go:155-192` | `Unenroll` — `end_date = now`, cleanup via `RemoveExtracurricularInvoices` mulai bulan `start_date` |
 | `apps/api/dto/student_extracurricular.go:9-11` | `UpdateStudentExtracurricularRequest` — hanya `end_date` |
 | `apps/api/cmd/api/main.go:53-69` | Daftar AutoMigrate (tempat daftarkan model baru) |
 | `apps/api/cmd/api/main.go:578-591` | Pola nested route siswa (`/:id/extracurriculars/:se_id`, `/:id/facilities/:facilityId`) |
@@ -95,7 +96,7 @@ Item yang sudah **dibayar** tidak pernah dihapus — response menyertakan pering
 
 "Skip" dan "Berhenti" adalah dua fitur terpisah yang hidup berdampingan:
 
-- **Berhenti** (existing, tidak berubah): `end_date = now`, enrollment jadi Tidak Aktif, tagihan dibersihkan dari bulan berjalan ke depan
+- **Berhenti** (`Unenroll`): `end_date = now`, enrollment jadi Tidak Aktif, semua item unpaid PASTA/fasilitas itu dibersihkan dari invoice mulai bulan `start_date` ke depan (Aturan B — termasuk bulan-bulan sebelum `end_date`). Item yang sudah dibayar tetap dipertahankan.
 - **Skip** (baru): enrollment tetap Aktif, hanya tagihan bulan terpilih yang di-off-kan
 
 Keputusan: saat `Unenroll` (Berhenti) dipanggil untuk sebuah enrollment, **semua baris exclusion enrollment tersebut dihapus** — data tidak dibiarkan menggantung. Berlaku di `studentExtracurricularService.Unenroll` dan `studentFacilityService.Unenroll`.

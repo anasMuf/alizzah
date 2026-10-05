@@ -2945,32 +2945,20 @@ const docTemplate = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
-                    },
-                    {
-                        "ApiKeyAuth": []
                     }
                 ],
-                "description": "Delete a daycare enrollment. If delete_invoices=true, also removes unpaid monthly invoices from current month onward.\nCheck if a student has ever had a premium daycare enrollment (for auto-detect Lanjutan/Baru)",
+                "description": "Check if a student has ever had a premium daycare enrollment (for auto-detect Lanjutan/Baru)",
                 "consumes": [
-                    "application/json",
                     "application/json"
                 ],
                 "produces": [
-                    "application/json",
                     "application/json"
                 ],
                 "tags": [
-                    "daycare-enrollments",
                     "daycare-enrollments"
                 ],
                 "summary": "Check if student has premium history",
                 "parameters": [
-                    {
-                        "type": "boolean",
-                        "description": "Also delete unpaid invoices",
-                        "name": "delete_invoices",
-                        "in": "query"
-                    },
                     {
                         "type": "integer",
                         "description": "Student ID",
@@ -2999,30 +2987,6 @@ const docTemplate = `{
                                     }
                                 }
                             ]
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3541,25 +3505,19 @@ const docTemplate = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
-                    },
-                    {
-                        "ApiKeyAuth": []
                     }
                 ],
-                "description": "Delete a daycare enrollment. If delete_invoices=true, also removes unpaid monthly invoices from current month onward.\nCheck if a student has ever had a premium daycare enrollment (for auto-detect Lanjutan/Baru)",
+                "description": "Delete a daycare enrollment. If delete_invoices=true, also removes unpaid monthly invoices from current month onward.",
                 "consumes": [
-                    "application/json",
                     "application/json"
                 ],
                 "produces": [
-                    "application/json",
                     "application/json"
                 ],
                 "tags": [
-                    "daycare-enrollments",
                     "daycare-enrollments"
                 ],
-                "summary": "Check if student has premium history",
+                "summary": "Delete daycare enrollment",
                 "parameters": [
                     {
                         "type": "integer",
@@ -3573,13 +3531,6 @@ const docTemplate = `{
                         "description": "Also delete unpaid invoices",
                         "name": "delete_invoices",
                         "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Student ID",
-                        "name": "student_id",
-                        "in": "query",
-                        "required": true
                     }
                 ],
                 "responses": {
@@ -3594,10 +3545,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "type": "object",
-                                            "additionalProperties": {
-                                                "type": "boolean"
-                                            }
+                                            "$ref": "#/definitions/dto.DeleteDaycareEnrollmentResponse"
                                         }
                                     }
                                 }
@@ -5348,7 +5296,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get list of students enrolled in a specific extracurricular",
+                "description": "Get list of students that have PASTA billing items in the given",
                 "consumes": [
                     "application/json"
                 ],
@@ -5373,6 +5321,30 @@ const docTemplate = `{
                         "name": "academic_year_id",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Bulan awal rentang (1-12); kosong = bulan pertama tahun ajaran",
+                        "name": "month_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Tahun awal rentang; kosong = tahun mulai tahun ajaran",
+                        "name": "year_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Bulan akhir rentang (1-12); kosong = bulan terakhir tahun ajaran",
+                        "name": "month_to",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Tahun akhir rentang; kosong = tahun akhir tahun ajaran",
+                        "name": "year_to",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -5625,6 +5597,18 @@ const docTemplate = `{
                         "type": "integer",
                         "description": "Limit (default 20)",
                         "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Bulan (1-12) untuk kuantitas hari; default bulan berjalan",
+                        "name": "month",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Tahun untuk kuantitas hari; default tahun berjalan",
+                        "name": "year",
                         "in": "query"
                     }
                 ],
@@ -7390,6 +7374,91 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Membuat tagihan manual. type \"arrears\" = tunggakan historis (tepat 1 item, nominal total saja, notes wajib); type \"manual\" = tagihan rinci dengan N item. Total dihitung server dari item — jangan kirim total dari client.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "invoices"
+                ],
+                "summary": "Create manual invoice",
+                "parameters": [
+                    {
+                        "description": "Data tagihan",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateInvoiceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/dto.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.InvoiceDetailResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
             }
         },
         "/v1/invoices/batch": {
@@ -7586,6 +7655,169 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Mengubah notes dan due_date saja. Item, total_amount, paid_amount, dan status tidak tersentuh. due_date kosong menghapus jatuh tempo. Untuk type arrears, notes wajib diisi.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "invoices"
+                ],
+                "summary": "Update invoice metadata",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Invoice ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Data yang diubah",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateInvoiceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/dto.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.InvoiceDetailResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Soft delete tagihan manual (type arrears/manual) yang belum memiliki pembayaran. Tagihan hasil generate, atau yang sudah memiliki pembayaran, ditolak dengan 409.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "invoices"
+                ],
+                "summary": "Delete manual invoice",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Invoice ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
                         "schema": {
                             "$ref": "#/definitions/dto.ErrorResponse"
                         }
@@ -10487,6 +10719,42 @@ const docTemplate = `{
                         "description": "Search by student name",
                         "name": "search",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Jenjang siswa (intan/berlian) via enrollment aktif",
+                        "name": "level",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "ID rombel siswa via enrollment aktif",
+                        "name": "class_group_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Petugas pencatat (user ID)",
+                        "name": "created_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Kategori item yang dibayar (monthly_spp, pasta, dll)",
+                        "name": "category",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Periode tagihan yang dibayar (bulan 1-12)",
+                        "name": "month",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Periode tagihan yang dibayar (tahun)",
+                        "name": "year",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -11075,6 +11343,72 @@ const docTemplate = `{
                         "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/reports/integrity/payments": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List payments whose header total_amount differs from the sum of payment_items (money missing/duplicated from item-based reports)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reports"
+                ],
+                "summary": "Payment integrity diagnostic",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Academic Year ID",
+                        "name": "academic_year_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/dto.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.PaymentIntegrityResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "401": {
@@ -12905,7 +13239,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Recovery endpoint: menghapus item ekskul tertentu dari invoice",
+                "description": "Recovery endpoint: menghapus item unpaid ekskul tertentu dari",
                 "consumes": [
                     "application/json"
                 ],
@@ -12915,7 +13249,7 @@ const docTemplate = `{
                 "tags": [
                     "student-extracurriculars"
                 ],
-                "summary": "Hapus item ekskul dari invoice bulan ini dan seterusnya",
+                "summary": "Hapus item unpaid ekskul dari invoice mulai bulan mulai mengikuti",
                 "parameters": [
                     {
                         "type": "integer",
@@ -12937,6 +13271,86 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/dto.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/students/{id}/extracurriculars/{extracurricular_id}/cleanup-invoices/preview": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Menampilkan item unpaid ekstrakurikuler yang AKAN dihapus dari",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "student-extracurriculars"
+                ],
+                "summary": "Preview pembersihan tagihan PASTA (dry-run)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Student ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Extracurricular ID",
+                        "name": "extracurricular_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/dto.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.ExtracurricularCleanupPreviewResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -13724,6 +14138,202 @@ const docTemplate = `{
                                     "properties": {
                                         "data": {
                                             "$ref": "#/definitions/dto.FacilityCurrentMonthDaysResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/students/{id}/facilities/{facilityId}/month-days": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Menyetel jumlah hari item fasilitas utk satu bulan. days = 0 berarti bulan tsb di-skip (tidak ditagih); days \u003e= 1 mencabut skip \u0026 menyetel jumlah hari.",
+                "tags": [
+                    "facilities"
+                ],
+                "summary": "Set per-month days for a facility enrollment (0 = skip month)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Student ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Student Facility enrollment ID",
+                        "name": "facilityId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Set month days",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateFacilityMonthDaysRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/dto.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.FacilityMonthDaysResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/students/{id}/facilities/{facilityId}/month-zone": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "tags": [
+                    "facilities"
+                ],
+                "summary": "Set per-month zone override for a facility enrollment",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Student ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Student Facility enrollment ID",
+                        "name": "facilityId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Set month zone",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateStudentFacilityMonthZoneRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/dto.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.FacilityMonthZoneResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "tags": [
+                    "facilities"
+                ],
+                "summary": "Remove per-month zone override (back to default)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Student ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Student Facility enrollment ID",
+                        "name": "facilityId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Bulan (1-12)",
+                        "name": "month",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Tahun",
+                        "name": "year",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Izinkan rewrite item yang sudah dibayar",
+                        "name": "force",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/dto.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.FacilityMonthZoneResponse"
                                         }
                                     }
                                 }
@@ -15168,6 +15778,10 @@ const docTemplate = `{
         "dto.AnnualIncomeSummary": {
             "type": "object",
             "properties": {
+                "other_income": {
+                    "description": "income_transactions (BOS/Donasi/Hibah/dll)",
+                    "type": "number"
+                },
                 "total_billed": {
                     "type": "number"
                 },
@@ -15290,6 +15904,13 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "months": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.BillingExclusionMonth"
+                    }
+                },
+                "paid_months": {
+                    "description": "PaidMonths = bulan di mana entity tsb sudah punya item yang DIBIAYAR\n(paid_amount \u003e 0) pada invoice siswa. UI memakai daftar ini untuk\nmen-disable bulan yang tidak bisa di-skip (item berbayar tidak bisa\ndihapus backend) — berbeda dengan sekadar \"invoice bulan tsb sudah bayar\".",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/dto.BillingExclusionMonth"
@@ -16105,6 +16726,72 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.CreateInvoiceItemRequest": {
+            "type": "object",
+            "required": [
+                "category",
+                "name"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "category": {
+                    "type": "string",
+                    "maxLength": 30
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "unit_price": {
+                    "type": "number"
+                }
+            }
+        },
+        "dto.CreateInvoiceRequest": {
+            "type": "object",
+            "required": [
+                "academic_year_id",
+                "items",
+                "student_id",
+                "type"
+            ],
+            "properties": {
+                "academic_year_id": {
+                    "type": "integer"
+                },
+                "due_date": {
+                    "type": "string"
+                },
+                "items": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/dto.CreateInvoiceItemRequest"
+                    }
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "student_id": {
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "arrears",
+                        "manual"
+                    ]
+                }
+            }
+        },
         "dto.CreatePaymentRequest": {
             "type": "object",
             "required": [
@@ -16136,6 +16823,11 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "savings_deposit": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "savings_usage_amount": {
+                    "description": "SavingsUsage: berapa dari total tagihan yang didanai dari tabungan umum\n(sisanya tunai). Opsional; 0 = seluruhnya tunai. Bila kosong dan\nsource=\"savings\", di-default ke seluruh total (kompat perilaku lama).",
                     "type": "number",
                     "minimum": 0
                 },
@@ -16908,6 +17600,63 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.ExtracurricularCleanupPreviewItem": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "description": "\"remove\" | \"writeoff\"",
+                    "type": "string"
+                },
+                "amount": {
+                    "description": "nilai yang dihapus / sisa yang dibebaskan",
+                    "type": "number"
+                },
+                "invoice_id": {
+                    "type": "integer"
+                },
+                "item_id": {
+                    "type": "integer"
+                },
+                "item_name": {
+                    "type": "string"
+                },
+                "month": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.ExtracurricularCleanupPreviewResponse": {
+            "type": "object",
+            "properties": {
+                "extracurricular_id": {
+                    "type": "integer"
+                },
+                "extracurricular_name": {
+                    "type": "string"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ExtracurricularCleanupPreviewItem"
+                    }
+                },
+                "start_date": {
+                    "type": "string"
+                },
+                "student_id": {
+                    "type": "integer"
+                },
+                "total_amount": {
+                    "type": "number"
+                },
+                "total_items": {
+                    "type": "integer"
+                }
+            }
+        },
         "dto.ExtracurricularExportItem": {
             "type": "object",
             "properties": {
@@ -17063,6 +17812,10 @@ const docTemplate = `{
                 "default_days": {
                     "type": "integer"
                 },
+                "excluded": {
+                    "description": "Excluded true bila bulan ini di-skip (tidak ditagih) untuk fasilitas ini.",
+                    "type": "boolean"
+                },
                 "invoice_id": {
                     "type": "integer"
                 },
@@ -17071,6 +17824,66 @@ const docTemplate = `{
                 },
                 "zone_amount": {
                     "type": "number"
+                }
+            }
+        },
+        "dto.FacilityMonthDaysResponse": {
+            "type": "object",
+            "properties": {
+                "days": {
+                    "description": "Days jumlah hari efektif setelah operasi; 0 bila bulan di-skip.",
+                    "type": "integer"
+                },
+                "excluded": {
+                    "description": "Excluded true bila bulan tsb di-skip (tidak ditagih).",
+                    "type": "boolean"
+                },
+                "invoice_id": {
+                    "type": "integer"
+                },
+                "invoice_item_id": {
+                    "type": "integer"
+                },
+                "item_paid": {
+                    "description": "ItemPaid true bila item bulan tsb (masih ada) sudah ada pembayaran.",
+                    "type": "boolean"
+                },
+                "month": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.FacilityMonthZoneResponse": {
+            "type": "object",
+            "properties": {
+                "fee_config_item_id": {
+                    "description": "Zona efektif setelah operasi (override ?: default); null = tanpa zona.",
+                    "type": "integer"
+                },
+                "invoice_item_updated": {
+                    "description": "InvoiceItemUpdated true bila item invoice bulan tsb ditemukan \u0026 ditulis ulang.",
+                    "type": "boolean"
+                },
+                "item_paid_amount": {
+                    "description": "ItemPaidAmount jumlah yang sudah dibayar pada item bulan tsb.",
+                    "type": "number"
+                },
+                "month": {
+                    "type": "integer"
+                },
+                "remaining_or_excess": {
+                    "description": "RemainingOrExcess = amount - paid; positif = sisa tagihan,\nnegatif = kelebihan bayar (setelah rewrite).",
+                    "type": "number"
+                },
+                "source": {
+                    "description": "\"override\" | \"default\"",
+                    "type": "string"
+                },
+                "year": {
+                    "type": "integer"
                 }
             }
         },
@@ -17095,6 +17908,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "current_month_days": {
+                    "description": "Jumlah hari (kuantitas item fasilitas per_day) untuk bulan yang diminta.",
                     "type": "integer"
                 },
                 "end_date": {
@@ -17105,6 +17919,29 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "integer"
+                },
+                "invoice_id": {
+                    "description": "InvoiceID \u0026 InvoiceItemID item fasilitas pada bulan yang diminta —\ndiisi hanya bila item per_day tersedia, dipakai FE untuk menyimpan\nperubahan jumlah hari tanpa panggilan resolve terpisah.",
+                    "type": "integer"
+                },
+                "invoice_item_id": {
+                    "type": "integer"
+                },
+                "month_excluded": {
+                    "description": "MonthExcluded true bila bulan tsb di-skip (tidak ditagih) untuk fasilitas\nini — membedakan \"0 hari karena di-skip\" dari \"belum ada item\".",
+                    "type": "boolean"
+                },
+                "month_item_paid": {
+                    "description": "MonthItemPaid true bila item invoice fasilitas bulan tsb sudah dibayar\n(memicu konfirmasi saat ubah zona/hari).",
+                    "type": "boolean"
+                },
+                "month_zone_fee_config_item_id": {
+                    "description": "Zona EFEKTIF bulan yang diminta (override ?: default) — dipakai dropdown\nzona per bulan di tab bulanan. Absence field = default tanpa zona.",
+                    "type": "integer"
+                },
+                "month_zone_overridden": {
+                    "description": "MonthZoneOverridden true bila bulan tsb punya override eksplisit.",
+                    "type": "boolean"
                 },
                 "start_date": {
                     "type": "string"
@@ -17684,6 +18521,10 @@ const docTemplate = `{
                 "quantity": {
                     "type": "integer"
                 },
+                "skipped": {
+                    "description": "Skipped true berarti operasi quantity=0 berhasil dan item fasilitas\ndihapus dari invoice melalui billing exclusion.",
+                    "type": "boolean"
+                },
                 "status": {
                     "type": "string"
                 },
@@ -17972,6 +18813,10 @@ const docTemplate = `{
                 "savings_deposit": {
                     "type": "number"
                 },
+                "savings_usage_amount": {
+                    "description": "porsi dibayar dari tabungan umum",
+                    "type": "number"
+                },
                 "source": {
                     "type": "string"
                 },
@@ -17979,6 +18824,60 @@ const docTemplate = `{
                     "$ref": "#/definitions/dto.StudentBriefResponse"
                 },
                 "total_amount": {
+                    "type": "number"
+                }
+            }
+        },
+        "dto.PaymentIntegrityResponse": {
+            "type": "object",
+            "properties": {
+                "academic_year": {
+                    "type": "string"
+                },
+                "count": {
+                    "type": "integer"
+                },
+                "rows": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.PaymentIntegrityRow"
+                    }
+                },
+                "total_delta": {
+                    "description": "Σ unaccounted",
+                    "type": "number"
+                }
+            }
+        },
+        "dto.PaymentIntegrityRow": {
+            "type": "object",
+            "properties": {
+                "header": {
+                    "description": "payments.total_amount",
+                    "type": "number"
+                },
+                "items_sum": {
+                    "description": "Σ payment_items.amount",
+                    "type": "number"
+                },
+                "payment_date": {
+                    "type": "string"
+                },
+                "payment_id": {
+                    "type": "integer"
+                },
+                "savings": {
+                    "description": "payments.savings_deposit",
+                    "type": "number"
+                },
+                "student_id": {
+                    "type": "integer"
+                },
+                "student_name": {
+                    "type": "string"
+                },
+                "unaccounted": {
+                    "description": "header − items_sum",
                     "type": "number"
                 }
             }
@@ -18018,6 +18917,12 @@ const docTemplate = `{
                 },
                 "invoice_item_name": {
                     "type": "string"
+                },
+                "invoice_month": {
+                    "type": "integer"
+                },
+                "invoice_year": {
+                    "type": "integer"
                 }
             }
         },
@@ -18032,6 +18937,12 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "integer"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.PaymentItemResponse"
+                    }
                 },
                 "payment_date": {
                     "type": "string"
@@ -19108,6 +20019,32 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.UpdateFacilityMonthDaysRequest": {
+            "type": "object",
+            "required": [
+                "days",
+                "month",
+                "year"
+            ],
+            "properties": {
+                "days": {
+                    "description": "Pointer agar field yang tidak dikirim (nil) ditolak validasi, bukan\ndiperlakukan sebagai 0 (yang berarti skip).",
+                    "type": "integer",
+                    "maximum": 31,
+                    "minimum": 0
+                },
+                "month": {
+                    "type": "integer",
+                    "maximum": 12,
+                    "minimum": 1
+                },
+                "year": {
+                    "type": "integer",
+                    "maximum": 2100,
+                    "minimum": 2000
+                }
+            }
+        },
         "dto.UpdateFeeConfigRequest": {
             "type": "object",
             "required": [
@@ -19147,8 +20084,10 @@ const docTemplate = `{
             ],
             "properties": {
                 "quantity": {
+                    "description": "Pointer agar field yang tidak dikirim (nil) berbeda dari quantity 0.",
                     "type": "integer",
-                    "minimum": 1
+                    "maximum": 31,
+                    "minimum": 0
                 }
             }
         },
@@ -19172,6 +20111,17 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.UpdateInvoiceRequest": {
+            "type": "object",
+            "properties": {
+                "due_date": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.UpdateStudentExtracurricularRequest": {
             "type": "object",
             "required": [
@@ -19180,6 +20130,33 @@ const docTemplate = `{
             "properties": {
                 "end_date": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.UpdateStudentFacilityMonthZoneRequest": {
+            "type": "object",
+            "required": [
+                "month",
+                "year"
+            ],
+            "properties": {
+                "fee_config_item_id": {
+                    "description": "FeeConfigItemID zona utk bulan tsb; null = \"tanpa zona\".",
+                    "type": "integer"
+                },
+                "force": {
+                    "description": "Force=true mengizinkan rewrite item invoice yang sudah dibayar\n(paid_amount dipertahankan; selisih jadi sisa tagihan/kelebihan bayar).",
+                    "type": "boolean"
+                },
+                "month": {
+                    "type": "integer",
+                    "maximum": 12,
+                    "minimum": 1
+                },
+                "year": {
+                    "type": "integer",
+                    "maximum": 2100,
+                    "minimum": 2000
                 }
             }
         },

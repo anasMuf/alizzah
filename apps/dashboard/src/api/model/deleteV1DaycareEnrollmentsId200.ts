@@ -5,9 +5,9 @@
  * API for Alizzah School Management System
  * OpenAPI spec version: 1.0
  */
-import type { DeleteV1DaycareEnrollmentsId200Data } from "./deleteV1DaycareEnrollmentsId200Data";
+import type { DtoDeleteDaycareEnrollmentResponse } from "./dtoDeleteDaycareEnrollmentResponse";
 import type { DtoSuccessResponse } from "./dtoSuccessResponse";
 
 export type DeleteV1DaycareEnrollmentsId200 = DtoSuccessResponse & {
-	data?: DeleteV1DaycareEnrollmentsId200Data;
+	data?: DtoDeleteDaycareEnrollmentResponse;
 };

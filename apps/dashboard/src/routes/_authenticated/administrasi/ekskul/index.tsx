@@ -157,7 +157,7 @@ function EkskulPage() {
 			const skipNote = skips.length > 0 ? ` · ${skips.join(", ")}` : "";
 			return {
 				key: `${it.student_id}-${it.extracurricular_id}`,
-				student_name: it.student_name,
+				title: it.student_name,
 				action: `${it.extracurricular_name} — ${it.months_to_add.length} bulan ditambah${it.months_to_add.length > 0 ? `: ${monthLabels}` : ""}${skipNote}`,
 				status: it.months_to_add.length > 0 ? "change" : "skip",
 			};

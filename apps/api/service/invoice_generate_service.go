@@ -28,8 +28,14 @@ type InvoiceGenerateService interface {
 	SyncDaycareMonthlyInvoices() (*dto.DaycareSyncResult, error)
 	RecalculateInfaqHarian(classGroupID, month, year uint) error
 	AddExtracurricularToMonthlyRange(studentID, extracurricularID, academicYearID uint) error
-	RemoveExtracurricularFromFutureInvoices(studentID, extracurricularID, academicYearID uint, endDate time.Time) error
+	// RemoveExtracurricularInvoices menghapus item unpaid ekskul dari invoice mulai
+	// bulan startDate ke depan (Aturan B: berhenti PASTA = semua item unpaid PASTA
+	// dibersihkan, termasuk bulan sebelum end_date).
+	RemoveExtracurricularInvoices(studentID, extracurricularID, academicYearID uint, startDate time.Time) error
 	CleanupExtracurricularInvoices(studentID, extracurricularID uint) error
+	// PlanExtracurricularCleanupInvoices menghitung (dry-run) item yang akan dihapus
+	// oleh CleanupExtracurricularInvoices — read-only, untuk preview UI.
+	PlanExtracurricularCleanupInvoices(studentID, extracurricularID uint) (*dto.ExtracurricularCleanupPreviewResponse, error)
 	SyncExtracurricularMonthlyInvoices() (*dto.ExtracurricularSyncResult, error)
 	// PlanExtracurricularSync menghitung rencana sync (dry-run, read-only).
 	PlanExtracurricularSync() (*dto.ExtracurricularPreviewResponse, error)
@@ -37,6 +43,15 @@ type InvoiceGenerateService interface {
 	PlanDaycareSync() (*dto.DaycarePreviewResponse, error)
 	AddFacilityToMonthlyRange(studentID, facilityID, academicYearID uint) error
 	RemoveFacilityFromFutureInvoices(studentID, facilityID, academicYearID uint, extraZoneNames ...string) error
+	// RemoveFacilityInvoices menghapus item unpaid fasilitas dari invoice mulai
+	// bulan startDate ke depan (Aturan B saat Unenroll) — termasuk bulan-bulan
+	// sebelum hari ini. Jalur ganti zona TETAP pakai RemoveFacilityFromFutureInvoices.
+	RemoveFacilityInvoices(studentID, facilityID, academicYearID uint, startDate time.Time, extraZoneNames ...string) error
+	// RewriteFacilityMonthItem menulis ulang item fasilitas pada invoice bulan
+	// tertentu milik siswa sesuai zona feeItem — dipakai semantik zona default &
+	// override per bulan (epic zona-bulanan). Quantity (hari) & paid_amount
+	// dipertahankan; item paid hanya ditulis bila allowPaid=true.
+	RewriteFacilityMonthItem(studentID, facilityID, month, year uint, feeItem *model.FeeConfigItem, allowPaid bool) (*dto.FacilityMonthRewriteResult, error)
 	// Billing month exclusions (skip tagihan bulanan)
 	// RemoveExtracurricularItemFromMonthly menghapus item unpaid ekstrakurikuler
 	// dari invoice bulan tertentu (saat bulan ditandai skip).
@@ -80,6 +95,7 @@ type invoiceGenerateService struct {
 	dispensationRepo      repository.DispensationRepository
 	exceptionalityRepo    repository.StudentExceptionalityRepository
 	billingExclusionRepo  repository.BillingMonthExclusionRepository
+	sfMonthZoneRepo       repository.StudentFacilityMonthZoneRepository
 }
 
 func NewInvoiceGenerateService(
@@ -100,6 +116,7 @@ func NewInvoiceGenerateService(
 	exceptionalityRepo repository.StudentExceptionalityRepository,
 	daycareMonthlyAttRepo repository.DaycareMonthlyAttendanceRepository,
 	billingExclusionRepo repository.BillingMonthExclusionRepository,
+	sfMonthZoneRepo repository.StudentFacilityMonthZoneRepository,
 ) InvoiceGenerateService {
 	return &invoiceGenerateService{
 		db:                    db,
@@ -119,6 +136,7 @@ func NewInvoiceGenerateService(
 		dispensationRepo:      dispensationRepo,
 		exceptionalityRepo:    exceptionalityRepo,
 		billingExclusionRepo:  billingExclusionRepo,
+		sfMonthZoneRepo:       sfMonthZoneRepo,
 	}
 }
 
@@ -183,10 +201,11 @@ func (s *invoiceGenerateService) GenerateInitial(params dto.GenerateInitialInvoi
 							label = fmt.Sprintf("Dispensasi: %s (%.0f%%)", d.Reason, d.DiscountValue)
 						}
 						dispensationItems = append(dispensationItems, model.InvoiceItem{
-							Name:     label,
-							Category: "dispensation",
-							Amount:   -discountForThis,
-							Status:   "paid",
+							Name:           label,
+							Category:       "dispensation",
+							OffsetCategory: d.FeeCategory,
+							Amount:         -discountForThis,
+							Status:         "paid",
 						})
 					}
 				}
@@ -504,12 +523,13 @@ func (s *invoiceGenerateService) GenerateMonthly(params dto.GenerateMonthlyInvoi
 							label = fmt.Sprintf("Dispensasi: %s (%.0f%%)", d.Reason, d.DiscountValue)
 						}
 						invoiceItems = append(invoiceItems, model.InvoiceItem{
-							Name:        label,
-							Category:    "dispensation",
-							Amount:      -discountForThis,
-							IsMandatory: true,
-							Status:      "paid",
-							Notes:       d.Notes,
+							Name:           label,
+							Category:       "dispensation",
+							OffsetCategory: d.FeeCategory,
+							Amount:         -discountForThis,
+							IsMandatory:    true,
+							Status:         "paid",
+							Notes:          d.Notes,
 						})
 					}
 				}
@@ -755,6 +775,42 @@ func (s *invoiceGenerateService) RecalculateInfaqHarian(classGroupID, month, yea
 						needsRecalc = true
 					}
 				}
+
+				// Item fasilitas per-hari (per_day): hari efektif berubah → jumlah
+				// hari ikut di-update. Tanpa ini, item fasilitas yang dibuat sebelum
+				// hari efektif diset akan tertulis 0 hari selamanya (tidak ada recalc
+				// lain utk fasilitas). Item flat (quantity NULL) tidak disentuh.
+				if item.Category == "facility" && item.Quantity != nil && item.UnitPrice != nil {
+					newQuantity := effectiveDays.TotalDays
+					newAmount := *item.UnitPrice * float64(newQuantity)
+
+					// Nama dasar tanpa suffix " (N hari)" — ambil dari nama item saat ini
+					baseName := item.Name
+					if idx := strings.LastIndex(item.Name, " ("); idx > 0 {
+						baseName = item.Name[:idx]
+					}
+					newName := fmt.Sprintf("%s (%d hari)", baseName, newQuantity)
+
+					if item.PaidAmount == 0 {
+						item.Amount = newAmount
+						item.Quantity = &newQuantity
+						item.Name = newName
+						item.Status = "unpaid"
+						txItemRepo.Update(&item)
+						needsRecalc = true
+					} else if newAmount >= item.PaidAmount {
+						item.Amount = newAmount
+						item.Quantity = &newQuantity
+						item.Name = newName
+						if item.PaidAmount >= newAmount {
+							item.Status = "paid"
+						} else {
+							item.Status = "partial"
+						}
+						txItemRepo.Update(&item)
+						needsRecalc = true
+					}
+				}
 			}
 
 			if needsRecalc {
@@ -877,47 +933,112 @@ func (s *invoiceGenerateService) feeItemsToAddForMonth(invoiceID, month uint, le
 	return toAdd
 }
 
-func (s *invoiceGenerateService) RemoveExtracurricularFromFutureInvoices(studentID, extracurricularID, academicYearID uint, endDate time.Time) error {
+// extracurricularRemovalCandidate — item ekskul yang akan diproses cleanup beserta
+// bulan invoice-nya. Action "remove" = item unpaid dihapus (hard delete);
+// "writeoff" = sisa item partial dibebaskan (item dipertahankan, nominal
+// diturunkan ke jumlah yang sudah dibayar). Dipakai bersama
+// RemoveExtracurricularInvoices (apply) dan PlanExtracurricularCleanupInvoices
+// (preview) agar keduanya tidak pernah divergen.
+type extracurricularRemovalCandidate struct {
+	Item   model.InvoiceItem
+	Month  uint
+	Year   uint
+	Action string // "remove" | "writeoff"
+}
+
+// extracurricularItemsToRemove mengumpulkan item ekskul yang cocok
+// (name+category fee config, bulan >= startDate) dari invoice bulanan siswa:
+// - unpaid → Action "remove" (akan dihapus)
+// - partial (sudah dibayar sebagian) → Action "writeoff" (sisa dibebaskan)
+// Item lunas tidak ikut diproses (integritas pembayaran).
+// Perilaku error meniru implementasi lama: fee config tidak ditemukan / query
+// invoice gagal → kandidat kosong (no-op), bukan error.
+func (s *invoiceGenerateService) extracurricularItemsToRemove(studentID, extracurricularID, academicYearID uint, startDate time.Time) ([]extracurricularRemovalCandidate, error) {
 	ex, err := s.extracurricularRepo.FindByID(extracurricularID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	feeConfig, err := s.feeConfigRepo.FindByAcademicYearID(academicYearID)
 	if err != nil {
-		return nil
+		return nil, nil
 	}
 
 	feeItems, _ := s.feeConfigItemRepo.FindByExtracurricular(feeConfig.ID, ex.Type, ex.Name)
 	if len(feeItems) == 0 {
-		return nil
+		return nil, nil
 	}
 
-	// Gunakan end_date (bukan time.Now()) agar akurat meskipun di-backdate
-	fromMonth := uint(endDate.Month())
-	fromYear := uint(endDate.Year())
+	// Lower bound = bulan MULAI enrollment: item hanya dibuat mulai bulan itu
+	// (AddExtracurricularToMonthlyRange memakai MonthRangeFromDate(start, endTA)),
+	// jadi item unpaid bulan sebelum end_date (mis. Agustus saat berhenti di
+	// September) ikut dibersihkan — Aturan B, bukan hanya "bulan berjalan ke depan".
+	fromMonth := uint(startDate.Month())
+	fromYear := uint(startDate.Year())
 
 	invoices, err := s.invoiceRepo.FindMonthlyByStudentFromMonth(studentID, fromMonth, fromYear)
 	if err != nil {
-		return nil
+		return nil, nil
 	}
 
+	var candidates []extracurricularRemovalCandidate
 	for _, inv := range invoices {
+		if inv.Month == nil || inv.Year == nil {
+			continue
+		}
 		items, _ := s.invoiceItemRepo.FindByInvoiceID(inv.ID)
-		anyChange := false
 		for _, item := range items {
 			for _, feeItem := range feeItems {
-				if item.Name == feeItem.Name && item.Category == feeItem.Category && item.PaidAmount == 0 {
-					// Hard delete — hindari soft-delete agar tidak menyebabkan duplikat saat enrollment ulang.
-					s.db.Unscoped().Delete(&model.InvoiceItem{}, item.ID)
-					anyChange = true
+				if item.Name != feeItem.Name || item.Category != feeItem.Category {
+					continue
 				}
+				switch {
+				case item.PaidAmount == 0:
+					candidates = append(candidates, extracurricularRemovalCandidate{
+						Item: item, Month: *inv.Month, Year: *inv.Year, Action: "remove",
+					})
+				case item.PaidAmount < item.Amount:
+					// Sudah dibayar sebagian — sisa dibebaskan (write-off), item
+					// dipertahankan agar riwayat pembayaran tetap utuh.
+					candidates = append(candidates, extracurricularRemovalCandidate{
+						Item: item, Month: *inv.Month, Year: *inv.Year, Action: "writeoff",
+					})
+				}
+				break
 			}
 		}
-		// Selalu recalculate jika ada perubahan — mencegah total mismatch
-		if anyChange {
-			s.recalculateInvoiceTotal(inv.ID)
+	}
+	return candidates, nil
+}
+
+func (s *invoiceGenerateService) RemoveExtracurricularInvoices(studentID, extracurricularID, academicYearID uint, startDate time.Time) error {
+	candidates, err := s.extracurricularItemsToRemove(studentID, extracurricularID, academicYearID, startDate)
+	if err != nil || len(candidates) == 0 {
+		return err
+	}
+
+	changed := make(map[uint]bool)
+	for _, c := range candidates {
+		switch c.Action {
+		case "writeoff":
+			// Sisa dibebaskan: nominal item diturunkan ke jumlah yang sudah
+			// dibayar & status jadi lunas, disertai catatan agar traceable.
+			if err := s.db.Model(&model.InvoiceItem{}).Where("id = ?", c.Item.ID).Updates(map[string]interface{}{
+				"amount": c.Item.PaidAmount,
+				"status": "paid",
+				"notes":  fmt.Sprintf("Sisa dibebaskan — siswa berhenti mengikuti (%d/%d)", c.Month, c.Year),
+			}).Error; err != nil {
+				return err
+			}
+		default:
+			// Hard delete — hindari soft-delete agar tidak menyebabkan duplikat saat enrollment ulang.
+			s.db.Unscoped().Delete(&model.InvoiceItem{}, c.Item.ID)
 		}
+		changed[c.Item.InvoiceID] = true
+	}
+	// Selalu recalculate jika ada perubahan — mencegah total mismatch
+	for invoiceID := range changed {
+		s.recalculateInvoiceTotal(invoiceID)
 	}
 
 	return nil
@@ -1073,7 +1194,7 @@ func (s *invoiceGenerateService) RestoreFacilityItemToMonthly(studentID, facilit
 	if feeConfig == nil || feeConfig.ID == 0 {
 		return nil
 	}
-	feeItems := s.resolveFacilityFeeItems(studentID, facilityID, academicYearID, facility, feeConfig)
+	feeItems := s.facilityFeeItemsForMonth(studentID, facilityID, academicYearID, month, year, facility, feeConfig)
 	if len(feeItems) == 0 {
 		return nil
 	}
@@ -1086,17 +1207,83 @@ func (s *invoiceGenerateService) RestoreFacilityItemToMonthly(studentID, facilit
 }
 
 // CleanupExtracurricularInvoices adalah recovery endpoint untuk admin.
-// Menghapus item ekskul dari invoice bulan ini dan seterusnya tanpa harus
-// regenerate seluruh invoice (yang akan menghapus riwayat pembayaran).
+// Menghapus item unpaid ekskul dari invoice mulai bulan mulai mengikuti (start_date)
+// tanpa harus regenerate seluruh invoice (yang akan menghapus riwayat pembayaran).
 func (s *invoiceGenerateService) CleanupExtracurricularInvoices(studentID, extracurricularID uint) error {
 	// Cari tahun ajaran aktif dari enrollment
 	enr, err := s.enrollmentRepo.FindActiveByStudentID(studentID)
 	if err != nil {
 		return fmt.Errorf("enrollment aktif tidak ditemukan untuk siswa %d: %w", studentID, err)
 	}
-	return s.RemoveExtracurricularFromFutureInvoices(
-		studentID, extracurricularID, enr.AcademicYearID, time.Now(),
+	// Ambil record enrollment ekskul (aktif ataupun sudah nonaktif) untuk
+	// menentukan start_date — cleanup harus membersihkan dari bulan mulai
+	// mengikuti, bukan dari bulan berjalan.
+	startDate := time.Now()
+	if se, err := s.seRepo.FindByStudentAndExtracurricular(studentID, extracurricularID, enr.AcademicYearID); err == nil && se != nil {
+		startDate = se.StartDate
+	}
+	return s.RemoveExtracurricularInvoices(
+		studentID, extracurricularID, enr.AcademicYearID, startDate,
 	)
+}
+
+// PlanExtracurricularCleanupInvoices menghitung (dry-run) item unpaid ekskul yang
+// akan dihapus oleh CleanupExtracurricularInvoices, tanpa mengubah data apa pun.
+// Resolusi tahun ajaran & start_date serta logika pemilihan item IDENTIK dengan
+// jalur eksekusi agar preview selalu akurat (lihat extracurricularItemsToRemove).
+func (s *invoiceGenerateService) PlanExtracurricularCleanupInvoices(studentID, extracurricularID uint) (*dto.ExtracurricularCleanupPreviewResponse, error) {
+	// Cari tahun ajaran aktif dari enrollment (sama seperti CleanupExtracurricularInvoices)
+	enr, err := s.enrollmentRepo.FindActiveByStudentID(studentID)
+	if err != nil {
+		return nil, fmt.Errorf("enrollment aktif tidak ditemukan untuk siswa %d: %w", studentID, err)
+	}
+
+	startDate := time.Now()
+	exName := ""
+	if se, err := s.seRepo.FindByStudentAndExtracurricular(studentID, extracurricularID, enr.AcademicYearID); err == nil && se != nil {
+		startDate = se.StartDate
+		if se.Extracurricular.Name != "" {
+			exName = se.Extracurricular.Name
+		}
+	}
+	if exName == "" {
+		if ex, err := s.extracurricularRepo.FindByID(extracurricularID); err == nil {
+			exName = ex.Name
+		}
+	}
+
+	candidates, err := s.extracurricularItemsToRemove(studentID, extracurricularID, enr.AcademicYearID, startDate)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &dto.ExtracurricularCleanupPreviewResponse{
+		StudentID:           studentID,
+		ExtracurricularID:   extracurricularID,
+		ExtracurricularName: exName,
+		StartDate:           startDate.Format("2006-01-02"),
+		Items:               make([]dto.ExtracurricularCleanupPreviewItem, 0, len(candidates)),
+	}
+	for _, c := range candidates {
+		// Untuk write-off, nilai yang dipengaruhi adalah SISA yang dibebaskan
+		// (bukan seluruh nominal item) — preview harus persis dengan eksekusi.
+		affected := c.Item.Amount
+		if c.Action == "writeoff" {
+			affected = c.Item.Amount - c.Item.PaidAmount
+		}
+		resp.Items = append(resp.Items, dto.ExtracurricularCleanupPreviewItem{
+			InvoiceID: c.Item.InvoiceID,
+			Month:     c.Month,
+			Year:      c.Year,
+			ItemID:    c.Item.ID,
+			ItemName:  c.Item.Name,
+			Action:    c.Action,
+			Amount:    affected,
+		})
+		resp.TotalAmount += affected
+	}
+	resp.TotalItems = len(resp.Items)
+	return resp, nil
 }
 
 // SyncExtracurricularMonthlyInvoices backfills extracurricular items into existing monthly invoices.
@@ -1811,13 +1998,14 @@ func (s *invoiceGenerateService) applyDispensationToInvoice(invoice *model.Invoi
 					label = fmt.Sprintf("Dispensasi: %s (%.0f%%)", d.Reason, d.DiscountValue)
 				}
 				newItems = append(newItems, model.InvoiceItem{
-					InvoiceID:   invoice.ID,
-					Name:        label,
-					Category:    "dispensation",
-					Amount:      -discountForThis,
-					IsMandatory: true,
-					Status:      "paid",
-					Notes:       d.Notes,
+					InvoiceID:      invoice.ID,
+					Name:           label,
+					Category:       "dispensation",
+					OffsetCategory: d.FeeCategory,
+					Amount:         -discountForThis,
+					IsMandatory:    true,
+					Status:         "paid",
+					Notes:          d.Notes,
 				})
 			}
 		}
@@ -2089,12 +2277,53 @@ func (s *invoiceGenerateService) AddFacilityToMonthlyRange(studentID, facilityID
 		if err != nil {
 			continue
 		}
-		if err := s.addFacilityItemToMonthly(studentID, m.Month, m.Year, invoice, facility, feeItems, zoneNames); err != nil {
+		// Zona EFEKTIF bulan tsb (override ?: default) — override per bulan yang
+		// di-set lewat month-zone ikut dipakai saat item bulan dibuat ulang.
+		monthFeeItems := s.facilityFeeItemsForMonth(studentID, facilityID, academicYearID, m.Month, m.Year, facility, feeConfig)
+		if len(monthFeeItems) == 0 {
+			continue
+		}
+		monthZoneNames := make([]string, 0, len(monthFeeItems))
+		for _, fi := range monthFeeItems {
+			monthZoneNames = append(monthZoneNames, fi.Name)
+		}
+		if err := s.addFacilityItemToMonthly(studentID, m.Month, m.Year, invoice, facility, monthFeeItems, monthZoneNames); err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+// facilityFeeItemsForMonth me-resolve zona EFEKTIF bulan utk pendaftaran
+// fasilitas saat item ditambahkan ke invoice (jalur reaktivasi & restore skip):
+// override per bulan (month-zone) bila ada, fallback ke zona default enrollment.
+func (s *invoiceGenerateService) facilityFeeItemsForMonth(studentID, facilityID, academicYearID, month, year uint, facility *model.Facility, feeConfig *model.FeeConfig) []model.FeeConfigItem {
+	if s.sfMonthZoneRepo != nil {
+		var sfID uint
+		if allSF, err := s.sfRepo.FindActiveByStudentID(studentID, academicYearID); err == nil {
+			for _, en := range allSF {
+				if en.FacilityID == facilityID {
+					sfID = en.ID
+					break
+				}
+			}
+		}
+		if sfID > 0 {
+			if zones, err := s.sfMonthZoneRepo.FindBySFIDsAndMonth([]uint{sfID}, month, year); err == nil && len(zones) == 1 {
+				z := zones[0]
+				if z.FeeConfigItemID != nil {
+					if item, err := s.feeConfigItemRepo.FindByID(*z.FeeConfigItemID); err == nil && item != nil && item.FeeConfigID == feeConfig.ID {
+						return []model.FeeConfigItem{*item}
+					}
+				} else if base, err := s.feeConfigItemRepo.FindByItemKeys(feeConfig.ID, []string{facilityItemKey(facility.Name)}); err == nil && len(base) > 0 {
+					// Override "tanpa zona" → item dasar nama fasilitas.
+					return []model.FeeConfigItem{base[0]}
+				}
+			}
+		}
+	}
+	return s.resolveFacilityFeeItems(studentID, facilityID, academicYearID, facility, feeConfig)
 }
 
 // resolveFacilityFeeItems menentukan fee items untuk fasilitas: pakai zona/paket
@@ -2190,7 +2419,28 @@ func (s *invoiceGenerateService) addFacilityItemToMonthly(studentID, month, year
 	return s.recalculateInvoiceTotal(invoice.ID)
 }
 
+// RemoveFacilityFromFutureInvoices menghapus item unpaid fasilitas dari invoice
+// bulan berjalan ke depan — dipakai jalur GANTI ZONA (Enroll reactivation &
+// UpdateEnrollment): item zona lama bulan-bulan sebelumnya adalah piutang sah
+// dan tidak boleh dihapus.
 func (s *invoiceGenerateService) RemoveFacilityFromFutureInvoices(studentID, facilityID, academicYearID uint, extraZoneNames ...string) error {
+	now := time.Now()
+	return s.removeFacilityItemsFromInvoices(studentID, facilityID, academicYearID, uint(now.Month()), uint(now.Year()), extraZoneNames...)
+}
+
+// RemoveFacilityInvoices menghapus item unpaid fasilitas dari invoice mulai bulan
+// startDate ke depan — dipakai jalur Unenroll (Aturan B): berhenti fasilitas =
+// semua item unpaid fasilitas itu dibersihkan, termasuk bulan-bulan sebelum hari
+// ini. Item yang sudah dibayar dipertahankan (integritas pembayaran).
+func (s *invoiceGenerateService) RemoveFacilityInvoices(studentID, facilityID, academicYearID uint, startDate time.Time, extraZoneNames ...string) error {
+	return s.removeFacilityItemsFromInvoices(studentID, facilityID, academicYearID, uint(startDate.Month()), uint(startDate.Year()), extraZoneNames...)
+}
+
+// removeFacilityItemsFromInvoices adalah inti pembersihan item fasilitas:
+// menghapus item unpaid (category=facility, paid_amount=0) yang cocok dengan
+// fasilitas/zona pada invoice bulan >= (fromMonth, fromYear) dalam tahun ajaran
+// yang sama, lalu recalculate total invoice yang berubah.
+func (s *invoiceGenerateService) removeFacilityItemsFromInvoices(studentID, facilityID, academicYearID, fromMonth, fromYear uint, extraZoneNames ...string) error {
 	facility, err := s.facilityRepo.FindByID(facilityID)
 	if err != nil {
 		return err
@@ -2207,10 +2457,6 @@ func (s *invoiceGenerateService) RemoveFacilityFromFutureInvoices(studentID, fac
 		}
 	}
 
-	now := time.Now()
-	curMonth := uint(now.Month())
-	curYear := uint(now.Year())
-
 	// Scope ke TAHUN AJARAN yang sama — jangan sampai unenroll fasilitas di
 	// tahun ajaran lama menghapus item fasilitas di invoice tahun ajaran baru.
 	allInvoices, _ := s.invoiceRepo.FindMonthlyByStudentAcademicYear(studentID, academicYearID)
@@ -2219,7 +2465,7 @@ func (s *invoiceGenerateService) RemoveFacilityFromFutureInvoices(studentID, fac
 		if inv.Month == nil || inv.Year == nil {
 			continue
 		}
-		if *inv.Year > curYear || (*inv.Year == curYear && *inv.Month >= curMonth) {
+		if *inv.Year > fromYear || (*inv.Year == fromYear && *inv.Month >= fromMonth) {
 			invoices = append(invoices, inv)
 		}
 	}
@@ -2252,6 +2498,129 @@ func (s *invoiceGenerateService) RemoveFacilityFromFutureInvoices(studentID, fac
 	}
 
 	return nil
+}
+
+// RewriteFacilityMonthItem menulis ulang item fasilitas (category=facility) pada
+// invoice bulan tertentu milik siswa: nama & harga satuan mengikuti zona feeItem,
+// quantity (jumlah hari) dipertahankan, amount = quantity × unit price. Item yang
+// sudah dibayar hanya ditulis bila allowPaid=true (paid_amount dipertahankan;
+// selisih jadi sisa tagihan/kelebihan bayar). Bulan tanpa invoice/item fasilitas
+// → InvoiceItemUpdated=false (bukan error). Item legacy tanpa facility_id
+// dicocokkan via nama fasilitas/zona.
+func (s *invoiceGenerateService) RewriteFacilityMonthItem(studentID, facilityID, month, year uint, feeItem *model.FeeConfigItem, allowPaid bool) (*dto.FacilityMonthRewriteResult, error) {
+	result := &dto.FacilityMonthRewriteResult{}
+	if feeItem == nil {
+		return result, fmt.Errorf("Item tarif fasilitas tidak ditemukan")
+	}
+
+	invoice, err := s.invoiceRepo.FindMonthlyByStudent(studentID, month, year)
+	if err != nil {
+		return result, nil // invoice bulan tsb belum ada — tidak ada item utk ditulis
+	}
+
+	facility, err := s.facilityRepo.FindByID(facilityID)
+	if err != nil {
+		return result, err
+	}
+
+	items, err := s.invoiceItemRepo.FindByInvoiceID(invoice.ID)
+	if err != nil {
+		return result, err
+	}
+
+	names := s.facilityItemLegacyNames(invoice.AcademicYearID, facility, feeItem)
+
+	var target *model.InvoiceItem
+	for i := range items {
+		it := &items[i]
+		if it.Category != "facility" {
+			continue
+		}
+		if it.FacilityID != nil {
+			if *it.FacilityID != facilityID {
+				continue
+			}
+			target = it
+			break
+		}
+		// Baris legacy tanpa facility_id → fallback nama fasilitas/zona.
+		if facilityItemNameMatches(it.Name, facility.Name, names...) {
+			target = it
+			break
+		}
+	}
+	if target == nil {
+		return result, nil
+	}
+
+	if target.PaidAmount > 0 && !allowPaid {
+		result.BlockedByPayment = true
+		result.ItemPaidAmount = target.PaidAmount
+		return result, nil
+	}
+
+	// Quantity (jumlah hari) dipertahankan — koreksi manual per bulan tidak hilang.
+	qty := target.Quantity
+	target.Name = feeItem.Name
+	amount := feeItem.Amount
+	if feeItem.Unit == "per_day" && qty != nil {
+		target.Name = fmt.Sprintf("%s (%d hari)", feeItem.Name, *qty)
+		amount = feeItem.Amount * float64(*qty)
+	}
+	unitPrice := feeItem.Amount
+	target.UnitPrice = &unitPrice
+	target.Amount = amount
+	target.Status = facilityItemStatusFromPaid(target.PaidAmount, target.Amount)
+	if err := s.invoiceItemRepo.Update(target); err != nil {
+		return result, err
+	}
+	if err := s.recalculateInvoiceTotal(invoice.ID); err != nil {
+		return result, err
+	}
+
+	result.InvoiceItemUpdated = true
+	result.ItemPaidAmount = target.PaidAmount
+	result.RemainingOrExcess = target.Amount - target.PaidAmount
+	return result, nil
+}
+
+// facilityItemLegacyNames mengumpulkan nama dasar yang mungkin dipakai item
+// fasilitas legacy (tanpa facility_id) utk fasilitas tsb: nama fasilitas, nama
+// zona target, dan semua nama zona/item milik fasilitas pada fee config tahun
+// ajaran yang sama (mis. item lama bernama ZONA 2 saat default sudah ZONA 1).
+func (s *invoiceGenerateService) facilityItemLegacyNames(academicYearID uint, facility *model.Facility, feeItem *model.FeeConfigItem) []string {
+	names := []string{facility.Name}
+	if feeItem != nil {
+		names = append(names, feeItem.Name)
+	}
+
+	feeConfig, err := s.feeConfigRepo.FindByAcademicYearID(academicYearID)
+	if err != nil || feeConfig == nil {
+		return names
+	}
+	items, err := s.feeConfigItemRepo.FindByCategory(feeConfig.ID, "facility")
+	if err != nil {
+		return names
+	}
+	baseKey := facilityItemKey(facility.Name)
+	for i := range items {
+		if items[i].ItemKey == baseKey || strings.HasPrefix(items[i].ItemKey, baseKey+"_") {
+			names = append(names, items[i].Name)
+		}
+	}
+	return names
+}
+
+// facilityItemStatusFromPaid menentukan status item berdasarkan paid_amount
+// terhadap amount terbaru (dipakai setelah rewrite harga item).
+func facilityItemStatusFromPaid(paid, amount float64) string {
+	if paid <= 0 {
+		return "unpaid"
+	}
+	if paid >= amount {
+		return "paid"
+	}
+	return "partial"
 }
 
 // ─── Dispensation Methods ────────────────────────────────────────────
@@ -2469,11 +2838,13 @@ func (s *invoiceGenerateService) RegenerateForStudent(studentID uint) error {
 		return fmt.Errorf("gagal menemukan tahun ajaran: %w", err)
 	}
 
-	// 4. Hapus semua invoice (initial, registration, monthly) untuk student+academic_year
+	// 4. Hapus semua invoice hasil generate (initial, registration, monthly) untuk
+	//    student+academic_year. Invoice yang diinput admin (arrears/manual) DIKECUALIKAN
+	//    — regenerate tidak boleh menghapus data yang bukan hasil generate.
 	//    Urutan: invoice_installments → invoice_items → invoices (FK constraint)
 	var invoiceIDs []uint
 	if err := s.db.Model(&model.Invoice{}).
-		Where("student_id = ? AND academic_year_id = ?", studentID, academicYearID).
+		Where("student_id = ? AND academic_year_id = ? AND type NOT IN (?)", studentID, academicYearID, []string{"arrears", "manual"}).
 		Pluck("id", &invoiceIDs).Error; err != nil {
 		return fmt.Errorf("gagal mengambil daftar invoice: %w", err)
 	}

@@ -39,4 +39,28 @@ export type GetV1PaymentsParams = {
 	 * Search by student name
 	 */
 	search?: string;
+	/**
+	 * Jenjang siswa (intan/berlian) via enrollment aktif
+	 */
+	level?: string;
+	/**
+	 * ID rombel siswa via enrollment aktif
+	 */
+	class_group_id?: number;
+	/**
+	 * Petugas pencatat (user ID)
+	 */
+	created_by?: number;
+	/**
+	 * Kategori item yang dibayar (monthly_spp, pasta, dll)
+	 */
+	category?: string;
+	/**
+	 * Periode tagihan yang dibayar (bulan 1-12)
+	 */
+	month?: number;
+	/**
+	 * Periode tagihan yang dibayar (tahun)
+	 */
+	year?: number;
 };

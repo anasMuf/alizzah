@@ -11,8 +11,4 @@ export type DeleteV1DaycareEnrollmentsIdParams = {
 	 * Also delete unpaid invoices
 	 */
 	delete_invoices?: boolean;
-	/**
-	 * Student ID
-	 */
-	student_id: number;
 };

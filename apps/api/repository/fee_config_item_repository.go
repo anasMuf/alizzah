@@ -22,6 +22,11 @@ type FeeConfigItemRepository interface {
 	FindByStudentForCategory(feeConfigID uint, category, level, gender string) ([]model.FeeConfigItem, error)
 	FindByExtracurricular(feeConfigID uint, exType, exName string) ([]model.FeeConfigItem, error)
 	FindByItemKeys(feeConfigID uint, itemKeys []string) ([]model.FeeConfigItem, error)
+	// CountActiveItemsByAcademicYear menghitung item tarif AKTIF milik sebuah TA.
+	// Dipakai untuk memvalidasi bahwa mode rinci (type=manual) punya tarif yang
+	// bisa dipilih. Definisi "punya tarif" harus identik dengan yang dilihat
+	// klien: fee_config_repository.FindAll menyaring is_active = true.
+	CountActiveItemsByAcademicYear(academicYearID uint) (int64, error)
 	FindMandatoryByStudent(feeConfigID uint, level, gender string) ([]model.FeeConfigItem, error)
 	GetProductNames(ids []uint) (map[uint]string, error)
 }
@@ -135,6 +140,19 @@ func (r *feeConfigItemRepository) FindByItemKeys(feeConfigID uint, itemKeys []st
 	var items []model.FeeConfigItem
 	err := r.db.Where("fee_config_id = ? AND item_key IN ?", feeConfigID, itemKeys).Find(&items).Error
 	return items, err
+}
+
+// CountActiveItemsByAcademicYear menghitung item tarif aktif milik sebuah TA.
+// Join eksplisit ke fee_configs karena AY tidak tersimpan di item; fee_configs
+// yang ter-soft-delete dikecualikan manual (GORM hanya menerapkan filter
+// deleted_at pada tabel utama query).
+func (r *feeConfigItemRepository) CountActiveItemsByAcademicYear(academicYearID uint) (int64, error) {
+	var count int64
+	err := r.db.Model(&model.FeeConfigItem{}).
+		Joins("JOIN fee_configs ON fee_configs.id = fee_config_items.fee_config_id").
+		Where("fee_configs.academic_year_id = ? AND fee_configs.deleted_at IS NULL AND fee_config_items.is_active = ?", academicYearID, true).
+		Count(&count).Error
+	return count, err
 }
 
 // FindMandatoryByStudent returns fee config items marked as is_mandatory=true that match the student's level and gender.

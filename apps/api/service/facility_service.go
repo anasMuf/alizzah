@@ -27,8 +27,17 @@ type StudentFacilityService interface {
 	GetStudentsByFacility(facilityID uint, params dto.FacilityStudentQueryParams) (*dto.PaginatedFacilityStudentResponse, error)
 	GetCurrentMonthDays(studentID, sfID uint) (*dto.FacilityCurrentMonthDaysResponse, error)
 	Enroll(studentID uint, req dto.EnrollFacilityRequest) (*dto.StudentFacilityResponse, error)
-	UpdateEnrollment(studentID, sfID uint, req dto.UpdateStudentFacilityRequest) (*dto.StudentFacilityResponse, error)
+	// UpdateEnrollment mengubah zona DEFAULT pendaftaran lalu menyelaraskan item
+	// invoice fasilitas pada semua bulan unpaid tanpa override (epic zona-bulanan).
+	UpdateEnrollment(studentID, sfID uint, req dto.UpdateStudentFacilityRequest) (*dto.StudentFacilityResponse, *dto.FacilityDefaultZoneSummary, error)
 	Unenroll(studentID, sfID uint) error
+	// SetMonthZone menetapkan override zona utk satu bulan (PUT month-zone).
+	SetMonthZone(studentID, sfID uint, req dto.UpdateStudentFacilityMonthZoneRequest) (*dto.FacilityMonthZoneResponse, error)
+	// ClearMonthZone menghapus override zona utk satu bulan → ikut default (DELETE month-zone).
+	ClearMonthZone(studentID, sfID uint, month, year uint, force bool) (*dto.FacilityMonthZoneResponse, error)
+	// SetMonthDays menetapkan jumlah hari item fasilitas utk SATU bulan:
+	// 0 = bulan di-skip (tidak ditagih), >= 1 = item diset/dikembalikan ke hari tsb.
+	SetMonthDays(studentID, sfID uint, req dto.UpdateFacilityMonthDaysRequest) (*dto.FacilityMonthDaysResponse, error)
 }
 
 // ─── Master Facility Service ─────────────────────────────────────────
@@ -176,6 +185,7 @@ type studentFacilityService struct {
 	studentRepo       repository.StudentRepository
 	facilityRepo      repository.FacilityRepository
 	acRepo            repository.AcademicYearRepository
+	feeConfigRepo     repository.FeeConfigRepository
 	feeConfigItemRepo repository.FeeConfigItemRepository
 	invoiceRepo       repository.InvoiceRepository
 	invoiceItemRepo   repository.InvoiceItemRepository
@@ -183,6 +193,12 @@ type studentFacilityService struct {
 	effectiveDayRepo  repository.EffectiveDayRepository
 	invoiceGen        InvoiceGenerateService
 	exclRepo          repository.BillingMonthExclusionRepository
+	monthZoneRepo     repository.StudentFacilityMonthZoneRepository
+	// invoiceSvc dipakai agar perubahan jumlah hari memakai perhitungan & guard
+	// yang sama dengan endpoint quantity (tidak menduplikasi logika nominal).
+	invoiceSvc InvoiceService
+	// exclSvc adalah penulis tunggal tabel billing_month_exclusions (skip bulan).
+	exclSvc BillingExclusionService
 }
 
 func NewStudentFacilityService(
@@ -197,12 +213,17 @@ func NewStudentFacilityService(
 	effectiveDayRepo repository.EffectiveDayRepository,
 	invoiceGen InvoiceGenerateService,
 	exclRepo repository.BillingMonthExclusionRepository,
+	feeConfigRepo repository.FeeConfigRepository,
+	monthZoneRepo repository.StudentFacilityMonthZoneRepository,
+	invoiceSvc InvoiceService,
+	exclSvc BillingExclusionService,
 ) StudentFacilityService {
 	return &studentFacilityService{
 		sfRepo:            sfRepo,
 		studentRepo:       studentRepo,
 		facilityRepo:      facilityRepo,
 		acRepo:            acRepo,
+		feeConfigRepo:     feeConfigRepo,
 		feeConfigItemRepo: feeConfigItemRepo,
 		invoiceRepo:       invoiceRepo,
 		invoiceItemRepo:   invoiceItemRepo,
@@ -210,6 +231,9 @@ func NewStudentFacilityService(
 		effectiveDayRepo:  effectiveDayRepo,
 		invoiceGen:        invoiceGen,
 		exclRepo:          exclRepo,
+		monthZoneRepo:     monthZoneRepo,
+		invoiceSvc:        invoiceSvc,
+		exclSvc:           exclSvc,
 	}
 }
 
@@ -337,61 +361,426 @@ func (s *studentFacilityService) Enroll(studentID uint, req dto.EnrollFacilityRe
 	return &resp, nil
 }
 
-func (s *studentFacilityService) UpdateEnrollment(studentID, sfID uint, req dto.UpdateStudentFacilityRequest) (*dto.StudentFacilityResponse, error) {
+func (s *studentFacilityService) UpdateEnrollment(studentID, sfID uint, req dto.UpdateStudentFacilityRequest) (*dto.StudentFacilityResponse, *dto.FacilityDefaultZoneSummary, error) {
+	sf, err := s.sfRepo.FindByID(sfID)
+	if err != nil || sf.StudentID != studentID {
+		return nil, nil, errors.New("Data pendaftaran fasilitas tidak ditemukan")
+	}
+
+	if sf.EndDate != nil {
+		return nil, nil, errors.New("Siswa sudah tidak aktif di fasilitas ini")
+	}
+
+	// Validasi & resolve zona baru (default). Zona harus milik fee config tahun
+	// ajaran enrollment — bila tidak, item invoice tidak akan pernah memakainya.
+	var newItem *model.FeeConfigItem
+	if req.FeeConfigItemID != nil {
+		item, err := s.feeConfigItemRepo.FindByID(*req.FeeConfigItemID)
+		if err != nil {
+			return nil, nil, errors.New("Paket/zona tidak ditemukan")
+		}
+		if !item.IsActive {
+			return nil, nil, errors.New("Paket/zona sudah tidak aktif")
+		}
+		feeConfig, fcErr := s.feeConfigRepo.FindByAcademicYearID(sf.AcademicYearID)
+		if fcErr != nil || feeConfig == nil || item.FeeConfigID != feeConfig.ID {
+			return nil, nil, errors.New("Paket/zona tidak ada di tarif tahun ajaran ini")
+		}
+		newItem = item
+	}
+
+	sf.FeeConfigItemID = req.FeeConfigItemID
+	if err := s.sfRepo.Update(sf); err != nil {
+		return nil, nil, err
+	}
+
+	// Selaraskan semua bulan unpaid tanpa override ke zona default (R.5 —
+	// termasuk bulan lalu; bulan ber-override & item paid dilewati).
+	summary := s.reconcileDefaultZone(sf, newItem)
+
+	saved, err := s.sfRepo.FindByID(sf.ID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("gagal mengambil data fasilitas: %w", err)
+	}
+	resp := mapStudentFacilityToResponse(*saved)
+	return &resp, summary, nil
+}
+
+// reconcileDefaultZone menyelaraskan item invoice fasilitas pendaftaran sf ke
+// zona default (defaultItem) pada semua bulan dalam rentang enrollment yang
+// item-nya UNPAID dan TANPA override. Bulan ber-override dan item paid dilewati;
+// quantity (hari) dipertahankan oleh RewriteFacilityMonthItem.
+func (s *studentFacilityService) reconcileDefaultZone(sf *model.StudentFacility, defaultItem *model.FeeConfigItem) *dto.FacilityDefaultZoneSummary {
+	summary := &dto.FacilityDefaultZoneSummary{}
+	if s.invoiceGen == nil || s.monthZoneRepo == nil {
+		return summary
+	}
+
+	ay, err := s.acRepo.FindByID(sf.AcademicYearID)
+	if err != nil || ay == nil {
+		log.Printf("[Facility] Reconcile gagal ambil tahun ajaran sf=%d: %v", sf.ID, err)
+		return summary
+	}
+
+	// "Tanpa zona" (default NULL) → pakai item dasar nama fasilitas.
+	if defaultItem == nil {
+		defaultItem = s.baseFacilityItem(sf)
+	}
+	if defaultItem == nil {
+		// Tidak ada tarif dasar — tidak ada yang bisa ditulis ke item bulan.
+		log.Printf("[Facility] Reconcile lewati sf=%d: tarif dasar fasilitas tidak ditemukan", sf.ID)
+		return summary
+	}
+
+	overrides, err := s.monthZoneRepo.FindByStudentFacilityID(sf.ID)
+	if err != nil {
+		log.Printf("[Facility] Reconcile gagal ambil override sf=%d: %v", sf.ID, err)
+		return summary
+	}
+	overrideSet := make(map[string]bool, len(overrides))
+	for _, z := range overrides {
+		overrideSet[fmt.Sprintf("%d-%d", z.Month, z.Year)] = true
+	}
+
+	months := utility.MonthRangeFromDate(sf.StartDate, ay.EndDate)
+	for _, m := range months {
+		key := fmt.Sprintf("%d-%d", m.Month, m.Year)
+		if overrideSet[key] {
+			summary.SkippedOverride++
+			continue
+		}
+		res, err := s.invoiceGen.RewriteFacilityMonthItem(sf.StudentID, sf.FacilityID, m.Month, m.Year, defaultItem, false)
+		if err != nil {
+			log.Printf("[Facility] Reconcile sf=%d bulan=%d/%d: %v", sf.ID, m.Month, m.Year, err)
+			continue
+		}
+		if res.BlockedByPayment {
+			summary.SkippedPaid++
+			continue
+		}
+		if res.InvoiceItemUpdated {
+			summary.Reconciled++
+		}
+	}
+	return summary
+}
+
+// SetMonthZone menetapkan override zona utk satu bulan lalu menulis ulang item
+// invoice bulan itu. Bulan dengan item paid butuh Force=true (R.6).
+func (s *studentFacilityService) SetMonthZone(studentID, sfID uint, req dto.UpdateStudentFacilityMonthZoneRequest) (*dto.FacilityMonthZoneResponse, error) {
 	sf, err := s.sfRepo.FindByID(sfID)
 	if err != nil || sf.StudentID != studentID {
 		return nil, errors.New("Data pendaftaran fasilitas tidak ditemukan")
 	}
-
 	if sf.EndDate != nil {
 		return nil, errors.New("Siswa sudah tidak aktif di fasilitas ini")
 	}
-
-	// Validate FeeConfigItem if provided
-	if req.FeeConfigItemID != nil {
-		item, err := s.feeConfigItemRepo.FindByID(*req.FeeConfigItemID)
-		if err != nil {
-			return nil, errors.New("Paket/zona tidak ditemukan")
-		}
-		if !item.IsActive {
-			return nil, errors.New("Paket/zona sudah tidak aktif")
-		}
+	if !s.monthWithinEnrollment(sf, req.Month, req.Year) {
+		return nil, errors.New("Bulan/tahun di luar rentang pendaftaran fasilitas (tidak valid)")
 	}
 
-	// Simpan zona LAMA sebelum diganti — dipakai untuk menghapus item
-	// invoice lama yang dinamai sesuai zona lama.
-	oldFeeConfigItemID := sf.FeeConfigItemID
-
-	sf.FeeConfigItemID = req.FeeConfigItemID
-	if err := s.sfRepo.Update(sf); err != nil {
-		return nil, err
-	}
-
-	// Update invoices: remove old facility items, then re-add with new zone price
-	if s.invoiceGen != nil {
-		var oldZoneNames []string
-		if oldFeeConfigItemID != nil {
-			if oldItem, err := s.feeConfigItemRepo.FindByIDIncludingDeleted(*oldFeeConfigItemID); err == nil && oldItem != nil {
-				oldZoneNames = append(oldZoneNames, oldItem.Name)
-			}
-		}
-		go func() {
-			if err := s.invoiceGen.RemoveFacilityFromFutureInvoices(studentID, sf.FacilityID, sf.AcademicYearID, oldZoneNames...); err != nil {
-				log.Printf("[Facility] Gagal remove facility dari invoice (update) student=%d facility=%d: %v", studentID, sf.FacilityID, err)
-			}
-			if err := s.invoiceGen.AddFacilityToMonthlyRange(studentID, sf.FacilityID, sf.AcademicYearID); err != nil {
-				log.Printf("[Facility] Gagal add facility ke invoice (update) student=%d facility=%d: %v", studentID, sf.FacilityID, err)
-			}
-		}()
-	}
-
-	// Reload with preloaded relations
-	saved, err := s.sfRepo.FindByID(sf.ID)
+	feeItem, err := s.resolveZoneFeeItem(sf, req.FeeConfigItemID)
 	if err != nil {
 		return nil, err
 	}
-	resp := mapStudentFacilityToResponse(*saved)
-	return &resp, nil
+
+	zone := &model.StudentFacilityMonthZone{
+		StudentFacilityID: sfID,
+		Month:             req.Month,
+		Year:              req.Year,
+		FeeConfigItemID:   req.FeeConfigItemID,
+	}
+	if err := s.monthZoneRepo.UpsertMonth(zone); err != nil {
+		return nil, err
+	}
+
+	res, err := s.invoiceGen.RewriteFacilityMonthItem(studentID, sf.FacilityID, req.Month, req.Year, feeItem, req.Force)
+	if err != nil {
+		return nil, err
+	}
+	if res.BlockedByPayment {
+		return nil, errors.New("Item fasilitas bulan ini sudah dibayar — tidak bisa diubah tanpa konfirmasi force")
+	}
+
+	return &dto.FacilityMonthZoneResponse{
+		Month:              req.Month,
+		Year:               req.Year,
+		FeeConfigItemID:    req.FeeConfigItemID,
+		Source:             "override",
+		InvoiceItemUpdated: res.InvoiceItemUpdated,
+		ItemPaidAmount:     res.ItemPaidAmount,
+		RemainingOrExcess:  res.RemainingOrExcess,
+	}, nil
+}
+
+// ClearMonthZone menghapus override zona utk satu bulan (kembali ke default)
+// lalu menulis ulang item invoice bulan itu.
+func (s *studentFacilityService) ClearMonthZone(studentID, sfID uint, month, year uint, force bool) (*dto.FacilityMonthZoneResponse, error) {
+	sf, err := s.sfRepo.FindByID(sfID)
+	if err != nil || sf.StudentID != studentID {
+		return nil, errors.New("Data pendaftaran fasilitas tidak ditemukan")
+	}
+	if sf.EndDate != nil {
+		return nil, errors.New("Siswa sudah tidak aktif di fasilitas ini")
+	}
+	if !s.monthWithinEnrollment(sf, month, year) {
+		return nil, errors.New("Bulan/tahun di luar rentang pendaftaran fasilitas (tidak valid)")
+	}
+
+	if err := s.monthZoneRepo.DeleteMonth(sfID, month, year); err != nil {
+		return nil, err
+	}
+
+	feeItem, err := s.resolveZoneFeeItem(sf, sf.FeeConfigItemID)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := s.invoiceGen.RewriteFacilityMonthItem(studentID, sf.FacilityID, month, year, feeItem, force)
+	if err != nil {
+		return nil, err
+	}
+	if res.BlockedByPayment {
+		return nil, errors.New("Item fasilitas bulan ini sudah dibayar — tidak bisa diubah tanpa konfirmasi force")
+	}
+
+	return &dto.FacilityMonthZoneResponse{
+		Month:              month,
+		Year:               year,
+		FeeConfigItemID:    sf.FeeConfigItemID,
+		Source:             "default",
+		InvoiceItemUpdated: res.InvoiceItemUpdated,
+		ItemPaidAmount:     res.ItemPaidAmount,
+		RemainingOrExcess:  res.RemainingOrExcess,
+	}, nil
+}
+
+// SetMonthDays menetapkan jumlah hari item fasilitas utk SATU bulan.
+//
+// days = 0 → bulan di-skip (tidak ditagih): item unpaid bulan tsb dihapus & bulan
+// dicatat di billing_month_exclusions (mekanisme yang sama dengan "Kelola Bulan").
+// days >= 1 → skip dicabut (item dipulihkan) lalu jumlah hari item diset ke days.
+func (s *studentFacilityService) SetMonthDays(studentID, sfID uint, req dto.UpdateFacilityMonthDaysRequest) (*dto.FacilityMonthDaysResponse, error) {
+	sf, err := s.sfRepo.FindByID(sfID)
+	if err != nil || sf.StudentID != studentID {
+		return nil, errors.New("Data pendaftaran fasilitas tidak ditemukan")
+	}
+	if sf.EndDate != nil {
+		return nil, errors.New("Siswa sudah tidak aktif di fasilitas ini")
+	}
+	if req.Days == nil {
+		return nil, errors.New("Jumlah hari wajib diisi")
+	}
+	if !s.monthWithinEnrollment(sf, req.Month, req.Year) {
+		return nil, errors.New("Bulan/tahun di luar rentang pendaftaran fasilitas (tidak valid)")
+	}
+	days := *req.Days
+
+	// Guard sebelum menulis exclusion: RemoveFacilityItemFromMonthly melewati
+	// item yang sudah dibayar secara silent, jadi menolak di sini mencegah
+	// exclusion tercatat sementara tagihannya tetap muncul.
+	if item := s.findFacilityMonthItem(sf, req.Month, req.Year); item != nil && item.PaidAmount > 0 {
+		return nil, utility.NewUnprocessableError("Item fasilitas bulan ini sudah ada pembayaran — jumlah hari tidak bisa diubah. Selesaikan lewat penyesuaian pembayaran (kasir).")
+	}
+
+	if days == 0 {
+		if err := s.exclSvc.SkipFacilityMonth(studentID, sf.FacilityID, req.Month, req.Year); err != nil {
+			return nil, err
+		}
+	} else {
+		// Jangan mencabut skip bila invoice bulan belum ada: tidak ada item yang
+		// bisa dipulihkan atau diubah ke jumlah hari yang diminta. Dengan guard ini
+		// exclusion tetap tersimpan dan generate berikutnya tetap tidak menagih.
+		_, invoice := s.findFacilityMonthItemAndInvoice(sf, req.Month, req.Year)
+		excluded := s.isFacilityMonthExcluded(studentID, sf.FacilityID, req.Month, req.Year)
+		if invoice == nil {
+			if excluded {
+				return nil, errors.New("Invoice fasilitas bulan ini belum dibuat — jumlah hari belum dapat dipulihkan")
+			}
+			return nil, errors.New("Belum ada tagihan fasilitas untuk bulan ini")
+		}
+
+		if err := s.exclSvc.UnskipFacilityMonth(studentID, sf.FacilityID, req.Month, req.Year); err != nil {
+			return nil, err
+		}
+
+		// Ambil ulang: item mungkin baru dipulihkan oleh pencabutan skip.
+		item := s.findFacilityMonthItem(sf, req.Month, req.Year)
+		if item == nil {
+			return nil, s.rollbackMonthDaysUnskip(studentID, sf.FacilityID, req.Month, req.Year, errors.New("Belum ada tagihan fasilitas untuk bulan ini"))
+		}
+		if item.UnitPrice == nil {
+			// Item tanpa unit_price tidak bisa diset jumlah harinya. Bila tarif
+			// dasarnya per_day, penyebabnya hari efektif bulan tsb belum diinput.
+			if base := s.baseFacilityItem(sf); base != nil && base.Unit == "per_day" {
+				return nil, s.rollbackMonthDaysUnskip(studentID, sf.FacilityID, req.Month, req.Year, utility.NewUnprocessableError("Item fasilitas bulan ini belum dihitung per hari (hari efektif belum diinput). Isi hari efektif dulu, lalu ulangi."))
+			}
+			return nil, s.rollbackMonthDaysUnskip(studentID, sf.FacilityID, req.Month, req.Year, utility.NewUnprocessableError("Item fasilitas bulan ini bertarif flat (bukan per hari) — jumlah hari tidak berlaku"))
+		}
+		if item.Quantity == nil || *item.Quantity != days {
+			if _, err := s.invoiceSvc.UpdateItemQuantity(item.InvoiceID, item.ID, dto.UpdateInvoiceItemQuantityRequest{Quantity: &days}); err != nil {
+				return nil, s.rollbackMonthDaysUnskip(studentID, sf.FacilityID, req.Month, req.Year, err)
+			}
+		}
+	}
+
+	return s.buildMonthDaysResponse(sf, req.Month, req.Year)
+}
+
+// rollbackMonthDaysUnskip mengembalikan exclusion bila operasi setelah unskip
+// gagal, sehingga percobaan mengisi N hari tidak mengaktifkan tagihan sebagian.
+func (s *studentFacilityService) rollbackMonthDaysUnskip(studentID, facilityID, month, year uint, originalErr error) error {
+	if rollbackErr := s.exclSvc.SkipFacilityMonth(studentID, facilityID, month, year); rollbackErr != nil {
+		return fmt.Errorf("%w; rollback skip gagal: %v", originalErr, rollbackErr)
+	}
+	return originalErr
+}
+
+// buildMonthDaysResponse membaca ulang state bulan tsb (exclusion + item) agar
+// respons mencerminkan kondisi setelah operasi.
+func (s *studentFacilityService) buildMonthDaysResponse(sf *model.StudentFacility, month, year uint) (*dto.FacilityMonthDaysResponse, error) {
+	excluded := false
+	if s.exclRepo != nil {
+		ex, err := s.exclRepo.Exists(sf.StudentID, "facility", sf.FacilityID, month, year)
+		if err != nil {
+			return nil, err
+		}
+		excluded = ex
+	}
+
+	resp := &dto.FacilityMonthDaysResponse{Month: month, Year: year, Excluded: excluded}
+
+	item, invoice := s.findFacilityMonthItemAndInvoice(sf, month, year)
+	if invoice != nil {
+		invoiceID := invoice.ID
+		resp.InvoiceID = &invoiceID
+	}
+	if item != nil {
+		itemID := item.ID
+		resp.InvoiceItemID = &itemID
+		resp.ItemPaid = item.PaidAmount > 0
+		if item.Quantity != nil {
+			resp.Days = *item.Quantity
+		}
+	}
+	// Bulan ter-skip = tidak ditagih → jumlah hari efektif 0.
+	if excluded {
+		resp.Days = 0
+	}
+	return resp, nil
+}
+
+// findFacilityMonthItem mencari item fasilitas pendaftaran ini pada invoice bulan
+// tertentu (nil bila invoice atau itemnya belum ada).
+func (s *studentFacilityService) findFacilityMonthItem(sf *model.StudentFacility, month, year uint) *model.InvoiceItem {
+	item, _ := s.findFacilityMonthItemAndInvoice(sf, month, year)
+	return item
+}
+
+// findFacilityMonthItemAndInvoice mengembalikan item fasilitas + invoice bulan tsb.
+// Pencocokan mengikuti jalur baca lain: prioritaskan relasi facility_id; baris
+// legacy tanpa facility_id dicocokkan via nama fasilitas/zona.
+func (s *studentFacilityService) findFacilityMonthItemAndInvoice(sf *model.StudentFacility, month, year uint) (*model.InvoiceItem, *model.Invoice) {
+	invoice, err := s.invoiceRepo.FindMonthlyByStudent(sf.StudentID, month, year)
+	if err != nil {
+		return nil, nil
+	}
+
+	var zoneName string
+	if sf.FeeConfigItem != nil {
+		zoneName = sf.FeeConfigItem.Name
+	}
+
+	items, err := s.invoiceItemRepo.FindByInvoiceID(invoice.ID)
+	if err != nil {
+		return nil, invoice
+	}
+	for i := range items {
+		item := &items[i]
+		if item.Category != "facility" {
+			continue
+		}
+		if item.FacilityID != nil {
+			if *item.FacilityID != sf.FacilityID {
+				continue
+			}
+		} else if !facilityItemNameMatches(item.Name, sf.Facility.Name, zoneName) {
+			continue
+		}
+		return item, invoice
+	}
+	return nil, invoice
+}
+
+// isFacilityMonthExcluded melaporkan apakah bulan tertentu di-skip (tidak
+// ditagih) untuk sebuah fasilitas siswa.
+func (s *studentFacilityService) isFacilityMonthExcluded(studentID, facilityID, month, year uint) bool {
+	if s.exclRepo == nil {
+		return false
+	}
+	ex, err := s.exclRepo.Exists(studentID, "facility", facilityID, month, year)
+	return err == nil && ex
+}
+
+// resolveZoneFeeItem memvalidasi & me-resolve fee item zona utk bulan:
+//   - zoneID non-nil → zona tsb harus aktif & milik fee config tahun ajaran
+//   - zoneID nil ("tanpa zona") → item dasar nama fasilitas
+func (s *studentFacilityService) resolveZoneFeeItem(sf *model.StudentFacility, zoneID *uint) (*model.FeeConfigItem, error) {
+	if zoneID == nil {
+		item := s.baseFacilityItem(sf)
+		if item == nil {
+			return nil, errors.New("Tarif dasar fasilitas tidak ditemukan")
+		}
+		return item, nil
+	}
+
+	item, err := s.feeConfigItemRepo.FindByID(*zoneID)
+	if err != nil {
+		return nil, errors.New("Paket/zona tidak ditemukan")
+	}
+	if !item.IsActive {
+		return nil, errors.New("Paket/zona sudah tidak aktif")
+	}
+	feeConfig, fcErr := s.feeConfigRepo.FindByAcademicYearID(sf.AcademicYearID)
+	if fcErr != nil || feeConfig == nil || item.FeeConfigID != feeConfig.ID {
+		return nil, errors.New("Paket/zona tidak ada di tarif tahun ajaran ini")
+	}
+	return item, nil
+}
+
+// baseFacilityItem mengambil item tarif dasar fasilitas (key facility_<slug>)
+// pada fee config tahun ajaran enrollment; nil bila tidak ada.
+func (s *studentFacilityService) baseFacilityItem(sf *model.StudentFacility) *model.FeeConfigItem {
+	feeConfig, err := s.feeConfigRepo.FindByAcademicYearID(sf.AcademicYearID)
+	if err != nil || feeConfig == nil {
+		return nil
+	}
+	items, err := s.feeConfigItemRepo.FindByItemKeys(feeConfig.ID, []string{facilityItemKey(sf.Facility.Name)})
+	if err != nil || len(items) == 0 {
+		return nil
+	}
+	return &items[0]
+}
+
+// monthWithinEnrollment memeriksa apakah (month, year) berada pada rentang
+// bulan enrollment (start_date .. akhir tahun ajaran) — inklusif.
+func (s *studentFacilityService) monthWithinEnrollment(sf *model.StudentFacility, month, year uint) bool {
+	ay, err := s.acRepo.FindByID(sf.AcademicYearID)
+	if err != nil || ay == nil {
+		return false
+	}
+	if month < 1 || month > 12 {
+		return false
+	}
+	start := sf.StartDate
+	end := ay.EndDate
+	if year < uint(start.Year()) || (year == uint(start.Year()) && month < uint(start.Month())) {
+		return false
+	}
+	if year > uint(end.Year()) || (year == uint(end.Year()) && month > uint(end.Month())) {
+		return false
+	}
+	return true
 }
 
 // facilityItemNameMatches menentukan apakah sebuah item invoice fasilitas
@@ -427,6 +816,10 @@ func (s *studentFacilityService) GetCurrentMonthDays(studentID, sfID uint) (*dto
 	month := uint(now.Month())
 	year := uint(now.Year())
 
+	// Penanda bulan ini di-skip (tidak ditagih) — dihitung lebih awal supaya
+	// tetap terisi walau invoice bulan ini belum dibuat.
+	excluded := s.isFacilityMonthExcluded(sf.StudentID, sf.FacilityID, month, year)
+
 	// Get student's monthly invoice for current month
 	invoice, err := s.invoiceRepo.FindMonthlyByStudent(studentID, month, year)
 	if err != nil {
@@ -434,6 +827,7 @@ func (s *studentFacilityService) GetCurrentMonthDays(studentID, sfID uint) (*dto
 			DefaultDays: 0,
 			CurrentDays: 0,
 			ZoneAmount:  0,
+			Excluded:    excluded,
 		}, nil
 	}
 
@@ -495,6 +889,9 @@ func (s *studentFacilityService) GetCurrentMonthDays(studentID, sfID uint) (*dto
 	if facilityItemID > 0 {
 		resp.InvoiceItemID = &facilityItemID
 	}
+	// Penanda bulan ini di-skip (tidak ditagih) — membedakan "0 hari karena
+	// di-skip" dari "belum ada item".
+	resp.Excluded = excluded
 	return resp, nil
 }
 
@@ -510,10 +907,12 @@ func (s *studentFacilityService) Unenroll(studentID, sfID uint) error {
 		return err
 	}
 
-	// Hapus item fasilitas dari invoice bulan ini ke depan yang belum dibayar
+	// Hapus item unpaid fasilitas dari invoice mulai bulan siswa mengikuti
+	// (start_date) ke depan — berhenti = semua item unpaid fasilitas ini
+	// dihapus, termasuk bulan-bulan sebelum hari ini (Aturan B).
 	if s.invoiceGen != nil {
 		go func() {
-			if err := s.invoiceGen.RemoveFacilityFromFutureInvoices(studentID, sf.FacilityID, sf.AcademicYearID); err != nil {
+			if err := s.invoiceGen.RemoveFacilityInvoices(studentID, sf.FacilityID, sf.AcademicYearID, sf.StartDate); err != nil {
 				log.Printf("[Facility] Gagal remove facility dari invoice (unenroll) student=%d facility=%d: %v", studentID, sf.FacilityID, err)
 			}
 		}()
@@ -524,6 +923,14 @@ func (s *studentFacilityService) Unenroll(studentID, sfID uint) error {
 	if s.exclRepo != nil {
 		if err := s.exclRepo.DeleteByStudentAndEntity(studentID, "facility", sf.FacilityID); err != nil {
 			log.Printf("[Facility] Gagal menghapus billing exclusions student=%d facility=%d: %v", studentID, sf.FacilityID, err)
+		}
+	}
+
+	// R.9 (epic zona-bulanan): hapus semua override zona per bulan pendaftaran
+	// ini — enrollment sudah nonaktif, override tidak boleh menggantung.
+	if s.monthZoneRepo != nil {
+		if err := s.monthZoneRepo.DeleteByStudentFacilityID(sf.ID); err != nil {
+			log.Printf("[Facility] Gagal menghapus month-zone sf=%d: %v", sf.ID, err)
 		}
 	}
 
@@ -586,6 +993,26 @@ func (s *studentFacilityService) GetStudentsByFacility(facilityID uint, params d
 	now := time.Now()
 	curMonth := uint(now.Month())
 	curYear := uint(now.Year())
+	// Bila bulan/tahun diminta eksplisit, pakai itu (fitur pilih bulan).
+	if params.Month > 0 && params.Year > 0 {
+		curMonth = params.Month
+		curYear = params.Year
+	}
+
+	// Override zona per bulan utk semua pendaftaran di halaman ini (batch,
+	// hindari N+1) — zona efektif bulan = override ?: default.
+	overrideBySF := map[uint]model.StudentFacilityMonthZone{}
+	if s.monthZoneRepo != nil && len(sfs) > 0 {
+		sfIDs := make([]uint, len(sfs))
+		for i := range sfs {
+			sfIDs[i] = sfs[i].ID
+		}
+		if monthZones, err := s.monthZoneRepo.FindBySFIDsAndMonth(sfIDs, curMonth, curYear); err == nil {
+			for _, z := range monthZones {
+				overrideBySF[z.StudentFacilityID] = z
+			}
+		}
+	}
 
 	for _, sf := range sfs {
 		var endDateStr *string
@@ -614,6 +1041,15 @@ func (s *studentFacilityService) GetStudentsByFacility(facilityID uint, params d
 			}
 		}
 
+		// Zona EFEKTIF bulan yang diminta (override ?: default) untuk dropdown
+		// zona per bulan di tab bulanan.
+		if z, ok := overrideBySF[sf.ID]; ok {
+			item.MonthZoneOverridden = true
+			item.MonthZoneFeeConfigItemID = z.FeeConfigItemID
+		} else {
+			item.MonthZoneFeeConfigItemID = sf.FeeConfigItemID
+		}
+
 		// Populate current month invoice item quantity.
 		// Nama item bisa memakai nama fasilitas ATAU nama zona/paket siswa.
 		var zoneName string
@@ -636,9 +1072,18 @@ func (s *studentFacilityService) GetStudentsByFacility(facilityID uint, params d
 					continue
 				}
 				item.CurrentMonthDays = invItem.Quantity
+				// Penanda item bulan ini sudah dibayar (memicu konfirmasi edit).
+				item.MonthItemPaid = invItem.PaidAmount > 0
+				invoiceID := invoice.ID
+				invItemID := invItem.ID
+				item.InvoiceID = &invoiceID
+				item.InvoiceItemID = &invItemID
 				break
 			}
 		}
+
+		// Penanda bulan yang di-skip (tidak ditagih) utk fasilitas ini.
+		item.MonthExcluded = s.isFacilityMonthExcluded(sf.StudentID, sf.FacilityID, curMonth, curYear)
 
 		items = append(items, item)
 	}

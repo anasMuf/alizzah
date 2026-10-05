@@ -27,6 +27,8 @@ export interface BillingExclusionsResponse {
 		message: string;
 		data: {
 			months: BillingExclusionMonth[];
+			/** Bulan yang item entity-nya sudah dibayar (paid) — tak bisa di-skip. */
+			paid_months?: BillingExclusionMonth[];
 		};
 	};
 	status: number;

@@ -14,6 +14,11 @@ type InvoiceItemRepository interface {
 	ExistsByNameAndCategory(invoiceID uint, name, category string) (bool, error)
 	Create(item *model.InvoiceItem) error
 	BulkCreate(items []model.InvoiceItem) error
+	// BulkCreateNonMandatoryItems menyisipkan item lalu memaksa is_mandatory=false.
+	// Diperlukan karena GORM selalu mengecualikan field bernilai zero yang memiliki
+	// tag `default` dari INSERT (Select pun tidak menolong), sehingga false akan
+	// tertulis sebagai nilai default DB (true).
+	BulkCreateNonMandatoryItems(items []model.InvoiceItem) error
 	Update(item *model.InvoiceItem) error
 	UpdatePaidAmount(id uint, paidAmount float64, status string) error
 	Delete(id uint) error
@@ -76,6 +81,23 @@ func (r *invoiceItemRepository) BulkCreate(items []model.InvoiceItem) error {
 		return nil
 	}
 	return r.db.Create(&items).Error
+}
+
+func (r *invoiceItemRepository) BulkCreateNonMandatoryItems(items []model.InvoiceItem) error {
+	if len(items) == 0 {
+		return nil
+	}
+	if err := r.db.Create(&items).Error; err != nil {
+		return err
+	}
+
+	ids := make([]uint, 0, len(items))
+	for _, it := range items {
+		ids = append(ids, it.ID)
+	}
+	return r.db.Model(&model.InvoiceItem{}).
+		Where("id IN ?", ids).
+		Update("is_mandatory", false).Error
 }
 
 func (r *invoiceItemRepository) Update(item *model.InvoiceItem) error {

@@ -15,4 +15,9 @@ type SetBillingExclusionsRequest struct {
 // BillingExclusionsResponse adalah daftar bulan yang sedang di-skip.
 type BillingExclusionsResponse struct {
 	Months []BillingExclusionMonth `json:"months"`
+	// PaidMonths = bulan di mana entity tsb sudah punya item yang DIBIAYAR
+	// (paid_amount > 0) pada invoice siswa. UI memakai daftar ini untuk
+	// men-disable bulan yang tidak bisa di-skip (item berbayar tidak bisa
+	// dihapus backend) — berbeda dengan sekadar "invoice bulan tsb sudah bayar".
+	PaidMonths []BillingExclusionMonth `json:"paid_months,omitempty"`
 }

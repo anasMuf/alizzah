@@ -9,6 +9,7 @@ import {
 	Trash2,
 } from "lucide-react";
 import { useState } from "react";
+import { useGetV1InvoicesBatch } from "#/api/endpoints/invoices/invoice-batch";
 import { useGetV1PaymentsId } from "#/api/endpoints/payments/payments";
 import { useDeleteV1PaymentsId } from "#/api/endpoints/payments/payments-manual";
 import { Button, ConfirmDialog, useToast } from "#/components/ui";
@@ -32,6 +33,26 @@ function DetailPembayaranPage() {
 
 	const { data: paymentResp, isLoading } = useGetV1PaymentsId(Number(id));
 	const payment = (paymentResp?.data as any)?.data;
+	const paymentItems: any[] = payment?.items ?? [];
+
+	// Tahun ajaran asal tiap tagihan yang dibayar. Pembayaran atas tagihan TA lampau
+	// mencatat kas di TA aktif, jadi struk perlu menyebut tagihan aslinya milik TA mana.
+	const invoiceIds = Array.from(
+		new Set<number>(
+			paymentItems
+				.map((item: any) => item.invoice_id)
+				.filter((v: any) => typeof v === "number"),
+		),
+	);
+	const { data: relatedInvoices = [] } = useGetV1InvoicesBatch(invoiceIds, {
+		enabled: invoiceIds.length > 0,
+	});
+	const originYearByInvoice = new Map<number, string | undefined>(
+		relatedInvoices.map((inv: any) => [
+			inv.id as number,
+			inv.academic_year?.name as string | undefined,
+		]),
+	);
 
 	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -71,13 +92,17 @@ function DetailPembayaranPage() {
 	const handlePrint = () => {
 		const itemsRows = payment.items?.length
 			? payment.items
-					.map(
-						(item: any) => `
+					.map((item: any) => {
+						const originYear = originYearByInvoice.get(item.invoice_id);
+						const originLabel = originYear
+							? `<br/><span style="font-size:11px;color:#b45309">TA ${originYear}</span>`
+							: "";
+						return `
 				<tr>
-					<td class="py-2">${item.invoice_item_name || "Pembayaran Tagihan"}</td>
+					<td class="py-2">${item.invoice_item_name || "Pembayaran Tagihan"}${originLabel}</td>
 					<td class="text-right">${formatCurrency(Number(item.amount))}</td>
-				</tr>`,
-					)
+				</tr>`;
+					})
 					.join("")
 			: `<tr><td class="py-2" colspan="2">Tidak ada rincian item.</td></tr>`;
 
@@ -354,10 +379,15 @@ function DetailPembayaranPage() {
 						<tbody className="divide-y divide-gray-200">
 							{payment.items && payment.items.length > 0 ? (
 								<>
-									{payment.items.map((item: any, idx: number) => (
-										<tr key={idx}>
+									{payment.items.map((item: any) => (
+										<tr key={item.id}>
 											<td className="py-3 text-sm text-gray-700">
 												{item.invoice_item_name || "Pembayaran Tagihan"}
+												{originYearByInvoice.get(item.invoice_id) && (
+													<span className="block text-[11px] text-amber-700">
+														TA {originYearByInvoice.get(item.invoice_id)}
+													</span>
+												)}
 											</td>
 											<td className="py-3 text-sm text-gray-900 font-medium text-right">
 												{formatCurrency(Number(item.amount))}

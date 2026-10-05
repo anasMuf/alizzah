@@ -9,6 +9,7 @@
 export interface DtoInvoiceItemResponse {
 	amount?: number;
 	category?: string;
+	facility_id?: number;
 	id?: number;
 	is_koperasi?: boolean;
 	is_mandatory?: boolean;

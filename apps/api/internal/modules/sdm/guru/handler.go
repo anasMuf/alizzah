@@ -36,6 +36,7 @@ func New(db *gorm.DB, masterRepo *master.Repository) *Handler {
 func (h *Handler) RegisterRoutes(g *echo.Group, mw ...echo.MiddlewareFunc) {
 	g.GET("/employees", h.List, mw...)
 	g.POST("/employees", h.Create, mw...)
+	g.POST("/employees/import", h.Import, mw...)
 	g.GET("/employees/:id", h.Get, mw...)
 	g.PUT("/employees/:id", h.Update, mw...)
 	g.DELETE("/employees/:id", h.Delete, mw...)
@@ -124,6 +125,25 @@ func (h *Handler) Create(c echo.Context) error {
 		return utility.Fail(c, err)
 	}
 	return c.JSON(http.StatusCreated, dto.SuccessResponse{Message: "Berhasil menambah karyawan", Data: item})
+}
+
+// Import godoc
+// @Summary Import karyawan (bulk): tambah baru / update existing (oleh ID)
+// @Tags sdm-guru
+// @Security ApiKeyAuth
+// @Param request body guru.ImportRequest true "Baris karyawan"
+// @Success 200 {object} dto.SuccessResponse{data=guru.ImportResult}
+// @Router /v1/sdm/employees/import [post]
+func (h *Handler) Import(c echo.Context) error {
+	var req ImportRequest
+	if err := bindAndValidate(c, &req); err != nil {
+		return err
+	}
+	res, err := h.svc.Import(req.Rows)
+	if err != nil {
+		return utility.Fail(c, err)
+	}
+	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Import karyawan selesai", Data: res})
 }
 
 // Get godoc

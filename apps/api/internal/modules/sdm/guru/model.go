@@ -16,6 +16,7 @@ type Employee struct {
 	model.PrimaryKey
 	LegacyID    *int       `gorm:"uniqueIndex" json:"legacy_id"`
 	Nama        string     `gorm:"size:100;not null" json:"nama"`
+	NoTelp      string     `gorm:"size:20;not null;default:''" json:"no_telp"`
 	TglMasuk    *time.Time `gorm:"type:date" json:"tgl_masuk"`
 	GolonganID  *uint      `gorm:"index" json:"golongan_id"`
 	Sertifikasi bool       `gorm:"not null;default:false" json:"sertifikasi"`

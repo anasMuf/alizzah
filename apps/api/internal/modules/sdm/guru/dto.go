@@ -4,6 +4,7 @@ package guru
 
 type EmployeeRequest struct {
 	Nama        string `json:"nama" validate:"required,max=100"`
+	NoTelp      string `json:"no_telp" validate:"omitempty,max=30"`
 	TglMasuk    string `json:"tgl_masuk" validate:"omitempty,dateonly"`
 	GolonganID  *uint  `json:"golongan_id"`
 	Sertifikasi bool   `json:"sertifikasi"`
@@ -43,6 +44,7 @@ type EmployeeItem struct {
 	ID          uint           `json:"id"`
 	LegacyID    *int           `json:"legacy_id"`
 	Nama        string         `json:"nama"`
+	NoTelp      string         `json:"no_telp"`
 	TglMasuk    *string        `json:"tgl_masuk"`
 	GolonganID  *uint          `json:"golongan_id"`
 	Golongan    *GolonganBrief `json:"golongan,omitempty"`
@@ -94,4 +96,31 @@ type HRBundle struct {
 type EmployeeDetail struct {
 	EmployeeItem
 	HR HRBundle `json:"hr"`
+}
+
+// ── Import ──
+
+// ImportRow — satu baris import karyawan. ID > 0 & ada → update; selainnya → baru.
+type ImportRow struct {
+	ID           uint   `json:"id"`
+	Nama         string `json:"nama" validate:"required,max=100"`
+	NoTelp       string `json:"no_telp" validate:"omitempty,max=30"`
+	TglMasuk     string `json:"tgl_masuk" validate:"omitempty,dateonly"`
+	GolonganKode string `json:"golongan_kode" validate:"omitempty,max=2"`
+	Sertifikasi  bool   `json:"sertifikasi"`
+	Impasing     bool   `json:"impasing"`
+	IsActive     bool   `json:"is_active"`
+}
+
+// ImportRequest — body POST /employees/import.
+type ImportRequest struct {
+	Rows []ImportRow `json:"rows" validate:"required,min=1,dive"`
+}
+
+// ImportResult — ringkasan hasil import.
+type ImportResult struct {
+	Created int      `json:"created"`
+	Updated int      `json:"updated"`
+	Failed  int      `json:"failed"`
+	Errors  []string `json:"errors"`
 }

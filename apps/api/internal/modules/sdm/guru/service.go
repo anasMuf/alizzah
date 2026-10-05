@@ -2,6 +2,7 @@ package guru
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -89,6 +90,7 @@ func (s *Service) Get(id uint) (*EmployeeDetail, error) {
 func (s *Service) Create(req EmployeeRequest) (*EmployeeItem, error) {
 	emp := &Employee{
 		Nama:        strings.TrimSpace(req.Nama),
+		NoTelp:      normalizePhone(req.NoTelp),
 		GolonganID:  req.GolonganID,
 		Sertifikasi: req.Sertifikasi,
 		Impasing:    req.Impasing,
@@ -118,6 +120,7 @@ func (s *Service) Update(id uint, req EmployeeRequest) (*EmployeeItem, error) {
 		return nil, err
 	}
 	emp.Nama = strings.TrimSpace(req.Nama)
+	emp.NoTelp = normalizePhone(req.NoTelp)
 	emp.GolonganID = req.GolonganID
 	emp.Sertifikasi = req.Sertifikasi
 	emp.Impasing = req.Impasing
@@ -232,6 +235,7 @@ func toEmployeeItem(emp *Employee, allGolongan []master.Golongan, asOf time.Time
 		ID:          emp.ID,
 		LegacyID:    emp.LegacyID,
 		Nama:        emp.Nama,
+		NoTelp:      emp.NoTelp,
 		GolonganID:  emp.GolonganID,
 		EffectiveID: ResolveEffectiveGolongan(allGolongan, emp, asOf),
 		Sertifikasi: emp.Sertifikasi,
@@ -260,4 +264,106 @@ func parseDate(s string) (*time.Time, error) {
 		return nil, err
 	}
 	return &t, nil
+}
+
+// normalizePhone menormalkan nomor telepon Indonesia ke format kanonik
+// "+62xxxxxxxxx" (digit saja setelah '+'). Menerima input apa pun: "0812…",
+// "812…", "+62 812…", "62-812…". Kosong → "".
+func normalizePhone(s string) string {
+	digits := strings.Map(func(r rune) rune {
+		if r >= '0' && r <= '9' {
+			return r
+		}
+		return -1
+	}, s)
+	if digits == "" {
+		return ""
+	}
+	switch {
+	case strings.HasPrefix(digits, "62"):
+		return "+" + digits
+	case strings.HasPrefix(digits, "0"):
+		return "+62" + digits[1:]
+	default:
+		return "+62" + digits
+	}
+}
+
+// Import menambah/memperbarui karyawan secara massal (bulk). Baris dengan ID yang
+// ada → update; baris tanpa ID → tambah baru. Best-effort: baris yang gagal
+// dicatat di Errors tanpa membatalkan baris lain.
+func (s *Service) Import(rows []ImportRow) (*ImportResult, error) {
+	allGolongan, _ := s.masterRepo.FindAllGolongan()
+	byKode := map[string]uint{}
+	for _, g := range allGolongan {
+		byKode[strings.ToUpper(g.Kode)] = g.ID
+	}
+
+	res := &ImportResult{Errors: []string{}}
+	for i, row := range rows {
+		line := i + 1
+		fail := func(msg string) {
+			res.Failed++
+			res.Errors = append(res.Errors, fmt.Sprintf("baris %d: %s", line, msg))
+		}
+
+		nama := strings.TrimSpace(row.Nama)
+		if nama == "" {
+			fail("nama kosong")
+			continue
+		}
+
+		var golonganID *uint
+		if k := strings.ToUpper(strings.TrimSpace(row.GolonganKode)); k != "" {
+			id, ok := byKode[k]
+			if !ok {
+				fail("golongan '" + row.GolonganKode + "' tidak dikenal")
+				continue
+			}
+			golonganID = &id
+		}
+
+		tgl, err := parseDate(row.TglMasuk)
+		if err != nil {
+			fail("tanggal masuk tidak valid")
+			continue
+		}
+
+		if row.ID > 0 {
+			emp, err := s.repo.FindByID(row.ID)
+			if err != nil {
+				fail("ID karyawan tidak ditemukan")
+				continue
+			}
+			emp.Nama = nama
+			emp.NoTelp = normalizePhone(row.NoTelp)
+			emp.TglMasuk = tgl
+			emp.GolonganID = golonganID
+			emp.Sertifikasi = row.Sertifikasi
+			emp.Impasing = row.Impasing
+			emp.IsActive = row.IsActive
+			if err := s.repo.Update(emp); err != nil {
+				fail(err.Error())
+				continue
+			}
+			res.Updated++
+			continue
+		}
+
+		emp := &Employee{
+			Nama:        nama,
+			NoTelp:      normalizePhone(row.NoTelp),
+			TglMasuk:    tgl,
+			GolonganID:  golonganID,
+			Sertifikasi: row.Sertifikasi,
+			Impasing:    row.Impasing,
+			IsActive:    row.IsActive,
+		}
+		if err := s.repo.Create(emp); err != nil {
+			fail(err.Error())
+			continue
+		}
+		res.Created++
+	}
+	return res, nil
 }

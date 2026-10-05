@@ -65,6 +65,7 @@ export interface Employee {
 	id: number;
 	legacy_id?: number | null;
 	nama: string;
+	no_telp: string;
 	tgl_masuk?: string | null;
 	golongan_id?: number | null;
 	golongan?: GolonganBrief | null;
@@ -76,6 +77,7 @@ export interface Employee {
 
 export interface EmployeeInput {
 	nama: string;
+	no_telp?: string;
 	tgl_masuk?: string | null;
 	golongan_id?: number | null;
 	sertifikasi: boolean;
@@ -424,6 +426,35 @@ export function useDeleteEmployee() {
 	const qc = useQueryClient();
 	return useMutation({
 		mutationFn: (id: number) => sdmSend<null>("DELETE", `/employees/${id}`),
+		onSuccess: () => invalidateEmployees(qc),
+	});
+}
+
+// ── Import karyawan (bulk) ──
+
+export interface ImportRow {
+	id: number; // 0 = baru
+	nama: string;
+	no_telp: string;
+	tgl_masuk: string;
+	golongan_kode: string;
+	sertifikasi: boolean;
+	impasing: boolean;
+	is_active: boolean;
+}
+
+export interface ImportResult {
+	created: number;
+	updated: number;
+	failed: number;
+	errors: string[];
+}
+
+export function useImportEmployees() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (rows: ImportRow[]) =>
+			sdmSend<ImportResult>("POST", "/employees/import", { rows }),
 		onSuccess: () => invalidateEmployees(qc),
 	});
 }

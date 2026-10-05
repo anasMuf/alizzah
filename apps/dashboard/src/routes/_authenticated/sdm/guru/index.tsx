@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Loader2, Plus, Search, Users } from "lucide-react";
+import { Download, Loader2, Plus, Search, Upload, Users } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import * as XLSX from "xlsx";
 import { ApiError } from "#/api/mutator/custom-instance";
 import {
 	Badge,
@@ -20,6 +21,8 @@ import {
 	useGolongans,
 	useSaveEmployee,
 } from "#/features/sdm/api";
+import { EmployeeImportDialog } from "#/features/sdm/components/EmployeeImport";
+import { sdmGet } from "#/features/sdm/lib/client";
 import { formatDate } from "#/utils/format";
 
 export const Route = createFileRoute("/_authenticated/sdm/guru/")({
@@ -35,6 +38,7 @@ function GuruListPage() {
 	const [formOpen, setFormOpen] = useState(false);
 	const [editing, setEditing] = useState<Employee | null>(null);
 	const [deleting, setDeleting] = useState<Employee | null>(null);
+	const [importOpen, setImportOpen] = useState(false);
 
 	const { data: golongans = [] } = useGolongans();
 	const {
@@ -80,6 +84,60 @@ function GuruListPage() {
 	const golonganKode = (id?: number | null) =>
 		golongans.find((g) => g.id === id)?.kode ?? "-";
 
+	const handleExport = async () => {
+		try {
+			const all = await sdmGet<Employee[]>("/employees", { all: true });
+			const header = [
+				"ID",
+				"Nama",
+				"No. Telp",
+				"Tgl Masuk",
+				"Golongan",
+				"Sertifikasi",
+				"Impasing",
+				"Aktif",
+			];
+			const body = all.map((e) => [
+				e.id,
+				e.nama,
+				e.no_telp ?? "",
+				e.tgl_masuk ?? "",
+				e.golongan?.kode ?? "",
+				e.sertifikasi ? "ya" : "tidak",
+				e.impasing ? "ya" : "tidak",
+				e.is_active ? "ya" : "tidak",
+			]);
+			const ws = XLSX.utils.aoa_to_sheet([header, ...body]);
+			ws["!cols"] = [
+				{ wch: 6 },
+				{ wch: 30 },
+				{ wch: 16 },
+				{ wch: 12 },
+				{ wch: 9 },
+				{ wch: 10 },
+				{ wch: 10 },
+				{ wch: 7 },
+			];
+			const wb = XLSX.utils.book_new();
+			XLSX.utils.book_append_sheet(wb, ws, "Karyawan");
+			XLSX.writeFile(
+				wb,
+				`karyawan-${new Date().toISOString().slice(0, 10)}.xlsx`,
+			);
+			addToast({
+				variant: "success",
+				title: "Berhasil",
+				message: `${all.length} karyawan diekspor.`,
+			});
+		} catch {
+			addToast({
+				variant: "error",
+				title: "Gagal",
+				message: "Gagal mengekspor data karyawan.",
+			});
+		}
+	};
+
 	return (
 		<div className="space-y-6">
 			<div className="flex items-center justify-between">
@@ -89,6 +147,12 @@ function GuruListPage() {
 						Master guru & tenaga kependidikan — golongan, sertifikasi/impasing.
 					</p>
 				</div>
+				<Button variant="primary" onClick={() => setImportOpen(true)}>
+					<Upload className="h-4 w-4 mr-1.5" /> Import
+				</Button>
+				<Button variant="secondary" onClick={handleExport}>
+					<Download className="h-4 w-4 mr-1.5" /> Export
+				</Button>
 				<Button
 					variant="primary"
 					onClick={() => {
@@ -132,6 +196,9 @@ function GuruListPage() {
 									Nama
 								</th>
 								<th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
+									No. Telp
+								</th>
+								<th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
 									Masuk
 								</th>
 								<th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
@@ -159,6 +226,9 @@ function GuruListPage() {
 										>
 											{e.nama}
 										</Link>
+									</td>
+									<td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+										{e.no_telp || "-"}
 									</td>
 									<td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
 										{formatDate(e.tgl_masuk ?? undefined)}
@@ -253,6 +323,12 @@ function GuruListPage() {
 				}
 			/>
 
+			<EmployeeImportDialog
+				isOpen={importOpen}
+				onClose={() => setImportOpen(false)}
+				golongans={golongans}
+			/>
+
 			<ConfirmDialog
 				open={!!deleting}
 				title="Hapus Karyawan?"
@@ -288,6 +364,14 @@ function GuruListPage() {
 	);
 }
 
+function localFromStored(v?: string | null): string {
+	if (!v) return "";
+	const d = v.replace(/\D/g, "");
+	if (d.startsWith("62")) return d.slice(2);
+	if (d.startsWith("0")) return d.slice(1);
+	return d;
+}
+
 function EmployeeForm({
 	isOpen,
 	onClose,
@@ -302,6 +386,7 @@ function EmployeeForm({
 	onSubmit: (id: number | undefined, body: EmployeeInput) => void;
 }) {
 	const [nama, setNama] = useState("");
+	const [noTelp, setNoTelp] = useState("");
 	const [tglMasuk, setTglMasuk] = useState("");
 	const [golonganId, setGolonganId] = useState("");
 	const [sertifikasi, setSertifikasi] = useState(false);
@@ -315,6 +400,7 @@ function EmployeeForm({
 		setKey(formKey);
 		if (initial) {
 			setNama(initial.nama);
+			setNoTelp(localFromStored(initial.no_telp));
 			setTglMasuk(initial.tgl_masuk ?? "");
 			setGolonganId(initial.golongan_id ? String(initial.golongan_id) : "");
 			setSertifikasi(initial.sertifikasi);
@@ -322,6 +408,7 @@ function EmployeeForm({
 			setIsActive(initial.is_active);
 		} else {
 			setNama("");
+			setNoTelp("");
 			setTglMasuk("");
 			setGolonganId("");
 			setSertifikasi(false);
@@ -335,6 +422,7 @@ function EmployeeForm({
 		if (!nama.trim()) return;
 		onSubmit(initial?.id, {
 			nama: nama.trim(),
+			no_telp: noTelp.trim(),
 			tgl_masuk: tglMasuk || null,
 			golongan_id: golonganId ? Number(golonganId) : null,
 			sertifikasi,
@@ -368,6 +456,28 @@ function EmployeeForm({
 					onChange={(e) => setNama(e.target.value)}
 					required
 				/>
+				<div>
+					<label
+						htmlFor="no_telp"
+						className="block text-sm font-medium leading-6 text-gray-900 mb-2"
+					>
+						No. Telepon / WA
+					</label>
+					<div className="flex">
+						<span className="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 bg-gray-50 px-3 text-sm text-gray-600">
+							+62
+						</span>
+						<input
+							id="no_telp"
+							type="tel"
+							inputMode="numeric"
+							value={noTelp}
+							onChange={(e) => setNoTelp(e.target.value.replace(/[^\d]/g, ""))}
+							placeholder="812xxxxxxx"
+							className="block w-full rounded-r-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
+						/>
+					</div>
+				</div>
 				<div className="grid grid-cols-2 gap-4">
 					<FormField
 						id="tgl_masuk"

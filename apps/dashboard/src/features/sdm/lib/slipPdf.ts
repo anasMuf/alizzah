@@ -142,24 +142,31 @@ export function renderSlipPdf(
 	const doc = new jsPDF({ unit: "mm", format: "a5" });
 	const pageW = doc.internal.pageSize.getWidth();
 	const margin = 8;
+	const maxW = pageW - margin * 2;
+	const MM_PER_PT = 0.352778;
 
-	// Header: doa + identitas periode.
+	// Header: doa (bisa membungkus beberapa baris) — hitung tinggi agar tiap
+	// bagian berikutnya diposisikan relatif, tidak menumpuk.
+	let y = 11;
 	doc.setFont("helvetica", "normal");
 	doc.setFontSize(12);
-	doc.text(
+	const doa = doc.splitTextToSize(
 		"Alhamdulillah… Alloh Ar Rozzaq memberikan Rizki Halal melalui PAUD Unggulan AL IZZAH. Semoga Barokah & membawa banyak manfaat.",
-		pageW / 2,
-		11,
-		{ align: "center", maxWidth: pageW - margin * 2 },
+		maxW,
 	);
+	doc.text(doa, pageW / 2, y, { align: "center" });
+	y += doa.length * 12 * 1.15 * MM_PER_PT + 2;
+
+	// Identitas: nama karyawan || periode.
 	doc.setFont("helvetica", "bold");
 	doc.setFontSize(12);
-	doc.text(`${slip.nama}  ||  ${formatPeriode(periode)}`, pageW / 2, 20, {
+	doc.text(`${slip.nama}  ||  ${formatPeriode(periode)}`, pageW / 2, y, {
 		align: "center",
 	});
+	y += 8;
 
 	autoTable(doc, {
-		startY: 25,
+		startY: y,
 		margin: { left: margin, right: margin },
 		theme: "grid",
 		head: [["No", "Jenis HR", "Nominal", "Subtotal", "Ket"]],
@@ -215,7 +222,7 @@ export function renderSlipPdf(
 	// Tanda tangan.
 	const sig = readSignatory();
 	const rightX = pageW - margin;
-	let y = finalY + 8;
+	y = finalY + 8;
 	doc.setFont("helvetica", "normal");
 	doc.setFontSize(9);
 	doc.text(`Mojokerto, ${todayID()}`, rightX, y, { align: "right" });

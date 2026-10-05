@@ -13,6 +13,7 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as STokenRouteImport } from './routes/s.$token'
 import { Route as AuthenticatedSdmRouteImport } from './routes/_authenticated/sdm'
 import { Route as AuthenticatedKoperasiRouteImport } from './routes/_authenticated/koperasi'
 import { Route as AuthenticatedKeuanganRouteImport } from './routes/_authenticated/keuangan'
@@ -132,6 +133,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedRoute,
+} as any)
+const STokenRoute = STokenRouteImport.update({
+  id: '/s/$token',
+  path: '/s/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedSdmRoute = AuthenticatedSdmRouteImport.update({
   id: '/sdm',
@@ -734,6 +740,7 @@ export interface FileRoutesByFullPath {
   '/keuangan': typeof AuthenticatedKeuanganRouteWithChildren
   '/koperasi': typeof AuthenticatedKoperasiRouteWithChildren
   '/sdm': typeof AuthenticatedSdmRouteWithChildren
+  '/s/$token': typeof STokenRoute
   '/administrasi/tahun-ajaran': typeof AuthenticatedAdministrasiTahunAjaranRoute
   '/koperasi/barang': typeof AuthenticatedKoperasiBarangRoute
   '/koperasi/kas': typeof AuthenticatedKoperasiKasRoute
@@ -835,6 +842,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/administrasi': typeof AuthenticatedAdministrasiRouteWithChildren
+  '/s/$token': typeof STokenRoute
   '/': typeof AuthenticatedIndexRoute
   '/administrasi/tahun-ajaran': typeof AuthenticatedAdministrasiTahunAjaranRoute
   '/koperasi/barang': typeof AuthenticatedKoperasiBarangRoute
@@ -941,6 +949,7 @@ export interface FileRoutesById {
   '/_authenticated/keuangan': typeof AuthenticatedKeuanganRouteWithChildren
   '/_authenticated/koperasi': typeof AuthenticatedKoperasiRouteWithChildren
   '/_authenticated/sdm': typeof AuthenticatedSdmRouteWithChildren
+  '/s/$token': typeof STokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/administrasi/tahun-ajaran': typeof AuthenticatedAdministrasiTahunAjaranRoute
   '/_authenticated/koperasi/barang': typeof AuthenticatedKoperasiBarangRoute
@@ -1049,6 +1058,7 @@ export interface FileRouteTypes {
     | '/keuangan'
     | '/koperasi'
     | '/sdm'
+    | '/s/$token'
     | '/administrasi/tahun-ajaran'
     | '/koperasi/barang'
     | '/koperasi/kas'
@@ -1150,6 +1160,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/administrasi'
+    | '/s/$token'
     | '/'
     | '/administrasi/tahun-ajaran'
     | '/koperasi/barang'
@@ -1255,6 +1266,7 @@ export interface FileRouteTypes {
     | '/_authenticated/keuangan'
     | '/_authenticated/koperasi'
     | '/_authenticated/sdm'
+    | '/s/$token'
     | '/_authenticated/'
     | '/_authenticated/administrasi/tahun-ajaran'
     | '/_authenticated/koperasi/barang'
@@ -1358,6 +1370,7 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
+  STokenRoute: typeof STokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1389,6 +1402,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/s/$token': {
+      id: '/s/$token'
+      path: '/s/$token'
+      fullPath: '/s/$token'
+      preLoaderRoute: typeof STokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/sdm': {
       id: '/_authenticated/sdm'
@@ -2432,6 +2452,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
+  STokenRoute: STokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

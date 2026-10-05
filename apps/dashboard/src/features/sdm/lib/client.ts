@@ -40,6 +40,20 @@ export interface SdmPageMeta {
 
 type PagedEnvelope<T> = { message: string; data: T; meta: SdmPageMeta };
 
+// publicGet — endpoint publik (tautan slip gaji ber-token), TANPA header
+// Authorization dan dilayani binary SDM (/v1/public/*). Token dikirim sebagai
+// query param, bukan bearer.
+export async function publicGet<T>(
+	path: string,
+	params?: Record<string, unknown>,
+): Promise<T> {
+	const res = await customInstance<{ data: Envelope<T> }>(
+		`/v1/public${path}`,
+		params ? { params } : undefined,
+	);
+	return res.data.data;
+}
+
 // Varian sdmGet untuk endpoint paginated ({ message, data, meta }).
 export async function sdmGetPaged<T>(
 	path: string,

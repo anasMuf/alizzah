@@ -41,9 +41,10 @@ export const customInstance = async <T>(
 	urlStr: string,
 	options?: RequestInit & { params?: Record<string, unknown> },
 ): Promise<T> => {
+	// SDM_API_URL melayani /sdm/* (admin) dan /public/* (tautan slip gaji ber-token).
 	const base = urlStr.includes("/koperasi/")
 		? KOPERASI_API_URL
-		: urlStr.includes("/sdm/")
+		: urlStr.includes("/sdm/") || urlStr.includes("/public/")
 			? SDM_API_URL
 			: API_URL;
 	const url = new URL(`${base}${urlStr}`);

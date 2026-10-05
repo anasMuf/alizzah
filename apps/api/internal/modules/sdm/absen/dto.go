@@ -18,7 +18,7 @@ type AbsenEntry struct {
 // Periode menerima "YYYY-MM" atau "YYYY-MM-05" (dinormalisasi ke day=payday).
 type UpsertRequest struct {
 	Periode string       `json:"periode" validate:"required,max=10"`
-	Items   []AbsenEntry `json:"items" validate:"required,dive"`
+	Items   []AbsenEntry `json:"items" validate:"required,min=1,dive"`
 }
 
 // Response — baris absensi + informasi karyawan (untuk tampilan).

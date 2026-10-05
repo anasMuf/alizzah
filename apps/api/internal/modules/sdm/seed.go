@@ -139,8 +139,9 @@ func seedNamedMaster[T any](db *gorm.DB, _ *T, rows []T) {
 	log.Printf("Seed SDM: %d %T", len(rows), *new(T))
 }
 
-// seedEmployees mengisi karyawan dari dump `guru` lama (31 baris valid).
-// `LegacyID` = id_guru lama; `GolonganID` dipetakan dari kode golongan.
+// seedEmployees mengisi karyawan sesuai data terkini: dump `guru` lama + dua
+// karyawan baru yang ditambah lewat UI (LegacyID nil). `GolonganID` dipetakan
+// dari kode golongan; `NoTelp` sudah format ternormalisasi (+62…).
 func seedEmployees(db *gorm.DB) {
 	var count int64
 	db.Model(&guru.Employee{}).Count(&count)
@@ -148,7 +149,7 @@ func seedEmployees(db *gorm.DB) {
 		return
 	}
 
-	// Peta kode golongan (id_pk lama 1–6 = A–F) → id baru.
+	// Peta kode golongan (A–F) → id baru.
 	var golongans []master.Golongan
 	if err := db.Find(&golongans).Error; err != nil {
 		log.Printf("Seed SDM karyawan gagal (golongan): %v", err)
@@ -158,7 +159,6 @@ func seedEmployees(db *gorm.DB) {
 	for _, g := range golongans {
 		kodeToID[g.Kode] = g.ID
 	}
-	legacyGolongan := map[int]string{1: "A", 2: "B", 3: "C", 4: "D", 5: "E", 6: "F"}
 
 	parse := func(s string) *time.Time {
 		if s == "" {
@@ -171,58 +171,66 @@ func seedEmployees(db *gorm.DB) {
 		return &t
 	}
 
-	// (legacy_id, nama, tgl_masuk, id_pk lama, sertifikasi, impasing)
+	// (legacy_id, nama, no_telp, tgl_masuk, kode golongan, sertifikasi, impasing)
+	// legacy_id = id_guru lama; nil untuk karyawan yang ditambah lewat UI.
 	type row struct {
-		legacyID    int
+		legacyID    *int
 		nama        string
+		noTelp      string
 		tgl         string
-		idPK        int
+		golongan    string
 		sertifikasi bool
 		impasing    bool
 	}
 	rows := []row{
-		{1, "Abdul Rohim, S.PdI", "2005-11-15", 6, false, false},
-		{2, "Khoirul Izzah, S.Pd AUD", "2005-11-15", 6, false, true},
-		{3, "Miftahul Jannah, S.Pd", "2005-11-15", 6, true, false},
-		{4, "Fatimah Zahroh, S.Pd", "2005-11-15", 6, true, false},
-		{5, "Umami Faizah, SE, S.Pd", "2005-11-15", 6, false, true},
-		{7, "Iin Mayasari, S.Pd", "2007-03-01", 5, true, false},
-		{8, "Indah Susanti, S.Pd", "2008-06-02", 5, true, false},
-		{9, "Sri Wahyudati, S.Pd", "2011-07-01", 4, true, false},
-		{10, "Maratul Mufidah, S.Pd", "2012-07-01", 4, true, false},
-		{11, "Siti Zulaikhah, S.Pd", "2013-06-01", 4, false, false},
-		{12, "Khafidhotul Mushonnifah", "2013-07-01", 4, true, false},
-		{13, "Heni Khumaaidah, S.Pd", "2014-09-01", 4, false, false},
-		{15, "Choirul Ummah", "2015-02-01", 4, true, false},
-		{16, "Elis Masrikhah, S.Pd", "2015-07-01", 4, false, false},
-		{17, "Fitriyah Hanim, S.Pd", "2015-11-01", 4, false, false},
-		{19, "Nur Fadilah, S.Pd", "2016-06-01", 3, true, false},
-		{20, "Dini Mayasusanti, S.Pd", "2016-07-07", 3, true, false},
-		{22, "Husnul Khotimah", "2017-03-27", 3, false, false},
-		{23, "Triana Septi Anifah", "2017-03-27", 3, false, false},
-		{24, "Ifatin Nikmah, S.Pd", "2018-03-12", 3, true, false},
-		{25, "Mei Nur Firdaus, S.S", "2019-06-01", 3, true, false},
-		{27, "Nur Sa'diyah", "", 1, false, false},
-		{28, "Faizatur Rohmah", "2021-11-22", 2, true, false},
-		{30, "Anita Khoirina, S.Pd", "2021-10-22", 2, false, false},
-		{31, "Dhiayu Choirun Nisak, S.Pd", "2022-06-06", 2, false, false},
-		{32, "Qurrotul Azizah", "2022-08-26", 2, false, false},
-		{33, "Ika Nur Istiqomah", "2022-10-25", 2, false, false},
-		{36, "Rizky Nurus Shobah", "2023-09-04", 2, false, false},
-		{38, "Nadlifatul Faniyah", "2023-08-15", 2, false, false},
-		{39, "Khiqma Liatul Khoirina", "2025-09-15", 1, false, false},
-		{40, "Anindya Margaretha Setya Winara", "2025-09-15", 1, false, false},
+		{ptr(1), "Abdul Rohim, S.PdI", "+6285852665153", "2005-11-15", "F", false, false},
+		{ptr(2), "Khoirul Izzah, S.Pd AUD", "+6285856181318", "2005-11-15", "F", false, true},
+		{ptr(3), "Miftahul Jannah, S.Pd", "+6285730499275", "2005-11-15", "F", true, false},
+		{ptr(4), "Fatimah Zahroh, S.Pd", "+6285646518778", "2005-11-15", "F", true, false},
+		{ptr(5), "Umami Faizah, SE, S.Pd", "+6282233637848", "2005-11-15", "F", false, true},
+		{ptr(7), "Iin Mayasari, S.Pd", "+6285851100016", "2007-03-01", "E", true, false},
+		{ptr(8), "Indah Susanti, S.Pd", "+6285604452548", "2008-06-02", "E", true, false},
+		{ptr(9), "Sri Wahyudati, S.Pd", "+6285648975887", "2011-07-01", "D", true, false},
+		{ptr(10), "Maratul Mufidah, S.Pd", "+6285871281390", "2012-07-01", "D", true, false},
+		{ptr(11), "Siti Zulaikhah, S.Pd", "+6281935438554", "2013-06-01", "D", false, false},
+		{ptr(12), "Khafidhotul Mushonnifah", "+6285804425092", "2013-07-01", "D", true, false},
+		{ptr(13), "Heni Khumaaidah, S.Pd", "+6285732519859", "2014-09-01", "D", false, false},
+		{ptr(15), "Choirul Ummah", "+6285645480020", "2015-02-01", "D", true, false},
+		{ptr(16), "Elis Masrikhah, S.Pd", "+6285707019842", "2015-07-01", "D", false, false},
+		{ptr(17), "Fitriyah Hanim, S.Pd", "+6285731830420", "2015-11-01", "D", false, false},
+		{ptr(19), "Nur Fadilah, S.Pd", "+6285755144227", "2016-06-01", "C", true, false},
+		{ptr(20), "Dini Mayasusanti, S.Pd", "+628993592261", "2016-07-07", "C", true, false},
+		{ptr(22), "Husnul Khotimah", "+6281234027634", "2017-03-27", "C", false, false},
+		{ptr(23), "Triana Septi Anifah", "+6285706199197", "2017-03-27", "C", false, false},
+		{ptr(24), "Ifatin Nikmah, S.Pd", "+6285536483099", "2018-03-12", "C", true, false},
+		{ptr(25), "Mei Nur Firdaus, S.S", "+6283849045315", "2019-06-01", "C", true, false},
+		{ptr(27), "Nur Sa'diyah", "+6281231447396", "", "A", false, false},
+		{ptr(28), "Faizatur Rohmah", "+6289699070503", "2021-11-22", "B", true, false},
+		{ptr(30), "Anita Khoirina, S.Pd", "+6285755482109", "2021-10-22", "B", false, false},
+		{ptr(31), "Dhiayu Choirun Nisak, S.Pd", "+62895337475148", "2022-06-06", "B", false, false},
+		{ptr(32), "Qurrotul Azizah", "+6285755255694", "2022-08-26", "B", false, false},
+		{ptr(33), "Ika Nur Istiqomah", "+6285815180424", "2022-10-25", "B", false, false},
+		{ptr(36), "Rizky Nurus Shobah", "+6285854070131", "2023-09-04", "B", false, false},
+		{ptr(38), "Nadlifatul Faniyah", "+6285704163511", "2023-08-15", "B", false, false},
+		{ptr(39), "Khiqma Liatul Khoirina", "+6282231670185", "2025-09-15", "A", false, false},
+		{ptr(40), "Anindya Margaretha Setya Winara", "+6287843907711", "2025-09-15", "A", false, false},
+		{nil, "Sugiyanto", "+6285648533884", "2026-06-09", "A", false, false},
+		{nil, "Adila Farah Aulia", "+6282234062893", "2026-08-17", "A", false, false},
 	}
 
 	employees := make([]guru.Employee, 0, len(rows))
 	for _, r := range rows {
-		legacy := r.legacyID
-		golonganID := kodeToID[legacyGolongan[r.idPK]]
+		var golonganID *uint
+		if id, ok := kodeToID[r.golongan]; ok {
+			g := id
+			golonganID = &g
+		}
 		employees = append(employees, guru.Employee{
-			LegacyID:    &legacy,
+			LegacyID:    r.legacyID,
 			Nama:        r.nama,
+			NoTelp:      r.noTelp,
 			TglMasuk:    parse(r.tgl),
-			GolonganID:  &golonganID,
+			GolonganID:  golonganID,
 			Sertifikasi: r.sertifikasi,
 			Impasing:    r.impasing,
 			IsActive:    true,

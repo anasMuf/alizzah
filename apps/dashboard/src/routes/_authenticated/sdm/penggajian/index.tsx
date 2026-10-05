@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import {
 	AlertCircle,
+	Download,
 	FileText,
 	Lock,
 	LockOpen,
@@ -20,10 +21,12 @@ import {
 import {
 	formatPeriode,
 	monthsInAcademicYear,
+	type Slip,
 	useFinalizePayroll,
 	usePenggajian,
 	useUnlockPayroll,
 } from "#/features/sdm/api";
+import { sdmGet } from "#/features/sdm/lib/client";
 import { academicYearAtom } from "#/store/global";
 import { formatCurrency } from "#/utils/format";
 
@@ -42,6 +45,7 @@ function PenggajianPage() {
 	const [confirmAction, setConfirmAction] = useState<
 		"finalize" | "unlock" | null
 	>(null);
+	const [pdfId, setPdfId] = useState<number | null>(null);
 
 	useEffect(() => {
 		if (months.length > 0 && !months.some((m) => m.value === periode)) {
@@ -72,6 +76,26 @@ function PenggajianPage() {
 	const rows = payroll?.rows ?? [];
 	const status = payroll?.status ?? "preview";
 	const isFinalized = status === "finalized";
+
+	const handlePdf = async (employeeId: number) => {
+		setPdfId(employeeId);
+		try {
+			const [slip, { downloadSlipPdf }] = await Promise.all([
+				sdmGet<Slip>(`/penggajian/${employeeId}`, { periode }),
+				import("#/features/sdm/lib/slipPdf"),
+			]);
+			downloadSlipPdf(slip, periode);
+		} catch (err) {
+			addToast({
+				variant: "error",
+				title: "Gagal",
+				message:
+					err instanceof ApiError ? err.message : "Gagal membuat slip PDF.",
+			});
+		} finally {
+			setPdfId(null);
+		}
+	};
 
 	const runAction = () => {
 		if (!confirmAction || !periode) return;
@@ -245,6 +269,15 @@ function PenggajianPage() {
 												>
 													<FileText className="h-3.5 w-3.5 mr-1" /> Slip
 												</Link>
+												<button
+													type="button"
+													onClick={() => handlePdf(r.employee_id)}
+													disabled={pdfId === r.employee_id}
+													className="inline-flex items-center rounded-md border border-gray-300 px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+												>
+													<Download className="h-3.5 w-3.5 mr-1" />
+													{pdfId === r.employee_id ? "..." : "PDF"}
+												</button>
 												<Link
 													to="/sdm/penggajian/olah-hr/$id"
 													params={{ id: String(r.employee_id) }}

@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Printer } from "lucide-react";
+import { ArrowLeft, FileDown, Printer } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "#/components/ui";
 import { currentPeriode, formatPeriode, useSlip } from "#/features/sdm/api";
@@ -39,6 +39,18 @@ function SlipPage() {
 				>
 					<ArrowLeft className="h-4 w-4 mr-1" /> Penggajian
 				</Link>
+				<button
+					type="button"
+					onClick={async () => {
+						const { downloadSlipPdf } = await import(
+							"#/features/sdm/lib/slipPdf"
+						);
+						downloadSlipPdf(slip, periodeState);
+					}}
+					className="inline-flex items-center rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+				>
+					<FileDown className="h-4 w-4 mr-1.5" /> Download PDF
+				</button>
 				<button
 					type="button"
 					onClick={() => window.print()}

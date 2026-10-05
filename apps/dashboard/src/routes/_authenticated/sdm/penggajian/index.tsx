@@ -2,9 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import {
 	AlertCircle,
-	ChevronRight,
+	FileText,
 	Lock,
 	LockOpen,
+	UserCog,
 	Wallet,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -205,92 +206,53 @@ function PenggajianPage() {
 						<table className="min-w-full divide-y divide-gray-200">
 							<thead className="bg-gray-50">
 								<tr>
+									<th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase w-14">
+										No
+									</th>
 									<th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
-										Karyawan
+										Nama
 									</th>
-									<th className="px-2 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
-										Pokok
-									</th>
-									<th className="px-2 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
-										Hadir
-									</th>
-									<th className="px-2 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
-										Disiplin
-									</th>
-									<th className="px-2 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
-										Bonus
-									</th>
-									<th className="px-2 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
-										F
-									</th>
-									<th className="px-2 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
-										TT
-									</th>
-									<th className="px-2 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
-										PJ
-									</th>
-									<th className="px-2 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
-										Lain
-									</th>
-									<th className="px-2 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
-										Angs.
-									</th>
-									<th className="px-3 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
+									<th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
 										Total
 									</th>
-									<th className="px-3 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
-										Slip
+									<th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
+										Aksi
 									</th>
 								</tr>
 							</thead>
 							<tbody className="divide-y divide-gray-100">
-								{rows.map((r) => (
+								{rows.map((r, i) => (
 									<tr key={r.employee_id} className="hover:bg-gray-50">
+										<td className="px-4 py-3 text-sm text-gray-400 tabular-nums">
+											{i + 1}
+										</td>
 										<td className="px-4 py-3 text-sm font-medium text-gray-900 whitespace-nowrap">
 											{r.nama}
 											<span className="ml-2 text-xs text-gray-400">
 												{r.golongan_kode}
 											</span>
 										</td>
-										<td className="px-2 py-3 text-sm text-gray-900 text-right">
-											{formatCurrency(r.hr_pokok)}
-										</td>
-										<td className="px-2 py-3 text-sm text-gray-600 text-right">
-											{formatCurrency(r.kehadiran)}
-										</td>
-										<td className="px-2 py-3 text-sm text-gray-600 text-right">
-											{formatCurrency(r.siaga + r.piket)}
-										</td>
-										<td className="px-2 py-3 text-sm text-gray-600 text-right">
-											{formatCurrency(r.bonus_terlambat + r.bonus_pulang_awal)}
-										</td>
-										<td className="px-2 py-3 text-sm text-gray-600 text-right">
-											{formatCurrency(r.subtotal_f)}
-										</td>
-										<td className="px-2 py-3 text-sm text-gray-600 text-right">
-											{formatCurrency(r.subtotal_t)}
-										</td>
-										<td className="px-2 py-3 text-sm text-gray-600 text-right">
-											{formatCurrency(r.subtotal_p)}
-										</td>
-										<td className="px-2 py-3 text-sm text-gray-600 text-right">
-											{formatCurrency(r.subtotal_l)}
-										</td>
-										<td className="px-2 py-3 text-sm text-red-600 text-right">
-											{formatCurrency(r.angsuran)}
-										</td>
-										<td className="px-3 py-3 text-sm font-bold text-gray-900 text-right whitespace-nowrap">
+										<td className="px-4 py-3 text-sm font-bold text-gray-900 text-right whitespace-nowrap">
 											{formatCurrency(r.total_gaji)}
 										</td>
-										<td className="px-3 py-3 text-right">
-											<Link
-												to="/sdm/penggajian/$id"
-												params={{ id: String(r.employee_id) }}
-												search={{ periode }}
-												className="inline-flex items-center text-indigo-600 hover:text-indigo-800"
-											>
-												<ChevronRight className="h-4 w-4" />
-											</Link>
+										<td className="px-4 py-3 text-right">
+											<div className="inline-flex items-center gap-2">
+												<Link
+													to="/sdm/penggajian/$id"
+													params={{ id: String(r.employee_id) }}
+													search={{ periode }}
+													className="inline-flex items-center rounded-md border border-gray-300 px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+												>
+													<FileText className="h-3.5 w-3.5 mr-1" /> Slip
+												</Link>
+												<Link
+													to="/sdm/guru/$id"
+													params={{ id: String(r.employee_id) }}
+													className="inline-flex items-center rounded-md border border-gray-300 px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+												>
+													<UserCog className="h-3.5 w-3.5 mr-1" /> Olah HR
+												</Link>
+											</div>
 										</td>
 									</tr>
 								))}

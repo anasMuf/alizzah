@@ -10,10 +10,12 @@
 package sdm
 
 import (
+	"context"
 	"net/http"
 
 	"api/internal/modules/sdm/absen"
 	"api/internal/modules/sdm/guru"
+	"api/internal/modules/sdm/kirimwa"
 	"api/internal/modules/sdm/master"
 	"api/internal/modules/sdm/penggajian"
 	"api/internal/modules/sdm/pinjam"
@@ -33,6 +35,8 @@ type Module struct {
 	pinjam     *pinjam.Handler
 	penggajian *penggajian.Handler
 	publik     *publik.Handler
+	kirimwa    *kirimwa.Handler
+	kirimSvc   *kirimwa.Service
 	jwt        echo.MiddlewareFunc
 	guard      *middleware.ModuleGuard
 }
@@ -44,6 +48,9 @@ func New(deps *shared.Deps) *Module {
 
 	guruSvc := guru.NewService(guru.NewRepository(db), masterRepo)
 	pengSvc := penggajian.NewService(penggajian.NewRepository(db))
+	kirimSvc := kirimwa.NewService(
+		kirimwa.NewRepository(db), guruSvc, pengSvc, kirimwa.NewClientFromEnv(),
+	)
 
 	return &Module{
 		master:     master.New(db),
@@ -52,9 +59,16 @@ func New(deps *shared.Deps) *Module {
 		pinjam:     pinjam.New(db),
 		penggajian: penggajian.NewHandler(pengSvc),
 		publik:     publik.New(guruSvc, pengSvc),
+		kirimwa:    kirimwa.NewHandler(kirimSvc),
+		kirimSvc:   kirimSvc,
 		jwt:        middleware.JWTAuth(repository.NewTokenBlacklistRepository(db)),
 		guard:      middleware.NewModuleGuard(repository.NewUserModuleRepository(db)),
 	}
+}
+
+// StartWorkers menjalankan worker latar modul (antrian kirim WA) sampai ctx batal.
+func (m *Module) StartWorkers(ctx context.Context) {
+	go m.kirimSvc.Run(ctx)
 }
 
 // Models mengembalikan seluruh model GORM milik modul untuk AutoMigrate.
@@ -68,6 +82,7 @@ func (m *Module) Models() []any {
 		&absen.Absen{},
 		&pinjam.Pinjam{}, &pinjam.PinjamDetail{},
 		&penggajian.PayrollPeriode{}, &penggajian.PayrollDetail{},
+		&kirimwa.KirimWA{},
 	}
 }
 
@@ -84,6 +99,7 @@ func (m *Module) RegisterRoutes(api *echo.Group) {
 	m.pinjam.RegisterRoutes(g, manage)
 	m.penggajian.RegisterRoutes(g, manage)
 	m.publik.RegisterAdminRoutes(g, manage)
+	m.kirimwa.RegisterRoutes(g, manage)
 
 	// Endpoint publik (tanpa JWT) — dikunci token + rate-limit.
 	m.publik.RegisterPublicRoutes(api)

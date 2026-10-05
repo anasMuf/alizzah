@@ -6,8 +6,12 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"api/config"
 	"api/internal/bootstrap"
@@ -39,6 +43,11 @@ func main() {
 
 	e := bootstrap.NewEcho()
 	mod.RegisterRoutes(bootstrap.APIGroup(e))
+
+	// Worker latar (antrian kirim slip WA) — berhenti saat proses dimatikan.
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	mod.StartWorkers(ctx)
 
 	// Port dari env SDM_PORT (default 8082) — terpisah dari PORT/KOPERASI_PORT
 	// agar tiga binary bisa jalan bersama di satu host saat dev.

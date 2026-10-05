@@ -1,5 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Download, Loader2, Plus, Search, Upload, Users } from "lucide-react";
+import {
+	Download,
+	FileDown,
+	Loader2,
+	Plus,
+	Search,
+	Upload,
+	Users,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import { ApiError } from "#/api/mutator/custom-instance";
@@ -30,6 +38,28 @@ export const Route = createFileRoute("/_authenticated/sdm/guru/")({
 });
 
 const PAGE_SIZE = 10;
+
+// Kolom Excel untuk export & template import (cocok dengan parser import).
+const IMPORT_HEADERS = [
+	"ID",
+	"Nama",
+	"No. Telp",
+	"Tgl Masuk",
+	"Golongan",
+	"Sertifikasi",
+	"Impasing",
+	"Aktif",
+];
+const IMPORT_COLS = [
+	{ wch: 6 },
+	{ wch: 30 },
+	{ wch: 16 },
+	{ wch: 12 },
+	{ wch: 9 },
+	{ wch: 10 },
+	{ wch: 10 },
+	{ wch: 7 },
+];
 
 function GuruListPage() {
 	const { addToast } = useToast();
@@ -87,16 +117,6 @@ function GuruListPage() {
 	const handleExport = async () => {
 		try {
 			const all = await sdmGet<Employee[]>("/employees", { all: true });
-			const header = [
-				"ID",
-				"Nama",
-				"No. Telp",
-				"Tgl Masuk",
-				"Golongan",
-				"Sertifikasi",
-				"Impasing",
-				"Aktif",
-			];
 			const body = all.map((e) => [
 				e.id,
 				e.nama,
@@ -107,17 +127,8 @@ function GuruListPage() {
 				e.impasing ? "ya" : "tidak",
 				e.is_active ? "ya" : "tidak",
 			]);
-			const ws = XLSX.utils.aoa_to_sheet([header, ...body]);
-			ws["!cols"] = [
-				{ wch: 6 },
-				{ wch: 30 },
-				{ wch: 16 },
-				{ wch: 12 },
-				{ wch: 9 },
-				{ wch: 10 },
-				{ wch: 10 },
-				{ wch: 7 },
-			];
+			const ws = XLSX.utils.aoa_to_sheet([IMPORT_HEADERS, ...body]);
+			ws["!cols"] = IMPORT_COLS;
 			const wb = XLSX.utils.book_new();
 			XLSX.utils.book_append_sheet(wb, ws, "Karyawan");
 			XLSX.writeFile(
@@ -138,6 +149,19 @@ function GuruListPage() {
 		}
 	};
 
+	const handleTemplate = () => {
+		const ws = XLSX.utils.aoa_to_sheet([IMPORT_HEADERS]);
+		ws["!cols"] = IMPORT_COLS;
+		const wb = XLSX.utils.book_new();
+		XLSX.utils.book_append_sheet(wb, ws, "Karyawan");
+		XLSX.writeFile(wb, "template-import-karyawan.xlsx");
+		addToast({
+			variant: "success",
+			title: "Berhasil",
+			message: "Template import diunduh.",
+		});
+	};
+
 	return (
 		<div className="space-y-6">
 			<div className="flex items-center justify-between">
@@ -147,6 +171,9 @@ function GuruListPage() {
 						Master guru & tenaga kependidikan — golongan, sertifikasi/impasing.
 					</p>
 				</div>
+				<Button variant="secondary" onClick={handleTemplate}>
+					<FileDown className="h-4 w-4 mr-1.5" /> Template
+				</Button>
 				<Button variant="primary" onClick={() => setImportOpen(true)}>
 					<Upload className="h-4 w-4 mr-1.5" /> Import
 				</Button>

@@ -52,11 +52,18 @@ function AbsenPage() {
 	// Editable state: employee_id → angka per kolom.
 	const [values, setValues] = useState<Record<number, AbsenEntry>>({});
 
-	// Inisialisasi nilai dari data absen yang sudah ada saat periode berubah.
+	// Kosongkan editan saat periode berganti agar tidak membawa sisa bulan lain.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: sengaja reset ketika periode berubah
 	useEffect(() => {
-		const init: Record<number, AbsenEntry> = {};
+		setValues({});
+	}, [periode]);
+
+	// Muat nilai tersimpan dari server. Digabung (data server di bawah, editan
+	// user di atas) supaya refetch tidak menimpa input yang belum disimpan.
+	useEffect(() => {
+		const fromServer: Record<number, AbsenEntry> = {};
 		for (const r of rows) {
-			init[r.employee_id] = {
+			fromServer[r.employee_id] = {
 				employee_id: r.employee_id,
 				hadir: r.hadir,
 				hadir_siaga: r.hadir_siaga,
@@ -65,7 +72,7 @@ function AbsenPage() {
 				pulang_awal: r.pulang_awal,
 			};
 		}
-		setValues(init);
+		setValues((prev) => ({ ...fromServer, ...prev }));
 	}, [rows]);
 
 	const items = useMemo(
@@ -123,6 +130,15 @@ function AbsenPage() {
 					e.pulang_awal > 0 ||
 					existingIds.has(e.employee_id),
 			);
+		if (entries.length === 0) {
+			addToast({
+				variant: "warning",
+				title: "Tidak ada yang disimpan",
+				message:
+					"Isi minimal satu kolom kehadiran. Untuk mengosongkan seluruh periode, gunakan tombol Hapus.",
+			});
+			return;
+		}
 		saveAbsen.mutate(
 			{ periode, items: entries },
 			{

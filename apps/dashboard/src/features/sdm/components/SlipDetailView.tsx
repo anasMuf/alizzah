@@ -71,32 +71,18 @@ export function SlipDetailView({
 						{slip.rincian_fungsional.length === 0 ? (
 							<Row label="-" value={0} muted />
 						) : (
-							<>
-								{slip.rincian_fungsional.map((r) => (
-									<Row key={r.nama} label={r.nama} value={r.nominal} />
-								))}
-								<Row
-									label="Subtotal Fungsional"
-									value={slip.subtotal_f}
-									strong
-								/>
-							</>
+							slip.rincian_fungsional.map((r) => (
+								<Row key={r.nama} label={r.nama} value={r.nominal} />
+							))
 						)}
 					</Block>
 					<Block title="Tugas Tambahan">
 						{slip.rincian_tugas_tambahan.length === 0 ? (
 							<Row label="-" value={0} muted />
 						) : (
-							<>
-								{slip.rincian_tugas_tambahan.map((r) => (
-									<Row key={r.nama} label={r.nama} value={r.nominal} />
-								))}
-								<Row
-									label="Subtotal Tugas Tambahan"
-									value={slip.subtotal_t}
-									strong
-								/>
-							</>
+							slip.rincian_tugas_tambahan.map((r) => (
+								<Row key={r.nama} label={r.nama} value={r.nominal} />
+							))
 						)}
 					</Block>
 				</div>
@@ -106,32 +92,18 @@ export function SlipDetailView({
 						{slip.rincian_penanggung_jawab.length === 0 ? (
 							<Row label="-" value={0} muted />
 						) : (
-							<>
-								{slip.rincian_penanggung_jawab.map((r) => (
-									<Row key={r.nama} label={r.nama} value={r.nominal} />
-								))}
-								<Row
-									label="Subtotal Penanggung Jawab"
-									value={slip.subtotal_p}
-									strong
-								/>
-							</>
+							slip.rincian_penanggung_jawab.map((r) => (
+								<Row key={r.nama} label={r.nama} value={r.nominal} />
+							))
 						)}
 					</Block>
 					<Block title="Lain-lain">
 						{slip.rincian_lainlain.length === 0 ? (
 							<Row label="-" value={0} muted />
 						) : (
-							<>
-								{slip.rincian_lainlain.map((r) => (
-									<Row key={r.nama} label={r.nama} value={r.nominal} />
-								))}
-								<Row
-									label="Subtotal Lain-lain"
-									value={slip.subtotal_l}
-									strong
-								/>
-							</>
+							slip.rincian_lainlain.map((r) => (
+								<Row key={r.nama} label={r.nama} value={r.nominal} />
+							))
 						)}
 					</Block>
 					<Block title="Potongan">

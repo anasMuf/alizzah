@@ -226,15 +226,51 @@ function AbsenPage() {
 				});
 				return;
 			}
+
+			// Cocokkan ID di file dengan karyawan aktif, dan pastikan ada nilai
+			// kehadiran. Sebelumnya pesan "N baris terbaca" hanya menandakan ID
+			// terbaca — file dengan ID tak dikenal/nilai 0 tetap dianggap sukses
+			// padahal tidak ada yang bisa disimpan.
+			const activeIds = new Set(employees.map((e) => e.id));
+			const matched = imported.filter((x) => activeIds.has(x.employee_id));
+			const ignored = imported.length - matched.length;
+			const filledCount = matched.filter(
+				(x) =>
+					x.hadir > 0 ||
+					x.hadir_siaga > 0 ||
+					x.hadir_terlambat > 0 ||
+					x.hadir_piket > 0 ||
+					x.pulang_awal > 0,
+			).length;
+
+			if (matched.length === 0) {
+				addToast({
+					variant: "error",
+					title: "Gagal",
+					message: `Tidak ada ID karyawan pada file yang cocok dengan ${employees.length} karyawan aktif. Gunakan template (kolom "ID Karyawan").`,
+				});
+				return;
+			}
+			if (filledCount === 0) {
+				addToast({
+					variant: "warning",
+					title: "Tidak ada nilai kehadiran",
+					message: `${matched.length} baris cocok, tetapi seluruh kolom kehadiran bernilai 0.`,
+				});
+				return;
+			}
+
 			const next: Record<number, AbsenEntry> = {};
-			for (const x of imported) {
+			for (const x of matched) {
 				next[x.employee_id] = x;
 			}
 			setValues((prev) => ({ ...prev, ...next }));
 			addToast({
 				variant: "success",
 				title: "Berhasil",
-				message: `${imported.length} baris terbaca — tekan Simpan untuk menyimpan.`,
+				message: `${filledCount} baris kehadiran terbaca${
+					ignored > 0 ? ` (${ignored} ID tidak dikenal diabaikan)` : ""
+				} — tekan Simpan untuk menyimpan.`,
 			});
 		} catch {
 			addToast({

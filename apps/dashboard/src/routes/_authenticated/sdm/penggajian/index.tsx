@@ -330,6 +330,9 @@ function PenggajianPage() {
 									<th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
 										Total
 									</th>
+									<th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">
+										Status WA
+									</th>
 									<th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
 										Aksi
 									</th>
@@ -351,6 +354,16 @@ function PenggajianPage() {
 											</td>
 											<td className="px-4 py-3 text-sm font-bold text-gray-900 text-right whitespace-nowrap">
 												{formatCurrency(r.total_gaji)}
+											</td>
+											<td className="px-4 py-3 text-center whitespace-nowrap">
+												{st ? (
+													<WaStatusBadge
+														status={st.status}
+														error={st.pesan_error}
+													/>
+												) : (
+													<span className="text-xs text-gray-300">—</span>
+												)}
 											</td>
 											<td className="px-4 py-3 text-right">
 												<div className="inline-flex items-center gap-2">
@@ -398,12 +411,6 @@ function PenggajianPage() {
 														<MessageCircle className="h-3.5 w-3.5 mr-1" />
 														{waBusyId === r.employee_id ? "..." : "WA"}
 													</button>
-													{st && (
-														<WaStatusBadge
-															status={st.status}
-															error={st.pesan_error}
-														/>
-													)}
 												</div>
 											</td>
 										</tr>

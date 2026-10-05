@@ -17,6 +17,7 @@ import (
 	"api/internal/modules/sdm/master"
 	"api/internal/modules/sdm/penggajian"
 	"api/internal/modules/sdm/pinjam"
+	"api/internal/modules/sdm/publik"
 	"api/internal/shared"
 	"api/middleware"
 	"api/repository"
@@ -31,6 +32,7 @@ type Module struct {
 	absen      *absen.Handler
 	pinjam     *pinjam.Handler
 	penggajian *penggajian.Handler
+	publik     *publik.Handler
 	jwt        echo.MiddlewareFunc
 	guard      *middleware.ModuleGuard
 }
@@ -40,12 +42,16 @@ func New(deps *shared.Deps) *Module {
 	db := deps.DB
 	masterRepo := master.NewRepository(db)
 
+	guruSvc := guru.NewService(guru.NewRepository(db), masterRepo)
+	pengSvc := penggajian.NewService(penggajian.NewRepository(db))
+
 	return &Module{
 		master:     master.New(db),
-		guru:       guru.New(db, masterRepo),
+		guru:       guru.NewHandler(guruSvc),
 		absen:      absen.New(db),
 		pinjam:     pinjam.New(db),
-		penggajian: penggajian.New(db),
+		penggajian: penggajian.NewHandler(pengSvc),
+		publik:     publik.New(guruSvc, pengSvc),
 		jwt:        middleware.JWTAuth(repository.NewTokenBlacklistRepository(db)),
 		guard:      middleware.NewModuleGuard(repository.NewUserModuleRepository(db)),
 	}
@@ -77,6 +83,10 @@ func (m *Module) RegisterRoutes(api *echo.Group) {
 	m.absen.RegisterRoutes(g, manage)
 	m.pinjam.RegisterRoutes(g, manage)
 	m.penggajian.RegisterRoutes(g, manage)
+	m.publik.RegisterAdminRoutes(g, manage)
+
+	// Endpoint publik (tanpa JWT) — dikunci token + rate-limit.
+	m.publik.RegisterPublicRoutes(api)
 }
 
 func (m *Module) health(c echo.Context) error {

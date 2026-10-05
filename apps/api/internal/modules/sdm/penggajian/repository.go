@@ -187,6 +187,18 @@ func (r *Repository) FindAcademicYear(id uint) (*model.AcademicYear, error) {
 	return &ay, nil
 }
 
+// EmployeePeriods mengambil periode (payday) di mana karyawan punya absen —
+// dipakai riwayat publik lintas tahun ajaran.
+func (r *Repository) EmployeePeriods(employeeID uint) ([]time.Time, error) {
+	var periods []time.Time
+	err := r.db.Table("sdm_absen").
+		Distinct("periode").
+		Where("employee_id = ? AND deleted_at IS NULL", employeeID).
+		Order("periode DESC").
+		Pluck("periode", &periods).Error
+	return periods, err
+}
+
 // LoadData mengambil seluruh data yang dibutuhkan untuk menghitung gaji
 // satu periode. Karyawan yang dihitung = yang punya absen di periode tsb
 // (sesuai perilaku lama: guru tanpa absen tidak muncul di penggajian bulan itu).

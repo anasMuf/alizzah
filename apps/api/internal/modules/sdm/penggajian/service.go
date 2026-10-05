@@ -540,6 +540,36 @@ func (s *Service) Riwayat(academicYearID, employeeID uint) (*RiwayatResponse, er
 	return resp, nil
 }
 
+// RiwayatPeriods mengembalikan riwayat gaji karyawan untuk seluruh periode yang
+// punya absen (lintas tahun ajaran), urut terbaru dulu. Dipakai halaman publik.
+func (s *Service) RiwayatPeriods(employeeID uint) ([]RiwayatBulan, error) {
+	periods, err := s.repo.EmployeePeriods(employeeID)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]RiwayatBulan, 0, len(periods))
+	for _, p := range periods {
+		got, err := s.Get(p.Format("2006-01-02"))
+		if err != nil {
+			return nil, err
+		}
+		row := RiwayatBulan{
+			Periode: periode.Format(p),
+			Label:   periode.MonthLabel(p),
+			Status:  got.Status,
+		}
+		for _, r := range got.Rows {
+			if r.EmployeeID == employeeID {
+				row.TotalGaji = r.TotalGaji
+				row.AdaData = true
+				break
+			}
+		}
+		out = append(out, row)
+	}
+	return out, nil
+}
+
 // monthsInRange mengembalikan tanggal payday (5) tiap bulan yang berada dalam
 // [start, end]. Contoh TA 2025-07-14..2026-07-13 → 2025-08-05 .. 2026-07-05.
 func monthsInRange(start, end time.Time) []time.Time {

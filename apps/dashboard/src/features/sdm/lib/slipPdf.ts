@@ -145,7 +145,7 @@ export function renderSlipPdf(
 
 	// Header: doa + identitas periode.
 	doc.setFont("helvetica", "normal");
-	doc.setFontSize(10);
+	doc.setFontSize(12);
 	doc.text(
 		"Alhamdulillah… Alloh Ar Rozzaq memberikan Rizki Halal melalui PAUD Unggulan AL IZZAH. Semoga Barokah & membawa banyak manfaat.",
 		pageW / 2,
@@ -181,7 +181,7 @@ export function renderSlipPdf(
 		styles: {
 			font: "helvetica",
 			fontSize: 9,
-			cellPadding: 2,
+			cellPadding: 1,
 			lineColor: [150, 150, 150],
 			lineWidth: 0.1,
 			textColor: [20, 20, 20],

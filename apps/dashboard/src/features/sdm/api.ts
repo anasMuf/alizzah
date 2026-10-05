@@ -237,6 +237,35 @@ export interface Summary {
 	guru_per_golongan: Array<{ kode: string; jumlah: number }>;
 }
 
+// ── Kirim slip via WhatsApp (Wablas) ──
+
+export interface KirimWAStatus {
+	employee_id: number;
+	nama: string;
+	no_telp: string;
+	status: string; // pending | sent | failed
+	pesan_error: string;
+	attempts: number;
+	waktu_kirim: string | null;
+}
+
+export interface ShareLink {
+	url: string;
+	expires_at: string;
+}
+
+export interface KirimWASendResult {
+	employee_id: number;
+	nama: string;
+	status: string;
+	message: string;
+}
+
+export interface KirimWAEnqueueResult {
+	enqueued: number;
+	skipped: number;
+}
+
 // ── Query keys ──
 
 export const sdmKeys = {
@@ -256,6 +285,7 @@ export const sdmKeys = {
 	pinjaman: (status: string) => ["sdm", "pinjaman", status] as const,
 	pinjamanDetail: (id: number) => ["sdm", "pinjaman", id] as const,
 	penggajian: (periode: string) => ["sdm", "penggajian", periode] as const,
+	kirimWa: (periode: string) => ["sdm", "kirim-wa", periode] as const,
 	slip: (periode: string, employeeId: number) =>
 		["sdm", "penggajian", periode, employeeId] as const,
 	summary: (tahun: string) => ["sdm", "summary", tahun] as const,
@@ -620,6 +650,54 @@ export function useUnlockPayroll() {
 		mutationFn: (periode: string) =>
 			sdmSend<null>("POST", "/penggajian/unlock", { periode }),
 		onSuccess: (_d, periode) => invalidatePayroll(qc, periode),
+	});
+}
+
+// ── Kirim slip via WhatsApp (Wablas) ──
+
+// useKirimWAStatus memantau status pengiriman tiap karyawan (polling 5s) —
+// penting untuk kirim massal async yang diproses worker latar.
+export function useKirimWAStatus(periode: string) {
+	return useQuery({
+		queryKey: sdmKeys.kirimWa(periode),
+		queryFn: () =>
+			sdmGet<KirimWAStatus[]>("/penggajian/kirim-wa/status", { periode }),
+		enabled: !!periode,
+		refetchInterval: 5000,
+	});
+}
+
+// useShareLink membuat tautan publik slip (token stateless, berlaku sementara).
+export function useShareLink() {
+	return useMutation({
+		mutationFn: (employeeId: number) =>
+			sdmGet<ShareLink>(`/employees/${employeeId}/share-link`),
+	});
+}
+
+export function useKirimWASatu() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (v: { employeeId: number; periode: string }) =>
+			sdmSend<KirimWASendResult>(
+				"POST",
+				`/penggajian/kirim-wa/kirim/${v.employeeId}`,
+				{ periode: v.periode },
+			),
+		onSuccess: (_d, v) =>
+			qc.invalidateQueries({ queryKey: sdmKeys.kirimWa(v.periode) }),
+	});
+}
+
+export function useKirimWASemua() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (periode: string) =>
+			sdmSend<KirimWAEnqueueResult>("POST", "/penggajian/kirim-wa/semua", {
+				periode,
+			}),
+		onSuccess: (_d, periode) =>
+			qc.invalidateQueries({ queryKey: sdmKeys.kirimWa(periode) }),
 	});
 }
 

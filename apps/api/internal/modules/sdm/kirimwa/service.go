@@ -52,19 +52,35 @@ func BuildMessage(nama, labelPeriode string, total int, url string) string {
 	return b.String()
 }
 
-// EnqueueAll memasukkan seluruh karyawan aktif yang punya no_telp ke antrian
-// (status pending) untuk diproses worker. Yang no_telp kosong dilewati.
+// EnqueueAll memasukkan seluruh karyawan aktif yang PUNYA data gaji pada
+// periode tsb dan punya no_telp ke antrian (status pending) untuk diproses
+// worker. Yang tanpa data gaji atau tanpa no_telp dilewati.
 func (s *Service) EnqueueAll(periodeInput string) (*EnqueueResult, error) {
 	p, err := periode.Parse(periodeInput)
 	if err != nil {
 		return nil, err
 	}
+	// Sumber baris = sama dengan yang tampil di halaman penggajian
+	// (snapshot bila periode difinalisasi, preview bila belum).
+	status, err := s.peng.Get(periodeInput)
+	if err != nil {
+		return nil, err
+	}
+	adaData := make(map[uint]bool, len(status.Rows))
+	for _, r := range status.Rows {
+		adaData[r.EmployeeID] = true
+	}
+
 	emps, err := s.guru.List("", nil, true)
 	if err != nil {
 		return nil, err
 	}
 	res := &EnqueueResult{}
 	for _, e := range emps {
+		if !adaData[e.ID] {
+			res.Skipped++
+			continue
+		}
 		if strings.TrimSpace(e.NoTelp) == "" {
 			res.Skipped++
 			continue

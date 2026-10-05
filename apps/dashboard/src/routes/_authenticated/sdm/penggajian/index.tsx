@@ -168,7 +168,7 @@ function PenggajianPage() {
 					addToast({
 						variant: "success",
 						title: "Dijadwalkan",
-						message: `${res.enqueued} slip masuk antrian${res.skipped > 0 ? `, ${res.skipped} dilewati (tanpa no. WA)` : ""}. Status diperbarui otomatis.`,
+						message: `${res.enqueued} slip masuk antrian${res.skipped > 0 ? `, ${res.skipped} dilewati (tanpa data gaji / no. WA)` : ""}. Status diperbarui otomatis.`,
 					});
 					setConfirmAction(null);
 				},

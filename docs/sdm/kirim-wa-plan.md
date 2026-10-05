@@ -10,7 +10,7 @@
 4. **Tanpa PIN.** Proteksi: token panjang, kedaluwarsa 3 hari, `noindex`, rate-limit.
 5. **Kirim massal async**: worker latar memproses antrian; tabel `sdm_kirim_wa` = **sumber status** (`pending`/`sent`/`failed`).
 6. **Pembuka pesan** memakai kalimat doa yang sama dengan PDF.
-7. **Kirim Semua**: hanya karyawan **aktif**, lewati yang `no_telp` kosong.
+7. **Kirim Semua**: hanya karyawan **aktif** yang **punya data gaji periode tsb** dan punya `no_telp`; selainnya dilewati (dihitung di `skipped`).
 
 ## Persyaratan (IMMUTABLE)
 - Tautan publik hanya menampilkan data **1 karyawan** (profil ringkas, golongan, rincian gaji). TIDAK boleh ada endpoint publik yang membocorkan daftar/anggota lain.

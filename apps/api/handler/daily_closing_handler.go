@@ -181,3 +181,31 @@ func (h *DailyClosingHandler) Confirm(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Tutup buku berhasil dikonfirmasi"})
 }
+
+// Preview godoc
+// @Summary      Preview daily closing system cash
+// @Description  Hitung saldo kas sistem terkoreksi untuk tanggal terpilih tanpa menyimpan
+// @Tags         daily-closings
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        academic_year_id  query   int     true   "Academic Year ID"
+// @Param        closing_date      query   string  true   "Closing Date (YYYY-MM-DD)"
+// @Success      200               {object}  dto.SuccessResponse{data=dto.DailyClosingPreviewResponse}
+// @Failure      400               {object}  dto.ErrorResponse
+// @Failure      401               {object}  dto.ErrorResponse
+// @Failure      403               {object}  dto.ErrorResponse
+// @Router       /v1/daily-closings/preview [get]
+func (h *DailyClosingHandler) Preview(c echo.Context) error {
+	academicYearID, _ := strconv.Atoi(c.QueryParam("academic_year_id"))
+	closingDate, err := utility.ParseDate(c.QueryParam("closing_date"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: "Format closing_date tidak valid (YYYY-MM-DD)"})
+	}
+	resp, err := h.service.Preview(uint(academicYearID), closingDate)
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{Status: status, Code: code, Message: err.Error()})
+	}
+	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil menghitung pratinjau tutup buku", Data: resp})
+}

@@ -151,7 +151,7 @@ export function renderSlipPdf(
 	doc.setFont("helvetica", "normal");
 	doc.setFontSize(12);
 	const doa = doc.splitTextToSize(
-		"Alhamdulillah… Alloh Ar Rozzaq memberikan Rizki Halal melalui PAUD Unggulan AL IZZAH. Semoga Barokah & membawa banyak manfaat.",
+		"Alhamdulillah… Alloh Ar Rozzaq memberikan Rizki Halal melalui PAUD Unggulan AL IZZAH.\nSemoga Barokah & membawa banyak manfaat.",
 		maxW,
 	);
 	doc.text(doa, pageW / 2, y, { align: "center" });

@@ -109,3 +109,21 @@ type RekapResponse struct {
 	PerBulan         []RekapBulan `json:"per_bulan"`
 	TotalGaji        int          `json:"total_gaji"`
 }
+
+// RiwayatBulan — baris riwayat gaji satu karyawan pada satu periode.
+type RiwayatBulan struct {
+	Periode   string `json:"periode"` // YYYY-MM-05
+	Label     string `json:"label"`   // "Agustus 2025"
+	Status    string `json:"status"`  // open | finalized | empty
+	AdaData   bool   `json:"ada_data"`
+	TotalGaji int    `json:"total_gaji"`
+}
+
+// RiwayatResponse — riwayat gaji satu karyawan sepanjang Tahun Ajaran.
+type RiwayatResponse struct {
+	EmployeeID       uint           `json:"employee_id"`
+	AcademicYearID   uint           `json:"academic_year_id"`
+	AcademicYearName string         `json:"academic_year_name"`
+	PerBulan         []RiwayatBulan `json:"per_bulan"`
+	TotalGaji        int            `json:"total_gaji"`
+}

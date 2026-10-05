@@ -196,6 +196,23 @@ export interface RekapResponse {
 	total_gaji: number;
 }
 
+// RiwayatBulan — riwayat gaji satu karyawan pada satu periode.
+export interface RiwayatBulan {
+	periode: string; // YYYY-MM-05
+	label: string;
+	status: string; // open | finalized | empty
+	ada_data: boolean;
+	total_gaji: number;
+}
+
+export interface RiwayatResponse {
+	employee_id: number;
+	academic_year_id: number;
+	academic_year_name: string;
+	per_bulan: RiwayatBulan[];
+	total_gaji: number;
+}
+
 export interface SlipItem {
 	nama: string;
 	nominal: number;
@@ -581,6 +598,21 @@ export function useRekap(academicYearId?: number) {
 		queryFn: () =>
 			sdmGet<RekapResponse>("/rekap", { academic_year_id: academicYearId }),
 		enabled: !!academicYearId,
+	});
+}
+
+// useRiwayat — riwayat gaji satu karyawan sepanjang Tahun Ajaran.
+export function useRiwayat(
+	academicYearId: number | undefined,
+	employeeId: number,
+) {
+	return useQuery({
+		queryKey: ["sdm", "riwayat", employeeId, academicYearId],
+		queryFn: () =>
+			sdmGet<RiwayatResponse>(`/penggajian/${employeeId}/riwayat`, {
+				academic_year_id: academicYearId,
+			}),
+		enabled: !!academicYearId && !!employeeId,
 	});
 }
 

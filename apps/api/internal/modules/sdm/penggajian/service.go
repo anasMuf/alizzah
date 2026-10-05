@@ -501,6 +501,45 @@ func (s *Service) Rekap(academicYearID uint) (*RekapResponse, error) {
 	return resp, nil
 }
 
+// Riwayat mengembalikan riwayat gaji satu karyawan untuk tiap bulan dalam
+// rentang Tahun Ajaran (mengikuti snapshot bila periode sudah difinalisasi).
+func (s *Service) Riwayat(academicYearID, employeeID uint) (*RiwayatResponse, error) {
+	say, err := s.repo.FindAcademicYear(academicYearID)
+	if err != nil {
+		return nil, err
+	}
+	resp := &RiwayatResponse{
+		EmployeeID:       employeeID,
+		AcademicYearID:   say.ID,
+		AcademicYearName: say.Name,
+		PerBulan:         []RiwayatBulan{},
+	}
+	for _, p := range monthsInRange(say.StartDate, say.EndDate) {
+		got, err := s.Get(p.Format("2006-01-02"))
+		if err != nil {
+			return nil, err
+		}
+		row := RiwayatBulan{
+			Periode: periode.Format(p),
+			Label:   periode.MonthLabel(p),
+			Status:  got.Status,
+		}
+		for _, r := range got.Rows {
+			if r.EmployeeID == employeeID {
+				row.TotalGaji = r.TotalGaji
+				row.AdaData = true
+				break
+			}
+		}
+		if !row.AdaData {
+			row.Status = "empty"
+		}
+		resp.PerBulan = append(resp.PerBulan, row)
+		resp.TotalGaji += row.TotalGaji
+	}
+	return resp, nil
+}
+
 // monthsInRange mengembalikan tanggal payday (5) tiap bulan yang berada dalam
 // [start, end]. Contoh TA 2025-07-14..2026-07-13 → 2025-08-05 .. 2026-07-05.
 func monthsInRange(start, end time.Time) []time.Time {

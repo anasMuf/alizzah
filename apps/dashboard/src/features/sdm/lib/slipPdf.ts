@@ -141,21 +141,21 @@ export function renderSlipPdf(slip: Slip, periode: string): jsPDF {
 
 	// Header: doa + identitas periode.
 	doc.setFont("helvetica", "normal");
-	doc.setFontSize(6.5);
+	doc.setFontSize(8);
 	doc.text(
 		"Alhamdulillah… Alloh Ar Rozzaq memberikan Rizki Halal melalui PAUD Unggulan AL IZZAH. Semoga Barokah & membawa banyak manfaat.",
 		pageW / 2,
-		10,
+		11,
 		{ align: "center", maxWidth: pageW - margin * 2 },
 	);
 	doc.setFont("helvetica", "bold");
-	doc.setFontSize(10);
-	doc.text(`${slip.nama}  ||  ${formatPeriode(periode)}`, pageW / 2, 18, {
+	doc.setFontSize(12);
+	doc.text(`${slip.nama}  ||  ${formatPeriode(periode)}`, pageW / 2, 20, {
 		align: "center",
 	});
 
 	autoTable(doc, {
-		startY: 22,
+		startY: 25,
 		margin: { left: margin, right: margin },
 		theme: "grid",
 		head: [["No", "Jenis HR", "Nominal", "Subtotal", "Ket"]],
@@ -176,8 +176,8 @@ export function renderSlipPdf(slip: Slip, periode: string): jsPDF {
 		],
 		styles: {
 			font: "helvetica",
-			fontSize: 6.5,
-			cellPadding: 1.1,
+			fontSize: 9,
+			cellPadding: 2,
 			lineColor: [150, 150, 150],
 			lineWidth: 0.1,
 			textColor: [20, 20, 20],
@@ -187,15 +187,20 @@ export function renderSlipPdf(slip: Slip, periode: string): jsPDF {
 			fillColor: [240, 240, 240],
 			textColor: [20, 20, 20],
 			fontStyle: "bold",
+			fontSize: 9,
 			halign: "center",
 		},
-		footStyles: { fillColor: [245, 245, 245], textColor: [20, 20, 20] },
+		footStyles: {
+			fillColor: [245, 245, 245],
+			textColor: [20, 20, 20],
+			fontSize: 9,
+		},
 		columnStyles: {
-			0: { cellWidth: 7, halign: "center" },
+			0: { cellWidth: 8, halign: "center" },
 			1: { cellWidth: "auto" },
-			2: { cellWidth: 24, halign: "right" },
-			3: { cellWidth: 24, halign: "right" },
-			4: { cellWidth: 28 },
+			2: { cellWidth: 27, halign: "right" },
+			3: { cellWidth: 27, halign: "right" },
+			4: { cellWidth: 30 },
 		},
 	});
 
@@ -208,15 +213,15 @@ export function renderSlipPdf(slip: Slip, periode: string): jsPDF {
 	const rightX = pageW - margin;
 	let y = finalY + 8;
 	doc.setFont("helvetica", "normal");
-	doc.setFontSize(7);
+	doc.setFontSize(9);
 	doc.text(`Mojokerto, ${todayID()}`, rightX, y, { align: "right" });
-	y += 4;
+	y += 5;
 	doc.text(sig.title || "Kepala Sekolah", rightX, y, { align: "right" });
-	y += 14;
+	y += 16;
 	if (sig.name) {
 		doc.setFont("helvetica", "bold");
 		doc.text(sig.name, rightX, y, { align: "right" });
-		y += 3;
+		y += 4;
 		doc.setFont("helvetica", "normal");
 	}
 	doc.setDrawColor(20, 20, 20);

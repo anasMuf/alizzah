@@ -49,20 +49,6 @@ function AbsenPage() {
 		setPeriode(currentPeriodeIn(months));
 	}, [months]);
 
-	if (!activeAy) {
-		return (
-			<div className="rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
-				<AlertCircle className="mx-auto h-12 w-12 text-gray-400" />
-				<h3 className="mt-4 text-sm font-semibold text-gray-900">
-					Tahun Ajaran Belum Dipilih
-				</h3>
-				<p className="mt-1 text-sm text-gray-500">
-					Pilih tahun ajaran pada panel samping untuk mengelola absensi.
-				</p>
-			</div>
-		);
-	}
-
 	// Editable state: employee_id → angka per kolom.
 	const [values, setValues] = useState<Record<number, AbsenEntry>>({});
 
@@ -82,14 +68,6 @@ function AbsenPage() {
 		setValues(init);
 	}, [rows]);
 
-	const setVal = (employeeId: number, key: string, raw: string) => {
-		const v = Math.max(0, Number(raw) || 0);
-		setValues((prev) => ({
-			...prev,
-			[employeeId]: { ...prev[employeeId], [key]: v } as AbsenEntry,
-		}));
-	};
-
 	const items = useMemo(
 		() =>
 			employees.map((e) => ({
@@ -105,6 +83,30 @@ function AbsenPage() {
 			})),
 		[employees, values],
 	);
+
+	// Guard diletakkan SETELAH seluruh hook agar jumlah & urutan hook tetap
+	// stabil (Rules of Hooks) meski Tahun Ajaran belum dipilih.
+	if (!activeAy) {
+		return (
+			<div className="rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
+				<AlertCircle className="mx-auto h-12 w-12 text-gray-400" />
+				<h3 className="mt-4 text-sm font-semibold text-gray-900">
+					Tahun Ajaran Belum Dipilih
+				</h3>
+				<p className="mt-1 text-sm text-gray-500">
+					Pilih tahun ajaran pada panel samping untuk mengelola absensi.
+				</p>
+			</div>
+		);
+	}
+
+	const setVal = (employeeId: number, key: string, raw: string) => {
+		const v = Math.max(0, Number(raw) || 0);
+		setValues((prev) => ({
+			...prev,
+			[employeeId]: { ...prev[employeeId], [key]: v } as AbsenEntry,
+		}));
+	};
 
 	const handleSave = () => {
 		// Hanya kirim karyawan yang diisi (ada nilai > 0) atau sudah punya data

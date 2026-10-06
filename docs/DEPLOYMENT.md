@@ -11,8 +11,11 @@ yang terminate TLS (Certbot host) & mem-proxy. Build & deploy via **GitHub Actio
                  │
         ┌────────▼─────────┐   (nginx HOST, sudah ada)
         │  nginx host      │   TLS via certbot host
-        │  api.alizzah…    ├──► 127.0.0.1:8091 ─► container api (Go/Echo :8080) ─► postgres (internal)
-        │  dashboard.aliz… ├──► 127.0.0.1:8090 ─► container dashboard (nginx SPA)
+        │  api.alizzah…    ├──► 127.0.0.1:8091 ─► container api           (:8080) ─┐
+        │   ├ /api/v1/koperasi ├► 127.0.0.1:8092 ─► container koperasi-api (:8081) ├─► postgres
+        │   ├ /api/v1/sdm      ├► 127.0.0.1:8093 ─► container sdm-api       (:8082) ┤   (internal)
+        │   └ /api/v1/public   ├► (sdm-api)
+        │  dashboard.aliz… ├──► 127.0.0.1:8090 ─► container dashboard (nginx SPA)  ─┘
         └──────────────────┘
 ```
 
@@ -48,9 +51,12 @@ Migrasi DB otomatis saat container API start (GORM AutoMigrate).
 | Nama | Isi |
 |------|-----|
 | `VITE_API_URL` | `https://api.alizzah.anaslabs.my.id/api` (di-bake saat build) |
+| `VITE_SDM_API_URL` | `https://api.alizzah.anaslabs.my.id/api` (SDM, by-path; samakan dgn `VITE_API_URL`) |
 
 **`.env` di VPS** (jangan di-commit): `DB_PASSWORD`, `JWT_SECRET`, `SEED_ADMIN_PASSWORD`,
-`CORS_ALLOWED_ORIGINS`, `IMAGE_OWNER`, dst (lihat `.env.production.example`).
+`CORS_ALLOWED_ORIGINS`, `IMAGE_OWNER`, dst (lihat `.env.production.example`). Untuk modul SDM/HR:
+`PUBLIC_APP_URL`, `PUBLIC_LINK_SECRET`, `PUBLIC_LINK_TTL_HOURS`, `WABLAS_DOMAIN`, `WABLAS_TOKEN`,
+`SDM_API_PORT`, `SDM_CORS_ALLOWED_ORIGINS`.
 
 ---
 
@@ -130,11 +136,75 @@ efektif, serta **tagihan (awal/registrasi/bulanan) berstatus _unpaid_**; saldo k
 
 ---
 
+## Modul SDM/HR (`sdm-api`) — penyiapan & migrasi
+
+`cmd/sdm` adalah binary **ketiga** (image sama, `entrypoint: ["/app/sdm"]`, port container 8082,
+loopback host `SDM_API_PORT` default **8093**). Ia memigrasi tabel `sdm_*` **dan** memelihara
+view `koperasi_employees` (sumber kanonik karyawan = modul SDM). Lihat `docs/sdm/plan.md` &
+`docs/sdm/kirim-wa-plan.md`.
+
+### Prasyarat `.env` (VPS)
+```
+PUBLIC_APP_URL=https://dashboard.alizzah.anaslabs.my.id   # basis tautan /s/<token>
+PUBLIC_LINK_SECRET=<openssl rand -hex 32>                  # WAJIB, beda dari JWT_SECRET
+PUBLIC_LINK_TTL_HOURS=72
+WABLAS_DOMAIN=https://jogja.wablas.com
+WABLAS_TOKEN=<token-device[.secretkey]>
+SDM_API_PORT=8093
+SDM_CORS_ALLOWED_ORIGINS=https://dashboard.alizzah.anaslabs.my.id
+```
+> Bila `PUBLIC_LINK_SECRET` **dan** `JWT_SECRET` kosong, `sdm-api` **menolak start** (`log.Fatal`)
+> — mencegah token tautan publik dipalsukan.
+
+### GitHub Variable
+`VITE_SDM_API_URL` = `https://api.alizzah.anaslabs.my.id/api` (by-path, samakan `VITE_API_URL`).
+Di-*bake* saat build image dashboard.
+
+### Nginx host (by-path, satu domain `api.alizzah…`)
+Tambahkan ke site `alizzah-api` (sudah ada di `deploy/nginx-host/alizzah-api.conf`):
+```nginx
+location /api/v1/sdm    { proxy_pass http://127.0.0.1:8093; ... }
+location /api/v1/public { proxy_pass http://127.0.0.1:8093; ... }
+```
+Nginx memilih prefix terpanjang → `/api/v1/sdm` & `/api/v1/public` ke **sdm-api**, sisanya ke api.
+```bash
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+### ⚠️ Backup DB SEBELUM deploy pertama SDM
+Start pertama `sdm-api` menjalankan migrasi **satu arah**: `EnsureEmployeeView` **DROP tabel fisik
+`koperasi_employees`** lalu menggantinya dengan **VIEW** atas `sdm_employees`, plus `AutoMigrate`
+tabel `sdm_*`.
+```bash
+docker compose exec postgres pg_dump -U "$DB_USER" "$DB_NAME" > ~/backup_pre-sdm_$(date +%F).sql
+```
+Rollback image **tidak** otomatis membalik migrasi ini — pulihkan dari backup bila perlu.
+
+### Deploy & verifikasi
+```bash
+cd "$DEPLOY_PATH" && git pull && docker compose pull && docker compose up -d
+docker compose ps                                            # sdm-api healthy?
+curl -s http://127.0.0.1:8093/health                         # {"status":"ok"}
+docker compose exec postgres psql -U "$DB_USER" -d "$DB_NAME" -c "\dv koperasi_employees"  # harus VIEW
+```
+
+### Go-live Wablas (hati-hati)
+Worker antrian **aktif** begitu `WABLAS_*` terisi: ia memproses baris `pending` di `sdm_kirim_wa`
+dan **mengirim WhatsApp sungguhan**. Jangan menekan **Kirim Semua** di produksi sebelum siap;
+uji dulu ke satu nomor internal.
+
+### Uji di staging dulu
+Unit test memakai SQLite; `EnsureEmployeeView` & migrasi rentang golongan hanya teruji di Postgres
+lokal. Disarankan uji pada DB salinan/staging sebelum produksi.
+
+---
+
 ## Operasional
 
 | Aksi | Perintah (di `DEPLOY_PATH`) |
 |------|----------|
 | Lihat log | `docker compose logs -f api` |
+| Lihat log SDM | `docker compose logs -f sdm-api` |
 | Status | `docker compose ps` |
 | Update manual | `git pull && docker compose pull && docker compose up -d` |
 | **Rollback** | set `IMAGE_TAG=<sha-lama>` di `.env` lalu `docker compose up -d` |
@@ -144,6 +214,7 @@ CI otomatis: merge ke `main` → build → push GHCR → SSH deploy. Deploy dise
 
 ## Catatan penting
 - **TLS & domain di nginx HOST + certbot host** (bukan di compose). Compose hanya expose `127.0.0.1:8090/8091`.
-- **`VITE_API_URL` di-bake saat build** — ganti URL = rebuild image dashboard (ubah Secret lalu trigger ulang workflow).
-- **CORS** ditangani aplikasi Go via `CORS_ALLOWED_ORIGINS`, bukan nginx.
+- **`VITE_API_URL` / `VITE_SDM_API_URL` di-bake saat build** — ganti URL = rebuild image dashboard (ubah Variable lalu trigger ulang workflow).
+- **CORS** ditangani aplikasi Go via `CORS_ALLOWED_ORIGINS` (api/koperasi) & `SDM_CORS_ALLOWED_ORIGINS` (sdm), bukan nginx.
+- **Migrasi SDM bersifat satu arah** (tabel `koperasi_employees` → view) — selalu backup sebelum deploy pertama `sdm-api`.
 - **Resource ketat** (RAM ~2 GB, disk 20 GB): build di CI (bukan di VPS); rajin `docker image prune`.

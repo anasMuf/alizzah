@@ -1,0 +1,948 @@
+import {
+	useInfiniteQuery,
+	useMutation,
+	useQuery,
+	useQueryClient,
+} from "@tanstack/react-query";
+import { sdmGet, sdmGetPaged, sdmSend } from "./lib/client";
+
+// ── Types ──
+
+export interface Golongan {
+	id: number;
+	kode: string;
+	from_day?: number | null;
+	to_day?: number | null;
+	keterangan: string;
+	nilai: number;
+}
+
+export interface GolonganInput {
+	kode: string;
+	from_day?: number | null;
+	to_day?: number | null;
+	keterangan?: string;
+	nilai: number;
+}
+
+export interface Kehadiran {
+	id: number;
+	nilai_per_hari: number;
+}
+
+export interface Kedisiplinan {
+	id: number;
+	kode: string;
+	nama: string;
+	nilai: number;
+}
+
+export interface KedisiplinanInput {
+	kode: string;
+	nama: string;
+	nilai: number;
+}
+
+export interface MasterItem {
+	id: number;
+	nama: string;
+	nilai?: number | null;
+}
+
+export interface MasterItemInput {
+	nama: string;
+	nilai?: number | null;
+}
+
+export interface GolonganBrief {
+	id: number;
+	kode: string;
+	nilai: number;
+	keterangan: string;
+}
+
+export interface Employee {
+	id: number;
+	legacy_id?: number | null;
+	nama: string;
+	no_telp: string;
+	tgl_masuk?: string | null;
+	golongan_id?: number | null;
+	golongan?: GolonganBrief | null;
+	effective_golongan_id: number;
+	sertifikasi: boolean;
+	impasing: boolean;
+	is_active: boolean;
+}
+
+export interface EmployeeInput {
+	nama: string;
+	no_telp?: string;
+	tgl_masuk?: string | null;
+	golongan_id?: number | null;
+	sertifikasi: boolean;
+	impasing: boolean;
+	is_active: boolean;
+}
+
+export interface HRAttach {
+	id: number;
+	nama: string;
+	nilai: number;
+	// id master disimpan di field spesifik masing-masing tipe
+}
+
+export interface HRBundle {
+	fungsional: Array<HRAttach & { fungsional_id: number }>;
+	tugas_tambahan: Array<HRAttach & { tugas_tambahan_id: number }>;
+	penanggung_jawab: Array<HRAttach & { penanggung_jawab_id: number }>;
+	lainlain: Array<HRAttach & { lainlain_id: number }>;
+}
+
+export interface EmployeeDetail extends Employee {
+	hr: HRBundle;
+}
+
+export interface AbsenRow {
+	id: number;
+	periode: string;
+	employee_id: number;
+	nama: string;
+	hadir: number;
+	hadir_siaga: number;
+	hadir_terlambat: number;
+	hadir_piket: number;
+	pulang_awal: number;
+}
+
+export interface AbsenEntry {
+	employee_id: number;
+	hadir: number;
+	hadir_siaga: number;
+	hadir_terlambat: number;
+	hadir_piket: number;
+	pulang_awal: number;
+}
+
+export interface Pinjaman {
+	id: number;
+	employee_id: number;
+	nama: string;
+	tgl_pinjam: string;
+	jumlah: number;
+	angsuran_terbayar: number;
+	sisa: number;
+	is_lunas: boolean;
+	tgl_lunas?: string | null;
+}
+
+export interface AngsuranItem {
+	id: number;
+	periode: string;
+	angsuran: number;
+	tanggal: string;
+}
+
+export interface PinjamanDetail extends Pinjaman {
+	angsuran: AngsuranItem[];
+}
+
+export interface PayrollRow {
+	employee_id: number;
+	nama: string;
+	golongan_kode: string;
+	hr_pokok: number;
+	sertifikasi: boolean;
+	impasing: boolean;
+	jumlah_hadir: number;
+	kehadiran: number;
+	jumlah_siaga: number;
+	siaga: number;
+	jumlah_piket: number;
+	piket: number;
+	jumlah_telat: number;
+	bonus_terlambat: number;
+	jumlah_pulang: number;
+	bonus_pulang_awal: number;
+	subtotal_absen: number;
+	subtotal_f: number;
+	subtotal_t: number;
+	subtotal_p: number;
+	subtotal_l: number;
+	angsuran: number;
+	total_gaji: number;
+}
+
+// PayrollStatus — hasil GET /penggajian: preview (dinamis) atau finalized (snapshot).
+export interface PayrollStatus {
+	status: "preview" | "finalized";
+	finalized_at?: string;
+	finalized_by?: string;
+	total_gaji: number;
+	rows: PayrollRow[];
+}
+
+// RekapBulan — ringkasan satu bulan dalam rekap per Tahun Ajaran.
+export interface RekapBulan {
+	periode: string; // YYYY-MM-05
+	label: string;
+	status: string;
+	total_gaji: number;
+	jumlah_karyawan: number;
+}
+
+export interface RekapResponse {
+	academic_year_id: number;
+	academic_year_name: string;
+	per_bulan: RekapBulan[];
+	total_gaji: number;
+}
+
+// RiwayatBulan — riwayat gaji satu karyawan pada satu periode.
+export interface RiwayatBulan {
+	periode: string; // YYYY-MM-05
+	label: string;
+	status: string; // open | finalized | empty
+	ada_data: boolean;
+	total_gaji: number;
+	golongan_kode: string; // golongan efektif pada periode tsb
+}
+
+export interface RiwayatResponse {
+	employee_id: number;
+	academic_year_id: number;
+	academic_year_name: string;
+	per_bulan: RiwayatBulan[];
+	total_gaji: number;
+}
+
+export interface SlipItem {
+	nama: string;
+	nominal: number;
+}
+
+export interface Slip extends PayrollRow {
+	rincian_fungsional: SlipItem[];
+	rincian_tugas_tambahan: SlipItem[];
+	rincian_penanggung_jawab: SlipItem[];
+	rincian_lainlain: SlipItem[];
+}
+
+export interface Summary {
+	jumlah_karyawan_aktif: number;
+	jumlah_golongan: number;
+	pinjaman_aktif: number;
+	total_sisa_pinjaman: number;
+	total_gaji_bulan_ini: number;
+	per_bulan: Array<{ bulan: string; total_gaji: number }>;
+	guru_per_golongan: Array<{ kode: string; jumlah: number }>;
+}
+
+// ── Kirim slip via WhatsApp (Wablas) ──
+
+export interface KirimWAStatus {
+	employee_id: number;
+	nama: string;
+	no_telp: string;
+	status: string; // pending | sent | failed
+	pesan_error: string;
+	attempts: number;
+	waktu_kirim: string | null;
+}
+
+export interface ShareLink {
+	url: string;
+	expires_at: string;
+}
+
+export interface KirimWASendResult {
+	employee_id: number;
+	nama: string;
+	status: string;
+	message: string;
+}
+
+export interface KirimWAEnqueueResult {
+	enqueued: number;
+	skipped: number;
+}
+
+// ── Riwayat golongan (penugasan effective-dated) ──
+
+export interface GolonganHistory {
+	id: number;
+	employee_id: number;
+	golongan_id: number;
+	golongan_kode: string;
+	effective_date: string;
+	reason: string;
+}
+
+export interface GolonganHistoryInput {
+	golongan_id: number;
+	effective_date: string;
+	reason?: string;
+}
+
+export interface BackfillResult {
+	employees: number;
+	rows: number;
+}
+
+// ── Riwayat item HR per periode (dari snapshot finalized) ──
+
+export interface HRHistoryItem {
+	nama: string;
+	nominal: number;
+}
+
+export interface HRHistoryPeriode {
+	periode: string;
+	label: string;
+	status: string;
+	fungsional: HRHistoryItem[];
+	tugas_tambahan: HRHistoryItem[];
+	penanggung_jawab: HRHistoryItem[];
+	lainlain: HRHistoryItem[];
+	subtotal_f: number;
+	subtotal_t: number;
+	subtotal_p: number;
+	subtotal_l: number;
+}
+
+// ── Query keys ──
+
+export const sdmKeys = {
+	all: ["sdm"] as const,
+	golongan: ["sdm", "golongan"] as const,
+	kehadiran: ["sdm", "kehadiran"] as const,
+	kedisiplinan: ["sdm", "kedisiplinan"] as const,
+	fungsional: ["sdm", "fungsional"] as const,
+	tugasTambahan: ["sdm", "tugas-tambahan"] as const,
+	penanggungJawab: ["sdm", "penanggung-jawab"] as const,
+	lainlain: ["sdm", "lainlain"] as const,
+	employees: (search: string, active: boolean) =>
+		["sdm", "employees", { search, active }] as const,
+	employee: (id: number) => ["sdm", "employees", id] as const,
+	employeeHR: (id: number) => ["sdm", "employees", id, "hr"] as const,
+	golonganHistory: (id: number) =>
+		["sdm", "employees", id, "golongan-history"] as const,
+	absen: (periode: string) => ["sdm", "absen", periode] as const,
+	pinjaman: (status: string) => ["sdm", "pinjaman", status] as const,
+	pinjamanDetail: (id: number) => ["sdm", "pinjaman", id] as const,
+	penggajian: (periode: string) => ["sdm", "penggajian", periode] as const,
+	kirimWa: (periode: string) => ["sdm", "kirim-wa", periode] as const,
+	slip: (periode: string, employeeId: number) =>
+		["sdm", "penggajian", periode, employeeId] as const,
+	summary: (tahun: string) => ["sdm", "summary", tahun] as const,
+};
+
+// ── Master hooks ──
+
+export function useGolongans() {
+	return useQuery({
+		queryKey: sdmKeys.golongan,
+		queryFn: () => sdmGet<Golongan[]>("/golongan"),
+	});
+}
+
+export function useKehadiran() {
+	return useQuery({
+		queryKey: sdmKeys.kehadiran,
+		queryFn: () => sdmGet<Kehadiran>("/kehadiran"),
+	});
+}
+
+export function useKedisiplinan() {
+	return useQuery({
+		queryKey: sdmKeys.kedisiplinan,
+		queryFn: () => sdmGet<Kedisiplinan[]>("/kedisiplinan"),
+	});
+}
+
+export function useFungsional() {
+	return useQuery({
+		queryKey: sdmKeys.fungsional,
+		queryFn: () => sdmGet<MasterItem[]>("/fungsional"),
+	});
+}
+
+export function useTugasTambahan() {
+	return useQuery({
+		queryKey: sdmKeys.tugasTambahan,
+		queryFn: () => sdmGet<MasterItem[]>("/tugas-tambahan"),
+	});
+}
+
+export function usePenanggungJawab() {
+	return useQuery({
+		queryKey: sdmKeys.penanggungJawab,
+		queryFn: () => sdmGet<MasterItem[]>("/penanggung-jawab"),
+	});
+}
+
+export function useLainlain() {
+	return useQuery({
+		queryKey: sdmKeys.lainlain,
+		queryFn: () => sdmGet<MasterItem[]>("/lainlain"),
+	});
+}
+
+// Generic mutation builder untuk master CRUD (golongan & kedisiplinan punya
+// bentuk khusus; sisanya berbentuk {nama, nilai}).
+function useMasterMutation<TVars, TRes>(
+	path: string,
+	queryKey: readonly unknown[],
+) {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: ({
+			method,
+			id,
+			body,
+		}: {
+			method: "POST" | "PUT" | "DELETE";
+			id?: number;
+			body?: TVars;
+		}) => sdmSend<TRes>(method, id ? `${path}/${id}` : path, body),
+		onSuccess: () => qc.invalidateQueries({ queryKey }),
+	});
+}
+
+export function useSaveGolongan() {
+	return useMasterMutation<GolonganInput, Golongan>(
+		"/golongan",
+		sdmKeys.golongan,
+	);
+}
+
+export function useSaveKehadiran() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (body: { nilai_per_hari: number }) =>
+			sdmSend<Kehadiran>("PUT", "/kehadiran", body),
+		onSuccess: () => qc.invalidateQueries({ queryKey: sdmKeys.kehadiran }),
+	});
+}
+
+export function useSaveKedisiplinan() {
+	return useMasterMutation<KedisiplinanInput, Kedisiplinan>(
+		"/kedisiplinan",
+		sdmKeys.kedisiplinan,
+	);
+}
+
+export function useSaveMasterItem(path: string, queryKey: readonly unknown[]) {
+	return useMasterMutation<MasterItemInput, MasterItem>(path, queryKey);
+}
+
+// ── Employee hooks ──
+
+export function useEmployees(
+	search = "",
+	activeOnly = false,
+	golonganId?: number,
+) {
+	return useQuery({
+		queryKey: [...sdmKeys.employees(search, activeOnly), { golonganId }],
+		queryFn: () =>
+			sdmGet<Employee[]>("/employees", {
+				all: true,
+				search: search || undefined,
+				active: activeOnly || undefined,
+				golongan_id: golonganId || undefined,
+			}),
+	});
+}
+
+// useEmployeesInfinite — daftar karyawan berhalaman (urut id) untuk infinite
+// scroll. Halaman diambil dengan limit (default 10) hingga total terpenuhi.
+// golonganId menyaring berdasarkan golongan EFEKTIF.
+export function useEmployeesInfinite(
+	search = "",
+	activeOnly = false,
+	limit = 10,
+	golonganId?: number,
+) {
+	return useInfiniteQuery({
+		queryKey: [
+			...sdmKeys.employees(search, activeOnly),
+			"infinite",
+			limit,
+			{ golonganId },
+		],
+		queryFn: ({ pageParam }) =>
+			sdmGetPaged<Employee[]>("/employees", {
+				page: pageParam,
+				limit,
+				search: search || undefined,
+				active: activeOnly || undefined,
+				golongan_id: golonganId || undefined,
+			}),
+		initialPageParam: 1,
+		getNextPageParam: (last) => {
+			const loaded = last.meta.page * last.meta.limit;
+			return loaded < last.meta.total ? last.meta.page + 1 : undefined;
+		},
+	});
+}
+
+export function useEmployee(id?: number) {
+	return useQuery({
+		queryKey: sdmKeys.employee(id ?? 0),
+		queryFn: () => sdmGet<EmployeeDetail>(`/employees/${id}`),
+		enabled: !!id,
+	});
+}
+
+function invalidateEmployees(qc: ReturnType<typeof useQueryClient>) {
+	qc.invalidateQueries({ queryKey: ["sdm", "employees"] });
+	qc.invalidateQueries({ queryKey: sdmKeys.all });
+}
+
+export function useSaveEmployee() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: ({ id, body }: { id?: number; body: EmployeeInput }) =>
+			id
+				? sdmSend<Employee>("PUT", `/employees/${id}`, body)
+				: sdmSend<Employee>("POST", "/employees", body),
+		onSuccess: () => invalidateEmployees(qc),
+	});
+}
+
+export function useDeleteEmployee() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (id: number) => sdmSend<null>("DELETE", `/employees/${id}`),
+		onSuccess: () => invalidateEmployees(qc),
+	});
+}
+
+// ── Import karyawan (bulk) ──
+
+export interface ImportRow {
+	id: number; // 0 = baru
+	nama: string;
+	no_telp: string;
+	tgl_masuk: string;
+	golongan_kode: string;
+	sertifikasi: boolean;
+	impasing: boolean;
+	is_active: boolean;
+}
+
+export interface ImportResult {
+	created: number;
+	updated: number;
+	failed: number;
+	errors: string[];
+}
+
+export function useImportEmployees() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (rows: ImportRow[]) =>
+			sdmSend<ImportResult>("POST", "/employees/import", { rows }),
+		onSuccess: () => invalidateEmployees(qc),
+	});
+}
+
+// ── Lampiran HR per karyawan ──
+
+type HRType = "fungsional" | "tugas_tambahan" | "penanggung_jawab" | "lainlain";
+
+// Segmen URL memakai tanda hubung (konsisten dengan route backend & endpoint
+// master). Body tetap memakai garis bawah (mis. tugas_tambahan_id).
+const HR_PATH: Record<HRType, string> = {
+	fungsional: "fungsional",
+	tugas_tambahan: "tugas-tambahan",
+	penanggung_jawab: "penanggung-jawab",
+	lainlain: "lainlain",
+};
+
+export function useAttachHR(employeeId: number) {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: ({
+			type,
+			body,
+		}: {
+			type: HRType;
+			body: Record<string, unknown>;
+		}) =>
+			sdmSend<null>("POST", `/employees/${employeeId}/${HR_PATH[type]}`, body),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: sdmKeys.employeeHR(employeeId) });
+			qc.invalidateQueries({ queryKey: sdmKeys.employee(employeeId) });
+		},
+	});
+}
+
+export function useDetachHR(employeeId: number) {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: ({ type, detailId }: { type: HRType; detailId: number }) =>
+			sdmSend<null>(
+				"DELETE",
+				`/employees/${employeeId}/${HR_PATH[type]}/${detailId}`,
+			),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: sdmKeys.employeeHR(employeeId) });
+			qc.invalidateQueries({ queryKey: sdmKeys.employee(employeeId) });
+		},
+	});
+}
+
+// ── Absen ──
+
+export function useAbsen(periode: string) {
+	return useQuery({
+		queryKey: sdmKeys.absen(periode),
+		queryFn: () => sdmGet<AbsenRow[]>("/absen", { periode }),
+		enabled: !!periode,
+	});
+}
+
+export function useSaveAbsen() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: ({
+			periode,
+			items,
+		}: {
+			periode: string;
+			items: AbsenEntry[];
+		}) => sdmSend<null>("PUT", "/absen", { periode, items }),
+		onSuccess: () => qc.invalidateQueries({ queryKey: ["sdm", "absen"] }),
+	});
+}
+
+export function useDeleteAbsen() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (periode: string) =>
+			sdmSend<null>("DELETE", `/absen?periode=${periode}`),
+		onSuccess: () => qc.invalidateQueries({ queryKey: ["sdm", "absen"] }),
+	});
+}
+
+// ── Pinjaman ──
+
+export function usePinjaman(status = "") {
+	return useQuery({
+		queryKey: sdmKeys.pinjaman(status),
+		queryFn: () =>
+			sdmGet<Pinjaman[]>("/pinjaman", status ? { status } : undefined),
+	});
+}
+
+export function usePinjamanDetail(id?: number) {
+	return useQuery({
+		queryKey: sdmKeys.pinjamanDetail(id ?? 0),
+		queryFn: () => sdmGet<PinjamanDetail>(`/pinjaman/${id}`),
+		enabled: !!id,
+	});
+}
+
+export function useCreatePinjaman() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (body: { employee_id: number; jumlah: number }) =>
+			sdmSend<Pinjaman>("POST", "/pinjaman", body),
+		onSuccess: () => qc.invalidateQueries({ queryKey: ["sdm", "pinjaman"] }),
+	});
+}
+
+export function usePayAngsuran(id: number) {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (body: { periode: string; angsuran: number }) =>
+			sdmSend<Pinjaman>("POST", `/pinjaman/${id}/angsuran`, body),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: ["sdm", "pinjaman"] });
+			qc.invalidateQueries({ queryKey: sdmKeys.pinjamanDetail(id) });
+		},
+	});
+}
+
+// ── Penggajian ──
+
+export function useSlip(periode: string, employeeId?: number) {
+	return useQuery({
+		queryKey: sdmKeys.slip(periode, employeeId ?? 0),
+		queryFn: () => sdmGet<Slip>(`/penggajian/${employeeId}`, { periode }),
+		enabled: !!periode && !!employeeId,
+	});
+}
+
+export function usePenggajian(periode: string) {
+	return useQuery({
+		queryKey: sdmKeys.penggajian(periode),
+		queryFn: () => sdmGet<PayrollStatus>("/penggajian", { periode }),
+		enabled: !!periode,
+	});
+}
+
+function invalidatePayroll(
+	qc: ReturnType<typeof useQueryClient>,
+	periode: string,
+) {
+	qc.invalidateQueries({ queryKey: sdmKeys.penggajian(periode) });
+	qc.invalidateQueries({ queryKey: sdmKeys.slip(periode, 0) });
+	qc.invalidateQueries({ queryKey: ["sdm", "summary"] });
+	qc.invalidateQueries({ queryKey: ["sdm", "rekap"] });
+}
+
+export function useFinalizePayroll() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (periode: string) =>
+			sdmSend<PayrollStatus>("POST", "/penggajian/finalize", { periode }),
+		onSuccess: (_d, periode) => invalidatePayroll(qc, periode),
+	});
+}
+
+export function useUnlockPayroll() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (periode: string) =>
+			sdmSend<null>("POST", "/penggajian/unlock", { periode }),
+		onSuccess: (_d, periode) => invalidatePayroll(qc, periode),
+	});
+}
+
+// ── Kirim slip via WhatsApp (Wablas) ──
+
+// useKirimWAStatus memantau status pengiriman tiap karyawan (polling 5s) —
+// penting untuk kirim massal async yang diproses worker latar.
+export function useKirimWAStatus(periode: string) {
+	return useQuery({
+		queryKey: sdmKeys.kirimWa(periode),
+		queryFn: () =>
+			sdmGet<KirimWAStatus[]>("/penggajian/kirim-wa/status", { periode }),
+		enabled: !!periode,
+		refetchInterval: 5000,
+	});
+}
+
+// useShareLink membuat tautan publik slip (token stateless, berlaku sementara).
+export function useShareLink() {
+	return useMutation({
+		mutationFn: (employeeId: number) =>
+			sdmGet<ShareLink>(`/employees/${employeeId}/share-link`),
+	});
+}
+
+export function useKirimWASatu() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (v: { employeeId: number; periode: string }) =>
+			sdmSend<KirimWASendResult>(
+				"POST",
+				`/penggajian/kirim-wa/kirim/${v.employeeId}`,
+				{ periode: v.periode },
+			),
+		onSuccess: (_d, v) =>
+			qc.invalidateQueries({ queryKey: sdmKeys.kirimWa(v.periode) }),
+	});
+}
+
+export function useKirimWASemua() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (periode: string) =>
+			sdmSend<KirimWAEnqueueResult>("POST", "/penggajian/kirim-wa/semua", {
+				periode,
+			}),
+		onSuccess: (_d, periode) =>
+			qc.invalidateQueries({ queryKey: sdmKeys.kirimWa(periode) }),
+	});
+}
+
+export function useRekap(academicYearId?: number) {
+	return useQuery({
+		queryKey: ["sdm", "rekap", academicYearId],
+		queryFn: () =>
+			sdmGet<RekapResponse>("/rekap", { academic_year_id: academicYearId }),
+		enabled: !!academicYearId,
+	});
+}
+
+// useRiwayat — riwayat gaji satu karyawan sepanjang Tahun Ajaran.
+export function useRiwayat(
+	academicYearId: number | undefined,
+	employeeId: number,
+) {
+	return useQuery({
+		queryKey: ["sdm", "riwayat", employeeId, academicYearId],
+		queryFn: () =>
+			sdmGet<RiwayatResponse>(`/penggajian/${employeeId}/riwayat`, {
+				academic_year_id: academicYearId,
+			}),
+		enabled: !!academicYearId && !!employeeId,
+	});
+}
+
+export function useSummary(academicYearId?: number) {
+	return useQuery({
+		queryKey: sdmKeys.summary(academicYearId ? String(academicYearId) : ""),
+		queryFn: () =>
+			sdmGet<Summary>("/summary", {
+				...(academicYearId ? { academic_year_id: academicYearId } : {}),
+			}),
+	});
+}
+
+// ── Riwayat golongan (penugasan effective-dated) ──
+
+export function useGolonganHistory(employeeId: number) {
+	return useQuery({
+		queryKey: sdmKeys.golonganHistory(employeeId),
+		queryFn: () =>
+			sdmGet<GolonganHistory[]>(`/employees/${employeeId}/golongan-history`),
+		enabled: !!employeeId,
+	});
+}
+
+// useSaveGolonganHistory — POST (upsert per employee+effective_date).
+export function useSaveGolonganHistory() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (v: { employeeId: number; input: GolonganHistoryInput }) =>
+			sdmSend<GolonganHistory>(
+				"POST",
+				`/employees/${v.employeeId}/golongan-history`,
+				v.input,
+			),
+		onSuccess: (_d, v) => {
+			qc.invalidateQueries({
+				queryKey: sdmKeys.golonganHistory(v.employeeId),
+			});
+			qc.invalidateQueries({ queryKey: sdmKeys.employee(v.employeeId) });
+			qc.invalidateQueries({ queryKey: ["sdm", "employees"] });
+			qc.invalidateQueries({ queryKey: ["sdm", "penggajian"] });
+			qc.invalidateQueries({ queryKey: ["sdm", "summary"] });
+		},
+	});
+}
+
+export function useDeleteGolonganHistory() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (v: { employeeId: number; historyId: number }) =>
+			sdmSend<null>(
+				"DELETE",
+				`/employees/${v.employeeId}/golongan-history/${v.historyId}`,
+			),
+		onSuccess: (_d, v) => {
+			qc.invalidateQueries({
+				queryKey: sdmKeys.golonganHistory(v.employeeId),
+			});
+			qc.invalidateQueries({ queryKey: sdmKeys.employee(v.employeeId) });
+			qc.invalidateQueries({ queryKey: ["sdm", "employees"] });
+			qc.invalidateQueries({ queryKey: ["sdm", "penggajian"] });
+			qc.invalidateQueries({ queryKey: ["sdm", "summary"] });
+		},
+	});
+}
+
+// useBackfillGolonganHistory — materialisasi riwayat dari masa kerja (semua).
+export function useBackfillGolonganHistory() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: () =>
+			sdmSend<BackfillResult>("POST", "/golongan-history/backfill"),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: ["sdm", "employees"] });
+			qc.invalidateQueries({ queryKey: ["sdm", "penggajian"] });
+			qc.invalidateQueries({ queryKey: ["sdm", "summary"] });
+		},
+	});
+}
+
+// useEmployeeHRHistory — item HR per periode (dari snapshot finalized).
+export function useEmployeeHRHistory(
+	employeeId: number,
+	academicYearId?: number,
+) {
+	return useQuery({
+		queryKey: ["sdm", "employees", employeeId, "hr-history", academicYearId],
+		queryFn: () =>
+			sdmGet<HRHistoryPeriode[]>(`/penggajian/${employeeId}/hr-history`, {
+				...(academicYearId ? { academic_year_id: academicYearId } : {}),
+			}),
+		enabled: !!employeeId,
+	});
+}
+
+// ── Utils periode ──
+
+export function formatPeriode(periode: string): string {
+	// Terima "YYYY-MM" atau "YYYY-MM-05"; tampil "Mei 2026 · payday 5".
+	const m = periode.match(/^(\d{4})-(\d{2})/);
+	if (!m) return periode;
+	const name = new Intl.DateTimeFormat("id-ID", { month: "long" }).format(
+		new Date(Number(m[1]), Number(m[2]) - 1, 1),
+	);
+	return `${name} ${m[1]}`;
+}
+
+export function formatPeriodePayday(periode: string): string {
+	return `${formatPeriode(periode)} · payday 5`;
+}
+
+export function currentPeriode(): string {
+	const now = new Date();
+	return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
+
+// ── Helper Tahun Ajaran → bulan ──
+
+const MONTH_ID = [
+	"Januari",
+	"Februari",
+	"Maret",
+	"April",
+	"Mei",
+	"Juni",
+	"Juli",
+	"Agustus",
+	"September",
+	"Oktober",
+	"November",
+	"Desember",
+];
+
+// MonthOption — pilihan bulan dalam rentang Tahun Ajaran (payday = 5).
+export interface MonthOption {
+	value: string; // YYYY-MM
+	label: string; // "Agustus 2025"
+	periode: string; // YYYY-MM-05
+}
+
+// monthsInAcademicYear mengembalikan bulan-bulan yang payday-nya (tanggal 5)
+// berada dalam rentang [start_date, end_date] tahun ajaran.
+export function monthsInAcademicYear(ay: {
+	start_date: string;
+	end_date: string;
+}): MonthOption[] {
+	const start = new Date(ay.start_date);
+	const end = new Date(ay.end_date);
+	const out: MonthOption[] = [];
+	const cur = new Date(start.getFullYear(), start.getMonth(), 1);
+	while (cur <= end) {
+		const payday = new Date(cur.getFullYear(), cur.getMonth(), 5);
+		if (payday >= start && payday <= end) {
+			const year = cur.getFullYear();
+			const mm = String(cur.getMonth() + 1).padStart(2, "0");
+			out.push({
+				value: `${year}-${mm}`,
+				label: `${MONTH_ID[cur.getMonth()]} ${year}`,
+				periode: `${year}-${mm}-05`,
+			});
+		}
+		cur.setMonth(cur.getMonth() + 1);
+	}
+	return out;
+}

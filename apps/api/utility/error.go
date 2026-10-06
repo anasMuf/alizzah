@@ -2,10 +2,15 @@ package utility
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"strings"
 
+	"api/dto"
+
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/labstack/echo/v4"
+	"gorm.io/gorm"
 )
 
 // AppError is a typed application error with HTTP status code.
@@ -96,4 +101,32 @@ func statusToCode(status int, msg string) string {
 	default:
 		return "INTERNAL_ERROR"
 	}
+}
+
+// Fail menulis response error JSON dari error apa pun (memetakan status via
+// GetErrorStatusAndCode). Error internal (DB/driver) TIDAK dibocorkan — dipetakan
+// ke 500 dengan pesan generik dan detailnya hanya ditulis ke log server.
+func Fail(c echo.Context, err error) error {
+	if isInternalError(err) {
+		log.Printf("[api] internal error: %v", err)
+		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+			Status:  http.StatusInternalServerError,
+			Code:    "INTERNAL_ERROR",
+			Message: "Terjadi kesalahan pada server",
+		})
+	}
+	status, code := GetErrorStatusAndCode(err)
+	return c.JSON(status, dto.ErrorResponse{Status: status, Code: code, Message: err.Error()})
+}
+
+// isInternalError mengenali error internal yang detailnya tidak boleh tampil ke
+// klien: error driver PostgreSQL (pgx) & sentinel internal GORM.
+func isInternalError(err error) bool {
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		return true
+	}
+	return errors.Is(err, gorm.ErrInvalidDB) ||
+		errors.Is(err, gorm.ErrInvalidTransaction) ||
+		errors.Is(err, gorm.ErrInvalidField)
 }

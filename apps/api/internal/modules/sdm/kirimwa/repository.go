@@ -43,6 +43,15 @@ func (r *Repository) Pending(limit int) ([]KirimWA, error) {
 	return rows, err
 }
 
+// RecoverProcessing mengembalikan baris yang tersangkut di status 'processing'
+// (mis. proses mati saat pengiriman) ke antrian. Idempotent; dipanggil saat start.
+func (r *Repository) RecoverProcessing() (int64, error) {
+	tx := r.db.Model(&KirimWA{}).
+		Where("status = ?", StatusProcessing).
+		Update("status", StatusPending)
+	return tx.RowsAffected, tx.Error
+}
+
 // FindByEmployee mengembalikan status satu karyawan pada periode (bila ada).
 func (r *Repository) FindByEmployee(employeeID uint, periode time.Time) (*KirimWA, error) {
 	var row KirimWA

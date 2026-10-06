@@ -185,6 +185,11 @@ func (s *Service) Run(ctx context.Context) {
 		return
 	}
 	log.Println("[sdm-kirimwa] worker antrian WA aktif")
+	if n, err := s.repo.RecoverProcessing(); err != nil {
+		log.Printf("[sdm-kirimwa] gagal memulihkan antrian: %v", err)
+	} else if n > 0 {
+		log.Printf("[sdm-kirimwa] %d baris 'processing' dikembalikan ke antrian", n)
+	}
 	ticker := time.NewTicker(pollEvery)
 	defer ticker.Stop()
 	for {
@@ -198,6 +203,11 @@ func (s *Service) Run(ctx context.Context) {
 	}
 }
 
+// processPending memproses antrian satu batch. Semantik pengiriman = at-least-once:
+// tiap baris DIKLAIM (status 'processing') sebelum dikirim, lalu hasilnya disimpan.
+// Bila proses mati di tengah pengiriman, baris 'processing' dipulihkan ke 'pending'
+// saat start berikutnya → berpotensi terkirim ulang (duplikat), trade-off yang
+// diterima demi tidak ada pesan yang hilang.
 func (s *Service) processPending() {
 	rows, err := s.repo.Pending(batchSize)
 	if err != nil {
@@ -206,6 +216,12 @@ func (s *Service) processPending() {
 	}
 	for i := range rows {
 		row := rows[i]
+		// Klaim baris agar tidak diproses ulang oleh siklus lain.
+		row.Status = StatusProcessing
+		if err := s.repo.Save(&row); err != nil {
+			log.Printf("[sdm-kirimwa] gagal klaim baris %d: %v", row.ID, err)
+			continue
+		}
 		emp, err := s.guru.Get(row.EmployeeID)
 		if err != nil {
 			row.Attempts++

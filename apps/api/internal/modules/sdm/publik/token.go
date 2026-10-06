@@ -23,6 +23,16 @@ func secret() []byte {
 	return []byte(s)
 }
 
+// ValidateConfig memastikan kunci penandatangan tautan publik tersedia. Bila
+// PUBLIC_LINK_SECRET & JWT_SECRET sama-sama kosong, HMAC memakai kunci kosong →
+// token bisa dipalsukan, jadi endpoint publik harus DITOLAK saat startup.
+func ValidateConfig() error {
+	if len(secret()) == 0 {
+		return errors.New("PUBLIC_LINK_SECRET (atau JWT_SECRET) belum diset — tautan publik slip tidak aman")
+	}
+	return nil
+}
+
 func ttl() time.Duration {
 	hours := 72
 	if v := os.Getenv("PUBLIC_LINK_TTL_HOURS"); v != "" {

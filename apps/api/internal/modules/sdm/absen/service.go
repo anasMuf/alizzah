@@ -33,20 +33,23 @@ func (s *Service) Upsert(req UpsertRequest) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	// Validasi semua karyawan ada — cegah data yatim.
+	// Validasi semua karyawan ada — cegah data yatim (satu query untuk semua id).
+	ids := make([]uint, 0, len(req.Items))
 	seen := map[uint]bool{}
 	for _, e := range req.Items {
-		if seen[e.EmployeeID] {
-			continue
+		if !seen[e.EmployeeID] {
+			seen[e.EmployeeID] = true
+			ids = append(ids, e.EmployeeID)
 		}
-		ok, err := s.repo.EmployeeExists(e.EmployeeID)
-		if err != nil {
-			return 0, err
-		}
-		if !ok {
+	}
+	existing, err := s.repo.ExistingEmployeeIDs(ids)
+	if err != nil {
+		return 0, err
+	}
+	for _, id := range ids {
+		if !existing[id] {
 			return 0, errors.New("Ada karyawan yang tidak ditemukan")
 		}
-		seen[e.EmployeeID] = true
 	}
 	if err := s.repo.UpsertBulk(p, req.Items); err != nil {
 		return 0, err

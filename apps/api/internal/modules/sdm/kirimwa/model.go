@@ -11,9 +11,10 @@ import (
 
 // Status pengiriman.
 const (
-	StatusPending = "pending" // menunggu diproses worker
-	StatusSent    = "sent"    // terkirim
-	StatusFailed  = "failed"  // gagal (lihat PesanError)
+	StatusPending    = "pending"    // menunggu diproses worker
+	StatusProcessing = "processing" // sedang dikirim (diklaim worker)
+	StatusSent       = "sent"       // terkirim
+	StatusFailed     = "failed"     // gagal (lihat PesanError)
 )
 
 // KirimWA — satu baris status pengiriman slip untuk (karyawan, periode).

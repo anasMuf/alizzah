@@ -16,11 +16,16 @@ import (
 	"api/config"
 	"api/internal/bootstrap"
 	"api/internal/modules/sdm"
+	"api/internal/modules/sdm/publik"
 	"api/internal/shared"
 )
 
 func main() {
 	config.LoadEnv()
+	// Endpoint publik (tautan slip) hanya aman bila kunci HMAC tersedia.
+	if err := publik.ValidateConfig(); err != nil {
+		log.Fatalf("Konfigurasi tautan publik tidak valid: %v", err)
+	}
 	db := config.DBInit()
 	flag.Parse()
 

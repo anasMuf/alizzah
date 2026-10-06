@@ -56,3 +56,18 @@ func TestPublicURL(t *testing.T) {
 		t.Fatalf("PublicURL = %q", got)
 	}
 }
+
+// ValidateConfig menolak saat kunci HMAC kosong (token bisa dipalsukan) dan
+// menerima bila terisi.
+func TestValidateConfig(t *testing.T) {
+	t.Setenv("PUBLIC_LINK_SECRET", "")
+	t.Setenv("JWT_SECRET", "")
+	if err := ValidateConfig(); err == nil {
+		t.Fatal("ValidateConfig harus error saat secret kosong")
+	}
+
+	t.Setenv("PUBLIC_LINK_SECRET", "rahasia-panjang")
+	if err := ValidateConfig(); err != nil {
+		t.Fatalf("ValidateConfig error tak terduga: %v", err)
+	}
+}

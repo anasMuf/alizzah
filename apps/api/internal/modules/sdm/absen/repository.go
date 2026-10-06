@@ -50,6 +50,23 @@ func (r *Repository) DeleteByPeriode(periode time.Time) error {
 	return r.db.Where("periode = ?", periode).Delete(&Absen{}).Error
 }
 
+// ExistingEmployeeIDs mengembalikan himpunan id karyawan yang ada — satu query
+// untuk banyak id (menghindari N+1 saat validasi bulk).
+func (r *Repository) ExistingEmployeeIDs(ids []uint) (map[uint]bool, error) {
+	found := map[uint]bool{}
+	if len(ids) == 0 {
+		return found, nil
+	}
+	var rows []uint
+	if err := r.db.Table("sdm_employees").Where("id IN ?", ids).Pluck("id", &rows).Error; err != nil {
+		return nil, err
+	}
+	for _, id := range rows {
+		found[id] = true
+	}
+	return found, nil
+}
+
 // EmployeeExists memeriksa keberadaan karyawan.
 func (r *Repository) EmployeeExists(employeeID uint) (bool, error) {
 	var count int64

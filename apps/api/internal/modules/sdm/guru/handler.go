@@ -57,6 +57,7 @@ func (h *Handler) RegisterRoutes(g *echo.Group, mw ...echo.MiddlewareFunc) {
 	g.GET("/employees/:id/golongan-history", h.ListGolonganHistory, mw...)
 	g.POST("/employees/:id/golongan-history", h.AddGolonganHistory, mw...)
 	g.DELETE("/employees/:id/golongan-history/:history_id", h.DeleteGolonganHistory, mw...)
+	g.POST("/golongan-history/backfill", h.BackfillGolonganHistory, mw...)
 }
 
 func parseUintParam(c echo.Context, name string) (uint, error) {
@@ -410,4 +411,18 @@ func (h *Handler) DeleteGolonganHistory(c echo.Context) error {
 		return utility.Fail(c, err)
 	}
 	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil menghapus riwayat golongan"})
+}
+
+// BackfillGolonganHistory godoc
+// @Summary Materialisasi riwayat golongan dari masa kerja (semua karyawan)
+// @Tags sdm-guru
+// @Security ApiKeyAuth
+// @Success 200 {object} dto.SuccessResponse{data=guru.BackfillResult}
+// @Router /v1/sdm/golongan-history/backfill [post]
+func (h *Handler) BackfillGolonganHistory(c echo.Context) error {
+	res, err := h.svc.BackfillGolonganHistory()
+	if err != nil {
+		return utility.Fail(c, err)
+	}
+	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Backfill riwayat golongan selesai", Data: res})
 }

@@ -527,6 +527,7 @@ func (s *Service) Riwayat(academicYearID, employeeID uint) (*RiwayatResponse, er
 		for _, r := range got.Rows {
 			if r.EmployeeID == employeeID {
 				row.TotalGaji = r.TotalGaji
+				row.GolonganKode = r.GolonganKode
 				row.AdaData = true
 				break
 			}
@@ -561,6 +562,7 @@ func (s *Service) RiwayatPeriods(employeeID uint) ([]RiwayatBulan, error) {
 		for _, r := range got.Rows {
 			if r.EmployeeID == employeeID {
 				row.TotalGaji = r.TotalGaji
+				row.GolonganKode = r.GolonganKode
 				row.AdaData = true
 				break
 			}

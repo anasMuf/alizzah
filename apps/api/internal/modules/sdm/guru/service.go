@@ -91,22 +91,63 @@ func calendarDays(from, to time.Time) int {
 // ── List / Detail ──
 
 func (s *Service) List(search string, golonganID *uint, activeOnly bool) ([]EmployeeItem, error) {
-	rows, err := s.repo.FindAll(search, golonganID, activeOnly)
+	allGolongan, _ := s.masterRepo.FindAllGolongan()
+	asOf := time.Now()
+	rows, err := s.repo.FindAll(search, nil, activeOnly)
 	if err != nil {
 		return nil, err
 	}
-	allGolongan, _ := s.masterRepo.FindAllGolongan()
-	return toEmployeeItems(rows, allGolongan, s.historyByEmp(employeeIDs(rows)), time.Now()), nil
+	hist := s.historyByEmp(employeeIDs(rows))
+	if golonganID != nil {
+		// Filter by golongan EFEKTIF → disaring di memori (bukan kolom tersimpan).
+		rows = filterEffectiveGolongan(rows, hist, allGolongan, *golonganID, asOf)
+	}
+	return toEmployeeItems(rows, allGolongan, hist, asOf), nil
 }
 
 // ListPaged mengembalikan halaman karyawan (urut id) + total baris terfilter.
 func (s *Service) ListPaged(search string, golonganID *uint, activeOnly bool, page, limit int) ([]EmployeeItem, int64, error) {
-	rows, total, err := s.repo.FindPaged(search, golonganID, activeOnly, page, limit)
+	allGolongan, _ := s.masterRepo.FindAllGolongan()
+	asOf := time.Now()
+	if golonganID != nil {
+		// Pagination dilakukan di memori setelah filter golongan efektif.
+		rows, err := s.repo.FindAll(search, nil, activeOnly)
+		if err != nil {
+			return nil, 0, err
+		}
+		hist := s.historyByEmp(employeeIDs(rows))
+		filtered := filterEffectiveGolongan(rows, hist, allGolongan, *golonganID, asOf)
+		total := int64(len(filtered))
+		if page < 1 {
+			page = 1
+		}
+		start := (page - 1) * limit
+		if start > len(filtered) {
+			start = len(filtered)
+		}
+		end := start + limit
+		if end > len(filtered) {
+			end = len(filtered)
+		}
+		return toEmployeeItems(filtered[start:end], allGolongan, hist, asOf), total, nil
+	}
+	rows, total, err := s.repo.FindPaged(search, nil, activeOnly, page, limit)
 	if err != nil {
 		return nil, 0, err
 	}
-	allGolongan, _ := s.masterRepo.FindAllGolongan()
-	return toEmployeeItems(rows, allGolongan, s.historyByEmp(employeeIDs(rows)), time.Now()), total, nil
+	return toEmployeeItems(rows, allGolongan, s.historyByEmp(employeeIDs(rows)), asOf), total, nil
+}
+
+// filterEffectiveGolongan menyaring karyawan yang golongan EFEKTIF (pada asOf)
+// sama dengan golonganID.
+func filterEffectiveGolongan(rows []Employee, histByEmp map[uint][]GolonganHistory, all []master.Golongan, golonganID uint, asOf time.Time) []Employee {
+	out := make([]Employee, 0, len(rows))
+	for i := range rows {
+		if ResolveEffectiveGolonganAt(all, histByEmp[rows[i].ID], &rows[i], asOf) == golonganID {
+			out = append(out, rows[i])
+		}
+	}
+	return out
 }
 
 // historyByEmp memuat riwayat golongan untuk sekumpulan karyawan (satu query)
@@ -365,6 +406,59 @@ func (s *Service) AddGolonganHistory(employeeID uint, req GolonganHistoryRequest
 
 func (s *Service) DeleteGolonganHistory(employeeID, id uint) error {
 	return s.repo.DeleteHistory(id, employeeID)
+}
+
+// BackfillGolonganHistory mematerialisasi riwayat golongan dari rentang masa
+// kerja untuk SEMUA karyawan (audit historis). Idempotent: baris yang sudah ada
+// TIDAK ditimpa (mis. override manual).
+func (s *Service) BackfillGolonganHistory() (*BackfillResult, error) {
+	all, err := s.masterRepo.FindAllGolongan()
+	if err != nil {
+		return nil, err
+	}
+	if len(all) == 0 {
+		return nil, errors.New("Master golongan kosong")
+	}
+	emps, err := s.repo.FindAll("", nil, false)
+	if err != nil {
+		return nil, err
+	}
+	today := time.Now()
+	res := &BackfillResult{}
+	for i := range emps {
+		e := &emps[i]
+		if e.TglMasuk == nil {
+			continue
+		}
+		created := 0
+		for _, g := range all {
+			if g.FromDay == nil {
+				continue
+			}
+			d := e.TglMasuk.AddDate(0, 0, *g.FromDay)
+			eff := time.Date(d.Year(), d.Month(), d.Day(), 0, 0, 0, 0, time.Local)
+			if eff.After(today) {
+				break // band berikutnya lebih jauh lagi (urut from_day)
+			}
+			ins, err := s.repo.InsertHistoryIfAbsent(&GolonganHistory{
+				EmployeeID:    e.ID,
+				GolonganID:    g.ID,
+				EffectiveDate: eff,
+				Reason:        "Masa kerja",
+			})
+			if err != nil {
+				return nil, err
+			}
+			if ins {
+				created++
+			}
+		}
+		if created > 0 {
+			res.Employees++
+		}
+		res.Rows += created
+	}
+	return res, nil
 }
 
 // ── helpers ──

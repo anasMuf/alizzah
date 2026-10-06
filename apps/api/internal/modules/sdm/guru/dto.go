@@ -117,6 +117,12 @@ type GolonganHistoryItem struct {
 	Reason        string `json:"reason"`
 }
 
+// BackfillResult — ringkasan materialisasi riwayat golongan dari masa kerja.
+type BackfillResult struct {
+	Employees int `json:"employees"` // jumlah karyawan yang mendapat baris baru
+	Rows      int `json:"rows"`      // jumlah baris riwayat yang dibuat
+}
+
 // ── Import ──
 
 // ImportRow — satu baris import karyawan. ID > 0 & ada → update; selainnya → baru.

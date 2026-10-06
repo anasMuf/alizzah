@@ -112,11 +112,12 @@ type RekapResponse struct {
 
 // RiwayatBulan — baris riwayat gaji satu karyawan pada satu periode.
 type RiwayatBulan struct {
-	Periode   string `json:"periode"` // YYYY-MM-05
-	Label     string `json:"label"`   // "Agustus 2025"
-	Status    string `json:"status"`  // open | finalized | empty
-	AdaData   bool   `json:"ada_data"`
-	TotalGaji int    `json:"total_gaji"`
+	Periode      string `json:"periode"` // YYYY-MM-05
+	Label        string `json:"label"`   // "Agustus 2025"
+	Status       string `json:"status"`  // open | finalized | empty
+	AdaData      bool   `json:"ada_data"`
+	TotalGaji    int    `json:"total_gaji"`
+	GolonganKode string `json:"golongan_kode"` // golongan efektif pada periode tsb
 }
 
 // RiwayatResponse — riwayat gaji satu karyawan sepanjang Tahun Ajaran.

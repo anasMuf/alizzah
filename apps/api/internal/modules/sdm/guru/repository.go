@@ -211,3 +211,13 @@ func (r *Repository) DeleteHistory(id, employeeID uint) error {
 	return r.db.Where("id = ? AND employee_id = ?", id, employeeID).
 		Delete(&GolonganHistory{}).Error
 }
+
+// InsertHistoryIfAbsent menyisipkan baris riwayat HANYA bila belum ada pada
+// (employee_id, effective_date) — mengembalikan true bila benar-benar dibuat.
+func (r *Repository) InsertHistoryIfAbsent(h *GolonganHistory) (bool, error) {
+	tx := r.db.Clauses(clause.OnConflict{DoNothing: true}).Create(h)
+	if tx.Error != nil {
+		return false, tx.Error
+	}
+	return tx.RowsAffected > 0, nil
+}

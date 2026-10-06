@@ -266,6 +266,23 @@ export interface KirimWAEnqueueResult {
 	skipped: number;
 }
 
+// ── Riwayat golongan (penugasan effective-dated) ──
+
+export interface GolonganHistory {
+	id: number;
+	employee_id: number;
+	golongan_id: number;
+	golongan_kode: string;
+	effective_date: string;
+	reason: string;
+}
+
+export interface GolonganHistoryInput {
+	golongan_id: number;
+	effective_date: string;
+	reason?: string;
+}
+
 // ── Query keys ──
 
 export const sdmKeys = {
@@ -281,6 +298,8 @@ export const sdmKeys = {
 		["sdm", "employees", { search, active }] as const,
 	employee: (id: number) => ["sdm", "employees", id] as const,
 	employeeHR: (id: number) => ["sdm", "employees", id, "hr"] as const,
+	golonganHistory: (id: number) =>
+		["sdm", "employees", id, "golongan-history"] as const,
 	absen: (periode: string) => ["sdm", "absen", periode] as const,
 	pinjaman: (status: string) => ["sdm", "pinjaman", status] as const,
 	pinjamanDetail: (id: number) => ["sdm", "pinjaman", id] as const,
@@ -732,6 +751,59 @@ export function useSummary(academicYearId?: number) {
 			sdmGet<Summary>("/summary", {
 				...(academicYearId ? { academic_year_id: academicYearId } : {}),
 			}),
+	});
+}
+
+// ── Riwayat golongan (penugasan effective-dated) ──
+
+export function useGolonganHistory(employeeId: number) {
+	return useQuery({
+		queryKey: sdmKeys.golonganHistory(employeeId),
+		queryFn: () =>
+			sdmGet<GolonganHistory[]>(`/employees/${employeeId}/golongan-history`),
+		enabled: !!employeeId,
+	});
+}
+
+// useSaveGolonganHistory — POST (upsert per employee+effective_date).
+export function useSaveGolonganHistory() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (v: { employeeId: number; input: GolonganHistoryInput }) =>
+			sdmSend<GolonganHistory>(
+				"POST",
+				`/employees/${v.employeeId}/golongan-history`,
+				v.input,
+			),
+		onSuccess: (_d, v) => {
+			qc.invalidateQueries({
+				queryKey: sdmKeys.golonganHistory(v.employeeId),
+			});
+			qc.invalidateQueries({ queryKey: sdmKeys.employee(v.employeeId) });
+			qc.invalidateQueries({ queryKey: ["sdm", "employees"] });
+			qc.invalidateQueries({ queryKey: ["sdm", "penggajian"] });
+			qc.invalidateQueries({ queryKey: ["sdm", "summary"] });
+		},
+	});
+}
+
+export function useDeleteGolonganHistory() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (v: { employeeId: number; historyId: number }) =>
+			sdmSend<null>(
+				"DELETE",
+				`/employees/${v.employeeId}/golongan-history/${v.historyId}`,
+			),
+		onSuccess: (_d, v) => {
+			qc.invalidateQueries({
+				queryKey: sdmKeys.golonganHistory(v.employeeId),
+			});
+			qc.invalidateQueries({ queryKey: sdmKeys.employee(v.employeeId) });
+			qc.invalidateQueries({ queryKey: ["sdm", "employees"] });
+			qc.invalidateQueries({ queryKey: ["sdm", "penggajian"] });
+			qc.invalidateQueries({ queryKey: ["sdm", "summary"] });
+		},
 	});
 }
 

@@ -58,7 +58,27 @@ function MasterPage() {
 				</p>
 			</div>
 
-			<div className="flex gap-2 border-b border-gray-200 overflow-x-auto">
+			{/* Mobile: dropdown kategori */}
+			<div className="sm:hidden">
+				<label htmlFor="master-tab" className="sr-only">
+					Pilih kategori Master HR
+				</label>
+				<select
+					id="master-tab"
+					value={tab}
+					onChange={(e) => setTab(e.target.value as TabId)}
+					className="block w-full rounded-md border-0 py-2 text-sm text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+				>
+					{TABS.map((t) => (
+						<option key={t.id} value={t.id}>
+							{t.label}
+						</option>
+					))}
+				</select>
+			</div>
+
+			{/* Desktop/tablet: tab bar */}
+			<div className="hidden gap-2 border-b border-gray-200 overflow-x-auto sm:flex">
 				{TABS.map((t) => (
 					<button
 						key={t.id}

@@ -111,7 +111,7 @@ function PublicSlipPage() {
 			<meta name="robots" content="noindex, nofollow" />
 
 			<div className="mx-auto max-w-3xl space-y-6">
-				<div className="rounded-lg border border-gray-200 bg-white p-6">
+				<div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6">
 					<div className="flex flex-wrap items-center justify-between gap-3">
 						<div>
 							<p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
@@ -143,7 +143,7 @@ function PublicSlipPage() {
 					</p>
 				</div>
 
-				<div className="rounded-lg border border-gray-200 bg-white p-6">
+				<div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6">
 					<h2 className="text-sm font-semibold text-gray-900">Riwayat Gaji</h2>
 					{riwayat.length === 0 ? (
 						<p className="mt-3 text-sm text-gray-500">
@@ -158,7 +158,7 @@ function PublicSlipPage() {
 										<button
 											type="button"
 											onClick={() => setPeriode(r.periode)}
-											className={`flex w-full items-center justify-between px-2 py-3 text-left transition-colors ${
+											className={`flex w-full flex-wrap items-center justify-between gap-2 px-2 py-3 text-left transition-colors ${
 												aktif ? "bg-indigo-50" : "hover:bg-gray-50"
 											}`}
 										>

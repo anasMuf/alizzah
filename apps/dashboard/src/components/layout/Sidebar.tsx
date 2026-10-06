@@ -39,9 +39,10 @@ import { AcademicYearSelector } from "./AcademicYearSelector";
 
 interface SidebarProps {
 	isOpen: boolean;
+	onNavigate?: () => void;
 }
 
-export function Sidebar({ isOpen }: SidebarProps) {
+export function Sidebar({ isOpen, onNavigate }: SidebarProps) {
 	const { isSuperadmin, hasModule, role } = useAccess();
 
 	const showAdministrasi = hasModule("administrasi");
@@ -66,7 +67,13 @@ export function Sidebar({ isOpen }: SidebarProps) {
 					<AcademicYearSelector />
 				</div>
 
-				<nav className="flex-1 overflow-y-auto space-y-1 px-3 py-4">
+				<nav
+					className="flex-1 overflow-y-auto space-y-1 px-3 py-4"
+					onClick={(e) => {
+						// Tutup sidebar (mobile) saat salah satu tautan menu diklik.
+						if ((e.target as HTMLElement).closest("a")) onNavigate?.();
+					}}
+				>
 					<NavLink to="/" icon={LayoutDashboard} exact>
 						Dashboard
 					</NavLink>

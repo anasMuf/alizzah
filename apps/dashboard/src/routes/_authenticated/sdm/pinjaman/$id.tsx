@@ -87,7 +87,7 @@ function PinjamanDetailPage() {
 							)}
 						</p>
 					</div>
-					<div className="grid grid-cols-3 gap-4 text-center">
+					<div className="grid grid-cols-1 gap-3 text-center sm:grid-cols-3 sm:gap-4 sm:text-right">
 						<MiniStat label="Jumlah" value={formatCurrency(loan.jumlah)} />
 						<MiniStat
 							label="Dibayar"
@@ -111,7 +111,7 @@ function PinjamanDetailPage() {
 					<h2 className="text-sm font-semibold text-gray-900">
 						Bayar Angsuran
 					</h2>
-					<div className="grid grid-cols-2 gap-4">
+					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 						<FormField
 							id="angsuran-periode"
 							label="Periode (YYYY-MM)"
@@ -144,36 +144,38 @@ function PinjamanDetailPage() {
 				{loan.angsuran.length === 0 ? (
 					<p className="px-5 py-4 text-sm text-gray-400">Belum ada angsuran.</p>
 				) : (
-					<table className="min-w-full divide-y divide-gray-200">
-						<thead className="bg-gray-50">
-							<tr>
-								<th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">
-									Periode
-								</th>
-								<th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">
-									Tanggal
-								</th>
-								<th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">
-									Nominal
-								</th>
-							</tr>
-						</thead>
-						<tbody className="divide-y divide-gray-100">
-							{loan.angsuran.map((a) => (
-								<tr key={a.id} className="hover:bg-gray-50">
-									<td className="px-4 py-3 text-sm text-gray-900">
-										{formatPeriode(a.periode)}
-									</td>
-									<td className="px-4 py-3 text-sm text-gray-600">
-										{formatDate(a.tanggal)}
-									</td>
-									<td className="px-4 py-3 text-sm text-gray-900 text-right">
-										{formatCurrency(a.angsuran)}
-									</td>
+					<div className="overflow-x-auto">
+						<table className="min-w-full divide-y divide-gray-200">
+							<thead className="bg-gray-50">
+								<tr>
+									<th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">
+										Periode
+									</th>
+									<th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">
+										Tanggal
+									</th>
+									<th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">
+										Nominal
+									</th>
 								</tr>
-							))}
-						</tbody>
-					</table>
+							</thead>
+							<tbody className="divide-y divide-gray-100">
+								{loan.angsuran.map((a) => (
+									<tr key={a.id} className="hover:bg-gray-50">
+										<td className="px-4 py-3 text-sm text-gray-900">
+											{formatPeriode(a.periode)}
+										</td>
+										<td className="px-4 py-3 text-sm text-gray-600">
+											{formatDate(a.tanggal)}
+										</td>
+										<td className="px-4 py-3 text-sm text-gray-900 text-right">
+											{formatCurrency(a.angsuran)}
+										</td>
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</div>
 				)}
 			</div>
 		</div>

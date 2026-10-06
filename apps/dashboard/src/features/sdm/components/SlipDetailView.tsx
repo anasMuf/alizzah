@@ -13,7 +13,7 @@ export function SlipDetailView({
 	periode: string;
 }) {
 	return (
-		<div className="rounded-lg border border-gray-200 bg-white p-6 print:border-0 print:p-0">
+		<div className="rounded-lg border border-gray-200 bg-white p-4 print:border-0 print:p-0 sm:p-6">
 			<div className="text-center border-b border-gray-200 pb-4 print:border-gray-300">
 				<h1 className="text-xl font-bold text-gray-900">
 					Slip Gaji {formatPeriode(periode)}
@@ -121,7 +121,7 @@ export function SlipDetailView({
 				</span>
 			</div>
 
-			<div className="mt-8 grid grid-cols-2 gap-8 text-center text-sm text-gray-600">
+			<div className="mt-8 grid grid-cols-2 gap-4 text-center text-sm text-gray-600 sm:gap-8">
 				<div>
 					<p>Diketahui,</p>
 					<p className="mt-10">Kepala Sekolah</p>
@@ -169,12 +169,12 @@ function Row({
 }) {
 	if (hideZero && value === 0) return null;
 	return (
-		<div className="flex items-center justify-between px-4 py-2">
+		<div className="flex items-center justify-between gap-3 px-4 py-2">
 			<span className={`text-sm ${muted ? "text-gray-400" : "text-gray-600"}`}>
 				{label}
 			</span>
 			<span
-				className={`text-sm ${
+				className={`whitespace-nowrap text-sm ${
 					danger
 						? "text-red-600 font-medium"
 						: strong

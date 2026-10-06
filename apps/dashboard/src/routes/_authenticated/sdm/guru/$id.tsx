@@ -143,6 +143,9 @@ function GuruDetailPage() {
 											Bulan
 										</th>
 										<th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
+											Golongan
+										</th>
+										<th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
 											Status
 										</th>
 										<th className="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
@@ -158,6 +161,13 @@ function GuruDetailPage() {
 										<tr key={b.periode} className="hover:bg-gray-50">
 											<td className="px-5 py-3 text-sm font-medium text-gray-900 whitespace-nowrap">
 												{b.label}
+											</td>
+											<td className="px-5 py-3 text-sm whitespace-nowrap">
+												{b.golongan_kode ? (
+													<Badge variant="info">{b.golongan_kode}</Badge>
+												) : (
+													<span className="text-gray-400">-</span>
+												)}
 											</td>
 											<td className="px-5 py-3">
 												{b.status === "finalized" ? (

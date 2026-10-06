@@ -205,6 +205,7 @@ export interface RiwayatBulan {
 	status: string; // open | finalized | empty
 	ada_data: boolean;
 	total_gaji: number;
+	golongan_kode: string; // golongan efektif pada periode tsb
 }
 
 export interface RiwayatResponse {
@@ -281,6 +282,11 @@ export interface GolonganHistoryInput {
 	golongan_id: number;
 	effective_date: string;
 	reason?: string;
+}
+
+export interface BackfillResult {
+	employees: number;
+	rows: number;
 }
 
 // ── Query keys ──
@@ -411,33 +417,46 @@ export function useSaveMasterItem(path: string, queryKey: readonly unknown[]) {
 
 // ── Employee hooks ──
 
-export function useEmployees(search = "", activeOnly = false) {
+export function useEmployees(
+	search = "",
+	activeOnly = false,
+	golonganId?: number,
+) {
 	return useQuery({
-		queryKey: sdmKeys.employees(search, activeOnly),
+		queryKey: [...sdmKeys.employees(search, activeOnly), { golonganId }],
 		queryFn: () =>
 			sdmGet<Employee[]>("/employees", {
 				all: true,
 				search: search || undefined,
 				active: activeOnly || undefined,
+				golongan_id: golonganId || undefined,
 			}),
 	});
 }
 
 // useEmployeesInfinite — daftar karyawan berhalaman (urut id) untuk infinite
 // scroll. Halaman diambil dengan limit (default 10) hingga total terpenuhi.
+// golonganId menyaring berdasarkan golongan EFEKTIF.
 export function useEmployeesInfinite(
 	search = "",
 	activeOnly = false,
 	limit = 10,
+	golonganId?: number,
 ) {
 	return useInfiniteQuery({
-		queryKey: [...sdmKeys.employees(search, activeOnly), "infinite", limit],
+		queryKey: [
+			...sdmKeys.employees(search, activeOnly),
+			"infinite",
+			limit,
+			{ golonganId },
+		],
 		queryFn: ({ pageParam }) =>
 			sdmGetPaged<Employee[]>("/employees", {
 				page: pageParam,
 				limit,
 				search: search || undefined,
 				active: activeOnly || undefined,
+				golongan_id: golonganId || undefined,
 			}),
 		initialPageParam: 1,
 		getNextPageParam: (last) => {
@@ -800,6 +819,20 @@ export function useDeleteGolonganHistory() {
 				queryKey: sdmKeys.golonganHistory(v.employeeId),
 			});
 			qc.invalidateQueries({ queryKey: sdmKeys.employee(v.employeeId) });
+			qc.invalidateQueries({ queryKey: ["sdm", "employees"] });
+			qc.invalidateQueries({ queryKey: ["sdm", "penggajian"] });
+			qc.invalidateQueries({ queryKey: ["sdm", "summary"] });
+		},
+	});
+}
+
+// useBackfillGolonganHistory — materialisasi riwayat dari masa kerja (semua).
+export function useBackfillGolonganHistory() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: () =>
+			sdmSend<BackfillResult>("POST", "/golongan-history/backfill"),
+		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: ["sdm", "employees"] });
 			qc.invalidateQueries({ queryKey: ["sdm", "penggajian"] });
 			qc.invalidateQueries({ queryKey: ["sdm", "summary"] });

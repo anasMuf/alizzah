@@ -65,6 +65,7 @@ function GuruListPage() {
 	const { addToast } = useToast();
 	const [search, setSearch] = useState("");
 	const [debounced, setDebounced] = useState("");
+	const [golonganFilter, setGolonganFilter] = useState("");
 	const [formOpen, setFormOpen] = useState(false);
 	const [editing, setEditing] = useState<Employee | null>(null);
 	const [deleting, setDeleting] = useState<Employee | null>(null);
@@ -78,7 +79,12 @@ function GuruListPage() {
 		fetchNextPage,
 		hasNextPage,
 		isFetchingNextPage,
-	} = useEmployeesInfinite(debounced, false, PAGE_SIZE);
+	} = useEmployeesInfinite(
+		debounced,
+		false,
+		PAGE_SIZE,
+		golonganFilter ? Number(golonganFilter) : undefined,
+	);
 	const saveEmp = useSaveEmployee();
 	const deleteEmp = useDeleteEmployee();
 
@@ -191,14 +197,29 @@ function GuruListPage() {
 				</Button>
 			</div>
 
-			<div className="relative max-w-sm">
-				<Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-				<Input
-					className="pl-9"
-					placeholder="Cari nama karyawan..."
-					value={search}
-					onChange={(e) => setSearch(e.target.value)}
-				/>
+			<div className="flex flex-wrap items-center gap-3">
+				<div className="relative max-w-sm flex-1">
+					<Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+					<Input
+						className="pl-9"
+						placeholder="Cari nama karyawan..."
+						value={search}
+						onChange={(e) => setSearch(e.target.value)}
+					/>
+				</div>
+				<select
+					value={golonganFilter}
+					onChange={(e) => setGolonganFilter(e.target.value)}
+					title="Filter golongan efektif"
+					className="block rounded-md border-0 py-2 text-sm text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+				>
+					<option value="">Semua golongan</option>
+					{golongans.map((g) => (
+						<option key={g.id} value={g.id}>
+							Golongan {g.kode}
+						</option>
+					))}
+				</select>
 			</div>
 
 			{isLoading ? (
@@ -208,8 +229,12 @@ function GuruListPage() {
 			) : employees.length === 0 ? (
 				<EmptyState
 					icon={<Users className="h-10 w-10 text-gray-400" />}
-					title="Belum ada karyawan"
-					description="Tambahkan data karyawan untuk mulai mengelola penggajian."
+					title={golonganFilter ? "Tidak ada karyawan" : "Belum ada karyawan"}
+					description={
+						golonganFilter
+							? "Tidak ada karyawan dengan golongan efektif ini."
+							: "Tambahkan data karyawan untuk mulai mengelola penggajian."
+					}
 				/>
 			) : (
 				<div className="overflow-hidden rounded-lg border border-gray-200 bg-white">

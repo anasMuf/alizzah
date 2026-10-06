@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { History, Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { ApiError } from "#/api/mutator/custom-instance";
 import {
@@ -17,6 +17,7 @@ import {
 	type KedisiplinanInput,
 	type MasterItem,
 	type MasterItemInput,
+	useBackfillGolonganHistory,
 	useFungsional,
 	useGolongans,
 	useKedisiplinan,
@@ -116,6 +117,8 @@ function GolonganSection() {
 	const { addToast } = useToast();
 	const { data: rows = [], isLoading } = useGolongans();
 	const save = useSaveGolongan();
+	const backfill = useBackfillGolonganHistory();
+	const [confirmBackfill, setConfirmBackfill] = useState(false);
 	const [editing, setEditing] = useState<Golongan | null>(null);
 	const [formOpen, setFormOpen] = useState(false);
 	const [deleting, setDeleting] = useState<Golongan | null>(null);
@@ -170,9 +173,19 @@ function GolonganSection() {
 			title="Golongan Gaji Pokok"
 			desc="Gaji pokok berdasarkan masa pengabdian (dipakai kalkulasi otomatis)."
 			action={
-				<Button variant="primary" size="sm" onClick={() => openForm(null)}>
-					<Plus className="h-4 w-4 mr-1" /> Tambah Golongan
-				</Button>
+				<div className="flex items-center gap-2">
+					<Button
+						variant="secondary"
+						size="sm"
+						onClick={() => setConfirmBackfill(true)}
+						disabled={backfill.isPending}
+					>
+						<History className="h-4 w-4 mr-1" /> Isi Riwayat dari Masa Kerja
+					</Button>
+					<Button variant="primary" size="sm" onClick={() => openForm(null)}>
+						<Plus className="h-4 w-4 mr-1" /> Tambah Golongan
+					</Button>
+				</div>
 			}
 		>
 			{isLoading ? (
@@ -287,6 +300,33 @@ function GolonganSection() {
 					/>
 				</ModalForm>
 			)}
+
+			<ConfirmDialog
+				open={confirmBackfill}
+				title="Isi Riwayat Golongan dari Masa Kerja?"
+				description="Sistem membuat riwayat golongan untuk SEMUA karyawan berdasarkan masa kerja (idempotent — baris yang sudah ada tidak diubah). Cocok dijalankan sekali saat mulai memakai fitur riwayat."
+				confirmLabel="Isi Riwayat"
+				onConfirm={() => {
+					backfill.mutate(undefined, {
+						onSuccess: (res) => {
+							addToast({
+								variant: "success",
+								title: "Berhasil",
+								message: `${res.rows} baris untuk ${res.employees} karyawan dibuat.`,
+							});
+							setConfirmBackfill(false);
+						},
+						onError: (err: Error) =>
+							addToast({
+								variant: "error",
+								title: "Gagal",
+								message:
+									err instanceof ApiError ? err.message : "Terjadi kesalahan",
+							}),
+					});
+				}}
+				onCancel={() => setConfirmBackfill(false)}
+			/>
 
 			<ConfirmDialog
 				open={!!deleting}

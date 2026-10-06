@@ -30,14 +30,12 @@ export function Topbar({ onMenuClick }: TopbarProps) {
 	const breadcrumbs = currentPath
 		.split("/")
 		.filter(Boolean)
-		.map((p) => {
-			return p.charAt(0).toUpperCase() + p.slice(1).replace("-", " ");
-		});
+		.map((p) => p.charAt(0).toUpperCase() + p.slice(1).replace(/-/g, " "));
 
 	return (
 		<header className="bg-white border-b border-gray-200">
-			<div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
-				<div className="flex items-center">
+			<div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+				<div className="flex min-w-0 items-center">
 					<button
 						type="button"
 						className="text-gray-500 hover:text-gray-700 focus:outline-none lg:hidden mr-4"
@@ -47,34 +45,42 @@ export function Topbar({ onMenuClick }: TopbarProps) {
 						<Menu className="h-6 w-6" aria-hidden="true" />
 					</button>
 
-					<div className="flex text-sm text-gray-500">
+					<div className="flex min-w-0 items-center text-sm text-gray-500">
 						{breadcrumbs.length > 0 ? (
-							breadcrumbs.map((crumb, idx) => (
-								<span key={idx} className="flex items-center">
-									{idx > 0 && <span className="mx-2">&gt;</span>}
+							breadcrumbs.map((crumb, idx) => {
+								const isLast = idx === breadcrumbs.length - 1;
+								return (
 									<span
-										className={
-											idx === breadcrumbs.length - 1
-												? "font-medium text-gray-900"
-												: ""
-										}
+										key={crumb}
+										className={`min-w-0 items-center ${isLast ? "flex" : "hidden sm:flex"}`}
 									>
-										{crumb}
+										{idx > 0 && (
+											<span className="mx-2 text-gray-300">{">"}</span>
+										)}
+										<span
+											className={
+												isLast
+													? "truncate font-medium text-gray-900"
+													: "truncate"
+											}
+										>
+											{crumb}
+										</span>
 									</span>
-								</span>
-							))
+								);
+							})
 						) : (
 							<span className="font-medium text-gray-900">Dashboard</span>
 						)}
 					</div>
 				</div>
 
-				<div className="flex items-center gap-4">
-					<div className="text-sm text-right hidden sm:block">
-						<p className="font-medium text-gray-900">
+				<div className="flex items-center gap-3 sm:gap-4">
+					<div className="hidden max-w-[12rem] text-right text-sm sm:block">
+						<p className="truncate font-medium text-gray-900">
 							{user?.full_name || "User"}
 						</p>
-						<p className="text-xs text-gray-500 uppercase">
+						<p className="truncate text-xs text-gray-500 uppercase">
 							{user?.role || "Role"}
 						</p>
 					</div>
@@ -83,6 +89,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
 						variant="secondary"
 						size="sm"
 						onClick={() => setShowLogoutDialog(true)}
+						className="shrink-0"
 					>
 						Logout
 					</Button>

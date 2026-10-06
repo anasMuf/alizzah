@@ -8,6 +8,9 @@ import {
 	CurrencyFormField,
 	EmptyState,
 	SlideOver,
+	Table,
+	TableBody,
+	TableHead,
 	useToast,
 } from "#/components/ui";
 import {
@@ -33,7 +36,7 @@ function PinjamanPage() {
 
 	return (
 		<div className="space-y-6">
-			<div className="flex items-center justify-between">
+			<div className="flex flex-wrap items-center justify-between gap-4">
 				<div>
 					<h1 className="text-2xl font-bold text-gray-900">Pinjaman</h1>
 					<p className="text-sm text-gray-500">
@@ -46,7 +49,7 @@ function PinjamanPage() {
 				</Button>
 			</div>
 
-			<div className="flex gap-2">
+			<div className="flex flex-wrap gap-2">
 				{[
 					{ value: "", label: "Semua" },
 					{ value: "belum_lunas", label: "Belum Lunas" },
@@ -78,76 +81,72 @@ function PinjamanPage() {
 					description="Catat pinjaman karyawan untuk mulai memotong angsuran dari gaji."
 				/>
 			) : (
-				<div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-					<table className="min-w-full divide-y divide-gray-200">
-						<thead className="bg-gray-50">
-							<tr>
-								<th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
-									Karyawan
-								</th>
-								<th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
-									Tanggal
-								</th>
-								<th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
-									Jumlah
-								</th>
-								<th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
-									Dibayar
-								</th>
-								<th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
-									Sisa
-								</th>
-								<th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
-									Status
-								</th>
-								<th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
-									Detail
-								</th>
+				<Table>
+					<TableHead>
+						<tr>
+							<th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
+								Karyawan
+							</th>
+							<th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
+								Tanggal
+							</th>
+							<th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
+								Jumlah
+							</th>
+							<th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
+								Dibayar
+							</th>
+							<th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
+								Sisa
+							</th>
+							<th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
+								Status
+							</th>
+							<th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
+								Detail
+							</th>
+						</tr>
+					</TableHead>
+					<TableBody>
+						{loans.map((l) => (
+							<tr key={l.id} className="hover:bg-gray-50">
+								<td className="px-4 py-3 text-sm font-medium text-gray-900">
+									{l.nama}
+								</td>
+								<td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+									{formatDate(l.tgl_pinjam)}
+								</td>
+								<td className="px-4 py-3 text-sm text-gray-900 text-right">
+									{formatCurrency(l.jumlah)}
+								</td>
+								<td className="px-4 py-3 text-sm text-emerald-600 text-right">
+									{formatCurrency(l.angsuran_terbayar)}
+								</td>
+								<td className="px-4 py-3 text-sm text-right font-medium">
+									<span
+										className={l.is_lunas ? "text-gray-400" : "text-amber-600"}
+									>
+										{formatCurrency(l.sisa)}
+									</span>
+								</td>
+								<td className="px-4 py-3">
+									<Badge variant={l.is_lunas ? "success" : "warning"}>
+										{l.is_lunas ? "Lunas" : "Belum Lunas"}
+									</Badge>
+								</td>
+								<td className="px-4 py-3 text-right">
+									<Link
+										to="/sdm/pinjaman/$id"
+										params={{ id: String(l.id) }}
+										className="inline-flex items-center text-indigo-600 hover:text-indigo-800"
+									>
+										Lihat <ChevronRight className="h-4 w-4" />
+									</Link>
+								</td>
 							</tr>
-						</thead>
-						<tbody className="divide-y divide-gray-100">
-							{loans.map((l) => (
-								<tr key={l.id} className="hover:bg-gray-50">
-									<td className="px-4 py-3 text-sm font-medium text-gray-900">
-										{l.nama}
-									</td>
-									<td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
-										{formatDate(l.tgl_pinjam)}
-									</td>
-									<td className="px-4 py-3 text-sm text-gray-900 text-right">
-										{formatCurrency(l.jumlah)}
-									</td>
-									<td className="px-4 py-3 text-sm text-emerald-600 text-right">
-										{formatCurrency(l.angsuran_terbayar)}
-									</td>
-									<td className="px-4 py-3 text-sm text-right font-medium">
-										<span
-											className={
-												l.is_lunas ? "text-gray-400" : "text-amber-600"
-											}
-										>
-											{formatCurrency(l.sisa)}
-										</span>
-									</td>
-									<td className="px-4 py-3">
-										<Badge variant={l.is_lunas ? "success" : "warning"}>
-											{l.is_lunas ? "Lunas" : "Belum Lunas"}
-										</Badge>
-									</td>
-									<td className="px-4 py-3 text-right">
-										<Link
-											to="/sdm/pinjaman/$id"
-											params={{ id: String(l.id) }}
-											className="inline-flex items-center text-indigo-600 hover:text-indigo-800"
-										>
-											Lihat <ChevronRight className="h-4 w-4" />
-										</Link>
-									</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
-				</div>
+						))}
+					</TableBody>
+				</Table>
 			)}
 
 			<PinjamanForm

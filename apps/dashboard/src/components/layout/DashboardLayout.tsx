@@ -27,7 +27,10 @@ export function DashboardLayout() {
 				/>
 			)}
 
-			<Sidebar isOpen={isSidebarOpen} />
+			<Sidebar
+				isOpen={isSidebarOpen}
+				onNavigate={() => setIsSidebarOpen(false)}
+			/>
 
 			<div className="flex flex-1 flex-col overflow-hidden">
 				<Topbar onMenuClick={() => setIsSidebarOpen(true)} />

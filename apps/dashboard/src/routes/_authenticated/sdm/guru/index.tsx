@@ -19,6 +19,9 @@ import {
 	FormField,
 	Input,
 	SlideOver,
+	Table,
+	TableBody,
+	TableHead,
 	useToast,
 } from "#/components/ui";
 import {
@@ -273,9 +276,9 @@ function GuruListPage() {
 					}
 				/>
 			) : (
-				<div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-					<table className="min-w-full divide-y divide-gray-200">
-						<thead className="bg-gray-50">
+				<>
+					<Table>
+						<TableHead>
 							<tr>
 								<th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase w-14">
 									No
@@ -299,8 +302,8 @@ function GuruListPage() {
 									Aksi
 								</th>
 							</tr>
-						</thead>
-						<tbody className="divide-y divide-gray-100">
+						</TableHead>
+						<TableBody>
 							{employees.map((e, i) => (
 								<tr key={e.id} className="hover:bg-gray-50">
 									<td className="px-4 py-3 text-sm text-gray-400 tabular-nums">
@@ -356,12 +359,12 @@ function GuruListPage() {
 									</td>
 								</tr>
 							))}
-						</tbody>
-					</table>
+						</TableBody>
+					</Table>
 
 					{/* Sentinel infinite scroll */}
 					<div ref={sentinelRef} className="h-px" />
-				</div>
+				</>
 			)}
 
 			{!isLoading && !isError && employees.length > 0 && (
@@ -566,7 +569,7 @@ function EmployeeForm({
 						/>
 					</div>
 				</div>
-				<div className="grid grid-cols-2 gap-4">
+				<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 					<FormField
 						id="tgl_masuk"
 						label="Tanggal Masuk"

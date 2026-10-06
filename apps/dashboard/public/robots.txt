@@ -1,3 +1,4 @@
-# https://www.robotstxt.org/robotstxt.html
+# Aplikasi manajemen internal Yayasan Al-Izzah.
+# Tidak untuk diindeks oleh mesin pencari publik.
 User-agent: *
-Disallow:
+Disallow: /

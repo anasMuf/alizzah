@@ -173,7 +173,7 @@ function GolonganSection() {
 			title="Golongan Gaji Pokok"
 			desc="Gaji pokok berdasarkan masa pengabdian (dipakai kalkulasi otomatis)."
 			action={
-				<div className="flex items-center gap-2">
+				<div className="flex flex-wrap items-center gap-2">
 					<Button
 						variant="secondary"
 						size="sm"
@@ -191,57 +191,59 @@ function GolonganSection() {
 			{isLoading ? (
 				<p className="px-5 py-4 text-sm text-gray-500">Memuat...</p>
 			) : (
-				<table className="min-w-full divide-y divide-gray-200">
-					<thead className="bg-gray-50">
-						<tr>
-							<th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">
-								Kode
-							</th>
-							<th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">
-								Masa Pengabdian
-							</th>
-							<th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">
-								Gaji Pokok
-							</th>
-							<th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">
-								Aksi
-							</th>
-						</tr>
-					</thead>
-					<tbody className="divide-y divide-gray-100">
-						{rows.map((g) => (
-							<tr key={g.id} className="hover:bg-gray-50">
-								<td className="px-4 py-3">
-									<Badge variant="info">Golongan {g.kode}</Badge>
-								</td>
-								<td className="px-4 py-3 text-sm text-gray-600">
-									{g.from_day != null && g.to_day != null
-										? `${g.from_day}–${g.to_day} hari`
-										: g.keterangan || "-"}
-								</td>
-								<td className="px-4 py-3 text-sm text-gray-900 text-right">
-									{formatCurrency(g.nilai)}
-								</td>
-								<td className="px-4 py-3 text-right whitespace-nowrap">
-									<button
-										type="button"
-										onClick={() => openForm(g)}
-										className="text-indigo-600 hover:text-indigo-800 mr-3"
-									>
-										<Pencil className="h-4 w-4 inline" />
-									</button>
-									<button
-										type="button"
-										onClick={() => setDeleting(g)}
-										className="text-red-600 hover:text-red-800"
-									>
-										<Trash2 className="h-4 w-4 inline" />
-									</button>
-								</td>
+				<div className="overflow-x-auto">
+					<table className="min-w-full divide-y divide-gray-200">
+						<thead className="bg-gray-50">
+							<tr>
+								<th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">
+									Kode
+								</th>
+								<th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">
+									Masa Pengabdian
+								</th>
+								<th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">
+									Gaji Pokok
+								</th>
+								<th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">
+									Aksi
+								</th>
 							</tr>
-						))}
-					</tbody>
-				</table>
+						</thead>
+						<tbody className="divide-y divide-gray-100">
+							{rows.map((g) => (
+								<tr key={g.id} className="hover:bg-gray-50">
+									<td className="px-4 py-3">
+										<Badge variant="info">Golongan {g.kode}</Badge>
+									</td>
+									<td className="px-4 py-3 text-sm text-gray-600">
+										{g.from_day != null && g.to_day != null
+											? `${g.from_day}–${g.to_day} hari`
+											: g.keterangan || "-"}
+									</td>
+									<td className="px-4 py-3 text-sm text-gray-900 text-right">
+										{formatCurrency(g.nilai)}
+									</td>
+									<td className="px-4 py-3 text-right whitespace-nowrap">
+										<button
+											type="button"
+											onClick={() => openForm(g)}
+											className="text-indigo-600 hover:text-indigo-800 mr-3"
+										>
+											<Pencil className="h-4 w-4 inline" />
+										</button>
+										<button
+											type="button"
+											onClick={() => setDeleting(g)}
+											className="text-red-600 hover:text-red-800"
+										>
+											<Trash2 className="h-4 w-4 inline" />
+										</button>
+									</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</div>
 			)}
 
 			{formOpen && (
@@ -250,7 +252,7 @@ function GolonganSection() {
 					onClose={() => setFormOpen(false)}
 					onSubmit={submit}
 				>
-					<div className="grid grid-cols-2 gap-4">
+					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 						<div>
 							<label className="block text-sm font-medium text-gray-900 mb-2">
 								Kode
@@ -275,7 +277,7 @@ function GolonganSection() {
 							required
 						/>
 					</div>
-					<div className="grid grid-cols-2 gap-4">
+					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 						<FormField
 							id="from_day"
 							label="Dari Hari (from_day)"
@@ -476,46 +478,48 @@ function KedisiplinanSection() {
 			{isLoading ? (
 				<p className="px-5 py-4 text-sm text-gray-500">Memuat...</p>
 			) : (
-				<table className="min-w-full divide-y divide-gray-200">
-					<thead className="bg-gray-50">
-						<tr>
-							<th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">
-								Kode
-							</th>
-							<th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">
-								Nama
-							</th>
-							<th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">
-								Nominal
-							</th>
-							<th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">
-								Aksi
-							</th>
-						</tr>
-					</thead>
-					<tbody className="divide-y divide-gray-100">
-						{rows.map((k) => (
-							<tr key={k.id} className="hover:bg-gray-50">
-								<td className="px-4 py-3">
-									<Badge variant="secondary">{k.kode}</Badge>
-								</td>
-								<td className="px-4 py-3 text-sm text-gray-900">{k.nama}</td>
-								<td className="px-4 py-3 text-sm text-gray-900 text-right">
-									{formatCurrency(k.nilai)}
-								</td>
-								<td className="px-4 py-3 text-right">
-									<button
-										type="button"
-										onClick={() => openForm(k)}
-										className="text-indigo-600 hover:text-indigo-800"
-									>
-										<Pencil className="h-4 w-4 inline" />
-									</button>
-								</td>
+				<div className="overflow-x-auto">
+					<table className="min-w-full divide-y divide-gray-200">
+						<thead className="bg-gray-50">
+							<tr>
+								<th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">
+									Kode
+								</th>
+								<th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">
+									Nama
+								</th>
+								<th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">
+									Nominal
+								</th>
+								<th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">
+									Aksi
+								</th>
 							</tr>
-						))}
-					</tbody>
-				</table>
+						</thead>
+						<tbody className="divide-y divide-gray-100">
+							{rows.map((k) => (
+								<tr key={k.id} className="hover:bg-gray-50">
+									<td className="px-4 py-3">
+										<Badge variant="secondary">{k.kode}</Badge>
+									</td>
+									<td className="px-4 py-3 text-sm text-gray-900">{k.nama}</td>
+									<td className="px-4 py-3 text-sm text-gray-900 text-right">
+										{formatCurrency(k.nilai)}
+									</td>
+									<td className="px-4 py-3 text-right">
+										<button
+											type="button"
+											onClick={() => openForm(k)}
+											className="text-indigo-600 hover:text-indigo-800"
+										>
+											<Pencil className="h-4 w-4 inline" />
+										</button>
+									</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</div>
 			)}
 
 			{formOpen && (
@@ -524,7 +528,7 @@ function KedisiplinanSection() {
 					onClose={() => setFormOpen(false)}
 					onSubmit={submit}
 				>
-					<div className="grid grid-cols-2 gap-4">
+					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 						<div>
 							<label className="block text-sm font-medium text-gray-900 mb-2">
 								Kode
@@ -741,7 +745,7 @@ function Card({
 }) {
 	return (
 		<div className="rounded-lg border border-gray-200 bg-white">
-			<div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+			<div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-5 py-4">
 				<div>
 					<h2 className="text-sm font-semibold text-gray-900">{title}</h2>
 					{desc && <p className="text-xs text-gray-500 mt-0.5">{desc}</p>}

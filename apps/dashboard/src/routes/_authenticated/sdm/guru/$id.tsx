@@ -351,48 +351,50 @@ function GolonganHistorySection({ employeeId }: { employeeId: number }) {
 					Belum ada riwayat golongan.
 				</p>
 			) : (
-				<table className="min-w-full divide-y divide-gray-200">
-					<thead className="bg-gray-50">
-						<tr>
-							<th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
-								Berlaku Sejak
-							</th>
-							<th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
-								Golongan
-							</th>
-							<th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
-								Alasan
-							</th>
-							<th className="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
-								Aksi
-							</th>
-						</tr>
-					</thead>
-					<tbody className="divide-y divide-gray-100">
-						{sorted.map((h) => (
-							<tr key={h.id} className="hover:bg-gray-50">
-								<td className="px-5 py-3 text-sm text-gray-900 whitespace-nowrap">
-									{formatDate(h.effective_date)}
-								</td>
-								<td className="px-5 py-3">
-									<Badge variant="info">Golongan {h.golongan_kode}</Badge>
-								</td>
-								<td className="px-5 py-3 text-sm text-gray-600">
-									{h.reason || "-"}
-								</td>
-								<td className="px-5 py-3 text-right">
-									<button
-										type="button"
-										onClick={() => setConfirmDelete(h)}
-										className="inline-flex items-center rounded-md border border-gray-300 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
-									>
-										<Trash2 className="h-3.5 w-3.5 mr-1" /> Hapus
-									</button>
-								</td>
+				<div className="overflow-x-auto">
+					<table className="min-w-full divide-y divide-gray-200">
+						<thead className="bg-gray-50">
+							<tr>
+								<th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
+									Berlaku Sejak
+								</th>
+								<th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
+									Golongan
+								</th>
+								<th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
+									Alasan
+								</th>
+								<th className="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
+									Aksi
+								</th>
 							</tr>
-						))}
-					</tbody>
-				</table>
+						</thead>
+						<tbody className="divide-y divide-gray-100">
+							{sorted.map((h) => (
+								<tr key={h.id} className="hover:bg-gray-50">
+									<td className="px-5 py-3 text-sm text-gray-900 whitespace-nowrap">
+										{formatDate(h.effective_date)}
+									</td>
+									<td className="px-5 py-3">
+										<Badge variant="info">Golongan {h.golongan_kode}</Badge>
+									</td>
+									<td className="px-5 py-3 text-sm text-gray-600">
+										{h.reason || "-"}
+									</td>
+									<td className="px-5 py-3 text-right">
+										<button
+											type="button"
+											onClick={() => setConfirmDelete(h)}
+											className="inline-flex items-center rounded-md border border-gray-300 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
+										>
+											<Trash2 className="h-3.5 w-3.5 mr-1" /> Hapus
+										</button>
+									</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</div>
 			)}
 
 			<ConfirmDialog

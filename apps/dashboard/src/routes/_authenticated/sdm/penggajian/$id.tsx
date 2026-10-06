@@ -32,35 +32,37 @@ function SlipPage() {
 
 	return (
 		<div className="space-y-6">
-			<div className="flex items-center justify-between">
+			<div className="flex flex-wrap items-center justify-between gap-3">
 				<Link
 					to="/sdm/penggajian"
 					className="inline-flex items-center text-sm text-gray-500 hover:text-indigo-600"
 				>
 					<ArrowLeft className="h-4 w-4 mr-1" /> Penggajian
 				</Link>
-				<button
-					type="button"
-					onClick={async () => {
-						const { downloadSlipPdf } = await import(
-							"#/features/sdm/lib/slipPdf"
-						);
-						const golonganKeterangan =
-							golongans.find((g) => g.kode === slip.golongan_kode)
-								?.keterangan ?? "";
-						downloadSlipPdf(slip, periodeState, { golonganKeterangan });
-					}}
-					className="inline-flex items-center rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-				>
-					<FileDown className="h-4 w-4 mr-1.5" /> Download PDF
-				</button>
-				<button
-					type="button"
-					onClick={() => window.print()}
-					className="inline-flex items-center rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-				>
-					<Printer className="h-4 w-4 mr-1.5" /> Cetak
-				</button>
+				<div className="flex flex-wrap items-center gap-2">
+					<button
+						type="button"
+						onClick={async () => {
+							const { downloadSlipPdf } = await import(
+								"#/features/sdm/lib/slipPdf"
+							);
+							const golonganKeterangan =
+								golongans.find((g) => g.kode === slip.golongan_kode)
+									?.keterangan ?? "";
+							downloadSlipPdf(slip, periodeState, { golonganKeterangan });
+						}}
+						className="inline-flex items-center rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+					>
+						<FileDown className="h-4 w-4 mr-1.5" /> Download PDF
+					</button>
+					<button
+						type="button"
+						onClick={() => window.print()}
+						className="inline-flex items-center rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+					>
+						<Printer className="h-4 w-4 mr-1.5" /> Cetak
+					</button>
+				</div>
 			</div>
 
 			<SlipDetailView slip={slip} periode={periodeState} />

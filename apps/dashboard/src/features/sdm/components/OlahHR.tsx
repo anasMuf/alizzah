@@ -66,7 +66,7 @@ export function OlahHR({ employeeId }: { employeeId: number }) {
 							{!emp.is_active && <Badge variant="secondary">Nonaktif</Badge>}
 						</div>
 					</div>
-					<div className="flex gap-2">
+					<div className="flex flex-wrap gap-2">
 						<Link
 							to="/sdm/penggajian/$id"
 							params={{ id: String(employeeId) }}

@@ -8,11 +8,13 @@ import {
 	Lock,
 	LockOpen,
 	MessageCircle,
+	MoreHorizontal,
 	Send,
 	UserCog,
 	Wallet,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { ApiError } from "#/api/mutator/custom-instance";
 import {
 	Badge,
@@ -257,7 +259,7 @@ function PenggajianPage() {
 						Tahun Ajaran {activeAy.name}.
 					</p>
 				</div>
-				<div className="flex items-center gap-2">
+				<div className="flex flex-wrap items-center gap-2">
 					<select
 						value={periode}
 						onChange={(e) => setPeriode(e.target.value)}
@@ -391,53 +393,54 @@ function PenggajianPage() {
 													<span className="text-xs text-gray-300">—</span>
 												)}
 											</td>
-											<td className="px-4 py-3 text-right">
-												<div className="inline-flex items-center gap-2">
+											<td className="px-4 py-3 text-right whitespace-nowrap">
+												<RowActionsMenu label={`Aksi untuk ${r.nama}`}>
 													<Link
 														to="/sdm/penggajian/$id"
 														params={{ id: String(r.employee_id) }}
 														search={{ periode }}
-														className="inline-flex items-center rounded-md border border-gray-300 px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+														className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
 													>
-														<FileText className="h-3.5 w-3.5 mr-1" /> Slip
+														<FileText className="h-4 w-4 text-gray-400" /> Slip
 													</Link>
 													<button
 														type="button"
 														onClick={() => handlePdf(r.employee_id)}
 														disabled={pdfId === r.employee_id}
-														className="inline-flex items-center rounded-md border border-gray-300 px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+														className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
 													>
-														<Download className="h-3.5 w-3.5 mr-1" />
-														{pdfId === r.employee_id ? "..." : "PDF"}
+														<Download className="h-4 w-4 text-gray-400" />
+														{pdfId === r.employee_id
+															? "Menyiapkan PDF..."
+															: "Unduh PDF"}
 													</button>
 													<Link
 														to="/sdm/penggajian/olah-hr/$id"
 														params={{ id: String(r.employee_id) }}
-														className="inline-flex items-center rounded-md border border-gray-300 px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+														className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
 													>
-														<UserCog className="h-3.5 w-3.5 mr-1" /> Olah HR
+														<UserCog className="h-4 w-4 text-gray-400" /> Olah
+														HR
 													</Link>
 													<button
 														type="button"
 														onClick={() => handleCopyLink(r.employee_id)}
 														disabled={copyBusyId === r.employee_id}
-														title="Salin tautan slip (berlaku sementara)"
-														className="inline-flex items-center rounded-md border border-gray-300 px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+														className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
 													>
-														<Copy className="h-3.5 w-3.5 mr-1" />
-														{copyBusyId === r.employee_id ? "..." : "Link"}
+														<Copy className="h-4 w-4 text-gray-400" /> Salin
+														tautan slip
 													</button>
 													<button
 														type="button"
 														onClick={() => handleKirimWA(r.employee_id)}
 														disabled={waBusyId === r.employee_id}
-														title="Kirim slip via WhatsApp"
-														className="inline-flex items-center rounded-md border border-gray-300 px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+														className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
 													>
-														<MessageCircle className="h-3.5 w-3.5 mr-1" />
-														{waBusyId === r.employee_id ? "..." : "WA"}
+														<MessageCircle className="h-4 w-4 text-gray-400" />{" "}
+														Kirim via WA
 													</button>
-												</div>
+												</RowActionsMenu>
 											</td>
 										</tr>
 									);
@@ -487,4 +490,103 @@ function WaStatusBadge({ status, error }: { status: string; error: string }) {
 			</Badge>
 		);
 	return <Badge variant="warning">Menunggu</Badge>;
+}
+
+// Lebar menu aksi (sesuai `w-44` = 11rem = 176px).
+const MENU_WIDTH = 176;
+
+// RowActionsMenu — menu dropdown untuk kolom Aksi. Di-render lewat portal
+// dengan posisi `fixed` agar tidak terpotong oleh pembungkus tabel yang
+// `overflow-x-auto` (yang juga memberlakukan overflow vertikal).
+function RowActionsMenu({
+	label,
+	children,
+}: {
+	label: string;
+	children: React.ReactNode;
+}) {
+	const btnRef = useRef<HTMLButtonElement>(null);
+	const menuRef = useRef<HTMLDivElement>(null);
+	const [open, setOpen] = useState(false);
+	const [coords, setCoords] = useState<{ top: number; left: number } | null>(
+		null,
+	);
+
+	const toggle = () => {
+		if (open) {
+			setOpen(false);
+			return;
+		}
+		const r = btnRef.current?.getBoundingClientRect();
+		if (!r) return;
+		const left = Math.max(
+			8,
+			Math.min(r.right - MENU_WIDTH, window.innerWidth - MENU_WIDTH - 8),
+		);
+		// Buka ke atas bila ruang di bawah tidak cukup (mis. baris terakhir).
+		const top =
+			window.innerHeight - r.bottom < 280
+				? Math.max(8, r.top - 280)
+				: r.bottom + 4;
+		setCoords({ top, left });
+		setOpen(true);
+	};
+
+	useEffect(() => {
+		if (!open) return;
+		const close = () => setOpen(false);
+		const onKey = (e: KeyboardEvent) => {
+			if (e.key === "Escape") setOpen(false);
+		};
+		const onDown = (e: MouseEvent) => {
+			const t = e.target as Node;
+			if (menuRef.current?.contains(t) || btnRef.current?.contains(t)) return;
+			setOpen(false);
+		};
+		// Tutup saat halaman/area lain di-scroll atau ukuran berubah.
+		window.addEventListener("scroll", close, true);
+		window.addEventListener("resize", close);
+		document.addEventListener("mousedown", onDown);
+		document.addEventListener("keydown", onKey);
+		return () => {
+			window.removeEventListener("scroll", close, true);
+			window.removeEventListener("resize", close);
+			document.removeEventListener("mousedown", onDown);
+			document.removeEventListener("keydown", onKey);
+		};
+	}, [open]);
+
+	return (
+		<div className="inline-block text-right">
+			<button
+				ref={btnRef}
+				type="button"
+				aria-haspopup="true"
+				aria-expanded={open}
+				aria-label={label}
+				onClick={toggle}
+				className="inline-flex items-center rounded-md border border-gray-300 p-1.5 text-gray-600 hover:bg-gray-50"
+			>
+				<MoreHorizontal className="h-4 w-4" />
+			</button>
+			{open &&
+				coords &&
+				createPortal(
+					<div
+						ref={menuRef}
+						style={{
+							position: "fixed",
+							top: coords.top,
+							left: coords.left,
+							width: MENU_WIDTH,
+						}}
+						className="z-50 rounded-md border border-gray-200 bg-white py-1 shadow-lg"
+					>
+						{/* Klik item mana pun menutup menu. */}
+						<div onClick={() => setOpen(false)}>{children}</div>
+					</div>,
+					document.body,
+				)}
+		</div>
+	);
 }

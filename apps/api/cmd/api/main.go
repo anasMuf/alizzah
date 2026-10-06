@@ -835,6 +835,7 @@ func main() {
 	// Batch 7: Daily Closings
 	dc := api.Group("/daily-closings", middleware.JWTAuth(tokenBlacklistRepo))
 	dc.GET("", dailyClosingHandler.List, guard.RequireModule(middleware.ModuleKeuangan))
+	dc.GET("/preview", dailyClosingHandler.Preview, guard.RequireModule(middleware.ModuleKeuangan))
 	dc.POST("", dailyClosingHandler.Create, guard.RequireModule(middleware.ModuleKeuangan))
 	dc.GET("/:id", dailyClosingHandler.Get, guard.RequireModule(middleware.ModuleKeuangan, middleware.ModuleLaporan))
 	dc.PATCH("/:id/confirm", dailyClosingHandler.Confirm, guard.RequireModule(middleware.ModuleKeuangan))

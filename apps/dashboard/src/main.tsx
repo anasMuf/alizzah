@@ -65,3 +65,13 @@ if (!rootElement.innerHTML) {
 		</QueryClientProvider>,
 	);
 }
+
+// PWA: daftarkan service worker (hanya di produksi). Kegagalan registrasi
+// diabaikan karena fitur ini opsional dan tidak boleh mengganggu aplikasi.
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
+	window.addEventListener("load", () => {
+		navigator.serviceWorker.register("/sw.js").catch(() => {
+			/* no-op */
+		});
+	});
+}

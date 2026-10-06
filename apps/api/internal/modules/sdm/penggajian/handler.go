@@ -27,6 +27,7 @@ func (h *Handler) RegisterRoutes(g *echo.Group, mw ...echo.MiddlewareFunc) {
 	g.GET("/penggajian", h.Get, mw...)
 	g.GET("/penggajian/:employee_id", h.Slip, mw...)
 	g.GET("/penggajian/:employee_id/riwayat", h.Riwayat, mw...)
+	g.GET("/penggajian/:employee_id/hr-history", h.EmployeeHRHistory, mw...)
 	g.POST("/penggajian/finalize", h.Finalize, mw...)
 	g.POST("/penggajian/unlock", h.Unlock, mw...)
 	g.GET("/rekap", h.Rekap, mw...)
@@ -145,6 +146,35 @@ func (h *Handler) Riwayat(c echo.Context) error {
 		return utility.Fail(c, err)
 	}
 	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil mengambil riwayat penggajian", Data: item})
+}
+
+// EmployeeHRHistory godoc
+// @Summary Riwayat item HR karyawan per periode (dari snapshot finalized)
+// @Tags sdm-penggajian
+// @Security ApiKeyAuth
+// @Param employee_id path int true "Employee ID"
+// @Param academic_year_id query int false "Batasi ke satu Tahun Ajaran"
+// @Success 200 {object} dto.SuccessResponse{data=[]penggajian.HRHistoryPeriode}
+// @Router /v1/sdm/penggajian/{employee_id}/hr-history [get]
+func (h *Handler) EmployeeHRHistory(c echo.Context) error {
+	employeeID, err := strconv.Atoi(c.Param("employee_id"))
+	if err != nil || employeeID <= 0 {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: "ID karyawan tidak valid"})
+	}
+	var ayID *uint
+	if v := c.QueryParam("academic_year_id"); v != "" {
+		id, err := strconv.Atoi(v)
+		if err != nil || id <= 0 {
+			return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "VALIDATION_ERROR", Message: "academic_year_id tidak valid"})
+		}
+		u := uint(id)
+		ayID = &u
+	}
+	items, err := h.svc.EmployeeHRHistory(uint(employeeID), ayID)
+	if err != nil {
+		return utility.Fail(c, err)
+	}
+	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil mengambil riwayat item HR", Data: items})
 }
 
 // Rekap godoc

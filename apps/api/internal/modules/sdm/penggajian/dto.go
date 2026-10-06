@@ -128,3 +128,26 @@ type RiwayatResponse struct {
 	PerBulan         []RiwayatBulan `json:"per_bulan"`
 	TotalGaji        int            `json:"total_gaji"`
 }
+
+// ── Riwayat item HR per periode (dibaca dari snapshot finalized) ──
+
+// HRItem — satu item HR pada snapshot.
+type HRItem struct {
+	Nama    string `json:"nama"`
+	Nominal int    `json:"nominal"`
+}
+
+// HRHistoryPeriode — item HR karyawan pada satu periode.
+type HRHistoryPeriode struct {
+	Periode         string   `json:"periode"`
+	Label           string   `json:"label"`
+	Status          string   `json:"status"`
+	Fungsional      []HRItem `json:"fungsional"`
+	TugasTambahan   []HRItem `json:"tugas_tambahan"`
+	PenanggungJawab []HRItem `json:"penanggung_jawab"`
+	Lainlain        []HRItem `json:"lainlain"`
+	SubtotalF       int      `json:"subtotal_f"`
+	SubtotalT       int      `json:"subtotal_t"`
+	SubtotalP       int      `json:"subtotal_p"`
+	SubtotalL       int      `json:"subtotal_l"`
+}

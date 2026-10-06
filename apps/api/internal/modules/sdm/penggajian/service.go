@@ -572,6 +572,78 @@ func (s *Service) RiwayatPeriods(employeeID uint) ([]RiwayatBulan, error) {
 	return out, nil
 }
 
+// EmployeeHRHistory mengembalikan item HR karyawan per periode dari snapshot
+// (hanya periode yang sudah difinalisasi). Opsional dibatasi satu Tahun Ajaran.
+func (s *Service) EmployeeHRHistory(employeeID uint, academicYearID *uint) ([]HRHistoryPeriode, error) {
+	emps, err := s.repo.FindEmployeesByIDs([]uint{employeeID})
+	if err != nil {
+		return nil, err
+	}
+	if len(emps) == 0 {
+		return nil, errors.New("Karyawan tidak ditemukan")
+	}
+
+	var start, end *time.Time
+	if academicYearID != nil {
+		ay, err := s.repo.FindAcademicYear(*academicYearID)
+		if err != nil {
+			return nil, err
+		}
+		start = &ay.StartDate
+		end = &ay.EndDate
+	}
+
+	rows, err := s.repo.FindEmployeeHRHistory(employeeID, start, end)
+	if err != nil {
+		return nil, err
+	}
+
+	order := make([]string, 0)
+	byPeriode := map[string]*HRHistoryPeriode{}
+	for _, r := range rows {
+		key := periode.Format(r.Periode)
+		hp := byPeriode[key]
+		if hp == nil {
+			hp = &HRHistoryPeriode{
+				Periode:         key,
+				Label:           periode.MonthLabel(r.Periode),
+				Status:          StatusFinalized,
+				Fungsional:      []HRItem{},
+				TugasTambahan:   []HRItem{},
+				PenanggungJawab: []HRItem{},
+				Lainlain:        []HRItem{},
+			}
+			byPeriode[key] = hp
+			order = append(order, key)
+		}
+		item := HRItem{Nama: r.NamaKomponen, Nominal: r.Nominal}
+		switch r.KodeKomponen {
+		case KodeFungsional:
+			hp.Fungsional = append(hp.Fungsional, item)
+		case KodeTugasTambahan:
+			hp.TugasTambahan = append(hp.TugasTambahan, item)
+		case KodePenanggungJawab:
+			hp.PenanggungJawab = append(hp.PenanggungJawab, item)
+		case KodeLainlain:
+			hp.Lainlain = append(hp.Lainlain, item)
+		case KodeSubtotalF:
+			hp.SubtotalF = r.Nominal
+		case KodeSubtotalT:
+			hp.SubtotalT = r.Nominal
+		case KodeSubtotalP:
+			hp.SubtotalP = r.Nominal
+		case KodeSubtotalL:
+			hp.SubtotalL = r.Nominal
+		}
+	}
+
+	out := make([]HRHistoryPeriode, 0, len(order))
+	for _, k := range order {
+		out = append(out, *byPeriode[k])
+	}
+	return out, nil
+}
+
 // monthsInRange mengembalikan tanggal payday (5) tiap bulan yang berada dalam
 // [start, end]. Contoh TA 2025-07-14..2026-07-13 → 2025-08-05 .. 2026-07-05.
 func monthsInRange(start, end time.Time) []time.Time {

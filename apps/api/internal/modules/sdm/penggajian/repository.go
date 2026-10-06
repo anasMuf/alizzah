@@ -219,6 +219,40 @@ func (r *Repository) EmployeePeriods(employeeID uint) ([]time.Time, error) {
 	return periods, err
 }
 
+// HRSnapshotRow — satu baris item HR (atau subtotalnya) pada snapshot payroll.
+type HRSnapshotRow struct {
+	Periode      time.Time
+	KodeKomponen string
+	NamaKomponen string
+	Nominal      int
+}
+
+// FindEmployeeHRHistory mengambil item HR + subtotal milik satu karyawan dari
+// snapshot periode yang sudah difinalisasi, opsional dibatasi rentang TA.
+func (r *Repository) FindEmployeeHRHistory(employeeID uint, start, end *time.Time) ([]HRSnapshotRow, error) {
+	kodes := []string{
+		KodeFungsional, KodeSubtotalF,
+		KodeTugasTambahan, KodeSubtotalT,
+		KodePenanggungJawab, KodeSubtotalP,
+		KodeLainlain, KodeSubtotalL,
+	}
+	q := r.db.Table("sdm_payroll_detail AS pd").
+		Select("pp.periode AS periode, pd.kode_komponen, pd.nama_komponen, pd.nominal").
+		Joins("JOIN sdm_payroll_periode pp ON pp.id = pd.payroll_periode_id").
+		Where("pd.employee_id = ? AND pp.status = ?", employeeID, StatusFinalized).
+		Where("pd.deleted_at IS NULL AND pp.deleted_at IS NULL").
+		Where("pd.kode_komponen IN ?", kodes)
+	if start != nil {
+		q = q.Where("pp.periode >= ?", *start)
+	}
+	if end != nil {
+		q = q.Where("pp.periode <= ?", *end)
+	}
+	var rows []HRSnapshotRow
+	err := q.Order("pp.periode DESC, pd.urutan ASC").Scan(&rows).Error
+	return rows, err
+}
+
 // LoadData mengambil seluruh data yang dibutuhkan untuk menghitung gaji
 // satu periode. Karyawan yang dihitung = yang punya absen di periode tsb
 // (sesuai perilaku lama: guru tanpa absen tidak muncul di penggajian bulan itu).

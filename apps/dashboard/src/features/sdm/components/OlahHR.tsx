@@ -192,7 +192,7 @@ function HRSection({
 					addToast({
 						variant: "success",
 						title: "Berhasil",
-						message: `${title} dilampirkan.`,
+						message: `${title} ditambahkan.`,
 					});
 					setOpen(false);
 					setSelected(0);
@@ -215,7 +215,7 @@ function HRSection({
 			<div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
 				<h2 className="text-sm font-semibold text-gray-900">{title}</h2>
 				<Button variant="secondary" size="sm" onClick={() => setOpen(!open)}>
-					<Plus className="h-4 w-4 mr-1" /> Lampirkan
+					<Plus className="h-4 w-4 mr-1" /> Tambah
 				</Button>
 			</div>
 

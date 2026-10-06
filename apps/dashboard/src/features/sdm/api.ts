@@ -289,6 +289,27 @@ export interface BackfillResult {
 	rows: number;
 }
 
+// ── Riwayat item HR per periode (dari snapshot finalized) ──
+
+export interface HRHistoryItem {
+	nama: string;
+	nominal: number;
+}
+
+export interface HRHistoryPeriode {
+	periode: string;
+	label: string;
+	status: string;
+	fungsional: HRHistoryItem[];
+	tugas_tambahan: HRHistoryItem[];
+	penanggung_jawab: HRHistoryItem[];
+	lainlain: HRHistoryItem[];
+	subtotal_f: number;
+	subtotal_t: number;
+	subtotal_p: number;
+	subtotal_l: number;
+}
+
 // ── Query keys ──
 
 export const sdmKeys = {
@@ -837,6 +858,21 @@ export function useBackfillGolonganHistory() {
 			qc.invalidateQueries({ queryKey: ["sdm", "penggajian"] });
 			qc.invalidateQueries({ queryKey: ["sdm", "summary"] });
 		},
+	});
+}
+
+// useEmployeeHRHistory — item HR per periode (dari snapshot finalized).
+export function useEmployeeHRHistory(
+	employeeId: number,
+	academicYearId?: number,
+) {
+	return useQuery({
+		queryKey: ["sdm", "employees", employeeId, "hr-history", academicYearId],
+		queryFn: () =>
+			sdmGet<HRHistoryPeriode[]>(`/penggajian/${employeeId}/hr-history`, {
+				...(academicYearId ? { academic_year_id: academicYearId } : {}),
+			}),
+		enabled: !!employeeId,
 	});
 }
 

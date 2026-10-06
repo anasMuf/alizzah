@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { useAtom } from "jotai";
 import { ArrowLeft, HandCoins, Plus, Trash2, Wallet } from "lucide-react";
 import { useState } from "react";
 import { ApiError } from "#/api/mutator/custom-instance";
@@ -14,11 +15,13 @@ import {
 	useAttachHR,
 	useDetachHR,
 	useEmployee,
+	useEmployeeHRHistory,
 	useFungsional,
 	useLainlain,
 	usePenanggungJawab,
 	useTugasTambahan,
 } from "#/features/sdm/api";
+import { academicYearAtom } from "#/store/global";
 import { formatCurrency, formatDate } from "#/utils/format";
 
 type AttachType =
@@ -130,6 +133,8 @@ export function OlahHR({ employeeId }: { employeeId: number }) {
 				withNilai
 				freeText
 			/>
+
+			<HRHistorySection employeeId={employeeId} />
 		</div>
 	);
 }
@@ -339,4 +344,115 @@ function useMasterForType(type: AttachType) {
 		default:
 			return [];
 	}
+}
+
+// HRHistorySection — item HR per periode, dibaca dari snapshot periode yang
+// sudah difinalisasi (terkunci). Read-only.
+function HRHistorySection({ employeeId }: { employeeId: number }) {
+	const [activeAy] = useAtom(academicYearAtom);
+	const { data: periods = [], isLoading } = useEmployeeHRHistory(
+		employeeId,
+		activeAy?.id,
+	);
+
+	return (
+		<div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+			<div className="border-b border-gray-100 px-5 py-4">
+				<h2 className="text-sm font-semibold text-gray-900">
+					Riwayat Item HR per Periode
+				</h2>
+				<p className="mt-1 text-xs text-gray-500">
+					Diambil dari snapshot periode yang sudah difinalisasi (terkunci).
+				</p>
+			</div>
+
+			{!activeAy ? (
+				<p className="px-5 py-6 text-sm text-gray-500">
+					Pilih Tahun Ajaran pada panel samping untuk melihat riwayat.
+				</p>
+			) : isLoading ? (
+				<p className="px-5 py-6 text-sm text-gray-500">Memuat riwayat...</p>
+			) : periods.length === 0 ? (
+				<p className="px-5 py-6 text-sm text-gray-400">
+					Belum ada periode yang difinalisasi pada Tahun Ajaran ini.
+				</p>
+			) : (
+				periods.map((p) => (
+					<div
+						key={p.periode}
+						className="border-b border-gray-100 px-5 py-4 last:border-b-0"
+					>
+						<div className="flex items-center justify-between">
+							<h3 className="text-sm font-semibold text-gray-900">{p.label}</h3>
+							<Link
+								to="/sdm/penggajian/$id"
+								params={{ id: String(employeeId) }}
+								search={{ periode: p.periode.slice(0, 7) }}
+								className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
+							>
+								Lihat Slip
+							</Link>
+						</div>
+						<div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+							<HRMiniList
+								title="Fungsional"
+								items={p.fungsional}
+								subtotal={p.subtotal_f}
+							/>
+							<HRMiniList
+								title="Tugas Tambahan"
+								items={p.tugas_tambahan}
+								subtotal={p.subtotal_t}
+							/>
+							<HRMiniList
+								title="Penanggung Jawab"
+								items={p.penanggung_jawab}
+								subtotal={p.subtotal_p}
+							/>
+							<HRMiniList
+								title="Lain-lain"
+								items={p.lainlain}
+								subtotal={p.subtotal_l}
+							/>
+						</div>
+					</div>
+				))
+			)}
+		</div>
+	);
+}
+
+function HRMiniList({
+	title,
+	items,
+	subtotal,
+}: {
+	title: string;
+	items: Array<{ nama: string; nominal: number }>;
+	subtotal: number;
+}) {
+	return (
+		<div className="rounded-md border border-gray-100 bg-gray-50 p-3">
+			<p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+				{title} · {formatCurrency(subtotal)}
+			</p>
+			{items.length === 0 ? (
+				<p className="mt-1 text-xs text-gray-400">-</p>
+			) : (
+				<ul className="mt-1 space-y-0.5">
+					{items.map((it) => (
+						<li
+							key={`${it.nama}-${it.nominal}`}
+							className="flex justify-between gap-2 text-xs text-gray-700"
+						>
+							<span className="truncate">{it.nama}</span>
+							<span className="tabular-nums whitespace-nowrap">
+								{formatCurrency(it.nominal)}
+							</span>
+						</li>
+					))}
+				</ul>
+			)}
+		</div>
+	);
 }

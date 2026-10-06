@@ -78,7 +78,7 @@ func (m *Module) Models() []any {
 		&master.Fungsional{}, &master.TugasTambahan{}, &master.PenanggungJawab{},
 		&master.Lainlain{},
 		&guru.Employee{}, &guru.FungsionalDetail{}, &guru.TugasTambahanDetail{},
-		&guru.PenanggungJawabDetail{}, &guru.LainlainDetail{},
+		&guru.PenanggungJawabDetail{}, &guru.LainlainDetail{}, &guru.GolonganHistory{},
 		&absen.Absen{},
 		&pinjam.Pinjam{}, &pinjam.PinjamDetail{},
 		&penggajian.PayrollPeriode{}, &penggajian.PayrollDetail{},

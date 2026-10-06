@@ -29,6 +29,24 @@ type Employee struct {
 
 func (Employee) TableName() string { return "sdm_employees" }
 
+// GolonganHistory — penugasan golongan efektif per tanggal (audit & override).
+// Golongan efektif karyawan pada `asOf` = baris terbaru dengan
+// effective_date <= asOf; bila tak ada, dihitung dari rentang masa kerja.
+// Unik per (employee_id, effective_date) agar tanggal kembali-berlaku jelas.
+type GolonganHistory struct {
+	model.PrimaryKey
+	EmployeeID    uint      `gorm:"not null;index;uniqueIndex:uq_gol_history" json:"employee_id"`
+	GolonganID    uint      `gorm:"not null;index" json:"golongan_id"`
+	EffectiveDate time.Time `gorm:"type:date;not null;uniqueIndex:uq_gol_history" json:"effective_date"`
+	Reason        string    `gorm:"size:120;not null;default:''" json:"reason"`
+	UserID        *uint     `gorm:"index" json:"user_id"`
+	model.BaseModelTimeAt
+
+	Golongan *master.Golongan `gorm:"foreignKey:GolonganID" json:"golongan,omitempty"`
+}
+
+func (GolonganHistory) TableName() string { return "sdm_employee_golongan_history" }
+
 // FungsionalDetail — lampiran jabatan fungsional ke karyawan (many-to-many).
 type FungsionalDetail struct {
 	model.PrimaryKey

@@ -330,7 +330,7 @@ func uniqueEmployeeIDs(details []PayrollDetail) []uint {
 
 // calculate — rumus gaji (wajib identik dengan aplikasi lama, lihat Dokumen 03).
 func (s *Service) calculate(emp *guru.Employee, d *Data, asOf time.Time) Response {
-	golongan := resolveGolongan(d.Golongan, guru.ResolveEffectiveGolongan(d.Golongan, emp, asOf))
+	golongan := resolveGolongan(d.Golongan, guru.ResolveEffectiveGolonganAt(d.Golongan, d.GolonganHist[emp.ID], emp, asOf))
 	resp := Response{
 		EmployeeID:   emp.ID,
 		NamaKaryawan: emp.Nama,

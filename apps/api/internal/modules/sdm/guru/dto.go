@@ -98,6 +98,25 @@ type EmployeeDetail struct {
 	HR HRBundle `json:"hr"`
 }
 
+// ── Riwayat golongan (penugasan effective-dated) ──
+
+// GolonganHistoryRequest — tambah/perbarui penugasan golongan.
+type GolonganHistoryRequest struct {
+	GolonganID    uint   `json:"golongan_id" validate:"required"`
+	EffectiveDate string `json:"effective_date" validate:"required,dateonly"`
+	Reason        string `json:"reason" validate:"omitempty,max=120"`
+}
+
+// GolonganHistoryItem — satu baris riwayat golongan.
+type GolonganHistoryItem struct {
+	ID            uint   `json:"id"`
+	EmployeeID    uint   `json:"employee_id"`
+	GolonganID    uint   `json:"golongan_id"`
+	GolonganKode  string `json:"golongan_kode"`
+	EffectiveDate string `json:"effective_date"`
+	Reason        string `json:"reason"`
+}
+
 // ── Import ──
 
 // ImportRow — satu baris import karyawan. ID > 0 & ada → update; selainnya → baru.

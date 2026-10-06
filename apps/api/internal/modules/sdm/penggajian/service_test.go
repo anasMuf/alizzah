@@ -49,6 +49,7 @@ func baseData() *Data {
 		Penanggung:    map[uint][]guru.PenanggungJawabDetail{},
 		Lainlain:      map[uint][]guru.LainlainDetail{},
 		Angsuran:      map[uint]int{},
+		GolonganHist:  map[uint][]guru.GolonganHistory{},
 	}
 }
 
@@ -174,6 +175,39 @@ func TestGolonganEfektifHistoris(t *testing.T) {
 	got := guru.ResolveEffectiveGolongan(testGolongans(), emp, asOf)
 	if got != 6 {
 		t.Errorf("Golongan efektif = %d, want 6 (F)", got)
+	}
+}
+
+// Riwayat golongan meng-override hasil rentang masa kerja; riwayat yang belum
+// berlaku diabaikan.
+func TestGolonganEfektifRiwayatOverride(t *testing.T) {
+	emp := &guru.Employee{PrimaryKey: model.PrimaryKey{ID: 1}, TglMasuk: date("2025-01-15")} // rentang → A
+	asOf := periode.MustParse("2026-01")
+
+	hist := []guru.GolonganHistory{{GolonganID: 4, EffectiveDate: *date("2026-01-01")}}
+	if got := guru.ResolveEffectiveGolonganAt(testGolongans(), hist, emp, asOf); got != 4 {
+		t.Errorf("override riwayat = %d, want 4 (D)", got)
+	}
+
+	future := []guru.GolonganHistory{{GolonganID: 4, EffectiveDate: *date("2026-12-01")}}
+	if got := guru.ResolveEffectiveGolonganAt(testGolongans(), future, emp, asOf); got != 1 {
+		t.Errorf("riwayat belum berlaku = %d, want 1 (rentang A)", got)
+	}
+}
+
+// Calculate harus memakai golongan dari riwayat (HR Pokok D = 400.000),
+// walau rentang masa kerja memberi A.
+func TestCalculate_GolonganDariRiwayat(t *testing.T) {
+	svc := &Service{}
+	d := baseData()
+	d.AbsenByEmp[1] = absen.Absen{EmployeeID: 1, Hadir: 20}
+	d.GolonganHist[1] = []guru.GolonganHistory{{GolonganID: 4, EffectiveDate: *date("2026-01-01")}}
+	emp := &guru.Employee{PrimaryKey: model.PrimaryKey{ID: 1}, TglMasuk: date("2025-01-15")}
+	asOf := periode.MustParse("2026-01")
+
+	resp := svc.calculate(emp, d, asOf)
+	if resp.HRPokok != 400000 {
+		t.Errorf("HR Pokok dari riwayat = %d, want 400000 (D)", resp.HRPokok)
 	}
 }
 

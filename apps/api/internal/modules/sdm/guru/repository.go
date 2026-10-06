@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // Repository menyediakan operasi baca/tulis karyawan & lampiran HR.
@@ -170,4 +171,43 @@ func (r *Repository) MasterExists(table string, id uint) (bool, error) {
 		return false, err
 	}
 	return count > 0, nil
+}
+
+// ── Riwayat golongan ──
+
+// FindHistoryByEmployeeIDs memuat riwayat golongan sekumpulan karyawan (batch).
+func (r *Repository) FindHistoryByEmployeeIDs(ids []uint) ([]GolonganHistory, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	var rows []GolonganHistory
+	err := r.db.Preload("Golongan").
+		Where("employee_id IN ?", ids).
+		Order("employee_id ASC, effective_date ASC").
+		Find(&rows).Error
+	return rows, err
+}
+
+// FindHistory memuat riwayat golongan satu karyawan (urut tanggal).
+func (r *Repository) FindHistory(employeeID uint) ([]GolonganHistory, error) {
+	var rows []GolonganHistory
+	err := r.db.Preload("Golongan").
+		Where("employee_id = ?", employeeID).
+		Order("effective_date ASC").
+		Find(&rows).Error
+	return rows, err
+}
+
+// UpsertHistory menyimpan penugasan golongan; bila (employee_id, effective_date)
+// sudah ada, baris tsb diperbarui.
+func (r *Repository) UpsertHistory(h *GolonganHistory) error {
+	return r.db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "employee_id"}, {Name: "effective_date"}},
+		DoUpdates: clause.AssignmentColumns([]string{"golongan_id", "reason", "user_id", "updated_at"}),
+	}).Create(h).Error
+}
+
+func (r *Repository) DeleteHistory(id, employeeID uint) error {
+	return r.db.Where("id = ? AND employee_id = ?", id, employeeID).
+		Delete(&GolonganHistory{}).Error
 }

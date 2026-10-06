@@ -6,6 +6,7 @@ import (
 
 	"api/dto"
 	"api/internal/modules/sdm/master"
+	"api/middleware"
 	"api/utility"
 
 	"github.com/labstack/echo/v4"
@@ -51,6 +52,11 @@ func (h *Handler) RegisterRoutes(g *echo.Group, mw ...echo.MiddlewareFunc) {
 	g.DELETE("/employees/:id/penanggung-jawab/:detail_id", h.DetachPenanggungJawab, mw...)
 	g.POST("/employees/:id/lainlain", h.AttachLainlain, mw...)
 	g.DELETE("/employees/:id/lainlain/:detail_id", h.DetachLainlain, mw...)
+
+	// Riwayat golongan (penugasan effective-dated)
+	g.GET("/employees/:id/golongan-history", h.ListGolonganHistory, mw...)
+	g.POST("/employees/:id/golongan-history", h.AddGolonganHistory, mw...)
+	g.DELETE("/employees/:id/golongan-history/:history_id", h.DeleteGolonganHistory, mw...)
 }
 
 func parseUintParam(c echo.Context, name string) (uint, error) {
@@ -334,4 +340,74 @@ func (h *Handler) DetachLainlain(c echo.Context) error {
 		return utility.Fail(c, err)
 	}
 	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil melepas lain-lain"})
+}
+
+// ── Riwayat golongan ──
+
+// ListGolonganHistory godoc
+// @Summary Riwayat penugasan golongan karyawan
+// @Tags sdm-guru
+// @Security ApiKeyAuth
+// @Param id path int true "Employee ID"
+// @Success 200 {object} dto.SuccessResponse{data=[]guru.GolonganHistoryItem}
+// @Router /v1/sdm/employees/{id}/golongan-history [get]
+func (h *Handler) ListGolonganHistory(c echo.Context) error {
+	id, err := parseUintParam(c, "id")
+	if err != nil {
+		return err
+	}
+	items, err := h.svc.ListGolonganHistory(id)
+	if err != nil {
+		return utility.Fail(c, err)
+	}
+	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil mengambil riwayat golongan", Data: items})
+}
+
+// AddGolonganHistory godoc
+// @Summary Tambah/perbarui penugasan golongan (effective date)
+// @Tags sdm-guru
+// @Security ApiKeyAuth
+// @Param id path int true "Employee ID"
+// @Param request body guru.GolonganHistoryRequest true "Data riwayat golongan"
+// @Success 201 {object} dto.SuccessResponse{data=guru.GolonganHistoryItem}
+// @Router /v1/sdm/employees/{id}/golongan-history [post]
+func (h *Handler) AddGolonganHistory(c echo.Context) error {
+	id, err := parseUintParam(c, "id")
+	if err != nil {
+		return err
+	}
+	var req GolonganHistoryRequest
+	if err := bindAndValidate(c, &req); err != nil {
+		return err
+	}
+	userID := middleware.GetCurrentUserID(c)
+	var uid *uint
+	if userID > 0 {
+		uid = &userID
+	}
+	item, err := h.svc.AddGolonganHistory(id, req, uid)
+	if err != nil {
+		return utility.Fail(c, err)
+	}
+	return c.JSON(http.StatusCreated, dto.SuccessResponse{Message: "Berhasil menyimpan riwayat golongan", Data: item})
+}
+
+// DeleteGolonganHistory godoc
+// @Summary Hapus baris riwayat golongan
+// @Tags sdm-guru
+// @Security ApiKeyAuth
+// @Param id path int true "Employee ID"
+// @Param history_id path int true "Riwayat ID"
+// @Success 200 {object} dto.SuccessResponse
+// @Router /v1/sdm/employees/{id}/golongan-history/{history_id} [delete]
+func (h *Handler) DeleteGolonganHistory(c echo.Context) error {
+	id, _ := parseUintParam(c, "id")
+	historyID, err := parseUintParam(c, "history_id")
+	if err != nil {
+		return err
+	}
+	if err := h.svc.DeleteGolonganHistory(id, historyID); err != nil {
+		return utility.Fail(c, err)
+	}
+	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil menghapus riwayat golongan"})
 }

@@ -24,7 +24,8 @@ type Data struct {
 	TugasTambahan map[uint][]guru.TugasTambahanDetail
 	Penanggung    map[uint][]guru.PenanggungJawabDetail
 	Lainlain      map[uint][]guru.LainlainDetail
-	Angsuran      map[uint]int // key: employee_id → total angsuran periode tsb
+	Angsuran      map[uint]int                    // key: employee_id → total angsuran periode tsb
+	GolonganHist  map[uint][]guru.GolonganHistory // key: employee_id → riwayat golongan
 }
 
 type Repository struct {
@@ -230,6 +231,7 @@ func (r *Repository) LoadData(periode time.Time) (*Data, error) {
 		Penanggung:    map[uint][]guru.PenanggungJawabDetail{},
 		Lainlain:      map[uint][]guru.LainlainDetail{},
 		Angsuran:      map[uint]int{},
+		GolonganHist:  map[uint][]guru.GolonganHistory{},
 	}
 
 	// Golongan & konfigurasi tarif.
@@ -275,6 +277,15 @@ func (r *Repository) LoadData(periode time.Time) (*Data, error) {
 	}
 	if len(empIDs) == 0 {
 		return d, nil
+	}
+
+	// Riwayat golongan (override effective-dated) untuk karyawan tsb.
+	var golHist []guru.GolonganHistory
+	if err := r.db.Where("employee_id IN ?", empIDs).Find(&golHist).Error; err != nil {
+		return nil, err
+	}
+	for i := range golHist {
+		d.GolonganHist[golHist[i].EmployeeID] = append(d.GolonganHist[golHist[i].EmployeeID], golHist[i])
 	}
 
 	var f []guru.FungsionalDetail

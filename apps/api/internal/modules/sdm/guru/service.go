@@ -27,9 +27,33 @@ func NewService(repo *Repository, masterRepo *master.Repository) *Service {
 // tak ada band cocok → fallback ke golongan tersimpan, lalu golongan terendah.
 // Ini menggantikan mutasi `id_pk` per-request di aplikasi lama (F5).
 func ResolveEffectiveGolongan(allGolongan []master.Golongan, emp *Employee, asOf time.Time) uint {
+	return ResolveEffectiveGolonganAt(allGolongan, nil, emp, asOf)
+}
+
+// ResolveEffectiveGolonganAt seperti ResolveEffectiveGolongan tetapi
+// mempertimbangkan riwayat penugasan golongan lebih dulu: bila ada baris dengan
+// effective_date <= asOf, golongan baris terbaru itulah yang dipakai (override
+// eksplisit / audit). Bila tidak ada, jatuh ke perhitungan rentang masa kerja.
+func ResolveEffectiveGolonganAt(allGolongan []master.Golongan, history []GolonganHistory, emp *Employee, asOf time.Time) uint {
+	// 1. Penugasan eksplisit terbaru yang sudah berlaku.
+	var best *GolonganHistory
+	for i := range history {
+		h := &history[i]
+		if h.GolonganID == 0 || h.EffectiveDate.After(asOf) {
+			continue
+		}
+		if best == nil || h.EffectiveDate.After(best.EffectiveDate) {
+			best = h
+		}
+	}
+	if best != nil {
+		return best.GolonganID
+	}
+
+	// 2. Fallback: rentang masa kerja (setengah terbuka, pilih from_day terbesar).
 	if emp.TglMasuk != nil {
 		days := calendarDays(*emp.TglMasuk, asOf)
-		var best *master.Golongan
+		var band *master.Golongan
 		for i := range allGolongan {
 			g := &allGolongan[i]
 			if g.FromDay == nil || days < *g.FromDay {
@@ -38,12 +62,12 @@ func ResolveEffectiveGolongan(allGolongan []master.Golongan, emp *Employee, asOf
 			if g.ToDay != nil && days >= *g.ToDay {
 				continue
 			}
-			if best == nil || *g.FromDay > *best.FromDay {
-				best = g
+			if band == nil || *g.FromDay > *band.FromDay {
+				band = g
 			}
 		}
-		if best != nil {
-			return best.ID
+		if band != nil {
+			return band.ID
 		}
 	}
 	if emp.GolonganID != nil {
@@ -72,7 +96,7 @@ func (s *Service) List(search string, golonganID *uint, activeOnly bool) ([]Empl
 		return nil, err
 	}
 	allGolongan, _ := s.masterRepo.FindAllGolongan()
-	return toEmployeeItems(rows, allGolongan, time.Now()), nil
+	return toEmployeeItems(rows, allGolongan, s.historyByEmp(employeeIDs(rows)), time.Now()), nil
 }
 
 // ListPaged mengembalikan halaman karyawan (urut id) + total baris terfilter.
@@ -82,13 +106,35 @@ func (s *Service) ListPaged(search string, golonganID *uint, activeOnly bool, pa
 		return nil, 0, err
 	}
 	allGolongan, _ := s.masterRepo.FindAllGolongan()
-	return toEmployeeItems(rows, allGolongan, time.Now()), total, nil
+	return toEmployeeItems(rows, allGolongan, s.historyByEmp(employeeIDs(rows)), time.Now()), total, nil
 }
 
-func toEmployeeItems(rows []Employee, allGolongan []master.Golongan, asOf time.Time) []EmployeeItem {
+// historyByEmp memuat riwayat golongan untuk sekumpulan karyawan (satu query)
+// lalu mengelompokkannya per employee_id.
+func (s *Service) historyByEmp(ids []uint) map[uint][]GolonganHistory {
+	rows, err := s.repo.FindHistoryByEmployeeIDs(ids)
+	if err != nil {
+		return nil
+	}
+	m := make(map[uint][]GolonganHistory, len(ids))
+	for i := range rows {
+		m[rows[i].EmployeeID] = append(m[rows[i].EmployeeID], rows[i])
+	}
+	return m
+}
+
+func employeeIDs(rows []Employee) []uint {
+	ids := make([]uint, len(rows))
+	for i := range rows {
+		ids[i] = rows[i].ID
+	}
+	return ids
+}
+
+func toEmployeeItems(rows []Employee, allGolongan []master.Golongan, histByEmp map[uint][]GolonganHistory, asOf time.Time) []EmployeeItem {
 	out := make([]EmployeeItem, 0, len(rows))
 	for i := range rows {
-		out = append(out, *toEmployeeItem(&rows[i], allGolongan, asOf))
+		out = append(out, *toEmployeeItem(&rows[i], allGolongan, histByEmp[rows[i].ID], asOf))
 	}
 	return out
 }
@@ -103,7 +149,7 @@ func (s *Service) Get(id uint) (*EmployeeDetail, error) {
 	if err != nil {
 		return nil, err
 	}
-	item := toEmployeeItem(emp, allGolongan, time.Now())
+	item := toEmployeeItem(emp, allGolongan, s.historyByEmp([]uint{id})[id], time.Now())
 	return &EmployeeDetail{EmployeeItem: *item, HR: *bundle}, nil
 }
 
@@ -133,7 +179,7 @@ func (s *Service) Create(req EmployeeRequest) (*EmployeeItem, error) {
 		return nil, err
 	}
 	allGolongan, _ := s.masterRepo.FindAllGolongan()
-	return toEmployeeItem(emp, allGolongan, time.Now()), nil
+	return toEmployeeItem(emp, allGolongan, nil, time.Now()), nil
 }
 
 func (s *Service) Update(id uint, req EmployeeRequest) (*EmployeeItem, error) {
@@ -162,7 +208,7 @@ func (s *Service) Update(id uint, req EmployeeRequest) (*EmployeeItem, error) {
 		return nil, err
 	}
 	allGolongan, _ := s.masterRepo.FindAllGolongan()
-	return toEmployeeItem(emp, allGolongan, time.Now()), nil
+	return toEmployeeItem(emp, allGolongan, s.historyByEmp([]uint{id})[id], time.Now()), nil
 }
 
 func (s *Service) Delete(id uint) error {
@@ -250,16 +296,87 @@ func (s *Service) DetachLainlain(employeeID, detailID uint) error {
 	return s.repo.DeleteLainlain(detailID, employeeID)
 }
 
+// ── Riwayat golongan (penugasan effective-dated) ──
+
+func toGolonganHistoryItem(h *GolonganHistory) GolonganHistoryItem {
+	item := GolonganHistoryItem{
+		ID:            h.ID,
+		EmployeeID:    h.EmployeeID,
+		GolonganID:    h.GolonganID,
+		EffectiveDate: h.EffectiveDate.Format("2006-01-02"),
+		Reason:        h.Reason,
+	}
+	if h.Golongan != nil {
+		item.GolonganKode = h.Golongan.Kode
+	}
+	return item
+}
+
+func (s *Service) ListGolonganHistory(employeeID uint) ([]GolonganHistoryItem, error) {
+	if _, err := s.repo.FindByID(employeeID); err != nil {
+		return nil, err
+	}
+	rows, err := s.repo.FindHistory(employeeID)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]GolonganHistoryItem, 0, len(rows))
+	for i := range rows {
+		out = append(out, toGolonganHistoryItem(&rows[i]))
+	}
+	return out, nil
+}
+
+func (s *Service) AddGolonganHistory(employeeID uint, req GolonganHistoryRequest, userID *uint) (*GolonganHistoryItem, error) {
+	if _, err := s.repo.FindByID(employeeID); err != nil {
+		return nil, err
+	}
+	ok, _ := s.repo.MasterExists("sdm_golongan", req.GolonganID)
+	if !ok {
+		return nil, errors.New("Golongan tidak ditemukan")
+	}
+	tgl, err := parseDate(req.EffectiveDate)
+	if err != nil || tgl == nil {
+		return nil, errors.New("Tanggal berlaku tidak valid")
+	}
+	h := &GolonganHistory{
+		EmployeeID:    employeeID,
+		GolonganID:    req.GolonganID,
+		EffectiveDate: *tgl,
+		Reason:        strings.TrimSpace(req.Reason),
+		UserID:        userID,
+	}
+	if err := s.repo.UpsertHistory(h); err != nil {
+		return nil, err
+	}
+	// Muat ulang agar memperoleh ID & kode golongan.
+	rows, err := s.repo.FindHistory(employeeID)
+	if err != nil {
+		return nil, err
+	}
+	for i := range rows {
+		if rows[i].EffectiveDate.Equal(*tgl) {
+			item := toGolonganHistoryItem(&rows[i])
+			return &item, nil
+		}
+	}
+	return nil, errors.New("Gagal menyimpan riwayat golongan")
+}
+
+func (s *Service) DeleteGolonganHistory(employeeID, id uint) error {
+	return s.repo.DeleteHistory(id, employeeID)
+}
+
 // ── helpers ──
 
-func toEmployeeItem(emp *Employee, allGolongan []master.Golongan, asOf time.Time) *EmployeeItem {
+func toEmployeeItem(emp *Employee, allGolongan []master.Golongan, hist []GolonganHistory, asOf time.Time) *EmployeeItem {
 	item := &EmployeeItem{
 		ID:          emp.ID,
 		LegacyID:    emp.LegacyID,
 		Nama:        emp.Nama,
 		NoTelp:      emp.NoTelp,
 		GolonganID:  emp.GolonganID,
-		EffectiveID: ResolveEffectiveGolongan(allGolongan, emp, asOf),
+		EffectiveID: ResolveEffectiveGolonganAt(allGolongan, hist, emp, asOf),
 		Sertifikasi: emp.Sertifikasi,
 		Impasing:    emp.Impasing,
 		IsActive:    emp.IsActive,

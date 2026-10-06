@@ -56,8 +56,9 @@ func main() {
 	// (saat kolom belum ada), jadi tak menimpa tanggal baris yang sudah benar.
 	preMigrateSavingsTransactionDate(db)
 
-	// AutoMigrate
-	if err := db.AutoMigrate(
+	// AutoMigrate — gabung seluruh model inti dalam satu slice
+	// (Go tidak mengizinkan argumen biasa + spread pada variadic tunggal).
+	migrateModels := []any{
 		&model.User{},
 		&model.AcademicYear{},
 		// Batch 2
@@ -115,7 +116,8 @@ func main() {
 		&model.AuditEntry{},
 		// Settings key-value
 		&model.Setting{},
-	); err != nil {
+	}
+	if err := db.AutoMigrate(migrateModels...); err != nil {
 		log.Fatal("Gagal AutoMigrate:", err)
 	}
 

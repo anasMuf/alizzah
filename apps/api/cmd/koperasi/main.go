@@ -13,6 +13,7 @@ import (
 	"api/internal/bootstrap"
 	"api/internal/modules/koperasi"
 	"api/internal/modules/koperasi/barang"
+	"api/internal/modules/sdm"
 	"api/internal/shared"
 )
 
@@ -40,6 +41,12 @@ func main() {
 
 	// Seed data master (anggota, pemasok, barang) bila masih kosong.
 	koperasi.Seed(db)
+
+	// Sumber kanonik karyawan adalah modul SDM → pastikan koperasi_employees
+	// adalah VIEW di atas sdm_employees (idempotent; dipanggil juga oleh cmd/sdm).
+	if err := sdm.EnsureEmployeeView(db); err != nil {
+		log.Fatalf("EnsureEmployeeView gagal: %v", err)
+	}
 
 	e := bootstrap.NewEcho()
 	mod.RegisterRoutes(bootstrap.APIGroup(e))

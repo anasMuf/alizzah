@@ -19,8 +19,10 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store pnpm install --froze
 COPY apps/dashboard apps/dashboard
 ARG VITE_API_URL
 ARG VITE_KOPERASI_API_URL
+ARG VITE_SDM_API_URL
 ENV VITE_API_URL=${VITE_API_URL}
 ENV VITE_KOPERASI_API_URL=${VITE_KOPERASI_API_URL}
+ENV VITE_SDM_API_URL=${VITE_SDM_API_URL}
 RUN pnpm --filter dashboard build
 
 # ---- runtime ----

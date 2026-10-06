@@ -7,7 +7,7 @@ type CreateUserRequest struct {
 	Email    string   `json:"email" validate:"required,email"`
 	Password string   `json:"password" validate:"required,min=8"`
 	Role     string   `json:"role" validate:"required,oneof=superadmin admin"`
-	Modules  []string `json:"modules" validate:"omitempty,dive,oneof=administrasi keuangan koperasi laporan"`
+	Modules  []string `json:"modules" validate:"omitempty,dive,oneof=administrasi keuangan koperasi laporan sdm"`
 }
 
 // UpdateUserRequest is the request body for PUT /api/v1/users/:id.
@@ -17,7 +17,7 @@ type UpdateUserRequest struct {
 	Email    string   `json:"email" validate:"required,email"`
 	Password string   `json:"password" validate:"omitempty,min=8"`
 	Role     string   `json:"role" validate:"required,oneof=superadmin admin"`
-	Modules  []string `json:"modules" validate:"omitempty,dive,oneof=administrasi keuangan koperasi laporan"`
+	Modules  []string `json:"modules" validate:"omitempty,dive,oneof=administrasi keuangan koperasi laporan sdm"`
 }
 
 // UserResponse is the standard user response (used in lists and details).

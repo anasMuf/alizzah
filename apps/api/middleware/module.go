@@ -20,6 +20,7 @@ const (
 	ModuleKeuangan     = "keuangan"
 	ModuleKoperasi     = "koperasi"
 	ModuleLaporan      = "laporan"
+	ModuleSDM          = "sdm"
 )
 
 // ModuleGuard membangun middleware otorisasi berbasis modul. Sumber kebenaran

@@ -7,6 +7,7 @@ import {
 	Bus,
 	Calendar,
 	CircleDollarSign,
+	ClipboardCheck,
 	CreditCard,
 	Database,
 	FileText,
@@ -30,6 +31,7 @@ import {
 	UserCog,
 	Users,
 	Vault,
+	Wallet,
 } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import { useAccess } from "#/features/auth/access";
@@ -45,6 +47,7 @@ export function Sidebar({ isOpen }: SidebarProps) {
 	const showAdministrasi = hasModule("administrasi");
 	const showKeuangan = hasModule("keuangan");
 	const showKoperasi = hasModule("koperasi");
+	const showSDM = hasModule("sdm");
 	const showLaporan = hasModule("laporan");
 
 	return (
@@ -187,6 +190,35 @@ export function Sidebar({ isOpen }: SidebarProps) {
 							</NavLink>
 							<NavLink to="/koperasi/laporan" icon={BarChart3}>
 								Laporan
+							</NavLink>
+						</div>
+					)}
+
+					{showSDM && (
+						<div className="pt-4">
+							<p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+								SDM / HR
+							</p>
+							<NavLink to="/sdm" icon={Users} exact>
+								Ringkasan
+							</NavLink>
+							<NavLink to="/sdm/guru" icon={Users}>
+								Data Karyawan
+							</NavLink>
+							<NavLink to="/sdm/master" icon={Layers}>
+								Master HR
+							</NavLink>
+							<NavLink to="/sdm/absen" icon={ClipboardCheck}>
+								Absensi
+							</NavLink>
+							<NavLink to="/sdm/pinjaman" icon={HandCoins}>
+								Pinjaman
+							</NavLink>
+							<NavLink to="/sdm/penggajian" icon={Wallet} exact>
+								Penggajian
+							</NavLink>
+							<NavLink to="/sdm/laporan" icon={BarChart3}>
+								Rekap Gaji
 							</NavLink>
 						</div>
 					)}

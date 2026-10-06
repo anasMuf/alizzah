@@ -259,7 +259,7 @@ func seedEmployees(db *gorm.DB) {
 		{ptr(23), "Triana Septi Anifah", "+6285706199197", "2017-03-27", "C", false, false},
 		{ptr(24), "Ifatin Nikmah, S.Pd", "+6285536483099", "2018-03-12", "C", true, false},
 		{ptr(25), "Mei Nur Firdaus, S.S", "+6283849045315", "2019-06-01", "C", true, false},
-		{ptr(27), "Nur Sa'diyah", "+6281231447396", "", "A", false, false},
+		{ptr(27), "Nur Sa'diyah", "+6281231447396", "2019-06-01", "C", false, false},
 		{ptr(28), "Faizatur Rohmah", "+6289699070503", "2021-11-22", "B", true, false},
 		{ptr(30), "Anita Khoirina, S.Pd", "+6285755482109", "2021-10-22", "B", false, false},
 		{ptr(31), "Dhiayu Choirun Nisak, S.Pd", "+62895337475148", "2022-06-06", "B", false, false},

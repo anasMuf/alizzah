@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import {
 	AlertCircle,
@@ -40,6 +40,10 @@ import { formatCurrency } from "#/utils/format";
 
 export const Route = createFileRoute("/_authenticated/sdm/penggajian/")({
 	component: PenggajianPage,
+	validateSearch: (search: Record<string, unknown>): { periode?: string } => {
+		const v = search.periode;
+		return typeof v === "string" && v !== "" ? { periode: v } : {};
+	},
 });
 
 function PenggajianPage() {
@@ -49,7 +53,14 @@ function PenggajianPage() {
 		() => (activeAy ? monthsInAcademicYear(activeAy) : []),
 		[activeAy],
 	);
-	const [periode, setPeriode] = useState("");
+	const { periode: periodeParam } = Route.useSearch();
+	const navigate = useNavigate();
+	const setPeriode = (value: string) =>
+		navigate({
+			to: "/sdm/penggajian",
+			search: { periode: value },
+			replace: true,
+		});
 	const [confirmAction, setConfirmAction] = useState<
 		"finalize" | "unlock" | "kirim-semua" | null
 	>(null);
@@ -57,13 +68,28 @@ function PenggajianPage() {
 	const [copyBusyId, setCopyBusyId] = useState<number | null>(null);
 	const [waBusyId, setWaBusyId] = useState<number | null>(null);
 
-	useEffect(() => {
-		if (months.length > 0 && !months.some((m) => m.value === periode)) {
-			const now = new Date();
-			const cur = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-			setPeriode(months.some((m) => m.value === cur) ? cur : months[0].value);
+	// periode efektif: dari URL bila valid, jika tidak → bulan berjalan / bulan
+	// pertama tahun ajaran.
+	const periode = useMemo(() => {
+		if (periodeParam && months.some((m) => m.value === periodeParam)) {
+			return periodeParam;
 		}
-	}, [months, periode]);
+		if (months.length === 0) return "";
+		const now = new Date();
+		const cur = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+		return months.some((m) => m.value === cur) ? cur : months[0].value;
+	}, [periodeParam, months]);
+
+	// Selaraskan URL dengan periode efektif → tetap saat refresh / pindah halaman.
+	useEffect(() => {
+		if (periode && periode !== periodeParam) {
+			navigate({
+				to: "/sdm/penggajian",
+				search: { periode },
+				replace: true,
+			});
+		}
+	}, [periode, periodeParam, navigate]);
 
 	const { data: payroll, isLoading, isError } = usePenggajian(periode);
 	const { data: golongans = [] } = useGolongans();

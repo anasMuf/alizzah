@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
 	Download,
 	FileDown,
@@ -35,6 +35,16 @@ import { formatDate } from "#/utils/format";
 
 export const Route = createFileRoute("/_authenticated/sdm/guru/")({
 	component: GuruListPage,
+	validateSearch: (
+		search: Record<string, unknown>,
+	): { q?: string; golongan?: number } => {
+		const out: { q?: string; golongan?: number } = {};
+		const q = search.q;
+		if (typeof q === "string" && q !== "") out.q = q;
+		const golongan = Number(search.golongan);
+		if (Number.isFinite(golongan) && golongan > 0) out.golongan = golongan;
+		return out;
+	},
 });
 
 const PAGE_SIZE = 10;
@@ -63,9 +73,14 @@ const IMPORT_COLS = [
 
 function GuruListPage() {
 	const { addToast } = useToast();
-	const [search, setSearch] = useState("");
-	const [debounced, setDebounced] = useState("");
-	const [golonganFilter, setGolonganFilter] = useState("");
+	const navigate = useNavigate();
+	const { q, golongan: golonganParam } = Route.useSearch();
+	// `search` = nilai input (lokal, agar mengetik responsif); debounce akan
+	// menyinkronkannya ke URL sebagai `q`.
+	const [search, setSearch] = useState(q ?? "");
+	// Nilai `q` terakhir yang kita tulis sendiri ke URL — untuk membedakan
+	// perubahan URL internal (debounce) vs eksternal (back/forward).
+	const lastEmitted = useRef<string | undefined>(undefined);
 	const [formOpen, setFormOpen] = useState(false);
 	const [editing, setEditing] = useState<Employee | null>(null);
 	const [deleting, setDeleting] = useState<Employee | null>(null);
@@ -79,12 +94,7 @@ function GuruListPage() {
 		fetchNextPage,
 		hasNextPage,
 		isFetchingNextPage,
-	} = useEmployeesInfinite(
-		debounced,
-		false,
-		PAGE_SIZE,
-		golonganFilter ? Number(golonganFilter) : undefined,
-	);
+	} = useEmployeesInfinite(q ?? "", false, PAGE_SIZE, golonganParam);
 	const saveEmp = useSaveEmployee();
 	const deleteEmp = useDeleteEmployee();
 
@@ -94,11 +104,26 @@ function GuruListPage() {
 	);
 	const total = data?.pages[0]?.meta.total ?? 0;
 
-	// Debounce sederhana untuk pencarian.
+	// Debounce sederhana untuk pencarian: tulis ke URL setelah 300ms jeda.
 	useEffect(() => {
-		const t = setTimeout(() => setDebounced(search), 300);
+		const t = setTimeout(() => {
+			const next = search || undefined;
+			lastEmitted.current = next;
+			navigate({
+				to: "/sdm/guru",
+				search: (prev) => ({ ...prev, q: next }),
+				replace: true,
+			});
+		}, 300);
 		return () => clearTimeout(t);
-	}, [search]);
+	}, [search, navigate]);
+
+	// Sinkronkan input saat URL berubah dari luar (mis. tombol back/forward).
+	// Perubahan yang berasal dari debounce sendiri diabaikan agar ketikan yang
+	// lebih baru tidak tertimpa nilai lama.
+	useEffect(() => {
+		if (q !== lastEmitted.current) setSearch(q ?? "");
+	}, [q]);
 
 	// Infinite scroll: muat halaman berikutnya saat sentinel terlihat.
 	const sentinelRef = useRef<HTMLDivElement>(null);
@@ -170,31 +195,33 @@ function GuruListPage() {
 
 	return (
 		<div className="space-y-6">
-			<div className="flex items-center justify-between">
+			<div className="flex flex-wrap items-center justify-between gap-4">
 				<div>
 					<h1 className="text-2xl font-bold text-gray-900">Data Karyawan</h1>
 					<p className="text-sm text-gray-500">
 						Master guru & tenaga kependidikan — golongan, sertifikasi/impasing.
 					</p>
 				</div>
-				<Button variant="secondary" onClick={handleTemplate}>
-					<FileDown className="h-4 w-4 mr-1.5" /> Template
-				</Button>
-				<Button variant="primary" onClick={() => setImportOpen(true)}>
-					<Upload className="h-4 w-4 mr-1.5" /> Import
-				</Button>
-				<Button variant="secondary" onClick={handleExport}>
-					<Download className="h-4 w-4 mr-1.5" /> Export
-				</Button>
-				<Button
-					variant="primary"
-					onClick={() => {
-						setEditing(null);
-						setFormOpen(true);
-					}}
-				>
-					<Plus className="h-4 w-4 mr-1.5" /> Tambah Karyawan
-				</Button>
+				<div className="flex flex-wrap items-center gap-2">
+					<Button variant="secondary" onClick={handleTemplate}>
+						<FileDown className="h-4 w-4 mr-1.5" /> Template
+					</Button>
+					<Button variant="primary" onClick={() => setImportOpen(true)}>
+						<Upload className="h-4 w-4 mr-1.5" /> Import
+					</Button>
+					<Button variant="secondary" onClick={handleExport}>
+						<Download className="h-4 w-4 mr-1.5" /> Export
+					</Button>
+					<Button
+						variant="primary"
+						onClick={() => {
+							setEditing(null);
+							setFormOpen(true);
+						}}
+					>
+						<Plus className="h-4 w-4 mr-1.5" /> Tambah Karyawan
+					</Button>
+				</div>
 			</div>
 
 			<div className="flex flex-wrap items-center gap-3">
@@ -208,8 +235,17 @@ function GuruListPage() {
 					/>
 				</div>
 				<select
-					value={golonganFilter}
-					onChange={(e) => setGolonganFilter(e.target.value)}
+					value={golonganParam ?? ""}
+					onChange={(e) =>
+						navigate({
+							to: "/sdm/guru",
+							search: (prev) => ({
+								...prev,
+								golongan: e.target.value ? Number(e.target.value) : undefined,
+							}),
+							replace: true,
+						})
+					}
 					title="Filter golongan efektif"
 					className="block rounded-md border-0 py-2 text-sm text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
 				>
@@ -229,9 +265,9 @@ function GuruListPage() {
 			) : employees.length === 0 ? (
 				<EmptyState
 					icon={<Users className="h-10 w-10 text-gray-400" />}
-					title={golonganFilter ? "Tidak ada karyawan" : "Belum ada karyawan"}
+					title={golonganParam ? "Tidak ada karyawan" : "Belum ada karyawan"}
 					description={
-						golonganFilter
+						golonganParam
 							? "Tidak ada karyawan dengan golongan efektif ini."
 							: "Tambahkan data karyawan untuk mulai mengelola penggajian."
 					}

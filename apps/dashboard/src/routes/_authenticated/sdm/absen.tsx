@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { AlertCircle, Download, Trash2, Upload } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -18,6 +18,10 @@ import { academicYearAtom } from "#/store/global";
 
 export const Route = createFileRoute("/_authenticated/sdm/absen")({
 	component: AbsenPage,
+	validateSearch: (search: Record<string, unknown>): { periode?: string } => {
+		const v = search.periode;
+		return typeof v === "string" && v !== "" ? { periode: v } : {};
+	},
 });
 
 const COLS = [
@@ -31,13 +35,23 @@ const COLS = [
 function AbsenPage() {
 	const { addToast } = useToast();
 	const [activeAy] = useAtom(academicYearAtom);
+	const navigate = useNavigate();
+	const { periode: periodeParam } = Route.useSearch();
 	const months = useMemo(
 		() => (activeAy ? monthsInAcademicYear(activeAy) : []),
 		[activeAy],
 	);
-	const [periode, setPeriode] = useState(() => currentPeriodeIn(months));
 	const [confirmDelete, setConfirmDelete] = useState(false);
 	const fileRef = useRef<HTMLInputElement>(null);
+
+	// Periode bersumber dari URL bila valid & ada pada rentang tahun ajaran;
+	// selebihnya jatuh ke bulan berjalan (atau bulan pertama).
+	const periode = useMemo(() => {
+		if (periodeParam && months.some((m) => m.value === periodeParam)) {
+			return periodeParam;
+		}
+		return currentPeriodeIn(months);
+	}, [periodeParam, months]);
 
 	const { data: employees = [] } = useEmployees("", true);
 	const { data: rows = [], isLoading } = useAbsen(periode);
@@ -46,8 +60,14 @@ function AbsenPage() {
 
 	// Pindah ke bulan berjalan saat tahun ajaran berubah.
 	useEffect(() => {
-		setPeriode(currentPeriodeIn(months));
-	}, [months]);
+		if (periode && periode !== periodeParam) {
+			navigate({
+				to: "/sdm/absen",
+				search: { periode },
+				replace: true,
+			});
+		}
+	}, [periode, periodeParam, navigate]);
 
 	// Editable state: employee_id → angka per kolom.
 	const [values, setValues] = useState<Record<number, AbsenEntry>>({});
@@ -310,7 +330,13 @@ function AbsenPage() {
 				<div className="flex items-center gap-2">
 					<select
 						value={periode}
-						onChange={(e) => setPeriode(e.target.value)}
+						onChange={(e) =>
+							navigate({
+								to: "/sdm/absen",
+								search: { periode: e.target.value },
+								replace: true,
+							})
+						}
 						className="block rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
 					>
 						{months.map((m) => (

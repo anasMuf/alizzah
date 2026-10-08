@@ -5,6 +5,7 @@ import {
 	CalendarCheck,
 	ClipboardList,
 	Cog,
+	Minus,
 	Pencil,
 	Plus,
 	RefreshCw,
@@ -801,6 +802,30 @@ function AttendanceTab() {
 		}
 	};
 
+	// Overtime hanya boleh diubah lewat stepper (kelipatan 30 menit) untuk
+	// mencegah salah input nilai yang bukan kelipatan 30. Nilai di-snap ke
+	// kelipatan 30 terdekat agar data lama yang tidak persis tetap aman.
+	const stepOvertime = (studentId: number, delta: number) => {
+		setMonthlyAtt((prev) => {
+			const cur = prev[studentId]?.overtimeMinutes ?? 0;
+			const next = Math.min(
+				6000,
+				Math.max(0, Math.round((cur + delta) / 30) * 30),
+			);
+			return {
+				...prev,
+				[studentId]: {
+					...(prev[studentId] || {
+						spdDays: 0,
+						mealDays: 0,
+						overtimeMinutes: 0,
+					}),
+					overtimeMinutes: next,
+				},
+			};
+		});
+	};
+
 	const handleMonthChange = (direction: number) => {
 		let newMonth = month + direction;
 		let newYear = year;
@@ -959,32 +984,37 @@ function AttendanceTab() {
 											/>
 										</div>
 										<div className="col-span-3 flex items-center gap-1">
+											<button
+												type="button"
+												onClick={() => stepOvertime(enr.student.id, -30)}
+												disabled={(a?.overtimeMinutes ?? 0) <= 0}
+												aria-label="Kurangi 30 menit overtime"
+												className="rounded-md border border-gray-300 p-1 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+											>
+												<Minus className="h-3.5 w-3.5" />
+											</button>
 											<input
-												type="number"
-												min={0}
-												max={6000}
-												step={30}
+												type="text"
+												inputMode="none"
+												readOnly
+												role="spinbutton"
+												aria-valuemin={0}
+												aria-valuemax={6000}
+												aria-valuenow={a?.overtimeMinutes ?? 0}
+												aria-label="Menit overtime"
 												value={a?.overtimeMinutes ?? 0}
-												onChange={(e) => {
-													const val = Math.min(
-														6000,
-														Math.max(0, Number.parseInt(e.target.value) || 0),
-													);
-													setMonthlyAtt((prev) => ({
-														...prev,
-														[enr.student.id]: {
-															...(prev[enr.student.id] || {
-																spdDays: 0,
-																mealDays: 0,
-																overtimeMinutes: 0,
-															}),
-															overtimeMinutes: val,
-														},
-													}));
-												}}
-												className="w-20 rounded-md border-gray-300 text-sm text-center"
+												className="w-14 rounded-md border border-gray-300 bg-gray-50 py-1 text-sm text-center cursor-default focus:outline-none"
 											/>
-											<span className="text-xs text-gray-400">
+											<button
+												type="button"
+												onClick={() => stepOvertime(enr.student.id, 30)}
+												disabled={(a?.overtimeMinutes ?? 0) >= 6000}
+												aria-label="Tambah 30 menit overtime"
+												className="rounded-md border border-gray-300 p-1 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+											>
+												<Plus className="h-3.5 w-3.5" />
+											</button>
+											<span className="text-xs text-gray-400 whitespace-nowrap">
 												= {Math.floor((a?.overtimeMinutes ?? 0) / 30)} unit
 											</span>
 										</div>

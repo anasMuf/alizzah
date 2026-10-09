@@ -63,14 +63,23 @@ export function invoiceCategoryLabel(category?: string): string {
 	return INVOICE_CATEGORY_LABELS[category] ?? category;
 }
 
-/** Periode tagihan: "Bulanan 8/2026" untuk bulanan, selain itu label jenisnya. */
+/**
+ * Periode tagihan: "Bulanan 8/2026" untuk bulanan, "Berjalan 9/2025" untuk tagihan
+ * manual berperiode (hasil input admin pada mode "Tagihan Berjalan"), selain itu
+ * label jenisnya.
+ *
+ * Tagihan manual kini menyimpan `month`/`year` (periode) seperti tagihan bulanan,
+ * jadi periodenya ditampilkan agar admin melihat bulannya — bukan sekadar "Manual".
+ */
 export function invoicePeriodOrTypeLabel(invoice: {
 	type?: string;
 	month?: number | null;
 	year?: number | null;
 }): string {
-	if (invoice.type === "monthly" && invoice.month && invoice.year) {
-		return `Bulanan ${invoice.month}/${invoice.year}`;
+	const { type, month, year } = invoice;
+	if (month && year) {
+		if (type === "monthly") return `Bulanan ${month}/${year}`;
+		if (type === "manual") return `Berjalan ${month}/${year}`;
 	}
-	return invoiceTypeLabel(invoice.type);
+	return invoiceTypeLabel(type);
 }

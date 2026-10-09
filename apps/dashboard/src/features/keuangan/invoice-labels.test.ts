@@ -96,6 +96,21 @@ describe("invoicePeriodOrTypeLabel", () => {
 		expect(invoicePeriodOrTypeLabel({ type: "initial" })).toBe("Biaya Awal");
 	});
 
+	it("memakai periode untuk tagihan manual berperiode", () => {
+		expect(
+			invoicePeriodOrTypeLabel({ type: "manual", month: 9, year: 2025 }),
+		).toBe("Berjalan 9/2025");
+	});
+
+	it("kembali ke label jenis bila manual tanpa periode", () => {
+		expect(
+			invoicePeriodOrTypeLabel({ type: "manual", month: null, year: null }),
+		).toBe("Manual");
+		expect(
+			invoicePeriodOrTypeLabel({ type: "manual", month: 9, year: null }),
+		).toBe("Manual");
+	});
+
 	it("kembali ke label jenis bila bulanan tanpa periode", () => {
 		expect(invoicePeriodOrTypeLabel({ type: "monthly" })).toBe("Bulanan");
 		expect(

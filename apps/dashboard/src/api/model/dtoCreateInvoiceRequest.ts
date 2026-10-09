@@ -13,7 +13,9 @@ export interface DtoCreateInvoiceRequest {
 	due_date?: string;
 	/** @minItems 1 */
 	items: DtoCreateInvoiceItemRequest[];
+	month?: number;
 	notes?: string;
 	student_id: number;
 	type: DtoCreateInvoiceRequestType;
+	year?: number;
 }

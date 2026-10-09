@@ -211,6 +211,21 @@ func (s *invoiceService) CreateManual(req dto.CreateInvoiceRequest) (*dto.Invoic
 		return nil, utility.NewUnprocessableError(reason)
 	}
 
+	// Bulan tagihan (periode): wajib untuk mode rinci dan harus jatuh di rentang
+	// TA terpilih. Diperiksa setelah aturan mode supaya kombinasi mode-vs-TA yang
+	// tidak sah tetap melaporkan masalah mode (bukan masalah bulan). Mode tunggakan
+	// sengaja tanpa periode — month/year dibiarkan NULL.
+	var month, year *uint
+	if req.Type == "manual" {
+		if req.Month == nil || req.Year == nil {
+			return nil, utility.NewUnprocessableError("Bulan tagihan wajib diisi")
+		}
+		if !monthInAcademicYearRange(*req.Month, *req.Year, ay.StartDate, ay.EndDate) {
+			return nil, utility.NewUnprocessableError("Bulan tagihan di luar rentang tahun ajaran")
+		}
+		month, year = req.Month, req.Year
+	}
+
 	var dueDate *time.Time
 	if strings.TrimSpace(req.DueDate) != "" {
 		parsed, err := utility.ParseDate(req.DueDate)
@@ -252,6 +267,8 @@ func (s *invoiceService) CreateManual(req dto.CreateInvoiceRequest) (*dto.Invoic
 		StudentID:      req.StudentID,
 		AcademicYearID: req.AcademicYearID,
 		Type:           req.Type,
+		Month:          month,
+		Year:           year,
 		Status:         "unpaid",
 		TotalAmount:    utility.SumInvoiceItems(items),
 		PaidAmount:     0,

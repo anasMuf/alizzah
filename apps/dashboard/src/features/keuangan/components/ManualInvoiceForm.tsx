@@ -8,6 +8,10 @@ import { useGetV1FeeConfigs } from "#/api/endpoints/fee-configs/fee-configs";
 import { usePostV1Invoices } from "#/api/endpoints/invoices/invoices";
 import { ApiError } from "#/api/mutator/custom-instance";
 import {
+	buildAcademicYearMonths,
+	MONTH_NAMES,
+} from "#/components/molecules/BillingMonthsDialog";
+import {
 	Button,
 	CurrencyFormField,
 	FormField,
@@ -29,6 +33,7 @@ import {
 	type ManualInvoiceItemDraft,
 	type ManualInvoiceMode,
 	modeAvailability,
+	pickDefaultBillingMonth,
 	studentLevelWarning,
 	sumDraftAmounts,
 	validateManualInvoice,
@@ -98,6 +103,8 @@ export function ManualInvoiceForm({
 	const [mode, setMode] = useState<ManualInvoiceMode>("total");
 	const [totalAmount, setTotalAmount] = useState(0);
 	const [itemRows, setItemRows] = useState<ItemRow[]>([]);
+	const [month, setMonth] = useState<number | undefined>(undefined);
+	const [year, setYear] = useState<number | undefined>(undefined);
 	const [notes, setNotes] = useState("");
 	const [dueDate, setDueDate] = useState("");
 	const [selectedFeeItemId, setSelectedFeeItemId] = useState("");
@@ -116,6 +123,8 @@ export function ManualInvoiceForm({
 		setMode(defaultManualInvoiceMode(!!initialAyId));
 		setTotalAmount(0);
 		setItemRows([]);
+		setMonth(undefined);
+		setYear(undefined);
 		setNotes("");
 		setDueDate("");
 		setSelectedFeeItemId("");
@@ -132,6 +141,20 @@ export function ManualInvoiceForm({
 	const { data: academicYearsResp } = useGetV1AcademicYears();
 	const academicYears: any[] = (academicYearsResp?.data as any)?.data || [];
 	const selectedAy = academicYears.find((ay: any) => ay.id === academicYearId);
+
+	// Daftar bulan TA terpilih — sumber opsi "Bulan Tagihan".
+	const ayMonths = useMemo(
+		() => buildAcademicYearMonths(selectedAy?.start_date, selectedAy?.end_date),
+		[selectedAy],
+	);
+
+	// Default bulan tagihan: bulan berjalan bila ada di rentang TA, selain itu bulan pertama.
+	useEffect(() => {
+		if (!isOpen || !academicYearId) return;
+		const fallback = pickDefaultBillingMonth(ayMonths);
+		setMonth(fallback?.month);
+		setYear(fallback?.year);
+	}, [isOpen, academicYearId, ayMonths]);
 
 	const { data: feeConfigsResp, isLoading: isFeeConfigLoading } =
 		useGetV1FeeConfigs();
@@ -323,6 +346,8 @@ export function ManualInvoiceForm({
 				...(row.quantity != null ? { quantity: row.quantity } : {}),
 				...(row.unitPrice != null ? { unitPrice: row.unitPrice } : {}),
 			})),
+			month,
+			year,
 			notes,
 			dueDate,
 			isActiveAcademicYear,
@@ -509,6 +534,30 @@ export function ManualInvoiceForm({
 					</>
 				) : (
 					<>
+						<div>
+							<Label htmlFor="manual-invoice-month">Bulan Tagihan</Label>
+							<select
+								id="manual-invoice-month"
+								value={month != null && year != null ? `${month}-${year}` : ""}
+								onChange={(e) => {
+									const [m, y] = e.target.value.split("-").map(Number);
+									setMonth(m);
+									setYear(y);
+								}}
+								className="mt-2 block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
+							>
+								<option value="">— Pilih bulan —</option>
+								{ayMonths.map((m) => (
+									<option
+										key={`${m.month}-${m.year}`}
+										value={`${m.month}-${m.year}`}
+									>
+										{MONTH_NAMES[m.month - 1]} {m.year}
+									</option>
+								))}
+							</select>
+						</div>
+
 						<div className="rounded-md bg-amber-50 p-3 text-xs text-amber-800">
 							Pastikan item yang dipilih belum tercakup tagihan yang sudah
 							di-generate untuk tahun ajaran ini.

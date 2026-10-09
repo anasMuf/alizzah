@@ -36,6 +36,9 @@ export interface ManualInvoiceFormState {
 	totalAmount: number;
 	/** Dipakai pada mode `itemized`. */
 	items: ManualInvoiceItemDraft[];
+	/** Periode tagihan (bulan tagihan) — wajib pada mode `itemized`. */
+	month?: number;
+	year?: number;
 	notes: string;
 	dueDate: string;
 	/** Apakah TA terpilih adalah TA aktif — menentukan mode yang sah. */
@@ -123,6 +126,27 @@ export function manualInvoiceType(
 	return mode === "itemized" ? InvoiceType.manual : InvoiceType.arrears;
 }
 
+export interface YearMonth {
+	month: number;
+	year: number;
+}
+
+/**
+ * Memilih bulan tagihan default dari daftar bulan tahun ajaran.
+ *
+ * Prioritas: bulan berjalan (`now`) bila ada di daftar; selain itu bulan pertama
+ * daftar. Mengembalikan `undefined` bila daftar kosong (mis. TA belum termuat).
+ */
+export function pickDefaultBillingMonth(
+	months: YearMonth[],
+	now: Date = new Date(),
+): YearMonth | undefined {
+	if (months.length === 0) return undefined;
+	const m = now.getMonth() + 1;
+	const y = now.getFullYear();
+	return months.find((x) => x.month === m && x.year === y) ?? months[0];
+}
+
 export interface FeeItemLike {
 	name?: string;
 	amount?: number;
@@ -200,6 +224,11 @@ export function validateManualInvoice(
 			return "Keterangan wajib diisi untuk tagihan tunggakan";
 		}
 		return null;
+	}
+
+	// Mode rinci: periode tagihan wajib (bulan berjalan).
+	if (state.month == null || state.year == null) {
+		return "Bulan tagihan wajib dipilih";
 	}
 
 	if (state.items.length === 0) return "Tambahkan minimal satu item tagihan";
@@ -281,6 +310,9 @@ export function buildCreateInvoicePayload(
 		student_id: state.studentId as number,
 		academic_year_id: state.academicYearId as number,
 		type: manualInvoiceType(state.mode),
+		...(state.mode === "itemized" && state.month != null && state.year != null
+			? { month: state.month, year: state.year }
+			: {}),
 		notes: state.notes.trim(),
 		...(state.dueDate ? { due_date: state.dueDate } : {}),
 		items,

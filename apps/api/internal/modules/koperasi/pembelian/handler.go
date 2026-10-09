@@ -21,14 +21,16 @@ type Handler struct{ svc Service }
 func NewHandler(svc Service) *Handler { return &Handler{svc: svc} }
 
 // New merangkai fitur pembelian dengan dependency bersama dari modul.
+// bridgeEnabled mengendalikan penulisan ke ledger keuangan sekolah (env KOPERASI_BRIDGE_ENABLED).
 func New(
 	db *gorm.DB,
 	paymentSvc pembayaran.Service,
 	barangRepo barang.Repository,
 	supplierRepo pemasok.Repository,
 	ayRepo repository.AcademicYearRepository,
+	bridgeEnabled bool,
 ) *Handler {
-	return NewHandler(NewService(db, NewRepository(db), barangRepo, supplierRepo, paymentSvc, ayRepo))
+	return NewHandler(NewService(db, NewRepository(db), barangRepo, supplierRepo, paymentSvc, ayRepo, bridgeEnabled))
 }
 
 func (h *Handler) RegisterRoutes(g *echo.Group, mw ...echo.MiddlewareFunc) {

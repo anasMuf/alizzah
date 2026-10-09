@@ -14,6 +14,7 @@ import (
 
 	"api/internal/modules/koperasi/anggota"
 	"api/internal/modules/koperasi/barang"
+	"api/internal/modules/koperasi/bridge"
 	"api/internal/modules/koperasi/kas"
 	"api/internal/modules/koperasi/lainlain"
 	"api/internal/modules/koperasi/laporan"
@@ -58,16 +59,20 @@ func New(deps *shared.Deps) *Module {
 	studentRepo := repository.NewStudentRepository(db)
 	ayRepo := repository.NewAcademicYearRepository(db)
 
+	// Jembatan koperasi → ledger keuangan sekolah (expenses + cash_transactions).
+	// Default nonaktif; aktifkan via env KOPERASI_BRIDGE_ENABLED=true.
+	bridgeEnabled := bridge.Enabled()
+
 	return &Module{
 		anggota:   anggota.New(db),
 		barang:    barang.New(db),
 		master:    master.New(db),
 		pemasok:   pemasok.New(db),
 		kas:       kas.New(db),
-		pembelian: pembelian.New(db, paymentSvc, barangRepo, supplierRepo, ayRepo),
+		pembelian: pembelian.New(db, paymentSvc, barangRepo, supplierRepo, ayRepo, bridgeEnabled),
 		penjualan: penjualan.New(db, paymentSvc, barangRepo, studentRepo, ayRepo),
 		pinjaman:  pinjaman.New(db, paymentSvc, cashWriter, ayRepo),
-		lainlain:  lainlain.New(db, cashWriter, ayRepo),
+		lainlain:  lainlain.New(db, cashWriter, ayRepo, bridgeEnabled),
 		laporan:   laporan.New(db),
 		jwt:       middleware.JWTAuth(repository.NewTokenBlacklistRepository(db)),
 		guard:     middleware.NewModuleGuard(repository.NewUserModuleRepository(db)),

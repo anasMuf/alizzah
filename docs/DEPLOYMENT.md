@@ -58,6 +58,13 @@ Migrasi DB otomatis saat container API start (GORM AutoMigrate).
 `PUBLIC_APP_URL`, `PUBLIC_LINK_SECRET`, `PUBLIC_LINK_TTL_HOURS`, `WABLAS_DOMAIN`, `WABLAS_TOKEN`,
 `SDM_API_PORT`, `SDM_CORS_ALLOWED_ORIGINS`.
 
+> Integrasi koperasi → ledger keuangan sekolah **default nonaktif**. Untuk mengaktifkan kembali
+> (mis. agar transaksi koperasi muncul di laporan sekolah): `KOPERASI_SEAM_ENABLED=true`
+> (seam pembayaran) dan/atau `KOPERASI_BRIDGE_ENABLED=true` (bridge lain-lain). Saat nonaktif,
+> artefak bridge lama di `expenses`/`cash_transactions` dibersihkan otomatis oleh
+> `seeders.FixKoperasiBridgeArtifacts` saat `school-api` start. Lihat
+> [koperasi/status-dan-lanjutan.md](./koperasi/status-dan-lanjutan.md) §6.
+
 ---
 
 ## Bootstrap pertama kali (di VPS)

@@ -19,14 +19,15 @@ type Service interface {
 }
 
 type svc struct {
-	db         *gorm.DB
-	repo       Repository
-	cashWriter kas.Writer
-	ayRepo     repository.AcademicYearRepository
+	db            *gorm.DB
+	repo          Repository
+	cashWriter    kas.Writer
+	ayRepo        repository.AcademicYearRepository
+	bridgeEnabled bool
 }
 
-func NewService(db *gorm.DB, r Repository, cashWriter kas.Writer, ayRepo repository.AcademicYearRepository) Service {
-	return &svc{db: db, repo: r, cashWriter: cashWriter, ayRepo: ayRepo}
+func NewService(db *gorm.DB, r Repository, cashWriter kas.Writer, ayRepo repository.AcademicYearRepository, bridgeEnabled bool) Service {
+	return &svc{db: db, repo: r, cashWriter: cashWriter, ayRepo: ayRepo, bridgeEnabled: bridgeEnabled}
 }
 
 func (s *svc) Create(req CreateRequest, createdBy uint) (*Response, error) {
@@ -67,14 +68,18 @@ func (s *svc) Create(req CreateRequest, createdBy uint) (*Response, error) {
 			return werr
 		}
 
-		// Bridge: catat di tabel sekolah (expenses + cash_transactions)
-		if req.Flow == "expense" {
-			if err := s.recordSchoolExpense(tx, req.AcademicYearID, date, req.Amount, desc, createdBy); err != nil {
-				return err
-			}
-		} else if req.Flow == "income" {
-			if err := s.recordSchoolIncome(tx, req.AcademicYearID, date, req.Amount, desc, createdBy); err != nil {
-				return err
+		// Bridge: catat di tabel sekolah (expenses + cash_transactions).
+		// Hanya aktif bila KOPERASI_BRIDGE_ENABLED=true (default false) — modul
+		// koperasi terpisah dari ledger keuangan sekolah.
+		if s.bridgeEnabled {
+			if req.Flow == "expense" {
+				if err := s.recordSchoolExpense(tx, req.AcademicYearID, date, req.Amount, desc, createdBy); err != nil {
+					return err
+				}
+			} else if req.Flow == "income" {
+				if err := s.recordSchoolIncome(tx, req.AcademicYearID, date, req.Amount, desc, createdBy); err != nil {
+					return err
+				}
 			}
 		}
 

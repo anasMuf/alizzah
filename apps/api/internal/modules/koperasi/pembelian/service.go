@@ -22,12 +22,13 @@ type Service interface {
 }
 
 type svc struct {
-	db           *gorm.DB
-	repo         Repository
-	barangRepo   barang.Repository
-	supplierRepo pemasok.Repository
-	paymentSvc   pembayaran.Service
-	ayRepo       repository.AcademicYearRepository
+	db            *gorm.DB
+	repo          Repository
+	barangRepo    barang.Repository
+	supplierRepo  pemasok.Repository
+	paymentSvc    pembayaran.Service
+	ayRepo        repository.AcademicYearRepository
+	bridgeEnabled bool
 }
 
 func NewService(
@@ -37,8 +38,9 @@ func NewService(
 	supplierRepo pemasok.Repository,
 	paymentSvc pembayaran.Service,
 	ayRepo repository.AcademicYearRepository,
+	bridgeEnabled bool,
 ) Service {
-	return &svc{db: db, repo: repo, barangRepo: barangRepo, supplierRepo: supplierRepo, paymentSvc: paymentSvc, ayRepo: ayRepo}
+	return &svc{db: db, repo: repo, barangRepo: barangRepo, supplierRepo: supplierRepo, paymentSvc: paymentSvc, ayRepo: ayRepo, bridgeEnabled: bridgeEnabled}
 }
 
 // resolveVariant menentukan varian sebuah item: pakai variant_id bila dikirim,
@@ -144,11 +146,14 @@ func (s *svc) Create(req CreateRequest, createdBy uint) (*Response, error) {
 				return err
 			}
 
-			// Bridge: catat pengeluaran di tabel sekolah (expenses + cash_transactions)
-			if err := s.recordSchoolExpense(tx, req.AcademicYearID, date, paid,
-				fmt.Sprintf("Pembelian koperasi #%d: %s", p.ID, req.ReferenceNumber),
-				createdBy); err != nil {
-				return err
+			// Bridge: catat pengeluaran di tabel sekolah (expenses + cash_transactions).
+			// Hanya bila KOPERASI_BRIDGE_ENABLED=true (default false).
+			if s.bridgeEnabled {
+				if err := s.recordSchoolExpense(tx, req.AcademicYearID, date, paid,
+					fmt.Sprintf("Pembelian koperasi #%d: %s", p.ID, req.ReferenceNumber),
+					createdBy); err != nil {
+					return err
+				}
 			}
 		}
 		purchaseID = p.ID
@@ -191,7 +196,10 @@ func (s *svc) Pay(id uint, req PaymentRequest, createdBy uint) (*Response, error
 			return err
 		}
 
-		// Bridge: catat pengeluaran di tabel sekolah
+		// Bridge: catat pengeluaran di tabel sekolah. Hanya bila bridge aktif.
+		if !s.bridgeEnabled {
+			return nil
+		}
 		return s.recordSchoolExpense(tx, p.AcademicYearID, date, req.Amount,
 			fmt.Sprintf("Pembayaran pembelian koperasi #%d", p.ID),
 			createdBy)

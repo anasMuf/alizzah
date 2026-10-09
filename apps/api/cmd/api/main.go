@@ -21,6 +21,7 @@ import (
 	"api/service"
 
 	"api/internal/modules/koperasi/barang"
+	"api/internal/modules/koperasi/bridge"
 	"api/internal/modules/koperasi/kas"
 
 	"gorm.io/gorm"
@@ -253,6 +254,12 @@ func main() {
 	// Backfill flag is_koperasi — hanya relevan jika seam koperasi aktif
 	if isKoperasiSeamEnabled() {
 		seeders.BackfillInvoiceKoperasiFlags(db)
+	}
+
+	// Bersihkan artefak bridge koperasi→sekolah (expenses + cash_transactions)
+	// yang dibuat saat bridge masih aktif. Hanya bila bridge nonaktif.
+	if !bridge.Enabled() {
+		seeders.FixKoperasiBridgeArtifacts(db)
 	}
 
 	// Unique index by name (after seed — data sudah bersih)

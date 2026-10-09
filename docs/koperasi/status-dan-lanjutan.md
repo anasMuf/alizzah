@@ -72,3 +72,25 @@ curl -s localhost:8081/api/v1/koperasi/products -H "Authorization: Bearer $T" | 
 ## 5. Catatan kerja
 - Per perubahan: branch dari `develop`, PR di-squash-merge (`gh pr merge --squash --delete-branch`).
 - Verifikasi tiap PR: `go build ./... && go vet`, `tsc --noEmit && biome check` (di `apps/dashboard`), lalu cek alur via curl + browser preview.
+
+## 6. Integrasi koperasi → keuangan sekolah (bridge) & flag env
+
+Ada **dua** integrasi koperasi yang menulis ke ledger **keuangan sekolah** (`expenses` / `cash_transactions`). Keduanya **default nonaktif**:
+
+| Integrasi | Titik kode | Flag env (default `false`) |
+|---|---|---|
+| **Seam pembayaran** — item `is_koperasi` terbayar → penjualan + kas koperasi + pengeluaran sekolah | `service/koperasi_seam.go`, `service/payment_service.go` | `KOPERASI_SEAM_ENABLED` |
+| **Bridge lain-lain** — transaksi lain-lain koperasi disalin ke `expenses` + `cash_transactions` sekolah | `internal/modules/koperasi/lainlain/service.go` | `KOPERASI_BRIDGE_ENABLED` |
+| **Bridge pembelian** — pembelian & pembayarannya disalin ke `expenses` + `cash_transactions` sekolah | `internal/modules/koperasi/pembelian/service.go` | `KOPERASI_BRIDGE_ENABLED` |
+
+Kedua bridge di atas memakai helper bersama `internal/modules/koperasi/bridge.Enabled()` (env `KOPERASI_BRIDGE_ENABLED`, default `false`).
+
+Saat `KOPERASI_BRIDGE_ENABLED` nonaktif, transaksi lain-lain koperasi **hanya** tercatat di ledger koperasi (`koperasi_misc_transactions` + `koperasi_cash_transactions`) dan **tidak** ikut muncul di laporan keuangan sekolah.
+
+**Cleanup data (seeder):** `seeders.FixKoperasiBridgeArtifacts` (dijalankan otomatis di `cmd/api/main.go` **hanya bila** bridge nonaktif) menghapus artefak bridge di ledger sekolah:
+- `cash_transactions` dengan `source_type = 'koperasi_income'`;
+- `expenses` kategori "Koperasi" yang identik (amount + tanggal + deskripsi) dengan baris `koperasi_misc_transactions` ber-`flow='expense'`, beserta `cash_transactions` 'expense'-nya.
+
+Idempotent. Input koperasi **manual** (mis. expense kategori "Koperasi" oleh user keuangan seperti `b ika: setoran koprasi`) **tidak** terpengaruh.
+
+> Tambahkan `KOPERASI_BRIDGE_ENABLED` ke `.env` bila ingin mengaktifkan kembali bridge (mis. agar transaksi koperasi kembali tampil di laporan sekolah).

@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Printer } from "lucide-react";
 import { useState } from "react";
 import { useGetV1StudentsIdInvoices } from "#/api/endpoints/invoices/invoices";
 import { useGetV1StudentsId } from "#/api/endpoints/students/students";
@@ -12,7 +12,8 @@ import {
 	otherYearOutstandingInvoices,
 } from "#/features/keuangan/outstanding-invoices";
 import { academicYearAtom } from "../../../../store/global";
-import { formatCurrency } from "../../../../utils/format";
+import { formatCurrency, formatMonthYear } from "../../../../utils/format";
+import { openPrintWindow } from "../../../../utils/print";
 
 export const Route = createFileRoute(
 	"/_authenticated/keuangan/tagihan/siswa/$id",
@@ -71,6 +72,134 @@ function TagihanSiswaPage() {
 
 	const translateType = (type: string) => invoiceTypeLabel(type);
 
+	const statusLabel = (status?: string) =>
+		status === "paid"
+			? "Lunas"
+			: status === "partial"
+				? "Sebagian Dibayar"
+				: "Belum Lunas";
+
+	const handlePrint = () => {
+		// Cetak seluruh tagihan yang sedang tampil: tagihan tahun ajaran aktif +
+		// tunggakan dari tahun ajaran lain.
+		const printInvoices: any[] = [...invoices, ...otherYearInvoices];
+		if (printInvoices.length === 0) return;
+
+		const rows = printInvoices
+			.map((invoice, idx) => {
+				const total = Number(invoice.total_amount) || 0;
+				const paid = Number(invoice.paid_amount) || 0;
+				const sisa = Math.max(0, total - paid);
+				const periode =
+					invoice.month && invoice.year
+						? formatMonthYear(invoice.month, invoice.year)
+						: invoice.academic_year?.name || "-";
+				return `
+				<tr>
+					<td>${idx + 1}</td>
+					<td>${invoice.academic_year?.name || "-"}</td>
+					<td>${translateType(invoice.type)}</td>
+					<td>${periode}</td>
+					<td>${statusLabel(invoice.status)}</td>
+					<td class="text-right">${formatCurrency(total)}</td>
+					<td class="text-right">${formatCurrency(paid)}</td>
+					<td class="text-right">${formatCurrency(sisa)}</td>
+				</tr>`;
+			})
+			.join("");
+
+		const totalAmount = printInvoices.reduce(
+			(sum, invoice) => sum + (Number(invoice.total_amount) || 0),
+			0,
+		);
+		const paidAmount = printInvoices.reduce(
+			(sum, invoice) => sum + (Number(invoice.paid_amount) || 0),
+			0,
+		);
+		const sisaAmount = printInvoices.reduce(
+			(sum, invoice) =>
+				sum +
+				Math.max(
+					0,
+					(Number(invoice.total_amount) || 0) -
+						(Number(invoice.paid_amount) || 0),
+				),
+			0,
+		);
+
+		const classGroup = student.active_enrollment?.class_group;
+		const rombel = `${classGroup?.name || "-"}${classGroup?.level ? ` (${classGroup.level})` : ""}`;
+
+		const content = `
+		<table class="mb-4">
+			<thead>
+				<tr>
+					<th>Nama Siswa</th>
+					<th>NISN</th>
+					<th>Jenis Kelamin</th>
+					<th>Rombel</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><strong>${student.full_name || "-"}</strong></td>
+					<td>${student.nisn || "-"}</td>
+					<td>${student.gender === "L" ? "Laki-laki" : student.gender === "P" ? "Perempuan" : "-"}</td>
+					<td>${rombel}</td>
+				</tr>
+			</tbody>
+		</table>
+
+		<table class="mb-4">
+			<thead>
+				<tr>
+					<th>Total Tagihan</th>
+					<th>Sudah Dibayar</th>
+					<th>Sisa Tunggakan</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td class="text-lg font-bold">${formatCurrency(totalAmount)}</td>
+					<td class="text-lg font-bold">${formatCurrency(paidAmount)}</td>
+					<td class="text-lg font-bold text-amber">${formatCurrency(sisaAmount)}</td>
+				</tr>
+			</tbody>
+		</table>
+
+		<h3 class="text-sm font-bold uppercase letter-spacing mb-2">Daftar Tagihan</h3>
+		<table>
+			<thead>
+				<tr>
+					<th>No</th>
+					<th>Tahun Ajaran</th>
+					<th>Jenis</th>
+					<th>Periode</th>
+					<th>Status</th>
+					<th class="text-right">Nominal</th>
+					<th class="text-right">Dibayar</th>
+					<th class="text-right">Sisa</th>
+				</tr>
+			</thead>
+			<tbody>
+				${rows}
+			</tbody>
+			<tfoot>
+				<tr class="border-t-foot">
+					<td colspan="5" class="text-right">Total</td>
+					<td class="text-right">${formatCurrency(totalAmount)}</td>
+					<td class="text-right">${formatCurrency(paidAmount)}</td>
+					<td class="text-right">${formatCurrency(sisaAmount)}</td>
+				</tr>
+			</tfoot>
+		</table>`;
+
+		openPrintWindow(content, {
+			title: `Semua Tagihan — ${student.full_name}`,
+			subtitle: `Tahun Ajaran ${activeAy?.name || "-"}`,
+		});
+	};
+
 	if (isStudentLoading)
 		return (
 			<div className="p-8 text-center text-gray-500">
@@ -114,7 +243,14 @@ function TagihanSiswaPage() {
 						&bull; Tahun Ajaran: {activeAy?.name}
 					</p>
 				</div>
-				<div className="mt-4 sm:ml-4 sm:mt-0">
+				<div className="mt-4 flex items-center gap-2 sm:ml-4 sm:mt-0">
+					<Button
+						variant="secondary"
+						onClick={handlePrint}
+						disabled={invoices.length === 0 && otherYearInvoices.length === 0}
+					>
+						<Printer className="w-4 h-4 mr-2" /> Cetak Semua Tagihan
+					</Button>
 					<Link
 						to="/keuangan/pembayaran/baru"
 						search={{ student_id: student.id, invoice_id: undefined }}

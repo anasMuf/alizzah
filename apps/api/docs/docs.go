@@ -16777,6 +16777,9 @@ const docTemplate = `{
                         "$ref": "#/definitions/dto.CreateInvoiceItemRequest"
                     }
                 },
+                "month": {
+                    "type": "integer"
+                },
                 "notes": {
                     "type": "string"
                 },
@@ -16789,6 +16792,9 @@ const docTemplate = `{
                         "arrears",
                         "manual"
                     ]
+                },
+                "year": {
+                    "type": "integer"
                 }
             }
         },

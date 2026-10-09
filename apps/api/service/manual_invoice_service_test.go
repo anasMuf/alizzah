@@ -129,6 +129,9 @@ func assertAppErrorCode(t *testing.T, err error, code int) {
 	assert.Equal(t, code, appErr.Code, "status code tidak sesuai: %s", appErr.Message)
 }
 
+// uintPtr membantu membentuk pointer uint untuk field opsional (Month/Year).
+func uintPtr(v uint) *uint { return &v }
+
 func TestCreateManual_Arrears_Success(t *testing.T) {
 	db := setupManualInvoiceTestDB(t)
 	fx := seedManualInvoiceFixture(t, db)
@@ -169,6 +172,8 @@ func TestCreateManual_Manual_MultipleItems_TotalComputedServerSide(t *testing.T)
 		StudentID:      fx.StudentID,
 		AcademicYearID: fx.ActiveAcademicYear.ID,
 		Type:           "manual",
+		Month:          uintPtr(8),
+		Year:           uintPtr(2025),
 		Notes:          "Seragam & uang kegiatan",
 		Items: []dto.CreateInvoiceItemRequest{
 			{Name: "Seragam", Category: "other", Amount: 100000},
@@ -365,6 +370,19 @@ func TestCreateInvoiceRequest_ValidationTags(t *testing.T) {
 		req := base
 		req.DueDate = "bukan-tanggal"
 		require.Error(t, v.Struct(req))
+	})
+
+	t.Run("bulan di luar 1-12 ditolak", func(t *testing.T) {
+		req := base
+		req.Month = uintPtr(13)
+		require.Error(t, v.Struct(req))
+	})
+
+	t.Run("bulan 1-12 diterima", func(t *testing.T) {
+		req := base
+		req.Month = uintPtr(8)
+		req.Year = uintPtr(2025)
+		require.NoError(t, v.Struct(req))
 	})
 }
 
@@ -665,6 +683,8 @@ func TestUpdateInvoice_Manual_EmptyNotes_Allowed(t *testing.T) {
 		StudentID:      fx.StudentID,
 		AcademicYearID: fx.ActiveAcademicYear.ID,
 		Type:           "manual",
+		Month:          uintPtr(8),
+		Year:           uintPtr(2025),
 		Notes:          "Seragam",
 		Items:          []dto.CreateInvoiceItemRequest{{Name: "Seragam", Category: "other", Amount: 100000}},
 	})
@@ -766,6 +786,8 @@ func TestManualItemMutation_StillAllowed(t *testing.T) {
 		StudentID:      fx.StudentID,
 		AcademicYearID: fx.ActiveAcademicYear.ID,
 		Type:           "manual",
+		Month:          uintPtr(8),
+		Year:           uintPtr(2025),
 		Items: []dto.CreateInvoiceItemRequest{
 			{Name: "Seragam", Category: "other", Amount: 100000},
 			{Name: "Kegiatan", Category: "other", Amount: 50000},
@@ -780,4 +802,133 @@ func TestManualItemMutation_StillAllowed(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, res.Items, 1)
 	assert.Equal(t, 50000.0, res.TotalAmount, "total dihitung ulang setelah item dihapus")
+}
+
+// --- Bulan tagihan (periode) pada mode rinci ---
+
+func TestCreateManual_Manual_WithoutMonth_Rejected(t *testing.T) {
+	db := setupManualInvoiceTestDB(t)
+	fx := seedManualInvoiceFixture(t, db)
+	svc := newTestManualInvoiceService(t, db)
+
+	_, err := svc.CreateManual(dto.CreateInvoiceRequest{
+		StudentID:      fx.StudentID,
+		AcademicYearID: fx.ActiveAcademicYear.ID,
+		Type:           "manual",
+		Items:          []dto.CreateInvoiceItemRequest{{Name: "Seragam", Category: "other", Amount: 100000}},
+	})
+	assertAppErrorCode(t, err, http.StatusUnprocessableEntity)
+
+	// Bulan setengah lengkap (month tanpa year) juga ditolak.
+	_, err = svc.CreateManual(dto.CreateInvoiceRequest{
+		StudentID:      fx.StudentID,
+		AcademicYearID: fx.ActiveAcademicYear.ID,
+		Type:           "manual",
+		Month:          uintPtr(8),
+		Items:          []dto.CreateInvoiceItemRequest{{Name: "Seragam", Category: "other", Amount: 100000}},
+	})
+	assertAppErrorCode(t, err, http.StatusUnprocessableEntity)
+
+	var count int64
+	require.NoError(t, db.Model(&model.Invoice{}).Count(&count).Error)
+	assert.Equal(t, int64(0), count, "percobaan gagal tidak boleh menyimpan invoice")
+}
+
+func TestCreateManual_Manual_MonthOutsideAcademicYear_Rejected(t *testing.T) {
+	db := setupManualInvoiceTestDB(t)
+	fx := seedManualInvoiceFixture(t, db)
+	svc := newTestManualInvoiceService(t, db)
+
+	// TA aktif = 2025-07-15..2026-06-30. Sebelum (Jun 2025) & sesudah (Jul 2026)
+	// berada di luar rentang.
+	cases := []struct{ month, year uint }{
+		{6, 2025},
+		{7, 2026},
+	}
+	for _, c := range cases {
+		_, err := svc.CreateManual(dto.CreateInvoiceRequest{
+			StudentID:      fx.StudentID,
+			AcademicYearID: fx.ActiveAcademicYear.ID,
+			Type:           "manual",
+			Month:          uintPtr(c.month),
+			Year:           uintPtr(c.year),
+			Items:          []dto.CreateInvoiceItemRequest{{Name: "Seragam", Category: "other", Amount: 100000}},
+		})
+		assertAppErrorCode(t, err, http.StatusUnprocessableEntity)
+	}
+}
+
+func TestCreateManual_Manual_StoresMonthYear(t *testing.T) {
+	db := setupManualInvoiceTestDB(t)
+	fx := seedManualInvoiceFixture(t, db)
+	svc := newTestManualInvoiceService(t, db)
+
+	resp, err := svc.CreateManual(dto.CreateInvoiceRequest{
+		StudentID:      fx.StudentID,
+		AcademicYearID: fx.ActiveAcademicYear.ID,
+		Type:           "manual",
+		Month:          uintPtr(9),
+		Year:           uintPtr(2025),
+		Items:          []dto.CreateInvoiceItemRequest{{Name: "Seragam", Category: "other", Amount: 100000}},
+	})
+	require.NoError(t, err)
+	require.NotNil(t, resp.Month)
+	require.NotNil(t, resp.Year)
+	assert.Equal(t, uint(9), *resp.Month)
+	assert.Equal(t, uint(2025), *resp.Year)
+
+	var row model.Invoice
+	require.NoError(t, db.First(&row, resp.ID).Error)
+	require.NotNil(t, row.Month)
+	require.NotNil(t, row.Year)
+	assert.Equal(t, uint(9), *row.Month)
+	assert.Equal(t, uint(2025), *row.Year)
+}
+
+func TestCreateManual_Arrears_IgnoresMonthYear(t *testing.T) {
+	db := setupManualInvoiceTestDB(t)
+	fx := seedManualInvoiceFixture(t, db)
+	svc := newTestManualInvoiceService(t, db)
+
+	// Klien mengirim bulan, tetapi mode tunggakan harus mengabaikannya (NULL).
+	resp, err := svc.CreateManual(dto.CreateInvoiceRequest{
+		StudentID:      fx.StudentID,
+		AcademicYearID: fx.PastAcademicYear.ID,
+		Type:           "arrears",
+		Month:          uintPtr(8),
+		Year:           uintPtr(2024),
+		Notes:          "Tunggakan SPP",
+		Items:          []dto.CreateInvoiceItemRequest{{Name: "Tunggakan", Category: "arrears", Amount: 100000}},
+	})
+	require.NoError(t, err)
+	assert.Nil(t, resp.Month, "month harus NULL untuk arrears")
+	assert.Nil(t, resp.Year, "year harus NULL untuk arrears")
+
+	var row model.Invoice
+	require.NoError(t, db.First(&row, resp.ID).Error)
+	assert.Nil(t, row.Month)
+	assert.Nil(t, row.Year)
+}
+
+func TestMonthInAcademicYearRange(t *testing.T) {
+	start := time.Date(2025, 7, 15, 0, 0, 0, 0, time.UTC)
+	end := time.Date(2026, 6, 30, 0, 0, 0, 0, time.UTC)
+
+	cases := []struct {
+		name        string
+		month, year uint
+		want        bool
+	}{
+		{"bulan awal TA", 7, 2025, true},
+		{"bulan dalam TA", 9, 2025, true},
+		{"bulan akhir TA", 6, 2026, true},
+		{"bulan sebelum TA", 6, 2025, false},
+		{"bulan setelah TA", 7, 2026, false},
+		{"tahun jauh sebelumnya", 1, 2024, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.want, monthInAcademicYearRange(tc.month, tc.year, start, end))
+		})
+	}
 }

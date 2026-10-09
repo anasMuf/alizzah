@@ -759,6 +759,8 @@ definitions:
           $ref: '#/definitions/dto.CreateInvoiceItemRequest'
         minItems: 1
         type: array
+      month:
+        type: integer
       notes:
         type: string
       student_id:
@@ -768,6 +770,8 @@ definitions:
         - arrears
         - manual
         type: string
+      year:
+        type: integer
     required:
     - academic_year_id
     - items

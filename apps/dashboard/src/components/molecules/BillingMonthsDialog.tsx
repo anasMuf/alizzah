@@ -2,7 +2,7 @@ import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button, SlideOver, useToast } from "#/components/ui";
 
-const MONTH_NAMES = [
+export const MONTH_NAMES = [
 	"Januari",
 	"Februari",
 	"Maret",

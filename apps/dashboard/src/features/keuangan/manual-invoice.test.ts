@@ -12,6 +12,7 @@ import {
 	type ManualInvoiceFormState,
 	manualInvoiceType,
 	modeAvailability,
+	pickDefaultBillingMonth,
 	studentLevelWarning,
 	sumDraftAmounts,
 	validateManualInvoice,
@@ -40,6 +41,8 @@ const itemizedState = (
 	isActiveAcademicYear: true,
 	hasTariffConfig: true,
 	notes: "",
+	month: 9,
+	year: 2025,
 	items: [{ name: "Seragam", category: "other", amount: 100_000 }],
 	...overrides,
 });
@@ -165,6 +168,14 @@ describe("validateManualInvoice", () => {
 		expect(validateManualInvoice(itemizedState({ notes: "" }))).toBeNull();
 	});
 
+	it("menolak mode rinci tanpa bulan tagihan", () => {
+		expect(
+			validateManualInvoice(
+				itemizedState({ month: undefined, year: undefined }),
+			),
+		).toBe("Bulan tagihan wajib dipilih");
+	});
+
 	it("menolak mode rinci tanpa item", () => {
 		expect(validateManualInvoice(itemizedState({ items: [] }))).toBe(
 			"Tambahkan minimal satu item tagihan",
@@ -278,6 +289,48 @@ describe("buildCreateInvoicePayload", () => {
 		expect(payload.items[0].unit_price).toBe(10_000);
 		expect("quantity" in payload.items[1]).toBe(false);
 		expect("unit_price" in payload.items[1]).toBe(false);
+	});
+
+	it("mode rinci menyertakan bulan & tahun tagihan", () => {
+		const payload = buildCreateInvoicePayload(
+			itemizedState({ month: 9, year: 2025 }),
+		);
+		expect(payload.month).toBe(9);
+		expect(payload.year).toBe(2025);
+	});
+
+	it("mode total tidak mengirim bulan & tahun", () => {
+		const payload = buildCreateInvoicePayload(
+			baseState as ManualInvoiceFormState,
+		);
+		expect("month" in payload).toBe(false);
+		expect("year" in payload).toBe(false);
+	});
+});
+
+describe("pickDefaultBillingMonth", () => {
+	const months = [
+		{ month: 7, year: 2025 },
+		{ month: 8, year: 2025 },
+		{ month: 9, year: 2025 },
+	];
+
+	it("memilih bulan berjalan bila ada di daftar", () => {
+		expect(pickDefaultBillingMonth(months, new Date(2025, 7, 20))).toEqual({
+			month: 8,
+			year: 2025,
+		});
+	});
+
+	it("jatuh ke bulan pertama bila bulan berjalan di luar rentang", () => {
+		expect(pickDefaultBillingMonth(months, new Date(2026, 0, 5))).toEqual({
+			month: 7,
+			year: 2025,
+		});
+	});
+
+	it("mengembalikan undefined untuk daftar kosong", () => {
+		expect(pickDefaultBillingMonth([])).toBeUndefined();
 	});
 });
 

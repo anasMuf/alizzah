@@ -112,10 +112,16 @@ type CreateInvoiceItemRequest struct {
 //	type "manual"  = tagihan rinci dengan N item
 //
 // Total TIDAK dikirim client — selalu dihitung server dari item.
+//
+// Month/Year = periode tagihan (bulan tagihan). Wajib untuk type "manual" dan
+// harus jatuh di rentang tahun ajaran terpilih (ditegakkan di service). Untuk
+// type "arrears" diabaikan dan disimpan NULL — tunggakan historis tanpa periode.
 type CreateInvoiceRequest struct {
 	StudentID      uint                       `json:"student_id" validate:"required"`
 	AcademicYearID uint                       `json:"academic_year_id" validate:"required"`
 	Type           string                     `json:"type" validate:"required,oneof=arrears manual"`
+	Month          *uint                      `json:"month" validate:"omitempty,min=1,max=12"`
+	Year           *uint                      `json:"year" validate:"omitempty"`
 	DueDate        string                     `json:"due_date" validate:"omitempty,dateonly"`
 	Notes          string                     `json:"notes"`
 	Items          []CreateInvoiceItemRequest `json:"items" validate:"required,min=1,dive"`

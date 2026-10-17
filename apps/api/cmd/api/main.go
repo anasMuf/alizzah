@@ -409,7 +409,7 @@ func main() {
 	extracurricularService := service.NewExtracurricularService(db, extracurricularRepo, fcRepo, fcItemRepo)
 	seService := service.NewStudentExtracurricularService(db, seRepo, studentRepo, extracurricularRepo, ayRepo, enrollmentRepo, fcRepo, fcItemRepo, invoiceGenService, billingExclusionRepo)
 	eventService := service.NewStudentAcademicEventService(eventRepo, studentRepo)
-	daycareService := service.NewDaycareEnrollmentService(db, daycareRepo, studentRepo, ayRepo, daycareMonthlyAttRepo, invoiceRepo, invoiceGenService)
+	daycareService := service.NewDaycareEnrollmentService(db, daycareRepo, studentRepo, ayRepo, daycareMonthlyAttRepo, invoiceRepo, invoiceGenService, billingExclusionRepo)
 
 	// Batch 4
 	fcService := service.NewFeeConfigService(fcRepo, fcItemRepo, ayRepo, extracurricularRepo)
@@ -550,7 +550,7 @@ func main() {
 	sfService := service.NewStudentFacilityService(sfRepo, studentRepo, facilityRepo, ayRepo, fcItemRepo, invoiceRepo, invoiceItemRepo, enrollmentRepo, effectiveDayRepo, invoiceGenService, billingExclusionRepo, fcRepo, monthZoneRepo, invoiceService, billingExclusionService)
 	facilityHandler := handler.NewFacilityHandler(facilityService, sfService)
 
-	billingExclusionHandler := handler.NewBillingExclusionHandler(billingExclusionService, seRepo, sfRepo)
+	billingExclusionHandler := handler.NewBillingExclusionHandler(billingExclusionService, seRepo, sfRepo, daycareRepo, ayRepo)
 
 	// Batch 7
 	cashHandler := handler.NewCashHandler(cashService)
@@ -650,6 +650,9 @@ func main() {
 	students.DELETE("/:id/facilities/:facilityId", facilityHandler.Unenroll, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.GET("/:id/facilities/:facilityId/billing-exclusions", billingExclusionHandler.GetFacility, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.PUT("/:id/facilities/:facilityId/billing-exclusions", billingExclusionHandler.SetFacility, guard.RequireModule(middleware.ModuleAdministrasi))
+	// Skip tagihan bulanan daycare (Kelola Bulan)
+	students.GET("/:id/daycare-enrollments/:de_id/billing-exclusions", billingExclusionHandler.GetDaycare, guard.RequireModule(middleware.ModuleAdministrasi))
+	students.PUT("/:id/daycare-enrollments/:de_id/billing-exclusions", billingExclusionHandler.SetDaycare, guard.RequireModule(middleware.ModuleAdministrasi))
 	// Per-bulan zone override fasilitas (epic zona-bulanan)
 	students.PUT("/:id/facilities/:facilityId/month-zone", facilityHandler.SetMonthZone, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.DELETE("/:id/facilities/:facilityId/month-zone", facilityHandler.ClearMonthZone, guard.RequireModule(middleware.ModuleAdministrasi))

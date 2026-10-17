@@ -34,24 +34,26 @@ type DaycareEnrollmentService interface {
 }
 
 type daycareEnrollmentService struct {
-	db             *gorm.DB
-	daycareRepo    repository.DaycareEnrollmentRepository
-	studentRepo    repository.StudentRepository
-	acRepo         repository.AcademicYearRepository
-	monthlyAttRepo repository.DaycareMonthlyAttendanceRepository
-	invoiceRepo    repository.InvoiceRepository
-	invoiceGen     InvoiceGenerateService
+	db                   *gorm.DB
+	daycareRepo          repository.DaycareEnrollmentRepository
+	studentRepo          repository.StudentRepository
+	acRepo               repository.AcademicYearRepository
+	monthlyAttRepo       repository.DaycareMonthlyAttendanceRepository
+	invoiceRepo          repository.InvoiceRepository
+	invoiceGen           InvoiceGenerateService
+	billingExclusionRepo repository.BillingMonthExclusionRepository
 }
 
-func NewDaycareEnrollmentService(db *gorm.DB, daycareRepo repository.DaycareEnrollmentRepository, studentRepo repository.StudentRepository, acRepo repository.AcademicYearRepository, monthlyAttRepo repository.DaycareMonthlyAttendanceRepository, invoiceRepo repository.InvoiceRepository, invoiceGen InvoiceGenerateService) DaycareEnrollmentService {
+func NewDaycareEnrollmentService(db *gorm.DB, daycareRepo repository.DaycareEnrollmentRepository, studentRepo repository.StudentRepository, acRepo repository.AcademicYearRepository, monthlyAttRepo repository.DaycareMonthlyAttendanceRepository, invoiceRepo repository.InvoiceRepository, invoiceGen InvoiceGenerateService, billingExclusionRepo repository.BillingMonthExclusionRepository) DaycareEnrollmentService {
 	return &daycareEnrollmentService{
-		db:             db,
-		daycareRepo:    daycareRepo,
-		studentRepo:    studentRepo,
-		acRepo:         acRepo,
-		monthlyAttRepo: monthlyAttRepo,
-		invoiceRepo:    invoiceRepo,
-		invoiceGen:     invoiceGen,
+		db:                   db,
+		daycareRepo:          daycareRepo,
+		studentRepo:          studentRepo,
+		acRepo:               acRepo,
+		monthlyAttRepo:       monthlyAttRepo,
+		invoiceRepo:          invoiceRepo,
+		invoiceGen:           invoiceGen,
+		billingExclusionRepo: billingExclusionRepo,
 	}
 }
 
@@ -314,6 +316,19 @@ func (s *daycareEnrollmentService) UpdateStatus(id uint, req dto.UpdateDaycareSt
 	return nil
 }
 
+// deleteExclusions menghapus daftar bulan skip milik enrollment daycare yang
+// dihapus agar tidak meninggalkan baris orphan di billing_month_exclusions.
+func (s *daycareEnrollmentService) deleteExclusions(tx *gorm.DB, studentID, enrollmentID uint) error {
+	if s.billingExclusionRepo == nil {
+		return nil
+	}
+	repo := s.billingExclusionRepo
+	if tx != nil {
+		repo = repo.WithTx(tx)
+	}
+	return repo.DeleteByStudentAndEntity(studentID, "daycare", enrollmentID)
+}
+
 // Delete checks for unpaid monthly invoices before deleting. If there are unpaid
 // invoices from current month onward, returns a warning without deleting.
 // If enrollment is already inactive, deletes immediately without checking invoices.
@@ -325,7 +340,12 @@ func (s *daycareEnrollmentService) Delete(id uint) (*dto.DeleteDaycareEnrollment
 
 	// Enrollment non-aktif → hapus langsung, tidak perlu cek invoice
 	if de.Status != "active" {
-		if err := s.daycareRepo.Delete(id); err != nil {
+		if err := s.db.Transaction(func(tx *gorm.DB) error {
+			if err := s.daycareRepo.WithTx(tx).Delete(id); err != nil {
+				return err
+			}
+			return s.deleteExclusions(tx, de.StudentID, id)
+		}); err != nil {
 			return nil, fmt.Errorf("gagal menghapus enrollment: %w", err)
 		}
 		return &dto.DeleteDaycareEnrollmentResponse{
@@ -365,7 +385,12 @@ func (s *daycareEnrollmentService) Delete(id uint) (*dto.DeleteDaycareEnrollment
 	}
 
 	// Tidak ada invoice unpaid → hapus langsung
-	if err := s.daycareRepo.Delete(id); err != nil {
+	if err := s.db.Transaction(func(tx *gorm.DB) error {
+		if err := s.daycareRepo.WithTx(tx).Delete(id); err != nil {
+			return err
+		}
+		return s.deleteExclusions(tx, de.StudentID, id)
+	}); err != nil {
 		return nil, fmt.Errorf("gagal menghapus enrollment: %w", err)
 	}
 
@@ -385,7 +410,12 @@ func (s *daycareEnrollmentService) DeleteWithInvoices(id uint) (*dto.DeleteDayca
 
 	// Enrollment non-aktif → hapus langsung
 	if de.Status != "active" {
-		if err := s.daycareRepo.Delete(id); err != nil {
+		if err := s.db.Transaction(func(tx *gorm.DB) error {
+			if err := s.daycareRepo.WithTx(tx).Delete(id); err != nil {
+				return err
+			}
+			return s.deleteExclusions(tx, de.StudentID, id)
+		}); err != nil {
 			return nil, fmt.Errorf("gagal menghapus enrollment: %w", err)
 		}
 		return &dto.DeleteDaycareEnrollmentResponse{
@@ -413,7 +443,10 @@ func (s *daycareEnrollmentService) DeleteWithInvoices(id uint) (*dto.DeleteDayca
 				deletedCount++
 			}
 		}
-		return tx.Delete(&model.DaycareEnrollment{}, id).Error
+		if err := tx.Delete(&model.DaycareEnrollment{}, id).Error; err != nil {
+			return err
+		}
+		return s.deleteExclusions(tx, de.StudentID, id)
 	})
 	if err != nil {
 		return nil, fmt.Errorf("gagal menghapus enrollment dan invoice: %w", err)

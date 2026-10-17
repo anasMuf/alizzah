@@ -11799,6 +11799,117 @@ paths:
       summary: Get academic events by student
       tags:
       - academic-events
+  /v1/students/{id}/daycare-enrollments/{de_id}/billing-exclusions:
+    get:
+      consumes:
+      - application/json
+      description: Daftar bulan yang tagihan daycare-nya di-skip
+      parameters:
+      - description: Student ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Daycare Enrollment ID
+        in: path
+        name: de_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.BillingExclusionsResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get billing month exclusions for a daycare enrollment
+      tags:
+      - daycare-enrollments
+    put:
+      consumes:
+      - application/json
+      description: Ganti seluruh daftar bulan yang tagihan daycare-nya di-skip
+      parameters:
+      - description: Student ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Daycare Enrollment ID
+        in: path
+        name: de_id
+        required: true
+        type: integer
+      - description: Daftar bulan skip
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SetBillingExclusionsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.BillingExclusionsResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set billing month exclusions for a daycare enrollment
+      tags:
+      - daycare-enrollments
   /v1/students/{id}/dispensations:
     get:
       parameters:

@@ -56,8 +56,8 @@ interface BillingMonthsDialogProps {
 
 /**
  * Dialog "Kelola Bulan" — memilih bulan-bulan yang tagihan bulanannya di-skip
- * (PASTA/fasilitas) tanpa mengubah status enrollment. Dipakai bersama oleh
- * halaman ekskul (PASTA) dan fasilitas siswa.
+ * (PASTA/fasilitas/daycare) tanpa mengubah status enrollment. Dipakai bersama
+ * oleh halaman ekskul (PASTA), fasilitas siswa, dan pendaftaran daycare.
  */
 export function BillingMonthsDialog({
 	open,

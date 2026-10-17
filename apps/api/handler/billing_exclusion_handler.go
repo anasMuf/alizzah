@@ -13,13 +13,15 @@ import (
 )
 
 type BillingExclusionHandler struct {
-	svc    service.BillingExclusionService
-	seRepo repository.StudentExtracurricularRepository
-	sfRepo repository.StudentFacilityRepository
+	svc         service.BillingExclusionService
+	seRepo      repository.StudentExtracurricularRepository
+	sfRepo      repository.StudentFacilityRepository
+	daycareRepo repository.DaycareEnrollmentRepository
+	ayRepo      repository.AcademicYearRepository
 }
 
-func NewBillingExclusionHandler(svc service.BillingExclusionService, seRepo repository.StudentExtracurricularRepository, sfRepo repository.StudentFacilityRepository) *BillingExclusionHandler {
-	return &BillingExclusionHandler{svc: svc, seRepo: seRepo, sfRepo: sfRepo}
+func NewBillingExclusionHandler(svc service.BillingExclusionService, seRepo repository.StudentExtracurricularRepository, sfRepo repository.StudentFacilityRepository, daycareRepo repository.DaycareEnrollmentRepository, ayRepo repository.AcademicYearRepository) *BillingExclusionHandler {
+	return &BillingExclusionHandler{svc: svc, seRepo: seRepo, sfRepo: sfRepo, daycareRepo: daycareRepo, ayRepo: ayRepo}
 }
 
 // resolveExtracurricular memvalidasi bahwa se_id milik siswa, lalu mengembalikan
@@ -40,6 +42,24 @@ func (h *BillingExclusionHandler) resolveFacility(studentID, sfID uint) (uint, e
 		return 0, errors.New("Data pendaftaran fasilitas tidak ditemukan")
 	}
 	return sf.FacilityID, nil
+}
+
+// resolveDaycare memvalidasi bahwa de_id milik siswa dan berasal dari tahun
+// ajaran aktif, lalu mengembalikan daycare_enrollment_id — key exclusion memakai
+// ID enrollment.
+func (h *BillingExclusionHandler) resolveDaycare(studentID, deID uint) (uint, error) {
+	de, err := h.daycareRepo.FindByID(deID)
+	if err != nil || de.StudentID != studentID {
+		return 0, errors.New("Data pendaftaran daycare tidak ditemukan")
+	}
+	ay, err := h.ayRepo.FindActive()
+	if err != nil {
+		return 0, errors.New("Tahun ajaran aktif tidak ditemukan")
+	}
+	if de.AcademicYearID != ay.ID {
+		return 0, errors.New("Pendaftaran daycare bukan milik tahun ajaran aktif")
+	}
+	return de.ID, nil
 }
 
 // GetExtracurricular godoc
@@ -123,6 +143,95 @@ func (h *BillingExclusionHandler) SetExtracurricular(c echo.Context) error {
 	}
 
 	resp, err := h.svc.SetExclusions(uint(studentID), "extracurricular", exID, req)
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{Status: status, Code: code, Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil menyimpan daftar bulan skip", Data: resp})
+}
+
+// GetDaycare godoc
+// @Summary      Get billing month exclusions for a daycare enrollment
+// @Description  Daftar bulan yang tagihan daycare-nya di-skip
+// @Tags         daycare-enrollments
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id     path  int  true  "Student ID"
+// @Param        de_id  path  int  true  "Daycare Enrollment ID"
+// @Success      200  {object}  dto.SuccessResponse{data=dto.BillingExclusionsResponse}
+// @Failure      400  {object}  dto.ErrorResponse
+// @Failure      401  {object}  dto.ErrorResponse
+// @Failure      403  {object}  dto.ErrorResponse
+// @Failure      404  {object}  dto.ErrorResponse
+// @Failure      500  {object}  dto.ErrorResponse
+// @Router       /v1/students/{id}/daycare-enrollments/{de_id}/billing-exclusions [get]
+func (h *BillingExclusionHandler) GetDaycare(c echo.Context) error {
+	studentID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: "ID siswa tidak valid"})
+	}
+	deID, err := strconv.Atoi(c.Param("de_id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: "ID pendaftaran daycare tidak valid"})
+	}
+
+	resolvedID, err := h.resolveDaycare(uint(studentID), uint(deID))
+	if err != nil {
+		return c.JSON(http.StatusNotFound, dto.ErrorResponse{Status: http.StatusNotFound, Code: "NOT_FOUND", Message: err.Error()})
+	}
+
+	resp, err := h.svc.GetByStudentAndEntity(uint(studentID), "daycare", resolvedID)
+	if err != nil {
+		status, code := utility.GetErrorStatusAndCode(err)
+		return c.JSON(status, dto.ErrorResponse{Status: status, Code: code, Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil mengambil daftar bulan skip", Data: resp})
+}
+
+// SetDaycare godoc
+// @Summary      Set billing month exclusions for a daycare enrollment
+// @Description  Ganti seluruh daftar bulan yang tagihan daycare-nya di-skip
+// @Tags         daycare-enrollments
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id       path  int                                  true  "Student ID"
+// @Param        de_id    path  int                                  true  "Daycare Enrollment ID"
+// @Param        request  body  dto.SetBillingExclusionsRequest      true  "Daftar bulan skip"
+// @Success      200      {object}  dto.SuccessResponse{data=dto.BillingExclusionsResponse}
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      401      {object}  dto.ErrorResponse
+// @Failure      403      {object}  dto.ErrorResponse
+// @Failure      404      {object}  dto.ErrorResponse
+// @Failure      500      {object}  dto.ErrorResponse
+// @Router       /v1/students/{id}/daycare-enrollments/{de_id}/billing-exclusions [put]
+func (h *BillingExclusionHandler) SetDaycare(c echo.Context) error {
+	studentID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: "ID siswa tidak valid"})
+	}
+	deID, err := strconv.Atoi(c.Param("de_id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: "ID pendaftaran daycare tidak valid"})
+	}
+
+	var req dto.SetBillingExclusionsRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "BAD_REQUEST", Message: err.Error()})
+	}
+	if err := c.Validate(req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "VALIDATION_ERROR", Message: err.Error()})
+	}
+
+	resolvedID, err := h.resolveDaycare(uint(studentID), uint(deID))
+	if err != nil {
+		return c.JSON(http.StatusNotFound, dto.ErrorResponse{Status: http.StatusNotFound, Code: "NOT_FOUND", Message: err.Error()})
+	}
+
+	resp, err := h.svc.SetExclusions(uint(studentID), "daycare", resolvedID, req)
 	if err != nil {
 		status, code := utility.GetErrorStatusAndCode(err)
 		return c.JSON(status, dto.ErrorResponse{Status: status, Code: code, Message: err.Error()})

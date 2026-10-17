@@ -192,7 +192,7 @@ func TestSetExclusions_RejectsInvalidEntityType(t *testing.T) {
 		newTestInvoiceGen(t, db),
 	)
 
-	_, err := svc.SetExclusions(fx.StudentID, "daycare", fx.ExID, dtoSetMonths())
+	_, err := svc.SetExclusions(fx.StudentID, "transport", fx.ExID, dtoSetMonths())
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "entity_type tidak valid")
 }

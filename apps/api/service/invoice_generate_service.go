@@ -65,6 +65,12 @@ type InvoiceGenerateService interface {
 	// RestoreFacilityItemToMonthly menambahkan kembali item fasilitas ke invoice
 	// bulan tertentu (saat skip dicabut).
 	RestoreFacilityItemToMonthly(studentID, facilityID, academicYearID, month, year uint) error
+	// RemoveDaycareItemFromMonthly menghapus item daycare unpaid (SPD, konsumsi,
+	// overtime) dari invoice bulan tertentu saat bulan di-skip.
+	RemoveDaycareItemFromMonthly(studentID, enrollmentID, month, year uint) error
+	// RestoreDaycareItemToMonthly menambahkan kembali item daycare ke invoice
+	// bulan tertentu saat skip dicabut (idempotent).
+	RestoreDaycareItemToMonthly(studentID, enrollmentID, academicYearID, month, year uint) error
 	ApplyDispensationToExistingInvoices(studentID, academicYearID uint) error
 	// RegenerateForStudent menghapus semua invoice (initial, registration, monthly)
 	// untuk student di tahun ajaran aktif lalu generate ulang dengan data terbaru.
@@ -1206,6 +1212,98 @@ func (s *invoiceGenerateService) RestoreFacilityItemToMonthly(studentID, facilit
 	return s.addFacilityItemToMonthly(studentID, month, year, invoice, facility, feeItems, zoneNames)
 }
 
+// RemoveDaycareItemFromMonthly menghapus seluruh item daycare unpaid dari invoice
+// bulan tertentu saat bulan ditandai skip. Item yang sudah dibayar tidak disentuh
+// (integritas pembayaran). Dispensasi unpaid ikut dihitung ulang agar total invoice
+// tetap konsisten setelah item dasar dihapus.
+func (s *invoiceGenerateService) RemoveDaycareItemFromMonthly(studentID, enrollmentID, month, year uint) error {
+	de, err := s.daycareRepo.FindByID(enrollmentID)
+	if err != nil {
+		return err
+	}
+	if de.StudentID != studentID {
+		return fmt.Errorf("pendaftaran daycare tidak ditemukan untuk siswa ini")
+	}
+
+	invoice, err := s.invoiceRepo.FindMonthlyByStudent(studentID, month, year)
+	if err != nil {
+		return nil // invoice bulan tsb belum ada — tidak ada yang dihapus
+	}
+
+	anyChange := false
+	for _, cat := range []string{"daycare", "daycare_meal", "daycare_overtime"} {
+		deleted, err := s.invoiceItemRepo.DeleteUnpaidByInvoiceAndCategory(invoice.ID, cat)
+		if err != nil {
+			return err
+		}
+		if deleted > 0 {
+			anyChange = true
+		}
+	}
+	if !anyChange {
+		return nil
+	}
+
+	// Hitung ulang dispensasi karena base amount daycare bisa berubah/hilang.
+	if err := s.applyDispensationToInvoice(invoice, "monthly_spp", "daycare"); err != nil {
+		log.Printf("[Daycare Skip] Gagal apply ulang dispensasi invoice=%d: %v", invoice.ID, err)
+	}
+	return s.recalculateInvoiceTotal(invoice.ID)
+}
+
+// RestoreDaycareItemToMonthly menambahkan kembali item daycare ke invoice bulan
+// tertentu saat skip dicabut. Regenerasi memakai data enrollment + kehadiran bulan
+// tsb sehingga hasilnya konsisten dengan generate biasa. Idempotent dan tidak
+// membuat invoice baru bila invoice bulan tsb belum ada.
+func (s *invoiceGenerateService) RestoreDaycareItemToMonthly(studentID, enrollmentID, academicYearID, month, year uint) error {
+	de, err := s.daycareRepo.FindByID(enrollmentID)
+	if err != nil {
+		return err
+	}
+	if de.StudentID != studentID {
+		return fmt.Errorf("pendaftaran daycare tidak ditemukan untuk siswa ini")
+	}
+
+	// Scoped restore: hanya menyentuh invoice bulan target. Jangan memanggil
+	// GenerateDaycareMonthlyInvoices karena untuk premium fungsi itu melakukan
+	// inject ke SEMUA bulan (dan menghapus overtime unpaid bulan lain).
+	invoice, err := s.invoiceRepo.FindMonthlyByStudent(studentID, month, year)
+	if err != nil {
+		return nil // invoice bulan tsb belum ada — tidak ada yang di-restore
+	}
+	feeConfig, err := s.feeConfigRepo.FindByAcademicYearID(academicYearID)
+	if err != nil || feeConfig == nil {
+		return nil
+	}
+
+	if de.Category == "premium" {
+		spdKey := buildDaycareSPDKey("premium", de.TimeSlot, de.AgeGroup)
+		spdItem, err := s.feeConfigItemRepo.FindByItemKey(feeConfig.ID, spdKey, "all", "all")
+		if err != nil || spdItem == nil {
+			return fmt.Errorf("fee item SPD tidak ditemukan: %s", spdKey)
+		}
+		if err := s.addDaycareItemToInvoice(invoice.ID, spdItem.Name, spdItem.Amount, nil, nil); err != nil {
+			return err
+		}
+	}
+
+	values := s.daycareAttendanceValues(studentID, month, year)
+	if values.hasData {
+		return s.applyDaycareAttendanceItems(*de, invoice, feeConfig, values)
+	}
+	if de.Category == "premium" {
+		// Premium tanpa data attendance tetap punya SPD flat yang perlu recalc.
+		if err := s.recalculateInvoiceTotal(invoice.ID); err != nil {
+			return err
+		}
+		if err := s.applyDispensationToInvoice(invoice, "monthly_spp", "daycare"); err != nil {
+			log.Printf("[Daycare Skip] Gagal apply dispensasi: %v", err)
+		}
+		return s.recalculateInvoiceTotal(invoice.ID)
+	}
+	return nil
+}
+
 // CleanupExtracurricularInvoices adalah recovery endpoint untuk admin.
 // Menghapus item unpaid ekskul dari invoice mulai bulan mulai mengikuti (start_date)
 // tanpa harus regenerate seluruh invoice (yang akan menghapus riwayat pembayaran).
@@ -1642,6 +1740,12 @@ func (s *invoiceGenerateService) InjectPremiumDaycareToMonthlyInvoices(de model.
 			continue
 		}
 
+		// Bulan yang di-skip lewat Kelola Bulan tidak boleh di-inject ulang
+		// (SyncDaycareMonthlyInvoices memanggil fungsi ini untuk semua bulan).
+		if s.isMonthExcluded(de.StudentID, "daycare", de.ID, *inv.Month, *inv.Year) {
+			continue
+		}
+
 		// Hapus item daycare lama (unpaid) sebelum inject SPD baru — mencegah akumulasi
 		// jika time_slot/age_group berubah tanpa melalui Update (misal: SyncDaycareMonthlyInvoices)
 		// Catatan: daycare_meal TIDAK dihapus di sini karena meal diregenerasi via attendance
@@ -1667,6 +1771,13 @@ func (s *invoiceGenerateService) GenerateDaycareMonthlyInvoices(params dto.Gener
 	de, err := s.daycareRepo.FindActiveByStudentID(params.StudentID, params.AcademicYearID)
 	if err != nil {
 		return fmt.Errorf("pendaftaran daycare tidak ditemukan")
+	}
+
+	// Bulan yang di-skip (Kelola Bulan) tidak boleh ditagihkan lagi — baik SPD
+	// premium, item attendance regular, konsumsi, maupun overtime.
+	if s.isMonthExcluded(params.StudentID, "daycare", de.ID, params.Month, params.Year) {
+		log.Printf("[Daycare SPD] Skip bulan %d/%d untuk student=%d (billing exclusion)", params.Month, params.Year, params.StudentID)
+		return nil
 	}
 
 	log.Printf("[Daycare SPD] Generate untuk student=%d month=%d/%d category=%s slot=%s age=%s",
@@ -1704,63 +1815,77 @@ func (s *invoiceGenerateService) GenerateDaycareMonthlyInvoices(params dto.Gener
 		return nil
 	}
 
-	// Try monthly attendance first
-	monthlyAtt, _ := s.daycareMonthlyAttRepo.FindByStudentMonthYear(params.StudentID, params.Month, params.Year)
+	// ─── Attendance-based items (monthly summary or fallback daily) ───
+	values := s.daycareAttendanceValues(params.StudentID, params.Month, params.Year)
+	if !values.hasData {
+		log.Printf("[Daycare SPD] tidak ada attendance atau data bulanan untuk %d/%d", params.Month, params.Year)
+		return nil
+	}
 
-	var spdDays, mealDays, overtimeMinutes uint
+	invoice, err := s.findOrCreateDaycareMonthlyInvoice(params.StudentID, params.AcademicYearID, params.Month, params.Year)
+	if err != nil {
+		return err
+	}
+	return s.applyDaycareAttendanceItems(*de, invoice, feeConfig, values)
+}
 
+type daycareAttendanceValues struct {
+	spdDays         uint
+	mealDays        uint
+	overtimeMinutes uint
+	// slotCount hanya terisi pada fallback absensi harian (regular).
+	slotCount map[string]int
+	hasData   bool
+}
+
+// daycareAttendanceValues mengambil ringkasan kehadiran bulanan sebagai sumber
+// utama; jika kosong, fallback ke absensi harian. Tidak menulis apa pun ke DB.
+func (s *invoiceGenerateService) daycareAttendanceValues(studentID, month, year uint) daycareAttendanceValues {
+	v := daycareAttendanceValues{}
+
+	monthlyAtt, _ := s.daycareMonthlyAttRepo.FindByStudentMonthYear(studentID, month, year)
 	if monthlyAtt != nil && (monthlyAtt.SPDDays > 0 || monthlyAtt.MealDays > 0 || monthlyAtt.OvertimeMinutes > 0) {
-		spdDays = monthlyAtt.SPDDays
-		mealDays = monthlyAtt.MealDays
-		overtimeMinutes = monthlyAtt.OvertimeMinutes
-		log.Printf("[Daycare SPD] Menggunakan data kehadiran bulanan: spd=%d meal=%d overtime=%d", spdDays, mealDays, overtimeMinutes)
-	} else {
-		// Fallback: hitung dari absensi harian
-		start := time.Date(int(params.Year), time.Month(params.Month), 1, 0, 0, 0, 0, time.UTC)
-		end := start.AddDate(0, 1, 0)
+		v.spdDays = monthlyAtt.SPDDays
+		v.mealDays = monthlyAtt.MealDays
+		v.overtimeMinutes = monthlyAtt.OvertimeMinutes
+		v.hasData = true
+		log.Printf("[Daycare SPD] Menggunakan data kehadiran bulanan: spd=%d meal=%d overtime=%d", v.spdDays, v.mealDays, v.overtimeMinutes)
+		return v
+	}
 
-		var atts []model.DaycareAttendance
-		s.db.Where("student_id = ? AND date >= ? AND date < ? AND time_slot != ''", params.StudentID, start, end).
-			Order("date ASC").Find(&atts)
+	// Fallback: hitung dari absensi harian
+	start := time.Date(int(year), time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+	end := start.AddDate(0, 1, 0)
 
-		if len(atts) == 0 {
-			log.Printf("[Daycare SPD] tidak ada attendance atau data bulanan untuk %d/%d", params.Month, params.Year)
-			return nil
+	var atts []model.DaycareAttendance
+	s.db.Where("student_id = ? AND date >= ? AND date < ? AND time_slot != ''", studentID, start, end).
+		Order("date ASC").Find(&atts)
+	if len(atts) == 0 {
+		return v
+	}
+
+	v.slotCount = make(map[string]int)
+	for _, a := range atts {
+		if a.TimeSlot != "" {
+			v.slotCount[a.TimeSlot]++
 		}
-
-		// Hitung per slot (untuk Regular SPD) + meal days
-		slotCount := make(map[string]int)
-		for _, a := range atts {
-			if a.TimeSlot != "" {
-				slotCount[a.TimeSlot]++
-			}
-			if a.WithMeal {
-				mealDays++
-			}
+		if a.WithMeal {
+			v.mealDays++
 		}
+	}
+	v.hasData = true
+	log.Printf("[Daycare SPD] Fallback absensi harian: slotCount=%v mealDays=%d", v.slotCount, v.mealDays)
+	return v
+}
 
-		log.Printf("[Daycare SPD] Fallback absensi harian: slotCount=%v mealDays=%d", slotCount, mealDays)
-
-		// Find or create monthly invoice
-		invoice, err := s.invoiceRepo.FindMonthlyByStudent(params.StudentID, params.Month, params.Year)
-		if err != nil {
-			invoice = &model.Invoice{
-				StudentID:      params.StudentID,
-				AcademicYearID: params.AcademicYearID,
-				Type:           "monthly",
-				Month:          &params.Month,
-				Year:           &params.Year,
-				Status:         "unpaid",
-				TotalAmount:    0,
-			}
-			if err := s.invoiceRepo.Create(invoice); err != nil {
-				return err
-			}
-		}
-
-		// Regular: SPD per time slot (fallback)
-		if de.Category == "regular" {
-			for slot, count := range slotCount {
+// applyDaycareAttendanceItems menulis item attendance (SPD regular, konsumsi,
+// overtime) untuk SATU invoice bulan saja, lalu menghitung ulang total dan
+// dispensasi. Premium hanya memakai meal/overtime karena SPD-nya flat.
+func (s *invoiceGenerateService) applyDaycareAttendanceItems(de model.DaycareEnrollment, invoice *model.Invoice, feeConfig *model.FeeConfig, v daycareAttendanceValues) error {
+	if de.Category == "regular" {
+		if len(v.slotCount) > 0 {
+			// Fallback absensi harian: SPD per time slot.
+			for slot, count := range v.slotCount {
 				spdKey := buildDaycareSPDKey("regular", slot, de.AgeGroup)
 				spdItem, err := s.feeConfigItemRepo.FindByItemKey(feeConfig.ID, spdKey, "all", "all")
 				if err != nil || spdItem == nil {
@@ -1775,76 +1900,32 @@ func (s *invoiceGenerateService) GenerateDaycareMonthlyInvoices(params dto.Gener
 					return err
 				}
 			}
-		}
-
-		// Meal fallback
-		if mealDays > 0 {
-			mealItem, err := s.feeConfigItemRepo.FindByItemKey(feeConfig.ID, "daycare_regular_meal", "all", "all")
-			if err == nil && mealItem != nil {
-				dailyRate := mealItem.Amount
-				qty := uint(mealDays)
-				name := fmt.Sprintf("%s (%d hari)", mealItem.Name, mealDays)
-				log.Printf("[Daycare SPD] Meal fallback: %d hari x %.0f", mealDays, dailyRate)
-				if err := s.upsertDaycareAttendanceItem(invoice.ID, mealItem.Name, name, dailyRate*float64(mealDays), &qty, &dailyRate, "daycare_meal", "hari"); err != nil {
+		} else if v.spdDays > 0 {
+			// Ringkasan bulanan: spd_days × tarif harian.
+			spdKey := buildDaycareSPDKey("regular", de.TimeSlot, de.AgeGroup)
+			spdItem, err := s.feeConfigItemRepo.FindByItemKey(feeConfig.ID, spdKey, "all", "all")
+			if err != nil || spdItem == nil {
+				log.Printf("[Daycare SPD] Regular: fee item tidak ditemukan key=%s err=%v", spdKey, err)
+			} else {
+				dailyRate := spdItem.Amount
+				qty := v.spdDays
+				name := fmt.Sprintf("%s (%d hari)", spdItem.Name, v.spdDays)
+				log.Printf("[Daycare SPD] Regular monthly: %s = %d x %.0f = %.0f", name, v.spdDays, dailyRate, dailyRate*float64(v.spdDays))
+				if err := s.upsertDaycareAttendanceItem(invoice.ID, spdItem.Name, name, dailyRate*float64(v.spdDays), &qty, &dailyRate, "daycare", "hari"); err != nil {
 					return err
 				}
 			}
 		}
-
-		// Recalculate + apply daycare dispensations
-		if err := s.recalculateInvoiceTotal(invoice.ID); err != nil {
-			return err
-		}
-		if err := s.applyDispensationToInvoice(invoice, "monthly_spp", "daycare"); err != nil {
-			log.Printf("[Daycare SPD] Gagal apply dispensasi: %v", err)
-		}
-		return s.recalculateInvoiceTotal(invoice.ID)
 	}
 
-	// ─── Monthly attendance path ───
-	// Find or create monthly invoice
-	invoice, err := s.invoiceRepo.FindMonthlyByStudent(params.StudentID, params.Month, params.Year)
-	if err != nil {
-		invoice = &model.Invoice{
-			StudentID:      params.StudentID,
-			AcademicYearID: params.AcademicYearID,
-			Type:           "monthly",
-			Month:          &params.Month,
-			Year:           &params.Year,
-			Status:         "unpaid",
-			TotalAmount:    0,
-		}
-		if err := s.invoiceRepo.Create(invoice); err != nil {
-			return err
-		}
-	}
-
-	// Regular SPD: spd_days × daily SPD rate
-	if de.Category == "regular" && spdDays > 0 {
-		spdKey := buildDaycareSPDKey("regular", de.TimeSlot, de.AgeGroup)
-		spdItem, err := s.feeConfigItemRepo.FindByItemKey(feeConfig.ID, spdKey, "all", "all")
-		if err != nil || spdItem == nil {
-			log.Printf("[Daycare SPD] Regular: fee item tidak ditemukan key=%s err=%v", spdKey, err)
-		} else {
-			dailyRate := spdItem.Amount
-			qty := spdDays
-			name := fmt.Sprintf("%s (%d hari)", spdItem.Name, spdDays)
-			log.Printf("[Daycare SPD] Regular monthly: %s = %d x %.0f = %.0f", name, spdDays, dailyRate, dailyRate*float64(spdDays))
-			if err := s.upsertDaycareAttendanceItem(invoice.ID, spdItem.Name, name, dailyRate*float64(spdDays), &qty, &dailyRate, "daycare", "hari"); err != nil {
-				return err
-			}
-		}
-	}
-
-	// Meal (both categories: monthly attendance × daily meal rate)
-	if mealDays > 0 {
+	if v.mealDays > 0 {
 		mealItem, err := s.feeConfigItemRepo.FindByItemKey(feeConfig.ID, "daycare_regular_meal", "all", "all")
 		if err == nil && mealItem != nil {
 			dailyRate := mealItem.Amount
-			qty := mealDays
-			name := fmt.Sprintf("%s (%d hari)", mealItem.Name, mealDays)
-			log.Printf("[Daycare SPD] Meal monthly: %d hari x %.0f = %.0f", mealDays, dailyRate, dailyRate*float64(mealDays))
-			if err := s.upsertDaycareAttendanceItem(invoice.ID, mealItem.Name, name, dailyRate*float64(mealDays), &qty, &dailyRate, "daycare_meal", "hari"); err != nil {
+			qty := v.mealDays
+			name := fmt.Sprintf("%s (%d hari)", mealItem.Name, v.mealDays)
+			log.Printf("[Daycare SPD] Meal: %d hari x %.0f = %.0f", v.mealDays, dailyRate, dailyRate*float64(v.mealDays))
+			if err := s.upsertDaycareAttendanceItem(invoice.ID, mealItem.Name, name, dailyRate*float64(v.mealDays), &qty, &dailyRate, "daycare_meal", "hari"); err != nil {
 				return err
 			}
 		} else {
@@ -1852,15 +1933,14 @@ func (s *invoiceGenerateService) GenerateDaycareMonthlyInvoices(params dto.Gener
 		}
 	}
 
-	// Overtime (both categories: monthly overtime × per-30min rate)
-	if overtimeMinutes > 0 {
+	if v.overtimeMinutes > 0 {
 		overtimeItem, err := s.feeConfigItemRepo.FindByItemKey(feeConfig.ID, "daycare_overtime", "all", "all")
 		if err == nil && overtimeItem != nil {
-			overtimeUnits := overtimeMinutes / 30 // pembulatan ke bawah
+			overtimeUnits := v.overtimeMinutes / 30 // pembulatan ke bawah
 			if overtimeUnits > 0 {
 				rate := overtimeItem.Amount
 				name := fmt.Sprintf("%s (%d unit)", overtimeItem.Name, overtimeUnits)
-				log.Printf("[Daycare SPD] Overtime: %d menit = %d unit x %.0f = %.0f", overtimeMinutes, overtimeUnits, rate, rate*float64(overtimeUnits))
+				log.Printf("[Daycare SPD] Overtime: %d menit = %d unit x %.0f = %.0f", v.overtimeMinutes, overtimeUnits, rate, rate*float64(overtimeUnits))
 				if err := s.upsertDaycareAttendanceItem(invoice.ID, overtimeItem.Name, name, rate*float64(overtimeUnits), &overtimeUnits, &rate, "daycare_overtime", "unit"); err != nil {
 					return err
 				}
@@ -1870,7 +1950,6 @@ func (s *invoiceGenerateService) GenerateDaycareMonthlyInvoices(params dto.Gener
 		}
 	}
 
-	// Recalculate + apply daycare dispensations
 	if err := s.recalculateInvoiceTotal(invoice.ID); err != nil {
 		return err
 	}
@@ -1878,6 +1957,27 @@ func (s *invoiceGenerateService) GenerateDaycareMonthlyInvoices(params dto.Gener
 		log.Printf("[Daycare SPD] Gagal apply dispensasi: %v", err)
 	}
 	return s.recalculateInvoiceTotal(invoice.ID)
+}
+
+func (s *invoiceGenerateService) findOrCreateDaycareMonthlyInvoice(studentID, academicYearID, month, year uint) (*model.Invoice, error) {
+	invoice, err := s.invoiceRepo.FindMonthlyByStudent(studentID, month, year)
+	if err == nil {
+		return invoice, nil
+	}
+
+	invoice = &model.Invoice{
+		StudentID:      studentID,
+		AcademicYearID: academicYearID,
+		Type:           "monthly",
+		Month:          &month,
+		Year:           &year,
+		Status:         "unpaid",
+		TotalAmount:    0,
+	}
+	if err := s.invoiceRepo.Create(invoice); err != nil {
+		return nil, err
+	}
+	return invoice, nil
 }
 
 // applyDispensationToInvoice removes old unpaid dispensation items for the given

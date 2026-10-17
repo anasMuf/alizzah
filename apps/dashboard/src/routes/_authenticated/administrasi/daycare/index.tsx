@@ -3,6 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import {
 	CalendarCheck,
+	CalendarDays,
 	ClipboardList,
 	Cog,
 	Minus,
@@ -15,7 +16,11 @@ import {
 	Trash2,
 	UserCircle,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+	getV1StudentsIdDaycareEnrollmentsDeIdBillingExclusions,
+	usePutV1StudentsIdDaycareEnrollmentsDeIdBillingExclusions,
+} from "#/api/endpoints/billing-exclusions/billing-exclusions";
 import {
 	getGetV1DaycareEnrollmentsQueryKey,
 	useGetV1DaycareEnrollments,
@@ -28,6 +33,10 @@ import {
 import { getGetV1InvoicesQueryKey } from "#/api/endpoints/invoices/invoices";
 import { postV1DaycareEnrollmentsPreviewSyncInvoices } from "#/api/endpoints/sync-invoices/sync-invoices";
 import { customInstance } from "#/api/mutator/custom-instance";
+import {
+	BillingMonthsDialog,
+	buildAcademicYearMonths,
+} from "#/components/molecules/BillingMonthsDialog";
 import {
 	SyncPreviewDialog,
 	type SyncPreviewRow,
@@ -129,6 +138,17 @@ function EnrollmentTab() {
 	const [generatingBulkSpd, setGeneratingBulkSpd] = useState(false);
 	const [syncOpen, setSyncOpen] = useState(false);
 
+	// Kelola Bulan — skip tagihan bulanan daycare
+	const [billingTarget, setBillingTarget] = useState<{
+		deId: number;
+		studentId: number;
+		name: string;
+		startDate: string;
+	} | null>(null);
+	const [billingPaidMonths, setBillingPaidMonths] = useState<
+		{ month: number; year: number }[] | null
+	>(null);
+
 	// Delete state
 	const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 	const [enrollmentToDelete, setEnrollmentToDelete] = useState<any>(null);
@@ -137,6 +157,81 @@ function EnrollmentTab() {
 	const [isCheckingDelete, setIsCheckingDelete] = useState(false);
 
 	const bulkSpdMutation = usePostV1DaycareEnrollmentsGenerateMonthlyBulk();
+
+	// Bulan-bulan tahun ajaran aktif (untuk grid dialog Kelola Bulan)
+	const activeYearMonths = useMemo(
+		() => buildAcademicYearMonths(activeAy?.start_date, activeAy?.end_date),
+		[activeAy],
+	);
+
+	useEffect(() => {
+		if (!billingTarget) {
+			setBillingPaidMonths(null);
+			return;
+		}
+		let cancelled = false;
+		setBillingPaidMonths(null);
+		getV1StudentsIdDaycareEnrollmentsDeIdBillingExclusions(
+			billingTarget.studentId,
+			billingTarget.deId,
+		)
+			.then((res) => {
+				if (cancelled) return;
+				setBillingPaidMonths(res.data.data.paid_months ?? []);
+			})
+			.catch((err: Error) => {
+				if (cancelled) return;
+				addToast({
+					variant: "error",
+					title: "Gagal",
+					message: err?.message || "Gagal memuat status pembayaran bulan.",
+				});
+				// Tutup dialog: tanpa data paid_months, bulan yang sudah dibayar
+				// berisiko tampil sebagai bisa di-skip.
+				setBillingTarget(null);
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [billingTarget, addToast]);
+
+	const billingMonths = useMemo(() => {
+		if (!billingTarget?.startDate) return activeYearMonths;
+		const start = new Date(billingTarget.startDate);
+		if (Number.isNaN(start.getTime())) return activeYearMonths;
+		const startKey = start.getFullYear() * 12 + (start.getMonth() + 1);
+		return activeYearMonths.filter((m) => m.year * 12 + m.month >= startKey);
+	}, [activeYearMonths, billingTarget]);
+
+	const billingPaidKeys = useMemo(() => {
+		const keys = new Set<string>();
+		for (const m of billingPaidMonths ?? []) {
+			keys.add(`${m.month}-${m.year}`);
+		}
+		return keys;
+	}, [billingPaidMonths]);
+
+	const billingMutation =
+		usePutV1StudentsIdDaycareEnrollmentsDeIdBillingExclusions({
+			mutation: {
+				onSuccess: () => {
+					addToast({
+						variant: "success",
+						title: "Berhasil",
+						message: "Daftar bulan skip tersimpan.",
+					});
+					queryClient.invalidateQueries({
+						queryKey: getGetV1InvoicesQueryKey(),
+					});
+					queryClient.invalidateQueries({
+						queryKey: getGetV1DaycareEnrollmentsQueryKey(),
+					});
+					setBillingTarget(null);
+				},
+				onError: (e: any) =>
+					addToast({ variant: "error", title: "Gagal", message: e?.message }),
+			},
+		});
 
 	const syncMutation = usePostV1DaycareEnrollmentsSyncInvoices({
 		mutation: {
@@ -462,6 +557,24 @@ function EnrollmentTab() {
 									</td>
 									<td className="py-3 pr-4 text-right">
 										<div className="flex items-center justify-end gap-2">
+											{e.status === "active" && (
+												<button
+													type="button"
+													onClick={() =>
+														setBillingTarget({
+															deId: e.id,
+															studentId: e.student.id,
+															name: e.student.full_name,
+															startDate: e.start_date,
+														})
+													}
+													className="text-indigo-600 hover:text-indigo-900 text-xs font-semibold flex items-center gap-1"
+													title="Atur bulan yang tagihannya di-skip"
+												>
+													<CalendarDays className="h-3 w-3" />
+													Kelola Bulan
+												</button>
+											)}
 											<button
 												onClick={() =>
 													navigate({
@@ -630,6 +743,37 @@ function EnrollmentTab() {
 				loadPreview={loadSyncPreview}
 				runSync={async () => {
 					await syncMutation.mutateAsync();
+				}}
+			/>
+
+			{/* Dialog Kelola Bulan — skip tagihan bulanan daycare */}
+			<BillingMonthsDialog
+				open={!!billingTarget && billingPaidMonths !== null}
+				onClose={() => setBillingTarget(null)}
+				title={
+					billingTarget
+						? `Kelola Bulan — ${billingTarget.name}`
+						: "Kelola Bulan"
+				}
+				description="Bulan yang dicentang tetap ditagihkan untuk daycare ini. Bulan yang tidak dicentang di-skip (tidak ditagih SPD, konsumsi, maupun overtime). Enrollment siswa tetap aktif."
+				months={billingMonths}
+				paidKeys={billingPaidKeys}
+				loadExclusions={async () => {
+					if (!billingTarget) return [];
+					const res =
+						await getV1StudentsIdDaycareEnrollmentsDeIdBillingExclusions(
+							billingTarget.studentId,
+							billingTarget.deId,
+						);
+					return res.data.data.months ?? [];
+				}}
+				saveExclusions={async (months) => {
+					if (!billingTarget) return;
+					await billingMutation.mutateAsync({
+						id: billingTarget.studentId,
+						deId: billingTarget.deId,
+						data: { months },
+					});
 				}}
 			/>
 		</div>

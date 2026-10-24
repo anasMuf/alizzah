@@ -5,6 +5,7 @@ import { useGetV1InvoicesBatch } from "#/api/endpoints/invoices/invoice-batch";
 import { usePutV1InvoicesIdItemsItemIdQuantity } from "#/api/endpoints/invoices/invoice-quantity";
 import { useGetV1StudentsIdInvoices } from "#/api/endpoints/invoices/invoices";
 import { Button, CurrencyInput, SlideOver, useToast } from "#/components/ui";
+import { buildDispensationTargets } from "#/features/keuangan/dispensation";
 import { invoicePeriodOrTypeLabel } from "#/features/keuangan/invoice-labels";
 import {
 	invoiceDescription,
@@ -140,13 +141,10 @@ export function InvoiceSelector({
 	// Derive payable items
 	const invoiceItems = useMemo(() => {
 		const items: any[] = [];
-		const hasDispensation = new Set<number>();
 
-		invoiceDetails.forEach((detail: any) => {
-			detail?.items?.forEach((item: any) => {
-				if (item.category === "dispensation") hasDispensation.add(detail.id);
-			});
-		});
+		// Kategori item yang didiskon dispensasi per invoice. Dispensasi daycare
+		// menargetkan konsumsi (`daycare_meal`), bukan SPP.
+		const dispensationTargets = buildDispensationTargets(invoiceDetails);
 
 		invoiceDetails.forEach((detail: any) => {
 			detail?.items?.forEach((item: any) => {
@@ -159,8 +157,10 @@ export function InvoiceSelector({
 					(payAmounts[item.id] ?? 0) > 0 ||
 					detail.status !== "paid"
 				) {
-					const isLockedBySpp =
-						item.category === "monthly_spp" && hasDispensation.has(detail.id);
+					const isDispensation = item.category === "dispensation";
+					const isDispensationTarget =
+						!isDispensation &&
+						(dispensationTargets.get(detail.id)?.has(item.category) ?? false);
 					// TA asal hanya ditandai bila berbeda dari TA aktif — agar baris tagihan
 					// tahun berjalan tidak diberi label yang tidak perlu.
 					const originYearName =
@@ -177,8 +177,8 @@ export function InvoiceSelector({
 						quantity: item.quantity ?? 0,
 						unit_price: item.unit_price ?? 0,
 						status: item.status,
-						is_dispensation: item.category === "dispensation",
-						is_locked: isLockedBySpp,
+						is_dispensation: isDispensation,
+						is_locked: isDispensationTarget,
 						origin_academic_year_name: originYearName,
 					});
 				}
@@ -521,7 +521,9 @@ export function InvoiceSelector({
 								{invoiceItems
 									.filter(
 										(item: any) =>
-											item.status !== "paid" || item.sisa_tagihan > 0,
+											item.status !== "paid" ||
+											item.sisa_tagihan > 0 ||
+											(item.is_dispensation && item.sisa_tagihan !== 0),
 									)
 									.map((item: any) => {
 										const checkable = !item.is_dispensation;
@@ -651,7 +653,9 @@ export function InvoiceSelector({
 								{/* Item yang sudah lunas */}
 								{invoiceItems.filter(
 									(item: any) =>
-										item.status === "paid" && item.sisa_tagihan <= 0,
+										item.status === "paid" &&
+										item.sisa_tagihan <= 0 &&
+										!(item.is_dispensation && item.sisa_tagihan !== 0),
 								).length > 0 && (
 									<div className="mt-2 pt-2 border-t border-gray-100">
 										<p className="text-[11px] font-medium text-gray-400 uppercase tracking-wider mb-1 px-2">
@@ -660,7 +664,9 @@ export function InvoiceSelector({
 										{invoiceItems
 											.filter(
 												(item: any) =>
-													item.status === "paid" && item.sisa_tagihan <= 0,
+													item.status === "paid" &&
+													item.sisa_tagihan <= 0 &&
+													!(item.is_dispensation && item.sisa_tagihan !== 0),
 											)
 											.map((item: any) => (
 												<div

@@ -1944,6 +1944,12 @@ definitions:
         type: integer
       name:
         type: string
+      offset_category:
+        description: |-
+          OffsetCategory hanya terisi untuk item dispensasi: kategori tagihan yang
+          didiskon (mis. "monthly_spp" atau "daycare"). Dipakai klien untuk
+          menentukan kapan potongan dispensasi boleh diterapkan.
+        type: string
       paid_amount:
         type: number
       quantity:

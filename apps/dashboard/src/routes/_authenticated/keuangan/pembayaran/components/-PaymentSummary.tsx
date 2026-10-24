@@ -1,6 +1,7 @@
 import { AlertCircle, FileText, Wallet } from "lucide-react";
 import { useMemo } from "react";
 import { CurrencyInput } from "#/components/ui";
+import { isDispensationApplicable } from "#/features/keuangan/dispensation";
 import { formatCurrency } from "../../../../../utils/format";
 
 interface PaymentSummaryProps {
@@ -56,13 +57,15 @@ export function PaymentSummary({
 					.filter(
 						(i: any) => payAmounts[i.id] !== 0 && !excludedItems.includes(i.id),
 					)
-					// Sembunyikan dispensasi jika item target (is_locked) tidak ikut dibayar
-					.filter((item: any, _: number, arr: any[]) => {
+					// Sembunyikan dispensasi jika item pada kategori targetnya tidak ikut dibayar.
+					.filter((item: any) => {
 						if (!item.is_dispensation) return true;
-						const hasLockedPaid = arr.some(
-							(i: any) => i.invoice_id === item.invoice_id && i.is_locked,
+						return isDispensationApplicable(
+							item,
+							invoiceItems,
+							payAmounts,
+							excludedItems,
 						);
-						return hasLockedPaid;
 					})
 					.sort(
 						(a: any, b: any) =>

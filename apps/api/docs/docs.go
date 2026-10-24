@@ -18700,6 +18700,10 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
+                "offset_category": {
+                    "description": "OffsetCategory hanya terisi untuk item dispensasi: kategori tagihan yang\ndidiskon (mis. \"monthly_spp\" atau \"daycare\"). Dipakai klien untuk\nmenentukan kapan potongan dispensasi boleh diterapkan.",
+                    "type": "string"
+                },
                 "paid_amount": {
                     "type": "number"
                 },

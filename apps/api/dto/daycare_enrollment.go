@@ -60,6 +60,10 @@ type GenerateDaycareMonthlyParams struct {
 	Month          uint
 	Year           uint
 	CreatedBy      uint
+	// ClearWhenNoAttendance memaksa pembersihan item daycare unpaid ketika bulan
+	// tidak punya data kehadiran. Hanya dipakai saat admin mengubah jumlah hari
+	// menjadi 0; generate massal tidak boleh menghapus tagihan tanpa data.
+	ClearWhenNoAttendance bool
 }
 
 type GenerateDaycareMonthlyRequest struct {

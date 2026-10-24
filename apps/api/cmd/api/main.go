@@ -248,6 +248,7 @@ func main() {
 	seeders.BackfillRemoveAslinFromJuly(db)     // Hapus item Aslin dari invoice Juli (start_month=8)
 	seeders.BackfillCleanFacilityDuplicates(db) // Bersihkan item fasilitas duplikat/sebelum start_date
 	seeders.BackfillFacilityItemIDs(db)         // Isi facility_id pada item fasilitas lama (matching nama, hanya jika tidak ambigu)
+	seeders.BackfillDaycareStaleItems(db)       // Hapus item SPD daycare basi akibat perubahan slot enrollment
 	seeders.BackfillDaycareRegularCleanup(db)   // Hapus daycare_initial regular + recalculate invoice mismatch
 	seeders.BackfillMandatorySavingsDeposit(db) // Setoran tabungan wajib untuk payment historical
 

@@ -24,6 +24,11 @@ type InvoiceGenerateService interface {
 	GenerateDaycareMonthlyBulk(params dto.GenerateDaycareMonthlyParams) (*dto.DaycareSyncResult, error)
 	InjectPremiumDaycareToMonthlyInvoices(de model.DaycareEnrollment) error
 	RemoveDaycareFromFutureInvoices(studentID uint, fromMonth, fromYear uint) error
+	// ResyncRegularDaycareFrom menulis ulang item daycare (SPD/konsumsi/overtime)
+	// pada invoice bulanan yang sudah punya tagihan daycare, mulai bulan tertentu.
+	// Dipakai saat time_slot/age_group enrollment regular berubah agar item lama
+	// diganti (bukan ditambah) dengan tarif baru.
+	ResyncRegularDaycareFrom(studentID, academicYearID, fromMonth, fromYear uint) error
 	DeleteDaycareInitial(studentID, academicYearID uint) error
 	SyncDaycareMonthlyInvoices() (*dto.DaycareSyncResult, error)
 	RecalculateInfaqHarian(classGroupID, month, year uint) error
@@ -1819,7 +1824,18 @@ func (s *invoiceGenerateService) GenerateDaycareMonthlyInvoices(params dto.Gener
 	values := s.daycareAttendanceValues(params.StudentID, params.Month, params.Year)
 	if !values.hasData {
 		log.Printf("[Daycare SPD] tidak ada attendance atau data bulanan untuk %d/%d", params.Month, params.Year)
-		return nil
+		// Hanya bersihkan bila pemanggil secara eksplisit memintanya (mis. admin
+		// mengubah seluruh jumlah hari menjadi 0). Generate massal/resync tidak
+		// boleh menghapus tagihan tanpa data karena berisiko menghapus tagihan sah
+		// ketika data kehadiran belum lengkap.
+		if !params.ClearWhenNoAttendance {
+			return nil
+		}
+		invoice, err := s.invoiceRepo.FindMonthlyByStudent(params.StudentID, params.Month, params.Year)
+		if err != nil {
+			return nil
+		}
+		return s.applyDaycareAttendanceItems(*de, invoice, feeConfig, values)
 	}
 
 	invoice, err := s.findOrCreateDaycareMonthlyInvoice(params.StudentID, params.AcademicYearID, params.Month, params.Year)
@@ -1882,45 +1898,107 @@ func (s *invoiceGenerateService) daycareAttendanceValues(studentID, month, year 
 // overtime) untuk SATU invoice bulan saja, lalu menghitung ulang total dan
 // dispensasi. Premium hanya memakai meal/overtime karena SPD-nya flat.
 func (s *invoiceGenerateService) applyDaycareAttendanceItems(de model.DaycareEnrollment, invoice *model.Invoice, feeConfig *model.FeeConfig, v daycareAttendanceValues) error {
+	// Item daycare adalah hasil generate, bukan input manual. Jalur tulis ini
+	// otoritatif per kategori: item unpaid lama dibuang lebih dulu, lalu ditulis
+	// ulang sesuai data terkini. Pembersihan SPD hanya menyasar item yang namanya
+	// cocok dengan tarif SPD daycare, sehingga item konsumsi legacy yang masih
+	// berkategori "daycare" tidak ikut terhapus. Tarif diresolusi SEBELUM
+	// menghapus: jika fee item tidak ditemukan, item lama dibiarkan agar tagihan
+	// tidak hilang karena konfigurasi tarif yang belum lengkap.
 	if de.Category == "regular" {
+		spdNames, err := s.daycareSPDItemNames(feeConfig.ID)
+		if err != nil {
+			return err
+		}
+
 		if len(v.slotCount) > 0 {
 			// Fallback absensi harian: SPD per time slot.
+			type resolvedSPD struct {
+				item  *model.FeeConfigItem
+				count int
+			}
+			resolved := make([]resolvedSPD, 0, len(v.slotCount))
+			missing := false
 			for slot, count := range v.slotCount {
 				spdKey := buildDaycareSPDKey("regular", slot, de.AgeGroup)
 				spdItem, err := s.feeConfigItemRepo.FindByItemKey(feeConfig.ID, spdKey, "all", "all")
 				if err != nil || spdItem == nil {
 					log.Printf("[Daycare SPD] Regular: fee item tidak ditemukan key=%s err=%v", spdKey, err)
+					missing = true
 					continue
 				}
-				dailyRate := spdItem.Amount
-				qty := uint(count)
-				name := fmt.Sprintf("%s (%d hari)", spdItem.Name, count)
-				log.Printf("[Daycare SPD] Regular fallback: %s = %d x %.0f", name, count, dailyRate)
-				if err := s.upsertDaycareAttendanceItem(invoice.ID, spdItem.Name, name, dailyRate*float64(count), &qty, &dailyRate, "daycare", "hari"); err != nil {
+				resolved = append(resolved, resolvedSPD{item: spdItem, count: count})
+			}
+			if missing {
+				// Jangan hapus apa pun: sebagian tarif tidak bisa dihitung sehingga
+				// rewrite berisiko menghilangkan tagihan yang sah.
+				log.Printf("[Daycare SPD] Regular fallback: sebagian tarif tidak ditemukan, item SPD tidak diubah")
+			} else {
+				if err := s.deleteUnpaidDaycareSPDItems(invoice.ID, spdNames); err != nil {
 					return err
 				}
+				for _, r := range resolved {
+					dailyRate := r.item.Amount
+					qty := uint(r.count)
+					name := fmt.Sprintf("%s (%d hari)", r.item.Name, r.count)
+					log.Printf("[Daycare SPD] Regular fallback: %s = %d x %.0f", name, r.count, dailyRate)
+					if err := s.upsertDaycareAttendanceItem(invoice.ID, r.item.Name, name, dailyRate*float64(r.count), &qty, &dailyRate, "daycare", "hari"); err != nil {
+						return err
+					}
+				}
 			}
-		} else if v.spdDays > 0 {
-			// Ringkasan bulanan: spd_days × tarif harian.
-			spdKey := buildDaycareSPDKey("regular", de.TimeSlot, de.AgeGroup)
-			spdItem, err := s.feeConfigItemRepo.FindByItemKey(feeConfig.ID, spdKey, "all", "all")
-			if err != nil || spdItem == nil {
-				log.Printf("[Daycare SPD] Regular: fee item tidak ditemukan key=%s err=%v", spdKey, err)
+		} else {
+			// Ringkasan bulanan. Resolusi tarif dulu; saat spd_days = 0 tidak ada
+			// tarif yang diperlukan karena item memang harus dihapus.
+			var spdItem *model.FeeConfigItem
+			if v.spdDays > 0 {
+				spdKey := buildDaycareSPDKey("regular", de.TimeSlot, de.AgeGroup)
+				item, err := s.feeConfigItemRepo.FindByItemKey(feeConfig.ID, spdKey, "all", "all")
+				if err != nil || item == nil {
+					log.Printf("[Daycare SPD] Regular: fee item tidak ditemukan key=%s err=%v", spdKey, err)
+				} else {
+					spdItem = item
+				}
+			}
+			if v.spdDays > 0 && spdItem == nil {
+				log.Printf("[Daycare SPD] Regular: tarif SPD tidak ditemukan, item SPD tidak diubah")
 			} else {
-				dailyRate := spdItem.Amount
-				qty := v.spdDays
-				name := fmt.Sprintf("%s (%d hari)", spdItem.Name, v.spdDays)
-				log.Printf("[Daycare SPD] Regular monthly: %s = %d x %.0f = %.0f", name, v.spdDays, dailyRate, dailyRate*float64(v.spdDays))
-				if err := s.upsertDaycareAttendanceItem(invoice.ID, spdItem.Name, name, dailyRate*float64(v.spdDays), &qty, &dailyRate, "daycare", "hari"); err != nil {
+				if err := s.deleteUnpaidDaycareSPDItems(invoice.ID, spdNames); err != nil {
 					return err
+				}
+				if spdItem != nil {
+					dailyRate := spdItem.Amount
+					qty := v.spdDays
+					name := fmt.Sprintf("%s (%d hari)", spdItem.Name, v.spdDays)
+					log.Printf("[Daycare SPD] Regular monthly: %s = %d x %.0f = %.0f", name, v.spdDays, dailyRate, dailyRate*float64(v.spdDays))
+					if err := s.upsertDaycareAttendanceItem(invoice.ID, spdItem.Name, name, dailyRate*float64(v.spdDays), &qty, &dailyRate, "daycare", "hari"); err != nil {
+						return err
+					}
 				}
 			}
 		}
 	}
 
-	if v.mealDays > 0 {
-		mealItem, err := s.feeConfigItemRepo.FindByItemKey(feeConfig.ID, "daycare_regular_meal", "all", "all")
-		if err == nil && mealItem != nil {
+	mealItem, err := s.feeConfigItemRepo.FindByItemKey(feeConfig.ID, "daycare_regular_meal", "all", "all")
+	if err != nil {
+		mealItem = nil
+	}
+	if mealItem == nil && v.mealDays > 0 {
+		log.Printf("[Daycare SPD] Meal: fee item daycare_regular_meal tidak ditemukan, item konsumsi tidak diubah")
+	} else {
+		// Bersihkan konsumsi unpaid lebih dulu agar perubahan meal_days → 0 juga
+		// menghapus tagihan lama (bukan hanya saat nilainya > 0).
+		if _, err := s.invoiceItemRepo.DeleteUnpaidByInvoiceAndCategory(invoice.ID, "daycare_meal"); err != nil {
+			return err
+		}
+		if mealItem != nil {
+			// Item konsumsi legacy tercatat sebagai kategori "daycare"; hapus hanya
+			// yang namanya memang item konsumsi agar SPD tidak ikut terhapus.
+			if err := s.deleteUnpaidLegacyMealItems(invoice.ID, mealItem.Name); err != nil {
+				return err
+			}
+		}
+		if mealItem != nil && v.mealDays > 0 {
 			dailyRate := mealItem.Amount
 			qty := v.mealDays
 			name := fmt.Sprintf("%s (%d hari)", mealItem.Name, v.mealDays)
@@ -1928,14 +2006,20 @@ func (s *invoiceGenerateService) applyDaycareAttendanceItems(de model.DaycareEnr
 			if err := s.upsertDaycareAttendanceItem(invoice.ID, mealItem.Name, name, dailyRate*float64(v.mealDays), &qty, &dailyRate, "daycare_meal", "hari"); err != nil {
 				return err
 			}
-		} else {
-			log.Printf("[Daycare SPD] Meal: fee item daycare_regular_meal tidak ditemukan")
 		}
 	}
 
-	if v.overtimeMinutes > 0 {
-		overtimeItem, err := s.feeConfigItemRepo.FindByItemKey(feeConfig.ID, "daycare_overtime", "all", "all")
-		if err == nil && overtimeItem != nil {
+	overtimeItem, err := s.feeConfigItemRepo.FindByItemKey(feeConfig.ID, "daycare_overtime", "all", "all")
+	if err != nil {
+		overtimeItem = nil
+	}
+	if overtimeItem == nil && v.overtimeMinutes > 0 {
+		log.Printf("[Daycare SPD] Overtime: fee item daycare_overtime tidak ditemukan, item overtime tidak diubah")
+	} else {
+		if _, err := s.invoiceItemRepo.DeleteUnpaidByInvoiceAndCategory(invoice.ID, "daycare_overtime"); err != nil {
+			return err
+		}
+		if overtimeItem != nil && v.overtimeMinutes > 0 {
 			overtimeUnits := v.overtimeMinutes / 30 // pembulatan ke bawah
 			if overtimeUnits > 0 {
 				rate := overtimeItem.Amount
@@ -1945,8 +2029,6 @@ func (s *invoiceGenerateService) applyDaycareAttendanceItems(de model.DaycareEnr
 					return err
 				}
 			}
-		} else {
-			log.Printf("[Daycare SPD] Overtime: fee item daycare_overtime tidak ditemukan")
 		}
 	}
 
@@ -1957,6 +2039,77 @@ func (s *invoiceGenerateService) applyDaycareAttendanceItems(de model.DaycareEnr
 		log.Printf("[Daycare SPD] Gagal apply dispensasi: %v", err)
 	}
 	return s.recalculateInvoiceTotal(invoice.ID)
+}
+
+// daycareSPDItemNames mengembalikan seluruh nama tarif SPD daycare pada fee
+// config (regular harian & premium flat). Dipakai untuk memisahkan item SPD dari
+// item konsumsi legacy yang sama-sama berkategori "daycare".
+func (s *invoiceGenerateService) daycareSPDItemNames(feeConfigID uint) ([]string, error) {
+	items, err := s.feeConfigItemRepo.FindByFeeConfigID(feeConfigID, dto.FeeConfigItemQueryParams{Category: "daycare"})
+	if err != nil {
+		return nil, err
+	}
+	names := make([]string, 0, len(items))
+	for _, item := range items {
+		isRegularSPD := strings.HasPrefix(item.ItemKey, "daycare_regular_") && strings.HasSuffix(item.ItemKey, "_daily")
+		isPremiumSPD := strings.HasPrefix(item.ItemKey, "daycare_premium_") && strings.HasSuffix(item.ItemKey, "_spd")
+		if isRegularSPD || isPremiumSPD {
+			names = append(names, item.Name)
+		}
+	}
+	return names, nil
+}
+
+// deleteUnpaidDaycareSPDItems menghapus item SPD daycare unpaid (termasuk tarif
+// slot/age group lama) tanpa menyentuh item kategori "daycare" lainnya.
+func (s *invoiceGenerateService) deleteUnpaidDaycareSPDItems(invoiceID uint, spdNames []string) error {
+	items, err := s.invoiceItemRepo.FindByInvoiceID(invoiceID)
+	if err != nil {
+		return err
+	}
+	for _, item := range items {
+		if item.Category != "daycare" || item.PaidAmount > 0 {
+			continue
+		}
+		if matchesFeeItemName(item.Name, spdNames) {
+			if err := s.invoiceItemRepo.Delete(item.ID); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// matchesFeeItemName mencocokkan nama item invoice dengan nama tarif. Boundary
+// " (" dipakai agar tarif yang namanya menjadi prefix tarif lain tidak salah cocok.
+func matchesFeeItemName(name string, itemNames []string) bool {
+	for _, itemName := range itemNames {
+		if name == itemName || strings.HasPrefix(name, itemName+" (") {
+			return true
+		}
+	}
+	return false
+}
+
+// deleteUnpaidLegacyMealItems menghapus item konsumsi versi lama yang masih
+// tersimpan dengan kategori "daycare". Prefix nama dipakai agar SPD (kategori
+// yang sama) tidak ikut terhapus.
+func (s *invoiceGenerateService) deleteUnpaidLegacyMealItems(invoiceID uint, mealName string) error {
+	items, err := s.invoiceItemRepo.FindByInvoiceID(invoiceID)
+	if err != nil {
+		return err
+	}
+	for _, item := range items {
+		if item.Category != "daycare" || item.PaidAmount > 0 {
+			continue
+		}
+		if strings.HasPrefix(item.Name, mealName) {
+			if err := s.invoiceItemRepo.Delete(item.ID); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func (s *invoiceGenerateService) findOrCreateDaycareMonthlyInvoice(studentID, academicYearID, month, year uint) (*model.Invoice, error) {
@@ -2188,6 +2341,66 @@ func (s *invoiceGenerateService) RemoveDaycareFromFutureInvoices(studentID uint,
 		}
 	}
 	return nil
+}
+
+// ResyncRegularDaycareFrom menulis ulang item daycare (SPD/konsumsi/overtime)
+// pada invoice bulanan mulai bulan tertentu yang memang sudah memiliki tagihan
+// daycare. Dipakai saat time_slot/age_group enrollment regular berubah: item
+// lama diganti dengan tarif baru, bukan ditambah sehingga menumpuk.
+// Invoice yang belum punya item daycare tidak disentuh (menunggu generate admin).
+func (s *invoiceGenerateService) ResyncRegularDaycareFrom(studentID, academicYearID, fromMonth, fromYear uint) error {
+	invoices, err := s.invoiceRepo.FindMonthlyByStudentFromMonth(studentID, fromMonth, fromYear)
+	if err != nil {
+		return err
+	}
+
+	for _, inv := range invoices {
+		if inv.Month == nil || inv.Year == nil {
+			continue
+		}
+		hasItems, err := s.hasMutableDaycareItems(inv.ID)
+		if err != nil {
+			return err
+		}
+		if !hasItems {
+			continue
+		}
+		// Tanpa data kehadiran, rewrite tidak bisa menghitung nominal yang benar.
+		// Lewati agar tagihan lama tidak hilang; admin tetap bisa generate manual.
+		values := s.daycareAttendanceValues(studentID, *inv.Month, *inv.Year)
+		if !values.hasData {
+			log.Printf("[Daycare SPD] Resync: lewati %d/%d (tidak ada data kehadiran)", *inv.Month, *inv.Year)
+			continue
+		}
+		if err := s.GenerateDaycareMonthlyInvoices(dto.GenerateDaycareMonthlyParams{
+			StudentID:      studentID,
+			AcademicYearID: academicYearID,
+			Month:          *inv.Month,
+			Year:           *inv.Year,
+		}); err != nil {
+			return fmt.Errorf("gagal sync daycare bulan %d/%d: %w", *inv.Month, *inv.Year, err)
+		}
+	}
+	return nil
+}
+
+// hasMutableDaycareItems memeriksa apakah invoice masih punya item daycare yang
+// bisa ditulis ulang (belum lunas). Item parsial ikut dihitung karena sisa
+// tagihannya perlu disesuaikan dengan tarif baru; item lunas tidak boleh diubah.
+func (s *invoiceGenerateService) hasMutableDaycareItems(invoiceID uint) (bool, error) {
+	items, err := s.invoiceItemRepo.FindByInvoiceID(invoiceID)
+	if err != nil {
+		return false, err
+	}
+	for _, item := range items {
+		switch item.Category {
+		case "daycare", "daycare_meal", "daycare_overtime":
+			if item.Status != "paid" {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
 }
 
 // DeleteDaycareInitial menghapus invoice daycare_initial beserta item-nya.

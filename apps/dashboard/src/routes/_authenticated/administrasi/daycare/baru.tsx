@@ -9,7 +9,10 @@ import {
 	usePostV1DaycareEnrollments,
 	usePutV1DaycareEnrollmentsId,
 } from "#/api/endpoints/daycare-enrollments/daycare-enrollments";
-import { getGetV1StudentsIdInvoicesQueryKey } from "#/api/endpoints/invoices/invoices";
+import {
+	getGetV1InvoicesQueryKey,
+	getGetV1StudentsIdInvoicesQueryKey,
+} from "#/api/endpoints/invoices/invoices";
 import {
 	useGetV1Students,
 	useGetV1StudentsId,
@@ -190,6 +193,14 @@ function DaycareBaruPage() {
 				});
 				queryClient.invalidateQueries({
 					queryKey: getGetV1DaycareEnrollmentsQueryKey(),
+				});
+				// Simpan enrollment juga menulis ulang invoice daycare, jadi daftar
+				// tagihan & kartu siswa harus ikut di-refresh.
+				queryClient.invalidateQueries({
+					queryKey: getGetV1InvoicesQueryKey(),
+				});
+				queryClient.invalidateQueries({
+					queryKey: getGetV1StudentsIdInvoicesQueryKey(selectedStudent.id),
 				});
 				navigate({ to: "/administrasi/daycare", search: {} as any });
 			},

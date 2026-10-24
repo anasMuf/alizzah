@@ -838,6 +838,7 @@ func mapInvoiceItemToResponse(item model.InvoiceItem) dto.InvoiceItemResponse {
 		KoperasiProductID: item.KoperasiProductID,
 		KoperasiVariantID: item.KoperasiVariantID,
 		FacilityID:        item.FacilityID,
+		OffsetCategory:    item.OffsetCategory,
 	}
 	return resp
 }

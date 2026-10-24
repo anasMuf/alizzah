@@ -15,6 +15,12 @@ import { usePutV1PaymentsId } from "#/api/endpoints/payments/payments-manual";
 import { useGetV1StudentsIdSavings } from "#/api/endpoints/savings/savings";
 import { useGetV1StudentsId } from "#/api/endpoints/students/students";
 import { Button, useToast } from "#/components/ui";
+import {
+	buildDispensationTargets,
+	computeInvoicePaymentTotal,
+	dispensationTargetCategory,
+	isDispensationApplicable,
+} from "#/features/keuangan/dispensation";
 import { academicYearAtom } from "../../../../store/global";
 import { formatCurrency } from "../../../../utils/format";
 import { IncidentalItems } from "./components/-IncidentalItems";
@@ -194,13 +200,9 @@ function KasirPembayaranPage() {
 	const invoiceItems = useMemo(() => {
 		const items: any[] = [];
 
-		// Deteksi invoice mana yang memiliki item dispensasi
-		const hasDispensation = new Set<number>();
-		invoiceDetails.forEach((detail: any) => {
-			detail?.items?.forEach((item: any) => {
-				if (item.category === "dispensation") hasDispensation.add(detail.id);
-			});
-		});
+		// Peta kategori target per invoice — dipakai untuk menandai item yang
+		// didiskon dispensasi (mis. konsumsi daycare, bukan hanya SPP).
+		const dispensationTargets = buildDispensationTargets(invoiceDetails);
 
 		invoiceDetails.forEach((detail: any) => {
 			detail?.items?.forEach((item: any) => {
@@ -216,16 +218,21 @@ function KasirPembayaranPage() {
 						activeAy?.id != null && detail.academic_year?.id !== activeAy.id
 							? detail.academic_year?.name
 							: undefined;
+					const isDispensation = item.category === "dispensation";
 					items.push({
 						id: item.id,
 						invoice_id: detail.id,
 						name: item.name,
 						category: item.category,
 						sisa_tagihan: sisa,
-						is_dispensation: item.category === "dispensation",
-						// Item monthly_spp "dikunci" jika invoice-nya punya dispensasi
+						is_dispensation: isDispensation,
+						dispensation_target_category: isDispensation
+							? dispensationTargetCategory(item.offset_category)
+							: undefined,
+						// Item ini menjadi target dispensasi di invoice-nya.
 						is_locked:
-							item.category === "monthly_spp" && hasDispensation.has(detail.id),
+							!isDispensation &&
+							(dispensationTargets.get(detail.id)?.has(item.category) ?? false),
 						origin_academic_year_name: originYearName,
 					});
 				}
@@ -277,32 +284,11 @@ function KasirPembayaranPage() {
 		.filter((i) => i.isSavings)
 		.reduce((sum, i) => sum + i.amount, 0);
 	const totalPay = useMemo(() => {
-		// Kelompokkan item per invoice. Dispensasi hanya berlaku jika
-		// item yang menjadi target dispensasi (is_locked) ikut dibayar.
-		const invoiceGroups: Record<
-			number,
-			{ nonDisp: number; disp: number; lockedPaid: number }
-		> = {};
-		invoiceItems.forEach((item: any) => {
-			const invId = item.invoice_id;
-			if (!invoiceGroups[invId])
-				invoiceGroups[invId] = { nonDisp: 0, disp: 0, lockedPaid: 0 };
-			const amt = payAmounts[item.id] ?? 0;
-			if (excludedItems.includes(item.id)) return;
-			if (item.is_dispensation) {
-				invoiceGroups[invId].disp += amt;
-			} else {
-				invoiceGroups[invId].nonDisp += amt;
-				if (item.is_locked) {
-					invoiceGroups[invId].lockedPaid += amt;
-				}
-			}
-		});
-
-		const invoiceTotal = Object.values(invoiceGroups).reduce((sum, g) => {
-			// Dispensasi hanya berlaku jika item target (is_locked) ikut dibayar
-			return sum + g.nonDisp + (g.lockedPaid > 0 ? g.disp : 0);
-		}, 0);
+		const invoiceTotal = computeInvoicePaymentTotal(
+			invoiceItems,
+			payAmounts,
+			excludedItems,
+		);
 		const incidentalTotal = incidentalItems.reduce(
 			(sum, item) => sum + item.amount,
 			0,
@@ -430,17 +416,6 @@ function KasirPembayaranPage() {
 			.filter((i) => !i.isSavings)
 			.map((i) => ({ name: i.name, amount: i.amount }));
 
-		// Tentukan invoice mana yang punya item target dispensasi dibayar
-		const invoicesWithLockedPaid = new Set<number>();
-		for (const [id, amt] of Object.entries(payAmounts)) {
-			if (amt > 0 && !excludedItems.includes(Number(id))) {
-				const it = invoiceItems.find((i: any) => i.id === Number(id));
-				if (it && it.is_locked) {
-					invoicesWithLockedPaid.add(it.invoice_id);
-				}
-			}
-		}
-
 		const payload = {
 			academic_year_id: activeAy?.id || 1,
 			student_id: selectedStudent.id,
@@ -451,10 +426,19 @@ function KasirPembayaranPage() {
 				.filter(([id, amt]) => {
 					if (excludedItems.includes(Number(id))) return false;
 					const item = invoiceItems.find((i: any) => i.id === Number(id));
-					if (item?.is_dispensation) {
-						// Dispensasi hanya dikirim jika item target (is_locked)
-						// di invoice yang sama ikut dibayar
-						return invoicesWithLockedPaid.has(item.invoice_id);
+					if (!item) return false;
+					if (item.is_dispensation) {
+						// Dispensasi hanya dikirim jika item pada kategori targetnya
+						// (mis. konsumsi daycare) ikut dibayar di invoice yang sama.
+						return (
+							amt !== 0 &&
+							isDispensationApplicable(
+								item,
+								invoiceItems,
+								payAmounts,
+								excludedItems,
+							)
+						);
 					}
 					return amt > 0;
 				})

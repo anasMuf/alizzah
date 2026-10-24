@@ -264,3 +264,16 @@ func TestDaycareUpdate_SlotChangeKeepsPaidSPDItem(t *testing.T) {
 	assert.Equal(t, item.Amount, kept.PaidAmount)
 	assert.Contains(t, kept.Name, "10-13")
 }
+
+// Response item invoice harus membawa offset_category agar klien bisa memasangkan
+// dispensasi dengan kategori tagihan yang benar (mis. daycare → konsumsi).
+func TestMapInvoiceItemToResponse_ExposesOffsetCategory(t *testing.T) {
+	resp := mapInvoiceItemToResponse(model.InvoiceItem{
+		Name:           "Dispensasi: warga al izzah",
+		Category:       "dispensation",
+		OffsetCategory: "daycare",
+		Amount:         -20000,
+	})
+
+	assert.Equal(t, "daycare", resp.OffsetCategory)
+}

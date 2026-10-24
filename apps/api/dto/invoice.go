@@ -74,6 +74,10 @@ type InvoiceItemResponse struct {
 	KoperasiProductID *uint    `json:"koperasi_product_id,omitempty"`
 	KoperasiVariantID *uint    `json:"koperasi_variant_id,omitempty"`
 	FacilityID        *uint    `json:"facility_id,omitempty"`
+	// OffsetCategory hanya terisi untuk item dispensasi: kategori tagihan yang
+	// didiskon (mis. "monthly_spp" atau "daycare"). Dipakai klien untuk
+	// menentukan kapan potongan dispensasi boleh diterapkan.
+	OffsetCategory string `json:"offset_category,omitempty"`
 }
 
 // Request — Add Item

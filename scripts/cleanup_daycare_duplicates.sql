@@ -1,6 +1,12 @@
 -- ============================================================
 -- Fix: Bersihkan data daycare yg rusak akibat bug Update & sync
 -- ============================================================
+-- ⚠️  CATATAN: script ini adalah cleanup lama dan SANGAT agresif (menghapus
+--     semua item daycare/meal unpaid pada invoice duplikat lalu regenerate
+--     lewat SQL). Untuk kode terbaru gunakan seeder idempotent:
+--     apps/api/seeders/backfill_daycare_stale_items.go (berjalan otomatis saat
+--     API start). Jangan jalankan script ini di production tanpa review.
+-- ============================================================
 -- Masalah:
 --   1. Siswa punya >1 enrollment daycare (aktif + nonaktif) —
 --      duplikat yg menyebabkan SPD di-inject berkali-kali.

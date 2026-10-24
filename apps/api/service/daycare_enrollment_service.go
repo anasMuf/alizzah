@@ -196,8 +196,10 @@ func (s *daycareEnrollmentService) Update(id uint, req dto.CreateDaycareEnrollme
 	oldTimeSlot := de.TimeSlot
 	oldAgeGroup := de.AgeGroup
 	categoryChanged := oldCategory != req.Category
-	// Untuk premium: perubahan time_slot/age_group juga perlu sync SPD
-	spdChanged := req.Category == "premium" && (oldTimeSlot != req.TimeSlot || oldAgeGroup != req.AgeGroup)
+	// Perubahan time_slot/age_group mengubah tarif SPD untuk SEMUA kategori
+	// (regular memakai tarif harian sesuai slot, premium memakai SPD flat),
+	// sehingga invoice yang sudah ada harus disinkronkan — bukan hanya premium.
+	spdChanged := oldTimeSlot != req.TimeSlot || oldAgeGroup != req.AgeGroup
 	needsSync := categoryChanged || spdChanged
 
 	// Tentukan enrollment_type untuk premium SEBELUM update DB
@@ -232,12 +234,12 @@ func (s *daycareEnrollmentService) Update(id uint, req dto.CreateDaycareEnrollme
 		fromMonth := uint(startDate.Month())
 		fromYear := uint(startDate.Year())
 
-		// Hapus item daycare dari invoice bulanan ke depan (regular/meal/premium)
-		if err := s.invoiceGen.RemoveDaycareFromFutureInvoices(de.StudentID, fromMonth, fromYear); err != nil {
-			return nil, fmt.Errorf("gagal menghapus tagihan daycare lama: %w", err)
-		}
-
 		if req.Category == "premium" {
+			// Premium: hapus item daycare lama lalu inject ulang SPD flat + meal.
+			if err := s.invoiceGen.RemoveDaycareFromFutureInvoices(de.StudentID, fromMonth, fromYear); err != nil {
+				return nil, fmt.Errorf("gagal menghapus tagihan daycare lama: %w", err)
+			}
+
 			// Inject premium SPD ke invoice bulanan
 			if err := s.invoiceGen.InjectPremiumDaycareToMonthlyInvoices(*de); err != nil {
 				return nil, err
@@ -259,6 +261,13 @@ func (s *daycareEnrollmentService) Update(id uint, req dto.CreateDaycareEnrollme
 				}); err != nil {
 					return nil, err
 				}
+			}
+		} else {
+			// Regular: tulis ulang item daycare bulan-bulan yang sudah punya tagihan
+			// memakai tarif slot/age_group baru. Ini mengganti item lama (bukan
+			// menambah item baru) sehingga tagihan tidak menumpuk saat slot berubah.
+			if err := s.invoiceGen.ResyncRegularDaycareFrom(de.StudentID, de.AcademicYearID, fromMonth, fromYear); err != nil {
+				return nil, fmt.Errorf("gagal menyinkronkan tagihan daycare: %w", err)
 			}
 		}
 		// Jika downgrade dari premium ke regular: hapus invoice daycare_initial
@@ -558,14 +567,16 @@ func (s *daycareEnrollmentService) UpsertMonthlyAttendance(createdBy uint, req d
 		return nil, err
 	}
 
-	// Auto-generate invoice setelah simpan kehadiran bulanan
+	// Auto-generate invoice setelah simpan kehadiran bulanan. ClearWhenNoAttendance
+	// memastikan perubahan seluruh jumlah menjadi 0 tetap menghapus item lama.
 	if s.invoiceGen != nil {
 		genErr := s.invoiceGen.GenerateDaycareMonthlyInvoices(dto.GenerateDaycareMonthlyParams{
-			StudentID:      req.StudentID,
-			AcademicYearID: req.AcademicYearID,
-			Month:          req.Month,
-			Year:           req.Year,
-			CreatedBy:      createdBy,
+			StudentID:             req.StudentID,
+			AcademicYearID:        req.AcademicYearID,
+			Month:                 req.Month,
+			Year:                  req.Year,
+			CreatedBy:             createdBy,
+			ClearWhenNoAttendance: true,
 		})
 		if genErr != nil {
 			log.Printf("[Daycare SPD] Auto-generate gagal untuk student=%d bulan=%d/%d: %v", req.StudentID, req.Month, req.Year, genErr)

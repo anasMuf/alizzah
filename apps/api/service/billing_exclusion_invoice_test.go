@@ -49,6 +49,7 @@ func setupBillingExclusionInvoiceTestDB(t *testing.T) *gorm.DB {
 		&model.StudentExceptionality{},
 		&model.BillingMonthExclusion{},
 		&model.DaycareEnrollment{},
+		&model.DaycareAttendance{},
 		&model.DaycareMonthlyAttendance{},
 	)
 	require.NoError(t, err)

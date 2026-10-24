@@ -30,7 +30,10 @@ import {
 	usePostV1DaycareEnrollmentsSyncInvoices,
 	usePutV1DaycareEnrollmentsMonthlyAttendance,
 } from "#/api/endpoints/daycare-enrollments/daycare-enrollments";
-import { getGetV1InvoicesQueryKey } from "#/api/endpoints/invoices/invoices";
+import {
+	getGetV1InvoicesQueryKey,
+	getGetV1StudentsIdInvoicesQueryKey,
+} from "#/api/endpoints/invoices/invoices";
 import { postV1DaycareEnrollmentsPreviewSyncInvoices } from "#/api/endpoints/sync-invoices/sync-invoices";
 import { customInstance } from "#/api/mutator/custom-instance";
 import {
@@ -784,6 +787,7 @@ function EnrollmentTab() {
 function AttendanceTab() {
 	const [activeAy] = useAtom(academicYearAtom);
 	const { addToast } = useToast();
+	const queryClient = useQueryClient();
 	const [month, setMonth] = useState(new Date().getMonth() + 1);
 	const [year, setYear] = useState(new Date().getFullYear());
 	const [monthlyAtt, setMonthlyAtt] = useState<
@@ -927,6 +931,14 @@ function AttendanceTab() {
 				}
 				return updated;
 			});
+			// Simpan kehadiran bulanan menulis ulang item SPD/konsumsi/overtime.
+			// Segarkan daftar tagihan agar nominal terbaru langsung terlihat.
+			queryClient.invalidateQueries({ queryKey: getGetV1InvoicesQueryKey() });
+			for (const enr of changed) {
+				queryClient.invalidateQueries({
+					queryKey: getGetV1StudentsIdInvoicesQueryKey(enr.student.id),
+				});
+			}
 			const successCount = changed.length - errors.length;
 			if (errors.length > 0) {
 				addToast({

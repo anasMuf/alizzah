@@ -96,7 +96,13 @@ func (s *reportService) GetDailyReport(req dto.DailyReportRequest) (*dto.DailyRe
 	totalExpense := utility.SumCategoryAmounts(expenseByCategory)
 
 	openingBalance, _ := s.cashRepo.GetBalanceUpToDate(academicYearID, date.AddDate(0, 0, -1))
-	closingBalance := openingBalance + totalIncome - totalExpense
+	// Bagian Cash memakai basis ledger (cash_transactions) agar ClosingBalance
+	// rekonsiliasi persis dengan Tutup Buku Harian (GetBalanceUpToDate).
+	// IncomeSummary/ExpenseSummary tetap rincian per kategori (informasional),
+	// bukan arus kas mentah — keduanya memang bisa berbeda dari arus kas karena
+	// arus kas juga mencakup transfer kas↔brangkas.
+	dayCredit, dayDebit, _ := s.cashRepo.SumByDate(academicYearID, date)
+	closingBalance := openingBalance + dayCredit - dayDebit
 
 	vaultBalance, _ := s.vaultRepo.GetBalanceUpToDate(academicYearID, date)
 
@@ -129,8 +135,8 @@ func (s *reportService) GetDailyReport(req dto.DailyReportRequest) (*dto.DailyRe
 		},
 		Cash: dto.CashSummaryResponse{
 			OpeningBalance: openingBalance,
-			TotalCredit:    totalIncome,
-			TotalDebit:     totalExpense,
+			TotalCredit:    dayCredit,
+			TotalDebit:     dayDebit,
 			ClosingBalance: closingBalance,
 		},
 		Vault:        dto.VaultSummaryResponse{Balance: vaultBalance},

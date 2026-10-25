@@ -17,6 +17,7 @@ type DailyClosingService interface {
 	GetByID(id uint) (*dto.DailyClosingListResponse, error)
 	Create(closedBy uint, req dto.CreateDailyClosingRequest) (*dto.DailyClosingListResponse, error)
 	Confirm(id uint, closedBy uint, req dto.ConfirmDailyClosingRequest) error
+	Preview(academicYearID uint, closingDate time.Time) (*dto.DailyClosingPreviewResponse, error)
 }
 
 type dailyClosingService struct {
@@ -70,9 +71,9 @@ func (s *dailyClosingService) Create(closedBy uint, req dto.CreateDailyClosingRe
 		return nil, echo.NewHTTPError(400, "Tanggal tutup buku tidak boleh di masa depan")
 	}
 
-	systemCash, err := s.cashRepo.GetBalanceUpToDate(req.AcademicYearID, closingDate)
+	ledgerCash, workaroundAdj, systemCash, err := s.computeSystemCash(req.AcademicYearID, closingDate)
 	if err != nil {
-		return nil, fmt.Errorf("gagal menghitung saldo kas sistem: %w", err)
+		return nil, err
 	}
 
 	difference := req.PhysicalCashAmount - systemCash
@@ -82,14 +83,16 @@ func (s *dailyClosingService) Create(closedBy uint, req dto.CreateDailyClosingRe
 	}
 
 	dc := &model.DailyClosing{
-		AcademicYearID:     req.AcademicYearID,
-		ClosingDate:        closingDate,
-		PhysicalCashAmount: req.PhysicalCashAmount,
-		SystemCashAmount:   systemCash,
-		Difference:         difference,
-		Notes:              req.Notes,
-		IsConfirmed:        false,
-		ClosedBy:           closedBy,
+		AcademicYearID:       req.AcademicYearID,
+		ClosingDate:          closingDate,
+		PhysicalCashAmount:   req.PhysicalCashAmount,
+		SystemCashAmount:     systemCash,
+		LedgerCashAmount:     ledgerCash,
+		WorkaroundAdjustment: workaroundAdj,
+		Difference:           difference,
+		Notes:                req.Notes,
+		IsConfirmed:          false,
+		ClosedBy:             closedBy,
 	}
 
 	if err := s.repo.Create(dc); err != nil {
@@ -124,19 +127,65 @@ func (s *dailyClosingService) Confirm(id uint, closedBy uint, req dto.ConfirmDai
 	return s.repo.Confirm(id, req.Notes)
 }
 
+// computeSystemCash menghitung saldo kas terkoreksi untuk sebuah tanggal:
+// ledger mentah dikurangi uang-hantu workaround "tarik lalu bayar tunai"
+// (penarikan tabungan hanya administrasi, tak ada uang fisik masuk laci).
+func (s *dailyClosingService) computeSystemCash(academicYearID uint, date time.Time) (ledger, workaround, system float64, err error) {
+	ledger, err = s.cashRepo.GetBalanceUpToDate(academicYearID, date)
+	if err != nil {
+		return 0, 0, 0, fmt.Errorf("gagal menghitung saldo kas sistem: %w", err)
+	}
+	workaround, err = s.cashRepo.SumWorkaroundWithdrawalsUpToDate(academicYearID, date)
+	if err != nil {
+		return 0, 0, 0, fmt.Errorf("gagal menghitung koreksi workaround: %w", err)
+	}
+	return ledger, workaround, ledger - workaround, nil
+}
+
+// Preview menghitung kas sistem terkoreksi untuk tanggal terpilih tanpa
+// menyimpan catatan tutup buku — untuk pratinjau sebelum input uang fisik.
+func (s *dailyClosingService) Preview(academicYearID uint, closingDate time.Time) (*dto.DailyClosingPreviewResponse, error) {
+	ledger, workaround, system, err := s.computeSystemCash(academicYearID, closingDate)
+	if err != nil {
+		return nil, err
+	}
+	// Arus kas khusus tanggal terpilih (difilter tepat pada tanggal itu).
+	dayIn, dayOut, err := s.cashRepo.SumByDate(academicYearID, closingDate)
+	if err != nil {
+		return nil, fmt.Errorf("gagal menghitung arus kas harian: %w", err)
+	}
+	opening, err := s.cashRepo.GetBalanceUpToDate(academicYearID, closingDate.AddDate(0, 0, -1))
+	if err != nil {
+		return nil, fmt.Errorf("gagal menghitung saldo awal: %w", err)
+	}
+	existing, _ := s.repo.FindByDate(closingDate)
+	return &dto.DailyClosingPreviewResponse{
+		ClosingDate:          closingDate.Format("2006-01-02"),
+		OpeningBalance:       opening,
+		DayCashIn:            dayIn,
+		DayCashOut:           dayOut,
+		LedgerCashAmount:     ledger,
+		WorkaroundAdjustment: workaround,
+		SystemCashAmount:     system,
+		AlreadyClosed:        existing != nil,
+	}, nil
+}
+
 func (s *dailyClosingService) mapToResponse(dc *model.DailyClosing) dto.DailyClosingListResponse {
 	var notes *string
 	if dc.Notes != "" {
 		notes = &dc.Notes
 	}
 	return dto.DailyClosingListResponse{
-		ID:                 dc.ID,
-		ClosingDate:        dc.ClosingDate.Format("2006-01-02"),
-		PhysicalCashAmount: dc.PhysicalCashAmount,
-		SystemCashAmount:   dc.SystemCashAmount,
-		Difference:         dc.Difference,
-		Notes:              notes,
-		IsConfirmed:        dc.IsConfirmed,
+		ID:                   dc.ID,
+		ClosingDate:          dc.ClosingDate.Format("2006-01-02"),
+		PhysicalCashAmount:   dc.PhysicalCashAmount,
+		SystemCashAmount:     dc.SystemCashAmount,
+		LedgerCashAmount:     dc.LedgerCashAmount,
+		WorkaroundAdjustment: dc.WorkaroundAdjustment,
+		Difference:           dc.Difference,
+		Notes:                notes,
+		IsConfirmed:          dc.IsConfirmed,
 		ClosedBy: dto.UserBriefResponse{
 			ID:       dc.Closer.ID,
 			FullName: dc.Closer.FullName,

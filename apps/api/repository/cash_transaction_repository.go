@@ -22,6 +22,7 @@ type CashTransactionRepository interface {
 	GetLastClosingDate(academicYearID uint) (*time.Time, error)
 	GetTodaySummary(academicYearID uint) (credit, debit float64, err error)
 	SumByCategory(academicYearID uint, start, end time.Time) ([]dto.CategoryAmount, error)
+	SumWorkaroundWithdrawalsUpToDate(academicYearID uint, date time.Time) (float64, error)
 	DeleteBySource(tx *gorm.DB, sourceType string, sourceID uint) error
 }
 
@@ -276,4 +277,28 @@ func (r *cashTransactionRepository) SumByCategory(academicYearID uint, start, en
 func (r *cashTransactionRepository) DeleteBySource(tx *gorm.DB, sourceType string, sourceID uint) error {
 	return tx.Where("source_type = ? AND source_id = ?", sourceType, sourceID).
 		Delete(&model.CashTransaction{}).Error
+}
+
+// SumWorkaroundWithdrawalsUpToDate menjumlah penarikan tabungan (guardian_withdrawal)
+// yang berpasangan dengan pembayaran tunai di hari & siswa yang sama — pola
+// "tarik lalu bayar tunai" (workaround). Karena penarikan hanya administrasi
+// (tak ada uang fisik pindah ke laci) sementara pembayaran tunai pasangannya
+// menambah saldo kas ledger, jumlah ini adalah "uang hantu" yang menggelembungkan
+// systemCash. Dikurangkan dari systemCash agar mendekati uang tunai fisik.
+func (r *cashTransactionRepository) SumWorkaroundWithdrawalsUpToDate(academicYearID uint, date time.Time) (float64, error) {
+	var total float64
+	err := r.db.
+		Table("savings_transactions st").
+		Select("COALESCE(SUM(st.net_amount), 0)").
+		Joins("JOIN student_savings ss ON ss.id = st.student_savings_id").
+		Where(`st.deleted_at IS NULL AND st.transaction_type = 'credit'
+			AND st.source_type = 'guardian_withdrawal' AND st.transaction_date <= ?
+			AND EXISTS (
+				SELECT 1 FROM payments p
+				WHERE p.deleted_at IS NULL AND p.academic_year_id = ?
+					AND p.student_id = ss.student_id AND p.source = 'cash'
+					AND p.payment_date = st.transaction_date
+			)`, date, academicYearID).
+		Scan(&total).Error
+	return total, err
 }

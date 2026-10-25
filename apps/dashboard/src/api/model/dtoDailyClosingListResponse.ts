@@ -13,7 +13,9 @@ export interface DtoDailyClosingListResponse {
 	difference?: number;
 	id?: number;
 	is_confirmed?: boolean;
+	ledger_cash_amount?: number;
 	notes?: string;
 	physical_cash_amount?: number;
 	system_cash_amount?: number;
+	workaround_adjustment?: number;
 }

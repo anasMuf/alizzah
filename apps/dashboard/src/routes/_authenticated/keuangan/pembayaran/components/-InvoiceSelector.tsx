@@ -43,8 +43,12 @@ export function InvoiceSelector({
 	onExcludeItems,
 	onIncludeItems,
 }: InvoiceSelectorProps) {
-	// Toggle untuk menampilkan semua tagihan bulanan (termasuk bulan depan)
-	const [showAllMonths, setShowAllMonths] = useState(false);
+	// Toggle untuk menampilkan semua tagihan bulanan (termasuk bulan depan).
+	// Bila halaman dibuka lewat tautan ke invoice tertentu (mis. "Catat Pembayaran"
+	// dari detail tagihan bulan depan), langsung aktifkan agar invoice tersebut ikut
+	// ter-fetch — tanpa ini ia tersaring batas bulan berjalan di backend sehingga
+	// tidak pernah muncul dan tidak bisa dipilih.
+	const [showAllMonths, setShowAllMonths] = useState(initialInvoiceId != null);
 
 	// SlideOver untuk edit quantity item harian
 	const { addToast } = useToast();

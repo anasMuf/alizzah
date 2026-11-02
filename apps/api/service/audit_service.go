@@ -9,6 +9,10 @@ import (
 	"time"
 )
 
+// DefaultAuditRetentionDays adalah retensi audit trail (hari) yang dipakai
+// bersama oleh school-api dan sdm-api agar tidak divergen.
+const DefaultAuditRetentionDays = 7
+
 type AuditService interface {
 	LogAsync(entry model.AuditEntry)
 	GetAll(params dto.AuditLogQueryParams) ([]dto.AuditLogResponse, *dto.Meta, error)

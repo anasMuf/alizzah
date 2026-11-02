@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"api/internal/modules/sdm/master"
+	"api/utility"
 )
 
 // Service memuat logika bisnis karyawan & lampiran HR.
@@ -278,7 +279,18 @@ func (s *Service) AttachFungsional(employeeID uint, req AttachFungsionalRequest)
 	if !ok {
 		return errors.New("Fungsional tidak ditemukan")
 	}
-	return s.repo.CreateFungsional(&FungsionalDetail{FungsionalID: req.FungsionalID, EmployeeID: employeeID})
+	if attached, err := s.repo.IsFungsionalAttached(employeeID, req.FungsionalID); err != nil {
+		return err
+	} else if attached {
+		return utility.NewConflictError("Fungsional sudah terdaftar pada karyawan ini")
+	}
+	if err := s.repo.CreateFungsional(&FungsionalDetail{FungsionalID: req.FungsionalID, EmployeeID: employeeID}); err != nil {
+		if utility.IsDuplicateKey(err) {
+			return utility.NewConflictError("Fungsional sudah terdaftar pada karyawan ini")
+		}
+		return err
+	}
+	return nil
 }
 
 func (s *Service) DetachFungsional(employeeID, detailID uint) error {
@@ -293,9 +305,20 @@ func (s *Service) AttachTugasTambahan(employeeID uint, req AttachTugasTambahanRe
 	if !ok {
 		return errors.New("Tugas tambahan tidak ditemukan")
 	}
-	return s.repo.CreateTugasTambahan(&TugasTambahanDetail{
+	if attached, err := s.repo.IsTugasTambahanAttached(employeeID, req.TugasTambahanID); err != nil {
+		return err
+	} else if attached {
+		return utility.NewConflictError("Tugas tambahan sudah terdaftar pada karyawan ini")
+	}
+	if err := s.repo.CreateTugasTambahan(&TugasTambahanDetail{
 		TugasTambahanID: req.TugasTambahanID, EmployeeID: employeeID, Nilai: req.Nilai,
-	})
+	}); err != nil {
+		if utility.IsDuplicateKey(err) {
+			return utility.NewConflictError("Tugas tambahan sudah terdaftar pada karyawan ini")
+		}
+		return err
+	}
+	return nil
 }
 
 func (s *Service) DetachTugasTambahan(employeeID, detailID uint) error {
@@ -310,9 +333,20 @@ func (s *Service) AttachPenanggungJawab(employeeID uint, req AttachPenanggungJaw
 	if !ok {
 		return errors.New("Penanggung jawab tidak ditemukan")
 	}
-	return s.repo.CreatePenanggungJawab(&PenanggungJawabDetail{
+	if attached, err := s.repo.IsPenanggungJawabAttached(employeeID, req.PenanggungJawabID); err != nil {
+		return err
+	} else if attached {
+		return utility.NewConflictError("Penanggung jawab sudah terdaftar pada karyawan ini")
+	}
+	if err := s.repo.CreatePenanggungJawab(&PenanggungJawabDetail{
 		PenanggungJawabID: req.PenanggungJawabID, EmployeeID: employeeID,
-	})
+	}); err != nil {
+		if utility.IsDuplicateKey(err) {
+			return utility.NewConflictError("Penanggung jawab sudah terdaftar pada karyawan ini")
+		}
+		return err
+	}
+	return nil
 }
 
 func (s *Service) DetachPenanggungJawab(employeeID, detailID uint) error {
@@ -328,9 +362,20 @@ func (s *Service) AttachLainlain(employeeID uint, req AttachLainlainRequest) err
 	if err != nil {
 		return err
 	}
-	return s.repo.CreateLainlain(&LainlainDetail{
+	if attached, err := s.repo.IsLainlainAttached(employeeID, item.ID); err != nil {
+		return err
+	} else if attached {
+		return utility.NewConflictError("Lain-lain sudah terdaftar pada karyawan ini")
+	}
+	if err := s.repo.CreateLainlain(&LainlainDetail{
 		LainlainID: item.ID, EmployeeID: employeeID, Nilai: req.Nilai,
-	})
+	}); err != nil {
+		if utility.IsDuplicateKey(err) {
+			return utility.NewConflictError("Lain-lain sudah terdaftar pada karyawan ini")
+		}
+		return err
+	}
+	return nil
 }
 
 func (s *Service) DetachLainlain(employeeID, detailID uint) error {

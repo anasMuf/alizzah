@@ -502,10 +502,10 @@ func main() {
 	go func() {
 		for {
 			time.Sleep(1 * time.Hour)
-			if deleted, err := auditService.Cleanup(7); err != nil {
+			if deleted, err := auditService.Cleanup(service.DefaultAuditRetentionDays); err != nil {
 				log.Printf("[audit] cleanup error: %v", err)
 			} else if deleted > 0 {
-				log.Printf("[audit] cleanup: %d entries dihapus (retensi 7 hari)", deleted)
+				log.Printf("[audit] cleanup: %d entries dihapus (retensi %d hari)", deleted, service.DefaultAuditRetentionDays)
 			}
 		}
 	}()

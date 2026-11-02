@@ -143,6 +143,33 @@ func (r *Repository) GetHRBundle(employeeID uint) (*HRBundle, error) {
 	return bundle, nil
 }
 
+// isAttached memeriksa lampiran aktif (soft-deleted diabaikan oleh GORM) untuk
+// memberi pesan konflik yang ramah sebelum menabrak partial unique index.
+// refColumn adalah nama kolom FK master (konstanta, bukan input pengguna).
+func isAttached[T any](r *Repository, employeeID, refID uint, refColumn string) (bool, error) {
+	var count int64
+	err := r.db.Model(new(T)).
+		Where("employee_id = ? AND "+refColumn+" = ?", employeeID, refID).
+		Count(&count).Error
+	return count > 0, err
+}
+
+func (r *Repository) IsFungsionalAttached(employeeID, fungsionalID uint) (bool, error) {
+	return isAttached[FungsionalDetail](r, employeeID, fungsionalID, "fungsional_id")
+}
+
+func (r *Repository) IsTugasTambahanAttached(employeeID, tugasTambahanID uint) (bool, error) {
+	return isAttached[TugasTambahanDetail](r, employeeID, tugasTambahanID, "tugas_tambahan_id")
+}
+
+func (r *Repository) IsPenanggungJawabAttached(employeeID, penanggungJawabID uint) (bool, error) {
+	return isAttached[PenanggungJawabDetail](r, employeeID, penanggungJawabID, "penanggung_jawab_id")
+}
+
+func (r *Repository) IsLainlainAttached(employeeID, lainlainID uint) (bool, error) {
+	return isAttached[LainlainDetail](r, employeeID, lainlainID, "lainlain_id")
+}
+
 func (r *Repository) CreateFungsional(d *FungsionalDetail) error { return r.db.Create(d).Error }
 func (r *Repository) DeleteFungsional(id, employeeID uint) error {
 	return r.db.Where("id = ? AND employee_id = ?", id, employeeID).Delete(&FungsionalDetail{}).Error
@@ -202,8 +229,10 @@ func (r *Repository) FindHistory(employeeID uint) ([]GolonganHistory, error) {
 // sudah ada, baris tsb diperbarui.
 func (r *Repository) UpsertHistory(h *GolonganHistory) error {
 	return r.db.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "employee_id"}, {Name: "effective_date"}},
-		DoUpdates: clause.AssignmentColumns([]string{"golongan_id", "reason", "user_id", "updated_at"}),
+		Columns: []clause.Column{{Name: "employee_id"}, {Name: "effective_date"}},
+		// deleted_at ikut di-reset agar baris yang pernah dihapus (soft delete)
+		// dapat dipakai kembali pada tanggal efektif yang sama.
+		DoUpdates: clause.AssignmentColumns([]string{"golongan_id", "reason", "user_id", "deleted_at", "updated_at"}),
 	}).Create(h).Error
 }
 

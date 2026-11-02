@@ -49,9 +49,25 @@ func (r *Repository) FindByEmployee(employeeID uint) (*Pinjam, error) {
 	return &p, err
 }
 
+// FindByEmployeeUnscoped mengambil baris pinjaman termasuk yang sudah di-
+// soft-delete — dipakai untuk memulihkan baris akumulatif saat karyawan
+// meminjam lagi (unique employee_id tetap satu baris seumur hidup).
+func (r *Repository) FindByEmployeeUnscoped(employeeID uint) (*Pinjam, error) {
+	var p Pinjam
+	err := r.db.Unscoped().Where("employee_id = ?", employeeID).First(&p).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	return &p, err
+}
+
 func (r *Repository) Create(p *Pinjam) error { return r.db.Create(p).Error }
 
 func (r *Repository) Update(p *Pinjam) error { return r.db.Save(p).Error }
+
+// SaveUnscoped dipakai saat memulihkan baris soft-deleted: Save biasa akan
+// menambahkan kondisi `deleted_at IS NULL` sehingga baris tidak tersentuh.
+func (r *Repository) SaveUnscoped(p *Pinjam) error { return r.db.Unscoped().Save(p).Error }
 
 func (r *Repository) Delete(id uint) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {

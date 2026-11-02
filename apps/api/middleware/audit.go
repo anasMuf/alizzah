@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"net/http"
 	"time"
@@ -91,6 +92,18 @@ func (m *AuditMiddleware) Capture(next echo.HandlerFunc) echo.HandlerFunc {
 		// Jalankan handler
 		err := next(c)
 
+		// Echo menjalankan HTTPErrorHandler SETELAH middleware selesai, jadi untuk
+		// error yang di-return (bukan ditulis langsung oleh handler) status respons
+		// belum terset. Ambil status sebenarnya dari *echo.HTTPError.
+		statusCode := c.Response().Status
+		if statusCode == 0 {
+			statusCode = http.StatusOK
+		}
+		var httpErr *echo.HTTPError
+		if errors.As(err, &httpErr) {
+			statusCode = httpErr.Code
+		}
+
 		// Build audit entry
 		entry := model.AuditEntry{
 			Method:      c.Request().Method,
@@ -98,7 +111,7 @@ func (m *AuditMiddleware) Capture(next echo.HandlerFunc) echo.HandlerFunc {
 			Module:      utility.ModuleFromPath(c.Request().URL.Path),
 			Action:      utility.ActionFromMethod(c.Request().Method),
 			RequestBody: reqBodyStr,
-			StatusCode:  c.Response().Status,
+			StatusCode:  statusCode,
 			IPAddress:   c.RealIP(),
 			LatencyMs:   int(time.Since(start).Milliseconds()),
 		}
@@ -122,7 +135,7 @@ func (m *AuditMiddleware) Capture(next echo.HandlerFunc) echo.HandlerFunc {
 
 		// Extract error message jika handler mengembalikan HTTPError
 		if err != nil {
-			if httpErr, ok := err.(*echo.HTTPError); ok {
+			if errors.As(err, &httpErr) {
 				if msg, ok := httpErr.Message.(string); ok {
 					entry.ErrorMessage = msg
 				}

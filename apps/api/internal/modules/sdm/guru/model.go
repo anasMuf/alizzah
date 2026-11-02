@@ -48,10 +48,13 @@ type GolonganHistory struct {
 func (GolonganHistory) TableName() string { return "sdm_employee_golongan_history" }
 
 // FungsionalDetail — lampiran jabatan fungsional ke karyawan (many-to-many).
+// Keunikan pasangan (fungsional_id, employee_id) dijaga partial unique index
+// `WHERE deleted_at IS NULL` yang dibuat di sdm.EnsureIndexes, bukan lewat tag
+// gorm: baris soft-deleted tidak boleh menghalangi pemasangan ulang.
 type FungsionalDetail struct {
 	model.PrimaryKey
-	FungsionalID uint `gorm:"not null;index;uniqueIndex:uq_fungsional_guru" json:"fungsional_id"`
-	EmployeeID   uint `gorm:"not null;index;uniqueIndex:uq_fungsional_guru" json:"employee_id"`
+	FungsionalID uint `gorm:"not null;index" json:"fungsional_id"`
+	EmployeeID   uint `gorm:"not null;index" json:"employee_id"`
 	model.BaseModelTimeAt
 
 	Fungsional *master.Fungsional `gorm:"foreignKey:FungsionalID" json:"fungsional,omitempty"`
@@ -60,10 +63,12 @@ type FungsionalDetail struct {
 func (FungsionalDetail) TableName() string { return "sdm_fungsional_detail" }
 
 // TugasTambahanDetail — lampiran bidang tugas tambahan; nominal diisi per-guru.
+// Keunikan (tugas_tambahan_id, employee_id) dijaga partial unique index di
+// sdm.EnsureIndexes (lihat catatan FungsionalDetail).
 type TugasTambahanDetail struct {
 	model.PrimaryKey
-	TugasTambahanID uint `gorm:"not null;index;uniqueIndex:uq_tugas_tambahan_guru" json:"tugas_tambahan_id"`
-	EmployeeID      uint `gorm:"not null;index;uniqueIndex:uq_tugas_tambahan_guru" json:"employee_id"`
+	TugasTambahanID uint `gorm:"not null;index" json:"tugas_tambahan_id"`
+	EmployeeID      uint `gorm:"not null;index" json:"employee_id"`
 	Nilai           int  `gorm:"not null;default:0" json:"nilai"`
 	model.BaseModelTimeAt
 
@@ -73,10 +78,12 @@ type TugasTambahanDetail struct {
 func (TugasTambahanDetail) TableName() string { return "sdm_tugas_tambahan_detail" }
 
 // PenanggungJawabDetail — lampiran peran penanggung jawab ke karyawan.
+// Keunikan (penanggung_jawab_id, employee_id) dijaga partial unique index di
+// sdm.EnsureIndexes (lihat catatan FungsionalDetail).
 type PenanggungJawabDetail struct {
 	model.PrimaryKey
-	PenanggungJawabID uint `gorm:"not null;index;uniqueIndex:uq_pj_guru" json:"penanggung_jawab_id"`
-	EmployeeID        uint `gorm:"not null;index;uniqueIndex:uq_pj_guru" json:"employee_id"`
+	PenanggungJawabID uint `gorm:"not null;index" json:"penanggung_jawab_id"`
+	EmployeeID        uint `gorm:"not null;index" json:"employee_id"`
 	model.BaseModelTimeAt
 
 	PenanggungJawab *master.PenanggungJawab `gorm:"foreignKey:PenanggungJawabID" json:"penanggung_jawab,omitempty"`
@@ -85,11 +92,12 @@ type PenanggungJawabDetail struct {
 func (PenanggungJawabDetail) TableName() string { return "sdm_penanggung_jawab_detail" }
 
 // LainlainDetail — lampiran lain-lain; nominal disimpan saat pemasangan
-// (mengikuti pola lama yang nominalnya bervariasi per guru).
+// (mengikuti pola lama yang nominalnya bervariasi per guru). Keunikan
+// (lainlain_id, employee_id) dijaga partial unique index di sdm.EnsureIndexes.
 type LainlainDetail struct {
 	model.PrimaryKey
-	LainlainID uint `gorm:"not null;index;uniqueIndex:uq_lainlain_guru" json:"lainlain_id"`
-	EmployeeID uint `gorm:"not null;index;uniqueIndex:uq_lainlain_guru" json:"employee_id"`
+	LainlainID uint `gorm:"not null;index" json:"lainlain_id"`
+	EmployeeID uint `gorm:"not null;index" json:"employee_id"`
 	Nilai      int  `gorm:"not null;default:0" json:"nilai"`
 	model.BaseModelTimeAt
 

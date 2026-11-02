@@ -25,6 +25,8 @@ func (r *Repository) FindByPeriode(periode time.Time) ([]Absen, error) {
 
 // UpsertBulk menyimpan absensi banyak karyawan untuk satu periode. Idempotent:
 // kombinasi (periode, employee_id) unik → konflik di-ON CONFLICT-update.
+// `deleted_at` ikut di-reset: periode yang pernah dihapus (soft delete) bisa
+// diisi ulang tanpa baris lama tetap tersembunyi dari List.
 func (r *Repository) UpsertBulk(periode time.Time, entries []AbsenEntry) error {
 	if len(entries) == 0 {
 		return nil
@@ -40,7 +42,7 @@ func (r *Repository) UpsertBulk(periode time.Time, entries []AbsenEntry) error {
 	return r.db.Clauses(clause.OnConflict{
 		Columns: []clause.Column{{Name: "periode"}, {Name: "employee_id"}},
 		DoUpdates: clause.AssignmentColumns([]string{
-			"hadir", "hadir_siaga", "hadir_terlambat", "hadir_piket", "pulang_awal", "updated_at",
+			"hadir", "hadir_siaga", "hadir_terlambat", "hadir_piket", "pulang_awal", "deleted_at", "updated_at",
 		}),
 	}).Create(&rows).Error
 }

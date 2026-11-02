@@ -119,6 +119,23 @@ func Fail(c echo.Context, err error) error {
 	return c.JSON(status, dto.ErrorResponse{Status: status, Code: code, Message: err.Error()})
 }
 
+// IsDuplicateKey mengenali pelanggaran unique constraint (PostgreSQL 23505 dan
+// varian sqlite/mysql). Dipakai layer service untuk memetakan race insert menjadi
+// konflik yang ramah, bukan 500.
+func IsDuplicateKey(err error) bool {
+	if err == nil {
+		return false
+	}
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		return pgErr.Code == "23505"
+	}
+	msg := err.Error()
+	return strings.Contains(msg, "duplicate key") ||
+		strings.Contains(msg, "UNIQUE constraint failed") ||
+		strings.Contains(msg, "Error 1062")
+}
+
 // isInternalError mengenali error internal yang detailnya tidak boleh tampil ke
 // klien: error driver PostgreSQL (pgx) & sentinel internal GORM.
 func isInternalError(err error) bool {

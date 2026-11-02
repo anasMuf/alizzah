@@ -116,13 +116,21 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     environment: ANASLABS_VPS   # agar bisa baca secret VPS_HOST/USER/KEY
+    permissions:
+      contents: read
+      packages: read   # GITHUB_TOKEN boleh menarik package GHCR milik repo ini
     steps:
       - name: SSH & docker compose up
         uses: appleboy/ssh-action@v1
+        env:
+          # Utamakan GHCR_PAT bila ada; fallback ke GITHUB_TOKEN agar tidak
+          # bergantung pada kredensial manual di VPS yang bisa kedaluwarsa.
+          GHCR_TOKEN: ${{ secrets.GHCR_PAT || secrets.GITHUB_TOKEN }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_KEY }}
+          envs: GHCR_TOKEN
           script: |
             set -e
             cd "${{ secrets.DEPLOY_PATH }}"
@@ -130,9 +138,11 @@ jobs:
             # .env aman karena gitignored.
             git fetch origin main
             git reset --hard origin/main
-            if [ -n "${{ secrets.GHCR_PAT }}" ]; then
-              echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+            if [ -z "$GHCR_TOKEN" ]; then
+              echo "GHCR_TOKEN kosong — image GHCR privat tidak bisa ditarik" >&2
+              exit 1
             fi
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
             export IMAGE_OWNER="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
             export IMAGE_TAG="${{ github.sha }}"
             docker compose pull

@@ -251,7 +251,10 @@ func (h *Handler) AttachFungsional(c echo.Context) error {
 }
 
 func (h *Handler) DetachFungsional(c echo.Context) error {
-	id, _ := parseUintParam(c, "id")
+	id, err := parseUintParam(c, "id")
+	if err != nil {
+		return err
+	}
 	detailID, err := parseUintParam(c, "detail_id")
 	if err != nil {
 		return err
@@ -278,7 +281,10 @@ func (h *Handler) AttachTugasTambahan(c echo.Context) error {
 }
 
 func (h *Handler) DetachTugasTambahan(c echo.Context) error {
-	id, _ := parseUintParam(c, "id")
+	id, err := parseUintParam(c, "id")
+	if err != nil {
+		return err
+	}
 	detailID, err := parseUintParam(c, "detail_id")
 	if err != nil {
 		return err
@@ -305,7 +311,10 @@ func (h *Handler) AttachPenanggungJawab(c echo.Context) error {
 }
 
 func (h *Handler) DetachPenanggungJawab(c echo.Context) error {
-	id, _ := parseUintParam(c, "id")
+	id, err := parseUintParam(c, "id")
+	if err != nil {
+		return err
+	}
 	detailID, err := parseUintParam(c, "detail_id")
 	if err != nil {
 		return err
@@ -332,7 +341,10 @@ func (h *Handler) AttachLainlain(c echo.Context) error {
 }
 
 func (h *Handler) DetachLainlain(c echo.Context) error {
-	id, _ := parseUintParam(c, "id")
+	id, err := parseUintParam(c, "id")
+	if err != nil {
+		return err
+	}
 	detailID, err := parseUintParam(c, "detail_id")
 	if err != nil {
 		return err
@@ -402,7 +414,10 @@ func (h *Handler) AddGolonganHistory(c echo.Context) error {
 // @Success 200 {object} dto.SuccessResponse
 // @Router /v1/sdm/employees/{id}/golongan-history/{history_id} [delete]
 func (h *Handler) DeleteGolonganHistory(c echo.Context) error {
-	id, _ := parseUintParam(c, "id")
+	id, err := parseUintParam(c, "id")
+	if err != nil {
+		return err
+	}
 	historyID, err := parseUintParam(c, "history_id")
 	if err != nil {
 		return err

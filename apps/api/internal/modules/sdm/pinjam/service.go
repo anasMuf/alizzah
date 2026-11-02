@@ -6,6 +6,9 @@ import (
 	"time"
 
 	"api/internal/modules/sdm/periode"
+	"api/utility"
+
+	"gorm.io/gorm"
 )
 
 var periodeRegex = regexp.MustCompile(`^\d{6}$`)
@@ -66,6 +69,21 @@ func (s *Service) Create(req CreateRequest) (*Item, error) {
 		return nil, err
 	}
 
+	// Baris lama mungkin sudah dihapus (soft delete): pulihkan baris akumulatif
+	// yang sama agar tidak menabrak unique employee_id dan riwayatnya tetap satu.
+	restored := false
+	if existing == nil {
+		deleted, err := s.repo.FindByEmployeeUnscoped(req.EmployeeID)
+		if err != nil {
+			return nil, err
+		}
+		if deleted != nil {
+			deleted.DeletedAt = gorm.DeletedAt{}
+			existing = deleted
+			restored = true
+		}
+	}
+
 	now := time.Now()
 	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 
@@ -78,6 +96,9 @@ func (s *Service) Create(req CreateRequest) (*Item, error) {
 			IsLunas:    false,
 		}
 		if err := s.repo.Create(existing); err != nil {
+			if utility.IsDuplicateKey(err) {
+				return nil, utility.NewConflictError("Pinjaman karyawan sudah ada")
+			}
 			return nil, err
 		}
 		return toItem(existing), nil
@@ -92,7 +113,11 @@ func (s *Service) Create(req CreateRequest) (*Item, error) {
 		existing.IsLunas = false
 		existing.TglLunas = nil
 	}
-	if err := s.repo.Update(existing); err != nil {
+	if restored {
+		if err := s.repo.SaveUnscoped(existing); err != nil {
+			return nil, err
+		}
+	} else if err := s.repo.Update(existing); err != nil {
 		return nil, err
 	}
 	return toItem(existing), nil

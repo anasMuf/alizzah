@@ -137,7 +137,6 @@ function PenggajianPage() {
 		data: waStatuses = [],
 		refetch: refetchWaStatus,
 		isFetching: waStatusFetching,
-		dataUpdatedAt: waStatusUpdatedAt,
 	} = useKirimWAStatus(periode);
 	const waByEmp = useMemo(
 		() => new Map(waStatuses.map((s) => [s.employee_id, s])),
@@ -417,12 +416,6 @@ function PenggajianPage() {
 									<CheckCheck className="h-4 w-4 mr-1" /> Tandai Semua Terkirim
 									({belumTerkirimCount})
 								</Button>
-							)}
-							{waStatusUpdatedAt > 0 && (
-								<span className="text-xs text-gray-500">
-									Status WA{" "}
-									{new Date(waStatusUpdatedAt).toLocaleTimeString("id-ID")}
-								</span>
 							)}
 							<Button
 								variant="secondary"

@@ -754,15 +754,15 @@ export function useUnlockPayroll() {
 
 // ── Kirim slip via WhatsApp (Wablas) ──
 
-// useKirimWAStatus memantau status pengiriman tiap karyawan (polling 5s) —
-// penting untuk kirim massal async yang diproses worker latar.
+// useKirimWAStatus memantau status pengiriman tiap karyawan. Sengaja TANPA
+// polling otomatis: status diperbarui saat tombol "Muat Ulang" ditekan (atau
+// otomatis sekali setelah aksi kirim/tandai karena invalidateQueries).
 export function useKirimWAStatus(periode: string) {
 	return useQuery({
 		queryKey: sdmKeys.kirimWa(periode),
 		queryFn: () =>
 			sdmGet<KirimWAStatus[]>("/penggajian/kirim-wa/status", { periode }),
 		enabled: !!periode,
-		refetchInterval: 5000,
 	});
 }
 

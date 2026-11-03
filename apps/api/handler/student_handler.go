@@ -184,9 +184,33 @@ func (h *StudentHandler) Update(c echo.Context) error {
 	})
 }
 
+// DeletePreview godoc
+// @Summary      Preview data terhubung sebelum siswa dihapus
+// @Tags         students
+// @Security     ApiKeyAuth
+// @Param        id   path      int  true  "Student ID"
+// @Success      200  {object}  dto.SuccessResponse{data=dto.StudentDeletePreviewResponse}
+// @Router       /v1/students/{id}/delete-preview [get]
+func (h *StudentHandler) DeletePreview(c echo.Context) error {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "ID tidak valid")
+	}
+
+	item, err := h.studentService.DeletePreview(uint(id))
+	if err != nil {
+		return utility.Fail(c, err)
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "Berhasil mengambil pratinjau penghapusan siswa",
+		Data:    item,
+	})
+}
+
 // Delete godoc
 // @Summary      Delete a student
-// @Description  Delete a student (fails if student has active enrollments)
+// @Description  Delete a student beserta seluruh data terhubung (soft-delete cascade). Wajib confirm_name; force=true bila ada data finansial.
 // @Tags         students
 // @Accept       json
 // @Produce      json
@@ -205,12 +229,12 @@ func (h *StudentHandler) Delete(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "ID tidak valid")
 	}
 
-	err = h.studentService.Delete(uint(id))
+	confirmName := c.QueryParam("confirm_name")
+	force := c.QueryParam("force") == "true" || c.QueryParam("force") == "1"
+
+	err = h.studentService.Delete(uint(id), confirmName, force)
 	if err != nil {
-		if err.Error() == "Siswa tidak ditemukan" {
-			return echo.NewHTTPError(http.StatusNotFound, err.Error())
-		}
-		return echo.NewHTTPError(http.StatusUnprocessableEntity, err.Error())
+		return utility.Fail(c, err)
 	}
 
 	return c.JSON(http.StatusOK, dto.SuccessResponse{

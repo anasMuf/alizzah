@@ -626,6 +626,7 @@ func main() {
 	students.GET("", studentHandler.List, guard.RequireModule(middleware.ModuleAdministrasi, middleware.ModuleKeuangan, middleware.ModuleKoperasi))
 	students.POST("", studentHandler.Create, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.POST("/import", studentHandler.Import, guard.RequireModule(middleware.ModuleAdministrasi))
+	students.GET("/:id/delete-preview", studentHandler.DeletePreview, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.GET("/:id", studentHandler.Get, guard.RequireModule(middleware.ModuleAdministrasi, middleware.ModuleKeuangan))
 	students.PUT("/:id", studentHandler.Update, guard.RequireModule(middleware.ModuleAdministrasi))
 	students.DELETE("/:id", studentHandler.Delete, guard.RequireModule(middleware.ModuleAdministrasi))

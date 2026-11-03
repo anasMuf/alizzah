@@ -23,7 +23,8 @@ type StudentService interface {
 	GetByID(id uint) (*dto.StudentDetailResponse, error)
 	Create(createdBy uint, req dto.CreateStudentRequest) (*dto.StudentDetailResponse, error)
 	Update(id uint, req dto.UpdateStudentRequest) (*dto.StudentDetailResponse, error)
-	Delete(id uint) error
+	Delete(id uint, confirmName string, force bool) error
+	DeletePreview(id uint) (*dto.StudentDeletePreviewResponse, error)
 	Import(file *multipart.FileHeader) (*dto.ImportSummaryResponse, error)
 	RegenerateInvoices(studentID uint) error
 }
@@ -462,26 +463,6 @@ func (s *studentService) Update(id uint, req dto.UpdateStudentRequest) (*dto.Stu
 	}
 
 	return mapStudentToDetailResponse(*student), nil
-}
-
-func (s *studentService) Delete(id uint) error {
-	hasActive, err := s.studentRepo.HasActiveEnrollment(id)
-	if err != nil {
-		return err
-	}
-	if hasActive {
-		return errors.New("Tidak bisa menghapus siswa yang memiliki pendaftaran aktif")
-	}
-
-	_, err = s.studentRepo.FindByID(id)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return errors.New("Siswa tidak ditemukan")
-		}
-		return err
-	}
-
-	return s.studentRepo.Delete(id)
 }
 
 func (s *studentService) RegenerateInvoices(studentID uint) error {

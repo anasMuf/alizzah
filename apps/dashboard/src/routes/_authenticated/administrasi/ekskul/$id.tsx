@@ -542,6 +542,7 @@ function EkskulDetailPage() {
 											<Link
 												to="/administrasi/siswa/$id/profil"
 												params={{ id: String(student.id) }}
+												search={{}}
 												className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1 rounded-md text-sm"
 											>
 												Detail

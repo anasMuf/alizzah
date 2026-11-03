@@ -41,7 +41,15 @@ const INCOME_SORT_STORAGE_KEY = "alizzah_income_sort";
 
 export const Route = createFileRoute("/_authenticated/keuangan/penerimaan/")({
 	component: PenerimaanListPage,
-	validateSearch: (search: Record<string, unknown>) => ({
+	validateSearch: (
+		search: Record<string, unknown>,
+	): {
+		income_category_id?: number;
+		date_from?: string;
+		date_to?: string;
+		sort_by?: string;
+		sort_dir?: string;
+	} => ({
 		income_category_id:
 			typeof search.income_category_id === "number"
 				? search.income_category_id
@@ -611,6 +619,7 @@ function PenerimaanListPage() {
 													<Link
 														to="/keuangan/penerimaan/$id"
 														params={{ id: item.id.toString() }}
+														search={searchParams}
 														className="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center"
 													>
 														<Edit className="w-3 h-3 mr-0.5" /> Edit

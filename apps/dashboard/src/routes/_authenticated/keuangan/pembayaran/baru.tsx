@@ -340,6 +340,7 @@ function KasirPembayaranPage() {
 				navigate({
 					to: "/keuangan/pembayaran/$id",
 					params: { id: String(res.data?.data?.id) },
+					search: {},
 				});
 			},
 			onError: (err: any) => {
@@ -366,6 +367,7 @@ function KasirPembayaranPage() {
 				navigate({
 					to: "/keuangan/pembayaran/$id",
 					params: { id: String(res.data?.data?.id) },
+					search: {},
 				});
 			},
 			onError: (err: any) => {

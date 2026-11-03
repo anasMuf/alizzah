@@ -11,6 +11,16 @@ import { BayarForm } from "../../../../features/koperasi/pinjaman/BayarForm";
 
 export const Route = createFileRoute("/_authenticated/koperasi/pinjaman/$id")({
 	component: PinjamanDetailPage,
+	// Bawa filter/aksi asal agar tombol kembali tidak mereset konteks.
+	validateSearch: (
+		search: Record<string, unknown>,
+	): { action?: string; member_id?: number } => {
+		const member = Number(search.member_id);
+		return {
+			action: typeof search.action === "string" ? search.action : undefined,
+			member_id: Number.isFinite(member) && member > 0 ? member : undefined,
+		};
+	},
 });
 
 const STATUS: Record<
@@ -29,6 +39,7 @@ const METHOD_LABEL: Record<string, string> = {
 
 function PinjamanDetailPage() {
 	const { id } = Route.useParams();
+	const search = Route.useSearch();
 	const { data: loan, isLoading, isError } = useLoan(Number(id));
 	const [isPayOpen, setIsPayOpen] = useState(false);
 
@@ -45,6 +56,7 @@ function PinjamanDetailPage() {
 		<div className="space-y-6">
 			<Link
 				to="/koperasi/pinjaman"
+				search={search}
 				className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700"
 			>
 				<ArrowLeft className="h-4 w-4 mr-1" /> Kembali ke daftar

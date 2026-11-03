@@ -64,7 +64,21 @@ const periodeLabel = (month?: number, year?: number) =>
 
 export const Route = createFileRoute("/_authenticated/keuangan/pembayaran/")({
 	component: PembayaranListPage,
-	validateSearch: (search: Record<string, unknown>) => ({
+	validateSearch: (
+		search: Record<string, unknown>,
+	): {
+		source?: string;
+		start_date?: string;
+		end_date?: string;
+		search?: string;
+		level?: string;
+		class_group_id?: string;
+		created_by?: string;
+		category?: string;
+		month?: string;
+		year?: string;
+		page?: number;
+	} => ({
 		source: typeof search.source === "string" ? search.source : undefined,
 		start_date:
 			typeof search.start_date === "string" ? search.start_date : undefined,
@@ -540,6 +554,7 @@ function PembayaranListPage() {
 													<Link
 														to="/keuangan/pembayaran/$id"
 														params={{ id: payment.id.toString() }}
+														search={searchParams}
 														onClick={(e) => e.stopPropagation()}
 														className="font-mono text-indigo-600 hover:text-indigo-900"
 													>
@@ -588,6 +603,7 @@ function PembayaranListPage() {
 													<Link
 														to="/keuangan/pembayaran/$id"
 														params={{ id: payment.id.toString() }}
+														search={searchParams}
 														onClick={(e) => e.stopPropagation()}
 														className="inline-flex items-center text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
 													>

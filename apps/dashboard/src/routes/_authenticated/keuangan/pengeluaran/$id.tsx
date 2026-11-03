@@ -30,10 +30,31 @@ export const Route = createFileRoute(
 	"/_authenticated/keuangan/pengeluaran/$id",
 )({
 	component: PengeluaranDetailPage,
+	// Filter daftar dibawa saat kembali / navigasi, agar tidak reset.
+	validateSearch: (
+		search: Record<string, unknown>,
+	): {
+		search?: string;
+		category_id?: string;
+		date_from?: string;
+		date_to?: string;
+		sort_by?: string;
+		sort_dir?: string;
+	} => ({
+		search: typeof search.search === "string" ? search.search : undefined,
+		category_id:
+			typeof search.category_id === "string" ? search.category_id : undefined,
+		date_from:
+			typeof search.date_from === "string" ? search.date_from : undefined,
+		date_to: typeof search.date_to === "string" ? search.date_to : undefined,
+		sort_by: typeof search.sort_by === "string" ? search.sort_by : undefined,
+		sort_dir: typeof search.sort_dir === "string" ? search.sort_dir : undefined,
+	}),
 });
 
 function PengeluaranDetailPage() {
 	const { id } = Route.useParams();
+	const search = Route.useSearch();
 	const expenseId = Number(id);
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
@@ -129,7 +150,7 @@ function PengeluaranDetailPage() {
 					title: "Berhasil",
 					message: "Pengeluaran berhasil dihapus.",
 				});
-				navigate({ to: "/keuangan/pengeluaran", search: {} as any });
+				navigate({ to: "/keuangan/pengeluaran", search });
 			},
 			onError: (error: Error) => {
 				const msg =
@@ -186,7 +207,7 @@ function PengeluaranDetailPage() {
 				title="Pengeluaran tidak ditemukan"
 				description="Data pengeluaran dengan ID ini tidak ditemukan."
 				action={
-					<Link to="/keuangan/pengeluaran" search={{} as any}>
+					<Link to="/keuangan/pengeluaran" search={search}>
 						<Button variant="secondary">Kembali ke Daftar</Button>
 					</Link>
 				}
@@ -207,7 +228,7 @@ function PengeluaranDetailPage() {
 			<div>
 				<Link
 					to="/keuangan/pengeluaran"
-					search={{} as any}
+					search={search}
 					className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-4"
 				>
 					<ArrowLeft className="h-4 w-4" />

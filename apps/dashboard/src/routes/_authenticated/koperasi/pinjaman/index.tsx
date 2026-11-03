@@ -17,9 +17,10 @@ export const Route = createFileRoute("/_authenticated/koperasi/pinjaman/")({
 	validateSearch: (
 		search: Record<string, unknown>,
 	): { action?: string; member_id?: number } => {
+		const member = Number(search.member_id);
 		return {
-			action: search.action as string | undefined,
-			member_id: search.member_id as number | undefined,
+			action: typeof search.action === "string" ? search.action : undefined,
+			member_id: Number.isFinite(member) && member > 0 ? member : undefined,
 		};
 	},
 });
@@ -122,6 +123,7 @@ function LoanList({
 	status: string;
 	setStatus: (s: string) => void;
 }) {
+	const search = Route.useSearch();
 	const { data, isLoading, isError } = useLoans(ayId, page, status);
 	const rows = data?.data ?? [];
 	const total = data?.meta.total ?? 0;
@@ -223,6 +225,7 @@ function LoanList({
 											<Link
 												to="/koperasi/pinjaman/$id"
 												params={{ id: String(l.id) }}
+												search={search}
 												className="inline-flex items-center text-indigo-600 hover:text-indigo-800"
 											>
 												Lihat <ChevronRight className="h-4 w-4" />

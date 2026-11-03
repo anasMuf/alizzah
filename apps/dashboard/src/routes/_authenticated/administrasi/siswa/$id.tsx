@@ -20,10 +20,37 @@ import { Badge } from "#/components/ui";
 
 export const Route = createFileRoute("/_authenticated/administrasi/siswa/$id")({
 	component: StudentLayout,
+	// Filter daftar dibawa agar breadcrumb/tab tidak mereset pencarian.
+	validateSearch: (
+		params: Record<string, unknown>,
+	): {
+		page?: number;
+		search?: string;
+		status?: string;
+		class_group_id?: string | number;
+	} => {
+		const parseClassGroupId = (v: unknown) => {
+			if (typeof v === "number") return v;
+			if (typeof v === "string" && v === "__none__") return "__none__";
+			if (typeof v === "string" && v !== "") return Number(v);
+			return undefined;
+		};
+		return {
+			page: (typeof params.page === "number"
+				? params.page
+				: typeof params.page === "string"
+					? Number.parseInt(params.page, 10) || 1
+					: undefined) as number | undefined,
+			search: typeof params.search === "string" ? params.search : undefined,
+			status: typeof params.status === "string" ? params.status : undefined,
+			class_group_id: parseClassGroupId(params.class_group_id),
+		};
+	},
 });
 
 function StudentLayout() {
 	const { id } = Route.useParams();
+	const search = Route.useSearch();
 	const studentId = Number(id);
 	// Active path to determine which tab is active (useRouterState is reactive, unlike useRouter)
 	const currentPath = useRouterState({ select: (s) => s.location.pathname });
@@ -108,7 +135,7 @@ function StudentLayout() {
 					<li>
 						<Link
 							to="/administrasi/siswa"
-							search={{} as any}
+							search={search}
 							className="text-gray-400 hover:text-gray-500"
 						>
 							Administrasi
@@ -122,7 +149,7 @@ function StudentLayout() {
 							/>
 							<Link
 								to="/administrasi/siswa"
-								search={{} as any}
+								search={search}
 								className="ml-2 text-sm font-medium text-gray-500 hover:text-gray-700"
 							>
 								Siswa
@@ -203,7 +230,7 @@ function StudentLayout() {
 							name="tabs"
 							className="block w-full rounded-md border-none focus:ring-0 focus:ring-indigo-500 py-3 pl-3 pr-10 text-base sm:text-sm"
 							value={currentPath}
-							onChange={(e) => navigate({ to: e.target.value })}
+							onChange={(e) => navigate({ to: e.target.value, search })}
 						>
 							{tabs
 								.filter((t) => t.show)
@@ -229,6 +256,7 @@ function StudentLayout() {
 										<Link
 											key={tab.name}
 											to={tab.href}
+											search={search}
 											className={`
                       group relative min-w-0 flex-1 overflow-hidden py-4 px-4 text-center text-sm font-medium hover:bg-gray-50 focus:z-10
                       ${isActive ? "text-indigo-700 bg-indigo-50" : "text-gray-500 hover:text-gray-700 bg-white"}

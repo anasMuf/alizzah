@@ -340,6 +340,7 @@ function TagihanSiswaPage() {
 												<Link
 													to="/keuangan/tagihan/$id"
 													params={{ id: String(invoice.id) }}
+													search={{}}
 													className="inline-flex items-center text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
 												>
 													Detail <ChevronRight className="w-4 h-4 ml-1" />
@@ -451,6 +452,7 @@ function TagihanSiswaPage() {
 												<Link
 													to="/keuangan/tagihan/$id"
 													params={{ id: invoice.id.toString() }}
+													search={{}}
 													className="inline-flex items-center text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
 												>
 													Detail <ChevronRight className="w-4 h-4 ml-1" />

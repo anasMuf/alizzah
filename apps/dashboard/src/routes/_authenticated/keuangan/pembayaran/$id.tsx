@@ -23,11 +23,57 @@ import { openPrintWindow } from "../../../../utils/print";
 export const Route = createFileRoute("/_authenticated/keuangan/pembayaran/$id")(
 	{
 		component: DetailPembayaranPage,
+		// Filter daftar dibawa saat kembali / navigasi, agar tidak reset.
+		validateSearch: (
+			search: Record<string, unknown>,
+		): {
+			source?: string;
+			start_date?: string;
+			end_date?: string;
+			search?: string;
+			level?: string;
+			class_group_id?: string;
+			created_by?: string;
+			category?: string;
+			month?: string;
+			year?: string;
+			page?: number;
+		} => ({
+			source: typeof search.source === "string" ? search.source : undefined,
+			start_date:
+				typeof search.start_date === "string" ? search.start_date : undefined,
+			end_date:
+				typeof search.end_date === "string" ? search.end_date : undefined,
+			search: typeof search.search === "string" ? search.search : undefined,
+			level: typeof search.level === "string" ? search.level : undefined,
+			class_group_id:
+				typeof search.class_group_id === "string"
+					? search.class_group_id
+					: typeof search.class_group_id === "number"
+						? String(search.class_group_id)
+						: undefined,
+			created_by:
+				typeof search.created_by === "string"
+					? search.created_by
+					: typeof search.created_by === "number"
+						? String(search.created_by)
+						: undefined,
+			category:
+				typeof search.category === "string" ? search.category : undefined,
+			month: typeof search.month === "string" ? search.month : undefined,
+			year: typeof search.year === "string" ? search.year : undefined,
+			page: (typeof search.page === "number"
+				? search.page
+				: typeof search.page === "string"
+					? Number.parseInt(search.page, 10) || 1
+					: undefined) as number | undefined,
+		}),
 	},
 );
 
 function DetailPembayaranPage() {
 	const { id } = Route.useParams();
+	const search = Route.useSearch();
 	const navigate = useNavigate();
 	const { addToast } = useToast();
 
@@ -64,7 +110,7 @@ function DetailPembayaranPage() {
 					title: "Berhasil",
 					message: "Pembayaran berhasil dihapus.",
 				});
-				navigate({ to: "/keuangan/pembayaran", search: {} as any });
+				navigate({ to: "/keuangan/pembayaran", search });
 			},
 			onError: (err: any) => {
 				addToast({
@@ -233,7 +279,7 @@ function DetailPembayaranPage() {
 					<li>
 						<Link
 							to="/keuangan/pembayaran"
-							search={{} as any}
+							search={search}
 							className="hover:text-gray-900"
 						>
 							Pembayaran
@@ -251,7 +297,7 @@ function DetailPembayaranPage() {
 				<div>
 					<Link
 						to="/keuangan/pembayaran"
-						search={{} as any}
+						search={search}
 						className="text-sm font-medium text-indigo-600 hover:text-indigo-500 flex items-center"
 					>
 						<ArrowLeft className="w-4 h-4 mr-1" /> Kembali ke Daftar

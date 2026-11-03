@@ -40,7 +40,7 @@
 
 ### Frontend
 - Route publik `/s/$token` (route group terpisah), halaman read-only + warning + tombol PDF.
-- Halaman Penggajian: tombol **Salin Link** + **Kirim WA** per baris; **Kirim Semua** di header; **Kirim Ulang Gagal** muncul hanya bila ada baris `failed`; **Tandai Semua Terkirim** muncul bila ada `failed`/`unknown`; status pengiriman diperbarui **manual** lewat tombol **Muat Ulang** (tanpa polling).
+- Halaman Penggajian: tombol **Salin Link** + **Kirim WA** per baris; **Kirim Semua** di header; **Kirim Ulang Gagal** muncul hanya bila ada baris `failed`; **Tandai Semua Terkirim** muncul bila ada `failed`/`unknown`; status pengiriman dipantau **otomatis tiap 5 detik**, dengan tombol **Muat Ulang** untuk refresh segera.
 
 ## Task
 1. **[selesai]** Backend: token + endpoint publik + `share-link`.
@@ -77,8 +77,8 @@ WABLAS_WEBHOOK_SECRET=<acak-panjang>                # secret URL webhook trackin
   (start akan mencatat `[sdm-kirimwa] Wablas belum dikonfigurasi — worker tidak aktif`).
 - Worker memproses status `pending` tiap 5 detik, jeda 1,5 detik antar kirim, dan
   menyimpan hasil (`sent`/`failed`/`unknown` + `pesan_error` + `attempts`) ke `sdm_kirim_wa`.
-- Status pengiriman di halaman penggajian diperbarui **manual** via tombol **Muat Ulang**
-  (tanpa polling otomatis); query ikut ter-refresh sekali setelah aksi kirim/tandai.
+- Status pengiriman di halaman penggajian dipantau otomatis via polling **5 detik**
+  (progres worker & koreksi webhook langsung terlihat); tombol **Muat Ulang** tersedia untuk refresh segera.
 
 ### Mengaktifkan webhook tracking (sekali per device)
 1. Isi `WABLAS_WEBHOOK_SECRET` (mis. `openssl rand -hex 32`) lalu restart `sdm-api`.

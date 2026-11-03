@@ -754,15 +754,17 @@ export function useUnlockPayroll() {
 
 // ── Kirim slip via WhatsApp (Wablas) ──
 
-// useKirimWAStatus memantau status pengiriman tiap karyawan. Sengaja TANPA
-// polling otomatis: status diperbarui saat tombol "Muat Ulang" ditekan (atau
-// otomatis sekali setelah aksi kirim/tandai karena invalidateQueries).
+// useKirimWAStatus memantau status pengiriman tiap karyawan (polling 5s).
+// Polling otomatis dipakai agar progres kirim massal (worker latar) dan koreksi
+// status dari webhook Wablas langsung terlihat tanpa klik. Tombol "Muat Ulang"
+// tetap disediakan untuk refresh manual segera.
 export function useKirimWAStatus(periode: string) {
 	return useQuery({
 		queryKey: sdmKeys.kirimWa(periode),
 		queryFn: () =>
 			sdmGet<KirimWAStatus[]>("/penggajian/kirim-wa/status", { periode }),
 		enabled: !!periode,
+		refetchInterval: 5000,
 	});
 }
 

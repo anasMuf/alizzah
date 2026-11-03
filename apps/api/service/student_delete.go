@@ -52,8 +52,10 @@ type deletePreviewRow struct {
 
 // studentDeletePreviewSQL menghitung seluruh data terhubung dalam satu query.
 // Subquery memakai satu CTE `st` agar id siswa tidak perlu diulang puluhan kali.
+// CAST(? AS bigint) wajib: tanpa type context, pgx mengirim parameter sebagai
+// text sehingga `x.student_id = st.sid` gagal (bigint = text).
 const studentDeletePreviewSQL = `
-WITH st AS (SELECT ? AS sid)
+WITH st AS (SELECT CAST(? AS bigint) AS sid)
 SELECT
   (SELECT count(*) FROM student_enrollments x JOIN st ON 1=1 WHERE x.student_id=st.sid AND x.deleted_at IS NULL) AS enrollments,
   (SELECT count(*) FROM student_enrollments x JOIN st ON 1=1 WHERE x.student_id=st.sid AND x.deleted_at IS NULL AND x.status='active') AS active_enrollments,

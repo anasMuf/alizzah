@@ -10,7 +10,8 @@
 4. **Tanpa PIN.** Proteksi: token panjang, kedaluwarsa 3 hari, `noindex`, rate-limit.
 5. **Kirim massal async**: worker latar memproses antrian; tabel `sdm_kirim_wa` = **sumber status** (`pending`/`sent`/`failed`).
 6. **Pembuka pesan** memakai kalimat doa yang sama dengan PDF.
-7. **Kirim Semua**: hanya karyawan **aktif** yang **punya data gaji periode tsb** dan punya `no_telp`; selainnya dilewati (dihitung di `skipped`).
+7. **Kirim Semua**: hanya karyawan **aktif** yang **punya data gaji periode tsb** dan punya `no_telp`; selainnya dilewati (dihitung di `skipped`). Yang sudah `sent`/`processing` **tidak** diantrekan ulang (`already_sent`/`processing`) agar tidak ada pesan dobel.
+8. **Kirim Ulang yang Gagal**: mengantrekan ulang **hanya** baris `failed` pada periode tsb; baris `sent` tidak pernah disentuh. Tombolnya hanya tampil di UI bila ada baris gagal.
 
 ## Persyaratan (IMMUTABLE)
 - Tautan publik hanya menampilkan data **1 karyawan** (profil ringkas, golongan, rincian gaji). TIDAK boleh ada endpoint publik yang membocorkan daftar/anggota lain.
@@ -36,7 +37,7 @@
 
 ### Frontend
 - Route publik `/s/$token` (route group terpisah), halaman read-only + warning + tombol PDF.
-- Halaman Penggajian: tombol **Salin Link** + **Kirim WA** per baris; **Kirim Semua** di header.
+- Halaman Penggajian: tombol **Salin Link** + **Kirim WA** per baris; **Kirim Semua** di header; **Kirim Ulang Gagal** muncul hanya bila ada baris `failed`.
 
 ## Task
 1. **[selesai]** Backend: token + endpoint publik + `share-link`.
@@ -48,7 +49,8 @@
 |---|---|---|
 | GET | `/v1/sdm/employees/:id/share-link` | Buat tautan publik (token stateless, TTL 3 hari) |
 | POST | `/v1/sdm/penggajian/kirim-wa/kirim/:employee_id` | Kirim slip 1 karyawan (sinkron) |
-| POST | `/v1/sdm/penggajian/kirim-wa/semua` | Jadwalkan kirim semua karyawan aktif (async) |
+| POST | `/v1/sdm/penggajian/kirim-wa/semua` | Jadwalkan kirim semua karyawan aktif (async, melewati yang sudah `sent`) |
+| POST | `/v1/sdm/penggajian/kirim-wa/ulang-gagal` | Antrekan ulang hanya baris `failed` pada periode tsb (async) |
 | GET | `/v1/sdm/penggajian/kirim-wa/status?periode=` | Status kirim per periode |
 | GET | `/v1/public/slip?token=` | Profil + riwayat (tanpa JWT) |
 | GET | `/v1/public/slip/detail?token=&periode=` | Slip lengkap 1 periode (tanpa JWT) |

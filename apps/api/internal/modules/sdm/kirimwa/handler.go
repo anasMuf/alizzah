@@ -22,6 +22,7 @@ func (h *Handler) RegisterRoutes(g *echo.Group, mw ...echo.MiddlewareFunc) {
 	g.GET("/penggajian/kirim-wa/status", h.Status, mw...)
 	g.POST("/penggajian/kirim-wa/kirim/:employee_id", h.SendOne, mw...)
 	g.POST("/penggajian/kirim-wa/semua", h.SendAll, mw...)
+	g.POST("/penggajian/kirim-wa/ulang-gagal", h.RetryFailed, mw...)
 }
 
 // SendOne godoc
@@ -70,6 +71,28 @@ func (h *Handler) SendAll(c echo.Context) error {
 	}
 	return c.JSON(http.StatusOK, dto.SuccessResponse{
 		Message: "Pengiriman dijadwalkan. Status akan diperbarui otomatis.",
+		Data:    res,
+	})
+}
+
+// RetryFailed godoc
+// @Summary Jadwalkan ulang kirim slip yang GAGAL pada satu periode (async)
+// @Tags sdm-penggajian
+// @Security ApiKeyAuth
+// @Param request body kirimwa.SendRequest true "Periode"
+// @Success 200 {object} dto.SuccessResponse{data=kirimwa.EnqueueResult}
+// @Router /v1/sdm/penggajian/kirim-wa/ulang-gagal [post]
+func (h *Handler) RetryFailed(c echo.Context) error {
+	var req SendRequest
+	if err := c.Bind(&req); err != nil || req.Periode == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "VALIDATION_ERROR", Message: "Periode wajib diisi"})
+	}
+	res, err := h.svc.RetryFailed(req.Periode)
+	if err != nil {
+		return utility.Fail(c, err)
+	}
+	return c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "Pengiriman ulang dijadwalkan. Status akan diperbarui otomatis.",
 		Data:    res,
 	})
 }

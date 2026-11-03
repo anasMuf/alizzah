@@ -17,8 +17,10 @@ type SendResult struct {
 
 // EnqueueResult — ringkasan penjadwalan kirim massal (async).
 type EnqueueResult struct {
-	Enqueued int `json:"enqueued"` // masuk antrian
-	Skipped  int `json:"skipped"`  // dilewati (no_telp kosong)
+	Enqueued    int `json:"enqueued"`     // masuk antrian
+	Skipped     int `json:"skipped"`      // dilewati (tanpa data gaji / no_telp kosong)
+	AlreadySent int `json:"already_sent"` // sudah terkirim → tidak dikirim ulang
+	Processing  int `json:"processing"`   // sedang diproses worker → dilewati agar tidak dobel
 }
 
 // StatusItem — status pengiriman satu karyawan pada satu periode.

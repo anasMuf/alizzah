@@ -276,6 +276,8 @@ export interface KirimWASendResult {
 export interface KirimWAEnqueueResult {
 	enqueued: number;
 	skipped: number;
+	already_sent: number;
+	processing: number;
 }
 
 // ── Riwayat golongan (penugasan effective-dated) ──
@@ -789,6 +791,22 @@ export function useKirimWASemua() {
 			sdmSend<KirimWAEnqueueResult>("POST", "/penggajian/kirim-wa/semua", {
 				periode,
 			}),
+		onSuccess: (_d, periode) =>
+			qc.invalidateQueries({ queryKey: sdmKeys.kirimWa(periode) }),
+	});
+}
+
+// useKirimWAUlangGagal mengantrekan ulang HANYA baris yang gagal — baris yang
+// sudah terkirim tidak pernah dikirim ulang.
+export function useKirimWAUlangGagal() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (periode: string) =>
+			sdmSend<KirimWAEnqueueResult>(
+				"POST",
+				"/penggajian/kirim-wa/ulang-gagal",
+				{ periode },
+			),
 		onSuccess: (_d, periode) =>
 			qc.invalidateQueries({ queryKey: sdmKeys.kirimWa(periode) }),
 	});

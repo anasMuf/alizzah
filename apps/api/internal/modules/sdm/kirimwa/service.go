@@ -54,7 +54,8 @@ func BuildMessage(nama, labelPeriode string, total int, url string) string {
 
 // EnqueueAll memasukkan seluruh karyawan aktif yang PUNYA data gaji pada
 // periode tsb dan punya no_telp ke antrian (status pending) untuk diproses
-// worker. Yang tanpa data gaji atau tanpa no_telp dilewati.
+// worker. Yang tanpa data gaji atau tanpa no_telp dilewati, dan yang sudah
+// `sent`/`processing` TIDAK diantrekan ulang agar tidak terkirim dobel.
 func (s *Service) EnqueueAll(periodeInput string) (*EnqueueResult, error) {
 	p, err := periode.Parse(periodeInput)
 	if err != nil {
@@ -70,11 +71,27 @@ func (s *Service) EnqueueAll(periodeInput string) (*EnqueueResult, error) {
 	for _, r := range status.Rows {
 		adaData[r.EmployeeID] = true
 	}
+	// Status kirim yang sudah ada pada periode ini — dasar penentuan kirim ulang.
+	existing, err := s.repo.ListByPeriode(p)
+	if err != nil {
+		return nil, err
+	}
+	statusByEmp := make(map[uint]string, len(existing))
+	for _, r := range existing {
+		statusByEmp[r.EmployeeID] = r.Status
+	}
 
 	emps, err := s.guru.List("", nil, true)
 	if err != nil {
 		return nil, err
 	}
+	return s.enqueue(p, emps, adaData, statusByEmp)
+}
+
+// enqueue memutuskan siapa yang masuk antrian lalu menyimpan status pending.
+// Karyawan tanpa data gaji / tanpa no_telp dilewati, begitu juga yang sudah
+// `sent` atau `processing` — supaya `Kirim Semua` tidak mengirim dobel.
+func (s *Service) enqueue(p time.Time, emps []guru.EmployeeItem, adaData map[uint]bool, statusByEmp map[uint]string) (*EnqueueResult, error) {
 	res := &EnqueueResult{}
 	for _, e := range emps {
 		if !adaData[e.ID] {
@@ -85,6 +102,15 @@ func (s *Service) EnqueueAll(periodeInput string) (*EnqueueResult, error) {
 			res.Skipped++
 			continue
 		}
+		// Sudah terkirim / sedang dikirim worker → jangan diantrekan lagi.
+		switch statusByEmp[e.ID] {
+		case StatusSent:
+			res.AlreadySent++
+			continue
+		case StatusProcessing:
+			res.Processing++
+			continue
+		}
 		row := &KirimWA{
 			EmployeeID: e.ID,
 			Periode:    p,
@@ -92,6 +118,44 @@ func (s *Service) EnqueueAll(periodeInput string) (*EnqueueResult, error) {
 			Status:     StatusPending,
 		}
 		if err := s.repo.Upsert(row); err != nil {
+			return nil, err
+		}
+		res.Enqueued++
+	}
+	return res, nil
+}
+
+// RetryFailed memasukkan kembali ke antrian baris yang sebelumnya GAGAL pada
+// periode tsb (status → pending). Baris `sent` tidak disentuh sehingga kirim
+// ulang tidak pernah mengirim dobel ke karyawan yang sudah menerima slip.
+func (s *Service) RetryFailed(periodeInput string) (*EnqueueResult, error) {
+	p, err := periode.Parse(periodeInput)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := s.repo.ListByPeriode(p)
+	if err != nil {
+		return nil, err
+	}
+	res := &EnqueueResult{}
+	for i := range rows {
+		row := rows[i]
+		if row.Status != StatusFailed {
+			continue
+		}
+		// Pakai nomor terbaru dari data karyawan bila sudah dikoreksi.
+		noTelp := row.NoTelp
+		if emp, gerr := s.guru.Get(row.EmployeeID); gerr == nil && strings.TrimSpace(emp.NoTelp) != "" {
+			noTelp = emp.NoTelp
+		}
+		if strings.TrimSpace(noTelp) == "" {
+			res.Skipped++
+			continue
+		}
+		row.NoTelp = noTelp
+		row.Status = StatusPending
+		row.PesanError = ""
+		if err := s.repo.Save(&row); err != nil {
 			return nil, err
 		}
 		res.Enqueued++

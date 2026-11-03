@@ -9,6 +9,7 @@ import {
 	LockOpen,
 	MessageCircle,
 	MoreHorizontal,
+	RotateCcw,
 	Send,
 	UserCog,
 	Wallet,
@@ -33,6 +34,7 @@ import {
 	useKirimWASatu,
 	useKirimWASemua,
 	useKirimWAStatus,
+	useKirimWAUlangGagal,
 	usePayrollStatus,
 	usePenggajian,
 	useShareLink,
@@ -71,7 +73,7 @@ function PenggajianPage() {
 			replace: true,
 		});
 	const [confirmAction, setConfirmAction] = useState<
-		"finalize" | "unlock" | "kirim-semua" | null
+		"finalize" | "unlock" | "kirim-semua" | "kirim-ulang-gagal" | null
 	>(null);
 	const [tanggalBayar, setTanggalBayar] = useState("");
 	const [pdfId, setPdfId] = useState<number | null>(null);
@@ -118,9 +120,15 @@ function PenggajianPage() {
 	const shareLink = useShareLink();
 	const kirimSatu = useKirimWASatu();
 	const kirimSemua = useKirimWASemua();
+	const kirimUlangGagal = useKirimWAUlangGagal();
 	const { data: waStatuses = [] } = useKirimWAStatus(periode);
 	const waByEmp = useMemo(
 		() => new Map(waStatuses.map((s) => [s.employee_id, s])),
+		[waStatuses],
+	);
+	// Tombol "Kirim Ulang yang Gagal" hanya relevan bila ada baris gagal.
+	const failedCount = useMemo(
+		() => waStatuses.filter((s) => s.status === "failed").length,
 		[waStatuses],
 	);
 
@@ -208,13 +216,30 @@ function PenggajianPage() {
 
 	const runAction = () => {
 		if (!confirmAction || !periode) return;
-		if (confirmAction === "kirim-semua") {
-			kirimSemua.mutate(periode, {
+		if (
+			confirmAction === "kirim-semua" ||
+			confirmAction === "kirim-ulang-gagal"
+		) {
+			const mutation =
+				confirmAction === "kirim-semua" ? kirimSemua : kirimUlangGagal;
+			mutation.mutate(periode, {
 				onSuccess: (res) => {
+					const notes = [
+						res.skipped > 0
+							? `${res.skipped} dilewati (tanpa data gaji / no. WA)`
+							: "",
+						res.already_sent > 0
+							? `${res.already_sent} sudah terkirim (tidak dikirim ulang)`
+							: "",
+						res.processing > 0 ? `${res.processing} sedang diproses` : "",
+					].filter(Boolean);
 					addToast({
 						variant: "success",
-						title: "Dijadwalkan",
-						message: `${res.enqueued} slip masuk antrian${res.skipped > 0 ? `, ${res.skipped} dilewati (tanpa data gaji / no. WA)` : ""}. Status diperbarui otomatis.`,
+						title:
+							confirmAction === "kirim-semua"
+								? "Dijadwalkan"
+								: "Dijadwalkan Ulang",
+						message: `${res.enqueued} slip masuk antrian${notes.length > 0 ? `; ${notes.join("; ")}` : ""}. Status diperbarui otomatis.`,
 					});
 					setConfirmAction(null);
 				},
@@ -305,6 +330,17 @@ function PenggajianPage() {
 							>
 								<Send className="h-4 w-4 mr-1" /> Kirim Semua
 							</Button>
+							{failedCount > 0 && (
+								<Button
+									variant="secondary"
+									size="sm"
+									onClick={() => setConfirmAction("kirim-ulang-gagal")}
+									className="ring-red-300 text-red-700 hover:bg-red-50"
+								>
+									<RotateCcw className="h-4 w-4 mr-1" /> Kirim Ulang Gagal (
+									{failedCount})
+								</Button>
+							)}
 							{isFinalized ? (
 								<Button
 									variant="secondary"
@@ -520,8 +556,16 @@ function PenggajianPage() {
 			<ConfirmDialog
 				open={confirmAction === "kirim-semua"}
 				title="Kirim Slip ke Semua Karyawan?"
-				description={`Slip ${formatPeriode(periode)} akan dikirim via WhatsApp ke seluruh karyawan aktif yang punya nomor WA. Pengiriman diproses di latar (antrian) — status muncul otomatis per baris.`}
+				description={`Slip ${formatPeriode(periode)} akan dikirim via WhatsApp ke seluruh karyawan aktif yang punya nomor WA. Karyawan yang sudah terkirim TIDAK dikirim ulang. Pengiriman diproses di latar (antrian) — status muncul otomatis per baris.`}
 				confirmLabel="Kirim Semua"
+				onConfirm={runAction}
+				onCancel={() => setConfirmAction(null)}
+			/>
+			<ConfirmDialog
+				open={confirmAction === "kirim-ulang-gagal"}
+				title="Kirim Ulang Slip yang Gagal?"
+				description={`${failedCount} slip ${formatPeriode(periode)} yang sebelumnya GAGAL akan diantrekan ulang. Slip yang sudah terkirim tidak disentuh, jadi tidak ada pesan dobel.`}
+				confirmLabel="Kirim Ulang"
 				onConfirm={runAction}
 				onCancel={() => setConfirmAction(null)}
 			/>

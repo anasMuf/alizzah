@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import {
 	AlertCircle,
+	CheckCheck,
 	Copy,
 	Download,
 	FileText,
@@ -10,6 +11,7 @@ import {
 	MessageCircle,
 	MoreHorizontal,
 	RotateCcw,
+	RotateCw,
 	Send,
 	UserCog,
 	Wallet,
@@ -34,6 +36,8 @@ import {
 	useKirimWASatu,
 	useKirimWASemua,
 	useKirimWAStatus,
+	useKirimWATandaiSemuaTerkirim,
+	useKirimWATandaiTerkirim,
 	useKirimWAUlangGagal,
 	usePayrollStatus,
 	usePenggajian,
@@ -73,12 +77,18 @@ function PenggajianPage() {
 			replace: true,
 		});
 	const [confirmAction, setConfirmAction] = useState<
-		"finalize" | "unlock" | "kirim-semua" | "kirim-ulang-gagal" | null
+		| "finalize"
+		| "unlock"
+		| "kirim-semua"
+		| "kirim-ulang-gagal"
+		| "tandai-semua-terkirim"
+		| null
 	>(null);
 	const [tanggalBayar, setTanggalBayar] = useState("");
 	const [pdfId, setPdfId] = useState<number | null>(null);
 	const [copyBusyId, setCopyBusyId] = useState<number | null>(null);
 	const [waBusyId, setWaBusyId] = useState<number | null>(null);
+	const [markBusyId, setMarkBusyId] = useState<number | null>(null);
 
 	// "Hari ini" distabilkan per mount agar default tidak berubah saat render.
 	const today = useMemo(() => new Date(), []);
@@ -121,7 +131,14 @@ function PenggajianPage() {
 	const kirimSatu = useKirimWASatu();
 	const kirimSemua = useKirimWASemua();
 	const kirimUlangGagal = useKirimWAUlangGagal();
-	const { data: waStatuses = [] } = useKirimWAStatus(periode);
+	const tandaiTerkirim = useKirimWATandaiTerkirim();
+	const tandaiSemuaTerkirim = useKirimWATandaiSemuaTerkirim();
+	const {
+		data: waStatuses = [],
+		refetch: refetchWaStatus,
+		isFetching: waStatusFetching,
+		dataUpdatedAt: waStatusUpdatedAt,
+	} = useKirimWAStatus(periode);
 	const waByEmp = useMemo(
 		() => new Map(waStatuses.map((s) => [s.employee_id, s])),
 		[waStatuses],
@@ -131,6 +148,12 @@ function PenggajianPage() {
 		() => waStatuses.filter((s) => s.status === "failed").length,
 		[waStatuses],
 	);
+	// Baris "belum pasti" (timeout) bisa dikoreksi manual dari dashboard Wablas.
+	const unknownCount = useMemo(
+		() => waStatuses.filter((s) => s.status === "unknown").length,
+		[waStatuses],
+	);
+	const belumTerkirimCount = failedCount + unknownCount;
 
 	if (!activeAy) {
 		return (
@@ -214,8 +237,51 @@ function PenggajianPage() {
 		}
 	};
 
+	const handleTandaiTerkirim = async (employeeId: number) => {
+		setMarkBusyId(employeeId);
+		try {
+			const res = await tandaiTerkirim.mutateAsync({ employeeId, periode });
+			addToast({
+				variant: "success",
+				title: res.updated > 0 ? "Ditandai terkirim" : "Tidak ada perubahan",
+				message:
+					res.updated > 0
+						? "Status slip diperbarui menjadi terkirim."
+						: "Baris ini sudah berstatus terkirim.",
+			});
+		} catch (err) {
+			addToast({
+				variant: "error",
+				title: "Gagal",
+				message: err instanceof ApiError ? err.message : "Terjadi kesalahan",
+			});
+		} finally {
+			setMarkBusyId(null);
+		}
+	};
+
 	const runAction = () => {
 		if (!confirmAction || !periode) return;
+		if (confirmAction === "tandai-semua-terkirim") {
+			tandaiSemuaTerkirim.mutate(periode, {
+				onSuccess: (res) => {
+					addToast({
+						variant: "success",
+						title: "Status diperbarui",
+						message: `${res.updated} slip ditandai terkirim.`,
+					});
+					setConfirmAction(null);
+				},
+				onError: (err: Error) =>
+					addToast({
+						variant: "error",
+						title: "Gagal",
+						message:
+							err instanceof ApiError ? err.message : "Terjadi kesalahan",
+					}),
+			});
+			return;
+		}
 		if (
 			confirmAction === "kirim-semua" ||
 			confirmAction === "kirim-ulang-gagal"
@@ -341,6 +407,35 @@ function PenggajianPage() {
 									{failedCount})
 								</Button>
 							)}
+							{belumTerkirimCount > 0 && (
+								<Button
+									variant="secondary"
+									size="sm"
+									onClick={() => setConfirmAction("tandai-semua-terkirim")}
+									className="ring-green-300 text-green-700 hover:bg-green-50"
+								>
+									<CheckCheck className="h-4 w-4 mr-1" /> Tandai Semua Terkirim
+									({belumTerkirimCount})
+								</Button>
+							)}
+							{waStatusUpdatedAt > 0 && (
+								<span className="text-xs text-gray-500">
+									Status WA{" "}
+									{new Date(waStatusUpdatedAt).toLocaleTimeString("id-ID")}
+								</span>
+							)}
+							<Button
+								variant="secondary"
+								size="sm"
+								onClick={() => void refetchWaStatus()}
+								disabled={waStatusFetching}
+								title="Muat ulang status pengiriman dari server"
+							>
+								<RotateCw
+									className={`h-4 w-4 mr-1 ${waStatusFetching ? "animate-spin" : ""}`}
+								/>
+								Muat Ulang
+							</Button>
 							{isFinalized ? (
 								<Button
 									variant="secondary"
@@ -506,6 +601,22 @@ function PenggajianPage() {
 														<MessageCircle className="h-4 w-4 text-gray-400" />{" "}
 														Kirim via WA
 													</button>
+													{st &&
+														(st.status === "failed" ||
+															st.status === "unknown") && (
+															<button
+																type="button"
+																onClick={() =>
+																	handleTandaiTerkirim(r.employee_id)
+																}
+																disabled={markBusyId === r.employee_id}
+																className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+																title="Tandai terkirim setelah dicek di dashboard Wablas"
+															>
+																<CheckCheck className="h-4 w-4 text-gray-400" />{" "}
+																Tandai terkirim
+															</button>
+														)}
 												</RowActionsMenu>
 											</td>
 										</tr>
@@ -566,6 +677,14 @@ function PenggajianPage() {
 				title="Kirim Ulang Slip yang Gagal?"
 				description={`${failedCount} slip ${formatPeriode(periode)} yang sebelumnya GAGAL akan diantrekan ulang. Slip yang sudah terkirim tidak disentuh, jadi tidak ada pesan dobel.`}
 				confirmLabel="Kirim Ulang"
+				onConfirm={runAction}
+				onCancel={() => setConfirmAction(null)}
+			/>
+			<ConfirmDialog
+				open={confirmAction === "tandai-semua-terkirim"}
+				title="Tandai Semua Sudah Terkirim?"
+				description={`${belumTerkirimCount} slip ${formatPeriode(periode)} berstatus gagal/belum pasti akan ditandai TERKIRIM tanpa mengirim WhatsApp lagi. Lakukan hanya setelah Anda memastikan nomor-nomor itu sudah menerima slip di dashboard Wablas.`}
+				confirmLabel="Tandai Terkirim"
 				onConfirm={runAction}
 				onCancel={() => setConfirmAction(null)}
 			/>

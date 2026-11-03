@@ -280,6 +280,10 @@ export interface KirimWAEnqueueResult {
 	processing: number;
 }
 
+export interface KirimWAMarkResult {
+	updated: number;
+}
+
 // ── Riwayat golongan (penugasan effective-dated) ──
 
 export interface GolonganHistory {
@@ -805,6 +809,38 @@ export function useKirimWAUlangGagal() {
 			sdmSend<KirimWAEnqueueResult>(
 				"POST",
 				"/penggajian/kirim-wa/ulang-gagal",
+				{ periode },
+			),
+		onSuccess: (_d, periode) =>
+			qc.invalidateQueries({ queryKey: sdmKeys.kirimWa(periode) }),
+	});
+}
+
+// useKirimWATandaiTerkirim mengoreksi manual satu baris (failed/unknown → sent)
+// setelah operator mencocokkan status di dashboard Wablas.
+export function useKirimWATandaiTerkirim() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (v: { employeeId: number; periode: string }) =>
+			sdmSend<KirimWAMarkResult>(
+				"POST",
+				"/penggajian/kirim-wa/tandai-terkirim",
+				{ periode: v.periode, employee_id: v.employeeId },
+			),
+		onSuccess: (_d, v) =>
+			qc.invalidateQueries({ queryKey: sdmKeys.kirimWa(v.periode) }),
+	});
+}
+
+// useKirimWATandaiSemuaTerkirim menandai seluruh baris failed/unknown pada
+// periode terpilih sebagai terkirim.
+export function useKirimWATandaiSemuaTerkirim() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (periode: string) =>
+			sdmSend<KirimWAMarkResult>(
+				"POST",
+				"/penggajian/kirim-wa/tandai-semua-terkirim",
 				{ periode },
 			),
 		onSuccess: (_d, periode) =>

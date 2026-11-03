@@ -13,6 +13,7 @@
 7. **Kirim Semua**: hanya karyawan **aktif** yang **punya data gaji periode tsb** dan punya `no_telp`; selainnya dilewati (dihitung di `skipped`). Yang sudah `sent`/`processing` **tidak** diantrekan ulang (`already_sent`/`processing`) agar tidak ada pesan dobel.
 8. **Kirim Ulang yang Gagal**: mengantrekan ulang **hanya** baris `failed` pada periode tsb; baris `sent` tidak pernah disentuh. Tombolnya hanya tampil di UI bila ada baris gagal.
 9. **Timeout ≠ gagal**: bila Wablas tidak merespons (timeout/koneksi), status = `unknown` ("Belum pasti"), bukan `failed` — pesan bisa saja sudah terkirim. Status dikoreksi otomatis oleh **webhook tracking Wablas** (`delivered`/`read`/`sent` → `sent`, `cancel`/`rejected` → `failed`).
+10. **Koreksi manual**: operator dapat menandai baris `failed`/`unknown` menjadi `sent` (per baris atau massal per periode) setelah mencocokkan dashboard Wablas. Ini jaring pengaman bila webhook belum aktif atau event sudah terlewat — Wablas tidak menyediakan endpoint *pull* status pesan.
 
 ## Persyaratan (IMMUTABLE)
 - Tautan publik hanya menampilkan data **1 karyawan** (profil ringkas, golongan, rincian gaji). TIDAK boleh ada endpoint publik yang membocorkan daftar/anggota lain.
@@ -39,7 +40,7 @@
 
 ### Frontend
 - Route publik `/s/$token` (route group terpisah), halaman read-only + warning + tombol PDF.
-- Halaman Penggajian: tombol **Salin Link** + **Kirim WA** per baris; **Kirim Semua** di header; **Kirim Ulang Gagal** muncul hanya bila ada baris `failed`.
+- Halaman Penggajian: tombol **Salin Link** + **Kirim WA** per baris; **Kirim Semua** di header; **Kirim Ulang Gagal** muncul hanya bila ada baris `failed`; **Tandai Semua Terkirim** muncul bila ada `failed`/`unknown`; tombol **Muat Ulang** memaksa refresh status (polling tetap 5 detik).
 
 ## Task
 1. **[selesai]** Backend: token + endpoint publik + `share-link`.
@@ -53,6 +54,8 @@
 | POST | `/v1/sdm/penggajian/kirim-wa/kirim/:employee_id` | Kirim slip 1 karyawan (sinkron) |
 | POST | `/v1/sdm/penggajian/kirim-wa/semua` | Jadwalkan kirim semua karyawan aktif (async, melewati yang sudah `sent`) |
 | POST | `/v1/sdm/penggajian/kirim-wa/ulang-gagal` | Antrekan ulang hanya baris `failed` pada periode tsb (async) |
+| POST | `/v1/sdm/penggajian/kirim-wa/tandai-terkirim` | Tandai 1 karyawan (failed/unknown) sebagai terkirim |
+| POST | `/v1/sdm/penggajian/kirim-wa/tandai-semua-terkirim` | Tandai semua baris failed/unknown pada periode sebagai terkirim |
 | GET | `/v1/sdm/penggajian/kirim-wa/status?periode=` | Status kirim per periode |
 | POST/GET | `/v1/public/wablas/tracking?secret=` | Webhook tracking status Wablas (tanpa JWT) |
 | GET | `/v1/public/slip?token=` | Profil + riwayat (tanpa JWT) |

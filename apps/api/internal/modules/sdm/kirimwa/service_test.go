@@ -93,6 +93,60 @@ func TestApplyResult_TimeoutJadiUnknown(t *testing.T) {
 	}
 }
 
+// TestMarkSent_Manual menguji koreksi manual "tandai terkirim": hanya baris
+// failed/unknown yang berubah, baris sent tidak disentuh dan idempoten.
+func TestMarkSent_Manual(t *testing.T) {
+	db := newTestDB(t)
+	repo := NewRepository(db)
+	p := time.Date(2026, 10, 5, 0, 0, 0, 0, time.Local)
+	rows := []KirimWA{
+		{EmployeeID: 1, Periode: p, NoTelp: "6281", Status: StatusFailed, PesanError: "timeout", Attempts: 1},
+		{EmployeeID: 2, Periode: p, NoTelp: "6282", Status: StatusUnknown, PesanError: "Belum pasti", Attempts: 1},
+		{EmployeeID: 3, Periode: p, NoTelp: "6283", Status: StatusSent, Attempts: 1},
+	}
+	for i := range rows {
+		if err := db.Create(&rows[i]).Error; err != nil {
+			t.Fatalf("buat baris: %v", err)
+		}
+	}
+	svc := &Service{repo: repo}
+
+	changed, err := svc.MarkSent(1, "2026-10")
+	if err != nil || !changed {
+		t.Fatalf("MarkSent(1) = (%v,%v), mau (true,nil)", changed, err)
+	}
+	// Idempoten: baris yang sudah sent tidak berubah lagi.
+	if changed, _ = svc.MarkSent(1, "2026-10"); changed {
+		t.Fatal("MarkSent(1) kedua harus false (sudah sent)")
+	}
+
+	status := func(emp uint) KirimWA {
+		var row KirimWA
+		if err := db.Where("employee_id = ? AND periode = ?", emp, p).First(&row).Error; err != nil {
+			t.Fatalf("baca karyawan %d: %v", emp, err)
+		}
+		return row
+	}
+	if got := status(1); got.Status != StatusSent || got.PesanError != "" || got.WaktuKirim == nil {
+		t.Errorf("karyawan 1 = %+v, mau sent + pesan_error kosong + waktu_kirim terisi", got)
+	}
+	if got := status(2); got.Status != StatusUnknown {
+		t.Errorf("karyawan 2 = %q, mau tetap unknown sebelum bulk", got.Status)
+	}
+	if got := status(3); got.Status != StatusSent {
+		t.Errorf("karyawan 3 = %q, mau tetap sent", got.Status)
+	}
+
+	// Bulk hanya menyentuh baris yang masih failed/unknown.
+	n, err := svc.MarkAllSent("2026-10")
+	if err != nil || n != 1 {
+		t.Fatalf("MarkAllSent = (%d,%v), mau (1,nil)", n, err)
+	}
+	if got := status(2); got.Status != StatusSent || got.PesanError != "" {
+		t.Errorf("karyawan 2 = %+v, mau sent tanpa pesan_error", got)
+	}
+}
+
 func TestRupiah(t *testing.T) {
 	cases := map[int]string{
 		0:       "Rp 0",

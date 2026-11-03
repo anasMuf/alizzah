@@ -164,6 +164,32 @@ func (s *Service) RetryFailed(periodeInput string) (*EnqueueResult, error) {
 	return res, nil
 }
 
+// belumFinal — status yang masih boleh dikoreksi operator menjadi `sent`.
+var belumFinal = []string{StatusFailed, StatusUnknown}
+
+// MarkSent menandai satu karyawan pada periode sebagai terkirim (dipakai aksi
+// per baris setelah operator mencocokkan dashboard Wablas). Baris `sent` tidak
+// berubah; hasil false berarti tidak ada baris yang perlu dikoreksi.
+func (s *Service) MarkSent(employeeID uint, periodeInput string) (bool, error) {
+	p, err := periode.Parse(periodeInput)
+	if err != nil {
+		return false, err
+	}
+	n, err := s.repo.MarkSent(employeeID, p, belumFinal)
+	return n > 0, err
+}
+
+// MarkAllSent menandai SELURUH baris `failed`/`unknown` pada periode sebagai
+// terkirim, lalu mengembalikan jumlah baris yang berubah.
+func (s *Service) MarkAllSent(periodeInput string) (int, error) {
+	p, err := periode.Parse(periodeInput)
+	if err != nil {
+		return 0, err
+	}
+	n, err := s.repo.MarkAllSent(p, belumFinal)
+	return int(n), err
+}
+
 // SendOne mengirim slip 1 karyawan secara sinkron (untuk tombol per baris).
 // Status dikembalikan tanpa memakai antrian.
 func (s *Service) SendOne(employeeID uint, periodeInput string) (*SendResult, error) {

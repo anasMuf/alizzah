@@ -7,6 +7,17 @@ type SendRequest struct {
 	Periode string `json:"periode" validate:"required"`
 }
 
+// MarkSentRequest — body endpoint "tandai terkirim" (per karyawan / massal).
+type MarkSentRequest struct {
+	Periode    string `json:"periode" validate:"required"`
+	EmployeeID uint   `json:"employee_id"` // 0 = massal (semua baris gagal/belum pasti)
+}
+
+// MarkSentResult — jumlah baris yang berubah statusnya menjadi `sent`.
+type MarkSentResult struct {
+	Updated int `json:"updated"`
+}
+
 // SendResult — hasil pengiriman satu karyawan (sinkron).
 type SendResult struct {
 	EmployeeID uint   `json:"employee_id"`

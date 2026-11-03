@@ -69,6 +69,32 @@ func (r *Repository) FindLatestByPhone(variants []string) (*KirimWA, error) {
 	return &row, nil
 }
 
+// MarkSent menandai baris `employee_id` pada periode sbg terkirim BILA statusnya
+// masih salah satu di `from` (failed/unknown). `waktu_kirim` diisi hanya bila kosong.
+func (r *Repository) MarkSent(employeeID uint, periode time.Time, from []string) (int64, error) {
+	tx := r.db.Model(&KirimWA{}).
+		Where("employee_id = ? AND periode = ? AND status IN ?", employeeID, periode, from).
+		Updates(map[string]any{
+			"status":      StatusSent,
+			"pesan_error": "",
+			"waktu_kirim": gorm.Expr("COALESCE(waktu_kirim, ?)", time.Now()),
+		})
+	return tx.RowsAffected, tx.Error
+}
+
+// MarkAllSent menandai seluruh baris berstatus `from` pada periode sbg terkirim.
+// Dipakai tombol "tandai semua terkirim" setelah operator mencocokkan dashboard Wablas.
+func (r *Repository) MarkAllSent(periode time.Time, from []string) (int64, error) {
+	tx := r.db.Model(&KirimWA{}).
+		Where("periode = ? AND status IN ?", periode, from).
+		Updates(map[string]any{
+			"status":      StatusSent,
+			"pesan_error": "",
+			"waktu_kirim": gorm.Expr("COALESCE(waktu_kirim, ?)", time.Now()),
+		})
+	return tx.RowsAffected, tx.Error
+}
+
 // FindByEmployee mengembalikan status satu karyawan pada periode (bila ada).
 func (r *Repository) FindByEmployee(employeeID uint, periode time.Time) (*KirimWA, error) {
 	var row KirimWA

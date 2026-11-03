@@ -6,6 +6,7 @@ export const Route = createFileRoute("/_authenticated/administrasi/siswa/$id/")(
 			throw redirect({
 				to: "/administrasi/siswa/$id/profil",
 				params: { id: params.id },
+				search: {},
 			});
 		},
 		component: () => null,

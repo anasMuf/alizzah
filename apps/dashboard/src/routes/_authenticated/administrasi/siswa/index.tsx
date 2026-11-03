@@ -35,7 +35,14 @@ import { academicYearAtom } from "../../../../store/global";
 
 export const Route = createFileRoute("/_authenticated/administrasi/siswa/")({
 	component: SiswaIndexPage,
-	validateSearch: (params: Record<string, unknown>) => {
+	validateSearch: (
+		params: Record<string, unknown>,
+	): {
+		page?: number;
+		search?: string;
+		status?: string;
+		class_group_id?: string | number;
+	} => {
 		const parseClassGroupId = (v: unknown) => {
 			if (typeof v === "number") return v;
 			if (typeof v === "string" && v === "__none__") return "__none__";
@@ -599,6 +606,7 @@ function SiswaIndexPage() {
 													<Link
 														to="/administrasi/siswa/$id/profil"
 														params={{ id: student.id.toString() }}
+														search={searchParams}
 														className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1 rounded-md text-sm"
 													>
 														Detail

@@ -270,6 +270,7 @@ function RombelDetailPage() {
 											<Link
 												to="/administrasi/siswa/$id/profil"
 												params={{ id: student.id.toString() }}
+												search={{}}
 												className="hidden sm:flex rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
 											>
 												Lihat Profil{" "}

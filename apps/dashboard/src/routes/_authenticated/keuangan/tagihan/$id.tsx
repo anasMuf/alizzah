@@ -49,10 +49,41 @@ import { openPrintWindow } from "../../../../utils/print";
 
 export const Route = createFileRoute("/_authenticated/keuangan/tagihan/$id")({
 	component: DetailTagihanPage,
+	// Filter daftar dibawa saat kembali / navigasi, agar tidak reset.
+	validateSearch: (
+		search: Record<string, unknown>,
+	): {
+		search?: string;
+		type?: string;
+		status?: string;
+		class_group_id?: number;
+		month?: number;
+		page?: number;
+	} => {
+		const asNum = (v: unknown) =>
+			typeof v === "number"
+				? v
+				: typeof v === "string" && v !== ""
+					? Number(v)
+					: undefined;
+		return {
+			search: typeof search.search === "string" ? search.search : undefined,
+			type: typeof search.type === "string" ? search.type : undefined,
+			status: typeof search.status === "string" ? search.status : undefined,
+			class_group_id: asNum(search.class_group_id),
+			month: asNum(search.month),
+			page: (typeof search.page === "number"
+				? search.page
+				: typeof search.page === "string"
+					? Number.parseInt(search.page, 10) || 1
+					: undefined) as number | undefined,
+		};
+	},
 });
 
 function DetailTagihanPage() {
 	const { id } = Route.useParams();
+	const search = Route.useSearch();
 	const queryClient = useQueryClient();
 	const { addToast } = useToast();
 	const navigate = useNavigate();
@@ -557,7 +588,7 @@ function DetailTagihanPage() {
 					message: "Tagihan berhasil dihapus.",
 				});
 				invalidateInvoiceAndStudent();
-				navigate({ to: "/keuangan/tagihan", search: {} as any });
+				navigate({ to: "/keuangan/tagihan", search });
 			},
 			onError: (err: any) => {
 				invoiceActionGuard.current = false;
@@ -826,7 +857,7 @@ function DetailTagihanPage() {
 					<li>
 						<Link
 							to="/keuangan/tagihan"
-							search={{} as any}
+							search={search}
 							className="hover:text-gray-900"
 						>
 							Tagihan
@@ -1036,6 +1067,7 @@ function DetailTagihanPage() {
 												<Link
 													to="/keuangan/pembayaran/$id"
 													params={{ id: p.id.toString() }}
+													search={{}}
 													className="font-mono font-medium text-indigo-600 hover:text-indigo-900 inline-flex items-center"
 												>
 													#{p.id}{" "}

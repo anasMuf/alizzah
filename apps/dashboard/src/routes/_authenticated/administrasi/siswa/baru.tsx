@@ -67,6 +67,7 @@ function SiswaBaruPage() {
 					navigate({
 						to: "/administrasi/siswa/$id/profil",
 						params: { id: newId },
+						search: {},
 					});
 				}
 			},

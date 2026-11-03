@@ -38,7 +38,16 @@ const EXPENSE_SORT_STORAGE_KEY = "alizzah_expense_sort";
 
 export const Route = createFileRoute("/_authenticated/keuangan/pengeluaran/")({
 	component: PengeluaranListPage,
-	validateSearch: (search: Record<string, unknown>) => ({
+	validateSearch: (
+		search: Record<string, unknown>,
+	): {
+		search?: string;
+		category_id?: string;
+		date_from?: string;
+		date_to?: string;
+		sort_by?: string;
+		sort_dir?: string;
+	} => ({
 		search: typeof search.search === "string" ? search.search : undefined,
 		category_id:
 			typeof search.category_id === "string" ? search.category_id : undefined,
@@ -689,6 +698,7 @@ function PengeluaranListPage() {
 														<Link
 															to="/keuangan/pengeluaran/$id"
 															params={{ id: String(expense.id) }}
+															search={searchParams}
 															className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
 														>
 															Detail

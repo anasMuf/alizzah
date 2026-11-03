@@ -14,7 +14,16 @@ import { formatCurrency } from "../../../../utils/format";
 
 export const Route = createFileRoute("/_authenticated/keuangan/tagihan/")({
 	component: TagihanListPage,
-	validateSearch: (search: Record<string, unknown>) => {
+	validateSearch: (
+		search: Record<string, unknown>,
+	): {
+		search?: string;
+		type?: string;
+		status?: string;
+		class_group_id?: number;
+		month?: number;
+		page?: number;
+	} => {
 		const asNum = (v: unknown) =>
 			typeof v === "number"
 				? v
@@ -412,6 +421,7 @@ function TagihanListPage() {
 												<Link
 													to="/keuangan/tagihan/$id"
 													params={{ id: invoice.id.toString() }}
+													search={searchParams}
 													className="inline-flex items-center text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
 												>
 													Detail <ChevronRight className="w-4 h-4 ml-1" />

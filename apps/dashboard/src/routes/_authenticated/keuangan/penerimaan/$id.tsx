@@ -26,11 +26,35 @@ import { formatCurrency, formatDate } from "../../../../utils/format";
 export const Route = createFileRoute("/_authenticated/keuangan/penerimaan/$id")(
 	{
 		component: PenerimaanDetailPage,
+		// Filter daftar dibawa saat kembali / navigasi, agar tidak reset.
+		validateSearch: (
+			search: Record<string, unknown>,
+		): {
+			income_category_id?: number;
+			date_from?: string;
+			date_to?: string;
+			sort_by?: string;
+			sort_dir?: string;
+		} => ({
+			income_category_id:
+				typeof search.income_category_id === "number"
+					? search.income_category_id
+					: typeof search.income_category_id === "string"
+						? Number.parseInt(search.income_category_id, 10) || undefined
+						: undefined,
+			date_from:
+				typeof search.date_from === "string" ? search.date_from : undefined,
+			date_to: typeof search.date_to === "string" ? search.date_to : undefined,
+			sort_by: typeof search.sort_by === "string" ? search.sort_by : undefined,
+			sort_dir:
+				typeof search.sort_dir === "string" ? search.sort_dir : undefined,
+		}),
 	},
 );
 
 function PenerimaanDetailPage() {
 	const { id } = Route.useParams();
+	const search = Route.useSearch();
 	const incomeId = Number(id);
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
@@ -131,7 +155,7 @@ function PenerimaanDetailPage() {
 				});
 				queryClient.invalidateQueries({ queryKey: ["/v1/cash/balance"] });
 				queryClient.invalidateQueries({ queryKey: ["/v1/cash/transactions"] });
-				navigate({ to: "/keuangan/penerimaan", search: {} as any });
+				navigate({ to: "/keuangan/penerimaan", search });
 			},
 			onError: (err: any) => {
 				addToast({
@@ -203,7 +227,7 @@ function PenerimaanDetailPage() {
 				title="Penerimaan tidak ditemukan"
 				description="Data penerimaan dengan ID ini tidak ditemukan."
 				action={
-					<Link to="/keuangan/penerimaan" search={{} as any}>
+					<Link to="/keuangan/penerimaan" search={search}>
 						<Button variant="secondary">Kembali ke Daftar</Button>
 					</Link>
 				}
@@ -216,7 +240,7 @@ function PenerimaanDetailPage() {
 			<div>
 				<Link
 					to="/keuangan/penerimaan"
-					search={{} as any}
+					search={search}
 					className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-4"
 				>
 					<ArrowLeft className="h-4 w-4" />

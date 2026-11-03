@@ -44,11 +44,13 @@ const (
 // menandakan slip/rekap dibaca dari snapshot (bukan hitung dinamis).
 type PayrollPeriode struct {
 	model.PrimaryKey
-	Periode     time.Time  `gorm:"type:date;not null;uniqueIndex" json:"periode"` // YYYY-MM-05
-	Status      string     `gorm:"size:10;not null;default:open" json:"status"`
-	UserID      *uint      `gorm:"index" json:"user_id"`
-	TotalGaji   int        `gorm:"not null;default:0" json:"total_gaji"`
-	FinalizedAt *time.Time `gorm:"type:timestamptz" json:"finalized_at"`
+	Periode   time.Time `gorm:"type:date;not null;uniqueIndex" json:"periode"` // YYYY-MM-05
+	Status    string    `gorm:"size:10;not null;default:open" json:"status"`
+	UserID    *uint     `gorm:"index" json:"user_id"`
+	TotalGaji int       `gorm:"not null;default:0" json:"total_gaji"`
+	// TanggalBayar — tanggal transfer aktual (bisa tgl 3/4/5), diisi saat finalize.
+	TanggalBayar *time.Time `gorm:"type:date" json:"tanggal_bayar"`
+	FinalizedAt  *time.Time `gorm:"type:timestamptz" json:"finalized_at"`
 	model.BaseModelTimeAt
 }
 

@@ -52,6 +52,17 @@ func (r *Repository) DeleteByPeriode(periode time.Time) error {
 	return r.db.Where("periode = ?", periode).Delete(&Absen{}).Error
 }
 
+// PayrollFinalized melaporkan apakah gaji periode tsb sudah difinalisasi.
+// Query langsung ke tabel (bukan import package penggajian) untuk menghindari
+// dependency siklus: package penggajian sudah meng-import package absen.
+func (r *Repository) PayrollFinalized(periode time.Time) (bool, error) {
+	var count int64
+	err := r.db.Table("sdm_payroll_periode").
+		Where("periode = ? AND status = ? AND deleted_at IS NULL", periode, "finalized").
+		Count(&count).Error
+	return count > 0, err
+}
+
 // ExistingEmployeeIDs mengembalikan himpunan id karyawan yang ada — satu query
 // untuk banyak id (menghindari N+1 saat validasi bulk).
 func (r *Repository) ExistingEmployeeIDs(ids []uint) (map[uint]bool, error) {

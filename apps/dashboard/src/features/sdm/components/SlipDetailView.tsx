@@ -1,5 +1,6 @@
 import { Badge } from "#/components/ui";
 import { formatPeriode, type Slip } from "#/features/sdm/api";
+import { formatTanggalBayar } from "#/features/sdm/lib/periode";
 import { formatCurrency } from "#/utils/format";
 
 // SlipDetailView — tampilan rincian slip gaji 1 periode. Dipakai bersama oleh
@@ -21,6 +22,11 @@ export function SlipDetailView({
 				<p className="text-sm text-gray-500">
 					PAUD Unggulan AL-IZZAH Kab. Mojokerto
 				</p>
+				{slip.tanggal_bayar && (
+					<p className="text-sm text-gray-500">
+						Dibayar: {formatTanggalBayar(slip.tanggal_bayar)}
+					</p>
+				)}
 			</div>
 
 			<div className="mt-4 flex flex-wrap items-center justify-between gap-3">

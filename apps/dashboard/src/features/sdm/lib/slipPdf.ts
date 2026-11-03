@@ -1,6 +1,7 @@
 import { jsPDF } from "jspdf";
 import autoTable, { type CellInput } from "jspdf-autotable";
 import { formatPeriode, type Slip } from "#/features/sdm/api";
+import { formatTanggalBayar } from "./periode";
 
 // ── Helpers ──
 
@@ -164,6 +165,18 @@ export function renderSlipPdf(
 		align: "center",
 	});
 	y += 8;
+
+	if (slip.tanggal_bayar) {
+		doc.setFont("helvetica", "normal");
+		doc.setFontSize(9);
+		doc.text(
+			`Dibayar: ${formatTanggalBayar(slip.tanggal_bayar)}`,
+			pageW / 2,
+			y,
+			{ align: "center" },
+		);
+		y += 5;
+	}
 
 	autoTable(doc, {
 		startY: y,

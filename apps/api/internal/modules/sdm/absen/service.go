@@ -2,8 +2,10 @@ package absen
 
 import (
 	"errors"
+	"time"
 
 	"api/internal/modules/sdm/periode"
+	"api/utility"
 )
 
 type Service struct {
@@ -31,6 +33,9 @@ func (s *Service) List(periodeInput string) ([]Response, error) {
 func (s *Service) Upsert(req UpsertRequest) (int, error) {
 	p, err := periode.Parse(req.Periode)
 	if err != nil {
+		return 0, err
+	}
+	if err := s.ensureNotFinalized(p); err != nil {
 		return 0, err
 	}
 	// Validasi semua karyawan ada — cegah data yatim (satu query untuk semua id).
@@ -62,5 +67,22 @@ func (s *Service) Delete(periodeInput string) error {
 	if err != nil {
 		return err
 	}
+	if err := s.ensureNotFinalized(p); err != nil {
+		return err
+	}
 	return s.repo.DeleteByPeriode(p)
+}
+
+// ensureNotFinalized menolak perubahan absensi pada periode yang gajinya sudah
+// difinalisasi. Koreksi harus lewat Unlock di menu Penggajian terlebih dahulu,
+// agar angka yang sudah dibayarkan tidak berubah diam-diam.
+func (s *Service) ensureNotFinalized(p time.Time) error {
+	finalized, err := s.repo.PayrollFinalized(p)
+	if err != nil {
+		return err
+	}
+	if finalized {
+		return utility.NewConflictError("Periode penggajian sudah difinalisasi. Buka kembali (Unlock) di menu Penggajian sebelum mengubah absensi.")
+	}
+	return nil
 }

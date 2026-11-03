@@ -176,10 +176,19 @@ export interface PayrollRow {
 // PayrollStatus — hasil GET /penggajian: preview (dinamis) atau finalized (snapshot).
 export interface PayrollStatus {
 	status: "preview" | "finalized";
+	tanggal_bayar?: string;
 	finalized_at?: string;
 	finalized_by?: string;
 	total_gaji: number;
 	rows: PayrollRow[];
+}
+
+// PayrollPeriodeStatus — status ringan satu periode (tanpa baris gaji).
+export interface PayrollPeriodeStatus {
+	periode: string; // YYYY-MM-05
+	status: "open" | "finalized";
+	tanggal_bayar?: string;
+	finalized_at?: string;
 }
 
 // RekapBulan — ringkasan satu bulan dalam rekap per Tahun Ajaran.
@@ -187,6 +196,7 @@ export interface RekapBulan {
 	periode: string; // YYYY-MM-05
 	label: string;
 	status: string;
+	tanggal_bayar?: string;
 	total_gaji: number;
 	jumlah_karyawan: number;
 }
@@ -222,6 +232,7 @@ export interface SlipItem {
 }
 
 export interface Slip extends PayrollRow {
+	tanggal_bayar?: string;
 	rincian_fungsional: SlipItem[];
 	rincian_tugas_tambahan: SlipItem[];
 	rincian_penanggung_jawab: SlipItem[];
@@ -331,6 +342,8 @@ export const sdmKeys = {
 	pinjaman: (status: string) => ["sdm", "pinjaman", status] as const,
 	pinjamanDetail: (id: number) => ["sdm", "pinjaman", id] as const,
 	penggajian: (periode: string) => ["sdm", "penggajian", periode] as const,
+	penggajianStatus: (periode: string) =>
+		["sdm", "penggajian", "status", periode] as const,
 	kirimWa: (periode: string) => ["sdm", "kirim-wa", periode] as const,
 	slip: (periode: string, employeeId: number) =>
 		["sdm", "penggajian", periode, employeeId] as const,
@@ -684,11 +697,23 @@ export function usePenggajian(periode: string) {
 	});
 }
 
+// usePayrollStatus hanya membaca header periode — dipakai badge "Terkunci"
+// pada absensi dan penentuan periode default tanpa menghitung gaji.
+export function usePayrollStatus(periode: string) {
+	return useQuery({
+		queryKey: sdmKeys.penggajianStatus(periode),
+		queryFn: () =>
+			sdmGet<PayrollPeriodeStatus>("/penggajian/status", { periode }),
+		enabled: !!periode,
+	});
+}
+
 function invalidatePayroll(
 	qc: ReturnType<typeof useQueryClient>,
 	periode: string,
 ) {
 	qc.invalidateQueries({ queryKey: sdmKeys.penggajian(periode) });
+	qc.invalidateQueries({ queryKey: sdmKeys.penggajianStatus(periode) });
 	qc.invalidateQueries({ queryKey: sdmKeys.slip(periode, 0) });
 	qc.invalidateQueries({ queryKey: ["sdm", "summary"] });
 	qc.invalidateQueries({ queryKey: ["sdm", "rekap"] });
@@ -697,9 +722,18 @@ function invalidatePayroll(
 export function useFinalizePayroll() {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: (periode: string) =>
-			sdmSend<PayrollStatus>("POST", "/penggajian/finalize", { periode }),
-		onSuccess: (_d, periode) => invalidatePayroll(qc, periode),
+		mutationFn: ({
+			periode,
+			tanggal_bayar,
+		}: {
+			periode: string;
+			tanggal_bayar?: string;
+		}) =>
+			sdmSend<PayrollStatus>("POST", "/penggajian/finalize", {
+				periode,
+				tanggal_bayar: tanggal_bayar || undefined,
+			}),
+		onSuccess: (_d, vars) => invalidatePayroll(qc, vars.periode),
 	});
 }
 

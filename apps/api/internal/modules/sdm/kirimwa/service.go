@@ -2,6 +2,7 @@ package kirimwa
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -54,7 +55,8 @@ func BuildMessage(nama, labelPeriode string, total int, url string) string {
 
 // EnqueueAll memasukkan seluruh karyawan aktif yang PUNYA data gaji pada
 // periode tsb dan punya no_telp ke antrian (status pending) untuk diproses
-// worker. Yang tanpa data gaji atau tanpa no_telp dilewati.
+// worker. Yang tanpa data gaji atau tanpa no_telp dilewati, dan yang sudah
+// `sent`/`processing` TIDAK diantrekan ulang agar tidak terkirim dobel.
 func (s *Service) EnqueueAll(periodeInput string) (*EnqueueResult, error) {
 	p, err := periode.Parse(periodeInput)
 	if err != nil {
@@ -70,11 +72,27 @@ func (s *Service) EnqueueAll(periodeInput string) (*EnqueueResult, error) {
 	for _, r := range status.Rows {
 		adaData[r.EmployeeID] = true
 	}
+	// Status kirim yang sudah ada pada periode ini — dasar penentuan kirim ulang.
+	existing, err := s.repo.ListByPeriode(p)
+	if err != nil {
+		return nil, err
+	}
+	statusByEmp := make(map[uint]string, len(existing))
+	for _, r := range existing {
+		statusByEmp[r.EmployeeID] = r.Status
+	}
 
 	emps, err := s.guru.List("", nil, true)
 	if err != nil {
 		return nil, err
 	}
+	return s.enqueue(p, emps, adaData, statusByEmp)
+}
+
+// enqueue memutuskan siapa yang masuk antrian lalu menyimpan status pending.
+// Karyawan tanpa data gaji / tanpa no_telp dilewati, begitu juga yang sudah
+// `sent` atau `processing` — supaya `Kirim Semua` tidak mengirim dobel.
+func (s *Service) enqueue(p time.Time, emps []guru.EmployeeItem, adaData map[uint]bool, statusByEmp map[uint]string) (*EnqueueResult, error) {
 	res := &EnqueueResult{}
 	for _, e := range emps {
 		if !adaData[e.ID] {
@@ -83,6 +101,15 @@ func (s *Service) EnqueueAll(periodeInput string) (*EnqueueResult, error) {
 		}
 		if strings.TrimSpace(e.NoTelp) == "" {
 			res.Skipped++
+			continue
+		}
+		// Sudah terkirim / sedang dikirim worker → jangan diantrekan lagi.
+		switch statusByEmp[e.ID] {
+		case StatusSent:
+			res.AlreadySent++
+			continue
+		case StatusProcessing:
+			res.Processing++
 			continue
 		}
 		row := &KirimWA{
@@ -97,6 +124,70 @@ func (s *Service) EnqueueAll(periodeInput string) (*EnqueueResult, error) {
 		res.Enqueued++
 	}
 	return res, nil
+}
+
+// RetryFailed memasukkan kembali ke antrian baris yang sebelumnya GAGAL pada
+// periode tsb (status → pending). Baris `sent` tidak disentuh sehingga kirim
+// ulang tidak pernah mengirim dobel ke karyawan yang sudah menerima slip.
+func (s *Service) RetryFailed(periodeInput string) (*EnqueueResult, error) {
+	p, err := periode.Parse(periodeInput)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := s.repo.ListByPeriode(p)
+	if err != nil {
+		return nil, err
+	}
+	res := &EnqueueResult{}
+	for i := range rows {
+		row := rows[i]
+		if row.Status != StatusFailed {
+			continue
+		}
+		// Pakai nomor terbaru dari data karyawan bila sudah dikoreksi.
+		noTelp := row.NoTelp
+		if emp, gerr := s.guru.Get(row.EmployeeID); gerr == nil && strings.TrimSpace(emp.NoTelp) != "" {
+			noTelp = emp.NoTelp
+		}
+		if strings.TrimSpace(noTelp) == "" {
+			res.Skipped++
+			continue
+		}
+		row.NoTelp = noTelp
+		row.Status = StatusPending
+		row.PesanError = ""
+		if err := s.repo.Save(&row); err != nil {
+			return nil, err
+		}
+		res.Enqueued++
+	}
+	return res, nil
+}
+
+// belumFinal — status yang masih boleh dikoreksi operator menjadi `sent`.
+var belumFinal = []string{StatusFailed, StatusUnknown}
+
+// MarkSent menandai satu karyawan pada periode sebagai terkirim (dipakai aksi
+// per baris setelah operator mencocokkan dashboard Wablas). Baris `sent` tidak
+// berubah; hasil false berarti tidak ada baris yang perlu dikoreksi.
+func (s *Service) MarkSent(employeeID uint, periodeInput string) (bool, error) {
+	p, err := periode.Parse(periodeInput)
+	if err != nil {
+		return false, err
+	}
+	n, err := s.repo.MarkSent(employeeID, p, belumFinal)
+	return n > 0, err
+}
+
+// MarkAllSent menandai SELURUH baris `failed`/`unknown` pada periode sebagai
+// terkirim, lalu mengembalikan jumlah baris yang berubah.
+func (s *Service) MarkAllSent(periodeInput string) (int, error) {
+	p, err := periode.Parse(periodeInput)
+	if err != nil {
+		return 0, err
+	}
+	n, err := s.repo.MarkAllSent(p, belumFinal)
+	return int(n), err
 }
 
 // SendOne mengirim slip 1 karyawan secara sinkron (untuk tombol per baris).
@@ -248,6 +339,8 @@ func (s *Service) processPending() {
 }
 
 // applyResult menetapkan status/err/waktu pada baris berdasarkan hasil kirim.
+// Timeout/koneksi putus TIDAK dianggap gagal tegas: pesan bisa sudah diterima
+// Wablas, jadi statusnya `unknown` sampai webhook tracking mengonfirmasi.
 func applyResult(row *KirimWA, sendErr error) {
 	if sendErr == nil {
 		now := time.Now()
@@ -256,8 +349,77 @@ func applyResult(row *KirimWA, sendErr error) {
 		row.WaktuKirim = &now
 		return
 	}
+	var tr *TransportError
+	if errors.As(sendErr, &tr) {
+		row.Status = StatusUnknown
+		row.PesanError = truncate("Belum pasti: tidak ada respons Wablas (timeout) — menunggu webhook status", 255)
+		return
+	}
 	row.Status = StatusFailed
 	row.PesanError = truncate(sendErr.Error(), 255)
+}
+
+// SyncFromWablas menerapkan status tracking dari webhook Wablas ke baris yang
+// cocok (nomor tujuan sama). Idempoten: `sent` bersifat final dan tidak
+// diturunkan oleh event lama; status pending/diabaikan.
+func (s *Service) SyncFromWablas(phone, wablasStatus string) (bool, error) {
+	want, ok := mapWablasStatus(wablasStatus)
+	if !ok {
+		return false, nil
+	}
+	variants := phoneVariants(phone)
+	if len(variants) == 0 {
+		return false, nil
+	}
+	row, err := s.repo.FindLatestByPhone(variants)
+	if err != nil || row == nil {
+		return false, err
+	}
+	if row.Status == StatusSent {
+		return false, nil
+	}
+	row.Status = want
+	if want == StatusSent {
+		row.PesanError = ""
+		if row.WaktuKirim == nil {
+			now := time.Now()
+			row.WaktuKirim = &now
+		}
+	} else {
+		row.PesanError = truncate("Ditandai gagal oleh Wablas ("+strings.ToLower(strings.TrimSpace(wablasStatus))+")", 255)
+	}
+	if err := s.repo.Save(row); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+// mapWablasStatus memetakan status tracking Wablas ke status internal.
+// `pending` sengaja tidak dipetakan: baris dianggap belum terkirim sampai ada
+// bukti delivered/read.
+func mapWablasStatus(status string) (string, bool) {
+	switch strings.ToLower(strings.TrimSpace(status)) {
+	case "sent", "delivered", "received", "read":
+		return StatusSent, true
+	case "cancel", "canceled", "cancelled", "reject", "rejected", "failed":
+		return StatusFailed, true
+	default:
+		return "", false
+	}
+}
+
+// phoneVariants menghasilkan variasi format nomor yang mungkin tersimpan di DB
+// (`+62…`, `62…`, `0…`) untuk nomor Wablas yang dinormalisasi.
+func phoneVariants(phone string) []string {
+	p, ok := NormalizePhone(phone)
+	if !ok {
+		return nil
+	}
+	out := []string{p, "+" + p}
+	if strings.HasPrefix(p, "62") {
+		out = append(out, "0"+p[2:])
+	}
+	return out
 }
 
 func truncate(s string, max int) string {

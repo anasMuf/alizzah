@@ -255,7 +255,7 @@ export interface KirimWAStatus {
 	employee_id: number;
 	nama: string;
 	no_telp: string;
-	status: string; // pending | sent | failed
+	status: string; // pending | processing | sent | failed | unknown
 	pesan_error: string;
 	attempts: number;
 	waktu_kirim: string | null;
@@ -276,6 +276,12 @@ export interface KirimWASendResult {
 export interface KirimWAEnqueueResult {
 	enqueued: number;
 	skipped: number;
+	already_sent: number;
+	processing: number;
+}
+
+export interface KirimWAMarkResult {
+	updated: number;
 }
 
 // ── Riwayat golongan (penugasan effective-dated) ──
@@ -789,6 +795,54 @@ export function useKirimWASemua() {
 			sdmSend<KirimWAEnqueueResult>("POST", "/penggajian/kirim-wa/semua", {
 				periode,
 			}),
+		onSuccess: (_d, periode) =>
+			qc.invalidateQueries({ queryKey: sdmKeys.kirimWa(periode) }),
+	});
+}
+
+// useKirimWAUlangGagal mengantrekan ulang HANYA baris yang gagal — baris yang
+// sudah terkirim tidak pernah dikirim ulang.
+export function useKirimWAUlangGagal() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (periode: string) =>
+			sdmSend<KirimWAEnqueueResult>(
+				"POST",
+				"/penggajian/kirim-wa/ulang-gagal",
+				{ periode },
+			),
+		onSuccess: (_d, periode) =>
+			qc.invalidateQueries({ queryKey: sdmKeys.kirimWa(periode) }),
+	});
+}
+
+// useKirimWATandaiTerkirim mengoreksi manual satu baris (failed/unknown → sent)
+// setelah operator mencocokkan status di dashboard Wablas.
+export function useKirimWATandaiTerkirim() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (v: { employeeId: number; periode: string }) =>
+			sdmSend<KirimWAMarkResult>(
+				"POST",
+				"/penggajian/kirim-wa/tandai-terkirim",
+				{ periode: v.periode, employee_id: v.employeeId },
+			),
+		onSuccess: (_d, v) =>
+			qc.invalidateQueries({ queryKey: sdmKeys.kirimWa(v.periode) }),
+	});
+}
+
+// useKirimWATandaiSemuaTerkirim menandai seluruh baris failed/unknown pada
+// periode terpilih sebagai terkirim.
+export function useKirimWATandaiSemuaTerkirim() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (periode: string) =>
+			sdmSend<KirimWAMarkResult>(
+				"POST",
+				"/penggajian/kirim-wa/tandai-semua-terkirim",
+				{ periode },
+			),
 		onSuccess: (_d, periode) =>
 			qc.invalidateQueries({ queryKey: sdmKeys.kirimWa(periode) }),
 	});

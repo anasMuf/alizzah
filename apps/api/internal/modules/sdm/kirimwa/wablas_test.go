@@ -1,10 +1,12 @@
 package kirimwa
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
 // TestSendMessage_MengirimFormDanHeader memverifikasi kontrak Wablas: metode
@@ -68,5 +70,21 @@ func TestSendMessage_TolakNomorKosong(t *testing.T) {
 	c := &Client{domain: "http://localhost:1", token: "x", http: http.DefaultClient}
 	if err := c.SendMessage("abc", "x"); err == nil {
 		t.Fatal("harus error bila nomor tidak valid")
+	}
+}
+
+// TestSendMessage_TimeoutJadiTransportError memastikan gangguan jaringan
+// dikenali sebagai TransportError — bukan penolakan Wablas — agar status baris
+// tidak dicap `failed` padahal pesan bisa sudah terkirim.
+func TestSendMessage_TimeoutJadiTransportError(t *testing.T) {
+	c := &Client{
+		domain: "http://127.0.0.1:1",
+		token:  "x",
+		http:   &http.Client{Timeout: 2 * time.Second},
+	}
+	err := c.SendMessage("0812", "x")
+	var tr *TransportError
+	if !errors.As(err, &tr) {
+		t.Fatalf("err = %v, mau *TransportError", err)
 	}
 }

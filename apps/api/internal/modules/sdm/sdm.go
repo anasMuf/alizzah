@@ -103,6 +103,8 @@ func (m *Module) RegisterRoutes(api *echo.Group) {
 
 	// Endpoint publik (tanpa JWT) — dikunci token + rate-limit.
 	m.publik.RegisterPublicRoutes(api)
+	// Webhook tracking Wablas (tanpa JWT, dikunci secret di URL).
+	m.kirimwa.RegisterPublicRoutes(api)
 }
 
 func (m *Module) health(c echo.Context) error {

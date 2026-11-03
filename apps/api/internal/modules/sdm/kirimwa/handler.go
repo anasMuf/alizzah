@@ -22,6 +22,9 @@ func (h *Handler) RegisterRoutes(g *echo.Group, mw ...echo.MiddlewareFunc) {
 	g.GET("/penggajian/kirim-wa/status", h.Status, mw...)
 	g.POST("/penggajian/kirim-wa/kirim/:employee_id", h.SendOne, mw...)
 	g.POST("/penggajian/kirim-wa/semua", h.SendAll, mw...)
+	g.POST("/penggajian/kirim-wa/ulang-gagal", h.RetryFailed, mw...)
+	g.POST("/penggajian/kirim-wa/tandai-terkirim", h.MarkSent, mw...)
+	g.POST("/penggajian/kirim-wa/tandai-semua-terkirim", h.MarkAllSent, mw...)
 }
 
 // SendOne godoc
@@ -46,7 +49,11 @@ func (h *Handler) SendOne(c echo.Context) error {
 		return utility.Fail(c, err)
 	}
 	msg := "Slip berhasil dikirim"
-	if res.Status != StatusSent {
+	switch res.Status {
+	case StatusSent:
+	case StatusUnknown:
+		msg = "Status belum pasti — menunggu konfirmasi Wablas (webhook)"
+	default:
 		msg = "Gagal mengirim slip"
 	}
 	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: msg, Data: res})
@@ -71,6 +78,77 @@ func (h *Handler) SendAll(c echo.Context) error {
 	return c.JSON(http.StatusOK, dto.SuccessResponse{
 		Message: "Pengiriman dijadwalkan. Status akan diperbarui otomatis.",
 		Data:    res,
+	})
+}
+
+// RetryFailed godoc
+// @Summary Jadwalkan ulang kirim slip yang GAGAL pada satu periode (async)
+// @Tags sdm-penggajian
+// @Security ApiKeyAuth
+// @Param request body kirimwa.SendRequest true "Periode"
+// @Success 200 {object} dto.SuccessResponse{data=kirimwa.EnqueueResult}
+// @Router /v1/sdm/penggajian/kirim-wa/ulang-gagal [post]
+func (h *Handler) RetryFailed(c echo.Context) error {
+	var req SendRequest
+	if err := c.Bind(&req); err != nil || req.Periode == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "VALIDATION_ERROR", Message: "Periode wajib diisi"})
+	}
+	res, err := h.svc.RetryFailed(req.Periode)
+	if err != nil {
+		return utility.Fail(c, err)
+	}
+	return c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "Pengiriman ulang dijadwalkan. Status akan diperbarui otomatis.",
+		Data:    res,
+	})
+}
+
+// MarkSent godoc
+// @Summary Tandai slip 1 karyawan sebagai terkirim (koreksi manual)
+// @Tags sdm-penggajian
+// @Security ApiKeyAuth
+// @Param request body kirimwa.MarkSentRequest true "Periode + employee_id"
+// @Success 200 {object} dto.SuccessResponse{data=kirimwa.MarkSentResult}
+// @Router /v1/sdm/penggajian/kirim-wa/tandai-terkirim [post]
+func (h *Handler) MarkSent(c echo.Context) error {
+	var req MarkSentRequest
+	if err := c.Bind(&req); err != nil || req.Periode == "" || req.EmployeeID == 0 {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "VALIDATION_ERROR", Message: "periode & employee_id wajib diisi"})
+	}
+	changed, err := h.svc.MarkSent(req.EmployeeID, req.Periode)
+	if err != nil {
+		return utility.Fail(c, err)
+	}
+	msg := "Status ditandai terkirim"
+	if !changed {
+		msg = "Tidak ada status yang perlu dikoreksi"
+	}
+	updated := 0
+	if changed {
+		updated = 1
+	}
+	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: msg, Data: MarkSentResult{Updated: updated}})
+}
+
+// MarkAllSent godoc
+// @Summary Tandai SEMUA slip gagal/belum pasti pada periode sebagai terkirim
+// @Tags sdm-penggajian
+// @Security ApiKeyAuth
+// @Param request body kirimwa.SendRequest true "Periode"
+// @Success 200 {object} dto.SuccessResponse{data=kirimwa.MarkSentResult}
+// @Router /v1/sdm/penggajian/kirim-wa/tandai-semua-terkirim [post]
+func (h *Handler) MarkAllSent(c echo.Context) error {
+	var req SendRequest
+	if err := c.Bind(&req); err != nil || req.Periode == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "VALIDATION_ERROR", Message: "Periode wajib diisi"})
+	}
+	n, err := h.svc.MarkAllSent(req.Periode)
+	if err != nil {
+		return utility.Fail(c, err)
+	}
+	return c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "Status diperbarui",
+		Data:    MarkSentResult{Updated: n},
 	})
 }
 

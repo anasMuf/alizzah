@@ -446,6 +446,7 @@ function PenggajianPage() {
 													<Link
 														to="/sdm/penggajian/olah-hr/$id"
 														params={{ id: String(r.employee_id) }}
+														search={{ periode }}
 														className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
 													>
 														<UserCog className="h-4 w-4 text-gray-400" /> Olah

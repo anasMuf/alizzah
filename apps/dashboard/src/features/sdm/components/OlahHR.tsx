@@ -35,7 +35,13 @@ type AttachType =
  * Lain-lain) milik satu karyawan. Sebelumnya berada di halaman Data Karyawan;
  * kini menjadi halaman tersendiri di area Penggajian.
  */
-export function OlahHR({ employeeId }: { employeeId: number }) {
+export function OlahHR({
+	employeeId,
+	periode,
+}: {
+	employeeId: number;
+	periode?: string;
+}) {
 	const { data: emp, isLoading, isError } = useEmployee(employeeId);
 
 	if (isLoading) {
@@ -49,6 +55,7 @@ export function OlahHR({ employeeId }: { employeeId: number }) {
 		<div className="space-y-6">
 			<Link
 				to="/sdm/penggajian"
+				search={{ periode }}
 				className="inline-flex items-center text-sm text-gray-500 hover:text-indigo-600"
 			>
 				<ArrowLeft className="h-4 w-4 mr-1" /> Penggajian
@@ -70,7 +77,7 @@ export function OlahHR({ employeeId }: { employeeId: number }) {
 						<Link
 							to="/sdm/penggajian/$id"
 							params={{ id: String(employeeId) }}
-							search={{ periode: currentPeriode() }}
+							search={{ periode: periode ?? currentPeriode() }}
 							className="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700"
 						>
 							<Wallet className="h-4 w-4 mr-1.5" /> Slip Gaji

@@ -313,6 +313,7 @@ function GuruListPage() {
 										<Link
 											to="/sdm/guru/$id"
 											params={{ id: String(e.id) }}
+											search={{ q, golongan: golonganParam }}
 											className="hover:text-indigo-600"
 										>
 											{e.nama}

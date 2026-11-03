@@ -19,10 +19,18 @@ import { formatCurrency, formatDate } from "#/utils/format";
 
 export const Route = createFileRoute("/_authenticated/sdm/pinjaman/$id")({
 	component: PinjamanDetailPage,
+	// Bawa filter karyawan asal agar tombol kembali tidak menghapus konteks.
+	validateSearch: (
+		search: Record<string, unknown>,
+	): { employee_id?: number } => {
+		const id = Number(search.employee_id);
+		return Number.isFinite(id) && id > 0 ? { employee_id: id } : {};
+	},
 });
 
 function PinjamanDetailPage() {
 	const { id } = Route.useParams();
+	const { employee_id } = Route.useSearch();
 	const loanId = Number(id);
 	const { addToast } = useToast();
 	const { data: loan, isLoading, isError } = usePinjamanDetail(loanId);
@@ -67,7 +75,7 @@ function PinjamanDetailPage() {
 		<div className="space-y-6">
 			<Link
 				to="/sdm/pinjaman"
-				search={{ employee_id: undefined }}
+				search={{ employee_id }}
 				className="inline-flex items-center text-sm text-gray-500 hover:text-indigo-600"
 			>
 				<ArrowLeft className="h-4 w-4 mr-1" /> Pinjaman

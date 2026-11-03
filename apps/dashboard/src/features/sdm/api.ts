@@ -255,7 +255,7 @@ export interface KirimWAStatus {
 	employee_id: number;
 	nama: string;
 	no_telp: string;
-	status: string; // pending | sent | failed
+	status: string; // pending | processing | sent | failed | unknown
 	pesan_error: string;
 	attempts: number;
 	waktu_kirim: string | null;

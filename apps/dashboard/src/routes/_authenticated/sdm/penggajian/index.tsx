@@ -582,6 +582,14 @@ function WaStatusBadge({ status, error }: { status: string; error: string }) {
 				Gagal
 			</Badge>
 		);
+	// Timeout/koneksi putus: pesan bisa saja sudah diterima Wablas. Status akan
+	// dikoreksi otomatis oleh webhook tracking — jangan kirim ulang otomatis.
+	if (status === "unknown")
+		return (
+			<Badge variant="info" title={error || "Menunggu konfirmasi Wablas"}>
+				Belum pasti
+			</Badge>
+		);
 	return <Badge variant="warning">Menunggu</Badge>;
 }
 

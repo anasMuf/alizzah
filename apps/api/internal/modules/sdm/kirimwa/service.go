@@ -2,6 +2,7 @@ package kirimwa
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -312,6 +313,8 @@ func (s *Service) processPending() {
 }
 
 // applyResult menetapkan status/err/waktu pada baris berdasarkan hasil kirim.
+// Timeout/koneksi putus TIDAK dianggap gagal tegas: pesan bisa sudah diterima
+// Wablas, jadi statusnya `unknown` sampai webhook tracking mengonfirmasi.
 func applyResult(row *KirimWA, sendErr error) {
 	if sendErr == nil {
 		now := time.Now()
@@ -320,8 +323,77 @@ func applyResult(row *KirimWA, sendErr error) {
 		row.WaktuKirim = &now
 		return
 	}
+	var tr *TransportError
+	if errors.As(sendErr, &tr) {
+		row.Status = StatusUnknown
+		row.PesanError = truncate("Belum pasti: tidak ada respons Wablas (timeout) — menunggu webhook status", 255)
+		return
+	}
 	row.Status = StatusFailed
 	row.PesanError = truncate(sendErr.Error(), 255)
+}
+
+// SyncFromWablas menerapkan status tracking dari webhook Wablas ke baris yang
+// cocok (nomor tujuan sama). Idempoten: `sent` bersifat final dan tidak
+// diturunkan oleh event lama; status pending/diabaikan.
+func (s *Service) SyncFromWablas(phone, wablasStatus string) (bool, error) {
+	want, ok := mapWablasStatus(wablasStatus)
+	if !ok {
+		return false, nil
+	}
+	variants := phoneVariants(phone)
+	if len(variants) == 0 {
+		return false, nil
+	}
+	row, err := s.repo.FindLatestByPhone(variants)
+	if err != nil || row == nil {
+		return false, err
+	}
+	if row.Status == StatusSent {
+		return false, nil
+	}
+	row.Status = want
+	if want == StatusSent {
+		row.PesanError = ""
+		if row.WaktuKirim == nil {
+			now := time.Now()
+			row.WaktuKirim = &now
+		}
+	} else {
+		row.PesanError = truncate("Ditandai gagal oleh Wablas ("+strings.ToLower(strings.TrimSpace(wablasStatus))+")", 255)
+	}
+	if err := s.repo.Save(row); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+// mapWablasStatus memetakan status tracking Wablas ke status internal.
+// `pending` sengaja tidak dipetakan: baris dianggap belum terkirim sampai ada
+// bukti delivered/read.
+func mapWablasStatus(status string) (string, bool) {
+	switch strings.ToLower(strings.TrimSpace(status)) {
+	case "sent", "delivered", "received", "read":
+		return StatusSent, true
+	case "cancel", "canceled", "cancelled", "reject", "rejected", "failed":
+		return StatusFailed, true
+	default:
+		return "", false
+	}
+}
+
+// phoneVariants menghasilkan variasi format nomor yang mungkin tersimpan di DB
+// (`+62…`, `62…`, `0…`) untuk nomor Wablas yang dinormalisasi.
+func phoneVariants(phone string) []string {
+	p, ok := NormalizePhone(phone)
+	if !ok {
+		return nil
+	}
+	out := []string{p, "+" + p}
+	if strings.HasPrefix(p, "62") {
+		out = append(out, "0"+p[2:])
+	}
+	return out
 }
 
 func truncate(s string, max int) string {

@@ -32,6 +32,14 @@ func NewClientFromEnv() *Client {
 // Configured true bila domain & token tersedia.
 func (c *Client) Configured() bool { return c.domain != "" && c.token != "" }
 
+// TransportError menandai kegagalan jaringan/timeout saat memanggil Wablas.
+// Pesan bisa saja SUDAH diterima Wablas meski klien tidak mendapat respons,
+// jadi status pengiriman belum pasti (lihat StatusUnknown).
+type TransportError struct{ Err error }
+
+func (e *TransportError) Error() string { return "koneksi ke Wablas gagal: " + e.Err.Error() }
+func (e *TransportError) Unwrap() error { return e.Err }
+
 // NormalizePhone membersihkan nomor ke format internasional 62xxxxxxxxxx.
 // Mengikuti normalisasiNomorWA() aplikasi lama; false bila kosong.
 func NormalizePhone(phone string) (string, bool) {
@@ -77,7 +85,7 @@ func (c *Client) SendMessage(phone, message string) error {
 
 	resp, err := c.http.Do(req)
 	if err != nil {
-		return fmt.Errorf("koneksi ke Wablas gagal: %w", err)
+		return &TransportError{Err: err}
 	}
 	defer resp.Body.Close()
 

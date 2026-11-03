@@ -56,7 +56,7 @@ Migrasi DB otomatis saat container API start (GORM AutoMigrate).
 **`.env` di VPS** (jangan di-commit): `DB_PASSWORD`, `JWT_SECRET`, `SEED_ADMIN_PASSWORD`,
 `CORS_ALLOWED_ORIGINS`, `IMAGE_OWNER`, dst (lihat `.env.production.example`). Untuk modul SDM/HR:
 `PUBLIC_APP_URL`, `PUBLIC_LINK_SECRET`, `PUBLIC_LINK_TTL_HOURS`, `WABLAS_DOMAIN`, `WABLAS_TOKEN`,
-`SDM_API_PORT`, `SDM_CORS_ALLOWED_ORIGINS`.
+`WABLAS_WEBHOOK_SECRET`, `SDM_API_PORT`, `SDM_CORS_ALLOWED_ORIGINS`.
 
 > Integrasi koperasi → ledger keuangan sekolah **default nonaktif**. Untuk mengaktifkan kembali
 > (mis. agar transaksi koperasi muncul di laporan sekolah): `KOPERASI_SEAM_ENABLED=true`
@@ -157,6 +157,7 @@ PUBLIC_LINK_SECRET=<openssl rand -hex 32>                  # WAJIB, beda dari JW
 PUBLIC_LINK_TTL_HOURS=72
 WABLAS_DOMAIN=https://jogja.wablas.com
 WABLAS_TOKEN=<token-device[.secretkey]>
+WABLAS_WEBHOOK_SECRET=<openssl rand -hex 32>              # secret URL tracking status
 SDM_API_PORT=8093
 SDM_CORS_ALLOWED_ORIGINS=https://dashboard.alizzah.anaslabs.my.id
 ```
@@ -199,6 +200,11 @@ docker compose exec postgres psql -U "$DB_USER" -d "$DB_NAME" -c "\dv koperasi_e
 Worker antrian **aktif** begitu `WABLAS_*` terisi: ia memproses baris `pending` di `sdm_kirim_wa`
 dan **mengirim WhatsApp sungguhan**. Jangan menekan **Kirim Semua** di produksi sebelum siap;
 uji dulu ke satu nomor internal.
+
+Setelah itu isi **Webhook URL** di **detail device** Wablas dengan
+`https://api.alizzah.anaslabs.my.id/api/v1/public/wablas/tracking?secret=$WABLAS_WEBHOOK_SECRET`
+agar status `delivered`/`read` menyamakan baris `unknown` (timeout) menjadi `sent`.
+Tanpa ini, timeout tetap berstatus "Belum pasti" di dashboard.
 
 ### Uji di staging dulu
 Unit test memakai SQLite; `EnsureEmployeeView` & migrasi rentang golongan hanya teruji di Postgres

@@ -13,8 +13,9 @@ import (
 const (
 	StatusPending    = "pending"    // menunggu diproses worker
 	StatusProcessing = "processing" // sedang dikirim (diklaim worker)
-	StatusSent       = "sent"       // terkirim
-	StatusFailed     = "failed"     // gagal (lihat PesanError)
+	StatusSent       = "sent"       // terkirim (termasuk delivered/read dari webhook Wablas)
+	StatusFailed     = "failed"     // gagal tegas (ditolak Wablas / nomor tidak valid)
+	StatusUnknown    = "unknown"    // timeout/koneksi putus — belum pasti, tunggu webhook status
 )
 
 // KirimWA — satu baris status pengiriman slip untuk (karyawan, periode).
@@ -27,7 +28,7 @@ type KirimWA struct {
 	Status     string     `gorm:"size:10;not null;default:pending" json:"status"`
 	PesanError string     `gorm:"size:255;not null;default:''" json:"pesan_error"`
 	Attempts   int        `gorm:"not null;default:0" json:"attempts"`
-	WaktuKirim *time.Time `gorm:"type:timestamptz" json:"waktu_kirim"`
+	WaktuKirim *time.Time `json:"waktu_kirim"` // default GORM: timestamptz (portable untuk SQLite di test)
 	model.BaseModelTimeAt
 }
 

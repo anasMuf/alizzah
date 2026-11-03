@@ -47,7 +47,11 @@ func (h *Handler) SendOne(c echo.Context) error {
 		return utility.Fail(c, err)
 	}
 	msg := "Slip berhasil dikirim"
-	if res.Status != StatusSent {
+	switch res.Status {
+	case StatusSent:
+	case StatusUnknown:
+		msg = "Status belum pasti — menunggu konfirmasi Wablas (webhook)"
+	default:
 		msg = "Gagal mengirim slip"
 	}
 	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: msg, Data: res})

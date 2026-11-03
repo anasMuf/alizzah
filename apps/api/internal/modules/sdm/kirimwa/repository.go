@@ -52,6 +52,23 @@ func (r *Repository) RecoverProcessing() (int64, error) {
 	return tx.RowsAffected, tx.Error
 }
 
+// FindLatestByPhone mencari baris terbaru (created_at) untuk salah satu varian
+// nomor. Dipakai webhook tracking Wablas — nomor tujuan yang sama bisa muncul
+// di beberapa periode, jadi yang diambil adalah pengiriman paling akhir.
+func (r *Repository) FindLatestByPhone(variants []string) (*KirimWA, error) {
+	var row KirimWA
+	err := r.db.Where("no_telp IN ?", variants).
+		Order("created_at DESC, id DESC").
+		First(&row).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &row, nil
+}
+
 // FindByEmployee mengembalikan status satu karyawan pada periode (bila ada).
 func (r *Repository) FindByEmployee(employeeID uint, periode time.Time) (*KirimWA, error) {
 	var row KirimWA

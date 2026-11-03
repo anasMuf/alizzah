@@ -1,6 +1,7 @@
 package kirimwa
 
 import (
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -43,6 +44,52 @@ func TestBuildMessage(t *testing.T) {
 		if !strings.Contains(msg, want) {
 			t.Errorf("pesan tidak memuat %q:\n%s", want, msg)
 		}
+	}
+}
+
+func TestMapWablasStatus(t *testing.T) {
+	cases := []struct {
+		in   string
+		want string
+		ok   bool
+	}{
+		{"delivered", StatusSent, true},
+		{"READ", StatusSent, true},
+		{"sent", StatusSent, true},
+		{"received", StatusSent, true},
+		{"cancel", StatusFailed, true},
+		{"rejected", StatusFailed, true},
+		{"pending", "", false},
+		{"", "", false},
+	}
+	for _, c := range cases {
+		got, ok := mapWablasStatus(c.in)
+		if got != c.want || ok != c.ok {
+			t.Errorf("mapWablasStatus(%q) = (%q,%v), mau (%q,%v)", c.in, got, ok, c.want, c.ok)
+		}
+	}
+}
+
+// TestApplyResult_TimeoutJadiUnknown memastikan kegagalan jaringan/timeout tidak
+// dicap `failed` (yang akan memicu kirim ulang otomatis & pesan dobel).
+func TestApplyResult_TimeoutJadiUnknown(t *testing.T) {
+	row := &KirimWA{}
+	applyResult(row, &TransportError{Err: errors.New("context deadline exceeded")})
+	if row.Status != StatusUnknown {
+		t.Fatalf("status timeout = %q, mau %q", row.Status, StatusUnknown)
+	}
+	if row.WaktuKirim != nil {
+		t.Error("waktu_kirim tidak boleh diisi untuk status unknown")
+	}
+	if !strings.Contains(row.PesanError, "Belum pasti") {
+		t.Errorf("pesan_error = %q, mau menjelaskan status belum pasti", row.PesanError)
+	}
+
+	// Penolakan tegas dari Wablas tetap `failed`.
+	row = &KirimWA{}
+	applyResult(row, errors.New("token device tidak valid"))
+	if row.Status != StatusFailed {
+		t.Fatalf("status ditolak = %q, mau %q", row.Status, StatusFailed)
 	}
 }
 

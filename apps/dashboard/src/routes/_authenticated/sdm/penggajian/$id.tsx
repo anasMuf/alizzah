@@ -35,6 +35,7 @@ function SlipPage() {
 			<div className="flex flex-wrap items-center justify-between gap-3">
 				<Link
 					to="/sdm/penggajian"
+					search={{ periode: periodeState }}
 					className="inline-flex items-center text-sm text-gray-500 hover:text-indigo-600"
 				>
 					<ArrowLeft className="h-4 w-4 mr-1" /> Penggajian

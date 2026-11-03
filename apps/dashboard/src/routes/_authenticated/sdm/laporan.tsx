@@ -3,6 +3,7 @@ import { useAtom } from "jotai";
 import { AlertCircle, BarChart3, Printer } from "lucide-react";
 import { Badge } from "#/components/ui";
 import { useRekap } from "#/features/sdm/api";
+import { formatTanggalBayar } from "#/features/sdm/lib/periode";
 import { academicYearAtom } from "#/store/global";
 import { formatCurrency } from "#/utils/format";
 
@@ -38,8 +39,8 @@ function RekapPage() {
 					<h1 className="text-2xl font-bold text-gray-900">Rekap Gaji</h1>
 					<p className="text-sm text-gray-500">
 						Rekap penggajian Tahun Ajaran{" "}
-						{rekap?.academic_year_name ?? activeAy.name} · dibayar tgl 5 tiap
-						bulan.
+						{rekap?.academic_year_name ?? activeAy.name} · dibayar paling lambat
+						tgl 5 tiap bulan.
 					</p>
 				</div>
 				<button
@@ -94,6 +95,9 @@ function RekapPage() {
 									<th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
 										Status
 									</th>
+									<th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
+										Tanggal Bayar
+									</th>
 									<th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
 										Karyawan
 									</th>
@@ -118,6 +122,11 @@ function RekapPage() {
 												<Badge variant="warning">Preview</Badge>
 											)}
 										</td>
+										<td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+											{b.tanggal_bayar
+												? formatTanggalBayar(b.tanggal_bayar)
+												: "—"}
+										</td>
 										<td className="px-4 py-3 text-right text-gray-600">
 											{b.jumlah_karyawan}
 										</td>
@@ -139,7 +148,7 @@ function RekapPage() {
 							<tfoot className="bg-gray-50 font-semibold">
 								<tr>
 									<td
-										colSpan={3}
+										colSpan={4}
 										className="px-4 py-3 text-right text-gray-700"
 									>
 										Total

@@ -111,7 +111,7 @@ func (r *Repository) FindPayrollPeriode(periode time.Time) (*PayrollPeriode, err
 
 // SaveSnapshot menulis snapshot satu periode secara transaksional: upsert
 // header (status → finalized) lalu replace seluruh baris detail.
-func (r *Repository) SaveSnapshot(periode time.Time, userID uint, totalGaji int, details []PayrollDetail) (*PayrollPeriode, error) {
+func (r *Repository) SaveSnapshot(periode time.Time, tanggalBayar *time.Time, userID uint, totalGaji int, details []PayrollDetail) (*PayrollPeriode, error) {
 	var saved *PayrollPeriode
 	err := r.db.Transaction(func(tx *gorm.DB) error {
 		now := time.Now()
@@ -122,6 +122,7 @@ func (r *Repository) SaveSnapshot(periode time.Time, userID uint, totalGaji int,
 			pp.Status = StatusFinalized
 			pp.UserID = &userID
 			pp.TotalGaji = totalGaji
+			pp.TanggalBayar = tanggalBayar
 			pp.FinalizedAt = &now
 			if err := tx.Save(&pp).Error; err != nil {
 				return err
@@ -132,7 +133,8 @@ func (r *Repository) SaveSnapshot(periode time.Time, userID uint, totalGaji int,
 		case errors.Is(err, gorm.ErrRecordNotFound):
 			pp = PayrollPeriode{
 				Periode: periode, Status: StatusFinalized,
-				UserID: &userID, TotalGaji: totalGaji, FinalizedAt: &now,
+				UserID: &userID, TotalGaji: totalGaji,
+				TanggalBayar: tanggalBayar, FinalizedAt: &now,
 			}
 			if err := tx.Create(&pp).Error; err != nil {
 				return err
@@ -166,6 +168,7 @@ func (r *Repository) UnlockSnapshot(periode time.Time) error {
 			return err
 		}
 		pp.Status = StatusOpen
+		pp.TanggalBayar = nil
 		pp.FinalizedAt = nil
 		if err := tx.Save(&pp).Error; err != nil {
 			return err

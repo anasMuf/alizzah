@@ -51,6 +51,7 @@ type SlipItem struct {
 // SlipResponse — slip gaji detail 1 karyawan.
 type SlipResponse struct {
 	Response
+	TanggalBayar           *string    `json:"tanggal_bayar,omitempty"` // YYYY-MM-DD (aktual bila finalized)
 	RincianFungsional      []SlipItem `json:"rincian_fungsional"`
 	RincianTugasTambahan   []SlipItem `json:"rincian_tugas_tambahan"`
 	RincianPenanggungJawab []SlipItem `json:"rincian_penanggung_jawab"`
@@ -81,25 +82,40 @@ type GolonganStat struct {
 // PayrollStatusResponse — hasil GET /penggajian: preview (dinamis) atau
 // finalized (snapshot tersimpan).
 type PayrollStatusResponse struct {
-	Status      string     `json:"status"` // preview | finalized
-	FinalizedAt *string    `json:"finalized_at,omitempty"`
-	FinalizedBy string     `json:"finalized_by,omitempty"`
-	TotalGaji   int        `json:"total_gaji"`
-	Rows        []Response `json:"rows"`
+	Status       string     `json:"status"`                  // preview | finalized
+	TanggalBayar *string    `json:"tanggal_bayar,omitempty"` // YYYY-MM-DD
+	FinalizedAt  *string    `json:"finalized_at,omitempty"`
+	FinalizedBy  string     `json:"finalized_by,omitempty"`
+	TotalGaji    int        `json:"total_gaji"`
+	Rows         []Response `json:"rows"`
+}
+
+// PeriodeStatusResponse — ringkasan status payroll satu periode tanpa
+// menghitung baris gaji. Dipakai dashboard untuk badge "Terkunci" pada
+// absensi dan penentuan periode default.
+type PeriodeStatusResponse struct {
+	Periode      string  `json:"periode"` // YYYY-MM-05
+	Status       string  `json:"status"`  // open | finalized
+	TanggalBayar *string `json:"tanggal_bayar,omitempty"`
+	FinalizedAt  *string `json:"finalized_at,omitempty"`
 }
 
 // FinalizeRequest — body POST /penggajian/finalize & /unlock.
+// TanggalBayar opsional: "YYYY-MM-DD" realisasi transfer (bisa tgl 3/4).
+// Bila kosong → default tgl 5 bulan berikutnya.
 type FinalizeRequest struct {
-	Periode string `json:"periode" validate:"required,max=10"`
+	Periode      string `json:"periode" validate:"required,max=10"`
+	TanggalBayar string `json:"tanggal_bayar" validate:"omitempty,dateonly"`
 }
 
 // RekapBulan — ringkasan satu bulan dalam rekap per Tahun Ajaran.
 type RekapBulan struct {
-	Periode        string `json:"periode"` // YYYY-MM-05
-	Label          string `json:"label"`   // "Agustus 2025"
-	Status         string `json:"status"`  // preview | finalized
-	TotalGaji      int    `json:"total_gaji"`
-	JumlahKaryawan int    `json:"jumlah_karyawan"`
+	Periode        string  `json:"periode"` // YYYY-MM-05
+	Label          string  `json:"label"`   // "Agustus 2025"
+	Status         string  `json:"status"`  // preview | finalized
+	TanggalBayar   *string `json:"tanggal_bayar,omitempty"`
+	TotalGaji      int     `json:"total_gaji"`
+	JumlahKaryawan int     `json:"jumlah_karyawan"`
 }
 
 // RekapResponse — rekap gaji seluruh bulan dalam rentang Tahun Ajaran.

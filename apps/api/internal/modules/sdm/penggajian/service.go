@@ -9,6 +9,7 @@ import (
 	"api/internal/modules/sdm/guru"
 	"api/internal/modules/sdm/master"
 	"api/internal/modules/sdm/periode"
+	"api/utility"
 )
 
 // Konstanta bonus kedisiplinan — dikode dari aplikasi lama (vslip_absen):
@@ -84,8 +85,10 @@ func (s *Service) Slip(periodeInput string, employeeID uint) (*SlipResponse, err
 				if lain == nil {
 					lain = []SlipItem{}
 				}
+				tanggalBayar := periode.FormatPayDate(payDateOr(pp.TanggalBayar, p))
 				return &SlipResponse{
 					Response:               r,
+					TanggalBayar:           &tanggalBayar,
 					RincianFungsional:      fungsional,
 					RincianTugasTambahan:   tugas,
 					RincianPenanggungJawab: pj,
@@ -112,8 +115,10 @@ func (s *Service) Slip(periodeInput string, employeeID uint) (*SlipResponse, err
 		return nil, errors.New("Karyawan tidak memiliki absensi pada periode ini")
 	}
 	resp := s.calculate(emp, data, p)
+	tanggalBayar := periode.FormatPayDate(periode.DefaultPayDate(p))
 	return &SlipResponse{
 		Response:               resp,
+		TanggalBayar:           &tanggalBayar,
 		RincianFungsional:      slipItemsFromFungsional(data.Fungsional[employeeID]),
 		RincianTugasTambahan:   slipItemsFromTugas(data.TugasTambahan[employeeID]),
 		RincianPenanggungJawab: slipItemsFromPJ(data.Penanggung[employeeID]),
@@ -143,7 +148,8 @@ func (s *Service) Get(periodeInput string) (*PayrollStatusResponse, error) {
 		ids := uniqueEmployeeIDs(details)
 		emps, _ := s.repo.FindEmployeesByIDs(ids)
 		rows, _ := responseFromSnapshot(details, emps)
-		resp := &PayrollStatusResponse{Status: StatusFinalized, TotalGaji: pp.TotalGaji, Rows: rows}
+		tanggalBayar := periode.FormatPayDate(payDateOr(pp.TanggalBayar, p))
+		resp := &PayrollStatusResponse{Status: StatusFinalized, TanggalBayar: &tanggalBayar, TotalGaji: pp.TotalGaji, Rows: rows}
 		if pp.FinalizedAt != nil {
 			s := pp.FinalizedAt.Format(time.RFC3339)
 			resp.FinalizedAt = &s
@@ -160,27 +166,66 @@ func (s *Service) Get(periodeInput string) (*PayrollStatusResponse, error) {
 	for _, r := range rows {
 		total += r.TotalGaji
 	}
-	return &PayrollStatusResponse{Status: StatusOpen, TotalGaji: total, Rows: rows}, nil
+	tanggalBayar := periode.FormatPayDate(periode.DefaultPayDate(p))
+	return &PayrollStatusResponse{Status: StatusOpen, TanggalBayar: &tanggalBayar, TotalGaji: total, Rows: rows}, nil
+}
+
+// Status mengembalikan status payroll satu periode tanpa menghitung baris gaji.
+// Periode tanpa header dianggap open (belum difinalisasi).
+func (s *Service) Status(periodeInput string) (*PeriodeStatusResponse, error) {
+	p, err := periode.Parse(periodeInput)
+	if err != nil {
+		return nil, err
+	}
+	pp, err := s.repo.FindPayrollPeriode(p)
+	if err != nil {
+		return nil, err
+	}
+	tanggalBayar := periode.FormatPayDate(periode.DefaultPayDate(p))
+	resp := &PeriodeStatusResponse{Periode: periode.Format(p), Status: StatusOpen, TanggalBayar: &tanggalBayar}
+	if pp != nil {
+		resp.Status = pp.Status
+		if pp.TanggalBayar != nil {
+			tanggalBayar = periode.FormatPayDate(*pp.TanggalBayar)
+			resp.TanggalBayar = &tanggalBayar
+		}
+		if pp.FinalizedAt != nil {
+			s := pp.FinalizedAt.Format(time.RFC3339)
+			resp.FinalizedAt = &s
+		}
+	}
+	return resp, nil
 }
 
 // Finalize menghitung gaji seluruh karyawan periode tsb, menyimpan snapshot
 // (header + baris komponen) secara transaksional, lalu mengunci periode.
 // Idempotent: finalize ulang akan mengganti snapshot.
-func (s *Service) Finalize(periodeInput string, userID uint) (*PayrollStatusResponse, error) {
+func (s *Service) Finalize(periodeInput, tanggalBayarInput string, userID uint) (*PayrollStatusResponse, error) {
 	p, err := periode.Parse(periodeInput)
 	if err != nil {
 		return nil, err
+	}
+	bayar := periode.DefaultPayDate(p)
+	if tanggalBayarInput != "" {
+		bayar, err = periode.ParsePayDate(tanggalBayarInput)
+		if err != nil {
+			return nil, utility.NewValidationError(err.Error())
+		}
+		if bayar.Before(p) {
+			return nil, utility.NewValidationError("Tanggal bayar tidak boleh sebelum periode gaji")
+		}
 	}
 	data, err := s.repo.LoadData(p)
 	if err != nil {
 		return nil, err
 	}
 	details, rows, total := s.buildSnapshotDetails(data, p)
-	pp, err := s.repo.SaveSnapshot(p, userID, total, details)
+	pp, err := s.repo.SaveSnapshot(p, &bayar, userID, total, details)
 	if err != nil {
 		return nil, err
 	}
-	resp := &PayrollStatusResponse{Status: StatusFinalized, TotalGaji: total, Rows: rows}
+	tanggalBayar := periode.FormatPayDate(bayar)
+	resp := &PayrollStatusResponse{Status: StatusFinalized, TanggalBayar: &tanggalBayar, TotalGaji: total, Rows: rows}
 	if pp.FinalizedAt != nil {
 		s := pp.FinalizedAt.Format(time.RFC3339)
 		resp.FinalizedAt = &s
@@ -253,6 +298,15 @@ func (s *Service) buildSnapshotDetails(data *Data, asOf time.Time) ([]PayrollDet
 		add(KodeTotal, "Total Gaji", r.TotalGaji)
 	}
 	return details, responses, total
+}
+
+// payDateOr memakai tanggal bayar tersimpan bila ada, selainnya tanggal default
+// (tgl 5 bulan berikutnya) — snapshot lama belum punya kolom tanggal_bayar.
+func payDateOr(tanggalBayar *time.Time, p time.Time) time.Time {
+	if tanggalBayar != nil {
+		return *tanggalBayar
+	}
+	return periode.DefaultPayDate(p)
 }
 
 // responseFromSnapshot merekonstruksi baris Response + rincian slip dari baris
@@ -493,6 +547,7 @@ func (s *Service) Rekap(academicYearID uint) (*RekapResponse, error) {
 			Periode:        periode.Format(p),
 			Label:          periode.MonthLabel(p),
 			Status:         got.Status,
+			TanggalBayar:   got.TanggalBayar,
 			TotalGaji:      got.TotalGaji,
 			JumlahKaryawan: len(got.Rows),
 		})

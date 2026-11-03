@@ -63,6 +63,24 @@ func IsPayday(t time.Time) bool {
 	return t.Day() == PaydayDay
 }
 
+// DefaultPayDate mengembalikan tanggal bayar default untuk periode gaji:
+// tgl PaydayDay pada bulan berikutnya (gaji bulan M dibayarkan awal M+1).
+func DefaultPayDate(p time.Time) time.Time {
+	return time.Date(p.Year(), p.Month()+1, PaydayDay, 0, 0, 0, 0, p.Location())
+}
+
+// ParsePayDate mem-parse tanggal bayar aktual berformat "YYYY-MM-DD".
+func ParsePayDate(s string) (time.Time, error) {
+	t, err := time.ParseInLocation("2006-01-02", s, time.Local)
+	if err != nil {
+		return time.Time{}, errors.New("Tanggal bayar harus format YYYY-MM-DD")
+	}
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local), nil
+}
+
+// FormatPayDate memformat tanggal bayar sebagai "YYYY-MM-DD".
+func FormatPayDate(t time.Time) string { return t.Format("2006-01-02") }
+
 // MonthLabel menampilkan "Mei 2026" untuk keperluan UI/laporan.
 func MonthLabel(t time.Time) string {
 	names := [...]string{

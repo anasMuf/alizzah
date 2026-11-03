@@ -25,6 +25,8 @@ func New(db *gorm.DB) *Handler {
 
 func (h *Handler) RegisterRoutes(g *echo.Group, mw ...echo.MiddlewareFunc) {
 	g.GET("/penggajian", h.Get, mw...)
+	// Harus didaftarkan SEBELUM /:employee_id agar "status" tidak dibaca sebagai id.
+	g.GET("/penggajian/status", h.Status, mw...)
 	g.GET("/penggajian/:employee_id", h.Slip, mw...)
 	g.GET("/penggajian/:employee_id/riwayat", h.Riwayat, mw...)
 	g.GET("/penggajian/:employee_id/hr-history", h.EmployeeHRHistory, mw...)
@@ -63,6 +65,25 @@ func (h *Handler) Get(c echo.Context) error {
 	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil mengambil penggajian", Data: item})
 }
 
+// Status godoc
+// @Summary Status payroll satu periode (ringan, tanpa hitung baris gaji)
+// @Tags sdm-penggajian
+// @Security ApiKeyAuth
+// @Param periode query string true "Periode YYYY-MM (payday 5)"
+// @Success 200 {object} dto.SuccessResponse{data=penggajian.PeriodeStatusResponse}
+// @Router /v1/sdm/penggajian/status [get]
+func (h *Handler) Status(c echo.Context) error {
+	periode := c.QueryParam("periode")
+	if periode == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Status: http.StatusBadRequest, Code: "VALIDATION_ERROR", Message: "Periode wajib diisi"})
+	}
+	item, err := h.svc.Status(periode)
+	if err != nil {
+		return utility.Fail(c, err)
+	}
+	return c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Berhasil mengambil status penggajian", Data: item})
+}
+
 // Finalize godoc
 // @Summary Finalisasi penggajian satu periode (simpan snapshot & kunci)
 // @Tags sdm-penggajian
@@ -75,7 +96,7 @@ func (h *Handler) Finalize(c echo.Context) error {
 	if err := bindAndValidate(c, &req); err != nil {
 		return err
 	}
-	item, err := h.svc.Finalize(req.Periode, middleware.GetCurrentUserID(c))
+	item, err := h.svc.Finalize(req.Periode, req.TanggalBayar, middleware.GetCurrentUserID(c))
 	if err != nil {
 		return utility.Fail(c, err)
 	}

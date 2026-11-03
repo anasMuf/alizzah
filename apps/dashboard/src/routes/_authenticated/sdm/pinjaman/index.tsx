@@ -22,9 +22,12 @@ import { formatCurrency, formatDate } from "#/utils/format";
 
 export const Route = createFileRoute("/_authenticated/sdm/pinjaman/")({
 	component: PinjamanPage,
-	validateSearch: (search: Record<string, unknown>) => ({
-		employee_id: search.employee_id as number | undefined,
-	}),
+	validateSearch: (
+		search: Record<string, unknown>,
+	): { employee_id?: number } => {
+		const id = Number(search.employee_id);
+		return Number.isFinite(id) && id > 0 ? { employee_id: id } : {};
+	},
 });
 
 function PinjamanPage() {
@@ -138,6 +141,7 @@ function PinjamanPage() {
 									<Link
 										to="/sdm/pinjaman/$id"
 										params={{ id: String(l.id) }}
+										search={{ employee_id: search.employee_id }}
 										className="inline-flex items-center text-indigo-600 hover:text-indigo-800"
 									>
 										Lihat <ChevronRight className="h-4 w-4" />

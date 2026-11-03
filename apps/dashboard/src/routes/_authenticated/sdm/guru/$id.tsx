@@ -18,12 +18,25 @@ import { formatCurrency, formatDate } from "#/utils/format";
 
 export const Route = createFileRoute("/_authenticated/sdm/guru/$id")({
 	component: GuruDetailPage,
+	// Filter daftar dibawa lewat search agar tombol kembali mengembalikan
+	// pencarian/golongan yang sedang aktif.
+	validateSearch: (
+		search: Record<string, unknown>,
+	): { q?: string; golongan?: number } => {
+		const out: { q?: string; golongan?: number } = {};
+		const q = search.q;
+		if (typeof q === "string" && q !== "") out.q = q;
+		const golongan = Number(search.golongan);
+		if (Number.isFinite(golongan) && golongan > 0) out.golongan = golongan;
+		return out;
+	},
 });
 
 const PAGE_SIZE = 10;
 
 function GuruDetailPage() {
 	const { id } = Route.useParams();
+	const { q, golongan } = Route.useSearch();
 	const employeeId = Number(id);
 	const { data: emp, isLoading, isError } = useEmployee(employeeId);
 	const [activeAy] = useAtom(academicYearAtom);
@@ -75,6 +88,7 @@ function GuruDetailPage() {
 		<div className="space-y-6">
 			<Link
 				to="/sdm/guru"
+				search={{ q, golongan }}
 				className="inline-flex items-center text-sm text-gray-500 hover:text-indigo-600"
 			>
 				<ArrowLeft className="h-4 w-4 mr-1" /> Data Karyawan

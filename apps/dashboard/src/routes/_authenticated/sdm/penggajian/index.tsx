@@ -27,16 +27,23 @@ import {
 	formatPeriode,
 	monthsInAcademicYear,
 	type Slip,
+	useAbsen,
 	useFinalizePayroll,
 	useGolongans,
 	useKirimWASatu,
 	useKirimWASemua,
 	useKirimWAStatus,
+	usePayrollStatus,
 	usePenggajian,
 	useShareLink,
 	useUnlockPayroll,
 } from "#/features/sdm/api";
 import { sdmGet } from "#/features/sdm/lib/client";
+import {
+	defaultPayDate,
+	formatTanggalBayar,
+	resolveDefaultPeriode,
+} from "#/features/sdm/lib/periode";
 import { academicYearAtom } from "#/store/global";
 import { formatCurrency } from "#/utils/format";
 
@@ -66,21 +73,32 @@ function PenggajianPage() {
 	const [confirmAction, setConfirmAction] = useState<
 		"finalize" | "unlock" | "kirim-semua" | null
 	>(null);
+	const [tanggalBayar, setTanggalBayar] = useState("");
 	const [pdfId, setPdfId] = useState<number | null>(null);
 	const [copyBusyId, setCopyBusyId] = useState<number | null>(null);
 	const [waBusyId, setWaBusyId] = useState<number | null>(null);
 
-	// periode efektif: dari URL bila valid, jika tidak → bulan berjalan / bulan
-	// pertama tahun ajaran.
+	// "Hari ini" distabilkan per mount agar default tidak berubah saat render.
+	const today = useMemo(() => new Date(), []);
+	const calendarPrevMonth = useMemo(() => {
+		const curKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+		const idx = months.findIndex((m) => m.value === curKey);
+		return idx > 0 ? months[idx - 1].value : "";
+	}, [months, today]);
+	const { data: calendarPrevStatus } = usePayrollStatus(calendarPrevMonth);
+	const { data: calendarPrevRows = [] } = useAbsen(calendarPrevMonth);
+
+	// periode efektif: dari URL bila valid; selebihnya default cerdas (tutup buku
+	// bulan sebelumnya tgl 1–5 / buku tertunda), selainnya bulan berjalan.
 	const periode = useMemo(() => {
 		if (periodeParam && months.some((m) => m.value === periodeParam)) {
 			return periodeParam;
 		}
-		if (months.length === 0) return "";
-		const now = new Date();
-		const cur = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-		return months.some((m) => m.value === cur) ? cur : months[0].value;
-	}, [periodeParam, months]);
+		return resolveDefaultPeriode(months, today, {
+			prevStatus: calendarPrevStatus?.status,
+			prevHasAbsen: calendarPrevRows.length > 0,
+		});
+	}, [periodeParam, months, today, calendarPrevStatus, calendarPrevRows]);
 
 	// Selaraskan URL dengan periode efektif → tetap saat refresh / pindah halaman.
 	useEffect(() => {
@@ -211,23 +229,26 @@ function PenggajianPage() {
 			return;
 		}
 		if (confirmAction === "finalize") {
-			finalize.mutate(periode, {
-				onSuccess: () => {
-					addToast({
-						variant: "success",
-						title: "Berhasil",
-						message: `Penggajian ${formatPeriode(periode)} difinalisasi — snapshot terkunci.`,
-					});
-					setConfirmAction(null);
+			finalize.mutate(
+				{ periode, tanggal_bayar: tanggalBayar },
+				{
+					onSuccess: () => {
+						addToast({
+							variant: "success",
+							title: "Berhasil",
+							message: `Penggajian ${formatPeriode(periode)} difinalisasi — snapshot terkunci.`,
+						});
+						setConfirmAction(null);
+					},
+					onError: (err: Error) =>
+						addToast({
+							variant: "error",
+							title: "Gagal",
+							message:
+								err instanceof ApiError ? err.message : "Terjadi kesalahan",
+						}),
 				},
-				onError: (err: Error) =>
-					addToast({
-						variant: "error",
-						title: "Gagal",
-						message:
-							err instanceof ApiError ? err.message : "Terjadi kesalahan",
-					}),
-			});
+			);
 		} else {
 			unlock.mutate(periode, {
 				onSuccess: () => {
@@ -255,8 +276,11 @@ function PenggajianPage() {
 				<div>
 					<h1 className="text-2xl font-bold text-gray-900">Penggajian</h1>
 					<p className="text-sm text-gray-500">
-						Gaji {periode ? formatPeriode(periode) : "—"} · dibayar tgl 5 ·
-						Tahun Ajaran {activeAy.name}.
+						Gaji {periode ? formatPeriode(periode) : "—"} ·{" "}
+						{payroll?.tanggal_bayar
+							? `${isFinalized ? "dibayar" : "rencana dibayar"} ${formatTanggalBayar(payroll.tanggal_bayar)}`
+							: "dibayar paling lambat tgl 5"}{" "}
+						· Tahun Ajaran {activeAy.name}.
 					</p>
 				</div>
 				<div className="flex flex-wrap items-center gap-2">
@@ -293,7 +317,12 @@ function PenggajianPage() {
 								<Button
 									variant="primary"
 									size="sm"
-									onClick={() => setConfirmAction("finalize")}
+									onClick={() => {
+										setTanggalBayar(
+											payroll?.tanggal_bayar ?? defaultPayDate(periode),
+										);
+										setConfirmAction("finalize");
+									}}
 									disabled={rows.length === 0}
 								>
 									<Lock className="h-4 w-4 mr-1" /> Finalisasi
@@ -417,6 +446,7 @@ function PenggajianPage() {
 													<Link
 														to="/sdm/penggajian/olah-hr/$id"
 														params={{ id: String(r.employee_id) }}
+														search={{ periode }}
 														className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
 													>
 														<UserCog className="h-4 w-4 text-gray-400" /> Olah
@@ -458,7 +488,26 @@ function PenggajianPage() {
 				confirmLabel="Finalisasi"
 				onConfirm={runAction}
 				onCancel={() => setConfirmAction(null)}
-			/>
+			>
+				<div className="mt-3 text-left">
+					<label
+						htmlFor="tanggal-bayar"
+						className="block text-sm font-medium text-gray-700"
+					>
+						Tanggal bayar aktual
+					</label>
+					<input
+						id="tanggal-bayar"
+						type="date"
+						value={tanggalBayar}
+						onChange={(e) => setTanggalBayar(e.target.value)}
+						className="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
+					/>
+					<p className="mt-1 text-xs text-gray-500">
+						Default tgl 5 bulan berikutnya. Ubah bila transfer maju ke tgl 3/4.
+					</p>
+				</div>
+			</ConfirmDialog>
 			<ConfirmDialog
 				open={confirmAction === "unlock"}
 				title="Buka Kembali Periode?"

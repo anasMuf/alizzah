@@ -16,11 +16,14 @@ interface PaymentSummaryProps {
 	depositChange: boolean;
 	notes: string;
 	savingsUsage: number;
+	paymentDate: string;
+	maxPaymentDate: string;
 	onSourceChange: (s: "cash" | "savings") => void;
 	onCashReceivedChange: (v: number) => void;
 	onDepositChangeChange: (v: boolean) => void;
 	onNotesChange: (v: string) => void;
 	onSavingsUsageChange: (v: number) => void;
+	onPaymentDateChange: (v: string) => void;
 }
 
 export function PaymentSummary({
@@ -35,11 +38,14 @@ export function PaymentSummary({
 	depositChange,
 	notes,
 	savingsUsage,
+	paymentDate,
+	maxPaymentDate,
 	onSourceChange,
 	onCashReceivedChange,
 	onDepositChangeChange,
 	onNotesChange,
 	onSavingsUsageChange,
+	onPaymentDateChange,
 }: PaymentSummaryProps) {
 	const changeAmount = useMemo(() => {
 		return cashReceived > totalPay ? cashReceived - totalPay : 0;
@@ -116,6 +122,28 @@ export function PaymentSummary({
 						</span>
 					</div>
 				)}
+			</div>
+
+			{/* Tanggal Pembayaran */}
+			<div>
+				<label
+					htmlFor="payment-date"
+					className="block text-xs font-medium text-gray-700 mb-1"
+				>
+					Tanggal Pembayaran
+				</label>
+				<input
+					id="payment-date"
+					type="date"
+					className="block w-full rounded-lg border-0 py-2 px-3 text-sm text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+					value={paymentDate}
+					max={maxPaymentDate}
+					onChange={(e) => onPaymentDateChange(e.target.value)}
+					required
+				/>
+				<p className="mt-1 text-xs text-gray-500">
+					Dapat diubah untuk mencatat pembayaran yang diterima sebelumnya.
+				</p>
 			</div>
 
 			{/* Sumber Pembayaran */}

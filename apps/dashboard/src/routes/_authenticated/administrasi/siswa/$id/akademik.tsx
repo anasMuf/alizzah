@@ -133,9 +133,10 @@ function SiswaAkademikPage() {
 							Regenerasi Invoice
 						</h3>
 						<p className="mt-1 max-w-2xl text-sm text-gray-500">
-							Hapus semua invoice dan buat ulang berdasarkan data enrollment
-							terkini. Siswa dengan tipe "Mengulang" tidak akan mendapat invoice
-							biaya awal.
+							Hapus invoice hasil generate yang belum dibayar dan buat ulang
+							berdasarkan data enrollment terkini. Invoice yang sudah lunas atau
+							sudah dibayar sebagian tidak diubah. Siswa dengan tipe "Mengulang"
+							tidak akan mendapat invoice biaya awal.
 						</p>
 					</div>
 					{!confirmRegen ? (

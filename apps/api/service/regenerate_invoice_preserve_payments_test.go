@@ -167,8 +167,6 @@ func TestRegenerateForStudent_DoesNotReduceFullyPaidAbkItem(t *testing.T) {
 	assert.Equal(t, "paid", got.Status)
 }
 
-// ABK diaktifkan, item SPP pada invoice partial dikalikan 2 tanpa menghapus
-// invoice/pembayaran yang sudah ada.
 // TestRegenerateForStudent_ActivatesAbkOnPartialInvoice memastikan saat status
 // ABK diaktifkan, item SPP pada invoice partial dikalikan 2 tanpa menghapus
 // invoice/pembayaran yang sudah ada.

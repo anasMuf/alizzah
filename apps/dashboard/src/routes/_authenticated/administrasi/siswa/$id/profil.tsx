@@ -777,8 +777,8 @@ function ProfilSiswaPage() {
 			>
 				<p>
 					{pendingExceptionalityChange
-						? "Tagihan SPP bulan ini (belum lunas) akan direcalculate dengan pengali 2× lipat dan bulan-bulan berikutnya akan otomatis dikalikan 2×."
-						: "Tagihan SPP bulan ini (belum lunas) akan direcalculate kembali ke normal dan bulan-bulan berikutnya akan kembali normal."}
+						? "Tagihan SPP yang belum lunas (termasuk yang sudah dibayar sebagian) akan dihitung dengan pengali 2×. Tagihan yang sudah lunas tidak diubah."
+						: "Tagihan SPP yang belum lunas (termasuk yang sudah dibayar sebagian) akan dikembalikan ke tarif normal. Tagihan yang sudah lunas tidak diubah."}
 				</p>
 				<p className="mt-2 text-sm text-gray-500">Lanjutkan?</p>
 			</ConfirmDialog>

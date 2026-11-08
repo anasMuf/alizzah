@@ -77,8 +77,10 @@ type InvoiceGenerateService interface {
 	// bulan tertentu saat skip dicabut (idempotent).
 	RestoreDaycareItemToMonthly(studentID, enrollmentID, academicYearID, month, year uint) error
 	ApplyDispensationToExistingInvoices(studentID, academicYearID uint) error
-	// RegenerateForStudent menghapus semua invoice (initial, registration, monthly)
-	// untuk student di tahun ajaran aktif lalu generate ulang dengan data terbaru.
+	// RegenerateForStudent menghapus invoice hasil generate yang belum dibayar
+	// (initial, registration, monthly) untuk student di tahun ajaran aktif lalu
+	// generate ulang dengan data terbaru. Invoice paid/partial dipertahankan agar
+	// histori pembayaran tidak hilang.
 	RegenerateForStudent(studentID uint) error
 	// SyncSavingsMandatoryToMonthlyInvoices menambahkan item tabungan wajib
 	// (savings_mandatory) ke invoice bulanan yang belum memilikinya.
@@ -3125,8 +3127,14 @@ func (s *invoiceGenerateService) SyncSavingsMandatoryToMonthlyInvoices() (*dto.S
 	return result, nil
 }
 
-// RegenerateForStudent menghapus semua invoice (initial, registration, monthly)
-// untuk student di tahun ajaran aktif lalu generate ulang dengan data terbaru.
+// RegenerateForStudent menghapus invoice hasil generate yang BELUM memiliki
+// pembayaran (initial, registration, monthly) untuk student di tahun ajaran
+// aktif lalu generate ulang dengan data terbaru.
+//
+// Invoice yang sudah dibayar sebagian/penuh DIPERTAHANKAN: menghapusnya akan
+// ikut menghapus payment_items dan memutus histori pembayaran. Untuk invoice
+// yang dipertahankan, item SPP disesuaikan pengali ABK-nya agar tetap
+// mencerminkan status exceptionality siswa saat ini.
 func (s *invoiceGenerateService) RegenerateForStudent(studentID uint) error {
 	// 1. Cari enrollment aktif untuk mendapatkan AcademicYearID, Level, ClassGroupID
 	enrollment, err := s.enrollmentRepo.FindActiveByStudentID(studentID)
@@ -3151,18 +3159,21 @@ func (s *invoiceGenerateService) RegenerateForStudent(studentID uint) error {
 		return fmt.Errorf("gagal menemukan tahun ajaran: %w", err)
 	}
 
-	// 4. Hapus semua invoice hasil generate (initial, registration, monthly) untuk
-	//    student+academic_year. Invoice yang diinput admin (arrears/manual) DIKECUALIKAN
-	//    — regenerate tidak boleh menghapus data yang bukan hasil generate.
-	//    Urutan: invoice_installments → invoice_items → invoices (FK constraint)
+	// 4. Tentukan invoice hasil generate (initial, registration, monthly) yang aman
+	//    dihapus: belum ada pembayaran sama sekali. Invoice yang diinput admin
+	//    (arrears/manual) DIKECUALIKAN — regenerate tidak boleh menghapus data
+	//    yang bukan hasil generate. Invoice paid/partial juga DIPERTAHANKAN agar
+	//    payment_items & histori pembayaran tidak hilang.
+	//    Urutan hapus: invoice_installments → invoice_items → invoices (FK constraint)
 	var invoiceIDs []uint
 	if err := s.db.Model(&model.Invoice{}).
 		Where("student_id = ? AND academic_year_id = ? AND type NOT IN (?)", studentID, academicYearID, []string{"arrears", "manual"}).
+		Where("paid_amount = 0 AND status = ?", "unpaid").
 		Pluck("id", &invoiceIDs).Error; err != nil {
 		return fmt.Errorf("gagal mengambil daftar invoice: %w", err)
 	}
 
-	// 4. Hard-delete semua invoice lama (iterate satu per satu untuk pastikan DELETE sungguhan)
+	// 5. Hard-delete invoice lama yang belum dibayar (iterate satu per satu untuk pastikan DELETE sungguhan)
 	for _, invID := range invoiceIDs {
 		if err := s.db.Exec("DELETE FROM payment_items WHERE invoice_item_id IN (SELECT id FROM invoice_items WHERE invoice_id = ?)", invID).Error; err != nil {
 			return fmt.Errorf("gagal menghapus payment items untuk invoice %d: %w", invID, err)
@@ -3178,7 +3189,7 @@ func (s *invoiceGenerateService) RegenerateForStudent(studentID uint) error {
 		}
 	}
 
-	// 5. Generate ulang invoice initial (hanya untuk new & mutation)
+	// 6. Generate ulang invoice initial (hanya untuk new & mutation)
 	if enrollment.EnrollmentType == "new" || enrollment.EnrollmentType == "mutation" {
 		if err := s.GenerateInitial(dto.GenerateInitialInvoiceParams{
 			StudentID:      studentID,
@@ -3191,7 +3202,7 @@ func (s *invoiceGenerateService) RegenerateForStudent(studentID uint) error {
 		}
 	}
 
-	// 6. Generate ulang invoice registration
+	// 7. Generate ulang invoice registration
 	if err := s.GenerateRegistration(dto.GenerateRegistrationInvoiceParams{
 		StudentID:      studentID,
 		AcademicYearID: academicYearID,
@@ -3202,7 +3213,9 @@ func (s *invoiceGenerateService) RegenerateForStudent(studentID uint) error {
 		return fmt.Errorf("gagal generate invoice registration: %w", err)
 	}
 
-	// 7. Generate ulang invoice bulanan dari start_date enrollment sampai end_date tahun ajaran
+	// 8. Generate ulang invoice bulanan dari start_date enrollment sampai end_date tahun ajaran.
+	//    Bulan yang invoice-nya dipertahankan (paid/partial) otomatis dilewati
+	//    karena GenerateMonthly bersifat idempotent per bulan.
 	if err := s.GenerateMonthlyRange(
 		studentID, academicYearID, classGroupID,
 		level, gender,
@@ -3210,6 +3223,87 @@ func (s *invoiceGenerateService) RegenerateForStudent(studentID uint) error {
 		1,
 	); err != nil {
 		return fmt.Errorf("gagal generate invoice bulanan: %w", err)
+	}
+
+	// 9. Sinkronkan pengali ABK pada item SPP invoice partial yang dipertahankan.
+	isExceptional := false
+	if s.exceptionalityRepo != nil {
+		_, err := s.exceptionalityRepo.FindActiveByStudentID(studentID)
+		isExceptional = err == nil
+	}
+	if err := s.syncExceptionalityOnPreservedInvoices(studentID, academicYearID, isExceptional); err != nil {
+		return fmt.Errorf("gagal sinkronisasi status ABK pada invoice yang dipertahankan: %w", err)
+	}
+
+	return nil
+}
+
+// syncExceptionalityOnPreservedInvoices menyesuaikan item SPP bulanan pada
+// invoice partial (yang tidak di-regenerate karena sudah punya pembayaran) agar
+// pengali ABK sesuai status exceptionality siswa saat ini. Hanya item yang
+// belum lunas yang disesuaikan; paid_amount tidak diubah.
+func (s *invoiceGenerateService) syncExceptionalityOnPreservedInvoices(
+	studentID, academicYearID uint, isExceptional bool,
+) error {
+	var invoiceIDs []uint
+	if err := s.db.Model(&model.Invoice{}).
+		Where("student_id = ? AND academic_year_id = ? AND type = ? AND status = ?", studentID, academicYearID, "monthly", "partial").
+		Pluck("id", &invoiceIDs).Error; err != nil {
+		return err
+	}
+
+	for _, invoiceID := range invoiceIDs {
+		items, err := s.invoiceItemRepo.FindByInvoiceID(invoiceID)
+		if err != nil {
+			return err
+		}
+
+		changed := false
+		for i := range items {
+			item := &items[i]
+			if item.Category != "monthly_spp" {
+				continue
+			}
+			hasABK := strings.HasSuffix(item.Name, " (ABK)")
+			if hasABK == isExceptional {
+				continue // sudah sesuai
+			}
+			// Item yang sudah lunas tidak diubah: menurunkan amount di bawah
+			// paid_amount akan menciptakan kelebihan bayar/kredit yang tidak
+			// dimodelkan sistem. Tagihan lunas dianggap historis.
+			if item.PaidAmount >= item.Amount {
+				continue
+			}
+
+			if isExceptional {
+				item.Amount *= 2
+				item.Name += " (ABK)"
+			} else {
+				item.Amount /= 2
+				item.Name = strings.TrimSuffix(item.Name, " (ABK)")
+			}
+
+			// paid_amount tidak diubah — hanya status item yang disesuaikan.
+			switch {
+			case item.PaidAmount >= item.Amount:
+				item.Status = "paid"
+			case item.PaidAmount > 0:
+				item.Status = "partial"
+			default:
+				item.Status = "unpaid"
+			}
+
+			if err := s.invoiceItemRepo.Update(item); err != nil {
+				return err
+			}
+			changed = true
+		}
+
+		if changed {
+			if err := s.recalculateInvoiceTotal(invoiceID); err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil

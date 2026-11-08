@@ -10,10 +10,9 @@ import (
 
 // TestRegenerateForStudent_PreservesManualAndArrears memastikan invoice yang
 // diinput admin (type arrears/manual) tidak ikut terhapus oleh regenerate,
-// sementara invoice hasil generate tetap dihapus & dibuat ulang.
+// sementara invoice hasil generate yang belum dibayar dihapus & dibuat ulang.
 func TestRegenerateForStudent_PreservesManualAndArrears(t *testing.T) {
 	db := setupBillingExclusionInvoiceTestDB(t)
-	// RegenerateForStudent melakukan hard-delete payment_items.
 	require.NoError(t, db.AutoMigrate(&model.Payment{}, &model.PaymentItem{}))
 
 	fx := seedExclusionBaseFixture(t, db, false)

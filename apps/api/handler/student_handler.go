@@ -274,7 +274,7 @@ func (h *StudentHandler) Import(c echo.Context) error {
 
 // RegenerateInvoices godoc
 // @Summary      Regenerate student invoices
-// @Description  Delete all invoices (initial, registration, monthly) and regenerate them based on current enrollment data. Initial invoice only generated for enrollment_type "new" or "mutation".
+// @Description  Delete generated invoices that have no payments (initial, registration, monthly) and regenerate them based on current enrollment data. Paid/partial invoices are preserved. Initial invoice only generated for enrollment_type "new" or "mutation".
 // @Tags         students
 // @Accept       json
 // @Produce      json

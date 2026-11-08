@@ -1642,7 +1642,7 @@ export const getPostV1StudentsIdRegenerateInvoicesUrl = (id: number) => {
 };
 
 /**
- * Delete all invoices (initial, registration, monthly) and regenerate them based on current enrollment data. Initial invoice only generated for enrollment_type "new" or "mutation".
+ * Delete generated invoices that have no payments (initial, registration, monthly) and regenerate them based on current enrollment data. Paid/partial invoices are preserved. Initial invoice only generated for enrollment_type "new" or "mutation".
  * @summary Regenerate student invoices
  */
 export const postV1StudentsIdRegenerateInvoices = async (

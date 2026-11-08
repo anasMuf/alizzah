@@ -35,6 +35,14 @@ type IncidentalItem = {
 	isSavings: boolean;
 };
 
+// todayInputValue mengembalikan tanggal lokal (YYYY-MM-DD), bukan UTC, agar
+// default tanggal pembayaran tidak mundur sehari pada dini hari WIB.
+function todayInputValue(): string {
+	const now = new Date();
+	const local = new Date(now.getTime() - now.getTimezoneOffset() * 60_000);
+	return local.toISOString().split("T")[0];
+}
+
 export const Route = createFileRoute(
 	"/_authenticated/keuangan/pembayaran/baru",
 )({
@@ -107,9 +115,8 @@ function KasirPembayaranPage() {
 	const [paymentSource, setPaymentSource] = useState<"cash" | "savings">(
 		"cash",
 	);
-	const [paymentDate, setPaymentDate] = useState(
-		new Date().toISOString().split("T")[0],
-	);
+	const [paymentDate, setPaymentDate] = useState(todayInputValue());
+	const today = todayInputValue();
 	const [notes, setNotes] = useState("");
 
 	// Pre-fill from edit payment
@@ -385,7 +392,23 @@ function KasirPembayaranPage() {
 
 	const handleSubmit = () => {
 		if (submitGuard.current) return;
-		submitGuard.current = true;
+
+		if (!paymentDate) {
+			addToast({
+				variant: "error",
+				title: "Validasi",
+				message: "Tanggal pembayaran wajib diisi.",
+			});
+			return;
+		}
+		if (paymentDate > today) {
+			addToast({
+				variant: "error",
+				title: "Validasi",
+				message: "Tanggal pembayaran tidak boleh di masa depan.",
+			});
+			return;
+		}
 		if (paymentSource === "savings" && savingsUsage > savingsBalance) {
 			addToast({
 				variant: "error",
@@ -455,6 +478,7 @@ function KasirPembayaranPage() {
 				totalSavingsDeposit > 0 ? totalSavingsDeposit : undefined,
 		};
 
+		submitGuard.current = true;
 		if (editId) {
 			updateMutation.mutate({ id: editId, data: payload } as any);
 		} else {
@@ -484,7 +508,7 @@ function KasirPembayaranPage() {
 								setIncidentalItems([]);
 								setCashReceived(0);
 								setDepositChange(false);
-								setPaymentDate(new Date().toISOString().split("T")[0]);
+								setPaymentDate(todayInputValue());
 								setNotes("");
 								setPaymentSource("cash");
 								setSavingsUsage(0);
@@ -560,11 +584,14 @@ function KasirPembayaranPage() {
 							depositChange={depositChange}
 							notes={notes}
 							savingsUsage={savingsUsage}
+							paymentDate={paymentDate}
+							maxPaymentDate={today}
 							onSourceChange={handleSourceChange}
 							onCashReceivedChange={setCashReceived}
 							onDepositChangeChange={setDepositChange}
 							onNotesChange={setNotes}
 							onSavingsUsageChange={setSavingsUsage}
+							onPaymentDateChange={setPaymentDate}
 						/>
 						<div className="flex-shrink-0 border-t border-gray-200 p-4 bg-white">
 							<Button

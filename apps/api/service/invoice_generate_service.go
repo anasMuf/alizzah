@@ -290,7 +290,14 @@ func (s *invoiceGenerateService) GenerateRegistration(params dto.GenerateRegistr
 func (s *invoiceGenerateService) GenerateMonthly(params dto.GenerateMonthlyInvoiceParams) error {
 	exists, _ := s.invoiceRepo.ExistsMonthlyByStudent(params.StudentID, params.Month, params.Year)
 	if exists {
-		return nil // idempotent
+		// Invoice bulan ini bisa sudah dibuat alur lain (mis. daycare) sebelum
+		// enrollment akademik. Jangan sekadar skip — lengkapi item inti yang
+		// belum ada agar SPP & Infaq tidak hilang.
+		invoice, err := s.invoiceRepo.FindMonthlyByStudent(params.StudentID, params.Month, params.Year)
+		if err != nil {
+			return fmt.Errorf("gagal mengambil invoice bulanan: %w", err)
+		}
+		return s.topUpMissingCoreItems(invoice, params)
 	}
 
 	feeConfig, err := s.feeConfigRepo.FindByAcademicYearID(params.AcademicYearID)
@@ -298,77 +305,11 @@ func (s *invoiceGenerateService) GenerateMonthly(params dto.GenerateMonthlyInvoi
 		return fmt.Errorf("fee config tidak ditemukan")
 	}
 
-	// Hari efektif: cek per rombel dulu, fallback ke per jenjang
-	effectiveDays, _ := s.effectiveDayRepo.FindByClassGroupMonthYear(
-		params.ClassGroupID, params.Month, params.Year,
-	)
-	if effectiveDays == nil || effectiveDays.ID == 0 {
-		effectiveDays, _ = s.effectiveDayRepo.FindByLevelMonthYear(
-			params.Level, params.Month, params.Year,
-		)
-	}
+	effectiveDays := s.resolveEffectiveDays(params)
 
 	var invoiceItems []model.InvoiceItem
-
-	// Cek apakah siswa exceptional (ABK) — SPP akan dikalikan 2
-	isExceptional := false
-	if s.exceptionalityRepo != nil {
-		_, err := s.exceptionalityRepo.FindActiveByStudentID(params.StudentID)
-		isExceptional = err == nil
-	}
-
-	// SPP — pilih item berdasarkan semester: sem1 (Jul-Des) vs sem2 (Jan-Jun)
-	// Item dengan suffix _sem1/_sem2 difilter per semester; item tanpa suffix
-	// (format lama) tetap dipakai untuk backward compatibility.
-	sppItems, _ := s.feeConfigItemRepo.FindByStudentForCategory(feeConfig.ID, "monthly_spp", params.Level, params.Gender)
-	sppSemester := "sem1"
-	if params.Month >= 1 && params.Month <= 6 {
-		sppSemester = "sem2"
-	}
-	for _, item := range sppItems {
-		keyLower := strings.ToLower(item.ItemKey)
-		hasSemesterSuffix := strings.HasSuffix(keyLower, "_sem1") || strings.HasSuffix(keyLower, "_sem2")
-		if hasSemesterSuffix && !strings.HasSuffix(keyLower, "_"+sppSemester) {
-			continue
-		}
-		amount := item.Amount
-		name := item.Name
-		if isExceptional {
-			amount = amount * 2
-			name = name + " (ABK)"
-		}
-		invoiceItems = append(invoiceItems, model.InvoiceItem{
-			Name:        name,
-			Category:    item.Category,
-			Amount:      amount,
-			IsMandatory: true,
-		})
-	}
-
-	// Infaq harian
-	infaqItems, _ := s.feeConfigItemRepo.FindByStudentForCategory(feeConfig.ID, "monthly_infaq", params.Level, params.Gender)
-	for _, item := range infaqItems {
-		amount := item.Amount
-		notes := ""
-		totalDays := uint(0)
-		if effectiveDays != nil {
-			totalDays = effectiveDays.TotalDays
-			amount = item.Amount * float64(totalDays)
-		} else {
-			amount = 0
-			notes = "Menunggu input hari efektif"
-		}
-		unitPrice := item.Amount
-		invoiceItems = append(invoiceItems, model.InvoiceItem{
-			Name:        fmt.Sprintf("%s (%d hari)", item.Name, totalDays),
-			Category:    item.Category,
-			Amount:      amount,
-			Quantity:    &totalDays,
-			UnitPrice:   &unitPrice,
-			IsMandatory: true,
-			Notes:       notes,
-		})
-	}
+	invoiceItems = append(invoiceItems, s.buildSppItems(params, feeConfig)...)
+	invoiceItems = append(invoiceItems, s.buildInfaqItems(params, feeConfig, effectiveDays)...)
 
 	// Item wajib otomatis (is_mandatory=true di fee config): Calisan, Aslin, dll
 	mandatoryExtras, _ := s.feeConfigItemRepo.FindMandatoryByStudent(feeConfig.ID, params.Level, params.Gender)
@@ -500,55 +441,8 @@ func (s *invoiceGenerateService) GenerateMonthly(params dto.GenerateMonthlyInvoi
 	}
 
 	// Dispensasi SPP — item potongan dengan amount negatif
-	if s.dispensationRepo != nil {
-		dispensations, _ := s.dispensationRepo.FindActiveForStudentMonth(
-			params.StudentID, params.AcademicYearID,
-			params.Month, params.Year, "monthly_spp",
-		)
-
-		if len(dispensations) > 0 {
-			sppOriginalAmount := float64(0)
-			for _, item := range invoiceItems {
-				if item.Category == "monthly_spp" {
-					sppOriginalAmount += item.Amount
-				}
-			}
-
-			if sppOriginalAmount > 0 {
-				totalDiscount := CalculateTotalDiscount(sppOriginalAmount, dispensations)
-				remainingDiscount := totalDiscount
-
-				for _, d := range dispensations {
-					discountForThis := float64(0)
-					if d.DiscountType == "percent" {
-						discountForThis = sppOriginalAmount * d.DiscountValue / 100
-					} else {
-						discountForThis = d.DiscountValue
-					}
-					if discountForThis > remainingDiscount {
-						discountForThis = remainingDiscount
-					}
-					remainingDiscount -= discountForThis
-
-					if discountForThis > 0 {
-						label := fmt.Sprintf("Dispensasi: %s", d.Reason)
-						if d.DiscountType == "percent" {
-							label = fmt.Sprintf("Dispensasi: %s (%.0f%%)", d.Reason, d.DiscountValue)
-						}
-						invoiceItems = append(invoiceItems, model.InvoiceItem{
-							Name:           label,
-							Category:       "dispensation",
-							OffsetCategory: d.FeeCategory,
-							Amount:         -discountForThis,
-							IsMandatory:    true,
-							Status:         "paid",
-							Notes:          d.Notes,
-						})
-					}
-				}
-			}
-		}
-	}
+	invoiceItems = append(invoiceItems,
+		s.buildSppDispensationItems(params, sumInvoiceItemsByCategory(invoiceItems, "monthly_spp"))...)
 
 	totalAmount := utility.SumInvoiceItems(invoiceItems)
 
@@ -570,6 +464,214 @@ func (s *invoiceGenerateService) GenerateMonthly(params dto.GenerateMonthlyInvoi
 		}
 		return s.invoiceItemRepo.WithTx(tx).BulkCreate(invoiceItems)
 	})
+}
+
+// resolveEffectiveDays mengambil hari efektif per rombel, lalu fallback ke jenjang.
+func (s *invoiceGenerateService) resolveEffectiveDays(params dto.GenerateMonthlyInvoiceParams) *model.EffectiveDay {
+	effectiveDays, _ := s.effectiveDayRepo.FindByClassGroupMonthYear(
+		params.ClassGroupID, params.Month, params.Year,
+	)
+	if effectiveDays == nil || effectiveDays.ID == 0 {
+		effectiveDays, _ = s.effectiveDayRepo.FindByLevelMonthYear(
+			params.Level, params.Month, params.Year,
+		)
+	}
+	return effectiveDays
+}
+
+func (s *invoiceGenerateService) isStudentExceptional(studentID uint) bool {
+	if s.exceptionalityRepo == nil {
+		return false
+	}
+	_, err := s.exceptionalityRepo.FindActiveByStudentID(studentID)
+	return err == nil
+}
+
+// buildSppItems membuat item SPP sesuai semester dan status ABK siswa.
+func (s *invoiceGenerateService) buildSppItems(
+	params dto.GenerateMonthlyInvoiceParams, feeConfig *model.FeeConfig,
+) []model.InvoiceItem {
+	isExceptional := s.isStudentExceptional(params.StudentID)
+
+	// SPP — pilih item berdasarkan semester: sem1 (Jul-Des) vs sem2 (Jan-Jun)
+	// Item dengan suffix _sem1/_sem2 difilter per semester; item tanpa suffix
+	// (format lama) tetap dipakai untuk backward compatibility.
+	sppItems, _ := s.feeConfigItemRepo.FindByStudentForCategory(feeConfig.ID, "monthly_spp", params.Level, params.Gender)
+	sppSemester := "sem1"
+	if params.Month >= 1 && params.Month <= 6 {
+		sppSemester = "sem2"
+	}
+
+	var items []model.InvoiceItem
+	for _, item := range sppItems {
+		keyLower := strings.ToLower(item.ItemKey)
+		hasSemesterSuffix := strings.HasSuffix(keyLower, "_sem1") || strings.HasSuffix(keyLower, "_sem2")
+		if hasSemesterSuffix && !strings.HasSuffix(keyLower, "_"+sppSemester) {
+			continue
+		}
+		amount := item.Amount
+		name := item.Name
+		if isExceptional {
+			amount *= 2
+			name += " (ABK)"
+		}
+		items = append(items, model.InvoiceItem{
+			Name:        name,
+			Category:    item.Category,
+			Amount:      amount,
+			IsMandatory: true,
+		})
+	}
+	return items
+}
+
+// buildInfaqItems membuat item infaq harian berdasarkan hari efektif.
+func (s *invoiceGenerateService) buildInfaqItems(
+	params dto.GenerateMonthlyInvoiceParams, feeConfig *model.FeeConfig, effectiveDays *model.EffectiveDay,
+) []model.InvoiceItem {
+	infaqItems, _ := s.feeConfigItemRepo.FindByStudentForCategory(feeConfig.ID, "monthly_infaq", params.Level, params.Gender)
+
+	var items []model.InvoiceItem
+	for _, item := range infaqItems {
+		amount := item.Amount
+		notes := ""
+		totalDays := uint(0)
+		if effectiveDays != nil {
+			totalDays = effectiveDays.TotalDays
+			amount = item.Amount * float64(totalDays)
+		} else {
+			amount = 0
+			notes = "Menunggu input hari efektif"
+		}
+		unitPrice := item.Amount
+		items = append(items, model.InvoiceItem{
+			Name:        fmt.Sprintf("%s (%d hari)", item.Name, totalDays),
+			Category:    item.Category,
+			Amount:      amount,
+			Quantity:    &totalDays,
+			UnitPrice:   &unitPrice,
+			IsMandatory: true,
+			Notes:       notes,
+		})
+	}
+	return items
+}
+
+// buildSppDispensationItems membuat item potongan SPP dari dispensasi aktif.
+func (s *invoiceGenerateService) buildSppDispensationItems(
+	params dto.GenerateMonthlyInvoiceParams, sppOriginalAmount float64,
+) []model.InvoiceItem {
+	if s.dispensationRepo == nil || sppOriginalAmount <= 0 {
+		return nil
+	}
+
+	dispensations, _ := s.dispensationRepo.FindActiveForStudentMonth(
+		params.StudentID, params.AcademicYearID,
+		params.Month, params.Year, "monthly_spp",
+	)
+	if len(dispensations) == 0 {
+		return nil
+	}
+
+	totalDiscount := CalculateTotalDiscount(sppOriginalAmount, dispensations)
+	remainingDiscount := totalDiscount
+
+	var items []model.InvoiceItem
+	for _, d := range dispensations {
+		discountForThis := float64(0)
+		if d.DiscountType == "percent" {
+			discountForThis = sppOriginalAmount * d.DiscountValue / 100
+		} else {
+			discountForThis = d.DiscountValue
+		}
+		if discountForThis > remainingDiscount {
+			discountForThis = remainingDiscount
+		}
+		remainingDiscount -= discountForThis
+
+		if discountForThis > 0 {
+			label := fmt.Sprintf("Dispensasi: %s", d.Reason)
+			if d.DiscountType == "percent" {
+				label = fmt.Sprintf("Dispensasi: %s (%.0f%%)", d.Reason, d.DiscountValue)
+			}
+			items = append(items, model.InvoiceItem{
+				Name:           label,
+				Category:       "dispensation",
+				OffsetCategory: d.FeeCategory,
+				Amount:         -discountForThis,
+				IsMandatory:    true,
+				Status:         "paid",
+				Notes:          d.Notes,
+			})
+		}
+	}
+	return items
+}
+
+func sumInvoiceItemsByCategory(items []model.InvoiceItem, category string) float64 {
+	total := float64(0)
+	for _, item := range items {
+		if item.Category == category {
+			total += item.Amount
+		}
+	}
+	return total
+}
+
+// topUpMissingCoreItems melengkapi SPP/Infaq pada invoice bulanan yang sudah ada
+// (mis. dibuat alur daycare sebelum enrollment akademik). Tidak menghapus item
+// lain dan tidak mengubah invoice yang sudah lunas.
+func (s *invoiceGenerateService) topUpMissingCoreItems(
+	invoice *model.Invoice, params dto.GenerateMonthlyInvoiceParams,
+) error {
+	if invoice.Status == "paid" {
+		return nil
+	}
+
+	existingItems, err := s.invoiceItemRepo.FindByInvoiceID(invoice.ID)
+	if err != nil {
+		return err
+	}
+	hasSpp, hasInfaq := false, false
+	for _, item := range existingItems {
+		switch item.Category {
+		case "monthly_spp":
+			hasSpp = true
+		case "monthly_infaq":
+			hasInfaq = true
+		}
+	}
+	if hasSpp && hasInfaq {
+		return nil
+	}
+
+	feeConfig, err := s.feeConfigRepo.FindByAcademicYearID(params.AcademicYearID)
+	if err != nil {
+		return fmt.Errorf("fee config tidak ditemukan")
+	}
+
+	var newItems []model.InvoiceItem
+	if !hasSpp {
+		sppItems := s.buildSppItems(params, feeConfig)
+		newItems = append(newItems, sppItems...)
+		newItems = append(newItems, s.buildSppDispensationItems(
+			params, sumInvoiceItemsByCategory(sppItems, "monthly_spp"),
+		)...)
+	}
+	if !hasInfaq {
+		newItems = append(newItems, s.buildInfaqItems(params, feeConfig, s.resolveEffectiveDays(params))...)
+	}
+	if len(newItems) == 0 {
+		return nil
+	}
+
+	for i := range newItems {
+		newItems[i].InvoiceID = invoice.ID
+	}
+	if err := s.invoiceItemRepo.BulkCreate(newItems); err != nil {
+		return fmt.Errorf("gagal melengkapi item invoice bulanan: %w", err)
+	}
+	return s.recalculateInvoiceTotal(invoice.ID)
 }
 
 func (s *invoiceGenerateService) GenerateGraduation(params dto.GenerateGraduationInvoiceParams) (*model.Invoice, error) {

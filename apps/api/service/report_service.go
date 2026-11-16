@@ -72,6 +72,28 @@ func NewReportService(
 	}
 }
 
+// dateOnlyUTC menormalkan tanggal ke 00:00 UTC agar perbandingan rentang tidak
+// terpengaruh offset timezone dari database.
+func dateOnlyUTC(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
+}
+
+// validateReportDateRange memastikan rentang tanggal laporan berada di dalam TA.
+func validateReportDateRange(startDate, endDate, ayStart, ayEnd time.Time, ayName string) error {
+	start := dateOnlyUTC(startDate)
+	end := dateOnlyUTC(endDate)
+	taStart := dateOnlyUTC(ayStart)
+	taEnd := dateOnlyUTC(ayEnd)
+	if start.Before(taStart) || end.After(taEnd) {
+		return utility.NewUnprocessableError(fmt.Sprintf(
+			"Rentang tanggal %s s.d. %s berada di luar tahun ajaran %s (%s s.d. %s)",
+			start.Format("2006-01-02"), end.Format("2006-01-02"),
+			ayName, taStart.Format("2006-01-02"), taEnd.Format("2006-01-02"),
+		))
+	}
+	return nil
+}
+
 func (s *reportService) GetDailyReport(req dto.DailyReportRequest) (*dto.DailyReportResponse, error) {
 	academicYearID := req.AcademicYearID
 	if academicYearID == 0 {
@@ -404,22 +426,41 @@ func (s *reportService) GetPosisiKas(req dto.PosisiKasRequest) (*dto.PosisiKasRe
 		return nil, err
 	}
 
+	// Date ranges: date_from/date_to take priority over month/year.
+	var startDate, endDate, endPrevDate time.Time
+	switch {
+	case req.DateFrom != "" || req.DateTo != "":
+		if req.DateFrom == "" || req.DateTo == "" {
+			return nil, utility.NewUnprocessableError("date_from dan date_to harus diisi bersamaan")
+		}
+		var parseErr error
+		startDate, parseErr = time.Parse("2006-01-02", req.DateFrom)
+		if parseErr != nil {
+			return nil, utility.NewUnprocessableError("Format date_from tidak valid (YYYY-MM-DD)")
+		}
+		endDate, parseErr = time.Parse("2006-01-02", req.DateTo)
+		if parseErr != nil {
+			return nil, utility.NewUnprocessableError("Format date_to tidak valid (YYYY-MM-DD)")
+		}
+		if endDate.Before(startDate) {
+			return nil, utility.NewUnprocessableError("date_to tidak boleh sebelum date_from")
+		}
+		endPrevDate = startDate.AddDate(0, 0, -1)
+	case req.Month != 0 && req.Year != 0:
+		startDate = time.Date(int(req.Year), time.Month(req.Month), 1, 0, 0, 0, 0, time.UTC)
+		endDate = startDate.AddDate(0, 1, -1)
+		endPrevDate = startDate.AddDate(0, 0, -1)
+	default:
+		return nil, utility.NewUnprocessableError("date_from/date_to atau month/year wajib diisi")
+	}
+	if err := validateReportDateRange(startDate, endDate, ay.StartDate, ay.EndDate, ay.Name); err != nil {
+		return nil, err
+	}
+
 	// Load income category labels from DB (ganti hardcode)
 	incomeCategoryLabels, err := s.reportRepo.GetIncomeCategoryLabelMap()
 	if err != nil {
 		return nil, fmt.Errorf("gagal memuat kategori penerimaan: %w", err)
-	}
-
-	// Date ranges: date_from/date_to take priority over month/year
-	var startDate, endDate, endPrevDate time.Time
-	if req.DateFrom != "" && req.DateTo != "" {
-		startDate, _ = time.Parse("2006-01-02", req.DateFrom)
-		endDate, _ = time.Parse("2006-01-02", req.DateTo)
-		endPrevDate = startDate.AddDate(0, 0, -1)
-	} else {
-		startDate = time.Date(int(req.Year), time.Month(req.Month), 1, 0, 0, 0, 0, time.UTC)
-		endDate = startDate.AddDate(0, 1, -1)
-		endPrevDate = startDate.AddDate(0, 0, -1)
 	}
 
 	// Parse categories filter
@@ -669,16 +710,39 @@ func (s *reportService) GetSaldo(req dto.SaldoRequest) (*dto.SaldoResponse, erro
 
 	category := req.Category // "" = semua pos
 
-	// Parse date range: date_from/date_to take priority over month/year
+	// Parse date range: date_from/date_to take priority over month/year.
 	var startDate, endDate, endPrevDate time.Time
-	if req.DateFrom != "" && req.DateTo != "" {
-		startDate, _ = time.Parse("2006-01-02", req.DateFrom)
-		endDate, _ = time.Parse("2006-01-02", req.DateTo)
+	switch {
+	case req.DateFrom != "" || req.DateTo != "":
+		if req.DateFrom == "" || req.DateTo == "" {
+			return nil, utility.NewUnprocessableError("date_from dan date_to harus diisi bersamaan")
+		}
+		var parseErr error
+		startDate, parseErr = time.Parse("2006-01-02", req.DateFrom)
+		if parseErr != nil {
+			return nil, utility.NewUnprocessableError("Format date_from tidak valid (YYYY-MM-DD)")
+		}
+		endDate, parseErr = time.Parse("2006-01-02", req.DateTo)
+		if parseErr != nil {
+			return nil, utility.NewUnprocessableError("Format date_to tidak valid (YYYY-MM-DD)")
+		}
+		if endDate.Before(startDate) {
+			return nil, utility.NewUnprocessableError("date_to tidak boleh sebelum date_from")
+		}
 		endPrevDate = startDate.AddDate(0, 0, -1)
-	} else {
+	case req.Month != 0 && req.Year != 0:
 		startDate = time.Date(int(req.Year), time.Month(req.Month), 1, 0, 0, 0, 0, time.UTC)
 		endDate = startDate.AddDate(0, 1, -1)
 		endPrevDate = startDate.AddDate(0, 0, -1)
+	default:
+		return nil, utility.NewUnprocessableError("date_from/date_to atau month/year wajib diisi")
+	}
+
+	// Tanggal laporan wajib berada di dalam tahun ajaran terpilih. Tanpa ini,
+	// laporan bisa mencampur transaksi bertanggal di luar TA — mis. expense
+	// November 2026 yang masih bertanda academic_year_id TA 2025/2026.
+	if err := validateReportDateRange(startDate, endDate, ay.StartDate, ay.EndDate, ay.Name); err != nil {
+		return nil, err
 	}
 
 	// Parse categories: comma-separated takes priority over single category
@@ -701,6 +765,17 @@ func (s *reportService) GetSaldo(req dto.SaldoRequest) (*dto.SaldoResponse, erro
 	// If only income_categories specified, skip invoice queries
 	allPos := len(categories) == 1 && categories[0] == "" && req.IncomeCategories == "" && !req.IncludeSavings
 	onlyIncome := len(categories) == 1 && categories[0] == "" && req.IncomeCategories != ""
+
+	// Total pembayaran tunggakan periode ini — bagian dari penerimaan all-pos.
+	// Diisi hanya untuk all-pos agar tidak disalahartikan sebagai bagian dari
+	// pos yang sedang difilter.
+	var arrearsPayment float64
+	if allPos {
+		arrearsPayment, err = s.reportRepo.SumPenerimaan(academicYearID, startDate, endDate, "arrears")
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	// Aggregate data across all selected categories
 	var mergedIncome map[string]float64
@@ -937,7 +1012,8 @@ func (s *reportService) GetSaldo(req dto.SaldoRequest) (*dto.SaldoResponse, erro
 			Pengeluaran: totalPengeluaran,
 			Selisih:     totalPenerimaan - totalPengeluaran,
 		},
-		SaldoAkhir: runningBalance,
+		SaldoAkhir:     runningBalance,
+		ArrearsPayment: arrearsPayment,
 	}, nil
 }
 
@@ -1222,8 +1298,23 @@ func (s *reportService) GetPemasukan(req dto.PemasukanRequest) (*dto.PemasukanRe
 		return nil, err
 	}
 
-	startDate, _ := time.Parse("2006-01-02", req.DateFrom)
-	endDate, _ := time.Parse("2006-01-02", req.DateTo)
+	if req.DateFrom == "" || req.DateTo == "" {
+		return nil, utility.NewUnprocessableError("date_from dan date_to wajib diisi")
+	}
+	startDate, err := time.Parse("2006-01-02", req.DateFrom)
+	if err != nil {
+		return nil, utility.NewUnprocessableError("Format date_from tidak valid (YYYY-MM-DD)")
+	}
+	endDate, err := time.Parse("2006-01-02", req.DateTo)
+	if err != nil {
+		return nil, utility.NewUnprocessableError("Format date_to tidak valid (YYYY-MM-DD)")
+	}
+	if endDate.Before(startDate) {
+		return nil, utility.NewUnprocessableError("date_to tidak boleh sebelum date_from")
+	}
+	if err := validateReportDateRange(startDate, endDate, ay.StartDate, ay.EndDate, ay.Name); err != nil {
+		return nil, err
+	}
 
 	// Parse categories from request
 	var categories []string

@@ -10,6 +10,12 @@ import type { DtoSaldoTotalBulan } from "./dtoSaldoTotalBulan";
 
 export interface DtoSaldoResponse {
 	academic_year?: string;
+	/**
+	 * ArrearsPayment = total pembayaran tunggakan pada periode laporan. Diisi
+	 * hanya saat laporan menampilkan semua pos, karena angka ini adalah bagian
+	 * dari total penerimaan all-pos.
+	 */
+	arrears_payment?: number;
 	/** multiple selected categories */
 	categories?: string[];
 	category?: string;

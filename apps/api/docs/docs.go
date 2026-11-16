@@ -19432,8 +19432,11 @@ const docTemplate = `{
                 "academic_year": {
                     "type": "string"
                 },
+                "arrears_payment": {
+                    "description": "ArrearsPayment = total pembayaran tunggakan pada periode laporan. Diisi\nhanya saat laporan menampilkan semua pos, karena angka ini adalah bagian\ndari total penerimaan all-pos.",
+                    "type": "number"
+                },
                 "categories": {
-                    "description": "multiple selected categories",
                     "type": "array",
                     "items": {
                         "type": "string"

@@ -16,7 +16,6 @@ export interface SaldoParams {
 	categories?: string;
 	income_categories?: string; // comma-separated income category codes (bos, donasi, dll)
 	academic_year_id?: number;
-	academic_year_ids?: string;
 }
 
 export interface SaldoRow {
@@ -47,6 +46,8 @@ export interface SaldoData {
 	rows: SaldoRow[];
 	total_bulan: SaldoTotalBulan;
 	saldo_akhir: number;
+	/** Total pembayaran tunggakan pada periode (hanya diisi untuk laporan semua pos). */
+	arrears_payment?: number;
 }
 
 interface ApiResponse {

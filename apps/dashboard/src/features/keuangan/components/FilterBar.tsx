@@ -8,6 +8,12 @@ import { formatDateInput } from "#/utils/format";
 
 export interface FilterBarValues {
 	academic_year_id?: number;
+	academic_year?: {
+		id?: number;
+		name: string;
+		start_date: string;
+		end_date: string;
+	} | null;
 	date_from: string;
 	date_to: string;
 	payment_method: string;
@@ -35,11 +41,13 @@ function getMonthStartString(): string {
 	return formatDateInput(new Date(now.getFullYear(), now.getMonth(), 1));
 }
 
-function getAcademicYearDateRange(ay: { start_date: string } | null) {
+function getAcademicYearDateRange(
+	ay: { start_date: string; end_date?: string } | null,
+) {
 	if (!ay?.start_date) return null;
 	const start = new Date(ay.start_date);
-	const end = new Date(start);
-	end.setDate(end.getDate() + 364);
+	const end = ay.end_date ? new Date(ay.end_date) : new Date(start);
+	if (!ay.end_date) end.setDate(end.getDate() + 364);
 	return { from: formatDateInput(start), to: formatDateInput(end) };
 }
 
@@ -66,18 +74,21 @@ export function FilterBar({
 	const [dateTo, setDateTo] = useState(() => getTodayString());
 	const [paymentMethod, setPaymentMethod] = useState("");
 	const effectiveAyId = academicYearId ?? activeAy?.id;
+	const selectedAy =
+		academicYears.find((ay: any) => ay.id === effectiveAyId) ?? null;
 
 	const handleGenerate = useCallback(() => {
 		onGenerate({
 			academic_year_id: effectiveAyId,
+			academic_year: selectedAy,
 			date_from: dateFrom,
 			date_to: dateTo,
 			payment_method: paymentMethod,
 		});
-	}, [onGenerate, effectiveAyId, dateFrom, dateTo, paymentMethod]);
+	}, [onGenerate, effectiveAyId, selectedAy, dateFrom, dateTo, paymentMethod]);
 
 	const canGenerate = dateFrom !== "" && dateTo !== "";
-	const ayRange = getAcademicYearDateRange(activeAy);
+	const ayRange = getAcademicYearDateRange(selectedAy);
 
 	const inputClass =
 		"block w-full rounded-md border-0 py-1.5 px-2.5 text-sm text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-600";

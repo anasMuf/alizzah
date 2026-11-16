@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { Printer } from "lucide-react";
 import { useMemo, useState } from "react";
-import { useGetV1AcademicYears } from "#/api/endpoints/academic-years/academic-years";
 import {
 	useGetV1FeeConfigs,
 	useGetV1FeeConfigsIdItems,
@@ -22,6 +21,7 @@ import {
 	type MultiSelectGroup,
 } from "#/features/keuangan/components/MultiSelectCheckbox";
 import { ReportInfoCard } from "#/features/keuangan/components/ReportInfoCard";
+import { validateReportDateRange } from "#/features/keuangan/report-date-range";
 import { academicYearAtom } from "#/store/global";
 import { formatCurrency, formatDate } from "#/utils/format";
 import { openPrintWindow } from "#/utils/print";
@@ -42,6 +42,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 	graduation: "Wisuda",
 	calisan: "Calisan",
 	ekskul: "Ekskul",
+	arrears: "Tunggakan",
 };
 
 const CATEGORY_ORDER: Record<string, number> = {
@@ -56,7 +57,13 @@ const CATEGORY_ORDER: Record<string, number> = {
 	graduation: 9,
 	calisan: 10,
 	ekskul: 11,
+	arrears: 12,
 };
+
+// Pos yang bukan berasal dari item tarif (fee item), tetapi tetap didukung
+// backend sebagai kategori invoice. Saat ini hanya tunggakan historis.
+const CATEGORY_POS_PREFIX = "category:";
+const ARREARS_POS_ID = `${CATEGORY_POS_PREFIX}arrears`;
 
 function sortByCategory(a: any, b: any): number {
 	const orderA = CATEGORY_ORDER[a.category] ?? 99;
@@ -111,6 +118,10 @@ function LaporanSaldoPage() {
 		return [
 			...map.values(),
 			{
+				header: "Tunggakan",
+				items: [{ id: ARREARS_POS_ID, label: "Tunggakan" }],
+			},
+			{
 				header: "Penerimaan Lain",
 				items: [
 					...incomeCats.map((inc: any) => ({
@@ -128,23 +139,9 @@ function LaporanSaldoPage() {
 		[posGroups],
 	);
 
-	// Academic years for multi-TA select
-	const { data: ayData } = useGetV1AcademicYears({
-		query: { staleTime: 5 * 60 * 1000 },
-	});
-	const academicYears = ((ayData?.data as any)?.data ?? []) as any[];
-	const ayOptions = useMemo(
-		() =>
-			academicYears.map((ay: any) => ({
-				id: ay.id,
-				label: ay.name,
-			})),
-		[academicYears],
-	);
-
 	// Filter state
 	const [selectedPosIds, setSelectedPosIds] = useState<(string | number)[]>([]);
-	const [selectedAyIds, setSelectedAyIds] = useState<(string | number)[]>([]);
+	const [rangeError, setRangeError] = useState<string | null>(null);
 
 	const [committedParams, setCommittedParams] = useState<Record<
 		string,
@@ -162,9 +159,28 @@ function LaporanSaldoPage() {
 	const report: SaldoData | null = (reportData?.data as any)?.data ?? null;
 
 	const handleGenerate = (filters: FilterBarValues) => {
-		const selectedCategories = feeItems
+		const validation = validateReportDateRange(
+			filters.date_from,
+			filters.date_to,
+			filters.academic_year,
+		);
+		if (validation) {
+			setRangeError(validation);
+			return;
+		}
+		setRangeError(null);
+
+		const selectedFeeCategories = feeItems
 			.filter((item: any) => selectedPosIds.includes(item.id))
 			.map((item: any) => item.category);
+		const selectedCategoryCodes = selectedPosIds
+			.filter(
+				(id) => typeof id === "string" && id.startsWith(CATEGORY_POS_PREFIX),
+			)
+			.map((id) => (id as string).slice(CATEGORY_POS_PREFIX.length));
+		const selectedCategories = [
+			...new Set([...selectedFeeCategories, ...selectedCategoryCodes]),
+		];
 		const selectedIncomeCategories = selectedPosIds
 			.filter((id) => typeof id === "string" && id.startsWith("income:"))
 			.map((id) => (id as string).slice("income:".length));
@@ -182,8 +198,6 @@ function LaporanSaldoPage() {
 					: undefined,
 			include_savings: includeSavings || undefined,
 			academic_year_id: filters.academic_year_id,
-			academic_year_ids:
-				selectedAyIds.length > 0 ? selectedAyIds.join(",") : undefined,
 		});
 	};
 
@@ -243,29 +257,25 @@ function LaporanSaldoPage() {
 		const feeNames = feeItems
 			.filter((item: any) => selectedPosIds.includes(item.id))
 			.map((item: any) => item.name);
+		const categoryNames = selectedPosIds
+			.filter(
+				(id) => typeof id === "string" && id.startsWith(CATEGORY_POS_PREFIX),
+			)
+			.map((id) => {
+				const code = (id as string).slice(CATEGORY_POS_PREFIX.length);
+				return CATEGORY_LABELS[code] ?? code;
+			});
 		const incomeNames = selectedPosIds
 			.filter((id) => typeof id === "string" && id in incomeLabelMap)
 			.map((id) => incomeLabelMap[id as string])
 			.filter(Boolean);
-		const allPosNames = [...feeNames, ...incomeNames];
-		const taNames = academicYears
-			.filter((ay: any) => selectedAyIds.includes(ay.id))
-			.map((ay: any) => ay.name)
-			.join(", ");
+		const allPosNames = [...feeNames, ...categoryNames, ...incomeNames];
 		return {
 			periode: `${formatDate(committedParams.date_from as string)} - ${formatDate(committedParams.date_to as string)}`,
 			pos: allPosNames.join(", ") || "Semua",
-			ta: taNames || activeAy?.name || "-",
+			ta: report?.academic_year || activeAy?.name || "-",
 		};
-	}, [
-		committedParams,
-		selectedPosIds,
-		selectedAyIds,
-		feeItems,
-		incomeCats,
-		academicYears,
-		activeAy,
-	]);
+	}, [committedParams, selectedPosIds, feeItems, incomeCats, report, activeAy]);
 
 	return (
 		<div className="h-full flex flex-col">
@@ -304,12 +314,6 @@ function LaporanSaldoPage() {
 								selected={selectedPosIds}
 								onChange={setSelectedPosIds}
 							/>
-							<MultiSelectCheckbox
-								label="Tahun Ajaran"
-								options={ayOptions}
-								selected={selectedAyIds}
-								onChange={setSelectedAyIds}
-							/>
 						</div>
 					</FilterBar>
 				</div>
@@ -328,10 +332,25 @@ function LaporanSaldoPage() {
 								Terjadi kesalahan saat memuat laporan saldo.
 							</Alert>
 						)}
+						{rangeError && (
+							<Alert variant="error" title="Rentang tanggal tidak valid">
+								{rangeError}
+							</Alert>
+						)}
 
 						{report && !isLoading && (
 							<>
 								<ReportInfoCard filters={infoFilters} />
+								{(report.arrears_payment ?? 0) > 0 && (
+									<div className="mt-3 rounded-xl border border-amber-100 bg-amber-50 p-4 text-sm text-amber-800">
+										Termasuk pembayaran tunggakan pada periode ini:{" "}
+										<span className="font-semibold tabular-nums">
+											{formatCurrency(report.arrears_payment ?? 0)}
+										</span>
+										. Pilih pos <strong>Tunggakan</strong> untuk melihat rincian
+										per tanggal.
+									</div>
+								)}
 								{report.rows?.length > 0 ? (
 									<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden">
 										{/* Saldo Sebelum */}

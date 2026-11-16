@@ -40,7 +40,7 @@ export type GetV1InvoicesParams = {
 	 */
 	type?: string;
 	/**
-	 * Filter by status (exact, atau daftar dipisah koma: unpaid,partial)
+	 * Filter by status
 	 */
 	status?: string;
 };

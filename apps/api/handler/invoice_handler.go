@@ -36,7 +36,7 @@ func NewInvoiceHandler(service service.InvoiceService, invoiceGen service.Invoic
 // @Param        year              query   int     false  "Filter by year"
 // @Param        class_group_id    query   int     false  "Filter by class group ID"
 // @Param        type              query   string  false  "Filter by type"
-// @Param        status            query   string  false  "Filter by status (exact, atau daftar dipisah koma: unpaid,partial)"
+// @Param        status            query   string  false  "Filter by status"
 // @Success      200               {object}  dto.PaginatedResponse{data=[]dto.InvoiceListResponse}
 // @Failure      401               {object}  dto.ErrorResponse
 // @Failure      403               {object}  dto.ErrorResponse

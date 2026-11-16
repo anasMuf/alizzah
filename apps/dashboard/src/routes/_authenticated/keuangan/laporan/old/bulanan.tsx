@@ -57,11 +57,6 @@ function LaporanBulananPage() {
 	const expense = report?.expense_summary;
 	const cash = report?.cash;
 	const arrears: any[] = report?.arrears_by_class || [];
-	const otherYearArrears: any[] = report?.other_year_arrears_by_class || [];
-	const otherYearArrearsTotal = otherYearArrears.reduce(
-		(sum, cls) => sum + Number(cls.total_unpaid || 0),
-		0,
-	);
 
 	function handlePrint() {
 		if (!report) return;
@@ -187,41 +182,6 @@ function LaporanBulananPage() {
 				: `
 		<tr>
 			<td colspan="3" class="text-center text-gray">Tidak ada tunggakan pada bulan ini.</td>
-		</tr>`
-		}
-	</tbody>
-</table>
-
-<h3 class="text-base font-bold uppercase letter-spacing mb-2 mt-8">Tunggakan Tahun Ajaran Lain</h3>
-<table>
-	<thead>
-		<tr>
-			<th>Kelas</th>
-			<th class="text-right">Total Tunggakan</th>
-			<th class="text-right">Jumlah Siswa</th>
-		</tr>
-	</thead>
-	<tbody>
-		${
-			otherYearArrears.length > 0
-				? `${otherYearArrears
-						.map(
-							(cls: any) => `
-		<tr>
-			<td>${esc(cls.class_group_name)}</td>
-			<td class="text-right text-red">${formatCurrency(Number(cls.total_unpaid || 0))}</td>
-			<td class="text-right text-gray">${cls.student_count} siswa</td>
-		</tr>`,
-						)
-						.join("")}
-		<tr class="bg-gray-50 font-bold">
-			<td class="border-t-foot">TOTAL</td>
-			<td class="text-right border-t-foot text-red">${formatCurrency(otherYearArrearsTotal)}</td>
-			<td class="text-right border-t-foot text-gray">—</td>
-		</tr>`
-				: `
-		<tr>
-			<td colspan="3" class="text-center text-gray">Tidak ada tunggakan dari tahun ajaran lain.</td>
 		</tr>`
 		}
 	</tbody>
@@ -564,75 +524,6 @@ function LaporanBulananPage() {
 								</Link>
 							</div>
 						)}
-					</div>
-
-					{/* Tunggakan Tahun Ajaran Lain */}
-					<div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden">
-						<div className="p-6 pb-2">
-							<h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-								Tunggakan Tahun Ajaran Lain
-							</h3>
-							<p className="mt-1 text-xs text-gray-500">
-								Tunggakan historis di luar TA laporan, dikelompokkan berdasarkan
-								kelas siswa pada TA ini.
-							</p>
-						</div>
-						<div className="overflow-x-auto">
-							<table className="min-w-full divide-y divide-gray-300">
-								<thead className="bg-gray-50">
-									<tr>
-										<th className="py-3 pl-6 pr-3 text-left text-sm font-semibold text-gray-900">
-											Kelas
-										</th>
-										<th className="px-3 py-3 text-right text-sm font-semibold text-gray-900">
-											Total Tunggakan
-										</th>
-										<th className="px-3 py-3 text-right text-sm font-semibold text-gray-900 pr-6">
-											Jumlah Siswa
-										</th>
-									</tr>
-								</thead>
-								<tbody className="divide-y divide-gray-200 bg-white">
-									{otherYearArrears.length > 0 ? (
-										<>
-											{otherYearArrears.map((cls: any) => (
-												<tr key={cls.class_group_name}>
-													<td className="py-3 pl-6 pr-3 text-sm text-gray-900">
-														{cls.class_group_name}
-													</td>
-													<td className="px-3 py-3 text-sm text-right tabular-nums text-red-600 font-medium">
-														{formatCurrency(Number(cls.total_unpaid || 0))}
-													</td>
-													<td className="px-3 py-3 text-sm text-right text-gray-500 pr-6">
-														{cls.student_count} siswa
-													</td>
-												</tr>
-											))}
-											<tr className="bg-gray-50 font-semibold">
-												<td className="py-3 pl-6 pr-3 text-sm text-gray-900">
-													TOTAL
-												</td>
-												<td className="px-3 py-3 text-sm text-right tabular-nums text-red-600">
-													{formatCurrency(otherYearArrearsTotal)}
-												</td>
-												<td className="px-3 py-3 text-sm text-right text-gray-500 pr-6">
-													—
-												</td>
-											</tr>
-										</>
-									) : (
-										<tr>
-											<td
-												colSpan={3}
-												className="px-6 py-8 text-center text-sm text-gray-500"
-											>
-												Tidak ada tunggakan dari tahun ajaran lain.
-											</td>
-										</tr>
-									)}
-								</tbody>
-							</table>
-						</div>
 					</div>
 
 					{/* Cash Summary */}

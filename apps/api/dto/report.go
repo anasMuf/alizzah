@@ -63,12 +63,7 @@ type MonthlyReportResponse struct {
 	IncomeSummary  MonthlyIncomeSummary   `json:"income_summary"`
 	ExpenseSummary ExpenseSummaryResponse `json:"expense_summary"`
 	ArrearsByClass []ClassArrearSummary   `json:"arrears_by_class"`
-	// OtherYearArrearsByClass adalah tunggakan historis (type "arrears") dari
-	// tahun ajaran selain TA laporan, dikelompokkan berdasarkan kelas siswa pada
-	// TA laporan. Dipisahkan dari ArrearsByClass agar tidak tercampur dengan
-	// tagihan bulan berjalan.
-	OtherYearArrearsByClass []ClassArrearSummary `json:"other_year_arrears_by_class"`
-	Cash                    MonthlyCashSummary   `json:"cash"`
+	Cash           MonthlyCashSummary     `json:"cash"`
 }
 
 type MonthlyIncomeSummary struct {

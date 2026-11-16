@@ -3,6 +3,7 @@ package repository
 import (
 	"api/dto"
 	"api/model"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -42,6 +43,32 @@ func (r *invoiceRepository) WithTx(tx *gorm.DB) InvoiceRepository {
 	return &invoiceRepository{db: tx}
 }
 
+// applyInvoiceStatusFilter mendukung status tunggal maupun daftar dipisah koma
+// (mis. "unpaid,partial") agar klien dapat meminta semua tagihan yang belum
+// lunas tanpa kehilangan yang partial. Input yang hanya berisi pemisah
+// menghasilkan kondisi selalu false — bukan diam-diam mengembalikan semua data.
+func applyInvoiceStatusFilter(q *gorm.DB, status string) *gorm.DB {
+	if status == "" {
+		return q
+	}
+
+	parts := strings.Split(status, ",")
+	if len(parts) == 1 {
+		return q.Where("status = ?", status)
+	}
+
+	cleaned := make([]string, 0, len(parts))
+	for _, s := range parts {
+		if s = strings.TrimSpace(s); s != "" {
+			cleaned = append(cleaned, s)
+		}
+	}
+	if len(cleaned) == 0 {
+		return q.Where("1 = 0")
+	}
+	return q.Where("status IN ?", cleaned)
+}
+
 func (r *invoiceRepository) FindAll(params dto.InvoiceQueryParams) ([]model.Invoice, int64, float64, error) {
 	// applyFilters memasang semua kondisi WHERE (termasuk filter visibility bulanan)
 	// ke sebuah query. Dipakai ulang untuk count, sum, dan find agar identik & konsisten.
@@ -56,7 +83,7 @@ func (r *invoiceRepository) FindAll(params dto.InvoiceQueryParams) ([]model.Invo
 			q = q.Where("type = ?", params.Type)
 		}
 		if params.Status != "" {
-			q = q.Where("status = ?", params.Status)
+			q = applyInvoiceStatusFilter(q, params.Status)
 		}
 		if params.Month != 0 {
 			q = q.Where("month = ?", params.Month)

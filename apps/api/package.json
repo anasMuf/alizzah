@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "go run github.com/air-verse/air@latest",
-    "build": "go build -o bin/api main.go"
+    		"dev": "go run github.com/air-verse/air@latest",
+    		"build": "go build -o bin/api main.go",
+    		"generate:swagger": "swag init -g cmd/api/main.go -o docs --parseDependency --parseInternal --exclude internal/modules/sdm"
   }
 }

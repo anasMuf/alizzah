@@ -155,9 +155,10 @@ definitions:
       paid_months:
         description: |-
           PaidMonths = bulan di mana entity tsb sudah punya item yang DIBIAYAR
-          (paid_amount > 0) pada invoice siswa. UI memakai daftar ini untuk
-          men-disable bulan yang tidak bisa di-skip (item berbayar tidak bisa
-          dihapus backend) — berbeda dengan sekadar "invoice bulan tsb sudah bayar".
+          (paid_amount > 0) pada invoice siswa. Untuk daycare, mencakup item SPD,
+          konsumsi, dan overtime. UI memakai daftar ini untuk men-disable bulan
+          yang tidak bisa di-skip (item berbayar tidak bisa dihapus backend) —
+          berbeda dengan sekadar "invoice bulan tsb sudah bayar".
         items:
           $ref: '#/definitions/dto.BillingExclusionMonth'
         type: array
@@ -760,6 +761,8 @@ definitions:
         minItems: 1
         type: array
       month:
+        maximum: 12
+        minimum: 1
         type: integer
       notes:
         type: string
@@ -2110,6 +2113,15 @@ definitions:
         $ref: '#/definitions/dto.ExpenseSummaryResponse'
       income_summary:
         $ref: '#/definitions/dto.MonthlyIncomeSummary'
+      other_year_arrears_by_class:
+        description: |-
+          OtherYearArrearsByClass adalah tunggakan historis (type "arrears") dari
+          tahun ajaran selain TA laporan, dikelompokkan berdasarkan kelas siswa pada
+          TA laporan. Dipisahkan dari ArrearsByClass agar tidak tercampur dengan
+          tagihan bulan berjalan.
+        items:
+          $ref: '#/definitions/dto.ClassArrearSummary'
+        type: array
       period:
         type: string
     type: object
@@ -2585,6 +2597,57 @@ definitions:
         type: integer
       status:
         type: string
+    type: object
+  dto.StudentDeleteFinancial:
+    properties:
+      cash_transactions:
+        type: integer
+      koperasi_sales:
+        type: number
+      outstanding:
+        type: number
+      paid_invoices:
+        type: number
+      related_expenses:
+        type: integer
+      savings_balance:
+        type: number
+      total_invoices:
+        type: number
+      total_payments:
+        type: number
+      vault_transactions:
+        type: integer
+    type: object
+  dto.StudentDeleteItem:
+    properties:
+      amount:
+        type: number
+      count:
+        type: integer
+      key:
+        type: string
+      label:
+        type: string
+      note:
+        type: string
+    type: object
+  dto.StudentDeletePreviewResponse:
+    properties:
+      financial:
+        $ref: '#/definitions/dto.StudentDeleteFinancial'
+      full_name:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/dto.StudentDeleteItem'
+        type: array
+      requires_force:
+        type: boolean
+      status:
+        type: string
+      student_id:
+        type: integer
     type: object
   dto.StudentDetailResponse:
     properties:
@@ -8586,7 +8649,7 @@ paths:
         in: query
         name: type
         type: string
-      - description: Filter by status
+      - description: 'Filter by status (exact, atau daftar dipisah koma: unpaid,partial)'
         in: query
         name: status
         type: string
@@ -11627,7 +11690,8 @@ paths:
     delete:
       consumes:
       - application/json
-      description: Delete a student (fails if student has active enrollments)
+      description: Delete a student beserta seluruh data terhubung (soft-delete cascade).
+        Wajib confirm_name; force=true bila ada data finansial.
       parameters:
       - description: Student ID
         in: path
@@ -11916,6 +11980,29 @@ paths:
       summary: Set billing month exclusions for a daycare enrollment
       tags:
       - daycare-enrollments
+  /v1/students/{id}/delete-preview:
+    get:
+      parameters:
+      - description: Student ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.StudentDeletePreviewResponse'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Preview data terhubung sebelum siswa dihapus
+      tags:
+      - students
   /v1/students/{id}/dispensations:
     get:
       parameters:

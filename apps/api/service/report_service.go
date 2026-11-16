@@ -151,6 +151,10 @@ func (s *reportService) GetMonthlyReport(req dto.MonthlyReportRequest) (*dto.Mon
 	totalExpense := utility.SumCategoryAmounts(expenseByCategory)
 
 	arrearsByClass, _ := s.reportRepo.GetArrearsByClass(academicYearID, req.Month, req.Year)
+	otherYearArrearsByClass, err := s.reportRepo.GetOtherYearArrearsByClass(academicYearID)
+	if err != nil {
+		return nil, fmt.Errorf("gagal mengambil tunggakan tahun ajaran lain: %w", err)
+	}
 
 	openingBalance, _ := s.cashRepo.GetBalanceUpToDate(academicYearID, startDate.AddDate(0, 0, -1))
 	credit, debit, _ := s.cashRepo.SumByDateRange(academicYearID, startDate, endDate)
@@ -169,7 +173,8 @@ func (s *reportService) GetMonthlyReport(req dto.MonthlyReportRequest) (*dto.Mon
 			Total:      totalExpense,
 			ByCategory: expenseByCategory,
 		},
-		ArrearsByClass: arrearsByClass,
+		ArrearsByClass:          arrearsByClass,
+		OtherYearArrearsByClass: otherYearArrearsByClass,
 		Cash: dto.MonthlyCashSummary{
 			OpeningBalance: openingBalance,
 			TotalIncome:    credit,

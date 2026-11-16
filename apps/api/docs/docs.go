@@ -7328,7 +7328,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Filter by status",
+                        "description": "Filter by status (exact, atau daftar dipisah koma: unpaid,partial)",
                         "name": "status",
                         "in": "query"
                     }
@@ -12660,7 +12660,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Delete a student (fails if student has active enrollments)",
+                "description": "Delete a student beserta seluruh data terhubung (soft-delete cascade). Wajib confirm_name; force=true bila ada data finansial.",
                 "consumes": [
                     "application/json"
                 ],
@@ -12976,6 +12976,48 @@ const docTemplate = `{
                         "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/students/{id}/delete-preview": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "tags": [
+                    "students"
+                ],
+                "summary": "Preview data terhubung sebelum siswa dihapus",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Student ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/dto.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.StudentDeletePreviewResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -16089,7 +16131,7 @@ const docTemplate = `{
                     }
                 },
                 "paid_months": {
-                    "description": "PaidMonths = bulan di mana entity tsb sudah punya item yang DIBIAYAR\n(paid_amount \u003e 0) pada invoice siswa. UI memakai daftar ini untuk\nmen-disable bulan yang tidak bisa di-skip (item berbayar tidak bisa\ndihapus backend) — berbeda dengan sekadar \"invoice bulan tsb sudah bayar\".",
+                    "description": "PaidMonths = bulan di mana entity tsb sudah punya item yang DIBIAYAR\n(paid_amount \u003e 0) pada invoice siswa. Untuk daycare, mencakup item SPD,\nkonsumsi, dan overtime. UI memakai daftar ini untuk men-disable bulan\nyang tidak bisa di-skip (item berbayar tidak bisa dihapus backend) —\nberbeda dengan sekadar \"invoice bulan tsb sudah bayar\".",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/dto.BillingExclusionMonth"
@@ -16957,7 +16999,9 @@ const docTemplate = `{
                     }
                 },
                 "month": {
-                    "type": "integer"
+                    "type": "integer",
+                    "maximum": 12,
+                    "minimum": 1
                 },
                 "notes": {
                     "type": "string"
@@ -18944,6 +18988,13 @@ const docTemplate = `{
                 "income_summary": {
                     "$ref": "#/definitions/dto.MonthlyIncomeSummary"
                 },
+                "other_year_arrears_by_class": {
+                    "description": "OtherYearArrearsByClass adalah tunggakan historis (type \"arrears\") dari\ntahun ajaran selain TA laporan, dikelompokkan berdasarkan kelas siswa pada\nTA laporan. Dipisahkan dari ArrearsByClass agar tidak tercampur dengan\ntagihan bulan berjalan.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ClassArrearSummary"
+                    }
+                },
                 "period": {
                     "type": "string"
                 }
@@ -19663,6 +19714,84 @@ const docTemplate = `{
                 },
                 "status": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.StudentDeleteFinancial": {
+            "type": "object",
+            "properties": {
+                "cash_transactions": {
+                    "type": "integer"
+                },
+                "koperasi_sales": {
+                    "type": "number"
+                },
+                "outstanding": {
+                    "type": "number"
+                },
+                "paid_invoices": {
+                    "type": "number"
+                },
+                "related_expenses": {
+                    "type": "integer"
+                },
+                "savings_balance": {
+                    "type": "number"
+                },
+                "total_invoices": {
+                    "type": "number"
+                },
+                "total_payments": {
+                    "type": "number"
+                },
+                "vault_transactions": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.StudentDeleteItem": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "count": {
+                    "type": "integer"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "note": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.StudentDeletePreviewResponse": {
+            "type": "object",
+            "properties": {
+                "financial": {
+                    "$ref": "#/definitions/dto.StudentDeleteFinancial"
+                },
+                "full_name": {
+                    "type": "string"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.StudentDeleteItem"
+                    }
+                },
+                "requires_force": {
+                    "type": "boolean"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "student_id": {
+                    "type": "integer"
                 }
             }
         },

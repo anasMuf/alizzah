@@ -175,6 +175,9 @@ func main() {
 	db.Exec(`CREATE INDEX IF NOT EXISTS idx_cash_source ON cash_transactions(source_type, source_id)`)
 	db.Exec(`CREATE INDEX IF NOT EXISTS idx_vault_source ON vault_transactions(source_type, source_id)`)
 	db.Exec(`CREATE INDEX IF NOT EXISTS idx_savings_source ON savings_transactions(source_type, source_id)`)
+	// Composite index untuk agregasi tunggakan per kelas: lookup enrollment
+	// berdasarkan (student_id, academic_year_id) lalu ambil id terbaru.
+	db.Exec(`CREATE INDEX IF NOT EXISTS idx_enrollment_student_ay ON student_enrollments(student_id, academic_year_id, id DESC)`)
 
 	if err := db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS uq_ed_level ON effective_days (level, month, year) WHERE level != ''`).Error; err != nil {
 		log.Printf("ERROR: gagal buat index uq_ed_level: %v", err)

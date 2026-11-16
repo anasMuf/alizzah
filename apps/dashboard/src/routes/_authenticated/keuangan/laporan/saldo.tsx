@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { Printer } from "lucide-react";
 import { useMemo, useState } from "react";
-import { useGetV1AcademicYears } from "#/api/endpoints/academic-years/academic-years";
 import {
 	useGetV1FeeConfigs,
 	useGetV1FeeConfigsIdItems,
@@ -22,6 +21,7 @@ import {
 	type MultiSelectGroup,
 } from "#/features/keuangan/components/MultiSelectCheckbox";
 import { ReportInfoCard } from "#/features/keuangan/components/ReportInfoCard";
+import { validateReportDateRange } from "#/features/keuangan/report-date-range";
 import { academicYearAtom } from "#/store/global";
 import { formatCurrency, formatDate } from "#/utils/format";
 import { openPrintWindow } from "#/utils/print";
@@ -139,23 +139,9 @@ function LaporanSaldoPage() {
 		[posGroups],
 	);
 
-	// Academic years for multi-TA select
-	const { data: ayData } = useGetV1AcademicYears({
-		query: { staleTime: 5 * 60 * 1000 },
-	});
-	const academicYears = ((ayData?.data as any)?.data ?? []) as any[];
-	const ayOptions = useMemo(
-		() =>
-			academicYears.map((ay: any) => ({
-				id: ay.id,
-				label: ay.name,
-			})),
-		[academicYears],
-	);
-
 	// Filter state
 	const [selectedPosIds, setSelectedPosIds] = useState<(string | number)[]>([]);
-	const [selectedAyIds, setSelectedAyIds] = useState<(string | number)[]>([]);
+	const [rangeError, setRangeError] = useState<string | null>(null);
 
 	const [committedParams, setCommittedParams] = useState<Record<
 		string,
@@ -173,6 +159,17 @@ function LaporanSaldoPage() {
 	const report: SaldoData | null = (reportData?.data as any)?.data ?? null;
 
 	const handleGenerate = (filters: FilterBarValues) => {
+		const validation = validateReportDateRange(
+			filters.date_from,
+			filters.date_to,
+			filters.academic_year,
+		);
+		if (validation) {
+			setRangeError(validation);
+			return;
+		}
+		setRangeError(null);
+
 		const selectedFeeCategories = feeItems
 			.filter((item: any) => selectedPosIds.includes(item.id))
 			.map((item: any) => item.category);
@@ -201,8 +198,6 @@ function LaporanSaldoPage() {
 					: undefined,
 			include_savings: includeSavings || undefined,
 			academic_year_id: filters.academic_year_id,
-			academic_year_ids:
-				selectedAyIds.length > 0 ? selectedAyIds.join(",") : undefined,
 		});
 	};
 
@@ -275,24 +270,12 @@ function LaporanSaldoPage() {
 			.map((id) => incomeLabelMap[id as string])
 			.filter(Boolean);
 		const allPosNames = [...feeNames, ...categoryNames, ...incomeNames];
-		const taNames = academicYears
-			.filter((ay: any) => selectedAyIds.includes(ay.id))
-			.map((ay: any) => ay.name)
-			.join(", ");
 		return {
 			periode: `${formatDate(committedParams.date_from as string)} - ${formatDate(committedParams.date_to as string)}`,
 			pos: allPosNames.join(", ") || "Semua",
-			ta: taNames || activeAy?.name || "-",
+			ta: report?.academic_year || activeAy?.name || "-",
 		};
-	}, [
-		committedParams,
-		selectedPosIds,
-		selectedAyIds,
-		feeItems,
-		incomeCats,
-		academicYears,
-		activeAy,
-	]);
+	}, [committedParams, selectedPosIds, feeItems, incomeCats, report, activeAy]);
 
 	return (
 		<div className="h-full flex flex-col">
@@ -331,12 +314,6 @@ function LaporanSaldoPage() {
 								selected={selectedPosIds}
 								onChange={setSelectedPosIds}
 							/>
-							<MultiSelectCheckbox
-								label="Tahun Ajaran"
-								options={ayOptions}
-								selected={selectedAyIds}
-								onChange={setSelectedAyIds}
-							/>
 						</div>
 					</FilterBar>
 				</div>
@@ -353,6 +330,11 @@ function LaporanSaldoPage() {
 						{isError && (
 							<Alert variant="error" title="Gagal Memuat">
 								Terjadi kesalahan saat memuat laporan saldo.
+							</Alert>
+						)}
+						{rangeError && (
+							<Alert variant="error" title="Rentang tanggal tidak valid">
+								{rangeError}
 							</Alert>
 						)}
 

@@ -23,6 +23,7 @@ import {
 	type MultiSelectGroup,
 } from "#/features/keuangan/components/MultiSelectCheckbox";
 import { ReportInfoCard } from "#/features/keuangan/components/ReportInfoCard";
+import { validateReportDateRange } from "#/features/keuangan/report-date-range";
 import { academicYearAtom } from "#/store/global";
 import { formatDate } from "#/utils/format";
 import { openPrintWindow } from "#/utils/print";
@@ -153,6 +154,14 @@ function LaporanPosisiKasPage() {
 			groups.push({ header: label, items });
 		}
 
+		// Tunggakan historis bukan fee item/kategori income; tambahkan sebagai
+		// pos statis agar bisa difilter seperti Pemasukan/Saldo.
+		groups.push({
+			header: "Tunggakan",
+			items: [{ id: "cat:arrears", label: "Pemasukan" }],
+		});
+		flat.push({ id: "cat:arrears", label: "Tunggakan — Pemasukan" });
+
 		// Tabungan Umum
 		groups.push({
 			header: "Tabungan Umum",
@@ -164,6 +173,7 @@ function LaporanPosisiKasPage() {
 	}, [feeItems, expenseCats, incomeCats]);
 
 	const [selectedIds, setSelectedIds] = useState<(string | number)[]>([]);
+	const [rangeError, setRangeError] = useState<string | null>(null);
 
 	const [committedParams, setCommittedParams] = useState<Record<
 		string,
@@ -183,6 +193,17 @@ function LaporanPosisiKasPage() {
 	const grandTotal = report?.grand_total;
 
 	const handleGenerate = (filters: FilterBarValues) => {
+		const validation = validateReportDateRange(
+			filters.date_from,
+			filters.date_to,
+			filters.academic_year,
+		);
+		if (validation) {
+			setRangeError(validation);
+			return;
+		}
+		setRangeError(null);
+
 		const selected = [...selectedIds];
 
 		// Fee categories → categories param
@@ -301,9 +322,9 @@ function LaporanPosisiKasPage() {
 		return {
 			kategori: selectedNames || "Semua",
 			periode: periodLabel,
-			ta: activeAy?.name ?? "-",
+			ta: report?.academic_year || activeAy?.name || "-",
 		};
-	}, [committedParams, selectedIds, flatKategoriOptions, activeAy]);
+	}, [committedParams, selectedIds, flatKategoriOptions, report, activeAy]);
 
 	return (
 		<div className="h-full flex flex-col">
@@ -359,6 +380,11 @@ function LaporanPosisiKasPage() {
 						{isError && (
 							<Alert variant="error" title="Gagal Memuat">
 								Terjadi kesalahan saat memuat laporan posisi kas.
+							</Alert>
+						)}
+						{rangeError && (
+							<Alert variant="error" title="Rentang tanggal tidak valid">
+								{rangeError}
 							</Alert>
 						)}
 

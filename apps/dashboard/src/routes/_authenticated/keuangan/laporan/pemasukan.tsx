@@ -21,6 +21,7 @@ import {
 	type MultiSelectGroup,
 } from "#/features/keuangan/components/MultiSelectCheckbox";
 import { ReportInfoCard } from "#/features/keuangan/components/ReportInfoCard";
+import { validateReportDateRange } from "#/features/keuangan/report-date-range";
 import { academicYearAtom } from "#/store/global";
 import { formatCurrency, formatDate } from "#/utils/format";
 import { openPrintWindow } from "#/utils/print";
@@ -51,6 +52,8 @@ function sortByCategory(a: any, b: any): number {
 	if (orderA !== orderB) return orderA - orderB;
 	return a.id - b.id;
 }
+
+const ARREARS_POS_ID = "category:arrears";
 
 function LaporanPemasukanPage() {
 	const [activeAy] = useAtom(academicYearAtom);
@@ -108,6 +111,12 @@ function LaporanPemasukanPage() {
 			map.get(groupName)!.items.push({ id: item.id, label });
 		}
 
+		// Tunggakan historis bukan fee item, jadi ditambahkan sebagai pos statis.
+		map.set("Tunggakan", {
+			header: "Tunggakan",
+			items: [{ id: ARREARS_POS_ID, label: "Tunggakan" }],
+		});
+
 		// Income categories as final group (dinamis dari master data)
 		map.set("Penerimaan Lain", {
 			header: "Penerimaan Lain",
@@ -132,6 +141,7 @@ function LaporanPemasukanPage() {
 	const [selectedFeeItemIds, setSelectedFeeItemIds] = useState<
 		(string | number)[]
 	>([]);
+	const [rangeError, setRangeError] = useState<string | null>(null);
 
 	// Snapshots filter values only on Generate click — prevents auto-fetch on filter changes
 	const [committedParams, setCommittedParams] = useState<Record<
@@ -150,9 +160,26 @@ function LaporanPemasukanPage() {
 	const report: PemasukanData | null = (reportData?.data as any)?.data ?? null;
 
 	const handleGenerate = (filters: FilterBarValues) => {
-		const selectedCategories = feeItems
+		const validation = validateReportDateRange(
+			filters.date_from,
+			filters.date_to,
+			filters.academic_year,
+		);
+		if (validation) {
+			setRangeError(validation);
+			return;
+		}
+		setRangeError(null);
+
+		const selectedFeeCategories = feeItems
 			.filter((item: any) => selectedFeeItemIds.includes(item.id))
 			.map((item: any) => item.category);
+		const selectedCategoryCodes = selectedFeeItemIds
+			.filter((id) => typeof id === "string" && id.startsWith("category:"))
+			.map((id) => (id as string).slice("category:".length));
+		const selectedCategories = [
+			...new Set([...selectedFeeCategories, ...selectedCategoryCodes]),
+		];
 
 		const selectedIncomeCategories = selectedFeeItemIds
 			.filter((id) => typeof id === "string" && id.startsWith("income:"))
@@ -245,6 +272,7 @@ function LaporanPemasukanPage() {
 				.map((id) => {
 					const key = id as string;
 					if (key === "savings:voluntary") return "Tabungan Umum";
+					if (key === ARREARS_POS_ID) return "Tunggakan";
 					if (key.startsWith("income:")) {
 						const code = key.slice("income:".length);
 						const found = incomeCats.find((inc: any) => inc.code === code);
@@ -258,9 +286,16 @@ function LaporanPemasukanPage() {
 			sumber: allNames.join(", ") || "Semua",
 			metode: (committedParams.payment_method as string) || "Semua",
 			periode: `${formatDate(committedParams.date_from as string)} - ${formatDate(committedParams.date_to as string)}`,
-			ta: activeAy?.name ?? "-",
+			ta: report?.academic_year || activeAy?.name || "-",
 		};
-	}, [committedParams, selectedFeeItemIds, feeItems, incomeCats, activeAy]);
+	}, [
+		committedParams,
+		selectedFeeItemIds,
+		feeItems,
+		incomeCats,
+		report,
+		activeAy,
+	]);
 
 	return (
 		<div className="h-full flex flex-col">
@@ -314,6 +349,11 @@ function LaporanPemasukanPage() {
 						{isError && (
 							<Alert variant="error" title="Gagal Memuat">
 								Terjadi kesalahan saat memuat laporan pemasukan.
+							</Alert>
+						)}
+						{rangeError && (
+							<Alert variant="error" title="Rentang tanggal tidak valid">
+								{rangeError}
 							</Alert>
 						)}
 

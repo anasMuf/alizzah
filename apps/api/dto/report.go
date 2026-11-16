@@ -246,7 +246,6 @@ type SaldoRequest struct {
 	IncomeCategories string `query:"income_categories"`
 	IncludeSavings   bool   `query:"include_savings"` // include Tabungan Umum deposits
 	AcademicYearID   uint   `query:"academic_year_id"`
-	AcademicYearIDs  string `query:"academic_year_ids"`
 }
 
 type SaldoResponse struct {

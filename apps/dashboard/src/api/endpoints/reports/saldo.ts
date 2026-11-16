@@ -16,7 +16,6 @@ export interface SaldoParams {
 	categories?: string;
 	income_categories?: string; // comma-separated income category codes (bos, donasi, dll)
 	academic_year_id?: number;
-	academic_year_ids?: string;
 }
 
 export interface SaldoRow {

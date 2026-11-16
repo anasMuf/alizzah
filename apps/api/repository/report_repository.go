@@ -13,7 +13,6 @@ type ReportRepository interface {
 	SumInvoiceByCategory(academicYearID uint, month, year uint) ([]dto.BilledVsPaid, error)
 	SumExpenseByCategory(academicYearID uint, startDate, endDate time.Time) ([]dto.CategoryAmount, error)
 	GetArrearsByClass(academicYearID uint, month, year uint) ([]dto.ClassArrearSummary, error)
-	GetOtherYearArrearsByClass(academicYearID uint) ([]dto.ClassArrearSummary, error)
 	GetMonthlyBreakdown(academicYearID uint) ([]dto.MonthlyBreakdown, error)
 	GetInvoiceSummaryByStudent(studentID uint, academicYearID uint) (*dto.InvoiceSummary, error)
 	GetStudentsByClassGroupForMonth(classGroupID uint, month, year uint, academicYearID uint) ([]dto.StudentPaymentStatusInReport, error)
@@ -106,47 +105,11 @@ func (r *reportRepository) GetArrearsByClass(academicYearID uint, month, year ui
 
 	err := r.db.Table("invoices i").
 		Select("cg.name as class_group_name, SUM(i.total_amount - i.paid_amount) as total_unpaid, COUNT(DISTINCT i.student_id) as student_count").
-		// Ambil satu enrollment terbaru per siswa/TA agar enrollment ganda tidak
-		// menggandakan nominal invoice.
-		Joins("JOIN student_enrollments se ON se.id = (SELECT MAX(se2.id) FROM student_enrollments se2 WHERE se2.student_id = i.student_id AND se2.academic_year_id = i.academic_year_id AND se2.deleted_at IS NULL)").
+		Joins("JOIN student_enrollments se ON se.student_id = i.student_id AND se.academic_year_id = i.academic_year_id").
 		Joins("JOIN class_groups cg ON cg.id = se.class_group_id").
 		Where("i.deleted_at IS NULL AND i.academic_year_id = ? AND i.status != 'paid'", academicYearID).
-		// Tagihan bulanan tetap difilter per bulan; tunggakan historis (type
-		// "arrears") tidak punya month/year, jadi harus ikut tanpa filter bulan.
-		Where("(i.type = 'arrears' OR (i.month = ? AND i.year = ?))", month, year).
+		Where("i.month = ? AND i.year = ?", month, year).
 		Group("cg.name").
-		Scan(&results).Error
-
-	return results, err
-}
-
-// GetOtherYearArrearsByClass mengagregasi sisa tagihan historis (type "arrears")
-// dari TA selain academicYearID, dikelompokkan berdasarkan kelas siswa pada TA
-// laporan. Tunggakan historis tidak punya month/year, sehingga sengaja tidak
-// memakai filter bulan seperti GetArrearsByClass.
-//
-// Kelas diambil lewat subkueri (bukan JOIN) agar siswa dengan lebih dari satu
-// enrollment pada TA yang sama tidak menggandakan nominal invoice. Enrollment
-// terbaru dipakai apa pun statusnya: kelas terakhir tetap relevan untuk
-// penagihan. Siswa tanpa enrollment pada TA laporan dihitung pada bucket
-// "Tanpa Kelas".
-func (r *reportRepository) GetOtherYearArrearsByClass(academicYearID uint) ([]dto.ClassArrearSummary, error) {
-	results := make([]dto.ClassArrearSummary, 0)
-
-	classGroupExpr := `(SELECT cg.name
-		FROM student_enrollments se
-		JOIN class_groups cg ON cg.id = se.class_group_id
-		WHERE se.student_id = i.student_id
-		  AND se.academic_year_id = ?
-		  AND se.deleted_at IS NULL
-		ORDER BY se.id DESC
-		LIMIT 1)`
-
-	err := r.db.Table("invoices i").
-		Select("COALESCE("+classGroupExpr+", 'Tanpa Kelas') as class_group_name, SUM(i.total_amount - i.paid_amount) as total_unpaid, COUNT(DISTINCT i.student_id) as student_count", academicYearID).
-		Where("i.deleted_at IS NULL AND i.type = 'arrears' AND i.academic_year_id <> ? AND i.status <> 'paid'", academicYearID).
-		Group("class_group_name").
-		Order("total_unpaid DESC").
 		Scan(&results).Error
 
 	return results, err

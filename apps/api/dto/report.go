@@ -257,12 +257,16 @@ type SaldoResponse struct {
 	AcademicYear string          `json:"academic_year"`
 	PostName     string          `json:"post_name"`
 	Category     string          `json:"category,omitempty"`
-	Categories   []string        `json:"categories,omitempty"` // multiple selected categories
+	Categories   []string        `json:"categories,omitempty"`
 	PostList     []string        `json:"post_list,omitempty"`
 	SaldoSebelum float64         `json:"saldo_sebelum"`
 	Rows         []SaldoRow      `json:"rows"`
 	TotalBulan   SaldoTotalBulan `json:"total_bulan"`
 	SaldoAkhir   float64         `json:"saldo_akhir"`
+	// ArrearsPayment = total pembayaran tunggakan pada periode laporan. Diisi
+	// hanya saat laporan menampilkan semua pos, karena angka ini adalah bagian
+	// dari total penerimaan all-pos.
+	ArrearsPayment float64 `json:"arrears_payment"`
 }
 
 type SaldoRow struct {

@@ -702,6 +702,17 @@ func (s *reportService) GetSaldo(req dto.SaldoRequest) (*dto.SaldoResponse, erro
 	allPos := len(categories) == 1 && categories[0] == "" && req.IncomeCategories == "" && !req.IncludeSavings
 	onlyIncome := len(categories) == 1 && categories[0] == "" && req.IncomeCategories != ""
 
+	// Total pembayaran tunggakan periode ini — bagian dari penerimaan all-pos.
+	// Diisi hanya untuk all-pos agar tidak disalahartikan sebagai bagian dari
+	// pos yang sedang difilter.
+	var arrearsPayment float64
+	if allPos {
+		arrearsPayment, err = s.reportRepo.SumPenerimaan(academicYearID, startDate, endDate, "arrears")
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	// Aggregate data across all selected categories
 	var mergedIncome map[string]float64
 	var mergedExpense map[string]float64
@@ -937,7 +948,8 @@ func (s *reportService) GetSaldo(req dto.SaldoRequest) (*dto.SaldoResponse, erro
 			Pengeluaran: totalPengeluaran,
 			Selisih:     totalPenerimaan - totalPengeluaran,
 		},
-		SaldoAkhir: runningBalance,
+		SaldoAkhir:     runningBalance,
+		ArrearsPayment: arrearsPayment,
 	}, nil
 }
 

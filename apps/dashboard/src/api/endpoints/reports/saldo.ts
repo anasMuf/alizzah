@@ -47,6 +47,8 @@ export interface SaldoData {
 	rows: SaldoRow[];
 	total_bulan: SaldoTotalBulan;
 	saldo_akhir: number;
+	/** Total pembayaran tunggakan pada periode (hanya diisi untuk laporan semua pos). */
+	arrears_payment?: number;
 }
 
 interface ApiResponse {

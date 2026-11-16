@@ -15,5 +15,10 @@ export interface DtoMonthlyReportResponse {
 	cash?: DtoMonthlyCashSummary;
 	expense_summary?: DtoExpenseSummaryResponse;
 	income_summary?: DtoMonthlyIncomeSummary;
+	/** OtherYearArrearsByClass adalah tunggakan historis (type "arrears") dari
+	tahun ajaran selain TA laporan, dikelompokkan berdasarkan kelas siswa pada
+	TA laporan. Dipisahkan dari ArrearsByClass agar tidak tercampur dengan
+	tagihan bulan berjalan. */
+	other_year_arrears_by_class?: DtoClassArrearSummary[];
 	period?: string;
 }

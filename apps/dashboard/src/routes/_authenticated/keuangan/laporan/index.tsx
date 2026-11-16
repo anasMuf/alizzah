@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
 	ArrowRight,
 	BarChart3,
+	CalendarDays,
 	Receipt,
 	TrendingDown,
 	Wallet,
@@ -46,6 +47,15 @@ const REPORT_CARDS = [
 		to: "/keuangan/laporan/posisi-kas",
 		color: "text-teal-600",
 		bg: "bg-teal-50",
+	},
+	{
+		title: "Laporan Bulanan",
+		description:
+			"Total tagihan vs realisasi, tunggakan per kelas, tunggakan historis, dan ringkasan kas.",
+		icon: CalendarDays,
+		to: "/keuangan/laporan/old/bulanan",
+		color: "text-indigo-600",
+		bg: "bg-indigo-50",
 	},
 ];
 

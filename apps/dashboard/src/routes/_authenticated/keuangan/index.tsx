@@ -20,6 +20,7 @@ import {
 	invoiceCategoryLabel,
 	invoiceTypeLabel,
 } from "#/features/keuangan/invoice-labels";
+import { OUTSTANDING_INVOICE_STATUSES } from "#/features/keuangan/invoice-status";
 import { academicYearAtom } from "../../../store/global";
 import { formatCurrency } from "../../../utils/format";
 
@@ -47,7 +48,13 @@ function KeuanganOverviewPage() {
 		{ query: { enabled } },
 	);
 	const { data: unpaidData, isLoading: unpaidLoading } = useGetV1Invoices(
-		{ status: "unpaid", academic_year_id: activeAy?.id, limit: 5 },
+		// status != paid: invoice partial masih punya sisa tagihan dan wajib ikut
+		// terhitung di kartu Total Tunggakan.
+		{
+			status: OUTSTANDING_INVOICE_STATUSES,
+			academic_year_id: activeAy?.id,
+			limit: 5,
+		},
 		{ query: { enabled } },
 	);
 
@@ -207,7 +214,7 @@ function KeuanganOverviewPage() {
 							<div className="ml-5 w-0 flex-1">
 								<dl>
 									<dt className="truncate text-sm font-medium text-gray-500">
-										Total Tunggakan Bulan Ini
+										Total Tunggakan
 									</dt>
 									<dd>
 										<div className="text-lg font-medium text-amber-600">
@@ -306,7 +313,7 @@ function KeuanganOverviewPage() {
 				<div className="lg:col-span-2 rounded-lg bg-white shadow ring-1 ring-gray-900/5">
 					<div className="border-b border-gray-200 px-4 py-5 sm:px-6 flex justify-between items-center">
 						<h3 className="text-base font-semibold leading-6 text-gray-900">
-							Tagihan Jatuh Tempo Minggu Ini
+							Tagihan Belum Lunas
 						</h3>
 						<Link
 							to="/keuangan/tagihan"

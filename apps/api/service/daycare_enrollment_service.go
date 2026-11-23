@@ -146,12 +146,12 @@ func (s *daycareEnrollmentService) Create(createdBy uint, req dto.CreateDaycareE
 
 		// Generate initial invoice (Biaya Awal) hanya untuk premium baru
 		if de.Category == "premium" && enrollmentType == "baru" && s.invoiceGen != nil {
-			student, _ := s.studentRepo.FindByID(req.StudentID)
+			student, _ := s.studentRepo.WithTx(tx).FindByID(req.StudentID)
 			gender := "all"
 			if student != nil {
 				gender = student.Gender
 			}
-			if err := s.invoiceGen.GenerateDaycareInitial(dto.GenerateInitialInvoiceParams{
+			if err := s.invoiceGen.WithTx(tx).GenerateDaycareInitial(dto.GenerateInitialInvoiceParams{
 				StudentID:      req.StudentID,
 				AcademicYearID: req.AcademicYearID,
 				Level:          "all",

@@ -719,8 +719,12 @@ func (s *invoiceGenerateService) GenerateDaycareInitial(params dto.GenerateIniti
 		return nil // idempotent
 	}
 
-	// Defensive: pastikan enrollment daycare benar-benar premium
-	de, err := s.daycareRepo.FindActiveByStudentID(params.StudentID, params.AcademicYearID)
+	// Defensive: pastikan enrollment daycare benar-benar premium.
+	// Gunakan repo yang terikat ke s.db (transaksi aktif bila dipanggil lewat
+	// WithTx) agar enrollment yang baru dibuat di dalam transaksi Create sudah
+	// terlihat — sebelumnya query memakai koneksi lain sehingga tidak menemukan
+	// baris yang belum commit dan invoice biaya awal ikut terlewat.
+	de, err := s.daycareRepo.WithTx(s.db).FindActiveByStudentID(params.StudentID, params.AcademicYearID)
 	if err != nil || de == nil || de.Category != "premium" {
 		log.Printf("[Daycare] GenerateDaycareInitial: skip student=%d (bukan premium)", params.StudentID)
 		return nil
